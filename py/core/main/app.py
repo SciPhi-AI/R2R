@@ -3,14 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from .api.auth_router import AuthRouter
-from .services.ingestion_service import IngestionService
 from .api.ingestion_router import IngestionRouter
 from .api.management_router import ManagementRouter
 from .api.restructure_router import RestructureRouter
 from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
-
-from .hatchet import IngestionWorkflow, r2r_hatchet
+from .hatchet import IngestFilesWorkflow, UpdateFilesWorkflow, r2r_hatchet
+from .services.ingestion_service import IngestionService
 
 
 class R2RApp:
@@ -58,8 +57,8 @@ class R2RApp:
     ):
         self.r2r_worker = r2r_hatchet.worker("r2r-worker")
 
-        ingestion_workflow = IngestionWorkflow(self.ingestion_service)
-        self.r2r_worker.register_workflow(ingestion_workflow)
+        self.r2r_worker.register_workflow(IngestFilesWorkflow(self.ingestion_service))
+        self.r2r_worker.register_workflow(UpdateFilesWorkflow(self.ingestion_service))
 
     def _apply_cors(self):
         origins = ["*", "http://localhost:3000", "http://localhost:8000"]
@@ -74,11 +73,12 @@ class R2RApp:
     def serve(
         self, host: str = "0.0.0.0", port: int = 8000, max_threads: int = 1
     ):
-        import uvicorn
         import asyncio
 
         # Start the Hatchet worker in a separate thread
         import threading
+
+        import uvicorn
 
         r2r_worker_thread = threading.Thread(
             target=self.r2r_worker.start, daemon=True

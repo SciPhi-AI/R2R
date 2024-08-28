@@ -453,7 +453,7 @@ class GroupMixin(DatabaseMixin):
         except Exception as e:
             raise R2RException(
                 status_code=500,
-                message="An error occurred while assigning the document to the group",
+                message=f"An error '{e}' occurred while assigning the document to the group",
             )
 
     def document_groups(

@@ -1,8 +1,10 @@
-from typing import Any, Type, TypeVar
-from pydantic import BaseModel
 import asyncio
+from typing import Any, Type, TypeVar
 
-T = TypeVar('T', bound='R2RSerializable')
+from pydantic import BaseModel
+
+T = TypeVar("T", bound="R2RSerializable")
+
 
 class R2RSerializable(BaseModel):
     @classmethod
@@ -24,6 +26,7 @@ class R2RSerializable(BaseModel):
         json_encoders = {
             bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
+
 
 class AsyncSyncMeta(type):
     _event_loop = None  # Class-level shared event loop

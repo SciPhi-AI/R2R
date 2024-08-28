@@ -1,4 +1,4 @@
-from typing import Any, List, TypeVar
+from typing import Any, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -19,7 +19,14 @@ class FailedDocument(BaseModel):
 
 
 class IngestionResponse(BaseModel):
-    message: str = Field(..., description="A message describing the result of the ingestion request.")
+    message: str = Field(
+        ...,
+        description="A message describing the result of the ingestion request.",
+    )
+    task_id: UUID = Field(
+        ...,
+        description="The task ID of the ingestion request.",
+    )
 
-# Create wrapped version of the response
+
 WrappedIngestionResponse = ResultsWrapper[IngestionResponse]

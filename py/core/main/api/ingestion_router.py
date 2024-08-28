@@ -1,6 +1,7 @@
+import base64
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import Optional
 from uuid import UUID
 
 import yaml
@@ -9,7 +10,6 @@ from pydantic import Json
 
 from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
-from core.base.utils import generate_user_document_id
 
 from ...main.hatchet import r2r_hatchet
 from .base_router import BaseRouter, RunType
@@ -24,7 +24,9 @@ class IngestionRouter(BaseRouter):
         self.setup_routes()
 
     def load_openapi_extras(self):
-        yaml_path = Path(__file__).parent / "data" / "ingestion_router_openapi.yml"
+        yaml_path = (
+            Path(__file__).parent / "data" / "ingestion_router_openapi.yml"
+        )
         with open(yaml_path, "r") as yaml_file:
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
@@ -43,7 +45,7 @@ class IngestionRouter(BaseRouter):
         )
         @self.base_endpoint
         async def ingest_files_app(
-            files: List[UploadFile] = File(
+            files: list[UploadFile] = File(
                 ..., description=ingest_files_descriptions.get("files")
             ),
             document_ids: Optional[Json[list[UUID]]] = Form(
@@ -58,7 +60,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):  # -> WrappedIngestionResponse:
+        ) -> WrappedIngestionResponse:
             """
             Ingest files into the system.
 
@@ -66,19 +68,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive group permissioning is under development.
             """
-            from ..assembly.factory import R2RProviderFactory
-
-            if chunking_config:
-                chunking_config.validate()
-                # Validate the chunking settings
-                R2RProviderFactory.create_chunking_provider(
-                    chunking_config
-                )
-            else:
-                logger.info(
-                    "No chunking config override provided. Using default."
-                )
-
+            self._validate_chunking_config(chunking_config)
             # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser
 
@@ -97,24 +87,16 @@ class IngestionRouter(BaseRouter):
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
 
-            import base64
-
-            file_data = []
-            for file in files:
-                content = await file.read()
-                file_data.append(
-                    {
-                        "filename": file.filename,
-                        "content": base64.b64encode(content).decode("utf-8"),
-                        "content_type": file.content_type,
-                    }
-                )
-            if document_ids:
-                document_ids = [str(doc_id) for doc_id in document_ids]
+            file_datas = await self._process_files(files)
+            document_ids = (
+                [str(doc_id) for doc_id in document_ids]
+                if document_ids
+                else None
+            )
 
             workflow_input = {
-                "file_data": file_data,
-                "document_ids": document_ids,
+                "file_datas": file_datas,
+                "document_ids": [str(doc_id) for doc_id in document_ids],
                 "metadatas": metadatas,
                 "chunking_config": (
                     chunking_config.json() if chunking_config else None
@@ -122,12 +104,14 @@ class IngestionRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-
             task_id = r2r_hatchet.client.admin.run_workflow(
-                "ingestion-workflow", {"request": workflow_input}
+                "ingestion-files", {"request": workflow_input}
             )
 
-            return {"message": f"Ingestion task '{task_id}' queued successfully"}
+            return {
+                "message": f"Ingestion task queued successfully.",
+                "task_id": str(task_id),
+            }
 
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
@@ -140,7 +124,7 @@ class IngestionRouter(BaseRouter):
         )
         @self.base_endpoint
         async def update_files_app(
-            files: List[UploadFile] = File(
+            files: list[UploadFile] = File(
                 ..., description=update_files_descriptions.get("files")
             ),
             document_ids: Optional[Json[list[UUID]]] = Form(
@@ -166,19 +150,67 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
-            from ..assembly.factory import R2RProviderFactory
 
-            chunking_provider = None
-            if chunking_config:
-                config = ChunkingConfig(**chunking_config)
-                chunking_provider = (
-                    R2RProviderFactory.create_chunking_provider(config)
-                )
+            self._validate_chunking_config(chunking_config)
+            # Check if the user is a superuser
+            is_superuser = auth_user and auth_user.is_superuser
 
-            return await self.service.update_files(
-                files=files,
-                metadatas=metadatas,
-                document_ids=document_ids,
-                chunking_provider=chunking_provider,
-                user=auth_user,
+            # Handle user management logic at the request level
+            if not is_superuser:
+                for metadata in metadatas or []:
+                    if "user_id" in metadata and metadata["user_id"] != str(auth_user.id):
+                        raise R2RException(
+                            status_code=403,
+                            message="Non-superusers cannot set user_id in metadata.",
+                        )
+
+                    # Set user_id in metadata for non-superusers
+                    metadata["user_id"] = str(auth_user.id)
+
+            file_datas = await self._process_files(files)
+
+            workflow_input = {
+                "file_datas": file_datas,
+                "document_ids": [str(doc_id) for doc_id in document_ids],
+                "metadatas": metadatas,
+                "chunking_config": (
+                    chunking_config.json() if chunking_config else None
+                ),
+                "user": auth_user.json(),
+            }
+
+            task_id = r2r_hatchet.client.admin.run_workflow(
+                "update-files", {"request": workflow_input}
             )
+
+            return {
+                "message": f"Update task queued successfully.",
+                "task_id": str(task_id),
+            }
+
+
+    @staticmethod
+    def _validate_chunking_config(chunking_config):
+        from ..assembly.factory import R2RProviderFactory
+
+        if chunking_config:
+            chunking_config.validate()
+            R2RProviderFactory.create_chunking_provider(chunking_config)
+        else:
+            logger.info("No chunking config override provided. Using default.")
+
+    @staticmethod
+    async def _process_files(files):
+        import base64
+
+        file_datas = []
+        for file in files:
+            content = await file.read()
+            file_datas.append(
+                {
+                    "filename": file.filename,
+                    "content": base64.b64encode(content).decode("utf-8"),
+                    "content_type": file.content_type,
+                }
+            )
+        return file_datas

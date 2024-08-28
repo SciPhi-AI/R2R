@@ -6,7 +6,7 @@ adapter processing is required.
 All public classes, enums, and functions are re-exported by `vecs.adapters` module.
 """
 
-from typing import Any, Dict, Generator, Iterable, Optional, Tuple
+from typing import Generator, Iterable, Optional
 
 from .base import AdapterContext, AdapterStep, Record
 

@@ -33,7 +33,9 @@ class RetrievalRouter(BaseRouter):
         self.setup_routes()
 
     def load_openapi_extras(self):
-        yaml_path = Path(__file__).parent / "data" / "retrieval_router_openapi.yml"
+        yaml_path = (
+            Path(__file__).parent / "data" / "retrieval_router_openapi.yml"
+        )
         with open(yaml_path, "r") as yaml_file:
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content

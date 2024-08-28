@@ -27,7 +27,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             try:
                 from unstructured_client import UnstructuredClient
                 from unstructured_client.models import operations, shared
-                from unstructured_client.models.errors import SDKError
 
             except ImportError:
                 raise ImportError(

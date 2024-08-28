@@ -51,11 +51,8 @@ class LiteCompletionProvider(CompletionProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        try:
-            response = await self.acompletion(**args)
-            return response
-        except Exception as e:
-            raise
+        response = await self.acompletion(**args)
+        return response
 
     def _execute_task_sync(self, task: dict[str, Any]):
         messages = task["messages"]

@@ -1,10 +1,10 @@
 from .abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .api import *
 from .app import *
-from .hatchet import *
 
 # from .app_entry import r2r_app
 from .assembly import *
+from .hatchet import *
 from .services import *
 
 __all__ = [

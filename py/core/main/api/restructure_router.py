@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Union
 from fastapi import Body, Depends
 
 from core.base import KGEnrichmentSettings
-from .base_router import BaseRouter, RunType
 
 from ..services.restructure_service import RestructureService
+from .base_router import BaseRouter, RunType
 
 
 class RestructureRouter(BaseRouter):

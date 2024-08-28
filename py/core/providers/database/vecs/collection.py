@@ -11,19 +11,9 @@ import math
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from uuid import UUID, uuid4
 
-import psycopg2
 import sqlalchemy as sa
 from flupy import flu
 from nltk.corpus import wordnet
@@ -32,13 +22,10 @@ from sqlalchemy import (
     Column,
     Index,
     MetaData,
-    String,
     Table,
-    alias,
     and_,
     cast,
     delete,
-    distinct,
     func,
     or_,
     select,
@@ -57,7 +44,6 @@ from .exc import (
     CollectionNotFound,
     FilterError,
     MismatchedDimension,
-    Unreachable,
 )
 
 if TYPE_CHECKING:

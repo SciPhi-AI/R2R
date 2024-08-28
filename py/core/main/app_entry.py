@@ -1,12 +1,12 @@
 import logging
 import os
-from typing import Optional
 import threading
+from typing import Optional
 
 from fastapi import FastAPI
+from hatchet.base import worker
 
 from .assembly import R2RBuilder, R2RConfig
-from hatchet.base import worker
 
 logger = logging.getLogger(__name__)
 

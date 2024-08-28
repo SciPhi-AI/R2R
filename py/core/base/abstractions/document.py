@@ -6,6 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 from uuid import NAMESPACE_DNS, UUID, uuid4
+
 from pydantic import BaseModel, Field
 
 from .base import R2RSerializable

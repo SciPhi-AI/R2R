@@ -16,11 +16,11 @@ from core.base import (
     RunLoggingSingleton,
     RunManager,
     generate_user_document_id,
-    increment_version,
     to_async_generator,
+    increment_version,
 )
 from core.base.api.models import IngestionResponse
-from core.base.providers import ChunkingProvider, ChunkingConfig
+from core.base.providers import ChunkingConfig, ChunkingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ...base.api.models.auth.responses import UserResponse
@@ -57,7 +57,7 @@ class IngestionService(Service):
     @telemetry_event("IngestFiles")
     async def ingest_files(
         self,
-        file_data: list[dict],  # Changed from list[UploadFile] to list[dict]
+        file_datas: list[dict],
         user: UserResponse,
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[UUID]] = None,
@@ -65,55 +65,56 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> IngestionResponse:
-        if not file_data:
+        if not file_datas:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
             )
-        if len(file_data) > MAX_FILES_PER_INGESTION:
+        if len(file_datas) > MAX_FILES_PER_INGESTION:
             raise R2RException(
                 status_code=400,
                 message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
             )
-        try:
-            from ..assembly.factory import R2RProviderFactory
+        from ..assembly.factory import R2RProviderFactory
 
-            documents = []
-            for iteration, file_info in enumerate(file_data):
-                if not file_info.get('filename'):
-                    raise R2RException(
-                        status_code=400, message="File name not provided."
-                    )
-                
-                chunking_provider = None
-                if chunking_config:
-                    chunking_config.validate()
-                    # Validate the chunking settings
-                    chunking_provider = R2RProviderFactory.create_chunking_provider(
+        documents = []
+        for iteration, file_data in enumerate(file_datas):
+            if not file_data.get("filename"):
+                raise R2RException(
+                    status_code=400, message="File name not provided."
+                )
+
+            chunking_provider = None
+            if chunking_config:
+                chunking_config.validate()
+                # Validate the chunking settings
+                chunking_provider = (
+                    R2RProviderFactory.create_chunking_provider(
                         chunking_config
                     )
-                document_metadata = metadatas[iteration] if metadatas else {}
+                )
+            document_metadata = metadatas[iteration] if metadatas else {}
 
-                # document id is dynamically generated from the filename and user id, unless explicitly provided
-                document_id = (
-                    document_ids[iteration]
-                    if document_ids
-                    else generate_user_document_id(file_info['filename'], user.id)
+            # document id is dynamically generated from the filename and user id, unless explicitly provided
+            document_id = (
+                document_ids[iteration]
+                if document_ids
+                else generate_user_document_id(
+                    file_data["filename"], user.id
                 )
-                document = self._file_data_to_document(
-                    file_info, user, document_id, document_metadata
-                )
-                documents.append(document)
-            # ingests all documents in parallel
-            return await self.ingest_documents(
-                documents,
-                chunking_provider=chunking_provider,
-                *args,
-                **kwargs,
             )
+            document = self._file_data_to_document(
+                file_data, user, document_id, document_metadata
+            )
+            documents.append(document)
 
-        finally:
-            # No need to close files here as we're not dealing with file objects directly
-            pass
+        # ingests all documents in parallel
+        return await self.ingest_documents(
+            documents,
+            chunking_provider=chunking_provider,
+            *args,
+            **kwargs,
+        )
+
 
     def _file_data_to_document(
         self,
@@ -122,14 +123,16 @@ class IngestionService(Service):
         document_id: UUID,
         metadata: dict,
     ) -> Document:
-        file_extension = file_info['filename'].split(".")[-1].lower()
+        file_extension = file_info["filename"].split(".")[-1].lower()
         if file_extension.upper() not in DocumentType.__members__:
             raise R2RException(
                 status_code=415,
                 message=f"'{file_extension}' is not a valid DocumentType.",
             )
 
-        document_title = metadata.get("title") or file_info['filename'].split("/")[-1]
+        document_title = (
+            metadata.get("title") or file_info["filename"].split("/")[-1]
+        )
         metadata["title"] = document_title
 
         return Document(
@@ -137,9 +140,137 @@ class IngestionService(Service):
             group_ids=metadata.get("group_ids", []),
             user_id=user.id,
             type=DocumentType[file_extension.upper()],
-            data=file_info['content'],  # Assuming the file content is passed as base64 or similar
+            data=file_info[
+                "content"
+            ],  
             metadata=metadata,
         )
+
+    @telemetry_event("UpdateFiles")
+    async def update_files(
+        self,
+        file_datas: list[dict],
+        user: UserResponse,
+        document_ids: list[UUID],
+        metadatas: Optional[list[dict]] = None,
+        chunking_config: Optional[ChunkingConfig] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> IngestionResponse:
+        if not file_datas:
+            raise R2RException(
+                status_code=400, message="No files provided for update."
+            )
+        if len(file_datas) != len(document_ids):
+            raise R2RException(
+                status_code=400,
+                message="Number of files does not match number of document IDs.",
+            )
+        if len(file_datas) > MAX_FILES_PER_INGESTION:
+            raise R2RException(
+                status_code=400,
+                message=f"Exceeded maximum number of files per update: {MAX_FILES_PER_INGESTION}.",
+            )
+        from ..assembly.factory import R2RProviderFactory
+
+        chunking_provider = None
+        if chunking_config:
+            chunking_config.validate()
+            # Validate the chunking settings
+            chunking_provider = (
+                R2RProviderFactory.create_chunking_provider(
+                    chunking_config
+                )
+            )
+
+        if document_ids:
+            if len(document_ids) != len(file_datas):
+                raise R2RException(
+                    status_code=400,
+                    message="Number of ids does not match number of files.",
+                )
+        else:
+            document_ids = [
+                generate_user_document_id(file['filename'], user.id)
+                for file in file_datas
+            ]
+        if len(file_datas) > MAX_FILES_PER_INGESTION:
+            raise R2RException(
+                status_code=400,
+                message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
+            )
+
+        documents_overview = []
+
+        offset = 0
+        while True:
+            documents_overview_page = (
+                self.providers.database.relational.get_documents_overview(
+                    filter_document_ids=document_ids,
+                    filter_user_ids=(
+                        [user.id] if not user.is_superuser else None
+                    ),
+                    offset=offset,
+                    limit=OVERVIEW_FETCH_PAGE_SIZE,
+                )
+            )
+            documents_overview.extend(documents_overview_page)
+            if len(documents_overview_page) < OVERVIEW_FETCH_PAGE_SIZE:
+                break
+            offset += 1
+
+        documents = []
+        new_versions = []
+
+        for it, (file_data, document_id, doc_info) in enumerate(
+            zip(file_datas, document_ids, documents_overview)
+        ):
+            if not doc_info:
+                raise R2RException(
+                    status_code=404,
+                    message=f"Document with id {document_id} not found.",
+                )
+
+            new_version = increment_version(doc_info.version)
+            new_versions.append(new_version)
+
+            updated_metadata = (
+                metadatas[it] if metadatas else doc_info.metadata
+            )
+            updated_metadata["title"] = (
+                updated_metadata.get("title", None)
+                or file_data['filename'].split("/")[-1]
+            )
+
+            document = self._file_data_to_document(
+                file_data, user, document_id, updated_metadata
+            )
+            documents.append(document)
+
+        ingestion_results = await self.ingest_documents(
+            documents,
+            chunking_provider=chunking_provider,
+            versions=new_versions,
+            *args,
+            **kwargs,
+        )
+
+        for doc_id, old_version in zip(
+            document_ids,
+            [doc_info.version for doc_info in documents_overview],
+        ):
+            self.providers.database.vector.delete(
+                filters={
+                    "document_id": {"$eq": doc_id},
+                    "version": {"$eq": old_version},
+                }
+            )
+            self.providers.database.relational.delete_from_documents_overview(
+                doc_id, old_version
+            )
+
+        return ingestion_results
+
 
     async def ingest_documents(
         self,
@@ -352,65 +483,100 @@ class IngestionService(Service):
                 documents_to_upsert
             )
 
-        # # TODO - modify ingestion service so that at end we write out number
-        # # of vectors produced or the error message to document info
-        # # THEN, return updated document infos here
-        # return {
-        #     "processed_documents": [
-        #         document
-        #         for document in document_infos
-        #         if document.id in successful_ids
-        #     ],
-        #     "failed_documents": [
-        #         {
-        #             "document_id": document_id,
-        #             "result": str(results[document_id]),
-        #         }
-        #         for document_id in failed_ids
-        #     ],
-        #     "skipped_documents": skipped_ids,
-        # }
-        return True
+        # TODO - modify ingestion service so that at end we write out number
+        # of vectors produced or the error message to document info
+        # THEN, return updated document infos here
+        return {
+            "processed_documents": [
+                document
+                for document in document_infos
+                if document.id in successful_ids
+            ],
+            "failed_documents": [
+                {
+                    "document_id": document_id,
+                    "result": str(results[document_id]),
+                }
+                for document_id in failed_ids
+            ],
+            "skipped_documents": skipped_ids,
+        }
+
 
 
 class IngestionServiceAdapter:
     @staticmethod
+    def _parse_user_data(user_data):
+        if isinstance(user_data, str):
+            try:
+                user_data = json.loads(user_data)
+            except json.JSONDecodeError:
+                raise ValueError(f"Invalid user data format: {user_data}")
+        return UserResponse.from_dict(user_data)
+
+    @staticmethod
     def prepare_ingest_files_input(
-        file_data: list[dict],
+        file_datas: list[dict],
         user: UserResponse,
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[UUID]] = None,
         chunking_config: Optional[ChunkingConfig] = None,
     ) -> dict:
         return {
-            "file_data": file_data,
+            "file_datas": file_datas,
             "user": user.to_dict(),
             "metadatas": metadatas,
-            "document_ids": [str(doc_id) for doc_id in document_ids] if document_ids else None,
-            "chunking_config": chunking_config.to_dict() if chunking_config else None,
+            "document_ids": (
+                [str(doc_id) for doc_id in document_ids]
+                if document_ids
+                else None
+            ),
+            "chunking_config": (
+                chunking_config.to_dict() if chunking_config else None
+            ),
         }
 
     @staticmethod
     def parse_ingest_files_input(data: dict):
-        user_data = data["user"]
-        if isinstance(user_data, str):
-            try:
-                user_data = json.loads(user_data)
-            except json.JSONDecodeError:
-                raise ValueError(f"Invalid user data format: {user_data}")
-        
         return {
-            "file_data": data["file_data"],
-            "user": UserResponse.from_dict(user_data),
+            "file_datas": data["file_datas"],
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadatas": data["metadatas"],
-            "document_ids": [UUID(doc_id) for doc_id in data["document_ids"]] if data["document_ids"] else None,
-            "chunking_config": ChunkingConfig.from_dict(data["chunking_config"]) if data["chunking_config"] else None,
+            "document_ids": (
+                [UUID(doc_id) for doc_id in data["document_ids"]]
+                if data["document_ids"]
+                else None
+            ),
+            "chunking_config": (
+                ChunkingConfig.from_dict(data["chunking_config"])
+                if data["chunking_config"]
+                else None
+            ),
         }
 
-    # @staticmethod
-    # def serialize_ingestion_response(response: dict) -> dict:
-    #     return {
-    #         "processed_documents": [doc.to_dict() for doc in response["processed_documents"]],
-    #         "failed_documents": response["failed_documents"],
-    #         "skipped_documents": [str(doc_id) for doc_id in response["skipped_documents"]],
-    #     }
+
+    @staticmethod
+    def prepare_update_files_input(
+        file_datas: list[dict],
+        user: UserResponse,
+        document_ids: list[UUID],
+        metadatas: Optional[list[dict]] = None,
+        chunking_config: Optional[ChunkingConfig] = None,
+    ) -> dict:
+        return {
+            "file_datas": file_datas,
+            "user": user.to_dict(),
+            "document_ids": [str(doc_id) for doc_id in document_ids],
+            "metadatas": metadatas,
+            "chunking_config": chunking_config.to_dict() if chunking_config else None,
+        }
+
+    @staticmethod
+    def parse_update_files_input(data: dict):
+        return {
+            "file_datas": data["file_datas"],
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+            "document_ids": [UUID(doc_id) for doc_id in data["document_ids"]],
+            "metadatas": data["metadatas"],
+            "chunking_config": ChunkingConfig.from_dict(data["chunking_config"]) if data["chunking_config"] else None,
+        }
