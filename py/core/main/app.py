@@ -8,8 +8,14 @@ from .api.management_router import ManagementRouter
 from .api.restructure_router import RestructureRouter
 from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
-from .hatchet import IngestFilesWorkflow, UpdateFilesWorkflow, r2r_hatchet
+from .hatchet import (
+    EnrichGraphWorkflow,
+    IngestFilesWorkflow,
+    UpdateFilesWorkflow,
+    r2r_hatchet,
+)
 from .services.ingestion_service import IngestionService
+from .services.restructure_service import RestructureService
 
 
 class R2RApp:
@@ -18,6 +24,7 @@ class R2RApp:
         config: R2RConfig,
         auth_router: AuthRouter,
         ingestion_service: IngestionService,
+        restructure_service: RestructureService,
         ingestion_router: IngestionRouter,
         management_router: ManagementRouter,
         retrieval_router: RestructureRouter,
@@ -25,6 +32,7 @@ class R2RApp:
     ):
         self.config = config
         self.ingestion_service = ingestion_service
+        self.restructure_service = restructure_service
         self.ingestion_router = ingestion_router
         self.management_router = management_router
         self.retrieval_router = retrieval_router
@@ -64,6 +72,10 @@ class R2RApp:
             UpdateFilesWorkflow(self.ingestion_service)
         )
 
+        self.r2r_worker.register_workflow(
+            EnrichGraphWorkflow(self.restructure_service)
+        )
+
     def _apply_cors(self):
         origins = ["*", "http://localhost:3000", "http://localhost:8000"]
         self.app.add_middleware(
@@ -77,8 +89,6 @@ class R2RApp:
     def serve(
         self, host: str = "0.0.0.0", port: int = 8000, max_threads: int = 1
     ):
-        import asyncio
-
         # Start the Hatchet worker in a separate thread
         import threading
 

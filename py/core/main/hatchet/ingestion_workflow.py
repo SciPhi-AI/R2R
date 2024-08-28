@@ -4,7 +4,9 @@ from ..services import IngestionService, IngestionServiceAdapter
 from .base import r2r_hatchet
 
 
-@r2r_hatchet.workflow(name="ingestion-files", on_events=["file:ingest"])
+@r2r_hatchet.workflow(
+    name="ingestion-files", on_events=["file:ingest"], timeout=3600
+)
 class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
@@ -18,7 +20,9 @@ class IngestFilesWorkflow:
         await self.ingestion_service.ingest_files(**parsed_data)
 
 
-@r2r_hatchet.workflow(name="update-files", on_events=["file:update"])
+@r2r_hatchet.workflow(
+    name="update-files", on_events=["file:update"], timeout=3600
+)
 class UpdateFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service

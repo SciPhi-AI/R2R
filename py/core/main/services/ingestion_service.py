@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 from collections import defaultdict
@@ -16,8 +17,8 @@ from core.base import (
     RunLoggingSingleton,
     RunManager,
     generate_user_document_id,
-    to_async_generator,
     increment_version,
+    to_async_generator,
 )
 from core.base.api.models import IngestionResponse
 from core.base.providers import ChunkingConfig, ChunkingProvider
@@ -132,12 +133,15 @@ class IngestionService(Service):
         )
         metadata["title"] = document_title
 
+        # Decode the base64 encoded content
+        content = base64.b64decode(file_info["content"])
+
         return Document(
             id=document_id,
             group_ids=metadata.get("group_ids", []),
             user_id=user.id,
             type=DocumentType[file_extension.upper()],
-            data=file_info["content"],
+            data=content,
             metadata=metadata,
         )
 
