@@ -9,9 +9,8 @@ class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
-    @r2r_hatchet.step(retries=0)
+    @r2r_hatchet.step(retries=3)
     async def ingest_files(self, context: Context) -> None:
-        # Extract necessary data from context
         data = context.workflow_input()["request"]
 
         parsed_data = IngestionServiceAdapter.parse_ingest_files_input(data)
@@ -24,12 +23,10 @@ class UpdateFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
-    @r2r_hatchet.step(retries=0)
+    @r2r_hatchet.step(retries=3)
     async def update_files(self, context: Context) -> None:
-        # Extract necessary data from context
         data = context.workflow_input()["request"]
 
         parsed_data = IngestionServiceAdapter.parse_update_files_input(data)
 
-        print('updating files....')
         await self.ingestion_service.update_files(**parsed_data)

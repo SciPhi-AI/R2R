@@ -98,9 +98,7 @@ class IngestionService(Service):
             document_id = (
                 document_ids[iteration]
                 if document_ids
-                else generate_user_document_id(
-                    file_data["filename"], user.id
-                )
+                else generate_user_document_id(file_data["filename"], user.id)
             )
             document = self._file_data_to_document(
                 file_data, user, document_id, document_metadata
@@ -114,7 +112,6 @@ class IngestionService(Service):
             *args,
             **kwargs,
         )
-
 
     def _file_data_to_document(
         self,
@@ -140,9 +137,7 @@ class IngestionService(Service):
             group_ids=metadata.get("group_ids", []),
             user_id=user.id,
             type=DocumentType[file_extension.upper()],
-            data=file_info[
-                "content"
-            ],  
+            data=file_info["content"],
             metadata=metadata,
         )
 
@@ -177,10 +172,8 @@ class IngestionService(Service):
         if chunking_config:
             chunking_config.validate()
             # Validate the chunking settings
-            chunking_provider = (
-                R2RProviderFactory.create_chunking_provider(
-                    chunking_config
-                )
+            chunking_provider = R2RProviderFactory.create_chunking_provider(
+                chunking_config
             )
 
         if document_ids:
@@ -191,7 +184,7 @@ class IngestionService(Service):
                 )
         else:
             document_ids = [
-                generate_user_document_id(file['filename'], user.id)
+                generate_user_document_id(file["filename"], user.id)
                 for file in file_datas
             ]
         if len(file_datas) > MAX_FILES_PER_INGESTION:
@@ -239,7 +232,7 @@ class IngestionService(Service):
             )
             updated_metadata["title"] = (
                 updated_metadata.get("title", None)
-                or file_data['filename'].split("/")[-1]
+                or file_data["filename"].split("/")[-1]
             )
 
             document = self._file_data_to_document(
@@ -270,7 +263,6 @@ class IngestionService(Service):
             )
 
         return ingestion_results
-
 
     async def ingest_documents(
         self,
@@ -503,7 +495,6 @@ class IngestionService(Service):
         }
 
 
-
 class IngestionServiceAdapter:
     @staticmethod
     def _parse_user_data(user_data):
@@ -554,7 +545,6 @@ class IngestionServiceAdapter:
             ),
         }
 
-
     @staticmethod
     def prepare_update_files_input(
         file_datas: list[dict],
@@ -568,7 +558,9 @@ class IngestionServiceAdapter:
             "user": user.to_dict(),
             "document_ids": [str(doc_id) for doc_id in document_ids],
             "metadatas": metadatas,
-            "chunking_config": chunking_config.to_dict() if chunking_config else None,
+            "chunking_config": (
+                chunking_config.to_dict() if chunking_config else None
+            ),
         }
 
     @staticmethod
@@ -578,5 +570,9 @@ class IngestionServiceAdapter:
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "document_ids": [UUID(doc_id) for doc_id in data["document_ids"]],
             "metadatas": data["metadatas"],
-            "chunking_config": ChunkingConfig.from_dict(data["chunking_config"]) if data["chunking_config"] else None,
+            "chunking_config": (
+                ChunkingConfig.from_dict(data["chunking_config"])
+                if data["chunking_config"]
+                else None
+            ),
         }

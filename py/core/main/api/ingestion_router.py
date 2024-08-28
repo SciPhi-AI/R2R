@@ -158,7 +158,9 @@ class IngestionRouter(BaseRouter):
             # Handle user management logic at the request level
             if not is_superuser:
                 for metadata in metadatas or []:
-                    if "user_id" in metadata and metadata["user_id"] != str(auth_user.id):
+                    if "user_id" in metadata and metadata["user_id"] != str(
+                        auth_user.id
+                    ):
                         raise R2RException(
                             status_code=403,
                             message="Non-superusers cannot set user_id in metadata.",
@@ -187,7 +189,6 @@ class IngestionRouter(BaseRouter):
                 "message": f"Update task queued successfully.",
                 "task_id": str(task_id),
             }
-
 
     @staticmethod
     def _validate_chunking_config(chunking_config):

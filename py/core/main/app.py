@@ -57,8 +57,12 @@ class R2RApp:
     ):
         self.r2r_worker = r2r_hatchet.worker("r2r-worker")
 
-        self.r2r_worker.register_workflow(IngestFilesWorkflow(self.ingestion_service))
-        self.r2r_worker.register_workflow(UpdateFilesWorkflow(self.ingestion_service))
+        self.r2r_worker.register_workflow(
+            IngestFilesWorkflow(self.ingestion_service)
+        )
+        self.r2r_worker.register_workflow(
+            UpdateFilesWorkflow(self.ingestion_service)
+        )
 
     def _apply_cors(self):
         origins = ["*", "http://localhost:3000", "http://localhost:8000"]
