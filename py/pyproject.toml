@@ -65,10 +65,11 @@ poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
+unstructured-client = {version = "^0.25.5", optional = true, extras = ["core"]}
 
 [tool.poetry.extras]
 core = [
-    "future", "pydantic", "python-multipart", "fire", "gunicorn",
+    "future", "pydantic", "python-multipart", "fire", "gunicorn", "unstructured-client",
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
     "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
@@ -126,7 +127,7 @@ download-nltk-data = "scripts.download_nltk_data:download_nltk_data"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
+addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml --cache-clear"
 testpaths = [
     "tests",
 ]

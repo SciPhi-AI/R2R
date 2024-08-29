@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'py/**'
+  push:
+    branches:
+      - 'main'
 
 jobs:
   pre-commit:
