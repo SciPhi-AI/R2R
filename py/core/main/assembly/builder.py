@@ -1,5 +1,6 @@
-import os
-from typing import TYPE_CHECKING, Optional, Type
+import logging
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional, Type
 
 from core.agent import R2RRAGAgent
 from core.base import (
@@ -41,65 +42,69 @@ from .factory import (
     R2RProviderFactory,
 )
 
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ProviderOverrides:
+    auth: Optional[AuthProvider] = None
+    database: Optional[DatabaseProvider] = None
+    embedding: Optional[EmbeddingProvider] = None
+    llm: Optional[CompletionProvider] = None
+    prompt: Optional[PromptProvider] = None
+    kg: Optional[KGProvider] = None
+    crypto: Optional[CryptoProvider] = None
+    orchestration: Optional[OrchestrationProvider] = None
+
+
+@dataclass
+class PipeOverrides:
+    parsing: Optional[AsyncPipe] = None
+    embedding: Optional[AsyncPipe] = None
+    vector_storage: Optional[AsyncPipe] = None
+    vector_search: Optional[AsyncPipe] = None
+    rag: Optional[AsyncPipe] = None
+    streaming_rag: Optional[AsyncPipe] = None
+    kg: Optional[AsyncPipe] = None
+    kg_storage: Optional[AsyncPipe] = None
+    kg_search: Optional[AsyncPipe] = None
+    kg_node_extraction: Optional[AsyncPipe] = None
+    kg_node_description: Optional[AsyncPipe] = None
+    kg_clustering: Optional[AsyncPipe] = None
+
+
+@dataclass
+class PipelineOverrides:
+    ingestion: Optional[IngestionPipeline] = None
+    search: Optional[SearchPipeline] = None
+    rag: Optional[RAGPipeline] = None
+    streaming_rag: Optional[RAGPipeline] = None
+    kg_enrichment: Optional[KGEnrichmentPipeline] = None
+
+
+@dataclass
+class ServiceOverrides:
+    auth: Optional["AuthService"] = None
+    ingestion: Optional["IngestionService"] = None
+    management: Optional["ManagementService"] = None
+    retrieval: Optional["RetrievalService"] = None
+    restructure: Optional["RestructureService"] = None
+
 
 class R2RBuilder:
-    def __init__(
-        self,
-        config: R2RConfig,
-    ):
+    def __init__(self, config: R2RConfig):
         self.config = config
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
             None
         )
-
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
-
-        # Provider overrides
-        self.auth_provider_override: Optional[AuthProvider] = None
-        self.database_provider_override: Optional[DatabaseProvider] = None
-        self.embedding_provider_override: Optional[EmbeddingProvider] = None
-        self.llm_provider_override: Optional[CompletionProvider] = None
-        self.prompt_provider_override: Optional[PromptProvider] = None
-        self.kg_provider_override: Optional[KGProvider] = None
-        self.crypto_provider_override: Optional[CryptoProvider] = None
-        self.orchestration_provider_override: Optional[
-            OrchestrationProvider
-        ] = None
-
-        # Pipe overrides
-        self.parsing_pipe_override: Optional[AsyncPipe] = None
-        self.embedding_pipe_override: Optional[AsyncPipe] = None
-        self.vector_storage_pipe_override: Optional[AsyncPipe] = None
-        self.vector_search_pipe_override: Optional[AsyncPipe] = None
-        self.rag_pipe_override: Optional[AsyncPipe] = None
-        self.streaming_rag_pipe_override: Optional[AsyncPipe] = None
-        self.kg_pipe_override: Optional[AsyncPipe] = None
-        self.kg_storage_pipe_override: Optional[AsyncPipe] = None
-        self.kg_search_pipe_override: Optional[AsyncPipe] = None
-        self.kg_node_extraction_pipe_override: Optional[AsyncPipe] = None
-        self.kg_node_description_pipe_override: Optional[AsyncPipe] = None
-        self.kg_clustering_pipe_override: Optional[AsyncPipe] = None
-
-        # Pipeline overrides
-        self.ingestion_pipeline: Optional[IngestionPipeline] = None
-        self.search_pipeline: Optional[SearchPipeline] = None
-        self.rag_pipeline: Optional[RAGPipeline] = None
-        self.streaming_rag_pipeline: Optional[RAGPipeline] = None
-        self.kg_enrichment_pipeline: Optional[KGEnrichmentPipeline] = None
-
-        # Agent overrides
+        self.provider_overrides = ProviderOverrides()
+        self.pipe_overrides = PipeOverrides()
+        self.pipeline_overrides = PipelineOverrides()
+        self.service_overrides = ServiceOverrides()
         self.assistant_factory_override: Optional[R2RAgentFactory] = None
         self.rag_agent_override: Optional[R2RRAGAgent] = None
-
-        # Service overrides
-        self.auth_service_override: Optional["AuthService"] = None
-        self.ingestion_service_override: Optional["IngestionService"] = None
-        self.management_service_override: Optional["ManagementService"] = None
-        self.retrieval_service_override: Optional["RetrievalService"] = None
-        self.restructure_service_override: Optional["RestructureService"] = (
-            None
-        )
 
     def with_provider_factory(self, factory: Type[R2RProviderFactory]):
         self.provider_factory_override = factory
@@ -113,190 +118,110 @@ class R2RBuilder:
         self.pipeline_factory_override = factory
         return self
 
-    # Provider override methods
-    def with_auth_provider(self, provider: AuthProvider):
-        self.auth_provider_override = provider
+    def with_override(self, attr_name: str, value: Any):
+        setattr(self, f"{attr_name}_override", value)
         return self
 
-    def with_database_provider(self, provider: DatabaseProvider):
-        self.database_provider_override = provider
+    def with_provider(self, provider_type: str, provider: Any):
+        setattr(self.provider_overrides, provider_type, provider)
         return self
 
-    def with_embedding_provider(self, provider: EmbeddingProvider):
-        self.embedding_provider_override = provider
+    def with_pipe(self, pipe_type: str, pipe: AsyncPipe):
+        setattr(self.pipe_overrides, pipe_type, pipe)
         return self
 
-    def with_llm_provider(self, provider: CompletionProvider):
-        self.llm_provider_override = provider
+    def with_pipeline(self, pipeline_type: str, pipeline: Any):
+        setattr(self.pipeline_overrides, pipeline_type, pipeline)
         return self
 
-    def with_prompt_provider(self, provider: PromptProvider):
-        self.prompt_provider_override = provider
+    def with_service(self, service_type: str, service: Any):
+        setattr(self.service_overrides, service_type, service)
         return self
 
-    def with_kg_provider(self, provider: KGProvider):
-        self.kg_provider_override = provider
-        return self
+    def _create_providers(
+        self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
+    ) -> Any:
+        overrides = {
+            k: v
+            for k, v in vars(self.provider_overrides).items()
+            if v is not None
+        }
+        return provider_factory(self.config).create_providers(
+            overrides=overrides, *args, **kwargs
+        )
 
-    def with_crypto_provider(self, provider: CryptoProvider):
-        self.crypto_provider_override = provider
-        return self
+    def _create_pipes(
+        self, pipe_factory: R2RPipeFactory, providers: Any, *args, **kwargs
+    ) -> Any:
+        overrides = {
+            k: v for k, v in vars(self.pipe_overrides).items() if v is not None
+        }
+        return pipe_factory(self.config, providers).create_pipes(
+            overrides=overrides, *args, **kwargs
+        )
 
-    def with_orchestration_provider(self, provider: OrchestrationProvider):
-        self.orchestration_provider_override = provider
-        return self
+    def _create_pipelines(
+        self, pipeline_factory: R2RPipelineFactory, pipes: Any, *args, **kwargs
+    ) -> Any:
+        overrides = {
+            k: v
+            for k, v in vars(self.pipeline_overrides).items()
+            if v is not None
+        }
+        return pipeline_factory(self.config, pipes).create_pipelines(
+            overrides=overrides, *args, **kwargs
+        )
 
-    # Pipe override methods
-    def with_parsing_pipe(self, pipe: AsyncPipe):
-        self.parsing_pipe_override = pipe
-        return self
+    def _create_pipelines(
+        self, pipeline_factory: R2RPipelineFactory, pipes: Any, *args, **kwargs
+    ) -> Any:
+        override_dict = {
+            f"{k}_pipeline": v
+            for k, v in vars(self.pipeline_overrides).items()
+            if v is not None
+        }
+        kwargs.update(override_dict)
+        return pipeline_factory(self.config, pipes).create_pipelines(
+            *args, **kwargs
+        )
 
-    def with_embedding_pipe(self, pipe: AsyncPipe):
-        self.embedding_pipe_override = pipe
-        return self
-
-    def with_vector_storage_pipe(self, pipe: AsyncPipe):
-        self.vector_storage_pipe_override = pipe
-        return self
-
-    def with_vector_search_pipe(self, pipe: AsyncPipe):
-        self.vector_search_pipe_override = pipe
-        return self
-
-    def with_rag_pipe(self, pipe: AsyncPipe):
-        self.rag_pipe_override = pipe
-        return self
-
-    def with_streaming_rag_pipe(self, pipe: AsyncPipe):
-        self.streaming_rag_pipe_override = pipe
-        return self
-
-    def with_kg_pipe(self, pipe: AsyncPipe):
-        self.kg_pipe_override = pipe
-        return self
-
-    def with_kg_storage_pipe(self, pipe: AsyncPipe):
-        self.kg_storage_pipe_override = pipe
-        return self
-
-    def with_kg_search_pipe(self, pipe: AsyncPipe):
-        self.kg_search_pipe_override = pipe
-        return self
-
-    def with_kg_node_extraction_pipe(self, pipe: AsyncPipe):
-        self.kg_node_extraction_pipe_override = pipe
-        return self
-
-    def with_kg_clustering_pipe(self, pipe: AsyncPipe):
-        self.kg_clustering_pipe_override = pipe
-        return self
-
-    def with_kg_node_description_pipe(self, pipe: AsyncPipe):
-        self.kg_node_description_pipe_override = pipe
-        return self
-
-    # Pipeline override methods
-    def with_ingestion_pipeline(self, pipeline: IngestionPipeline):
-        self.ingestion_pipeline = pipeline
-        return self
-
-    def with_search_pipeline(self, pipeline: SearchPipeline):
-        self.search_pipeline = pipeline
-        return self
-
-    def with_rag_pipeline(self, pipeline: RAGPipeline):
-        self.rag_pipeline = pipeline
-        return self
-
-    def with_streaming_rag_pipeline(self, pipeline: RAGPipeline):
-        self.streaming_rag_pipeline = pipeline
-        return self
-
-    def with_kg_enrichment_pipeline(self, pipeline: KGEnrichmentPipeline):
-        self.kg_enrichment_pipeline = pipeline
-        return self
-
-    def with_assistant_factory(self, factory: R2RAgentFactory):
-        self.assistant_factory_override = factory
-        return self
-
-    def with_rag_agent(self, agent: R2RRAGAgent):
-        self.rag_agent_override = agent
-        return self
-
-    def with_auth_service(self, service: "AuthService"):
-        self.auth_service_override = service
-        return self
-
-    def with_ingestion_service(self, service: "IngestionService"):
-        self.ingestion_service_override = service
-        return self
-
-    def with_management_service(self, service: "ManagementService"):
-        self.management_service_override = service
-        return self
-
-    def with_retrieval_service(self, service: "RetrievalService"):
-        self.retrieval_service_override = service
-        return self
-
-    def with_restructure_service(self, service: "RestructureService"):
-        self.restructure_service_override = service
-        return self
+    def _create_services(
+        self, service_params: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        services = {}
+        for service_type, override in vars(self.service_overrides).items():
+            service_class = globals()[f"{service_type.capitalize()}Service"]
+            services[service_type] = override or service_class(
+                **service_params
+            )
+        return services
 
     def build(self, *args, **kwargs) -> R2RApp:
-
         provider_factory = self.provider_factory_override or R2RProviderFactory
         pipe_factory = self.pipe_factory_override or R2RPipeFactory
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
 
-        providers = provider_factory(self.config).create_providers(
-            auth_provider_override=self.auth_provider_override,
-            database_provider_override=self.database_provider_override,
-            embedding_provider_override=self.embedding_provider_override,
-            llm_provider_override=self.llm_provider_override,
-            prompt_provider_override=self.prompt_provider_override,
-            kg_provider_override=self.kg_provider_override,
-            crypto_provider_override=self.crypto_provider_override,
-            orchestration_provider_override=self.orchestration_provider_override,
-            *args,
-            **kwargs,
-        )
-        pipes = pipe_factory(self.config, providers).create_pipes(
-            parsing_pipe_override=self.parsing_pipe_override,
-            embedding_pipe_override=self.embedding_pipe_override,
-            vector_storage_pipe_override=self.vector_storage_pipe_override,
-            vector_search_pipe_override=self.vector_search_pipe_override,
-            rag_pipe_override=self.rag_pipe_override,
-            streaming_rag_pipe_override=self.streaming_rag_pipe_override,
-            kg_pipe_override=self.kg_pipe_override,
-            kg_storage_pipe_override=self.kg_storage_pipe_override,
-            kg_search_pipe_override=self.kg_search_pipe_override,
-            kg_node_extraction_pipe=self.kg_node_extraction_pipe_override,
-            kg_node_description_pipe=self.kg_node_description_pipe_override,
-            kg_clustering_pipe=self.kg_clustering_pipe_override,
-            *args,
-            **kwargs,
-        )
-
-        pipelines = pipeline_factory(self.config, pipes).create_pipelines(
-            ingestion_pipeline=self.ingestion_pipeline,
-            search_pipeline=self.search_pipeline,
-            rag_pipeline=self.rag_pipeline,
-            streaming_rag_pipeline=self.streaming_rag_pipeline,
-            kg_enrichment_pipeline=self.kg_enrichment_pipeline,
-            *args,
-            **kwargs,
-        )
+        try:
+            providers = self._create_providers(
+                provider_factory, *args, **kwargs
+            )
+            pipes = self._create_pipes(
+                pipe_factory, providers, *args, **kwargs
+            )
+            pipelines = self._create_pipelines(
+                pipeline_factory, pipes, *args, **kwargs
+            )
+        except Exception as e:
+            logger.error(f"Error creating providers, pipes, or pipelines: {e}")
+            raise
 
         assistant_factory = self.assistant_factory_override or R2RAgentFactory(
             self.config, providers, pipelines
         )
         agents = assistant_factory.create_agents(
-            rag_agent_override=self.rag_agent_override,
-            *args,
-            **kwargs,
+            overrides={"rag_agent": self.rag_agent_override}, *args, **kwargs
         )
+
         run_singleton = RunLoggingSingleton()
         run_manager = RunManager(run_singleton)
 
@@ -309,53 +234,30 @@ class R2RBuilder:
             "logging_connection": run_singleton,
         }
 
-        service_params = {
-            "config": self.config,
-            "providers": providers,
-            "pipelines": pipelines,
-            "agents": agents,
-            "run_manager": run_manager,
-            "logging_connection": run_singleton,
-        }
-
-        auth_service = self.auth_service_override or AuthService(
-            **service_params
-        )
-        ingestion_service = (
-            self.ingestion_service_override
-            or IngestionService(**service_params)
-        )
-        management_service = (
-            self.management_service_override
-            or ManagementService(**service_params)
-        )
-        retrieval_service = (
-            self.retrieval_service_override
-            or RetrievalService(**service_params)
-        )
-        restructure_service = (
-            self.restructure_service_override
-            or RestructureService(**service_params)
-        )
+        services = self._create_services(service_params)
 
         orchestration_provider = providers.orchestration
 
-        auth_router = AuthRouter(auth_service).get_router()
-        ingestion_router = IngestionRouter(
-            ingestion_service, orchestration_provider=orchestration_provider
-        ).get_router()
-        management_router = ManagementRouter(management_service).get_router()
-        retrieval_router = RetrievalRouter(retrieval_service).get_router()
-        restructure_router = RestructureRouter(
-            restructure_service, orchestration_provider=orchestration_provider
-        ).get_router()
+        routers = {
+            "auth_router": AuthRouter(services["auth"]).get_router(),
+            "ingestion_router": IngestionRouter(
+                services["ingestion"],
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "management_router": ManagementRouter(
+                services["management"]
+            ).get_router(),
+            "retrieval_router": RetrievalRouter(
+                services["retrieval"]
+            ).get_router(),
+            "restructure_router": RestructureRouter(
+                services["restructure"],
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+        }
 
         return R2RApp(
             config=self.config,
             orchestration_provider=orchestration_provider,
-            auth_router=auth_router,
-            ingestion_router=ingestion_router,
-            management_router=management_router,
-            retrieval_router=retrieval_router,
-            restructure_router=restructure_router,
+            **routers,
         )

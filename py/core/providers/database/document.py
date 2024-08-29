@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from core.base import DocumentInfo, DocumentStatus, DocumentType, R2RException
+from core.base import DocumentInfo, DocumentType, IngestionStatus, R2RException
 from core.base.api.models.management.responses import GroupResponse
 
 from .base import DatabaseMixin
@@ -20,8 +20,8 @@ class DocumentMixin(DatabaseMixin):
             title TEXT,
             version TEXT,
             size_in_bytes INT,
-            ingestion_status TEXT DEFAULT 'processing',
-            restructuring_status TEXT DEFAULT 'processing',
+            ingestion_status TEXT DEFAULT 'pending',
+            restructuring_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -121,7 +121,7 @@ class DocumentMixin(DatabaseMixin):
                 title=row[5],
                 version=row[6],
                 size_in_bytes=row[7],
-                ingestion_status=DocumentStatus(row[8]),
+                ingestion_status=IngestionStatus(row[8]),
                 created_at=row[9],
                 updated_at=row[10],
                 restructuring_status=row[11],

@@ -88,27 +88,45 @@ class EmbeddingPipe(AsyncPipe):
         async def process_batch(batch):
             return await self._process_batch(batch)
 
-        for item in input.message:
-            fragment_batch.append(item)
+        try:
+            for item in input.message:
+                fragment_batch.append(item)
 
-            if len(fragment_batch) >= batch_size:
+                if len(fragment_batch) >= batch_size:
+                    tasks.add(
+                        asyncio.create_task(process_batch(fragment_batch))
+                    )
+                    fragment_batch = []
+
+                while len(tasks) >= concurrent_limit:
+                    done, tasks = await asyncio.wait(
+                        tasks, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for task in done:
+                        for vector_entry in await task:
+                            yield vector_entry
+
+            if fragment_batch:
                 tasks.add(asyncio.create_task(process_batch(fragment_batch)))
-                fragment_batch = []
 
-            while len(tasks) >= concurrent_limit:
-                done, tasks = await asyncio.wait(
-                    tasks, return_when=asyncio.FIRST_COMPLETED
-                )
-                for task in done:
-                    for vector_entry in await task:
-                        yield vector_entry
-
-        if fragment_batch:
-            tasks.add(asyncio.create_task(process_batch(fragment_batch)))
-
-        for task in asyncio.as_completed(tasks):
-            for vector_entry in await task:
-                yield vector_entry
+            for task in asyncio.as_completed(tasks):
+                for vector_entry in await task:
+                    yield vector_entry
+        finally:
+            # Ensure all tasks are completed
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+            # Cancel the log worker task
+            if self.log_worker_task and not self.log_worker_task.done():
+                self.log_worker_task.cancel()
+                try:
+                    await self.log_worker_task
+                except asyncio.CancelledError:
+                    pass
+            # Ensure the log queue is empty
+            while not self.log_queue.empty():
+                await self.log_queue.get()
+                self.log_queue.task_done()
 
     async def _process_fragment(
         self, fragment: DocumentFragment

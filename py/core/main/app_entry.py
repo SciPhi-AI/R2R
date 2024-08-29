@@ -34,7 +34,7 @@ def r2r_app(
 
     # Start the Hatchet worker in a separate thread
     r2r_app.orchestration_provider.start_worker()
-    
+
     return app
 
 

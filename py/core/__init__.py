@@ -52,7 +52,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentFragment",
     "DocumentInfo",
-    "DocumentStatus",
+    "IngestionStatus",
+    "RestructureStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -249,7 +250,6 @@ __all__ = [
     "VectorSearchPipe",
     "VectorStoragePipe",
     "WebSearchPipe",
-    "KGSearchSearchPipe",
     "KGStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS

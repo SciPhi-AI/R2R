@@ -2,6 +2,8 @@ import json
 
 from hatchet_sdk import Context
 
+from core.base.abstractions import Document, DocumentInfo
+
 from ..services import IngestionService, IngestionServiceAdapter
 from .base import r2r_hatchet
 
@@ -14,47 +16,64 @@ class IngestFilesWorkflow:
         self.ingestion_service = ingestion_service
 
     @r2r_hatchet.step(retries=3)
-    async def parse_document_extractions(self, context: Context) -> None:
-        data = context.workflow_input()["request"]
+    async def parse_file(self, context: Context) -> None:
+        input_data = context.workflow_input()["request"]
 
-        parsed_data = IngestionServiceAdapter.parse_ingest_file_input(data)
+        parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+            input_data
+        )
 
-        extractions = await self.ingestion_service.parse_document_extractions(
+        documents_and_info = await self.ingestion_service.ingest_file_ingress(
             **parsed_data
         )
-        return {"result": extractions}
 
-    @r2r_hatchet.step(retries=3, parents=["parse_document_extractions"])
-    async def fragment_extractions(self, context: Context) -> None:
-        extractions = context.step_output("parse_document_extractions")[
-            "result"
-        ]
+        try:
+            extractions = await self.ingestion_service.parse_file(
+                documents_and_info["info"],
+                documents_and_info["document"],
+            )
+            return {
+                "result": extractions,
+                "info": documents_and_info["info"].json(),
+            }
+        except Exception as e:
+            raise ValueError(f"Failed to parse document extractions: {str(e)}")
+
+    @r2r_hatchet.step(retries=3, parents=["parse_file"])
+    async def chunk_document(self, context: Context) -> None:
+        inputs = context.step_output("parse_file")
+        document_info = DocumentInfo.from_dict(json.loads(inputs["info"]))
         chunking_config = context.workflow_input()["request"].get(
             "chunking_config"
         )
-        chunks = await self.ingestion_service.fragment_extractions(
-            [json.loads(extraction) for extraction in extractions],
+        chunks = await self.ingestion_service.chunk_document(
+            document_info,
+            [json.loads(extraction) for extraction in inputs["result"]],
             chunking_config,
         )
         return {"result": chunks}
 
-    @r2r_hatchet.step(retries=3, parents=["fragment_extractions"])
-    async def embed_documents(self, context: Context) -> dict:
-        chunked_documents = context.step_output("fragment_extractions")[
-            "result"
-        ]
-        embeddings = await self.ingestion_service.embed_documents(
-            [json.loads(chunk) for chunk in chunked_documents]
-        )
-        return {"result": embeddings}
+    @r2r_hatchet.step(retries=3, parents=["chunk_document"])
+    async def embed_and_store(self, context: Context) -> None:
+        inputs = context.step_output("parse_file")
+        document_info = DocumentInfo.from_dict(json.loads(inputs["info"]))
 
-    @r2r_hatchet.step(retries=3, parents=["embed_documents"])
-    async def store_embeddings(self, context: Context) -> dict:
-        embeddings = context.step_output("embed_documents")["result"]
-        embeddings = await self.ingestion_service.store_embeddings(
-            [json.loads(embedding) for embedding in embeddings]
+        chunks = context.step_output("chunk_document")["result"]
+        embeddings = await self.ingestion_service.embed_document(
+            document_info, [json.loads(chunk) for chunk in chunks]
         )
-        return {"result": embeddings}
+        await self.ingestion_service.store_embeddings(
+            document_info, [json.loads(embedding) for embedding in embeddings]
+        )
+        return {}
+
+    @r2r_hatchet.step(retries=3, parents=["embed_and_store"])
+    async def finalize_ingestion(self, context: Context) -> None:
+        inputs = context.step_output("parse_file")
+        document_info = DocumentInfo.from_dict(json.loads(inputs["info"]))
+        await self.ingestion_service.finalize_ingestion(document_info)
+        
+        return None
 
 
 @r2r_hatchet.workflow(

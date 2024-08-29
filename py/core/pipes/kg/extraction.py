@@ -14,8 +14,8 @@ from core.base import (
     DatabaseProvider,
     DocumentExtraction,
     DocumentFragment,
-    DocumentStatus,
     Entity,
+    IngestionStatus,
     KGExtraction,
     KGProvider,
     PipeType,
@@ -209,7 +209,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
             document_ids = [
                 doc.id
                 for doc in self.database_provider.relational.get_documents_overview()
-                if doc.restructuring_status != DocumentStatus.SUCCESS
+                if doc.restructuring_status != IngestionStatus.SUCCESS
             ]
 
         logger.info(f"Extracting KG for {len(document_ids)} documents")

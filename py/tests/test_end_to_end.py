@@ -8,7 +8,6 @@ from fastapi.datastructures import UploadFile
 from core import (
     Document,
     DocumentInfo,
-    DocumentStatus,
     DocumentType,
     GenerationConfig,
     R2RConfig,

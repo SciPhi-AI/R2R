@@ -144,9 +144,21 @@ class AsyncPipe:
                     ):
                         yield result
                 finally:
-                    await self.log_queue.join()
-                    self.log_worker_task.cancel()
-                    self.log_queue = asyncio.Queue()
+                    # Ensure the log queue is empty
+                    while not self.log_queue.empty():
+                        await self.log_queue.get()
+                        self.log_queue.task_done()
+
+                    # Cancel and wait for the log worker task
+                    if (
+                        self.log_worker_task
+                        and not self.log_worker_task.done()
+                    ):
+                        self.log_worker_task.cancel()
+                        try:
+                            await self.log_worker_task
+                        except asyncio.CancelledError:
+                            pass
 
         return wrapped_run()
 

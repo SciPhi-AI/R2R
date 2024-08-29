@@ -17,16 +17,6 @@ logger = logging.getLogger(__name__)
 DataType = Union[str, bytes]
 
 
-class DocumentStatus(str, Enum):
-    """Status of document processing."""
-
-    PROCESSING = "processing"
-    # TODO - Extend support for `partial-failure`
-    # PARTIAL_FAILURE = "partial-failure"
-    FAILURE = "failure"
-    SUCCESS = "success"
-
-
 class DocumentType(str, Enum):
     """Types of documents that can be stored."""
 
@@ -87,6 +77,28 @@ class Document(R2RSerializable):
         }
 
 
+class IngestionStatus(str, Enum):
+    """Status of document processing."""
+
+    PENDING = "pending"
+    PARSING = "parsing"
+    CHUNKING = "chunking"
+    EMBEDDING = "embedding"
+    STORING = "storing"
+
+    FAILURE = "failure"
+    SUCCESS = "success"
+
+
+class RestructureStatus(str, Enum):
+    """Status of document processing."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    FAILURE = "failure"
+    SUCCESS = "success"
+
+
 class DocumentInfo(R2RSerializable):
     """Base class for document information handling."""
 
@@ -98,8 +110,8 @@ class DocumentInfo(R2RSerializable):
     title: Optional[str] = None
     version: str
     size_in_bytes: int
-    ingestion_status: DocumentStatus = DocumentStatus.PROCESSING
-    restructuring_status: DocumentStatus = DocumentStatus.PROCESSING
+    ingestion_status: IngestionStatus = IngestionStatus.PENDING
+    restructuring_status: RestructureStatus = RestructureStatus.PROCESSING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

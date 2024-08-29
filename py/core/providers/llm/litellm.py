@@ -35,6 +35,7 @@ class LiteCompletionProvider(CompletionProvider):
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
+            "api_base": generation_config.api_base,
         }
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions

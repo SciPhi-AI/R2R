@@ -63,9 +63,7 @@ class R2RApp:
             allow_headers=["*"],
         )
 
-    def serve(
-        self, host: str = "0.0.0.0", port: int = 8000
-    ):
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
         # Start the Hatchet worker in a separate thread
         self.orchestration_provider.start_worker()
 

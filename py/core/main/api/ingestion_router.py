@@ -134,8 +134,8 @@ class IngestionRouter(BaseRouter):
                     }
                 )
 
-            return  messages
-        
+            return messages
+
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
             "input_descriptions", {}

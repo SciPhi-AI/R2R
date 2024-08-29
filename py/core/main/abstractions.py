@@ -48,7 +48,6 @@ class R2RPipes(BaseModel):
     streaming_rag_pipe: Optional[AsyncPipe]
     kg_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
-    kg_search_search_pipe: Optional[AsyncPipe]
     kg_node_extraction_pipe: Optional[AsyncPipe]
     kg_node_description_pipe: Optional[AsyncPipe]
     kg_clustering_pipe: Optional[AsyncPipe]

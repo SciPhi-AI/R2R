@@ -49,9 +49,7 @@ class ParsingPipe(AsyncPipe):
         document: Document,
         run_id: UUID,
         version: str,
-    ) -> AsyncGenerator[
-        Union[R2RDocumentProcessingError, DocumentExtraction], None
-    ]:
+    ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
             async for extraction in self.parsing_provider.parse(document):
                 extraction_id = generate_id_from_label(
@@ -62,7 +60,7 @@ class ParsingPipe(AsyncPipe):
                 extraction.metadata["version"] = version
                 yield extraction
         except Exception as e:
-            yield R2RDocumentProcessingError(
+            raise R2RDocumentProcessingError(
                 document_id=document.id,
                 error_message=f"Error parsing document: {str(e)}",
             )
@@ -74,7 +72,7 @@ class ParsingPipe(AsyncPipe):
         run_id: UUID,
         *args,
         **kwargs,
-    ) -> None:
+    ) -> AsyncGenerator[DocumentExtraction, None]:
         async for result in self._parse(
             input.message, run_id, input.message.metadata.get("version", "v0")
         ):
