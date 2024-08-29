@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import KGConfig, KGProvider
+from core.base import KGConfig, KGProvider, KGEnrichmentSettings
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -27,6 +27,8 @@ from .graph_queries import (
     PUT_ENTITIES_QUERY,
     PUT_TRIPLES_QUERY,
     UNIQUE_CONSTRAINTS,
+    GRAPH_PROJECTION_QUERY,
+    GRAPH_CLUSTERING_QUERY,
 )
 
 
@@ -382,3 +384,18 @@ class Neo4jKGProvider(KGProvider):
                     )
 
         return ret
+
+
+    def perform_graph_clustering(self, filters: dict, settings: KGEnrichmentSettings):
+        """
+        Perform graph clustering on the graph.
+        """
+
+        # step 1: drop the graph, if it exists and project the graph again. 
+        # in this step the vertices that have no edges are not included in the projection. 
+        self.structured_query(GRAPH_PROJECTION_QUERY)
+
+        # step 2: run the hierarchical leiden algorithm on the graph. 
+        self.structured_query(GRAPH_CLUSTERING_QUERY)
+
+        # step 3: run 

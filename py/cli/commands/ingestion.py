@@ -113,7 +113,7 @@ def ingest_files_from_urls(client, urls):
 @click.pass_obj
 def ingest_sample_file(client):
     """Ingest the first sample file into R2R."""
-    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
+    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle_v2.txt"
 
     with timer():
         response = ingest_files_from_urls(client, [sample_file_url])

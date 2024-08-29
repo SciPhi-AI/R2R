@@ -80,7 +80,67 @@ class KGClusteringPipe(AsyncPipe):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def cluster_kg(
+    async def process_community(self, Community):
+        input_text = """
+
+            Entities:
+            {entities}
+
+            Relationships:
+            {relationships}
+
+        """
+
+        entities_info = self.kg_provider.get_entities(community.entity_ids)
+        entities_info = "\n".join(
+            [
+                f"{entity.name}, {entity.description}"
+                for entity in entities_info
+            ]
+        )
+
+        relationships_info = self.kg_provider.get_triples(
+            community.relationship_ids
+        )
+
+        relationships_info = "\n".join(
+            [
+                f"{relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}"
+                for relationship in relationships_info
+            ]
+        )
+
+        input_text = input_text.format(
+            entities=entities_info, relationships=relationships_info
+        )
+
+        description = await self.llm_provider.aget_completion(
+            messages=self.prompt_provider._get_message_payload(
+                task_prompt_name="graphrag_community_reports",
+                task_inputs={
+                    "input_text": input_text,
+                },
+            ),
+            generation_config=settings.generation_config_enrichment,
+        )
+
+        description = description.choices[0].message.content
+        community.summary = description
+        summary_embedding = (
+            await self.embedding_provider.async_get_embedding(
+                community.summary
+            )
+        )
+        community.summary_embedding = summary_embedding
+        self.kg_provider.upsert_communities([community])
+        try:
+            summary = json.loads(community.summary)
+        except:
+            summary = {"title": "_"}
+        return {"id": community.id, "title": summary["title"]}
+
+
+    async def cluster_kg_old(
         self,
         triples: list[Triple],
         settings: KGEnrichmentSettings = KGEnrichmentSettings(),
@@ -136,63 +196,13 @@ class KGClusteringPipe(AsyncPipe):
             for key, value in dictionary.items():
                 yield key, value
 
-        async def process_community(community_key, community):
-            input_text = """
 
-                Entities:
-                {entities}
-
-                Relationships:
-                {relationships}
-
+        async def cluster_kg(self, filters: dict, settings: KGEnrichmentSettings = KGEnrichmentSettings()):
             """
+            Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
+            """
+            return self.kg_provider.perform_graph_clustering(filters, settings)
 
-            entities_info = self.kg_provider.get_entities(community.entity_ids)
-            entities_info = "\n".join(
-                [
-                    f"{entity.name}, {entity.description}"
-                    for entity in entities_info
-                ]
-            )
-
-            relationships_info = self.kg_provider.get_triples(
-                community.relationship_ids
-            )
-            relationships_info = "\n".join(
-                [
-                    f"{relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}"
-                    for relationship in relationships_info
-                ]
-            )
-
-            input_text = input_text.format(
-                entities=entities_info, relationships=relationships_info
-            )
-
-            description = await self.llm_provider.aget_completion(
-                messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="graphrag_community_reports",
-                    task_inputs={
-                        "input_text": input_text,
-                    },
-                ),
-                generation_config=settings.generation_config_enrichment,
-            )
-
-            description = description.choices[0].message.content
-            community.summary = description
-            summary_embedding = (
-                await self.embedding_provider.async_get_embedding(
-                    community.summary
-                )
-            )
-            community.summary_embedding = summary_embedding
-            self.kg_provider.upsert_communities([community])
-            try:
-                summary = json.loads(community.summary)
-            except:
-                summary = {"title": "_"}
-            return {"id": community.id, "title": summary["title"]}
 
         tasks = []
         async for community_key, community in async_iterate_dict(
@@ -234,9 +244,8 @@ class KGClusteringPipe(AsyncPipe):
         async for node in input.message:
             all_nodes.append(node)
 
-        triples = self.kg_provider.get_triples()
-
         async for community in self.cluster_kg(
-            triples, kg_enrichment_settings
+            {}, kg_enrichment_settings
         ):
+            community = await self.process_community(community)
             yield community
