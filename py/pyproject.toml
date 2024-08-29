@@ -65,6 +65,7 @@ psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
+unstructured_client = { git = "https://github.com/Unstructured-IO/unstructured-python-client", optional = true }
 
 [tool.poetry.extras]
 core = [
@@ -72,7 +73,7 @@ core = [
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
     "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
-    "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff", "graspologic"
+    "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff", "graspologic", "unstructured_client"
 ]
 core-ingest-movies = ["opencv-python", "moviepy"]
 

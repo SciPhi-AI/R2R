@@ -114,7 +114,10 @@ class R2RProviderFactory:
             from core.providers import R2RChunkingProvider
 
             return R2RChunkingProvider(chunking_config)
-        elif chunking_config.provider == "unstructured":
+        elif (
+            chunking_config.provider == "unstructured"
+            or chunking_config.provider == "unstructured_api"
+        ):
             from core.providers import UnstructuredChunkingProvider
 
             return UnstructuredChunkingProvider(chunking_config)
