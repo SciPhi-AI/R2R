@@ -123,6 +123,17 @@ class R2RProviderFactory:
                 f"Chunking provider {chunking_config.provider} not supported"
             )
 
+    @staticmethod
+    def create_orchestration_provider(*args, **kwargs):
+        from core.base.providers import OrchestrationConfig
+        from core.providers import HatchetOrchestrationProvider
+
+        orchestration_provider = HatchetOrchestrationProvider(
+            OrchestrationConfig()
+        )
+        orchestration_provider.get_worker("r2r-worker")
+        return orchestration_provider
+
     def create_database_provider(
         self,
         db_config: DatabaseConfig,
@@ -295,6 +306,7 @@ class R2RProviderFactory:
             self.config.chunking, *args, **kwargs
         )
 
+        orchestration_provider = self.create_orchestration_provider()
         return R2RProviders(
             auth=auth_provider,
             chunking=chunking_provider,
@@ -304,6 +316,7 @@ class R2RProviderFactory:
             parsing=parsing_provider,
             prompt=prompt_provider,
             kg=kg_provider,
+            orchestration=orchestration_provider,
         )
 
 

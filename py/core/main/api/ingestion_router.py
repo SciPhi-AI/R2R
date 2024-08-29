@@ -10,20 +10,39 @@ from pydantic import Json
 
 from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
+from core.base.providers import OrchestrationProvider
 
 from ...main.hatchet import r2r_hatchet
+from ..hatchet import IngestFilesWorkflow, UpdateFilesWorkflow
+from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
 
 
 class IngestionRouter(BaseRouter):
-    def __init__(self, service, run_type: RunType = RunType.INGESTION):
-        super().__init__(service, run_type)
-        self.openapi_extras = self.load_openapi_extras()
-        self.setup_routes()
+    def __init__(
+        self,
+        service: IngestionService,
+        run_type: RunType = RunType.INGESTION,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
+    ):
+        if not orchestration_provider:
+            raise ValueError(
+                "IngestionRouter requires an orchestration provider."
+            )
+        super().__init__(service, run_type, orchestration_provider)
+        self.service: IngestionService = service
 
-    def load_openapi_extras(self):
+    def _register_workflows(self):
+        self.orchestration_provider.register_workflow(
+            IngestFilesWorkflow(self.service)
+        )
+        self.orchestration_provider.register_workflow(
+            UpdateFilesWorkflow(self.service)
+        )
+
+    def _load_openapi_extras(self):
         yaml_path = (
             Path(__file__).parent / "data" / "ingestion_router_openapi.yml"
         )
@@ -31,7 +50,7 @@ class IngestionRouter(BaseRouter):
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
 
-    def setup_routes(self):
+    def _setup_routes(self):
         # Note, we use the following verbose input parameters because FastAPI struggles to handle `File` input and `Body` inputs
         # at the same time. Therefore, we must ues `Form` inputs for the metadata, document_ids
         ingest_files_extras = self.openapi_extras.get("ingest_files", {})
@@ -89,29 +108,34 @@ class IngestionRouter(BaseRouter):
 
             file_datas = await self._process_files(files)
 
-            workflow_input = {
-                "file_data": file_datas[0],
-                "document_id": (
-                    [str(doc_id) for doc_id in document_ids][0]
-                    if document_ids
-                    else None
-                ),
-                "metadata": metadatas[0] if metadatas else None,
-                "chunking_config": (
-                    chunking_config.json() if chunking_config else None
-                ),
-                "user": auth_user.json(),
-            }
+            messages = []
+            for it, file_data in enumerate(file_datas):
+                workflow_input = {
+                    "file_data": file_data,
+                    "document_id": (
+                        [str(doc_id) for doc_id in document_ids][it]
+                        if document_ids
+                        else None
+                    ),
+                    "metadata": metadatas[it] if metadatas else None,
+                    "chunking_config": (
+                        chunking_config.json() if chunking_config else None
+                    ),
+                    "user": auth_user.json(),
+                }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
-                "ingest-file", {"request": workflow_input}
-            )
+                task_id = r2r_hatchet.client.admin.run_workflow(
+                    "ingest-file", {"request": workflow_input}
+                )
+                messages.append(
+                    {
+                        "message": f"Ingestion task queued successfully.",
+                        "task_id": str(task_id),
+                    }
+                )
 
-            return {
-                "message": f"Ingestion task queued successfully.",
-                "task_id": str(task_id),
-            }
-
+            return  messages
+        
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
             "input_descriptions", {}

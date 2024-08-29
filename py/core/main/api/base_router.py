@@ -1,7 +1,7 @@
 import functools
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,24 +11,28 @@ from core.base.logging.base import RunType
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from ..services.base import Service
+from core.base.providers import OrchestrationProvider
+
+from ..services.base import Service
 
 
 class BaseRouter:
     def __init__(
-        self, service: "Service", run_type: RunType = RunType.UNSPECIFIED
+        self,
+        service: "Service",
+        run_type: RunType = RunType.UNSPECIFIED,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         self.service = service
         self.run_type = run_type
+        self.orchestration_provider = orchestration_provider
         self.router = APIRouter()
+        self.openapi_extras = self._load_openapi_extras()
+        self._setup_routes()
+        self._register_workflows()
 
     def get_router(self):
         return self.router
-
-    @abstractmethod
-    def load_openapi_extras(self):
-        pass
 
     def base_endpoint(self, func: callable):
         @functools.wraps(func)
@@ -82,3 +86,15 @@ class BaseRouter:
     @classmethod
     def build_router(cls, engine):
         return cls(engine).router
+
+    @abstractmethod
+    def _setup_routes(self):
+        pass
+
+    @abstractmethod
+    def _register_workflows(self):
+        pass
+
+    @abstractmethod
+    def _load_openapi_extras(self):
+        pass

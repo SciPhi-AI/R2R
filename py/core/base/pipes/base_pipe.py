@@ -124,6 +124,7 @@ class AsyncPipe:
     async def run(
         self,
         input: Input,
+        state: Optional[AsyncState] = None,
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
@@ -139,7 +140,7 @@ class AsyncPipe:
                 )
                 try:
                     async for result in self._run_logic(
-                        input, run_id=run_id, *args, **kwargs
+                        input, state=state, run_id=run_id, *args, **kwargs
                     ):
                         yield result
                 finally:

@@ -218,7 +218,7 @@ class RetrievalService(Service):
         **kwargs,
     ):
         async def stream_response():
-            async with manage_run(self.run_manager, "arag"):
+            async with manage_run(self.run_manager, "rag"):
                 async for (
                     chunk
                 ) in await self.pipelines.streaming_rag_pipeline.run(

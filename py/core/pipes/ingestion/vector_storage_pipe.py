@@ -64,6 +64,7 @@ class VectorStoragePipe(AsyncPipe):
     async def _run_logic(
         self,
         input: Input,
+        state: Optional[AsyncState],
         run_id: UUID,
         *args: Any,
         **kwargs: Any,

@@ -2,18 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
+from core.base.providers import OrchestrationProvider
+
 from .api.auth_router import AuthRouter
 from .api.ingestion_router import IngestionRouter
 from .api.management_router import ManagementRouter
 from .api.restructure_router import RestructureRouter
 from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
-from .hatchet import (
-    EnrichGraphWorkflow,
-    IngestFilesWorkflow,
-    UpdateFilesWorkflow,
-    r2r_hatchet,
-)
 from .services.ingestion_service import IngestionService
 from .services.restructure_service import RestructureService
 
@@ -22,25 +18,22 @@ class R2RApp:
     def __init__(
         self,
         config: R2RConfig,
+        orchestration_provider: OrchestrationProvider,
         auth_router: AuthRouter,
-        ingestion_service: IngestionService,
-        restructure_service: RestructureService,
         ingestion_router: IngestionRouter,
         management_router: ManagementRouter,
         retrieval_router: RestructureRouter,
         restructure_router: RetrievalRouter,
     ):
         self.config = config
-        self.ingestion_service = ingestion_service
-        self.restructure_service = restructure_service
         self.ingestion_router = ingestion_router
         self.management_router = management_router
         self.retrieval_router = retrieval_router
         self.auth_router = auth_router
         self.restructure_router = restructure_router
+        self.orchestration_provider = orchestration_provider
         self.app = FastAPI()
         self._setup_routes()
-        self._setup_hatchet_worker()
         self._apply_cors()
 
     def _setup_routes(self):
@@ -60,22 +53,6 @@ class R2RApp:
                 routes=self.app.routes,
             )
 
-    def _setup_hatchet_worker(
-        self,
-    ):
-        self.r2r_worker = r2r_hatchet.worker("r2r-worker")
-
-        self.r2r_worker.register_workflow(
-            IngestFilesWorkflow(self.ingestion_service)
-        )
-        self.r2r_worker.register_workflow(
-            UpdateFilesWorkflow(self.ingestion_service)
-        )
-
-        self.r2r_worker.register_workflow(
-            EnrichGraphWorkflow(self.restructure_service)
-        )
-
     def _apply_cors(self):
         origins = ["*", "http://localhost:3000", "http://localhost:8000"]
         self.app.add_middleware(
@@ -87,17 +64,12 @@ class R2RApp:
         )
 
     def serve(
-        self, host: str = "0.0.0.0", port: int = 8000, max_threads: int = 1
+        self, host: str = "0.0.0.0", port: int = 8000
     ):
         # Start the Hatchet worker in a separate thread
-        import threading
+        self.orchestration_provider.start_worker()
 
         import uvicorn
-
-        r2r_worker_thread = threading.Thread(
-            target=self.r2r_worker.start, daemon=True
-        )
-        r2r_worker_thread.start()
 
         # Run the FastAPI app
         uvicorn.run(self.app, host=host, port=port)

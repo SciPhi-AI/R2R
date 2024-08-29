@@ -206,7 +206,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
         in search_results["vector_search_results"][0]["text"]
     )
     ## test stream
-    response = await app.arag(
+    response = await app.rag(
         query="Who was aristotle?",
         rag_generation_config=GenerationConfig(
             **{"model": "gpt-3.5-turbo", "stream": True}

@@ -33,9 +33,8 @@ def r2r_app(
     app = R2RBuilder(config=config).build().app
 
     # Start the Hatchet worker in a separate thread
-    worker_thread = threading.Thread(target=start_hatchet_worker, daemon=True)
-    worker_thread.start()
-
+    r2r_app.orchestration_provider.start_worker()
+    
     return app
 
 

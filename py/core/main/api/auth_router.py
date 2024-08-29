@@ -11,6 +11,7 @@ from core.base.api.models.auth.responses import (
     WrappedTokenResponse,
     WrappedUserResponse,
 )
+from core.base.providers import OrchestrationProvider
 
 from ..services.auth_service import AuthService
 from .base_router import BaseRouter, RunType
@@ -20,12 +21,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class AuthRouter(BaseRouter):
     def __init__(
-        self, auth_service: AuthService, run_type: RunType = RunType.INGESTION
+        self,
+        auth_service: AuthService,
+        run_type: RunType = RunType.INGESTION,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(auth_service, run_type)
-        self.setup_routes()
+        super().__init__(auth_service, run_type, orchestration_provider)
 
-    def setup_routes(self):
+    def _setup_routes(self):
         @self.router.post("/register", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def register_app(

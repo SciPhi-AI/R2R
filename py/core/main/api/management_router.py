@@ -26,6 +26,7 @@ from core.base.api.models.management.responses import (
     WrappedUserOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
+from core.base.providers import OrchestrationProvider
 
 from ..services.management_service import ManagementService
 from .base_router import BaseRouter, RunType
@@ -36,14 +37,14 @@ class ManagementRouter(BaseRouter):
         self,
         service: ManagementService,
         run_type: RunType = RunType.MANAGEMENT,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(service, run_type)
+        super().__init__(service, run_type, orchestration_provider)
         self.service: ManagementService = service  # for type hinting
         self.start_time = datetime.now(timezone.utc)
-        self.setup_routes()
 
     # TODO: remove this from the management route, it should be at the base of the server
-    def setup_routes(self):
+    def _setup_routes(self):
         @self.router.get("/health")
         @self.base_endpoint
         async def health_check():

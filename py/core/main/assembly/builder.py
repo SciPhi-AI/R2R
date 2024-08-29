@@ -10,6 +10,7 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     KGProvider,
+    OrchestrationProvider,
     PromptProvider,
     RunLoggingSingleton,
     RunManager,
@@ -62,6 +63,9 @@ class R2RBuilder:
         self.prompt_provider_override: Optional[PromptProvider] = None
         self.kg_provider_override: Optional[KGProvider] = None
         self.crypto_provider_override: Optional[CryptoProvider] = None
+        self.orchestration_provider_override: Optional[
+            OrchestrationProvider
+        ] = None
 
         # Pipe overrides
         self.parsing_pipe_override: Optional[AsyncPipe] = None
@@ -136,6 +140,10 @@ class R2RBuilder:
 
     def with_crypto_provider(self, provider: CryptoProvider):
         self.crypto_provider_override = provider
+        return self
+
+    def with_orchestration_provider(self, provider: OrchestrationProvider):
+        self.orchestration_provider_override = provider
         return self
 
     # Pipe override methods
@@ -250,6 +258,7 @@ class R2RBuilder:
             prompt_provider_override=self.prompt_provider_override,
             kg_provider_override=self.kg_provider_override,
             crypto_provider_override=self.crypto_provider_override,
+            orchestration_provider_override=self.orchestration_provider_override,
             *args,
             **kwargs,
         )
@@ -329,19 +338,22 @@ class R2RBuilder:
             or RestructureService(**service_params)
         )
 
+        orchestration_provider = providers.orchestration
+
         auth_router = AuthRouter(auth_service).get_router()
-        ingestion_router = IngestionRouter(ingestion_service).get_router()
+        ingestion_router = IngestionRouter(
+            ingestion_service, orchestration_provider=orchestration_provider
+        ).get_router()
         management_router = ManagementRouter(management_service).get_router()
         retrieval_router = RetrievalRouter(retrieval_service).get_router()
         restructure_router = RestructureRouter(
-            restructure_service
+            restructure_service, orchestration_provider=orchestration_provider
         ).get_router()
 
         return R2RApp(
             config=self.config,
+            orchestration_provider=orchestration_provider,
             auth_router=auth_router,
-            ingestion_service=ingestion_service,
-            restructure_service=restructure_service,
             ingestion_router=ingestion_router,
             management_router=management_router,
             retrieval_router=retrieval_router,

@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
+from core.base.providers import OrchestrationProvider
 
 from ..services.retrieval_service import RetrievalService
 from .base_router import BaseRouter
@@ -25,14 +26,15 @@ from .base_router import BaseRouter
 
 class RetrievalRouter(BaseRouter):
     def __init__(
-        self, service: RetrievalService, run_type: RunType = RunType.RETRIEVAL
+        self,
+        service: RetrievalService,
+        run_type: RunType = RunType.RETRIEVAL,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(service, run_type)
+        super().__init__(service, run_type, orchestration_provider)
         self.service: RetrievalService = service  # for type hinting
-        self.openapi_extras = self.load_openapi_extras()
-        self.setup_routes()
 
-    def load_openapi_extras(self):
+    def _load_openapi_extras(self):
         yaml_path = (
             Path(__file__).parent / "data" / "retrieval_router_openapi.yml"
         )
@@ -40,10 +42,7 @@ class RetrievalRouter(BaseRouter):
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
 
-    def retrieval_endpoint(self, run_type: RunType = RunType.RETRIEVAL):
-        return self.base_endpoint(run_type)
-
-    def setup_routes(self):
+    def _setup_routes(self):
         search_extras = self.openapi_extras.get("search", {})
         search_descriptions = search_extras.get("input_descriptions", {})
 
@@ -51,7 +50,7 @@ class RetrievalRouter(BaseRouter):
             "/search",
             openapi_extra=search_extras.get("openapi_extra"),
         )
-        @self.retrieval_endpoint
+        @self.base_endpoint
         async def search_app(
             query: str = Body(
                 ..., description=search_descriptions.get("query")
@@ -109,7 +108,7 @@ class RetrievalRouter(BaseRouter):
             "/rag",
             openapi_extra=rag_extras.get("openapi_extra"),
         )
-        @self.retrieval_endpoint
+        @self.base_endpoint
         async def rag_app(
             query: str = Body(..., description=rag_descriptions.get("query")),
             vector_search_settings: VectorSearchSettings = Body(
@@ -150,7 +149,7 @@ class RetrievalRouter(BaseRouter):
 
             vector_search_settings.filters = filters
 
-            response = await self.service.arag(
+            response = await self.service.rag(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -177,7 +176,7 @@ class RetrievalRouter(BaseRouter):
             "/agent",
             openapi_extra=agent_extras.get("openapi_extra"),
         )
-        @self.retrieval_endpoint
+        @self.base_endpoint
         async def agent_app(
             messages: list[Message] = Body(
                 ..., description=agent_descriptions.get("messages")

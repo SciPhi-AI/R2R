@@ -29,4 +29,4 @@ class IngestionResponse(BaseModel):
     )
 
 
-WrappedIngestionResponse = ResultsWrapper[IngestionResponse]
+WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]

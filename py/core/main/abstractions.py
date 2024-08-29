@@ -11,6 +11,7 @@ from core.base.providers import (
     DatabaseProvider,
     EmbeddingProvider,
     KGProvider,
+    OrchestrationProvider,
     ParsingProvider,
     PromptProvider,
 )
@@ -25,11 +26,12 @@ from core.pipelines import (
 class R2RProviders(BaseModel):
     auth: Optional[AuthProvider]
     chunking: Optional[ChunkingProvider]
-    llm: Optional[CompletionProvider]
     database: Optional[DatabaseProvider]
-    embedding: Optional[EmbeddingProvider]
-    prompt: Optional[PromptProvider]
     kg: Optional[KGProvider]
+    llm: Optional[CompletionProvider]
+    embedding: Optional[EmbeddingProvider]
+    orchestration: Optional[OrchestrationProvider]
+    prompt: Optional[PromptProvider]
     parsing: Optional[ParsingProvider]
 
     class Config:
