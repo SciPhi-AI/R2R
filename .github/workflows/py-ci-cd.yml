@@ -78,6 +78,7 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: python
 
       - name: Clean up disk space
         uses: jlumbroso/free-disk-space@main
