@@ -59,6 +59,7 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "StorageResult",
     ## AGENT
     # Agent abstractions
     "Agent",

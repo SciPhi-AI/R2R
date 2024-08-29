@@ -10,12 +10,16 @@ from fastapi import UploadFile
 
 from core.base import (
     Document,
+    DocumentExtraction,
+    DocumentFragment,
     DocumentInfo,
     DocumentType,
     R2RDocumentProcessingError,
     R2RException,
     RunLoggingSingleton,
     RunManager,
+    VectorEntry,
+    generate_id_from_label,
     generate_user_document_id,
     increment_version,
     to_async_generator,
@@ -113,6 +117,208 @@ class IngestionService(Service):
             *args,
             **kwargs,
         )
+
+    @telemetry_event("IngestFile")
+    async def parse_document_extractions(
+        self,
+        file_data: dict,
+        user: UserResponse,
+        metadata: Optional[dict] = None,
+        document_id: Optional[UUID] = None,
+        chunking_config: Optional[ChunkingConfig] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> IngestionResponse:
+        if not file_data:
+            raise R2RException(
+                status_code=400, message="No files provided for ingestion."
+            )
+        from ..assembly.factory import R2RProviderFactory
+
+        if not file_data.get("filename"):
+            raise R2RException(
+                status_code=400, message="File name not provided."
+            )
+
+        chunking_provider = None
+        if chunking_config:
+            chunking_config.validate()
+            # Validate the chunking settings
+            chunking_provider = R2RProviderFactory.create_chunking_provider(
+                chunking_config
+            )
+        metadata = metadata or {}
+
+        # document id is dynamically generated from the filename and user id, unless explicitly provided
+        document_id = document_id or generate_user_document_id(
+            file_data["filename"], user.id
+        )
+
+        document = self._file_data_to_document(
+            file_data, user, document_id, metadata
+        )
+
+        # ingests all documents in parallel
+        return await self.ingest_document(
+            document,
+            chunking_provider=chunking_provider,
+            *args,
+            **kwargs,
+        )
+
+    async def ingest_document(
+        self,
+        document: Document,
+        version: Optional[str] = None,
+        chunking_provider: Optional[ChunkingProvider] = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+
+        if chunking_provider is None:
+            logger.info("No chunking provider specified. Using default.")
+        else:
+            logger.info(
+                f"Using custom chunking provider: {type(chunking_provider).__name__}"
+            )
+
+        document_infos = []
+        skipped_documents = []
+        processed_documents = {}
+        duplicate_documents = defaultdict(list)
+
+        user_id = document.user_id
+
+        existing_documents = (
+            (
+                self.providers.database.relational.get_documents_overview(
+                    filter_user_ids=[user_id]
+                )
+            )
+            if self.providers.database
+            else []
+        )
+
+        existing_document_info = {
+            doc_info.id: doc_info for doc_info in existing_documents
+        }
+
+        version = version or STARTING_VERSION
+
+        # Check for duplicates within the current batch
+        if document.id in processed_documents:
+            duplicate_documents[document.id].append(
+                document.metadata.get("title", str(document.id))
+            )
+            return None
+
+        if (
+            document.id in existing_document_info
+            # apply `geq` check to prevent re-ingestion of updated documents
+            and (existing_document_info[document.id].version >= version)
+            and existing_document_info[document.id].ingestion_status
+            == "success"
+        ):
+            # do something
+            pass
+
+        now = datetime.now()
+
+        document_info = DocumentInfo(
+            id=document.id,
+            user_id=document.user_id,
+            group_ids=document.group_ids,
+            type=document.type,
+            title=document.metadata.pop("title", "N/A"),
+            metadata=document.metadata,
+            version=version,
+            size_in_bytes=len(document.data),
+            ingestion_status="processing",
+            created_at=now,
+            updated_at=now,
+        )
+
+        self.providers.database.relational.upsert_documents_overview(
+            document_info
+        )
+
+        result_gen = await self.pipelines.ingestion_pipeline.parsing_pipe.run(
+            input=self.pipelines.ingestion_pipeline.parsing_pipe.Input(
+                message=document
+            ),
+            run_manager=self.run_manager,
+            *args,
+            **kwargs,
+        )
+
+        results = []
+        async for res in result_gen:
+            results.append(res.json())
+        return results
+
+    async def fragment_extractions(
+        self,
+        parsed_documents: list[dict],
+        chunking_config: Optional[ChunkingConfig] = None,
+    ) -> list[DocumentFragment]:
+        from ..assembly.factory import R2RProviderFactory
+
+        result_gen = await self.pipelines.ingestion_pipeline.chunking_pipe.run(
+            input=self.pipelines.ingestion_pipeline.chunking_pipe.Input(
+                message=[
+                    DocumentExtraction.from_dict(chunk)
+                    for chunk in parsed_documents
+                ]
+            ),
+            run_manager=self.run_manager,
+            chunking_config=chunking_config,
+        )
+
+        results = []
+        async for res in result_gen:
+            results.append(res.json())
+
+        return results
+
+    async def embed_documents(
+        self,
+        chunked_documents: list[dict],
+    ) -> list[str]:
+        result_gen = (
+            await self.pipelines.ingestion_pipeline.embedding_pipe.run(
+                input=self.pipelines.ingestion_pipeline.embedding_pipe.Input(
+                    message=[
+                        DocumentFragment.from_dict(chunk)
+                        for chunk in chunked_documents
+                    ]
+                ),
+                run_manager=self.run_manager,
+            )
+        )
+
+        results = []
+        async for res in result_gen:
+            results.append(res.json())
+        return results
+
+    async def store_embeddings(
+        self,
+        embeddings: list[dict],
+    ) -> list[str]:
+        result_gen = await self.pipelines.ingestion_pipeline.storage_pipe.run(
+            input=self.pipelines.ingestion_pipeline.storage_pipe.Input(
+                message=[
+                    VectorEntry.from_dict(embedding)
+                    for embedding in embeddings
+                ]
+            ),
+            run_manager=self.run_manager,
+        )
+
+        results = []
+        async for res in result_gen:
+            results.append(res.json())
+        return results
 
     def _file_data_to_document(
         self,
@@ -510,37 +716,13 @@ class IngestionServiceAdapter:
         return UserResponse.from_dict(user_data)
 
     @staticmethod
-    def prepare_ingest_files_input(
-        file_datas: list[dict],
-        user: UserResponse,
-        metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[UUID]] = None,
-        chunking_config: Optional[ChunkingConfig] = None,
-    ) -> dict:
+    def parse_ingest_file_input(data: dict):
         return {
-            "file_datas": file_datas,
-            "user": user.to_dict(),
-            "metadatas": metadatas,
-            "document_ids": (
-                [str(doc_id) for doc_id in document_ids]
-                if document_ids
-                else None
-            ),
-            "chunking_config": (
-                chunking_config.to_dict() if chunking_config else None
-            ),
-        }
-
-    @staticmethod
-    def parse_ingest_files_input(data: dict):
-        return {
-            "file_datas": data["file_datas"],
+            "file_data": data["file_data"],
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
-            "metadatas": data["metadatas"],
-            "document_ids": (
-                [UUID(doc_id) for doc_id in data["document_ids"]]
-                if data["document_ids"]
-                else None
+            "metadata": data["metadata"],
+            "document_id": (
+                UUID(data["document_id"]) if data["document_id"] else None
             ),
             "chunking_config": (
                 ChunkingConfig.from_dict(data["chunking_config"])

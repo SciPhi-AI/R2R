@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class ParsingPipe(AsyncPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[Document, None]
+        message: Document
 
     def __init__(
         self,
@@ -70,13 +70,11 @@ class ParsingPipe(AsyncPipe):
     async def _run_logic(
         self,
         input: Input,
-        state: AsyncState,
         run_id: UUID,
         *args,
         **kwargs,
-    ) -> AsyncGenerator[DocumentExtraction, None]:
-        async for document in input.message:
-            async for result in self._parse(
-                document, run_id, document.metadata.get("version", "1.0")
-            ):
-                yield result
+    ) -> None:
+        async for result in self._parse(
+            input.message, run_id, input.message.metadata.get("version", "v0")
+        ):
+            yield result

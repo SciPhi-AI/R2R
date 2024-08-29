@@ -78,7 +78,9 @@ class KGClusteringPipe(AsyncPipe):
 
             return results
         except ImportError as e:
-            raise ImportError(f"Clustering failed with: {e}\nPlease install the graspologic package.") from e
+            raise ImportError(
+                f"Clustering failed with: {e}\nPlease install the graspologic package."
+            ) from e
 
     async def cluster_kg(
         self,

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from core.base import DocumentInfo, DocumentStatus, DocumentType, R2RException
@@ -31,8 +31,12 @@ class DocumentMixin(DatabaseMixin):
         self.execute_query(query)
 
     def upsert_documents_overview(
-        self, documents_overview: list[DocumentInfo]
+        self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
     ) -> None:
+        # Convert single DocumentInfo to a list if necessary
+        if isinstance(documents_overview, DocumentInfo):
+            documents_overview = [documents_overview]
+
         for document_info in documents_overview:
             query = f"""
             INSERT INTO {self._get_table_name('document_info')}

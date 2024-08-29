@@ -123,7 +123,7 @@ class DocumentInfo(R2RSerializable):
         }
 
 
-class DocumentExtraction(BaseModel):
+class DocumentExtraction(R2RSerializable):
     """An extraction from a document."""
 
     id: UUID
@@ -134,7 +134,7 @@ class DocumentExtraction(BaseModel):
     metadata: dict
 
 
-class DocumentFragment(BaseModel):
+class DocumentFragment(R2RSerializable):
     """A fragment extracted from a document."""
 
     id: UUID

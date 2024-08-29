@@ -78,7 +78,7 @@ class AsyncPipe:
     class Input(BaseModel):
         """Input for a pipe."""
 
-        message: AsyncGenerator[Any, None]
+        message: Any
 
         class Config:
             extra = "forbid"
@@ -124,7 +124,6 @@ class AsyncPipe:
     async def run(
         self,
         input: Input,
-        state: AsyncState,
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
@@ -140,7 +139,7 @@ class AsyncPipe:
                 )
                 try:
                     async for result in self._run_logic(
-                        input, state, run_id=run_id, *args, **kwargs
+                        input, run_id=run_id, *args, **kwargs
                     ):
                         yield result
                 finally:
@@ -154,7 +153,6 @@ class AsyncPipe:
     async def _run_logic(
         self,
         input: Input,
-        state: AsyncState,
         run_id: UUID,
         *args: Any,
         **kwargs: Any,

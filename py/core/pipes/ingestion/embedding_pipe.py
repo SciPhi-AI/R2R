@@ -23,9 +23,7 @@ class EmbeddingPipe(AsyncPipe):
     """
 
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[
-            Union[DocumentFragment, R2RDocumentProcessingError], None
-        ]
+        message: list[DocumentFragment]
 
     def __init__(
         self,
@@ -75,11 +73,10 @@ class EmbeddingPipe(AsyncPipe):
     async def _run_logic(
         self,
         input: Input,
-        state: AsyncState,
         run_id: Any,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> AsyncGenerator[VectorEntry, None]:
         fragment_batch = []
         batch_size = self.embedding_batch_size
         concurrent_limit = (
@@ -90,11 +87,7 @@ class EmbeddingPipe(AsyncPipe):
         async def process_batch(batch):
             return await self._process_batch(batch)
 
-        async for item in input.message:
-            if isinstance(item, R2RDocumentProcessingError):
-                yield item
-                continue
-
+        for item in input.message:
             fragment_batch.append(item)
 
             if len(fragment_batch) >= batch_size:

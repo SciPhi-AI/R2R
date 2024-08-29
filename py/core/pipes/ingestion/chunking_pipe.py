@@ -20,9 +20,7 @@ logger = logging.getLogger(__name__)
 
 class ChunkingPipe(AsyncPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[
-            Union[DocumentExtraction, R2RDocumentProcessingError], None
-        ]
+        message: list[DocumentExtraction]
 
     def __init__(
         self,
@@ -48,41 +46,27 @@ class ChunkingPipe(AsyncPipe):
     async def _run_logic(
         self,
         input: Input,
-        state: AsyncState,
         run_id: Any,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[
-        Union[R2RDocumentProcessingError, DocumentFragment], None
-    ]:
+    ) -> AsyncGenerator[DocumentFragment, None]:
 
-        chunking_provider = kwargs.get(
-            "chunking_provider", self.default_chunking_provider
+        chunking_provider = (
+            kwargs.get("chunking_provider", None)
+            or self.default_chunking_provider
         )
 
-        async for item in input.message:
-            if isinstance(item, R2RDocumentProcessingError):
-                yield item
-                continue
-
-            try:
-                iteration = 0
-                async for chunk in chunking_provider.chunk(item):
-                    item.metadata["chunk_order"] = iteration
-                    yield DocumentFragment(
-                        id=generate_id_from_label(f"{item.id}-{iteration}"),
-                        extraction_id=item.id,
-                        document_id=item.document_id,
-                        user_id=item.user_id,
-                        group_ids=item.group_ids,
-                        data=chunk,
-                        metadata=item.metadata,
-                    )
-                    iteration += 1
-            except Exception as e:
-                logger.error(f"Error chunking document: {str(e)}")
-                # print the traceback
-                yield R2RDocumentProcessingError(
+        for item in input.message:
+            iteration = 0
+            async for chunk in chunking_provider.chunk(item):
+                item.metadata["chunk_order"] = iteration
+                yield DocumentFragment(
+                    id=generate_id_from_label(f"{item.id}-{iteration}"),
+                    extraction_id=item.id,
                     document_id=item.document_id,
-                    error_message=f"Error chunking document: {str(e)}",
+                    user_id=item.user_id,
+                    group_ids=item.group_ids,
+                    data=chunk,
+                    metadata=item.metadata,
                 )
+                iteration += 1

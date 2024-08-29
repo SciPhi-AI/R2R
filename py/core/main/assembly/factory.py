@@ -514,7 +514,7 @@ class R2RPipelineFactory:
                 self.pipes.embedding_pipe, embedding_pipe=True
             )
             ingestion_pipeline.add_pipe(
-                self.pipes.vector_storage_pipe, embedding_pipe=True
+                self.pipes.vector_storage_pipe, storage_pipe=True
             )
 
         return ingestion_pipeline

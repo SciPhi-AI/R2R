@@ -88,16 +88,15 @@ class IngestionRouter(BaseRouter):
                 metadata["user_id"] = str(auth_user.id)
 
             file_datas = await self._process_files(files)
-            document_ids = (
-                [str(doc_id) for doc_id in document_ids]
-                if document_ids
-                else None
-            )
 
             workflow_input = {
-                "file_datas": file_datas,
-                "document_ids": [str(doc_id) for doc_id in document_ids],
-                "metadatas": metadatas,
+                "file_data": file_datas[0],
+                "document_id": (
+                    [str(doc_id) for doc_id in document_ids][0]
+                    if document_ids
+                    else None
+                ),
+                "metadata": metadatas[0] if metadatas else None,
                 "chunking_config": (
                     chunking_config.json() if chunking_config else None
                 ),
@@ -105,7 +104,7 @@ class IngestionRouter(BaseRouter):
             }
 
             task_id = r2r_hatchet.client.admin.run_workflow(
-                "ingestion-files", {"request": workflow_input}
+                "ingest-file", {"request": workflow_input}
             )
 
             return {
