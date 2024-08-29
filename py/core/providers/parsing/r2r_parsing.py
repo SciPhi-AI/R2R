@@ -62,8 +62,7 @@ class R2RParsingProvider(ParsingProvider):
 
         # Apply overrides if specified
         for parser_override in self.config.override_parsers:
-            parser_name = getattr(parsers, parser_override.parser)
-            if parser_name:
+            if parser_name := getattr(parsers, parser_override.parser):
                 self.parsers[parser_override.document_type] = parser_name()
 
     async def parse(
@@ -82,7 +81,7 @@ class R2RParsingProvider(ParsingProvider):
 
         iteration = 0
         async for text in texts:
-            extraction = DocumentExtraction(
+            yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,
                 user_id=document.user_id,
@@ -90,7 +89,6 @@ class R2RParsingProvider(ParsingProvider):
                 data=text,
                 metadata=document.metadata,
             )
-            yield extraction
             iteration += 1
 
         logger.debug(
