@@ -348,8 +348,7 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_extraction_pipe=kg_extraction_pipe_override
-            or self.create_kg_extraction_pipe(*args, **kwargs),
+            kg_extraction_pipe=kg_extraction_pipe_override or self.create_kg_extraction_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
@@ -570,7 +569,7 @@ class R2RPipelineFactory:
                 stream=True,
                 *args,
                 **kwargs,
-            ),
+            )
         )
 
     def configure_logging(self):

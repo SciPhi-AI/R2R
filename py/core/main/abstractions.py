@@ -15,7 +15,10 @@ from core.base.providers import (
     ParsingProvider,
     PromptProvider,
 )
-from core.pipelines import RAGPipeline, SearchPipeline
+from core.pipelines import (
+    RAGPipeline,
+    SearchPipeline,
+)
 
 
 class R2RProviders(BaseModel):
