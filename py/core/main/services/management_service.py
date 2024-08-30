@@ -44,21 +44,32 @@ class ManagementService(Service):
 
     @telemetry_event("Logs")
     async def alogs(
-        self, run_type_filter: Optional[str] = None, max_runs: int = 100
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional[str] = None,
     ):
+        logger.info(f"alogs called with offset={offset}, limit={limit}")
         if self.logging_connection is None:
             raise R2RException(
                 status_code=404, message="Logging provider not found."
             )
 
         run_info = await self.logging_connection.get_info_logs(
-            limit=max_runs,
+            offset=offset,
+            limit=limit,
             run_type_filter=run_type_filter,
+        )
+        logger.info(
+            f"get_info_logs returned {len(run_info)} entries and they are: {run_info}"
         )
         run_ids = [run.run_id for run in run_info]
         if not run_ids:
             return []
         logs = await self.logging_connection.get_logs(run_ids)
+        logger.info(
+            f"get_logs returned {len(logs)} entries and they are: {logs}"
+        )
 
         aggregated_logs = []
 

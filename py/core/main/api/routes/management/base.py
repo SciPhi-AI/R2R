@@ -122,7 +122,8 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def logs_app(
             run_type_filter: Optional[str] = Query(""),
-            max_runs: int = Query(100, ge=1, le=1000),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedLogResponse:
             if not auth_user.is_superuser:
@@ -132,7 +133,8 @@ class ManagementRouter(BaseRouter):
 
             return await self.engine.alogs(
                 run_type_filter=run_type_filter,
-                max_runs=min(max(max_runs, 1), 1000),
+                offset=offset,
+                limit=limit,
             )
 
         @self.router.get("/app_settings")
