@@ -11,6 +11,7 @@ try:
     from core import *
 
     __all__ += core.__all__
-except ImportError:
+except ImportError as e:
     # Core dependencies not installed
-    pass
+    print(f"Error: {e}")
+    

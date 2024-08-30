@@ -563,7 +563,7 @@ class R2RPipelineFactory:
             kg_enrichment_pipeline = KGEnrichmentPipeline()
             kg_enrichment_pipeline.add_pipe(self.pipes.kg_pipe)
             kg_enrichment_pipeline.add_pipe(self.pipes.kg_storage_pipe)
-            # kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
+            kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
             kg_enrichment_pipeline.add_pipe(
                 self.pipes.kg_node_description_pipe
             )

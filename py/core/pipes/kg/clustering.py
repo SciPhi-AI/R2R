@@ -80,13 +80,14 @@ class KGClusteringPipe(AsyncPipe):
         return prompt.format(entities=entities_info, triples=triples_info)
 
     async def process_community(
-        self, community_id: str, settings: KGEnrichmentSettings
+        self, level: int, community_id: str, settings: KGEnrichmentSettings
     ) -> dict:
         """
-        Process a community by summarizing it and creating a summary embedding.
+        Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database. 
 
         Input:
-        - community_id: The ID of the community to process. This is a string that is constructed by the neo4j leiden clustering algorithm.
+        - level: The level of the hierarchy.
+        - community_id: The ID of the community to process.
 
         Output:
         - A dictionary with the community id and the title of the community.
@@ -104,11 +105,14 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         entities, triples = self.kg_provider.get_entities_and_triples(
-            community_id=community_id
+            level=level, community_id=community_id
         )
 
+        if entities == [] or triples == []:
+            return None
+
         description = (
-            await self.llm_provider.aget_completion(
+            (await self.llm_provider.aget_completion(
                 messages=self.prompt_provider._get_message_payload(
                     task_prompt_name="graphrag_community_reports",
                     task_inputs={
@@ -118,13 +122,12 @@ class KGClusteringPipe(AsyncPipe):
                     },
                 ),
                 generation_config=settings.generation_config_enrichment,
-            )
-            .choices[0]
-            .message.content
+            )).choices[0].message.content
         )
 
         community = Community(
-            id=community_id,
+            id=str(community_id),
+            level=str(level),
             summary=description,
             summary_embedding=await self.embedding_provider.async_get_embedding(
                 description
@@ -140,9 +143,8 @@ class KGClusteringPipe(AsyncPipe):
 
         return {"id": community.id, "title": summary["title"]}
 
-    async def get_communities(
+    async def cluster_kg(
         self,
-        filters: dict,
         settings: KGEnrichmentSettings = KGEnrichmentSettings(),
     ):
         """
@@ -151,11 +153,14 @@ class KGClusteringPipe(AsyncPipe):
         num_communities, num_hierarchies = (
             self.kg_provider.perform_graph_clustering(settings.leiden_params)
         )
-
-        for i in range(num_communities):
-            for j in range(num_hierarchies):
-                community_id = f"{i}_{j}"
-                yield await self.process_community(community_id, settings)
+            
+        for level in range(num_hierarchies):
+            for community_id in range(1, num_communities+1):
+                res = await self.process_community(level, community_id, settings)
+                # all values may not be present each level 
+                if not res:
+                    continue
+                yield res
 
     async def _run_logic(
         self,
@@ -181,6 +186,5 @@ class KGClusteringPipe(AsyncPipe):
         async for node in input.message:
             all_nodes.append(node)
 
-        async for community in self.cluster_kg({}, kg_enrichment_settings):
-            community = await self.process_community(community)
+        async for community in self.cluster_kg(kg_enrichment_settings):
             yield community

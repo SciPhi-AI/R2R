@@ -24,8 +24,6 @@ from .graph_queries import (
     GET_ENTITIES_QUERY,
     GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY,
     GET_TRIPLES_QUERY,
-    GRAPH_CLUSTERING_QUERY,
-    GRAPH_PROJECTION_QUERY,
     PUT_CHUNKS_QUERY,
     PUT_COMMUNITIES_QUERY,
     PUT_ENTITIES_EMBEDDINGS_QUERY,
@@ -260,13 +258,14 @@ class Neo4jKGProvider(KGProvider):
         return triples
 
     def get_entities_and_triples(
-        self, community_id: str, include_embeddings: bool = False
+        self, level: int, community_id: int, include_embeddings: bool = False
     ) -> Tuple[List[Entity], List[Triple]]:
         """
         Get the entities and triples that belong to a community.
 
         Input:
-        - community_id: The ID of the community to get the entities and triples for. This is a string that is constructed by the neo4j leiden clustering algorithm.
+        - level: The level of the hierarchy.
+        - community_id: The ID of the community to get the entities and triples for. 
         - include_embeddings: Whether to include the embeddings in the output.
 
         Output:
@@ -276,30 +275,28 @@ class Neo4jKGProvider(KGProvider):
 
         # get the entities and triples from the graph
         query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__) 
-                WHERE a.community_ids[$hierarchy_level] = $community_number
-                OR b.community_ids[$hierarchy_level] = $community_number
+                WHERE a.communityIds[$level] = $community_id
+                OR b.communityIds[$level] = $community_id
                 RETURN a.name AS source, b.name AS target, a.description AS source_description, 
                 b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels, 
                 r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
         """
 
-        community_number, hierarchy_level = community_id.split("_")
-
         neo4j_records = self.structured_query(
             query,
             {
-                "community_number": community_number,
-                "hierarchy_level": hierarchy_level,
+                "community_id": community_id,
+                "level": level,
             },
         )
-
+        
         entities = [
             Entity(
                 name=record["source"],
                 description=record["source_description"],
                 category=", ".join(record["source_labels"]),
             )
-            for record in neo4j_records
+            for record in neo4j_records.records
         ]
 
         triples = [
@@ -310,7 +307,7 @@ class Neo4jKGProvider(KGProvider):
                 description=record["relationship_description"],
                 weight=record["relationship_weight"],
             )
-            for record in neo4j_records
+            for record in neo4j_records.records
         ]
 
         return entities, triples
@@ -462,18 +459,19 @@ class Neo4jKGProvider(KGProvider):
             CALL gds.graph.exists('kg_graph') YIELD exists
             WITH exists
             RETURN CASE WHEN exists THEN true ELSE false END as graphExists;
+
         """
 
         result = self.structured_query(GRAPH_EXISTS_QUERY)
-        graph_exists = result.records[0]["graphExists"]
-
-        GRAPH_PROJECTION_QUERY = ""
+        graph_exists = result.records[0]["graphExists"] 
 
         if graph_exists:
-            GRAPH_PROJECTION_QUERY += "CALL gds.graph.drop('kg_graph')"
+            logger.info(f"Graph exists, dropping it")
+            GRAPH_DROP_QUERY = "CALL gds.graph.drop('kg_graph') YIELD graphName;"
+            result = self.structured_query(GRAPH_DROP_QUERY)
 
-        GRAPH_PROJECTION_QUERY += """
-            MATCH (s:__Entity__)-[r:__Relationship__]->(t:__Entity__)
+        GRAPH_PROJECTION_QUERY = """
+            MATCH (s:__Entity__)-[r]->(t:__Entity__)
             RETURN gds.graph.project(
                 'kg_graph',
                 s, 
@@ -483,24 +481,31 @@ class Neo4jKGProvider(KGProvider):
         if graph_exists:
             GRAPH_PROJECTION_QUERY += """
                 {
-                    sourceNodeProperties: [],
-                    targetNodeProperties: [],
-                    relationshipProperties: ['weight'],
-                    'relationshipWeightProperty': 'weight',
-                    undirectedRelationshipTypes: ['*'] 
-                }
-            )"""
-        else:
-            GRAPH_PROJECTION_QUERY += """
+                    sourceNodeProperties: s { },
+                    targetNodeProperties: t { },
+                    relationshipProperties: r { .weight }
+                },
                 {
-                    sourceNodeProperties: ['communityId'],
-                    targetNodeProperties: ['communityId'],
-                    relationshipProperties: ['weight'],
-                    'relationshipWeightProperty': 'weight',
+                    relationshipWeightProperty: 'weight',
                     undirectedRelationshipTypes: ['*'] 
                 }
             )
-        """
+            """
+        else:
+            GRAPH_PROJECTION_QUERY += """
+                {
+                    sourceNodeProperties: s {},
+                    targetNodeProperties: t {},
+                    relationshipProperties: r { .weight }
+                },
+                {
+                    relationshipWeightProperty: 'weight',
+                    undirectedRelationshipTypes: ['*'] 
+                }
+            )"""
+
+
+        print(GRAPH_PROJECTION_QUERY)
 
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
@@ -519,10 +524,9 @@ class Neo4jKGProvider(KGProvider):
 
         GRAPH_CLUSTERING_QUERY = f"""
             CALL gds.leiden.write('kg_graph', {{     
-                seedProperty: '{seed_property}',
                 {seed_property_config}
                 writeProperty: '{write_property}',
-                randomSeed: '{random_seed}',
+                randomSeed: {random_seed},
                 includeIntermediateCommunities: {include_intermediate_communities}
             }})
             YIELD communityCount, modularities;
