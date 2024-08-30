@@ -20,6 +20,7 @@ from core.base import (
     RunLoggingSingleton,
     RunManager,
     VectorEntry,
+    decrement_version,
     generate_user_document_id,
 )
 from core.base.providers import ChunkingConfig
@@ -93,6 +94,8 @@ class IngestionService(Service):
         user: UserResponse,
         metadata: Optional[dict] = None,
         document_id: Optional[UUID] = None,
+        version: Optional[str] = None,
+        is_update: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -112,10 +115,12 @@ class IngestionService(Service):
         document_id = document_id or generate_user_document_id(
             file_data["filename"], user.id
         )
-
+        version = version or STARTING_VERSION
+        print('version = ', version)
         document = self._file_data_to_document(
-            file_data, user, document_id, metadata
+            file_data, user, document_id, metadata, version
         )
+        
 
         document_lookup = (
             (
@@ -131,21 +136,31 @@ class IngestionService(Service):
         existing_document_info = {
             doc_info.id: doc_info for doc_info in document_lookup
         }
-
-        if (
-            document.id in existing_document_info
-            # apply `geq` check to prevent re-ingestion of updated documents
-            and (
-                existing_document_info[document.id].version >= STARTING_VERSION
-            )
-            and existing_document_info[document.id].ingestion_status
-            == "success"
-        ):
-            # do something
-            raise R2RException(
-                status_code=409,
-                message=f"Document with ID {document.id} was already successfully processed.",
-            )
+        if not is_update:
+            if (
+                document.id in existing_document_info
+                and existing_document_info[document.id].ingestion_status
+                != "failure"
+            ):
+                raise R2RException(
+                    status_code=409,
+                    message=f"Document {document.id} was already ingested and is not in a failed state.",
+                )
+        else:
+            if (
+                document_id not in existing_document_info
+                or (
+                    existing_document_info[document.id].version
+                    >= version
+                )
+                and existing_document_info[document.id].ingestion_status
+                == "success"
+            ):
+                # do something
+                raise R2RException(
+                    status_code=409,
+                    message=f"Must increment version number before attempting to overwrite document {document.id}.",
+                )
 
         now = datetime.now()
 
@@ -156,7 +171,7 @@ class IngestionService(Service):
             type=document.type,
             title=document.metadata.pop("title", "N/A"),
             metadata=document.metadata,
-            version=STARTING_VERSION,
+            version=version,
             size_in_bytes=len(document.data),
             ingestion_status="pending",
             created_at=now,
@@ -240,9 +255,22 @@ class IngestionService(Service):
     async def finalize_ingestion(
         self,
         document_info: DocumentInfo,
+        is_update: bool = False,
     ) -> None:
+        if is_update:
+            self.providers.database.vector.delete(
+                filters={
+                    "$and": [
+                        {"document_id": {"$eq": document_info.id}},
+                        {"version": {
+                            "$eq": decrement_version(document_info.version)
+                        }}
+                    ]
+                }
+            )
+
         async def empty_generator():
-            yield document_info 
+            yield document_info
 
         return empty_generator()
 
@@ -347,6 +375,7 @@ class IngestionService(Service):
         user: UserResponse,
         document_id: UUID,
         metadata: dict,
+        version: str,
     ) -> Document:
         file_extension = file_info["filename"].split(".")[-1].lower()
         if file_extension.upper() not in DocumentType.__members__:
@@ -359,7 +388,7 @@ class IngestionService(Service):
             metadata.get("title") or file_info["filename"].split("/")[-1]
         )
         metadata["title"] = document_title
-
+        metadata["version"] = version
         # Decode the base64 encoded content
         content = base64.b64decode(file_info["content"])
 
@@ -398,29 +427,13 @@ class IngestionServiceAdapter:
             "document_id": (
                 UUID(data["document_id"]) if data["document_id"] else None
             ),
+            "version": data.get("version", None),
             "chunking_config": (
                 ChunkingConfig.from_dict(data["chunking_config"])
                 if data["chunking_config"]
                 else None
             ),
-        }
-
-    @staticmethod
-    def prepare_update_files_input(
-        file_datas: list[dict],
-        user: UserResponse,
-        document_ids: list[UUID],
-        metadatas: Optional[list[dict]] = None,
-        chunking_config: Optional[ChunkingConfig] = None,
-    ) -> dict:
-        return {
-            "file_datas": file_datas,
-            "user": user.to_dict(),
-            "document_ids": [str(doc_id) for doc_id in document_ids],
-            "metadatas": metadatas,
-            "chunking_config": (
-                chunking_config.to_dict() if chunking_config else None
-            ),
+            "is_update": data.get("is_update", False),
         }
 
     @staticmethod

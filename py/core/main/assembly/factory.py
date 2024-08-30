@@ -129,7 +129,7 @@ class R2RProviderFactory:
         from core.providers import HatchetOrchestrationProvider
 
         orchestration_provider = HatchetOrchestrationProvider(
-            OrchestrationConfig()
+            OrchestrationConfig("hatchet")
         )
         orchestration_provider.get_worker("r2r-worker")
         return orchestration_provider
