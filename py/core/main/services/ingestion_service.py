@@ -27,7 +27,7 @@ from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ...base.api.models.auth.responses import UserResponse
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipes, R2RPipelines, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
@@ -73,6 +73,7 @@ class IngestionService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipes,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
@@ -81,6 +82,7 @@ class IngestionService(Service):
         super().__init__(
             config,
             providers,
+            pipes,
             pipelines,
             agents,
             run_manager,
@@ -116,7 +118,6 @@ class IngestionService(Service):
             file_data["filename"], user.id
         )
         version = version or STARTING_VERSION
-        print('version = ', version)
         document = self._file_data_to_document(
             file_data, user, document_id, metadata, version
         )
@@ -193,8 +194,8 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         document: Document,
     ) -> list[DocumentFragment]:
-        return await self.pipelines.ingestion_pipeline.parsing_pipe.run(
-            input=self.pipelines.ingestion_pipeline.parsing_pipe.Input(
+        return await self.pipes.parsing_pipe.run(
+            input=self.pipes.parsing_pipe.Input(
                 message=document
             ),
             run_manager=self.run_manager,
@@ -208,8 +209,8 @@ class IngestionService(Service):
         chunking_config: Optional[ChunkingConfig] = None,
     ) -> list[DocumentFragment]:
 
-        return await self.pipelines.ingestion_pipeline.chunking_pipe.run(
-            input=self.pipelines.ingestion_pipeline.chunking_pipe.Input(
+        return await self.pipes.chunking_pipe.run(
+            input=self.pipes.chunking_pipe.Input(
                 message=[
                     DocumentExtraction.from_dict(chunk)
                     for chunk in parsed_documents
@@ -225,8 +226,8 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         chunked_documents: list[dict],
     ) -> list[str]:
-        return await self.pipelines.ingestion_pipeline.embedding_pipe.run(
-            input=self.pipelines.ingestion_pipeline.embedding_pipe.Input(
+        return await self.pipes.embedding_pipe.run(
+            input=self.pipes.embedding_pipe.Input(
                 message=[
                     DocumentFragment.from_dict(chunk)
                     for chunk in chunked_documents
@@ -241,8 +242,8 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         embeddings: list[dict],
     ) -> list[str]:
-        return await self.pipelines.ingestion_pipeline.storage_pipe.run(
-            input=self.pipelines.ingestion_pipeline.storage_pipe.Input(
+        return await self.pipes.vector_storage_pipe.run(
+            input=self.pipes.vector_storage_pipe.Input(
                 message=[
                     VectorEntry.from_dict(embedding)
                     for embedding in embeddings

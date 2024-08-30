@@ -16,7 +16,6 @@ from core.base.providers import (
     PromptProvider,
 )
 from core.pipelines import (
-    IngestionPipeline,
     KGEnrichmentPipeline,
     RAGPipeline,
     SearchPipeline,
@@ -58,7 +57,6 @@ class R2RPipes(BaseModel):
 
 
 class R2RPipelines(BaseModel):
-    ingestion_pipeline: IngestionPipeline
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline

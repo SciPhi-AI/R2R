@@ -17,7 +17,6 @@ from core.base import (
     RunManager,
 )
 from core.pipelines import (
-    IngestionPipeline,
     KGEnrichmentPipeline,
     RAGPipeline,
     SearchPipeline,
@@ -75,7 +74,6 @@ class PipeOverrides:
 
 @dataclass
 class PipelineOverrides:
-    ingestion: Optional[IngestionPipeline] = None
     search: Optional[SearchPipeline] = None
     rag: Optional[RAGPipeline] = None
     streaming_rag: Optional[RAGPipeline] = None
@@ -228,6 +226,7 @@ class R2RBuilder:
         service_params = {
             "config": self.config,
             "providers": providers,
+            "pipes": pipes,
             "pipelines": pipelines,
             "agents": agents,
             "run_manager": run_manager,

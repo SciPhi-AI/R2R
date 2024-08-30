@@ -235,7 +235,6 @@ __all__ = [
     "HTMLParser",
     "TextParser",
     ## PIPELINES
-    "IngestionPipeline",
     "SearchPipeline",
     "RAGPipeline",
     ## PIPES
