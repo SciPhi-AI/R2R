@@ -19,7 +19,7 @@ packages = [
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.9,<3.13"
+python = ">=3.10,<3.13"
 
 httpx = "^0.27.0"
 nest-asyncio = "^1.6.0"

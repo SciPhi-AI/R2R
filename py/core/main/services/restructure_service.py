@@ -1,11 +1,13 @@
+import json
 import logging
 from typing import Any, Dict, Optional, Union
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGEnrichmentSettings
+from core.base.api.models.auth.responses import UserResponse
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..assembly.config import R2RConfig
+from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger(__name__)
@@ -65,3 +67,13 @@ class RestructureService(Service):
             raise R2RException(
                 status_code=500, message=f"Graph enrichment failed: {str(e)}"
             )
+
+
+class RestructureServiceAdapter:
+    @staticmethod
+    def parse_enrich_graph_input(data: dict):
+        return {
+            "kg_enrichment_settings": KGEnrichmentSettings.from_dict(
+                json.loads(data["kg_enrichment_settings"])
+            )
+        }

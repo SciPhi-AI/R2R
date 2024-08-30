@@ -11,7 +11,6 @@ from core import (
     DocumentInfo,
     R2RApp,
     R2RBuilder,
-    R2REngine,
     R2RException,
     Token,
     UserResponse,

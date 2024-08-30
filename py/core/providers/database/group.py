@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from core.base import R2RException
-from core.base.abstractions import DocumentInfo, DocumentStatus, DocumentType
+from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models.auth.responses import UserResponse
 from core.base.api.models.management.responses import (
     GroupOverviewResponse,
@@ -313,7 +313,7 @@ class GroupMixin(DatabaseMixin):
                 title=row[4],
                 version=row[5],
                 size_in_bytes=row[6],
-                ingestion_status=DocumentStatus(row[7]),
+                ingestion_status=IngestionStatus(row[7]),
                 created_at=row[8],
                 updated_at=row[9],
                 group_ids=[group_id],
@@ -453,7 +453,7 @@ class GroupMixin(DatabaseMixin):
         except Exception as e:
             raise R2RException(
                 status_code=500,
-                message="An error occurred while assigning the document to the group",
+                message=f"An error '{e}' occurred while assigning the document to the group",
             )
 
     def document_groups(

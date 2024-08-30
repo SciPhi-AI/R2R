@@ -207,8 +207,6 @@ class UserMixin(DatabaseMixin):
         if not group_result:
             raise R2RException(status_code=404, message="User not found")
 
-        user_groups = group_result[0]
-
         # Remove user from documents
         doc_update_query = f"""
             UPDATE {self._get_table_name('document_info')}

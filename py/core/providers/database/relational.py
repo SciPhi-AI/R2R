@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import exc, text
+from sqlalchemy import text
 
 from core.providers.database.base import DatabaseMixin, execute_query
 from core.providers.database.document import DocumentMixin

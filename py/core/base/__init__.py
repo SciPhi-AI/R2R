@@ -22,7 +22,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentFragment",
     "DocumentInfo",
-    "DocumentStatus",
+    "IngestionStatus",
+    "RestructureStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -59,6 +60,7 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "StorageResult",
     ## AGENT
     # Agent abstractions
     "Agent",

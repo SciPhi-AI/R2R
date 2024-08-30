@@ -5,6 +5,8 @@ x-depends-on:
     condition: service_healthy
   postgres: &postgres-dependency
     condition: service_healthy
+  hatchet-engine: &hatchet-dependency
+    condition: service_healthy
 
 networks:
   r2r-network:

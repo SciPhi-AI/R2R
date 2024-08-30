@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base.abstractions import Token
+from core.base.abstractions.base import R2RSerializable
 from core.base.api.models.base import ResultsWrapper
 
 
@@ -13,7 +14,7 @@ class TokenResponse(BaseModel):
     refresh_token: Token
 
 
-class UserResponse(BaseModel):
+class UserResponse(R2RSerializable):
     id: UUID
     email: str
     is_active: bool = True

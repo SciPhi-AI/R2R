@@ -32,7 +32,7 @@ from core.pipelines import (
 )
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from .config import R2RConfig
+from ..config import R2RConfig
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,17 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Chunking provider {chunking_config.provider} not supported"
             )
+
+    @staticmethod
+    def create_orchestration_provider(*args, **kwargs):
+        from core.base.providers import OrchestrationConfig
+        from core.providers import HatchetOrchestrationProvider
+
+        orchestration_provider = HatchetOrchestrationProvider(
+            OrchestrationConfig()
+        )
+        orchestration_provider.get_worker("r2r-worker")
+        return orchestration_provider
 
     def create_database_provider(
         self,
@@ -246,7 +257,7 @@ class R2RProviderFactory:
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
         parsing_provider_override: Optional[ParsingProvider] = None,
-        chunking_settings: Optional[ChunkingProvider] = None,
+        chunking_config: Optional[ChunkingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -291,10 +302,11 @@ class R2RProviderFactory:
                 self.config.parsing, *args, **kwargs
             )
         )
-        chunking_provider = chunking_settings or self.create_chunking_provider(
+        chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
 
+        orchestration_provider = self.create_orchestration_provider()
         return R2RProviders(
             auth=auth_provider,
             chunking=chunking_provider,
@@ -304,6 +316,7 @@ class R2RProviderFactory:
             parsing=parsing_provider,
             prompt=prompt_provider,
             kg=kg_provider,
+            orchestration=orchestration_provider,
         )
 
 
@@ -514,7 +527,7 @@ class R2RPipelineFactory:
                 self.pipes.embedding_pipe, embedding_pipe=True
             )
             ingestion_pipeline.add_pipe(
-                self.pipes.vector_storage_pipe, embedding_pipe=True
+                self.pipes.vector_storage_pipe, storage_pipe=True
             )
 
         return ingestion_pipeline

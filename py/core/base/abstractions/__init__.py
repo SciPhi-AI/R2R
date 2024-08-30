@@ -6,8 +6,9 @@ from .document import (
     DocumentExtraction,
     DocumentFragment,
     DocumentInfo,
-    DocumentStatus,
     DocumentType,
+    IngestionStatus,
+    RestructureStatus,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
@@ -39,7 +40,7 @@ from .search import (
     VectorSearchSettings,
 )
 from .user import Token, TokenData, UserStats
-from .vector import Vector, VectorEntry, VectorType
+from .vector import StorageResult, Vector, VectorEntry, VectorType
 
 __all__ = [
     # Base abstractions
@@ -54,7 +55,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentFragment",
     "DocumentInfo",
-    "DocumentStatus",
+    "IngestionStatus",
+    "RestructureStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -96,4 +98,5 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "StorageResult",
 ]

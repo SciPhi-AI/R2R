@@ -11,6 +11,7 @@ from .database import (
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
+from .orchestration import OrchestrationConfig, OrchestrationProvider
 from .parsing import OverrideParser, ParsingConfig, ParsingProvider
 from .prompt import PromptConfig, PromptProvider
 
@@ -42,6 +43,9 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
+    # Orchestration provider
+    "OrchestrationConfig",
+    "OrchestrationProvider",
     # Parsing provider
     "ParsingConfig",
     "ParsingProvider",

@@ -52,7 +52,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentFragment",
     "DocumentInfo",
-    "DocumentStatus",
+    "IngestionStatus",
+    "RestructureStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -185,19 +186,10 @@ __all__ = [
     "R2RPipes",
     "R2RPipelines",
     "R2RAgents",
-    ## R2R API
-    # Routes
-    "AuthRouter",
-    "IngestionRouter",
-    "ManagementRouter",
-    "RetrievalRouter",
-    "BaseRouter",
     ## R2R APP
     "R2RApp",
     ## R2R APP ENTRY
     # "r2r_app",
-    ## R2R ENGINE
-    "R2REngine",
     ## R2R ASSEMBLY
     # Builder
     "R2RBuilder",
@@ -210,13 +202,18 @@ __all__ = [
     "R2RAgentFactory",
     # Factory Extensions
     "R2RPipeFactoryWithMultiSearch",
-    ## R2R
-    "R2R",
+    # R2R Routers
+    "AuthRouter",
+    "IngestionRouter",
+    "ManagementRouter",
+    "RetrievalRouter",
+    "RestructureRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",
     "RetrievalService",
+    "RestructureService",
     ## PARSERS
     # Media parsers
     "AudioParser",
@@ -253,7 +250,6 @@ __all__ = [
     "VectorSearchPipe",
     "VectorStoragePipe",
     "WebSearchPipe",
-    "KGSearchSearchPipe",
     "KGStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS
