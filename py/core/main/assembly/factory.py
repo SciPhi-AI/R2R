@@ -24,7 +24,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
+from core.pipelines import RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
