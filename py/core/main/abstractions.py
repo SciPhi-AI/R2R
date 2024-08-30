@@ -16,7 +16,6 @@ from core.base.providers import (
     PromptProvider,
 )
 from core.pipelines import (
-    KGEnrichmentPipeline,
     RAGPipeline,
     SearchPipeline,
 )
@@ -45,7 +44,8 @@ class R2RPipes(BaseModel):
     vector_search_pipe: Optional[AsyncPipe]
     rag_pipe: Optional[AsyncPipe]
     streaming_rag_pipe: Optional[AsyncPipe]
-    kg_pipe: Optional[AsyncPipe]
+    kg_search_pipe: Optional[AsyncPipe]
+    kg_extraction_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
     kg_node_extraction_pipe: Optional[AsyncPipe]
     kg_node_description_pipe: Optional[AsyncPipe]
@@ -60,7 +60,6 @@ class R2RPipelines(BaseModel):
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
-    kg_enrichment_pipeline: Optional[KGEnrichmentPipeline]
 
     class Config:
         arbitrary_types_allowed = True

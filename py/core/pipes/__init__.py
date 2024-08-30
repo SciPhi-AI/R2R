@@ -13,12 +13,14 @@ from .retrieval.query_transform_pipe import QueryTransformPipe
 from .retrieval.search_rag_pipe import SearchRAGPipe
 from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
 from .retrieval.vector_search_pipe import VectorSearchPipe
+from .retrieval.kg_search_pipe import KGSearchSearchPipe
 
 __all__ = [
     "SearchPipe",
     "EmbeddingPipe",
     "KGTriplesExtractionPipe",
     "KGNodeExtractionPipe",
+    "KGSearchSearchPipe",
     "KGNodeDescriptionPipe",
     "ParsingPipe",
     "ChunkingPipe",
