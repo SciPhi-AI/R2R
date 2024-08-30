@@ -54,14 +54,50 @@ class RestructureService(Service):
                 for doc in input:
                     yield doc
 
-            if not kg_enrichment_settings or kg_enrichment_settings == {}:
-                kg_enrichment_settings = self.config.kg.kg_enrichment_settings
+            # if not kg_enrichment_settings or kg_enrichment_settings == {}:
+            kg_enrichment_settings = self.config.kg.kg_enrichment_settings
 
-            return await self.pipelines.kg_enrichment_pipeline.run(
-                input=input_generator(),
+            # return await self.pipelines.kg_enrichment_pipeline.run(
+            #     input=input_generator(),
+            #     kg_enrichment_settings=kg_enrichment_settings,
+            #     run_manager=self.run_manager,
+            # )
+            print("a")
+            triples = await self.pipes.kg_extraction_pipe.run(
+                input=self.pipes.kg_extraction_pipe.Input(message=input_generator()),
                 kg_enrichment_settings=kg_enrichment_settings,
-                run_manager=self.run_manager,
+                run_manager=self.run_manager
             )
+            print("triples = ", triples)
+            print("b")
+            storage = await self.pipes.kg_storage_pipe.run(
+                input=self.pipes.kg_extraction_pipe.Input(message=triples),
+                run_manager=self.run_manager
+            )
+            print("storage = ", storage)
+            print("c")
+            nodes = await self.pipes.kg_node_extraction_pipe.run(
+                input=self.pipes.kg_extraction_pipe.Input(message=storage),
+                run_manager=self.run_manager
+            )
+            print("nodes = ", nodes)
+            print("d")
+            descriptions = await self.pipes.kg_node_description_pipe.run(
+                input=self.pipes.kg_node_description_pipe.Input(message=nodes),
+                run_manager=self.run_manager
+            )
+            print("descriptions = ", descriptions)
+            print("e")
+            clusters = await self.pipes.kg_clustering_pipe.run(
+                input=self.pipes.kg_node_description_pipe.Input(message=descriptions),
+                kg_enrichment_settings=kg_enrichment_settings,
+                run_manager=self.run_manager
+            )
+            print("clusters = ", clusters)
+
+            # consume the generator
+            async for cluster in clusters:
+                print("cluster = ", cluster)
 
         except Exception as e:
             logger.error(f"Error during graph enrichment: {str(e)}")

@@ -328,7 +328,7 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[AsyncPipe] = None,
         embedding_pipe_override: Optional[AsyncPipe] = None,
-        kg_pipe_override: Optional[AsyncPipe] = None,
+        kg_extraction_pipe_override: Optional[AsyncPipe] = None,
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
         kg_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
@@ -352,15 +352,15 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_pipe=kg_pipe_override or self.create_kg_pipe(*args, **kwargs),
+            kg_extraction_pipe=kg_extraction_pipe_override or self.create_kg_extraction_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
-            kg_search_search_pipe=kg_search_pipe_override
-            or self.create_kg_search_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
             vector_search_pipe=vector_search_pipe_override
             or self.create_vector_search_pipe(*args, **kwargs),
+            kg_search_pipe=kg_search_pipe_override
+            or self.create_kg_search_pipe(*args, **kwargs),
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
@@ -416,7 +416,7 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
         )
 
-    def create_kg_pipe(self, *args, **kwargs) -> Any:
+    def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
         if self.config.kg.provider is None:
             return None
 
@@ -523,7 +523,7 @@ class R2RPipelineFactory:
         # Add KG pipes if provider is set
         if self.config.kg.provider is not None:
             search_pipeline.add_pipe(
-                self.pipes.kg_search_search_pipe, kg_pipe=True
+                self.pipes.kg_search_pipe, kg_extraction_pipe=True
             )
 
         return search_pipeline
@@ -544,28 +544,12 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
-    def create_kg_enrichment_pipeline(
-        self, *args, **kwargs
-    ) -> Optional[KGEnrichmentPipeline]:
-        if self.config.kg.provider is not None:
-            kg_enrichment_pipeline = KGEnrichmentPipeline()
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_pipe)
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_storage_pipe)
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
-            kg_enrichment_pipeline.add_pipe(
-                self.pipes.kg_node_description_pipe
-            )
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
-            return kg_enrichment_pipeline
-        else:
-            return None
 
     def create_pipelines(
         self,
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
-        kg_enrichment_pipeline: Optional[KGEnrichmentPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
@@ -591,9 +575,7 @@ class R2RPipelineFactory:
                 stream=True,
                 *args,
                 **kwargs,
-            ),
-            kg_enrichment_pipeline=kg_enrichment_pipeline
-            or self.create_kg_enrichment_pipeline(*args, **kwargs),
+            )
         )
 
     def configure_logging(self):
