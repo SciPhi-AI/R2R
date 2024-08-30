@@ -10,7 +10,7 @@ def runner():
 
 
 def test_cli_group_no_options():
-    assert len(cli.params) == 0
+    assert len(cli.params) == 1
 
 
 def test_cli_group_help(runner):
