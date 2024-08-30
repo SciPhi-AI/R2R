@@ -23,6 +23,7 @@ from core.base import (
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
+    Entity,
     Triple,
 )
 
@@ -59,167 +60,82 @@ class KGClusteringPipe(AsyncPipe):
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
-    def _compute_leiden_communities(
-        self,
-        graph: nx.Graph,
-        settings: KGEnrichmentSettings,
-    ) -> dict[int, dict[str, int]]:
-        """Compute Leiden communities."""
-        try:
-            from graspologic.partition import hierarchical_leiden
+    def community_summary_prompt(self, prompt: str, entities: list[Entity], triples: list[Triple]):
+        """
+            Preparing the list of entities and triples to be summarized and created into a community summary.
+        """
+        entities_info = "\n".join(
+            [
+                f"{entity.name}, {entity.description}"
+                for entity in entities
+            ]
+        )
 
-            community_mapping = hierarchical_leiden(
-                graph, **settings.leiden_params
-            )
-            results: dict[int, dict[str, int]] = {}
-            for partition in community_mapping:
-                results[partition.level] = results.get(partition.level, {})
-                results[partition.level][partition.node] = partition.cluster
+        triples_info = "\n".join(
+            [
+                f"{triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
+                for triple in triples
+            ]
+        )
 
-            return results
-        except ImportError as e:
-            raise ImportError("Please install the graspologic package.") from e
+        return prompt.format(entities=entities_info, triples=triples_info)
 
-    async def process_community(self, Community):
+    async def process_community(self, community_id: str, settings: KGEnrichmentSettings) -> dict:
+        """
+            Process a community by summarizing it and creating a summary embedding.
+
+            Input:
+            - community_id: The ID of the community to process. This is a string that is constructed by the neo4j leiden clustering algorithm.
+
+            Output:
+            - A dictionary with the community id and the title of the community.
+            - Output format: {"id": community_id, "title": title}
+        """
+
         input_text = """
 
             Entities:
             {entities}
 
-            Relationships:
-            {relationships}
+            Triples:
+            {triples}
 
         """
 
-        entities_info = self.kg_provider.get_entities(community.entity_ids)
-        entities_info = "\n".join(
-            [
-                f"{entity.name}, {entity.description}"
-                for entity in entities_info
-            ]
-        )
-
-        relationships_info = self.kg_provider.get_triples(
-            community.relationship_ids
-        )
-
-        relationships_info = "\n".join(
-            [
-                f"{relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}"
-                for relationship in relationships_info
-            ]
-        )
-
-        input_text = input_text.format(
-            entities=entities_info, relationships=relationships_info
-        )
+        entities, triples = self.kg_provider.get_entities_and_triples(community_id = community_id)
 
         description = await self.llm_provider.aget_completion(
             messages=self.prompt_provider._get_message_payload(
                 task_prompt_name="graphrag_community_reports",
                 task_inputs={
-                    "input_text": input_text,
+                    "input_text": self.community_summary_prompt(input_text, entities, triples),
                 },
             ),
             generation_config=settings.generation_config_enrichment,
+        ).choices[0].message.content
+
+        community = Community(
+            id=community_id,
+            summary=description,
+            summary_embedding=await self.embedding_provider.async_get_embedding(description),
         )
 
-        description = description.choices[0].message.content
-        community.summary = description
-        summary_embedding = (
-            await self.embedding_provider.async_get_embedding(
-                community.summary
-            )
-        )
-        community.summary_embedding = summary_embedding
         self.kg_provider.upsert_communities([community])
+        
         try:
             summary = json.loads(community.summary)
         except:
-            summary = {"title": "_"}
+            summary = {"title": ""}
+
         return {"id": community.id, "title": summary["title"]}
 
 
-    async def cluster_kg_old(
-        self,
-        triples: list[Triple],
-        settings: KGEnrichmentSettings = KGEnrichmentSettings(),
-    ) -> AsyncGenerator[Community, None]:
+    async def cluster_kg(self, filters: dict, settings: KGEnrichmentSettings = KGEnrichmentSettings()):
         """
-        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
+        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
-
-        logger.info(f"Clustering with settings: {str(settings)}")
-
-        G = nx.Graph()
-        for triple in triples:
-            G.add_edge(
-                triple.subject,
-                triple.object,
-                weight=triple.weight,
-                description=triple.description,
-                predicate=triple.predicate,
-                id=f"{triple.subject}->{triple.predicate}->{triple.object}",
-            )
-
-        hierarchical_communities = self._compute_leiden_communities(
-            G, settings=settings
-        )
-
-        community_details = {}
-
-        for level, level_communities in hierarchical_communities.items():
-            for node, cluster in level_communities.items():
-                if f"{level}_{cluster}" not in community_details:
-                    community_details[f"{level}_{cluster}"] = Community(
-                        id=f"{level}_{cluster}",
-                        level=str(level),
-                        entity_ids=[],
-                        relationship_ids=[],
-                        short_id=f"{level}.{cluster}",
-                        title=f"Community {level}.{cluster}",
-                        attributes={
-                            "name": f"Community {level}.{cluster}",
-                            "community_report": None,
-                        },
-                    )
-
-                community_details[f"{level}_{cluster}"].entity_ids.append(node)
-                for neighbor in G.neighbors(node):
-                    edge_info = G.get_edge_data(node, neighbor)
-                    if edge_info and edge_info.get("id"):
-                        community_details[
-                            f"{level}_{cluster}"
-                        ].relationship_ids.append(edge_info.get("id"))
-
-        async def async_iterate_dict(dictionary):
-            for key, value in dictionary.items():
-                yield key, value
-
-
-        async def cluster_kg(self, filters: dict, settings: KGEnrichmentSettings = KGEnrichmentSettings()):
-            """
-            Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
-            """
-            return self.kg_provider.perform_graph_clustering(filters, settings)
-
-
-        tasks = []
-        async for community_key, community in async_iterate_dict(
-            community_details
-        ):
-            tasks.append(
-                asyncio.create_task(
-                    process_community(community_key, community)
-                )
-            )
-
-        results = await tqdm_asyncio.gather(
-            *tasks, desc="Processing communities"
-        )
-        for result in results:
-            yield result
-
+        return self.kg_provider.perform_graph_clustering(filters, settings)
+    
     async def _run_logic(
         self,
         input: AsyncPipe.Input,

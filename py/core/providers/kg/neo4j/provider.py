@@ -255,6 +255,52 @@ class Neo4jKGProvider(KGProvider):
             for record in neo4j_records.records
         ]
         return triples
+    
+    def get_entities_and_triples(self, community_id: str, include_embeddings: bool = False) -> Tuple[List[Entity], List[Triple]]:
+        """
+            Get the entities and triples that belong to a community.
+
+            Input:
+            - community_id: The ID of the community to get the entities and triples for. This is a string that is constructed by the neo4j leiden clustering algorithm.
+            - include_embeddings: Whether to include the embeddings in the output.
+            
+            Output:
+            - A tuple of entities and triples that belong to the community. 
+            
+        """
+
+        # get the entities and triples from the graph
+        query = """MATCH (a) - [r] -> (b) 
+                WHERE a.community_id = $community_id 
+                OR b.community_id = $community_id
+                RETURN a.name AS source, b.name AS target, a.description AS source_description, 
+                b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels, 
+                r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
+        """
+
+        neo4j_records = self.structured_query(query, {"community_id": community_id})
+
+        entities = [
+            Entity(
+                name=record["source"],
+                description=record["source_description"],
+                category=", ".join(record["source_labels"]),
+            )
+            for record in neo4j_records
+        ]
+
+        triples = [
+            Triple(
+                subject=record["source"],
+                predicate=record["relationship_name"],
+                object=record["target"],
+                description=record["relationship_description"],
+                weight=record["relationship_weight"],
+            )
+            for record in neo4j_records
+        ]
+
+        return entities, triples
 
     def update_extraction_prompt(
         self,
@@ -390,12 +436,49 @@ class Neo4jKGProvider(KGProvider):
         """
         Perform graph clustering on the graph.
         """
-
         # step 1: drop the graph, if it exists and project the graph again. 
         # in this step the vertices that have no edges are not included in the projection. 
+        GRAPH_PROJECTION_QUERY = """
+            CALL gds.graph.exists('kg_graph') YIELD exists
+            WHERE exists
+            CALL gds.graph.drop('kg_graph')
+            MATCH (s:__Entity__)-[r:__Relationship__]->(t:__Entity__)
+            CALL gds.graph.project(
+                'kg_graph',
+                s, 
+                t,
+                {
+                    sourceNodeProperties: ['name', 'communityId', 'intermediateCommunityIds'],
+                    targetNodeProperties: ['name', 'communityId', 'intermediateCommunityIds'],
+                    relationshipProperties: ['type', 'weight']
+                },
+                {
+                    'relationshipWeightProperty': 'weight'
+                },
+                {
+                    undirectedRelationshipTypes: ['*'] 
+                }
+            )
+        """
         self.structured_query(GRAPH_PROJECTION_QUERY)
 
         # step 2: run the hierarchical leiden algorithm on the graph. 
-        self.structured_query(GRAPH_CLUSTERING_QUERY)
+        GRAPH_CLUSTERING_QUERY = """
+            CALL gds.leiden.mutate('kg_graph', {
+                seedProperty: 'intermediateCommunities',
+                mutateProperty: '',
+                randomSeed: 42,
+                includeIntermediateCommunities: true
+            })
+            YIELD communityCount, modularity, modularities;
 
-        # step 3: run 
+            CALL gds.leiden.mutate('kg_graph', {
+                seedProperty: 'intermediateCommunities',
+                mutateProperty: '',
+                randomSeed: 42,
+                includeIntermediateCommunities: true
+            })
+            YIELD communityCount, modularity, modularities;
+        """
+        self.structured_query(GRAPH_CLUSTERING_QUERY)
+        
