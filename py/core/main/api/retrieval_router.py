@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import yaml
 from fastapi import Body, Depends
@@ -18,29 +18,31 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
+from core.base.providers import OrchestrationProvider
 
-from ....engine import R2REngine
-from ..base_router import BaseRouter
+from ..services.retrieval_service import RetrievalService
+from .base_router import BaseRouter
 
 
 class RetrievalRouter(BaseRouter):
     def __init__(
-        self, engine: R2REngine, run_type: RunType = RunType.RETRIEVAL
+        self,
+        service: RetrievalService,
+        run_type: RunType = RunType.RETRIEVAL,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(engine, run_type)
-        self.openapi_extras = self.load_openapi_extras()
-        self.setup_routes()
+        super().__init__(service, run_type, orchestration_provider)
+        self.service: RetrievalService = service  # for type hinting
 
-    def load_openapi_extras(self):
-        yaml_path = Path(__file__).parent / "retrieval_router_openapi.yml"
+    def _load_openapi_extras(self):
+        yaml_path = (
+            Path(__file__).parent / "data" / "retrieval_router_openapi.yml"
+        )
         with open(yaml_path, "r") as yaml_file:
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
 
-    def retrieval_endpoint(self, run_type: RunType = RunType.RETRIEVAL):
-        return self.base_endpoint(run_type)
-
-    def setup_routes(self):
+    def _setup_routes(self):
         search_extras = self.openapi_extras.get("search", {})
         search_descriptions = search_extras.get("input_descriptions", {})
 
@@ -48,7 +50,7 @@ class RetrievalRouter(BaseRouter):
             "/search",
             openapi_extra=search_extras.get("openapi_extra"),
         )
-        @self.retrieval_endpoint
+        @self.base_endpoint
         async def search_app(
             query: str = Body(
                 ..., description=search_descriptions.get("query")
@@ -61,7 +63,7 @@ class RetrievalRouter(BaseRouter):
                 default_factory=KGSearchSettings,
                 description=search_descriptions.get("kg_search_settings"),
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedSearchResponse:
             """
             Perform a search query on the vector database and knowledge graph.
@@ -85,7 +87,6 @@ class RetrievalRouter(BaseRouter):
             filters = {
                 "$or": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    # {"group_ids": {"$any": list([str(ele) for ele in allowed_groups])}},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
@@ -93,7 +94,7 @@ class RetrievalRouter(BaseRouter):
                 filters = {"$and": [filters, vector_search_settings.filters]}
 
             vector_search_settings.filters = filters
-            results = await self.engine.asearch(
+            results = await self.service.search(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -107,7 +108,7 @@ class RetrievalRouter(BaseRouter):
             "/rag",
             openapi_extra=rag_extras.get("openapi_extra"),
         )
-        @self.retrieval_endpoint
+        @self.base_endpoint
         async def rag_app(
             query: str = Body(..., description=rag_descriptions.get("query")),
             vector_search_settings: VectorSearchSettings = Body(
@@ -125,7 +126,7 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override: Optional[str] = Body(
                 None, description=rag_descriptions.get("task_prompt_override")
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGResponse:
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
@@ -148,7 +149,7 @@ class RetrievalRouter(BaseRouter):
 
             vector_search_settings.filters = filters
 
-            response = await self.engine.arag(
+            response = await self.service.rag(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -175,7 +176,7 @@ class RetrievalRouter(BaseRouter):
             "/agent",
             openapi_extra=agent_extras.get("openapi_extra"),
         )
-        @self.retrieval_endpoint
+        @self.base_endpoint
         async def agent_app(
             messages: list[Message] = Body(
                 ..., description=agent_descriptions.get("messages")
@@ -202,7 +203,7 @@ class RetrievalRouter(BaseRouter):
                     "include_title_if_available"
                 ),
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:
             """
             Implement an agent-based interaction for complex query processing.
@@ -228,7 +229,7 @@ class RetrievalRouter(BaseRouter):
             vector_search_settings.filters = filters
 
             try:
-                response = await self.engine.arag_agent(
+                response = await self.service.arag_agent(
                     messages=messages,
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,

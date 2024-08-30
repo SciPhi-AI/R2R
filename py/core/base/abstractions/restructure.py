@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from .base import R2RSerializable
 from .llm import GenerationConfig
 
 
-class KGEnrichmentSettings(BaseModel):
+class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
     max_knowledge_triples: int = Field(

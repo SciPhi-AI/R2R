@@ -159,8 +159,6 @@ class Neo4jKGProvider(KGProvider):
         """
         return self.batched_import(PUT_CHUNKS_QUERY, chunks)
 
-        # create constraints, idempotent operation
-
     def upsert_entities(
         self, entities: List[Entity], with_embeddings: bool = False
     ):

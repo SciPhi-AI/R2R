@@ -189,7 +189,7 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        if params:
+        if not params:
             return await client._make_request(
                 "GET", f"document_chunks/{document_id}"
             )
@@ -480,7 +480,7 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        if params:
+        if not params:
             return await client._make_request(
                 "GET", f"user_groups/{str(user_id)}"
             )
@@ -559,7 +559,7 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        if params:
+        if not params:
             return await client._make_request(
                 "GET", f"document_groups/{str(document_id)}", params=params
             )

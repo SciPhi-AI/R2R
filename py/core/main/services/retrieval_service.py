@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from datetime import datetime
@@ -22,8 +23,8 @@ from core.base.api.models import RAGResponse, SearchResponse
 from core.base.api.models.auth.responses import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..assembly.config import R2RConfig
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders, R2RPipes
+from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class RetrievalService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipes,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
@@ -42,6 +44,7 @@ class RetrievalService(Service):
         super().__init__(
             config,
             providers,
+            pipes,
             pipelines,
             agents,
             run_manager,
@@ -217,7 +220,7 @@ class RetrievalService(Service):
         **kwargs,
     ):
         async def stream_response():
-            async with manage_run(self.run_manager, "arag"):
+            async with manage_run(self.run_manager, "rag"):
                 async for (
                     chunk
                 ) in await self.pipelines.streaming_rag_pipeline.run(
@@ -315,3 +318,116 @@ class RetrievalService(Service):
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
                 )
+
+
+class RetrievalServiceAdapter:
+    @staticmethod
+    def _parse_user_data(user_data):
+        if isinstance(user_data, str):
+            try:
+                user_data = json.loads(user_data)
+            except json.JSONDecodeError:
+                raise ValueError(f"Invalid user data format: {user_data}")
+        return UserResponse.from_dict(user_data)
+
+    @staticmethod
+    def prepare_search_input(
+        query: str,
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
+        user: UserResponse,
+    ) -> dict:
+        return {
+            "query": query,
+            "vector_search_settings": vector_search_settings.to_dict(),
+            "kg_search_settings": kg_search_settings.to_dict(),
+            "user": user.to_dict(),
+        }
+
+    @staticmethod
+    def parse_search_input(data: dict):
+        return {
+            "query": data["query"],
+            "vector_search_settings": VectorSearchSettings.from_dict(
+                data["vector_search_settings"]
+            ),
+            "kg_search_settings": KGSearchSettings.from_dict(
+                data["kg_search_settings"]
+            ),
+            "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
+        }
+
+    @staticmethod
+    def prepare_rag_input(
+        query: str,
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
+        rag_generation_config: GenerationConfig,
+        task_prompt_override: Optional[str],
+        user: UserResponse,
+    ) -> dict:
+        return {
+            "query": query,
+            "vector_search_settings": vector_search_settings.to_dict(),
+            "kg_search_settings": kg_search_settings.to_dict(),
+            "rag_generation_config": rag_generation_config.to_dict(),
+            "task_prompt_override": task_prompt_override,
+            "user": user.to_dict(),
+        }
+
+    @staticmethod
+    def parse_rag_input(data: dict):
+        return {
+            "query": data["query"],
+            "vector_search_settings": VectorSearchSettings.from_dict(
+                data["vector_search_settings"]
+            ),
+            "kg_search_settings": KGSearchSettings.from_dict(
+                data["kg_search_settings"]
+            ),
+            "rag_generation_config": GenerationConfig.from_dict(
+                data["rag_generation_config"]
+            ),
+            "task_prompt_override": data["task_prompt_override"],
+            "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
+        }
+
+    @staticmethod
+    def prepare_agent_input(
+        messages: list[Message],
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
+        rag_generation_config: GenerationConfig,
+        task_prompt_override: Optional[str],
+        include_title_if_available: bool,
+        user: UserResponse,
+    ) -> dict:
+        return {
+            "messages": [message.to_dict() for message in messages],
+            "vector_search_settings": vector_search_settings.to_dict(),
+            "kg_search_settings": kg_search_settings.to_dict(),
+            "rag_generation_config": rag_generation_config.to_dict(),
+            "task_prompt_override": task_prompt_override,
+            "include_title_if_available": include_title_if_available,
+            "user": user.to_dict(),
+        }
+
+    @staticmethod
+    def parse_agent_input(data: dict):
+        return {
+            "messages": [
+                Message.from_dict(message) for message in data["messages"]
+            ],
+            "vector_search_settings": VectorSearchSettings.from_dict(
+                data["vector_search_settings"]
+            ),
+            "kg_search_settings": KGSearchSettings.from_dict(
+                data["kg_search_settings"]
+            ),
+            "rag_generation_config": GenerationConfig.from_dict(
+                data["rag_generation_config"]
+            ),
+            "task_prompt_override": data["task_prompt_override"],
+            "include_title_if_available": data["include_title_if_available"],
+            "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
+        }
