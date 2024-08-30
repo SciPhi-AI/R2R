@@ -2,7 +2,7 @@ from abc import ABC
 
 from core.base import RunLoggingSingleton, RunManager
 
-from ..abstractions import R2RAgents, R2RPipes, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
 

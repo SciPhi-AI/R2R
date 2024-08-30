@@ -7,7 +7,9 @@ from fastapi import Body, Depends
 from pydantic import Json
 
 from core.base import KGEnrichmentSettings
-from core.base.api.models.restructure.responses import WrappedKGEnrichmentResponse
+from core.base.api.models.restructure.responses import (
+    WrappedKGEnrichmentResponse,
+)
 from core.base.providers import OrchestrationProvider
 
 from ...main.hatchet import r2r_hatchet
@@ -16,6 +18,7 @@ from ..services.restructure_service import RestructureService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
+
 
 class RestructureRouter(BaseRouter):
     def __init__(

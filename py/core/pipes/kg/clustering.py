@@ -232,7 +232,6 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-
         triples = self.kg_provider.get_triples()
 
         async for community in self.cluster_kg(

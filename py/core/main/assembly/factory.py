@@ -24,11 +24,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.pipelines import (
-    KGEnrichmentPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -352,7 +348,8 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_extraction_pipe=kg_extraction_pipe_override or self.create_kg_extraction_pipe(*args, **kwargs),
+            kg_extraction_pipe=kg_extraction_pipe_override
+            or self.create_kg_extraction_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
@@ -506,7 +503,6 @@ class R2RPipelineFactory:
         self.config = config
         self.pipes = pipes
 
-
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         """factory method to create an ingestion pipeline."""
         search_pipeline = SearchPipeline()
@@ -544,7 +540,6 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
-
     def create_pipelines(
         self,
         search_pipeline: Optional[SearchPipeline] = None,
@@ -575,7 +570,7 @@ class R2RPipelineFactory:
                 stream=True,
                 *args,
                 **kwargs,
-            )
+            ),
         )
 
     def configure_logging(self):

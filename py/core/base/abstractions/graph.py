@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Union
 
 from pydantic import BaseModel
+
 from .base import R2RSerializable
 
 logger = logging.getLogger(__name__)
