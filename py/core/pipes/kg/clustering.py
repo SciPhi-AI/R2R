@@ -232,9 +232,6 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        all_nodes = []
-        async for node in input.message:
-            all_nodes.append(node)
 
         triples = self.kg_provider.get_triples()
 
