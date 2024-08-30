@@ -16,11 +16,7 @@ from core.base import (
     RunLoggingSingleton,
     RunManager,
 )
-from core.pipelines import (
-    KGEnrichmentPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 
 from ..api.auth_router import AuthRouter
 from ..api.ingestion_router import IngestionRouter
@@ -71,6 +67,7 @@ class PipeOverrides:
     kg_node_description: Optional[AsyncPipe] = None
     kg_clustering: Optional[AsyncPipe] = None
     kg_search: Optional[AsyncPipe] = None
+
 
 @dataclass
 class PipelineOverrides:

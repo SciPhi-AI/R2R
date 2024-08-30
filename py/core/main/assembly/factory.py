@@ -24,11 +24,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.pipelines import (
-    KGEnrichmentPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from core.pipelines import RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -506,7 +502,6 @@ class R2RPipelineFactory:
         self.config = config
         self.pipes = pipes
 
-
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         """factory method to create an ingestion pipeline."""
         search_pipeline = SearchPipeline()
@@ -543,7 +538,6 @@ class R2RPipelineFactory:
         rag_pipeline.set_search_pipeline(search_pipeline)
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
-
 
     def create_pipelines(
         self,

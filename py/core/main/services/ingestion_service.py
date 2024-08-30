@@ -27,7 +27,7 @@ from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ...base.api.models.auth.responses import UserResponse
-from ..abstractions import R2RAgents, R2RPipes, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
@@ -121,7 +121,6 @@ class IngestionService(Service):
         document = self._file_data_to_document(
             file_data, user, document_id, metadata, version
         )
-        
 
         document_lookup = (
             (
@@ -150,10 +149,7 @@ class IngestionService(Service):
         else:
             if (
                 document_id not in existing_document_info
-                or (
-                    existing_document_info[document.id].version
-                    >= version
-                )
+                or (existing_document_info[document.id].version >= version)
                 and existing_document_info[document.id].ingestion_status
                 == "success"
             ):
@@ -195,9 +191,7 @@ class IngestionService(Service):
         document: Document,
     ) -> list[DocumentFragment]:
         return await self.pipes.parsing_pipe.run(
-            input=self.pipes.parsing_pipe.Input(
-                message=document
-            ),
+            input=self.pipes.parsing_pipe.Input(message=document),
             run_manager=self.run_manager,
         )
 
@@ -263,9 +257,11 @@ class IngestionService(Service):
                 filters={
                     "$and": [
                         {"document_id": {"$eq": document_info.id}},
-                        {"version": {
-                            "$eq": decrement_version(document_info.version)
-                        }}
+                        {
+                            "version": {
+                                "$eq": decrement_version(document_info.version)
+                            }
+                        },
                     ]
                 }
             )

@@ -1,6 +1,10 @@
-from typing import TYPE_CHECKING, Optional, Union
+import logging
+from pathlib import Path
+from typing import Optional
 
+import yaml
 from fastapi import Body, Depends
+from pydantic import Json
 
 from core.base import KGEnrichmentSettings
 from core.base.api.models.restructure.responses import (
@@ -8,9 +12,12 @@ from core.base.api.models.restructure.responses import (
 )
 from core.base.providers import OrchestrationProvider
 
-from ...main.hatchet import EnrichGraphWorkflow, r2r_hatchet
+from ...main.hatchet import r2r_hatchet
+from ..hatchet import EnrichGraphWorkflow
 from ..services.restructure_service import RestructureService
 from .base_router import BaseRouter, RunType
+
+logger = logging.getLogger(__name__)
 
 
 class RestructureRouter(BaseRouter):
@@ -25,7 +32,7 @@ class RestructureRouter(BaseRouter):
                 "RestructureRouter requires an orchestration provider."
             )
         super().__init__(service, run_type, orchestration_provider)
-        self.service: RestructureService = service  # for type hinting
+        self.service: RestructureService = service
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
@@ -33,21 +40,30 @@ class RestructureRouter(BaseRouter):
         )
 
     def _setup_routes(self):
-        @self.router.post("/enrich_graph")
+        @self.router.post(
+            "/enrich_graph",
+        )
         @self.base_endpoint
         async def enrich_graph(
-            kg_enrichment_settings: KGEnrichmentSettings = Body(
+            kg_enrichment_settings: Json[KGEnrichmentSettings] = Body(
                 ...,
-                description="Settings for knowledge graph enrichment",
             ),
-            auth_user=(Depends(self.service.providers.auth.auth_wrapper)),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
             Perform graph enrichment, e.g. GraphRAG, over the ingested documents.
 
-            Returns:
-                Dict[str, Any]: Results of the graph enrichment process.
+            This endpoint supports JSON requests, enabling you to enrich the knowledge graph in R2R.
+
+            A valid user authentication token is required to access this endpoint.
             """
+            # Check if the user is a superuser
+            is_superuser = auth_user and auth_user.is_superuser
+
+            if not is_superuser:
+                # Add any necessary permission checks here
+                pass
+
             workflow_input = {
                 "kg_enrichment_settings": kg_enrichment_settings.json(),
                 "user": auth_user.json(),
