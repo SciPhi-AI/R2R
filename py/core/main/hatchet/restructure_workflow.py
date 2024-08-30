@@ -53,7 +53,8 @@ class EnrichGraphWorkflow:
         kg_enrichment_settings = parsed_data["kg_enrichment_settings"]
     
         clusters = await self.restructure_service.kg_clustering(kg_enrichment_settings)
-        return {"result": clusters}
+        print('clusters = ', clusters)
+        return {"result": None}
 
     # @r2r_hatchet.step(retries=3, parents=["kg_clustering"])
     # async def finalize_enrichment(self, context: Context) -> None:

@@ -64,11 +64,12 @@ class RestructureService(Service):
         return await _collect_results(result_gen)
 
     async def kg_clustering(self, kg_enrichment_settings):
-        return await self.pipes.kg_clustering_pipe.run(
-            input=self.pipes.kg_node_description_pipe.Input(message=None),
+        result_gen = await self.pipes.kg_clustering_pipe.run(
+            input=self.pipes.kg_clustering_pipe.Input(message=None),
             kg_enrichment_settings=kg_enrichment_settings,
             run_manager=self.run_manager
         )
+        return await _collect_results(result_gen)
 
 class RestructureServiceAdapter:
     @staticmethod
