@@ -122,6 +122,7 @@ class IngestionRouter(BaseRouter):
                         chunking_config.json() if chunking_config else None
                     ),
                     "user": auth_user.json(),
+                    "is_update": False,
                 }
 
                 task_id = r2r_hatchet.client.admin.run_workflow(
@@ -162,7 +163,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+        ):  # -> WrappedIngestionResponse:
             """
             Update existing files in the system.
 

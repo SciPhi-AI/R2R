@@ -49,6 +49,12 @@ def increment_version(version: str) -> str:
     return f"{prefix}{suffix + 1}"
 
 
+def decrement_version(version: str) -> str:
+    prefix = version[:-1]
+    suffix = int(version[-1])
+    return f"{prefix}{max(0, suffix - 1)}"
+
+
 def format_entity_types(entity_types: list[EntityType]) -> str:
     lines = [entity.name for entity in entity_types]
     return "\n".join(lines)

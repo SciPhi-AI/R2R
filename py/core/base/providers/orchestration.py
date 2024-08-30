@@ -7,7 +7,7 @@ from .base import Provider, ProviderConfig
 
 
 class OrchestrationConfig(ProviderConfig):
-    provider: str = "hatchet"
+    provider: str
     max_threads: int = 256
 
     def validate(self) -> None:

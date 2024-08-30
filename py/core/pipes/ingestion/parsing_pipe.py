@@ -3,7 +3,7 @@ This module contains the `DocumentParsingPipe` class, which is responsible for p
 """
 
 import logging
-from typing import AsyncGenerator, Optional, Union
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import (

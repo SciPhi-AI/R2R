@@ -20,13 +20,14 @@ from core.base import (
     RunLoggingSingleton,
     RunManager,
     VectorEntry,
+    decrement_version,
     generate_user_document_id,
 )
 from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ...base.api.models.auth.responses import UserResponse
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipes, R2RPipelines, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
@@ -72,6 +73,7 @@ class IngestionService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipes,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
@@ -80,6 +82,7 @@ class IngestionService(Service):
         super().__init__(
             config,
             providers,
+            pipes,
             pipelines,
             agents,
             run_manager,
@@ -93,6 +96,8 @@ class IngestionService(Service):
         user: UserResponse,
         metadata: Optional[dict] = None,
         document_id: Optional[UUID] = None,
+        version: Optional[str] = None,
+        is_update: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -112,10 +117,11 @@ class IngestionService(Service):
         document_id = document_id or generate_user_document_id(
             file_data["filename"], user.id
         )
-
+        version = version or STARTING_VERSION
         document = self._file_data_to_document(
-            file_data, user, document_id, metadata
+            file_data, user, document_id, metadata, version
         )
+        
 
         document_lookup = (
             (
@@ -131,21 +137,31 @@ class IngestionService(Service):
         existing_document_info = {
             doc_info.id: doc_info for doc_info in document_lookup
         }
-
-        if (
-            document.id in existing_document_info
-            # apply `geq` check to prevent re-ingestion of updated documents
-            and (
-                existing_document_info[document.id].version >= STARTING_VERSION
-            )
-            and existing_document_info[document.id].ingestion_status
-            == "success"
-        ):
-            # do something
-            raise R2RException(
-                status_code=409,
-                message=f"Document with ID {document.id} was already successfully processed.",
-            )
+        if not is_update:
+            if (
+                document.id in existing_document_info
+                and existing_document_info[document.id].ingestion_status
+                != "failure"
+            ):
+                raise R2RException(
+                    status_code=409,
+                    message=f"Document {document.id} was already ingested and is not in a failed state.",
+                )
+        else:
+            if (
+                document_id not in existing_document_info
+                or (
+                    existing_document_info[document.id].version
+                    >= version
+                )
+                and existing_document_info[document.id].ingestion_status
+                == "success"
+            ):
+                # do something
+                raise R2RException(
+                    status_code=409,
+                    message=f"Must increment version number before attempting to overwrite document {document.id}.",
+                )
 
         now = datetime.now()
 
@@ -156,7 +172,7 @@ class IngestionService(Service):
             type=document.type,
             title=document.metadata.pop("title", "N/A"),
             metadata=document.metadata,
-            version=STARTING_VERSION,
+            version=version,
             size_in_bytes=len(document.data),
             ingestion_status="pending",
             created_at=now,
@@ -178,8 +194,8 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         document: Document,
     ) -> list[DocumentFragment]:
-        return await self.pipelines.ingestion_pipeline.parsing_pipe.run(
-            input=self.pipelines.ingestion_pipeline.parsing_pipe.Input(
+        return await self.pipes.parsing_pipe.run(
+            input=self.pipes.parsing_pipe.Input(
                 message=document
             ),
             run_manager=self.run_manager,
@@ -193,8 +209,8 @@ class IngestionService(Service):
         chunking_config: Optional[ChunkingConfig] = None,
     ) -> list[DocumentFragment]:
 
-        return await self.pipelines.ingestion_pipeline.chunking_pipe.run(
-            input=self.pipelines.ingestion_pipeline.chunking_pipe.Input(
+        return await self.pipes.chunking_pipe.run(
+            input=self.pipes.chunking_pipe.Input(
                 message=[
                     DocumentExtraction.from_dict(chunk)
                     for chunk in parsed_documents
@@ -210,8 +226,8 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         chunked_documents: list[dict],
     ) -> list[str]:
-        return await self.pipelines.ingestion_pipeline.embedding_pipe.run(
-            input=self.pipelines.ingestion_pipeline.embedding_pipe.Input(
+        return await self.pipes.embedding_pipe.run(
+            input=self.pipes.embedding_pipe.Input(
                 message=[
                     DocumentFragment.from_dict(chunk)
                     for chunk in chunked_documents
@@ -226,8 +242,8 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         embeddings: list[dict],
     ) -> list[str]:
-        return await self.pipelines.ingestion_pipeline.storage_pipe.run(
-            input=self.pipelines.ingestion_pipeline.storage_pipe.Input(
+        return await self.pipes.vector_storage_pipe.run(
+            input=self.pipes.vector_storage_pipe.Input(
                 message=[
                     VectorEntry.from_dict(embedding)
                     for embedding in embeddings
@@ -240,9 +256,22 @@ class IngestionService(Service):
     async def finalize_ingestion(
         self,
         document_info: DocumentInfo,
+        is_update: bool = False,
     ) -> None:
+        if is_update:
+            self.providers.database.vector.delete(
+                filters={
+                    "$and": [
+                        {"document_id": {"$eq": document_info.id}},
+                        {"version": {
+                            "$eq": decrement_version(document_info.version)
+                        }}
+                    ]
+                }
+            )
+
         async def empty_generator():
-            yield document_info 
+            yield document_info
 
         return empty_generator()
 
@@ -347,6 +376,7 @@ class IngestionService(Service):
         user: UserResponse,
         document_id: UUID,
         metadata: dict,
+        version: str,
     ) -> Document:
         file_extension = file_info["filename"].split(".")[-1].lower()
         if file_extension.upper() not in DocumentType.__members__:
@@ -359,7 +389,7 @@ class IngestionService(Service):
             metadata.get("title") or file_info["filename"].split("/")[-1]
         )
         metadata["title"] = document_title
-
+        metadata["version"] = version
         # Decode the base64 encoded content
         content = base64.b64decode(file_info["content"])
 
@@ -398,29 +428,13 @@ class IngestionServiceAdapter:
             "document_id": (
                 UUID(data["document_id"]) if data["document_id"] else None
             ),
+            "version": data.get("version", None),
             "chunking_config": (
                 ChunkingConfig.from_dict(data["chunking_config"])
                 if data["chunking_config"]
                 else None
             ),
-        }
-
-    @staticmethod
-    def prepare_update_files_input(
-        file_datas: list[dict],
-        user: UserResponse,
-        document_ids: list[UUID],
-        metadatas: Optional[list[dict]] = None,
-        chunking_config: Optional[ChunkingConfig] = None,
-    ) -> dict:
-        return {
-            "file_datas": file_datas,
-            "user": user.to_dict(),
-            "document_ids": [str(doc_id) for doc_id in document_ids],
-            "metadatas": metadatas,
-            "chunking_config": (
-                chunking_config.to_dict() if chunking_config else None
-            ),
+            "is_update": data.get("is_update", False),
         }
 
     @staticmethod

@@ -4,9 +4,8 @@ from typing import Any, Dict, Optional, Union
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGEnrichmentSettings
-from core.base.api.models.auth.responses import UserResponse
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders, R2RPipes
 from ..config import R2RConfig
 from .base import Service
 
@@ -18,6 +17,7 @@ class RestructureService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipes,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
@@ -27,6 +27,7 @@ class RestructureService(Service):
         super().__init__(
             config,
             providers,
+            pipes,
             pipelines,
             agents,
             run_manager,

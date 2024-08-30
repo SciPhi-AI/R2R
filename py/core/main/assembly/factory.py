@@ -25,7 +25,6 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.pipelines import (
-    IngestionPipeline,
     KGEnrichmentPipeline,
     RAGPipeline,
     SearchPipeline,
@@ -129,7 +128,7 @@ class R2RProviderFactory:
         from core.providers import HatchetOrchestrationProvider
 
         orchestration_provider = HatchetOrchestrationProvider(
-            OrchestrationConfig()
+            OrchestrationConfig(provider="hatchet")
         )
         orchestration_provider.get_worker("r2r-worker")
         return orchestration_provider
@@ -507,30 +506,6 @@ class R2RPipelineFactory:
         self.config = config
         self.pipes = pipes
 
-    def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
-        """factory method to create an ingestion pipeline."""
-        ingestion_pipeline = IngestionPipeline()
-
-        ingestion_pipeline.add_pipe(
-            pipe=self.pipes.parsing_pipe, parsing_pipe=True
-        )
-        ingestion_pipeline.add_pipe(
-            self.pipes.chunking_pipe, chunking_pipe=True
-        )
-
-        # Add embedding pipes if provider is set
-        if (
-            self.config.embedding.provider is not None
-            and self.config.database.provider is not None
-        ):
-            ingestion_pipeline.add_pipe(
-                self.pipes.embedding_pipe, embedding_pipe=True
-            )
-            ingestion_pipeline.add_pipe(
-                self.pipes.vector_storage_pipe, storage_pipe=True
-            )
-
-        return ingestion_pipeline
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         """factory method to create an ingestion pipeline."""
@@ -587,7 +562,6 @@ class R2RPipelineFactory:
 
     def create_pipelines(
         self,
-        ingestion_pipeline: Optional[IngestionPipeline] = None,
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
@@ -603,8 +577,6 @@ class R2RPipelineFactory:
             *args, **kwargs
         )
         return R2RPipelines(
-            ingestion_pipeline=ingestion_pipeline
-            or self.create_ingestion_pipeline(*args, **kwargs),
             search_pipeline=search_pipeline,
             rag_pipeline=rag_pipeline
             or self.create_rag_pipeline(
