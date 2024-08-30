@@ -15,6 +15,10 @@ from core.base.abstractions.graph import (
     Triple,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from .graph_queries import (
     GET_CHUNKS_QUERY,
     GET_COMMUNITIES_QUERY,
@@ -270,15 +274,17 @@ class Neo4jKGProvider(KGProvider):
         """
 
         # get the entities and triples from the graph
-        query = """MATCH (a) - [r] -> (b) 
-                WHERE a.community_id = $community_id 
-                OR b.community_id = $community_id
+        query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__) 
+                WHERE a.community_ids[$hierarchy_level] = $community_number
+                OR b.community_ids[$hierarchy_level] = $community_number
                 RETURN a.name AS source, b.name AS target, a.description AS source_description, 
                 b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels, 
                 r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
         """
 
-        neo4j_records = self.structured_query(query, {"community_id": community_id})
+        community_number, hierarchy_level = community_id.split("_")
+
+        neo4j_records = self.structured_query(query, {"community_number": community_number, "hierarchy_level": hierarchy_level})
 
         entities = [
             Entity(
@@ -432,53 +438,91 @@ class Neo4jKGProvider(KGProvider):
         return ret
 
 
-    def perform_graph_clustering(self, filters: dict, settings: KGEnrichmentSettings):
+    def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
         """
         Perform graph clustering on the graph.
+
+        Input:
+        - settings: a KGEnrichmentSettings object that contains the settings for the graph clustering.
+
+        Output:
+        - Total number of communities
+        - Total number of hierarchies
         """
         # step 1: drop the graph, if it exists and project the graph again. 
         # in this step the vertices that have no edges are not included in the projection. 
-        GRAPH_PROJECTION_QUERY = """
+
+        GRAPH_EXISTS_QUERY = """
             CALL gds.graph.exists('kg_graph') YIELD exists
-            WHERE exists
-            CALL gds.graph.drop('kg_graph')
+            WITH exists
+            RETURN CASE WHEN exists THEN true ELSE false END as graphExists;
+        """
+
+        result = self.structured_query(GRAPH_EXISTS_QUERY)
+        graph_exists = result.records[0]['graphExists']
+
+        GRAPH_PROJECTION_QUERY = ""
+
+        if graph_exists:
+            GRAPH_PROJECTION_QUERY += "CALL gds.graph.drop('kg_graph')"
+
+        GRAPH_PROJECTION_QUERY += """
             MATCH (s:__Entity__)-[r:__Relationship__]->(t:__Entity__)
-            CALL gds.graph.project(
+            RETURN gds.graph.project(
                 'kg_graph',
                 s, 
                 t,
+        """
+
+        if graph_exists:
+            GRAPH_PROJECTION_QUERY += """
                 {
-                    sourceNodeProperties: ['name', 'communityId', 'intermediateCommunityIds'],
-                    targetNodeProperties: ['name', 'communityId', 'intermediateCommunityIds'],
-                    relationshipProperties: ['type', 'weight']
-                },
+                    sourceNodeProperties: [],
+                    targetNodeProperties: [],
+                    relationshipProperties: ['weight'],
+                    'relationshipWeightProperty': 'weight',
+                    undirectedRelationshipTypes: ['*'] 
+                }
+            )"""
+        else:
+            GRAPH_PROJECTION_QUERY += """
                 {
-                    'relationshipWeightProperty': 'weight'
-                },
-                {
+                    sourceNodeProperties: ['communityId'],
+                    targetNodeProperties: ['communityId'],
+                    relationshipProperties: ['weight'],
+                    'relationshipWeightProperty': 'weight',
                     undirectedRelationshipTypes: ['*'] 
                 }
             )
         """
-        self.structured_query(GRAPH_PROJECTION_QUERY)
 
-        # step 2: run the hierarchical leiden algorithm on the graph. 
-        GRAPH_CLUSTERING_QUERY = """
-            CALL gds.leiden.mutate('kg_graph', {
-                seedProperty: 'intermediateCommunities',
-                mutateProperty: '',
-                randomSeed: 42,
-                includeIntermediateCommunities: true
-            })
-            YIELD communityCount, modularity, modularities;
+        result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
-            CALL gds.leiden.mutate('kg_graph', {
-                seedProperty: 'intermediateCommunities',
-                mutateProperty: '',
-                randomSeed: 42,
-                includeIntermediateCommunities: true
-            })
-            YIELD communityCount, modularity, modularities;
+        # step 2: run the hierarchical leiden algorithm on the graph.
+        seed_property = leiden_params.get("seed_property", "communityIds")
+        write_property = leiden_params.get("write_property", "communityIds")
+        random_seed = leiden_params.get("random_seed", 42)
+        include_intermediate_communities = leiden_params.get("include_intermediate_communities", True)
+
+        # don't use the seed property for now
+        seed_property_config = "" # f"seedProperty: '{seed_property}'" if graph_exists else ""
+
+        GRAPH_CLUSTERING_QUERY = f"""
+            CALL gds.leiden.write('kg_graph', {{     
+                seedProperty: '{seed_property}',
+                {seed_property_config}
+                writeProperty: '{write_property}',
+                randomSeed: {random_seed},
+                includeIntermediateCommunities: {include_intermediate_communities}
+            }})
+            YIELD communityCount, modularities;
         """
-        self.structured_query(GRAPH_CLUSTERING_QUERY)
-        
+
+        result = self.structured_query(GRAPH_CLUSTERING_QUERY).records[0]
+
+        community_count = result['communityCount']
+        modularities = result['modularities']
+
+        logger.info(f"Performed graph clustering with {community_count} communities and modularities {modularities}")
+
+        return (community_count, len(modularities))

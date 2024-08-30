@@ -130,11 +130,17 @@ class KGClusteringPipe(AsyncPipe):
         return {"id": community.id, "title": summary["title"]}
 
 
-    async def cluster_kg(self, filters: dict, settings: KGEnrichmentSettings = KGEnrichmentSettings()):
+    async def get_communities(self, filters: dict, settings: KGEnrichmentSettings = KGEnrichmentSettings()):
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
-        return self.kg_provider.perform_graph_clustering(filters, settings)
+        num_communities, num_hierarchies = self.kg_provider.perform_graph_clustering(settings.leiden_params)
+        
+        for i in range(num_communities):
+            for j in range(num_hierarchies):
+                community_id = f"{i}_{j}"
+                yield await self.process_community(community_id, settings)
+
     
     async def _run_logic(
         self,

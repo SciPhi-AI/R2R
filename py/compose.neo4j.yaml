@@ -15,13 +15,12 @@ services:
       - "7687:7687"  # Bolt
     environment:
       - NEO4J_AUTH=${NEO4J_AUTH:-neo4j/ineedastrongerpassword}
-      - NEO4J_dbms_memory_pagecache_size=${NEO4J_PAGECACHE_SIZE:-16G}
-      - NEO4J_dbms_memory_heap_max__size=${NEO4J_HEAP_SIZE:-16G}
+      - NEO4J_server_memory_pagecache_size=${NEO4J_PAGECACHE_SIZE:-2G}
+      - NEO4J_server_memory_heap_max__size=${NEO4J_HEAP_SIZE:-2G}
       - NEO4J_apoc_export_file_enabled=true
       - NEO4J_apoc_import_file_enabled=true
       - NEO4J_apoc_import_file_use__neo4j__config=true
-      - NEO4JLABS_PLUGINS=["apoc"]
-      - NEO4J_PLUGINS=["graph-data-science"]
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
       - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
     volumes:
