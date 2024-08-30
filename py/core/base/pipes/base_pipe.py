@@ -126,6 +126,7 @@ class AsyncPipe:
         input: Input,
         state: AsyncState,
         run_manager: Optional[RunManager] = None,
+        vecs_collection: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
@@ -140,7 +141,12 @@ class AsyncPipe:
                 )
                 try:
                     async for result in self._run_logic(
-                        input, state, run_id=run_id, *args, **kwargs
+                        input,
+                        state,
+                        run_id=run_id,
+                        vecs_collection=vecs_collection,
+                        *args,
+                        **kwargs,
                     ):
                         yield result
                 finally:

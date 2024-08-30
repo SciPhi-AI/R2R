@@ -22,6 +22,7 @@ class UserResponse(BaseModel):
     updated_at: datetime = datetime.now()
     is_verified: bool = False
     group_ids: list[UUID] = []
+    vecs_collection: Optional[str] = None
 
     # Optional fields (to update or set at creation)
     hashed_password: Optional[str] = None

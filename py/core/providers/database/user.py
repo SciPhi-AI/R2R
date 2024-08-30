@@ -30,7 +30,8 @@ class UserMixin(DatabaseMixin):
             reset_token_expiry TIMESTAMPTZ,
             group_ids UUID[] NULL,
             created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            vecs_collection TEXT
         );
         """
         self.execute_query(query)
@@ -94,6 +95,7 @@ class UserMixin(DatabaseMixin):
                     "profile_picture",
                     "bio",
                     "group_ids",
+                    "vecs_collection",
                 ]
             )
             .where("email = :email", email=email)
@@ -116,6 +118,7 @@ class UserMixin(DatabaseMixin):
             profile_picture=result[9],
             bio=result[10],
             group_ids=result[11],
+            vecs_collection=result[12],
         )
 
     def create_user(self, email: str, password: str) -> UserResponse:
@@ -130,17 +133,19 @@ class UserMixin(DatabaseMixin):
                 raise e
 
         hashed_password = self.crypto_provider.get_password_hash(password)
+        vecs_collection = str(generate_id_from_label(f"{email}"))
         query = f"""
             INSERT INTO {self._get_table_name('users')}
-            (email, user_id, hashed_password, group_ids)
-            VALUES (:email, :user_id, :hashed_password, :group_ids)
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            (email, user_id, hashed_password, group_ids, vecs_collection)
+            VALUES (:email, :user_id, :hashed_password, :group_ids, :vecs_collection)
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids, vecs_collection
         """
         params = {
             "email": email,
             "user_id": generate_id_from_label(email),
             "hashed_password": hashed_password,
             "group_ids": [],
+            "vecs_collection": vecs_collection,
         }
         result = self.execute_query(query, params).fetchone()
         if not result:
@@ -158,6 +163,7 @@ class UserMixin(DatabaseMixin):
             updated_at=result[6],
             group_ids=result[7],
             hashed_password=hashed_password,
+            vecs_collection=result[8],
         )
 
     def update_user(self, user: UserResponse) -> UserResponse:
@@ -192,6 +198,7 @@ class UserMixin(DatabaseMixin):
             profile_picture=result[8],
             bio=result[9],
             group_ids=result[10],
+            vecs_collection=result[11],
         )
 
     def delete_user(self, user_id: UUID) -> None:
@@ -480,6 +487,7 @@ class UserMixin(DatabaseMixin):
                     u.created_at,
                     u.updated_at,
                     u.group_ids,
+                    u.vecs_collection,
                     COUNT(d.document_id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
@@ -514,6 +522,7 @@ class UserMixin(DatabaseMixin):
                 num_files=row[8],
                 total_size_in_bytes=row[9],
                 document_ids=row[10] or [],
+                vecs_collection=row[11],
             )
             for row in results
         ]

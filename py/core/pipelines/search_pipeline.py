@@ -37,6 +37,7 @@ class SearchPipeline(AsyncPipeline):
         run_manager: Optional[RunManager] = None,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        vecs_collection: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -76,6 +77,7 @@ class SearchPipeline(AsyncPipeline):
                         stream,
                         run_manager,
                         vector_search_settings=vector_search_settings,
+                        vecs_collection=vecs_collection,
                         *args,
                         **kwargs,
                     )

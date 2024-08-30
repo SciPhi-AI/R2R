@@ -73,6 +73,13 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
+            vecs_collection = None
+            if (
+                hasattr(auth_user, "vecs_collection")
+                and auth_user.vecs_collection is not None
+            ):
+                vecs_collection = auth_user.vecs_collection
+
             user_groups = set(auth_user.group_ids)
             selected_groups = set(vector_search_settings.selected_group_ids)
             allowed_groups = user_groups.intersection(selected_groups)
@@ -85,7 +92,6 @@ class RetrievalRouter(BaseRouter):
             filters = {
                 "$or": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    # {"group_ids": {"$any": list([str(ele) for ele in allowed_groups])}},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
@@ -97,6 +103,7 @@ class RetrievalRouter(BaseRouter):
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
+                vecs_collection=vecs_collection,
             )
             return results
 
@@ -136,6 +143,12 @@ class RetrievalRouter(BaseRouter):
 
             The generation process can be customized using the rag_generation_config parameter.
             """
+            vecs_collection = None
+            if (
+                hasattr(auth_user, "vecs_collection")
+                and auth_user.vecs_collection is not None
+            ):
+                vecs_collection = auth_user.vecs_collection
             allowed_groups = set(auth_user.group_ids)
             filters = {
                 "$or": [
@@ -154,6 +167,7 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=kg_search_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
+                vecs_collection=vecs_collection,
             )
 
             if rag_generation_config.stream:

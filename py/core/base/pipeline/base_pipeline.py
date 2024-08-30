@@ -46,6 +46,7 @@ class AsyncPipeline:
         state: Optional[AsyncState] = None,
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
+        vecs_collection: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -64,6 +65,7 @@ class AsyncPipeline:
                         pipe_num,
                         current_input,
                         run_manager,
+                        vecs_collection,
                         *args,
                         **kwargs,
                     )

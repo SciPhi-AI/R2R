@@ -43,6 +43,7 @@ class VectorSearchPipe(SearchPipe):
         message: str,
         run_id: UUID,
         vector_search_settings: VectorSearchSettings,
+        vecs_collection: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
@@ -70,6 +71,7 @@ class VectorSearchPipe(SearchPipe):
             else self.database_provider.vector.semantic_search(
                 query_vector=query_vector,
                 search_settings=vector_search_settings,
+                vecs_collection=vecs_collection,
             )
         )
         reranked_results = self.embedding_provider.rerank(
@@ -104,6 +106,7 @@ class VectorSearchPipe(SearchPipe):
         state: AsyncState,
         run_id: UUID,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vecs_collection: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
@@ -115,6 +118,7 @@ class VectorSearchPipe(SearchPipe):
                 message=search_request,
                 run_id=run_id,
                 vector_search_settings=vector_search_settings,
+                vecs_collection=vecs_collection,
                 *args,
                 **kwargs,
             ):

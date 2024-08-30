@@ -54,6 +54,7 @@ class RetrievalService(Service):
         query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        vecs_collection: Optional[str] = None,
         *args,
         **kwargs,
     ) -> SearchResponse:
@@ -97,6 +98,7 @@ class RetrievalService(Service):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
+                vecs_collection=vecs_collection,
                 *args,
                 **kwargs,
             )
@@ -119,6 +121,7 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        vecs_collection: Optional[str] = None,
         *args,
         **kwargs,
     ) -> RAGResponse:
@@ -151,6 +154,7 @@ class RetrievalService(Service):
                         rag_generation_config,
                         vector_search_settings,
                         kg_search_settings,
+                        vecs_collection=vecs_collection,
                         *args,
                         **kwargs,
                     )
@@ -161,6 +165,7 @@ class RetrievalService(Service):
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
+                    vecs_collection=vecs_collection,
                     *args,
                     **kwargs,
                 )
@@ -213,6 +218,7 @@ class RetrievalService(Service):
         rag_generation_config,
         vector_search_settings,
         kg_search_settings,
+        vecs_collection=None,
         *args,
         **kwargs,
     ):
@@ -227,6 +233,7 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     completion_record=completion_record,
+                    vecs_collection=vecs_collection,
                     *args,
                     **kwargs,
                 ):

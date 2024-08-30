@@ -19,6 +19,7 @@ class RetrievalMethods:
             Union[dict, VectorSearchSettings]
         ] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
+        user_specified_collection: Optional[str] = None,
     ) -> SearchResponse:
         """
         Conduct a vector and/or KG search.

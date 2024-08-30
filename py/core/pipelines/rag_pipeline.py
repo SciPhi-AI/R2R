@@ -34,6 +34,7 @@ class RAGPipeline(AsyncPipeline):
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
+        vecs_collection: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -55,6 +56,7 @@ class RAGPipeline(AsyncPipeline):
                             run_manager=run_manager,
                             vector_search_settings=vector_search_settings,
                             kg_search_settings=kg_search_settings,
+                            vecs_collection=vecs_collection,
                             *args,
                             **kwargs,
                         )

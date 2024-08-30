@@ -46,3 +46,4 @@ class UserStats(BaseModel):
     num_files: int
     total_size_in_bytes: int
     document_ids: list[UUID]
+    vecs_collection: str

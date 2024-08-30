@@ -1,7 +1,6 @@
 import logging
 import os
 from typing import Any, Optional
-from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.engine.url import make_url
@@ -132,6 +131,25 @@ class PostgresVectorDBProvider(VectorDBProvider):
             name=self.collection_name, dimension=dimension
         )
 
+    def _get_or_create_collection(
+        self,
+        collection_name: Optional[str] = None,
+        dimension: Optional[int] = None,
+    ) -> Collection:
+        if collection_name is None:
+            if self.collection is None:
+                raise ValueError("Default collection is not initialized.")
+            return self.collection
+
+        if dimension is None:
+            raise ValueError(
+                "Dimension must be provided when creating a new collection."
+            )
+
+        return self.vx.get_or_create_collection(
+            name=collection_name, dimension=dimension
+        )
+
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
             raise ValueError(
@@ -176,15 +194,20 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
     def semantic_search(
-        self, query_vector: list[float], search_settings: VectorSearchSettings
+        self,
+        query_vector: list[float],
+        search_settings: VectorSearchSettings,
+        vecs_collection: Optional[str] = None,
     ) -> list[VectorSearchResult]:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `semantic_search`."
-            )
-        results = self.collection.query(
+
+        collection = self._get_or_create_collection(
+            vecs_collection, len(query_vector)
+        )
+
+        results = collection.query(
             vector=query_vector, search_settings=search_settings
         )
+
         return [
             VectorSearchResult(
                 fragment_id=result[0],
@@ -200,16 +223,18 @@ class PostgresVectorDBProvider(VectorDBProvider):
         ]
 
     def full_text_search(
-        self, query_text: str, search_settings: VectorSearchSettings
+        self,
+        query_vector: list[float],
+        query_text: str,
+        search_settings: VectorSearchSettings,
+        vecs_collection: Optional[str] = None,
     ) -> list[VectorSearchResult]:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `full_text_search`."
-            )
-        results = self.collection.full_text_search(
+        collection = self._get_or_create_collection(
+            vecs_collection, len(query_vector)
+        )
+        return collection.full_text_search(
             query_text=query_text, search_settings=search_settings
         )
-        return results
 
     def hybrid_search(
         self,
@@ -232,6 +257,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             )
         semantic_results = self.semantic_search(query_vector, search_settings)
         full_text_results = self.full_text_search(
+            query_vector,
             query_text,
             search_settings,
         )
