@@ -9,13 +9,29 @@ on:
         type: string
 
 jobs:
-  build-and-publish:
-    runs-on: [ self-hosted, Linux ]
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
+    steps:
+      - name: Determine version to use
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-publish-amd64:
+    needs: prepare
+    runs-on: amd2
     permissions:
       packages: write
       contents: read
       id-token: write
       actions: write
+    timeout-minutes: 720
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -40,18 +56,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Determine version to use
-        id: version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
-          fi
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -60,7 +64,7 @@ jobs:
             ragtoriches/prod
             us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r
           tags: |
-            type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
+            type=raw,value=${{ needs.prepare.outputs.release_version }}
             type=raw,value=latest
 
       - name: Build and Push Docker Image
@@ -71,9 +75,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image (Unstructured)
         uses: docker/build-push-action@v5
         with:
           context: ./py
@@ -81,4 +85,68 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}-unstructured
           labels: ${{ steps.meta.outputs.labels }}-unstructured
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
+
+  build-and-publish-arm64:
+    needs: prepare
+    runs-on: arm2
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+      actions: write
+    timeout-minutes: 720
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Configure SDK
+        run: 'gcloud auth configure-docker us-east1-docker.pkg.dev'
+
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ragtoriches/prod
+            us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.release_version }}
+            type=raw,value=latest
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./py
+          file: ./py/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/arm64
+
+      - name: Build and Push Docker Image (Unstructured)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./py
+          file: ./py/Dockerfile.unstructured
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-unstructured
+          labels: ${{ steps.meta.outputs.labels }}-unstructured
+          platforms: linux/arm64
