@@ -166,4 +166,3 @@ WITH c, value
 MATCH (ch:__Chunk__ {id: value.text_unit_id})
 MERGE (ch)-[:HAS_COVARIATE]->(c)
 """
-

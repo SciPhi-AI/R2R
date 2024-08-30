@@ -1,11 +1,12 @@
 import json
+import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import KGConfig, KGProvider, KGEnrichmentSettings
+from core.base import KGConfig, KGEnrichmentSettings, KGProvider
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -15,8 +16,6 @@ from core.base.abstractions.graph import (
     Triple,
 )
 
-import logging
-
 logger = logging.getLogger(__name__)
 
 from .graph_queries import (
@@ -25,14 +24,14 @@ from .graph_queries import (
     GET_ENTITIES_QUERY,
     GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY,
     GET_TRIPLES_QUERY,
+    GRAPH_CLUSTERING_QUERY,
+    GRAPH_PROJECTION_QUERY,
     PUT_CHUNKS_QUERY,
     PUT_COMMUNITIES_QUERY,
     PUT_ENTITIES_EMBEDDINGS_QUERY,
     PUT_ENTITIES_QUERY,
     PUT_TRIPLES_QUERY,
     UNIQUE_CONSTRAINTS,
-    GRAPH_PROJECTION_QUERY,
-    GRAPH_CLUSTERING_QUERY,
 )
 
 
@@ -259,18 +258,20 @@ class Neo4jKGProvider(KGProvider):
             for record in neo4j_records.records
         ]
         return triples
-    
-    def get_entities_and_triples(self, community_id: str, include_embeddings: bool = False) -> Tuple[List[Entity], List[Triple]]:
-        """
-            Get the entities and triples that belong to a community.
 
-            Input:
-            - community_id: The ID of the community to get the entities and triples for. This is a string that is constructed by the neo4j leiden clustering algorithm.
-            - include_embeddings: Whether to include the embeddings in the output.
-            
-            Output:
-            - A tuple of entities and triples that belong to the community. 
-            
+    def get_entities_and_triples(
+        self, community_id: str, include_embeddings: bool = False
+    ) -> Tuple[List[Entity], List[Triple]]:
+        """
+        Get the entities and triples that belong to a community.
+
+        Input:
+        - community_id: The ID of the community to get the entities and triples for. This is a string that is constructed by the neo4j leiden clustering algorithm.
+        - include_embeddings: Whether to include the embeddings in the output.
+
+        Output:
+        - A tuple of entities and triples that belong to the community.
+
         """
 
         # get the entities and triples from the graph
@@ -284,7 +285,13 @@ class Neo4jKGProvider(KGProvider):
 
         community_number, hierarchy_level = community_id.split("_")
 
-        neo4j_records = self.structured_query(query, {"community_number": community_number, "hierarchy_level": hierarchy_level})
+        neo4j_records = self.structured_query(
+            query,
+            {
+                "community_number": community_number,
+                "hierarchy_level": hierarchy_level,
+            },
+        )
 
         entities = [
             Entity(
@@ -437,7 +444,6 @@ class Neo4jKGProvider(KGProvider):
 
         return ret
 
-
     def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
         """
         Perform graph clustering on the graph.
@@ -449,8 +455,8 @@ class Neo4jKGProvider(KGProvider):
         - Total number of communities
         - Total number of hierarchies
         """
-        # step 1: drop the graph, if it exists and project the graph again. 
-        # in this step the vertices that have no edges are not included in the projection. 
+        # step 1: drop the graph, if it exists and project the graph again.
+        # in this step the vertices that have no edges are not included in the projection.
 
         GRAPH_EXISTS_QUERY = """
             CALL gds.graph.exists('kg_graph') YIELD exists
@@ -459,7 +465,7 @@ class Neo4jKGProvider(KGProvider):
         """
 
         result = self.structured_query(GRAPH_EXISTS_QUERY)
-        graph_exists = result.records[0]['graphExists']
+        graph_exists = result.records[0]["graphExists"]
 
         GRAPH_PROJECTION_QUERY = ""
 
@@ -502,17 +508,21 @@ class Neo4jKGProvider(KGProvider):
         seed_property = leiden_params.get("seed_property", "communityIds")
         write_property = leiden_params.get("write_property", "communityIds")
         random_seed = leiden_params.get("random_seed", 42)
-        include_intermediate_communities = leiden_params.get("include_intermediate_communities", True)
+        include_intermediate_communities = leiden_params.get(
+            "include_intermediate_communities", True
+        )
 
         # don't use the seed property for now
-        seed_property_config = "" # f"seedProperty: '{seed_property}'" if graph_exists else ""
+        seed_property_config = (
+            ""  # f"seedProperty: '{seed_property}'" if graph_exists else ""
+        )
 
         GRAPH_CLUSTERING_QUERY = f"""
             CALL gds.leiden.write('kg_graph', {{     
                 seedProperty: '{seed_property}',
                 {seed_property_config}
                 writeProperty: '{write_property}',
-                randomSeed: {random_seed},
+                randomSeed: '{random_seed}',
                 includeIntermediateCommunities: {include_intermediate_communities}
             }})
             YIELD communityCount, modularities;
@@ -520,9 +530,11 @@ class Neo4jKGProvider(KGProvider):
 
         result = self.structured_query(GRAPH_CLUSTERING_QUERY).records[0]
 
-        community_count = result['communityCount']
-        modularities = result['modularities']
+        community_count = result["communityCount"]
+        modularities = result["modularities"]
 
-        logger.info(f"Performed graph clustering with {community_count} communities and modularities {modularities}")
+        logger.info(
+            f"Performed graph clustering with {community_count} communities and modularities {modularities}"
+        )
 
         return (community_count, len(modularities))

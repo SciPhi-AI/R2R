@@ -1,6 +1,5 @@
 import os
-import socket
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -9,9 +8,6 @@ from cli.utils.docker_utils import (
     bring_down_docker_compose,
     build_docker_command,
     check_llm_reqs,
-    check_set_docker_env_vars,
-    check_subnet_conflict,
-    find_available_port,
     remove_r2r_network,
 )
 
@@ -73,8 +69,9 @@ def test_build_docker_command():
         False,
         False,
         "test_project",
-        None,
         "test_image",
+        None,
+        None,
     )
     assert (
         "docker compose -f base.yaml -f neo4j.yaml -f ollama.yaml -f postgres.yaml"

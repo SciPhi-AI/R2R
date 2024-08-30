@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.0.6"
+version = "3.0.8"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -31,6 +31,7 @@ python-dotenv = "^1.0.1"
 nltk = "^3.9.1"
 
 # Core dependencies (optional)
+future = { version = "^1.0.0", optional = true }
 openai = { version = "^1.11.1", optional = true }
 pydantic = { extras = ["email"], version = "^2.8.2", optional = true }
 python-multipart = { version = "^0.0.9", optional = true }
@@ -64,10 +65,11 @@ poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
+unstructured-client = {version = "^0.25.5", optional = true, extras = ["core"]}
 
 [tool.poetry.extras]
 core = [
-    "pydantic", "python-multipart", "fire", "gunicorn",
+    "future", "pydantic", "python-multipart", "fire", "gunicorn", "unstructured-client",
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
     "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
@@ -125,7 +127,7 @@ download-nltk-data = "scripts.download_nltk_data:download_nltk_data"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
+addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml --cache-clear"
 testpaths = [
     "tests",
 ]

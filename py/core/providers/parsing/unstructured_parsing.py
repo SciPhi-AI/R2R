@@ -4,6 +4,9 @@ import time
 from io import BytesIO
 from typing import AsyncGenerator
 
+from unstructured_client import UnstructuredClient
+from unstructured_client.models import operations, shared
+
 from core.base import (
     Document,
     DocumentExtraction,
@@ -25,21 +28,11 @@ class UnstructuredParsingProvider(ParsingProvider):
         self.use_api = use_api
         if self.use_api:
             try:
-                from unstructured_client import UnstructuredClient
-                from unstructured_client.models import operations, shared
-                from unstructured_client.models.errors import SDKError
-
-            except ImportError:
-                raise ImportError(
-                    "Please install the unstructured package to use the unstructured parsing provider."
-                )
-
-            try:
                 self.unstructured_api_auth = os.environ["UNSTRUCTURED_API_KEY"]
-            except KeyError:
+            except KeyError as e:
                 raise ValueError(
                     "UNSTRUCTURED_API_KEY environment variable is not set"
-                )
+                ) from e
 
             self.unstructured_api_url = os.environ.get(
                 "UNSTRUCTURED_API_URL",
@@ -59,10 +52,10 @@ class UnstructuredParsingProvider(ParsingProvider):
 
                 self.partition = partition
 
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "Please install the unstructured package to use the unstructured parsing provider."
-                )
+                ) from e
 
         super().__init__(config)
 
@@ -98,32 +91,30 @@ class UnstructuredParsingProvider(ParsingProvider):
                 f"Using local unstructured to parse document {document.id}"
             )
             elements = self.partition(
-                file=data, **self.config.chunking_config.dict()
+                file=data, **self.config.chunking_config.model_dump()
             )
 
         for iteration, element in enumerate(elements):
-
             for key, value in element.items():
-                if key != "text":
-                    if key == "metadata":
-                        for k, v in value.items():
-                            if k not in document.metadata:
-                                document.metadata[k] = v
-                            else:
-                                document.metadata[f"unstructured_{k}"] = v
-                    elif key in document.metadata:
-                        document.metadata[f"unstructured_{key}"] = value
-                    else:
-                        document.metadata[key] = value
-                else:
+                if key == "text":
                     text = value
+                elif key == "metadata":
+                    for k, v in value.items():
+                        if k not in document.metadata:
+                            document.metadata[k] = v
+                        else:
+                            document.metadata[f"unstructured_{k}"] = v
+                elif key in document.metadata:
+                    document.metadata[f"unstructured_{key}"] = value
+                else:
+                    document.metadata[key] = value
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline
             document.metadata["partitioned_by_unstructured"] = True
 
             # creating the text extraction
-            extraction = DocumentExtraction(
+            yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,
                 user_id=document.user_id,
@@ -131,8 +122,6 @@ class UnstructuredParsingProvider(ParsingProvider):
                 data=text,
                 metadata=document.metadata,
             )
-
-            yield extraction
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

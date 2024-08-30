@@ -11,8 +11,6 @@ import click
 import requests
 from requests.exceptions import RequestException
 
-from sdk import R2RClient
-
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
@@ -111,7 +109,7 @@ def run_docker_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
-    check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
+    check_set_docker_env_vars(exclude_neo4j, exclude_ollama, exclude_postgres)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -133,8 +131,9 @@ def run_docker_serve(
         exclude_ollama,
         exclude_postgres,
         project_name,
-        config_path,
         image,
+        config_name,
+        config_path,
     )
 
     click.echo("Starting Docker Compose setup...")
@@ -219,7 +218,9 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             sys.exit(1)
 
 
-def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
+def check_set_docker_env_vars(
+    exclude_neo4j=False, exclude_ollama=True, exclude_postgres=False
+):
     env_vars = []
     if not exclude_neo4j:
         neo4j_vars = [
@@ -227,7 +228,6 @@ def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
             "NEO4J_PASSWORD",
             "NEO4J_URL",
             "NEO4J_DATABASE",
-            "OLLAMA_API_BASE",
         ]
         env_vars.extend(neo4j_vars)
 
@@ -242,6 +242,12 @@ def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
         ]
         env_vars.extend(postgres_vars)
 
+    if not exclude_ollama:
+        ollama_vars = [
+            "OLLAMA_API_BASE",
+        ]
+        env_vars.extend(ollama_vars)
+
     is_test = (
         "pytest" in sys.modules
         or "unittest" in sys.modules
@@ -254,7 +260,6 @@ def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
                 warning_text = click.style("Warning:", fg="red", bold=True)
                 prompt = (
                     f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
-                    f"Set --exclude-postgres=true to avoid deploying a Postgres instance with R2R.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"
                 )
                 if click.confirm(prompt, default=True):
@@ -269,6 +274,7 @@ def set_config_env_vars(obj):
         os.environ["CONFIG_PATH"] = config_path
     else:
         os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
+
 
 def get_compose_files():
     package_dir = os.path.join(
@@ -316,8 +322,9 @@ def build_docker_command(
     exclude_ollama,
     exclude_postgres,
     project_name,
-    config_path,
     image,
+    config_name,
+    config_path,
 ):
     available_port = find_available_port(port)
 
@@ -334,12 +341,14 @@ def build_docker_command(
     os.environ["PORT"] = str(available_port)
     os.environ["HOST"] = host
     os.environ["TRAEFIK_PORT"] = str(available_port + 1)
-
-    os.environ["CONFIG_PATH"] = (
-        os.path.abspath(config_path) if config_path else ""
-    )
-
     os.environ["R2R_IMAGE"] = image or ""
+
+    if config_name is not None:
+        os.environ["CONFIG_NAME"] = config_name
+    elif config_path:
+        os.environ["CONFIG_PATH"] = (
+            os.path.abspath(config_path) if config_path else ""
+        )
 
     command += " up -d"
     return command

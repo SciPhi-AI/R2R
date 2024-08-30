@@ -18,12 +18,12 @@ from core.base import (
     Community,
     CompletionProvider,
     EmbeddingProvider,
+    Entity,
     KGEnrichmentSettings,
     KGProvider,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
-    Entity,
     Triple,
 )
 
@@ -60,15 +60,14 @@ class KGClusteringPipe(AsyncPipe):
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
-    def community_summary_prompt(self, prompt: str, entities: list[Entity], triples: list[Triple]):
+    def community_summary_prompt(
+        self, prompt: str, entities: list[Entity], triples: list[Triple]
+    ):
         """
-            Preparing the list of entities and triples to be summarized and created into a community summary.
+        Preparing the list of entities and triples to be summarized and created into a community summary.
         """
         entities_info = "\n".join(
-            [
-                f"{entity.name}, {entity.description}"
-                for entity in entities
-            ]
+            [f"{entity.name}, {entity.description}" for entity in entities]
         )
 
         triples_info = "\n".join(
@@ -80,16 +79,18 @@ class KGClusteringPipe(AsyncPipe):
 
         return prompt.format(entities=entities_info, triples=triples_info)
 
-    async def process_community(self, community_id: str, settings: KGEnrichmentSettings) -> dict:
+    async def process_community(
+        self, community_id: str, settings: KGEnrichmentSettings
+    ) -> dict:
         """
-            Process a community by summarizing it and creating a summary embedding.
+        Process a community by summarizing it and creating a summary embedding.
 
-            Input:
-            - community_id: The ID of the community to process. This is a string that is constructed by the neo4j leiden clustering algorithm.
+        Input:
+        - community_id: The ID of the community to process. This is a string that is constructed by the neo4j leiden clustering algorithm.
 
-            Output:
-            - A dictionary with the community id and the title of the community.
-            - Output format: {"id": community_id, "title": title}
+        Output:
+        - A dictionary with the community id and the title of the community.
+        - Output format: {"id": community_id, "title": title}
         """
 
         input_text = """
@@ -102,26 +103,36 @@ class KGClusteringPipe(AsyncPipe):
 
         """
 
-        entities, triples = self.kg_provider.get_entities_and_triples(community_id = community_id)
+        entities, triples = self.kg_provider.get_entities_and_triples(
+            community_id=community_id
+        )
 
-        description = await self.llm_provider.aget_completion(
-            messages=self.prompt_provider._get_message_payload(
-                task_prompt_name="graphrag_community_reports",
-                task_inputs={
-                    "input_text": self.community_summary_prompt(input_text, entities, triples),
-                },
-            ),
-            generation_config=settings.generation_config_enrichment,
-        ).choices[0].message.content
+        description = (
+            await self.llm_provider.aget_completion(
+                messages=self.prompt_provider._get_message_payload(
+                    task_prompt_name="graphrag_community_reports",
+                    task_inputs={
+                        "input_text": self.community_summary_prompt(
+                            input_text, entities, triples
+                        ),
+                    },
+                ),
+                generation_config=settings.generation_config_enrichment,
+            )
+            .choices[0]
+            .message.content
+        )
 
         community = Community(
             id=community_id,
             summary=description,
-            summary_embedding=await self.embedding_provider.async_get_embedding(description),
+            summary_embedding=await self.embedding_provider.async_get_embedding(
+                description
+            ),
         )
 
         self.kg_provider.upsert_communities([community])
-        
+
         try:
             summary = json.loads(community.summary)
         except:
@@ -129,19 +140,23 @@ class KGClusteringPipe(AsyncPipe):
 
         return {"id": community.id, "title": summary["title"]}
 
-
-    async def get_communities(self, filters: dict, settings: KGEnrichmentSettings = KGEnrichmentSettings()):
+    async def get_communities(
+        self,
+        filters: dict,
+        settings: KGEnrichmentSettings = KGEnrichmentSettings(),
+    ):
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
-        num_communities, num_hierarchies = self.kg_provider.perform_graph_clustering(settings.leiden_params)
-        
+        num_communities, num_hierarchies = (
+            self.kg_provider.perform_graph_clustering(settings.leiden_params)
+        )
+
         for i in range(num_communities):
             for j in range(num_hierarchies):
                 community_id = f"{i}_{j}"
                 yield await self.process_community(community_id, settings)
 
-    
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
@@ -166,8 +181,6 @@ class KGClusteringPipe(AsyncPipe):
         async for node in input.message:
             all_nodes.append(node)
 
-        async for community in self.cluster_kg(
-            {}, kg_enrichment_settings
-        ):
+        async for community in self.cluster_kg({}, kg_enrichment_settings):
             community = await self.process_community(community)
             yield community
