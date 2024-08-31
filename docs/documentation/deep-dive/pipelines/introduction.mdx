@@ -1,0 +1,100 @@
+---
+title: 'Pipelines'
+description: 'Learn about the R2R uses pipelines'
+---
+
+## Introduction
+
+R2R employs a sophisticated pipeline architecture to process data efficiently and flexibly. This modular approach allows for easy customization, extension, and maintenance of complex data processing workflows. Pipelines in R2R are composed of a series of `AsyncPipe` instances, each responsible for a specific task in the data processing sequence.
+
+## Key Concepts
+
+### AsyncPipe
+
+`AsyncPipe` is the fundamental building block of R2R pipelines. It defines a standard interface for asynchronous data processing with advanced features:
+
+#### Key Features of AsyncPipe
+
+- **Asynchronous Processing**: Leverages Python's `async/await` syntax for efficient I/O operations.
+- **Typed Inputs**: Defines input structure using Pydantic models, ensuring type safety.
+- **State Management**: Interacts with a shared `AsyncState` object for complex, stateful operations.
+- **Configurability**: Uses a `PipeConfig` for customization, enabling adaptability to various use cases.
+- **Integrated Logging**: Includes a built-in logging system with a log worker for efficient log management.
+
+```python
+class AsyncPipe:
+    class PipeConfig(BaseModel):
+        name: str = "default_pipe"
+        max_log_queue_size: int = 100
+
+    class Input(BaseModel):
+        message: AsyncGenerator[Any, None]
+
+    async def run(self, input: Input, state: AsyncState, run_manager: Optional[RunManager] = None, *args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
+        # Run logic with logging capabilities...
+
+    @abstractmethod
+    async def _run_logic(self, input: Input, state: AsyncState, run_id: uuid.UUID, *args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
+        pass
+```
+
+### AsyncState
+
+`AsyncState` is a thread-safe state object used for storing and managing data between pipes:
+
+```python
+class AsyncState:
+    async def update(self, outer_key: str, values: dict):
+        # Update the state with new values...
+
+    async def get(self, outer_key: str, inner_key: str, default=None):
+        # Get a value from the state...
+
+    async def delete(self, outer_key: str, inner_key: Optional[str] = None):
+        # Delete a value from the state...
+```
+
+### AsyncPipeline
+
+`AsyncPipeline` manages the execution of a sequence of `AsyncPipe` instances:
+
+#### Key Aspects of AsyncPipeline
+
+- **Flexible Composition**: Can be composed of any number and type of pipes.
+- **Data Flow Management**: Ensures output from one pipe becomes input for the next.
+- **Parallel Processing Support**: Allows for concurrent execution of pipes where applicable.
+- **Comprehensive Error Handling**: Manages errors and exceptions across the entire process.
+- **Stream Processing**: Supports both streaming and non-streaming modes of operation.
+
+```python
+class AsyncPipeline:
+    def add_pipe(self, pipe: AsyncPipe, add_upstream_outputs: Optional[list[dict[str, str]]] = None, *args, **kwargs) -> None:
+        # Add a pipe to the pipeline...
+
+    async def run(self, input: Any, state: Optional[AsyncState] = None, stream: bool = False, run_manager: Optional[RunManager] = None, log_run_info: bool = True, *args: Any, **kwargs: Any):
+        # Run the pipeline...
+```
+
+## Pipeline Types in R2R
+
+R2R implements several specialized pipeline types, defined in the `PipelineTypes` enum:
+
+- **EVAL**: For evaluation tasks.
+- **INGESTION**: For processing and storing input documents.
+- **SEARCH**: For retrieving relevant information from stored data.
+- **RAG**: For Retrieval-Augmented Generation tasks.
+- **OTHER**: For custom or miscellaneous pipeline types.
+
+Each specialized pipeline, like `EvalPipeline`, extends the base `AsyncPipeline` class with type-specific functionality.
+
+## Advanced Features
+
+- **Upstream Outputs**: Pipes can access outputs from previous pipes, allowing for complex data flow patterns.
+- **Run Management**: The `RunManager` class provides utilities for managing and logging pipeline runs.
+- **Asynchronous Generator Handling**: The pipeline can work with nested asynchronous generators, consuming them as needed.
+
+## Conclusion
+
+R2R's pipeline architecture provides a powerful and flexible foundation for building sophisticated data processing applications. The combination of `AsyncPipe`, `AsyncState`, and `AsyncPipeline` classes, along with specialized pipeline types and advanced features like upstream output handling, enables developers to create efficient, scalable, and maintainable solutions for complex information retrieval and generation tasks.
+
+For more detailed information on specific pipeline types and advanced usage, refer to the individual pipeline documentation pages and the API reference.

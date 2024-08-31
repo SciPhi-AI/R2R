@@ -1,0 +1,214 @@
+---
+title: 'GraphRAG'
+description: 'Learn how to build and use GraphRAG with R2R'
+icon: 'signal'
+---
+
+## Introduction 
+
+GraphRAG is a powerful feature of R2R that allows you to perform graph-based search and retrieval. This guide will walk you through the process of setting up and using Graph RAG using R2R. 
+
+<Note> This cookbook assumes that you have already created a knowledge graph using R2R. If not, please refer to the [knowledge graph](/cookbooks/knowledge-graph) cookbook. </Note>
+
+In this example, we'll query over the graph of YC Summer 2024 startups. You can interact with the graph using neo4j [here](https://sciphi.ai/graph-rag-demo).
+
+<Info>
+Knowledge graphs in R2R are still underdevelopment. Related API and interfaces are likely to evolve. Further, permisisoning is not yet supported over created graphs.
+</Info>
+
+
+![YC S24 Knowledge Graph](../images/yc_s24.png)
+
+<Note>
+Note that you may get limited performance on GraphRAG if your graphs were created using local models. For this cookbook, we recommend constructing your graph using gpt-4o-mini.
+</Note>
+
+
+## Start server 
+
+First you start your server with the same configuration that was used in the [knowledge graph](/cookbooks/knowledge-graph) cookbook. 
+
+
+```bash
+r2r serve --config-name=neo4j_kg
+```
+
+## Graph Enrichment
+
+The ingestion from the last cookbook has created a graph with nodes and relationships. Now we will run the graph enrichment step which adds node and relationship description summaries, performs hierarchical leiden clustering, and creates embeddings of their descriptions. These embeddings will be used later in the local search stage of the pipeline. If you are more interested in the algorithm, please refer to the blog post [here](https://www.sciphi.ai/blog/graphrag).
+
+```bash
+r2r enrich-graph
+```
+
+### Visualization
+
+The graph should now be ready to use. You can visualize it in the neo4j browser or using the following command. 
+
+```bash
+r2r inspect-knowledge-graph 
+```
+
+The output should be as follows:
+
+```
+== Lilac Labs ==
+  Offers:
+    - Voice AI Drive-Thru Solution
+  Co-Founder:
+    - Tony
+    - Shelden
+
+== Lumenary ==
+  Founded by:
+    - Daniel DiPietro
+  HAS_PARTNER:
+    - Surbhi Sarna
+
+== Daniel DiPietro ==
+  Co-founder:
+    - Lumenary
+
+== Ziray Hao ==
+  Co-founder:
+    - Lumenary
+
+== Vivek Hazari ==
+  Co-founder and CEO:
+    - Lumenary
+  Former Employee:  
+    - Palantir Technologies
+```
+
+## Search 
+
+GraphRAG currently supports two types of searches: local and global. 
+
+
+### Local search
+
+Local searches are faster and cheaper, they perform similarity search on the entity, relationship and community description embeddings. 
+
+```bash 
+r2r search --query="What does Parley do?" --use-kg-search --kg-search-type=local
+```
+
+The answer will be returned in JSON format and contains results from entities, relationships and communities. Following is a snippet of the output:  
+
+```json
+{
+  "Parley": {
+    "name": "Parley",
+    "description": "Parley is a San Francisco-based startup founded in 2024 that specializes in automating visa application processes to enhance the efficiency of immigration attorneys. The company, which is part of Y Combinator's S24 cohort, develops tools like the O-1A Visa Writer to streamline the drafting of visa petitions. With a small team of three co-founders, including Ian Edwards, Jackson, and Philip, Parley aims to simplify immigration complexities through innovative legaltech solutions."
+  }
+}
+```
+
+### Global search
+
+Global searches can be used for queries that require reasoning over the whole dataset. They provide more accurate results, however they use a large amount of queries and are expensive. We recommend checking the number of clusters created in the graph and setting the `max-llm-queries` to be a fraction (> 0.1) of that number.
+
+```bash 
+r2r search --query="In this batch, which companies are building AI agents?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
+```
+
+The answer will be returned in markdown format as follows: 
+
+```markdown
+
+### Companies Working with AI Agents
+
+Several companies in this batch are actively working with AI agents, leveraging advanced technologies to enhance their operations across various sectors. Below is a detailed overview of these companies and their specific applications of AI agents.
+
+#### Ångström AI
+Ångström AI specializes in generative AI molecular simulations, particularly for drug discovery. Their technology aims to replace traditional wet lab experiments with AI-driven simulations, significantly accelerating drug development processes [Data: Reports (1, 2, 3, 4, 5)].
+
+#### Kastle
+Kastle provides AI solutions for mortgage lenders, automating labor-intensive tasks such as collecting payments and handling customer inquiries. This automation significantly enhances operational efficiency for traditional lenders [Data: Reports (1, 2, 3, 4, 5)].
+
+#### Scale AI
+Scale AI focuses on artificial intelligence solutions and the Miru deployment platform, facilitating connections between developers and data providers. This enhances user experience and fosters innovation in AI technologies [Data: Reports (1, 2, 3, 4, 5)].
+
+#### Zenbase AI
+Zenbase AI automates the process of prompt engineering, enhancing the efficiency of developers working with AI technologies. Their SDK facilitates the integration of its capabilities into production environments [Data: Reports (Zenbase AI)].
+
+#### Corgi
+Corgi leverages artificial intelligence to streamline insurance processes such as policy acquisition and claims filing. Their model provides users with instant support for claims and facilitates document retrieval and application autofilling [Data: Reports (Corgi, HAMMURABI)].
+
+#### Mineflow
+Mineflow utilizes artificial intelligence to enhance mineral exploration and improve the accuracy of predictions related to mineral deposits. This technology assists mining companies in making informed decisions during exploration [Data: Reports (Mineflow)].
+
+#### AI Applied Engineers
+AI Applied Engineers focus on the development of AI technologies, relying heavily on venture capital for funding and often operating in stealth mode to protect their innovations [Data: Reports (1, 2, 3, 4)].
+
+#### Child and AI Buddy Community
+This community involves AI agents in the form of AI buddies designed to support children's learning and play, enhancing educational experiences in a digital environment [Data: Reports (1, 2, 3, 4)].
+
+#### Lilac
+Lilac specializes in automating order-taking at drive-thrus using voice AI technology, aiming to enhance operational efficiency in the fast food sector [Data: Reports (1, 2, 3, 4)].
+
+#### Laminar AI
+Laminar AI is developing a platform for building and deploying large language model (LLM) agents, enabling developers to create AI systems more efficiently [Data: Reports (1, 2)].
+
+#### Pipeshift AI
+Pipeshift AI focuses on providing infrastructure for fine-tuning and inferencing open-source language models (LLMs), playing a significant role in AI operations [Data: Reports (4)].
+
+#### Wordware
+Wordware provides a collaborative IDE for building AI agents and applications, enabling users to create complex AI solutions efficiently [Data: Reports (Wordware and AI Innovation Community, 1, 4)].
+
+#### Overeasy
+Overeasy is developing IRIS, an AI agent that automates the labeling of visual data for computer vision models, known for its state-of-the-art performance in zero-shot detection [Data: Reports (2, 6, 12)].
+
+#### &AI
+&AI focuses on automating patent due diligence processes using AI, enhancing the efficiency of legal practices by quickly analyzing thousands of patents [Data: Reports (8, 9, 10; 14, 15, 16)].
+
+#### Henry
+Henry is an AI copilot designed for commercial real estate brokers, integrating internal brokerage data with external sources to enhance transaction insights and operational efficiency [Data: Reports (Henry, Brokerage, Aids in Transactions)].
+
+#### Distro
+Distro is an AI-powered sales platform designed for industrial wholesale distributors, streamlining point-of-sale processes by converting complex customer requests into real-time product information and quotes [Data: Reports (1, 2, 3, 4, 5)].
+
+#### Remade
+Remade utilizes generative AI technology to enhance product photography, providing businesses with high-quality images at reduced costs and time [Data: Reports (2)].
+
+#### Maitai
+Maitai offers a fully managed, self-healing LLM stack that competes with leading models like GPT-4, allowing organizations to leverage advanced AI technology without the complexity typically associated with such integrations [Data: Reports (1, 2, 3, 4, 5)].
+
+#### Arva AI
+Arva AI automates the KYB onboarding process for banks and fintechs, significantly reducing the time and cost associated with traditional onboarding methods [Data: Reports (1, 8, 10, 12)].
+
+#### ClaimSorted
+ClaimSorted focuses on automating insurance claims management through AI, enhancing the efficiency of insurance
+```
+
+## Rag 
+
+You can directly use these search results as part of your RAG pipeline. 
+
+```bash
+r2r rag --query="Which companies in this batch have the highest chance of success?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
+```
+
+The output is as follows:
+```markdown
+Based on the provided context, the companies with the highest chance of success in this batch are:
+
+1. **Corgi**: This company has a strong team with four co-founders, including two successful repeat founders who have built products for hundreds of millions of users [2]. Their experience and industry knowledge significantly increase their chances of success.
+
+2. **Unbound Security**: The founders of Unbound Security have impressive backgrounds, with experience at notable companies like Palo Alto Networks, Adobe, Shogun, and Tophatter [3]. Their expertise in building data security for Gen AI apps positions them well for success.
+
+3. **SureBright Technologies, Inc.**: The CTO and co-founder, Sanket Munjal, is a second-time founder with a strong background in leading engineering teams at major companies like Policybazaar.com, Philips, and Samsung [4]. This experience, combined with their rapid progress and recognition in the fintech space, enhances their potential for success [5].
+
+4. **Formula Insight**: Co-founder and CEO Will Tong brings a decade of financial expertise, including managing a healthcare equities portfolio at Citadel, where he was recognized as a top equity analyst [9]. This strong financial background and industry knowledge are critical for their success in the SaaS and enterprise software space [10].
+
+These companies stand out due to their innovative approaches, strategic market positioning, and strong leadership, making them the most likely to succeed in this batch
+```
+
+
+# Conclusion 
+
+In conclusion, integrating R2R with GraphRAG significantly enhances the capabilities of your RAG applications. By leveraging the power of graph-based knowledge representations, GraphRAG allows for more nuanced and context-aware information retrieval. This is evident in the example query we ran using R2R, which not only retrieved relevant information but also provided a structured analysis of the companies most likely to succeed. 
+
+In essence, combining R2R with GraphRAG empowers your RAG applications to deliver more intelligent, context-aware, and insightful responses, making it a powerful tool for advanced information retrieval and analysis tasks.
+
+Feel free to reach out to us at founders@sciphi.ai if you have any questions or need further assistance.
