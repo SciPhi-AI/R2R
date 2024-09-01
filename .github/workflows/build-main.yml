@@ -32,6 +32,8 @@ jobs:
       id-token: write
       actions: write
     timeout-minutes: 720
+    env:
+      BUILDX_NO_DEFAULT_ATTESTATIONS: 1
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -76,6 +78,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
+          provenance: false
+          sbom: false
 
       - name: Build and Push Docker Image (Unstructured)
         uses: docker/build-push-action@v5
@@ -86,6 +90,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}-unstructured
           labels: ${{ steps.meta.outputs.labels }}-unstructured
           platforms: linux/amd64
+          provenance: false
+          sbom: false
 
   build-and-publish-arm64:
     needs: prepare
@@ -96,6 +102,8 @@ jobs:
       id-token: write
       actions: write
     timeout-minutes: 720
+    env:
+      BUILDX_NO_DEFAULT_ATTESTATIONS: 1
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -140,6 +148,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64
+          provenance: false
+          sbom: false
 
       - name: Build and Push Docker Image (Unstructured)
         uses: docker/build-push-action@v5
@@ -150,6 +160,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}-unstructured
           labels: ${{ steps.meta.outputs.labels }}-unstructured
           platforms: linux/arm64
+          provenance: false
+          sbom: false
 
   create-manifest:
     needs: [prepare, build-and-publish-amd64, build-and-publish-arm64]
@@ -163,24 +175,27 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker manifest create ragtoriches/prod:${{ needs.prepare.outputs.release_version }} \
-            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-amd64 \
-            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-arm64
-          docker manifest push ragtoriches/prod:${{ needs.prepare.outputs.release_version }}
+          docker buildx imagetools create -t ragtoriches/prod:${{ needs.prepare.outputs.release_version }} \
+            ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-arm64
 
-          docker manifest create ragtoriches/prod:latest \
-            --amend ragtoriches/prod:latest-amd64 \
-            --amend ragtoriches/prod:latest-arm64
-          docker manifest push ragtoriches/prod:latest
+          docker buildx imagetools create -t ragtoriches/prod:latest \
+            ragtoriches/prod:latest-amd64 \
+            ragtoriches/prod:latest-arm64
 
       - name: Create and push manifest (Unstructured)
         run: |
-          docker manifest create ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-unstructured \
-            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-amd64-unstructured \
-            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-arm64-unstructured
-          docker manifest push ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-unstructured
+          docker buildx imagetools create -t ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-unstructured \
+            ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-amd64-unstructured \
+            ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-arm64-unstructured
 
-          docker manifest create ragtoriches/prod:latest-unstructured \
-            --amend ragtoriches/prod:latest-amd64-unstructured \
-            --amend ragtoriches/prod:latest-arm64-unstructured
-          docker manifest push ragtoriches/prod:latest-unstructured
+          docker buildx imagetools create -t ragtoriches/prod:latest-unstructured \
+            ragtoriches/prod:latest-amd64-unstructured \
+            ragtoriches/prod:latest-arm64-unstructured
+
+      - name: Verify manifests
+        run: |
+          docker buildx imagetools inspect ragtoriches/prod:${{ needs.prepare.outputs.release_version }}
+          docker buildx imagetools inspect ragtoriches/prod:latest
+          docker buildx imagetools inspect ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-unstructured
+          docker buildx imagetools inspect ragtoriches/prod:latest-unstructured
