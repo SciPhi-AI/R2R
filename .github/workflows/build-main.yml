@@ -64,8 +64,8 @@ jobs:
             ragtoriches/prod
             us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r
           tags: |
-            type=raw,value=${{ needs.prepare.outputs.release_version }}
-            type=raw,value=latest
+            type=raw,value=${{ needs.prepare.outputs.release_version }}-amd64
+            type=raw,value=latest-amd64
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -128,8 +128,8 @@ jobs:
             ragtoriches/prod
             us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r
           tags: |
-            type=raw,value=${{ needs.prepare.outputs.release_version }}
-            type=raw,value=latest
+            type=raw,value=${{ needs.prepare.outputs.release_version }}-arm64
+            type=raw,value=latest-arm64
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -150,3 +150,37 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}-unstructured
           labels: ${{ steps.meta.outputs.labels }}-unstructured
           platforms: linux/arm64
+
+  create-manifest:
+    needs: [prepare, build-and-publish-amd64, build-and-publish-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+
+      - name: Create and push manifest
+        run: |
+          docker manifest create ragtoriches/prod:${{ needs.prepare.outputs.release_version }} \
+            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-amd64 \
+            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-arm64
+          docker manifest push ragtoriches/prod:${{ needs.prepare.outputs.release_version }}
+
+          docker manifest create ragtoriches/prod:latest \
+            --amend ragtoriches/prod:latest-amd64 \
+            --amend ragtoriches/prod:latest-arm64
+          docker manifest push ragtoriches/prod:latest
+
+      - name: Create and push manifest (Unstructured)
+        run: |
+          docker manifest create ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-unstructured \
+            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-amd64-unstructured \
+            --amend ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-arm64-unstructured
+          docker manifest push ragtoriches/prod:${{ needs.prepare.outputs.release_version }}-unstructured
+
+          docker manifest create ragtoriches/prod:latest-unstructured \
+            --amend ragtoriches/prod:latest-amd64-unstructured \
+            --amend ragtoriches/prod:latest-arm64-unstructured
+          docker manifest push ragtoriches/prod:latest-unstructured
