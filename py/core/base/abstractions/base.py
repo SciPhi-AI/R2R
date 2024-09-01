@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Type, TypeVar
+import json
+from typing import Any, Type, TypeVar, Union
 
 from pydantic import BaseModel
 
@@ -8,7 +9,9 @@ T = TypeVar("T", bound="R2RSerializable")
 
 class R2RSerializable(BaseModel):
     @classmethod
-    def from_dict(cls: Type[T], data: dict[str, Any]) -> T:
+    def from_dict(cls: Type[T], data: Union[dict[str, Any], str]) -> T:
+        if isinstance(data, str):
+            data = json.loads(data)
         return cls(**data)
 
     def to_dict(self) -> dict[str, Any]:

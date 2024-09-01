@@ -62,7 +62,7 @@ class KGNodeExtractionPipe(AsyncPipe):
     ) -> AsyncGenerator[Any, None]:
 
         len_input = 0
-        async for message in input.message:
+        for message in input.message:
             len_input += len(message)
 
         logger.info(f"Processing {len_input} chunks")
