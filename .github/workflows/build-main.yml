@@ -30,7 +30,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          echo "matrix={\"include\":[{\"platform\":\"linux/amd64\",\"runner\":\"amd2\"},{\"platform\":\"linux/arm64\",\"runner\":\"arm2\"}]}" >> $GITHUB_OUTPUT
+          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"amd2\"},{\"platform\":\"arm64\",\"runner\":\"arm2\"}]}" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
@@ -86,22 +86,22 @@ jobs:
       - name: Create and push default manifest
         run: |
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-linux/amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-linux/arm64
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
 
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-linux/amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-linux/arm64
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
 
       - name: Create and push unstructured manifest
         run: |
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-linux/amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-linux/arm64
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-arm64
 
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest-unstructured \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-linux/amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-linux/arm64
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-arm64
 
       - name: Verify manifests
         run: |
