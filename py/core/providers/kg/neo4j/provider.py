@@ -380,24 +380,27 @@ class Neo4jKGProvider(KGProvider):
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
         return False
 
-    def vector_query(self, query, **kwargs: Any) -> Dict[str, Any]:
+    def vector_query(self, query, **kwargs: Any) -> dict[str, Any]:
 
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "__Entity__")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get(
-            "property_names", ["name", "description", "summary"]
+            "property_names", ["name", "description"]
         )
         limit = kwargs.get("limit", 10)
 
-        if search_type == "__Relationship__":
 
+        property_names_arr = [f"e.{property_name} as {property_name}" for property_name in property_names]
+        property_names_str = ", ".join(property_names_arr)
+
+        if search_type == "__Relationship__":
             query = f"""
                 MATCH () - [e] -> ()
                 WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
                 WITH e, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
                 ORDER BY score DESC LIMIT toInteger($limit)
-                RETURN e, score
+                RETURN {property_names_str}, score
             """
 
             query_params = {
@@ -412,7 +415,7 @@ class Neo4jKGProvider(KGProvider):
                 WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
                 WITH e, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
                 ORDER BY score DESC LIMIT toInteger($limit)
-                RETURN e, score
+                RETURN {property_names_str}, score
             """
             query_params = {
                 "embedding": query_embedding,
@@ -426,16 +429,10 @@ class Neo4jKGProvider(KGProvider):
         # get the descriptions from the neo4j results
         # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
         # return descriptions, scores
-
+        import pdb; pdb.set_trace()
         ret = {}
-        for record in neo4j_results.records:
-            ret[record["e"]._properties["name"]] = {}
-
-            for property_name in property_names:
-                if property_name in record["e"]._properties:
-                    ret[record["e"]._properties["name"]][property_name] = (
-                        record["e"]._properties[property_name]
-                    )
+        for i, record in enumerate(neo4j_results.records):
+            ret[str(i)] = {property_name: record[property_name] for property_name in property_names}
 
         return ret
 

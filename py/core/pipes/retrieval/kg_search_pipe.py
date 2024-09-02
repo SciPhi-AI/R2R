@@ -130,6 +130,8 @@ class KGSearchSearchPipe(GeneratorPipe):
                         search_type
                     ],
                     query_embedding=query_embedding,
+                    embedding_type= 'summary_embedding' if search_type == '__Community__' else 'description_embedding',
+                    property_names = ['summary'] if search_type == '__Community__' else ['name', 'description']
                 )
                 all_search_results.append(search_result)
 
