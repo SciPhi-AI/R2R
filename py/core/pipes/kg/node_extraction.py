@@ -180,12 +180,13 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 entity.description_embedding = description_embedding[0]
 
                 # name embedding
-                name_embedding = (
-                    await self.embedding_provider.async_get_embeddings(
-                        [entity.name]
-                    )
-                )
-                entity.name_embedding = name_embedding[0]
+                # turned it off because we aren't using it for now
+                # name_embedding = (
+                #     await self.embedding_provider.async_get_embeddings(
+                #         [entity.name]
+                #     )
+                # )
+                # entity.name_embedding = name_embedding[0]
 
                 out_entity = entity
 
