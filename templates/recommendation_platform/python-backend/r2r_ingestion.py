@@ -9,11 +9,11 @@ client = R2RClient("YOUR_SCIPHI_DEPLOYMENT_URL")
 # Check server health
 health_response = client.health()
 if health_response["response"] != "ok":
-    raise Exception("Unable to connect to the R2R server.")
+    raise ConnectionError("Unable to connect to the R2R server.")
 
 # Path to the original CSV file from DataSF
 input_csv_path = (
-    "sfpopos/web-app/public/data/Privately_Owned_Public_Open_Spaces_20240809.csv"
+    "/public/data/Privately_Owned_Public_Open_Spaces_20240809.csv"
 )
 
 # Read the CSV file and process each row as a separate file
