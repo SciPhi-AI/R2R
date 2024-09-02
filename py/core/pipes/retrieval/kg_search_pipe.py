@@ -162,6 +162,12 @@ class KGSearchSearchPipe(GeneratorPipe):
                 level=kg_search_settings.kg_search_level
             )
 
+            if len(communities) == 0:
+                raise R2RException(
+                    "No communities found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph",
+                    400,
+                )
+
             async def preprocess_communities(communities):
                 merged_report = ""
                 for community in communities:
