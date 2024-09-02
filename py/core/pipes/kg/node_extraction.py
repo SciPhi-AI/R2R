@@ -187,7 +187,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 #     )
                 # )
                 # entity.name_embedding = name_embedding[0]
-
+ 
                 out_entity = entity
 
             return out_entity

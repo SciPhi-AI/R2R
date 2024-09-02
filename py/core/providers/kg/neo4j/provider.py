@@ -429,7 +429,6 @@ class Neo4jKGProvider(KGProvider):
         # get the descriptions from the neo4j results
         # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
         # return descriptions, scores
-        import pdb; pdb.set_trace()
         ret = {}
         for i, record in enumerate(neo4j_results.records):
             ret[str(i)] = {property_name: record[property_name] for property_name in property_names}

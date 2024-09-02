@@ -168,10 +168,7 @@ class IngestionRouter(BaseRouter):
             Update existing files in the system.
 
             This endpoint supports multipart/form-data requests, enabling you to update files and their associated metadatas into R2R.
-
-
-
-
+            
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
 
