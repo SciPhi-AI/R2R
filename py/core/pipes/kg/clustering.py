@@ -182,9 +182,5 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        all_nodes = []
-        async for node in input.message:
-            all_nodes.append(node)
-
         async for community in self.cluster_kg(kg_enrichment_settings):
             yield community
