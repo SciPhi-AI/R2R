@@ -13,7 +13,7 @@ from core.base.api.models.restructure.responses import (
 from core.base.providers import OrchestrationProvider
 
 from ...main.hatchet import r2r_hatchet
-from ..hatchet import EnrichGraphWorkflow
+from ..hatchet import EnrichGraphWorkflow, KgExtractAndStoreWorkflow, KgClusteringWorkflow
 from ..services.restructure_service import RestructureService
 from .base_router import BaseRouter, RunType
 
@@ -37,6 +37,12 @@ class RestructureRouter(BaseRouter):
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
             EnrichGraphWorkflow(self.service)
+        )
+        self.orchestration_provider.register_workflow(
+            KgExtractAndStoreWorkflow(self.service)
+        )
+        self.orchestration_provider.register_workflow(
+            KgClusteringWorkflow(self.service)
         )
 
     def _setup_routes(self):

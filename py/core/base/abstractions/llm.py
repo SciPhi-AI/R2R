@@ -1,5 +1,6 @@
 """Abstractions for the LLM model."""
 
+import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
 
@@ -88,6 +89,22 @@ class GenerationConfig(BaseModel):
             super().__init__(model=model, **data)
         else:
             super().__init__(**data)
+
+    def __str__(self):
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        return {
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "max_tokens_to_sample": self.max_tokens_to_sample,
+            "stream": self.stream,
+            "functions": self.functions,
+            "tools": self.tools,
+            "add_generation_kwargs": self.add_generation_kwargs,
+            "api_base": self.api_base
+        }
 
     class Config:
         json_schema_extra = {

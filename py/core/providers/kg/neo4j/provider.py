@@ -255,7 +255,7 @@ class Neo4jKGProvider(KGProvider):
         ]
         return triples
 
-    def get_entities_and_triples(
+    def get_community_entities_and_triples(
         self, level: int, community_id: int, include_embeddings: bool = False
     ) -> Tuple[List[Entity], List[Triple]]:
         """
@@ -514,7 +514,11 @@ class Neo4jKGProvider(KGProvider):
         include_intermediate_communities = leiden_params.get(
             "include_intermediate_communities", True
         )
-
+        max_levels = leiden_params.get("maxLevels", 10)
+        gamma = leiden_params.get("gamma", 1.0)
+        theta = leiden_params.get("theta", 0.01)
+        tolerance = leiden_params.get("tolerance", 0.0001)
+        min_level_size = leiden_params.get("minLevelSize", 10)
         # don't use the seed property for now
         seed_property_config = (
             ""  # f"seedProperty: '{seed_property}'" if graph_exists else ""
@@ -525,7 +529,9 @@ class Neo4jKGProvider(KGProvider):
                 {seed_property_config}
                 writeProperty: '{write_property}',
                 randomSeed: {random_seed},
-                includeIntermediateCommunities: {include_intermediate_communities}
+                includeIntermediateCommunities: {include_intermediate_communities},
+                maxLevels: {maxLevels},
+
             }})
             YIELD communityCount, modularities;
         """

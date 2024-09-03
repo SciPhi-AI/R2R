@@ -80,7 +80,6 @@ class KGStoragePipe(AsyncPipe):
         kg_batch = []
 
         async for kg_extraction in input.message:
-            logger.info(f"Storing knowledge graph extraction: {kg_extraction}")
             kg_batch.append(kg_extraction)
             if len(kg_batch) >= self.storage_batch_size:
                 # Schedule the storage task

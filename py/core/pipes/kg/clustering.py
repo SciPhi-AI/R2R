@@ -25,6 +25,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
     Triple,
+    GenerationConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class KGClusteringPipe(AsyncPipe):
         return prompt.format(entities=entities_info, triples=triples_info)
 
     async def process_community(
-        self, level: int, community_id: str, settings: KGEnrichmentSettings
+        self, level: int, community_id: str, generation_config: GenerationConfig
     ) -> dict:
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
@@ -104,7 +105,7 @@ class KGClusteringPipe(AsyncPipe):
 
         """
 
-        entities, triples = self.kg_provider.get_entities_and_triples(
+        entities, triples = self.kg_provider.get_community_entities_and_triples(
             level=level, community_id=community_id
         )
 
@@ -122,7 +123,7 @@ class KGClusteringPipe(AsyncPipe):
                             ),
                         },
                     ),
-                    generation_config=settings.generation_config_enrichment,
+                    generation_config=generation_config,
                 )
             )
             .choices[0]
@@ -149,19 +150,22 @@ class KGClusteringPipe(AsyncPipe):
 
     async def cluster_kg(
         self,
-        settings: KGEnrichmentSettings = KGEnrichmentSettings(),
+        leiden_params: dict,
+        generation_config: GenerationConfig,
     ):
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
         num_communities, num_hierarchies = (
-            self.kg_provider.perform_graph_clustering(settings.leiden_params)
+            self.kg_provider.perform_graph_clustering(leiden_params)
         )
+
+        logger.info(f"Clustering completed. Generated {num_communities} communities with {num_hierarchies} hierarchies.")
 
         for level in range(num_hierarchies):
             for community_id in range(1, num_communities + 1):
                 res = await self.process_community(
-                    level, community_id, settings
+                    level, community_id, generation_config
                 )
                 # all values may not be present each level
                 if not res:
@@ -173,13 +177,15 @@ class KGClusteringPipe(AsyncPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Community, None]:
         """
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
+
+        leiden_params = input.message.leiden_params
+        generation_config_enrichment = input.message.generation_config_enrichment
 
         base_dimension = self.embedding_provider.config.base_dimension
         vector_index_fn = self.kg_provider.create_vector_index
@@ -188,5 +194,5 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        async for community in self.cluster_kg(kg_enrichment_settings):
+        async for community in self.cluster_kg(leiden_params, generation_config_enrichment):
             yield community

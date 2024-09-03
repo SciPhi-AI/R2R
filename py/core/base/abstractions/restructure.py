@@ -2,6 +2,7 @@ from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
+from uuid import UUID
 
 
 class KGEnrichmentSettings(R2RSerializable):
@@ -10,6 +11,11 @@ class KGEnrichmentSettings(R2RSerializable):
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
+    )
+
+    document_ids: list[UUID] = Field(
+        default_factory=list,
+        description="The document IDs to enrich.",
     )
 
     generation_config_triplet: GenerationConfig = Field(

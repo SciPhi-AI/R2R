@@ -23,6 +23,7 @@ from core.base import (
     R2RDocumentProcessingError,
     RunLoggingSingleton,
     Triple,
+    GenerationConfig,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
@@ -41,9 +42,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
     """
 
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[
-            Union[DocumentExtraction, R2RDocumentProcessingError], None
-        ]
+        message: dict
 
     def __init__(
         self,
@@ -85,6 +84,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
     async def extract_kg(
         self,
         fragment: DocumentFragment,
+        generation_config: GenerationConfig,
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
@@ -107,7 +107,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
             try:
                 response = await self.llm_provider.aget_completion(
                     messages,
-                    self.kg_provider.config.kg_enrichment_settings.generation_config_triplet,
+                    generation_config=generation_config,
                 )
 
                 kg_extraction = response.choices[0].message.content
@@ -201,63 +201,50 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         logger.info("Running KG Extraction Pipe")
 
-        document_ids = []
-        async for extraction in input.message:
-            document_ids.append(extraction)
+        document_id = input.message["document_id"]
+        generation_config = input.message["generation_config"]
 
-        if document_ids == []:
-            document_ids = [
-                doc.id
-                for doc in self.database_provider.relational.get_documents_overview()
-                if doc.restructuring_status != IngestionStatus.SUCCESS
-            ]
-
-        logger.info(f"Extracting KG for {len(document_ids)} documents")
-
-        # process documents sequentially
-        # async won't improve performance significantly
-        for document_id in document_ids:
-            tasks = []
-            logger.info(f"Extracting KG for document: {document_id}")
-            extractions = [
-                DocumentFragment(
-                    id=extraction["fragment_id"],
-                    extraction_id=extraction["extraction_id"],
-                    document_id=extraction["document_id"],
-                    user_id=extraction["user_id"],
-                    group_ids=extraction["group_ids"],
-                    data=extraction["text"],
-                    metadata=extraction["metadata"],
-                )
-                for extraction in self.database_provider.vector.get_document_chunks(
-                    document_id=document_id
-                )
-            ]
-
-            tasks.extend(
-                [
-                    asyncio.create_task(self.extract_kg(extraction))
-                    for extraction in extractions
-                ]
+        tasks = []
+        logger.info(f"Extracting KG for document: {document_id}")
+        extractions = [
+            DocumentFragment(
+                id=extraction["fragment_id"],
+                extraction_id=extraction["extraction_id"],
+                document_id=extraction["document_id"],
+                user_id=extraction["user_id"],
+                group_ids=extraction["group_ids"],
+                data=extraction["text"],
+                metadata=extraction["metadata"],
             )
-
-            logger.info(
-                f"Processing {len(tasks)} tasks for document {document_id}"
+            for extraction in self.database_provider.vector.get_document_chunks(
+                document_id=document_id
             )
-            for completed_task in tqdm_asyncio.as_completed(
-                tasks,
-                desc="Extracting and updating KG Triples",
-                total=len(tasks),
-            ):
-                kg_extraction = await completed_task
-                yield kg_extraction
+        ]
 
-            try:
-                self.database_provider.relational.execute_query(
-                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'success' WHERE document_id = '{document_id}'"
-                )
-                logger.info(f"Updated document {document_id} to SUCCESS")
-            except Exception as e:
-                logger.error(
-                    f"Error updating document {document_id} to SUCCESS: {e}"
-                )
+        tasks.extend(
+            [
+                asyncio.create_task(self.extract_kg(extraction, generation_config))
+                for extraction in extractions
+            ]
+        )
+
+        logger.info(
+            f"Processing {len(tasks)} tasks for document {document_id}"
+        )
+        for completed_task in tqdm_asyncio.as_completed(
+            tasks,
+            desc="Extracting and updating KG Triples",
+            total=len(tasks),
+        ):
+            kg_extraction = await completed_task
+            yield kg_extraction
+
+        try:
+            self.database_provider.relational.execute_query(
+                f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'success' WHERE document_id = '{document_id}'"
+            )
+            logger.info(f"Updated document {document_id} to SUCCESS")
+        except Exception as e:
+            logger.error(
+                f"Error updating document {document_id} to SUCCESS: {e}"
+            )

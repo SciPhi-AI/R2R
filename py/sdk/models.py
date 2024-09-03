@@ -389,14 +389,27 @@ class VectorSearchSettings(BaseModel):
 
 
 class KGEnrichmentSettings(BaseModel):
+
+    document_ids: list[UUID] = Field(
+        default_factory=list,
+        description="The document IDs to enrich.",
+    )
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
-    generation_config: GenerationConfig = Field(
+    
+    generation_config_triplet: GenerationConfig = Field(
         default_factory=GenerationConfig,
         description="The generation configuration for the KG enrichment.",
     )
+
+    generation_config_enrichment: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="The generation configuration for the KG enrichment.",
+    )
+
     leiden_params: dict = Field(
         default_factory=dict,
         description="The parameters for the Leiden algorithm.",
