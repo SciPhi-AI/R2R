@@ -1,0 +1,152 @@
+---
+title: 'Quickstart'
+description: 'Getting started with R2R'
+icon: 'bolt'
+---
+
+This basic quickstart shows how to:
+
+1. Ingest files into your R2R system
+2. Search over ingested files
+3. Request or stream a RAG (Retrieval-Augmented Generation) responses
+4. Using the RAG Agent for more complex, interactive queries
+
+Be sure to complete the [installation instructions](/documentation/installation) before continuing with this guide. If you prefer to dive straight into the API details, select a choice from below:
+
+<CardGroup cols={3}>
+  <Card title="API Reference" icon="message-code" href="/api-reference/introduction" />
+  <Card title="Python SDK" icon="python" href="/documentation/python-sdk" />
+  <Card title="Javascript SDK" icon="js" href="/documentation/js-sdk" />
+</CardGroup>
+
+
+## Getting started
+
+Start by checking that you have correctly deployed your R2R instance locally:
+
+```bash
+curl http://localhost:8000/v2/health
+# {"results":{"response":"ok"}}
+```
+
+<Note>SciPhi Cloud includes a generous free tier and is the quickest way to get up and running with R2R. Check out the [documentation here](/sciphi-cloud/deploy) to skip the local installation! </Note>
+
+
+## Ingesting file(s) and directories
+
+The remainder of this quickstart will proceed with CLI commands, but all of these commands are easily reproduced inside of the Javascript or Python SDK.
+
+Ingest your selected files or directories:
+
+```bash
+r2r ingest-files --file-paths /path/to/your_file_1 /path/to/your_dir_1 ... 
+```
+
+**For testing**: Use the sample file(s) included inside the R2R project:
+
+```bash
+r2r ingest-sample-file
+```
+
+Example output:
+```plaintext
+{'results': {'processed_documents': [{'id': 'db02076e-989a-59cd-98d5-e24e15a0bd27', 'title': 'aristotle.txt'}], 'failed_documents': [], 'skipped_documents': []}}
+```
+
+<Info>When no document ID is provided, a unique document ID is automatically generated for each ingested document based on the input filepath and user id.</Info>
+
+## Executing a search
+
+Perform a search query:
+
+```bash
+r2r search --query="who was aristotle?"
+```
+
+The search query will use basic similarity search to find the most relevant documents. You can use advanced search methods like [hybrid search](/cookbooks/hybrid-search) or [knowledge graph search](/cookbooks/knowledge-graph) depending on your use case.
+
+Example output:
+```plaintext
+{'results': {'vector_search_results': [
+    {
+        'fragment_id': '34c32587-e2c9-529f-b0a7-884e9a3c3b2e',
+        'extraction_id': '8edf5123-0a5c-568c-bf97-654b6adaf8dc',
+        'document_id': 'db02076e-989a-59cd-98d5-e24e15a0bd27',
+        'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+        'group_ids': [],
+        'score': 0.780314067545999, 
+        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+        'metadata': {
+            'title': 'aristotle.txt', 
+            'version': 'v0', 
+            'chunk_order': 0, 
+            ...
+```
+
+## RAG Response
+
+Generate a RAG response:
+
+```bash
+r2r rag --query="who was aristotle?" --use-hybrid-search
+```
+
+Example output:
+```plaintext
+Search Results:
+{'vector_search_results': ... }
+Completion:
+{'results': [
+    {
+        'id': 'chatcmpl-9eXL6sKWlUkP3f6QBnXvEiKkWKBK4', 
+        'choices': [
+            {
+                'finish_reason': 'stop', 
+                'index': 0, 
+                'logprobs': None, 
+                'message': {
+                    'content': "Aristotle (384–322 BC) was an Ancient Greek philosopher and polymath whose writings covered a broad range of subjects including the natural sciences, 
+                    ...
+```
+
+## Stream a RAG Response
+
+Stream a RAG response:
+
+```bash
+r2r rag --query="who was aristotle?" --stream --use-hybrid-search
+```
+
+Example output (streamed):
+```plaintext
+<search>"{\"fragment_id\":\"34c32587-e2c9-52.....}"</search>
+<completion>Aristotle (384–322 BC) was an Ancient Greek philosopher ... </completion>
+```
+
+## Using the RAG Agent
+
+The RAG Agent provides a more interactive and intelligent way to query your knowledge base. It can formulate its own questions, search for information, and provide informed responses based on the retrieved context.
+
+### Basic RAG Agent Usage
+
+Here's how to use the RAG Agent for a simple query:
+
+```python
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:8000")
+# when using auth, do client.login(...)
+
+messages = [
+    {"role": "user", "content": "What was Aristotle's main contribution to philosophy?"},
+    {"role": "assistant", "content": "Aristotle made numerous significant contributions to philosophy, but one of his main contributions was in the field of logic and reasoning. He developed a system of formal logic, which is considered the first comprehensive system of its kind in Western philosophy. This system, often referred to as Aristotelian logic or term logic, provided a framework for deductive reasoning and laid the groundwork for scientific thinking."},
+    {"role": "user", "content": "Can you elaborate on how this influenced later thinkers?"}
+]
+
+result = client.agent(
+    messages=messages,
+    vector_search_settings={"use_hybrid_search":True},
+    rag_generation_config={"model": "openai/gpt-4o", "temperature": 0.7}
+)
+print(result)
+```
