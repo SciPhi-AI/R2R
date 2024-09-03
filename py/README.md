@@ -12,7 +12,7 @@ Build, scale, and manage user-facing Retrieval-Augmented Generation applications
 </h3>
 
 # About
-R2R (RAG to Riches), the Elasticsearc for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. R2R is built around a simple [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), making it easy to use and fast to implement.
+R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. R2R is built around a simple [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), making it easy to use and fast to implement.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
