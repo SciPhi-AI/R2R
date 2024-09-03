@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGEnrichmentSettings
@@ -21,7 +21,6 @@ class RestructureService(Service):
         run_manager: RunManager,
         logging_connection: RunLoggingSingleton,
     ):
-
         super().__init__(
             config,
             providers,
@@ -36,7 +35,7 @@ class RestructureService(Service):
         kg_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Perform graph enrichment.
 
@@ -44,24 +43,41 @@ class RestructureService(Service):
             Dict[str, Any]: Results of the graph enrichment process.
         """
         try:
-            # Assuming there's a graph enrichment pipeline
+            if not self.config.kg or not hasattr(
+                self.config.kg, "kg_enrichment_settings"
+            ):
+                raise R2RException(
+                    status_code=400,
+                    message="KG enrichment settings are not properly configured.",
+                )
+
+            if not self.pipelines.kg_enrichment_pipeline:
+                raise R2RException(
+                    status_code=400,
+                    message="KG enrichment pipeline is not configured.",
+                )
+
+            # Use provided settings or default to config
+            if not kg_enrichment_settings or kg_enrichment_settings == {}:
+                kg_enrichment_settings = self.config.kg.kg_enrichment_settings
 
             async def input_generator():
                 input = []
                 for doc in input:
                     yield doc
 
-            if not kg_enrichment_settings or kg_enrichment_settings == {}:
-                kg_enrichment_settings = self.config.kg.kg_enrichment_settings
-
-            return await self.pipelines.kg_enrichment_pipeline.run(
+            result = await self.pipelines.kg_enrichment_pipeline.run(
                 input=input_generator(),
                 kg_enrichment_settings=kg_enrichment_settings,
                 run_manager=self.run_manager,
             )
-
+            return result
         except Exception as e:
-            logger.error(f"Error during graph enrichment: {str(e)}")
+            logger.error(
+                f"Unexpected error during graph enrichment: {str(e)}",
+                exc_info=True,
+            )
             raise R2RException(
-                status_code=500, message=f"Graph enrichment failed: {str(e)}"
+                status_code=500,
+                message=f"Graph enrichment failed due to an error: {str(e)} Please check the logs for more details.",
             )

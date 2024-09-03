@@ -3,7 +3,6 @@ import json
 import logging
 import re
 import uuid
-from collections import Counter
 from typing import Any, AsyncGenerator, Optional, Union
 
 from tqdm.asyncio import tqdm_asyncio
@@ -206,7 +205,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         async for extraction in input.message:
             document_ids.append(extraction)
 
-        if document_ids == []:
+        if not document_ids:
             document_ids = [
                 doc.id
                 for doc in self.database_provider.relational.get_documents_overview()
@@ -218,7 +217,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
         # process documents sequentially
         # async won't improve performance significantly
         for document_id in document_ids:
-            tasks = []
             logger.info(f"Extracting KG for document: {document_id}")
             extractions = [
                 DocumentFragment(
@@ -235,29 +233,31 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 )
             ]
 
-            tasks.extend(
-                [
-                    asyncio.create_task(self.extract_kg(extraction))
-                    for extraction in extractions
-                ]
-            )
+            tasks = [
+                asyncio.create_task(self.extract_kg(extraction))
+                for extraction in extractions
+            ]
 
-            logger.info(
-                f"Processing {len(tasks)} tasks for document {document_id}"
-            )
+            try:
+                self.database_provider.relational.execute_query(
+                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'processing' WHERE document_id = '{document_id}'"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error updating document {document_id} to PROCESSING: {e}"
+                )
+
             for completed_task in tqdm_asyncio.as_completed(
                 tasks,
                 desc="Extracting and updating KG Triples",
                 total=len(tasks),
             ):
-                kg_extraction = await completed_task
-                yield kg_extraction
+                yield await completed_task
 
             try:
                 self.database_provider.relational.execute_query(
                     f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'success' WHERE document_id = '{document_id}'"
                 )
-                logger.info(f"Updated document {document_id} to SUCCESS")
             except Exception as e:
                 logger.error(
                     f"Error updating document {document_id} to SUCCESS: {e}"

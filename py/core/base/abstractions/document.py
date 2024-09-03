@@ -17,6 +17,7 @@ DataType = Union[str, bytes]
 class DocumentStatus(str, Enum):
     """Status of document processing."""
 
+    NOT_STARTED = "not_started"
     PROCESSING = "processing"
     # TODO - Extend support for `partial-failure`
     # PARTIAL_FAILURE = "partial-failure"
@@ -92,7 +93,7 @@ class DocumentInfo(BaseModel):
     version: str
     size_in_bytes: int
     ingestion_status: DocumentStatus = DocumentStatus.PROCESSING
-    restructuring_status: DocumentStatus = DocumentStatus.PROCESSING
+    restructuring_status: DocumentStatus = DocumentStatus.NOT_STARTED
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
