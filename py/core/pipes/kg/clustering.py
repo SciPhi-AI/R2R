@@ -10,7 +10,6 @@ from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 import networkx as nx
-from tqdm.asyncio import tqdm_asyncio
 
 from core.base import (
     AsyncPipe,
@@ -204,9 +203,7 @@ class KGClusteringPipe(AsyncPipe):
                 )
             )
 
-        results = await tqdm_asyncio.gather(
-            *tasks, desc="Processing communities"
-        )
+        results = await asyncio.gather(*tasks)
         for result in results:
             yield result
 

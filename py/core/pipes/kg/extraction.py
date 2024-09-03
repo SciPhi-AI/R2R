@@ -5,8 +5,6 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
-from tqdm.asyncio import tqdm_asyncio
-
 from core.base import (
     AsyncState,
     ChunkingProvider,
@@ -247,11 +245,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     f"Error updating document {document_id} to PROCESSING: {e}"
                 )
 
-            for completed_task in tqdm_asyncio.as_completed(
-                tasks,
-                desc="Extracting and updating KG Triples",
-                total=len(tasks),
-            ):
+            for completed_task in asyncio.as_completed(tasks):
                 yield await completed_task
 
             try:
