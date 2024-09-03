@@ -2,10 +2,11 @@
 
 ### R2R templates are in beta! We value your feedback and contributions to make them more widely accessible.
 
-| Framework | Python, Next.js |
-|-----------|-----------------|
-| Use Case  | AI, RAG         |
+<a href="https://chat-8zq2p8i6u-my-team-88dd52c0.vercel.app/" target="_blank">
+  <img src="agentic_rag_chatbot.png" alt="Agentic RAG Chatbot Image">
+</a>
 
+**Framework:** Python, Next.js
 
 A boilerplate chatbot that uses the R2R Python SDK to connect to an R2R server. This template offers a simple and clean interfact for users to interact with the chatbot.
 
@@ -27,17 +28,17 @@ cd agentic_rag_chatbot
 cd python-backend
 ```
 
-Then, inspecting the `r2r_ingestion.py` file shows us that we'll use the R2R Python SDK to ingest a number of sample files about RAG. These file path can be changed.
-
-Additionally, we see that we need to specify the URL at which our R2R server is deployed at.
+If we inspect the `r2r_ingestion.py` file it will shows us that we'll use the R2R Python SDK to ingest a number of sample files about RAG. These file path can be changed.
 
 ```python
+import os
 import time
 
 from r2r import R2RClient
 
 # Our R2R base URL is the URL of our SciPhi deployed R2R server
-client = R2RClient("YOUR_SCIPHI_DEPLOYMENT_URL")
+deployment_url = os.getenv("R2R_DEPLOYMENT_URL")
+client = R2RClient(deployment_url)
 
 # We'll make sure that we can connect to the server
 health_response = client.health()
@@ -54,8 +55,10 @@ print(ingest_response)
 print(f"Time taken to ingest: {t1 - t0} seconds")
 ```
 
-After setting our R2R deployment URL, we can run this file to ingest our sample data:
-```python
+Additionally, we see that we need to specify the URL at which our R2R server is deployed at.
+We can set our R2R deployment URL, and run this file to ingest our sample data:
+```bash
+export R2R_DEPLOYMENT_URL=<your_deployment_url>
 python r2r_ingestion.py
 ```
 
@@ -63,7 +66,7 @@ Then, we can launch our front end. This can be done locally, or through a server
 
 ```bash
 cd ../web-app
-export NEXT_PUBLIC_DEFAULT_AGENT_URL=YOUR_SCIPHI_DEPLOYMENT_URL
+export NEXT_PUBLIC_DEFAULT_AGENT_URL=$R2R_DEPLOYMENT_URL
 npm run build
 npm run start
 ```
