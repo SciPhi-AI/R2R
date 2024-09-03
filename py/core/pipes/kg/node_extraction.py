@@ -75,6 +75,7 @@ class KGNodeExtractionPipe(AsyncPipe):
                     "triples"
                 ]  # the entity and its associated triples
 
+
 class KGNodeDescriptionPipe(AsyncPipe):
     """
     The pipe takes input a list of nodes and extracts description from them.
@@ -187,7 +188,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 #     )
                 # )
                 # entity.name_embedding = name_embedding[0]
- 
+
                 out_entity = entity
 
             return out_entity
@@ -211,4 +212,3 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
         for entity in processed_entities:
             yield entity
-

@@ -263,7 +263,7 @@ class Neo4jKGProvider(KGProvider):
 
         Input:
         - level: The level of the hierarchy.
-        - community_id: The ID of the community to get the entities and triples for. 
+        - community_id: The ID of the community to get the entities and triples for.
         - include_embeddings: Whether to include the embeddings in the output.
 
         Output:
@@ -287,7 +287,7 @@ class Neo4jKGProvider(KGProvider):
                 "level": level,
             },
         )
-        
+
         entities = [
             Entity(
                 name=record["source"],
@@ -385,13 +385,13 @@ class Neo4jKGProvider(KGProvider):
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "__Entity__")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
-        property_names = kwargs.get(
-            "property_names", ["name", "description"]
-        )
+        property_names = kwargs.get("property_names", ["name", "description"])
         limit = kwargs.get("limit", 10)
 
-
-        property_names_arr = [f"e.{property_name} as {property_name}" for property_name in property_names]
+        property_names_arr = [
+            f"e.{property_name} as {property_name}"
+            for property_name in property_names
+        ]
         property_names_str = ", ".join(property_names_arr)
 
         if search_type == "__Relationship__":
@@ -431,7 +431,10 @@ class Neo4jKGProvider(KGProvider):
         # return descriptions, scores
         ret = {}
         for i, record in enumerate(neo4j_results.records):
-            ret[str(i)] = {property_name: record[property_name] for property_name in property_names}
+            ret[str(i)] = {
+                property_name: record[property_name]
+                for property_name in property_names
+            }
 
         return ret
 
@@ -457,11 +460,13 @@ class Neo4jKGProvider(KGProvider):
         """
 
         result = self.structured_query(GRAPH_EXISTS_QUERY)
-        graph_exists = result.records[0]["graphExists"] 
+        graph_exists = result.records[0]["graphExists"]
 
         if graph_exists:
             logger.info(f"Graph exists, dropping it")
-            GRAPH_DROP_QUERY = "CALL gds.graph.drop('kg_graph') YIELD graphName;"
+            GRAPH_DROP_QUERY = (
+                "CALL gds.graph.drop('kg_graph') YIELD graphName;"
+            )
             result = self.structured_query(GRAPH_DROP_QUERY)
 
         GRAPH_PROJECTION_QUERY = """
@@ -497,7 +502,6 @@ class Neo4jKGProvider(KGProvider):
                     undirectedRelationshipTypes: ['*'] 
                 }
             )"""
-
 
         print(GRAPH_PROJECTION_QUERY)
 

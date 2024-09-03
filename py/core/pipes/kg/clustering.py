@@ -83,7 +83,7 @@ class KGClusteringPipe(AsyncPipe):
         self, level: int, community_id: str, settings: KGEnrichmentSettings
     ) -> dict:
         """
-        Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database. 
+        Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
 
         Input:
         - level: The level of the hierarchy.
@@ -112,17 +112,21 @@ class KGClusteringPipe(AsyncPipe):
             return None
 
         description = (
-            (await self.llm_provider.aget_completion(
-                messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="graphrag_community_reports",
-                    task_inputs={
-                        "input_text": self.community_summary_prompt(
-                            input_text, entities, triples
-                        ),
-                    },
-                ),
-                generation_config=settings.generation_config_enrichment,
-            )).choices[0].message.content
+            (
+                await self.llm_provider.aget_completion(
+                    messages=self.prompt_provider._get_message_payload(
+                        task_prompt_name="graphrag_community_reports",
+                        task_inputs={
+                            "input_text": self.community_summary_prompt(
+                                input_text, entities, triples
+                            ),
+                        },
+                    ),
+                    generation_config=settings.generation_config_enrichment,
+                )
+            )
+            .choices[0]
+            .message.content
         )
 
         community = Community(
@@ -153,11 +157,13 @@ class KGClusteringPipe(AsyncPipe):
         num_communities, num_hierarchies = (
             self.kg_provider.perform_graph_clustering(settings.leiden_params)
         )
-            
+
         for level in range(num_hierarchies):
-            for community_id in range(1, num_communities+1):
-                res = await self.process_community(level, community_id, settings)
-                # all values may not be present each level 
+            for community_id in range(1, num_communities + 1):
+                res = await self.process_community(
+                    level, community_id, settings
+                )
+                # all values may not be present each level
                 if not res:
                     continue
                 yield res
