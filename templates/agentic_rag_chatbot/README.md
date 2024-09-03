@@ -2,13 +2,14 @@
 
 ### R2R templates are in beta! We value your feedback and contributions to make them more widely accessible.
 
-<a href="https://chat-8zq2p8i6u-my-team-88dd52c0.vercel.app/" target="_blank">
-  <img src="agentic_rag_chatbot.png" alt="Agentic RAG Chatbot Image">
-</a>
-
 **Framework:** Python, Next.js
 
 A boilerplate chatbot that uses the R2R Python SDK to connect to an R2R server. This template offers a simple and clean interfact for users to interact with the chatbot.
+
+### [Preview a live demo of this template:](https://chat-8zq2p8i6u-my-team-88dd52c0.vercel.app/)
+<a href="https://chat-8zq2p8i6u-my-team-88dd52c0.vercel.app/" target="_blank">
+  <img src="agentic_rag_chatbot.png" alt="Agentic RAG Chatbot Image">
+</a>
 
 ### Deploying
 Using the R2R CLI we can clone the template. First, we install the R2R CLI, followed by the clone command for this template:
@@ -25,6 +26,7 @@ Once our R2R server is up and running, we can navigate to the template directory
 
 ```bash
 cd agentic_rag_chatbot
+
 cd python-backend
 ```
 
@@ -59,6 +61,7 @@ Additionally, we see that we need to specify the URL at which our R2R server is 
 We can set our R2R deployment URL, and run this file to ingest our sample data:
 ```bash
 export R2R_DEPLOYMENT_URL=<your_deployment_url>
+
 python r2r_ingestion.py
 ```
 

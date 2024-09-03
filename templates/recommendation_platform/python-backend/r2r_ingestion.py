@@ -3,17 +3,17 @@ import os
 
 from r2r import R2RClient
 
-# Initialize the R2RClient
-client = R2RClient("YOUR_SCIPHI_DEPLOYMENT_URL")
+# Our R2R base URL is the URL of our SciPhi deployed R2R server
+deployment_url = os.getenv("R2R_DEPLOYMENT_URL")
+client = R2RClient(deployment_url)
 
 # Check server health
 health_response = client.health()
-if health_response["response"] != "ok":
-    raise ConnectionError("Unable to connect to the R2R server.")
+print(health_response)
 
 # Path to the original CSV file from DataSF
 input_csv_path = (
-    "/public/data/Privately_Owned_Public_Open_Spaces_20240809.csv"
+    "../web-app/public/data/Privately_Owned_Public_Open_Spaces_20240809.csv"
 )
 
 # Read the CSV file and process each row as a separate file
@@ -31,7 +31,7 @@ with open(input_csv_path, "r") as csvfile:
             for key, value in zip(header, row):
                 temp_txtfile.write(f"{key}: {value}\n")
 
-        # Ingest the temporary file using the R2R client
+        # Ingest the temporary file using the R2R client with a custom chunk size
         client.ingest_files(
             [temp_filename], chunking_config_override={"chunk_size": 2048}
         )
