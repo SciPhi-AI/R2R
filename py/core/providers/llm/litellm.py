@@ -11,8 +11,32 @@ class LiteCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         try:
-            from litellm import acompletion, completion
+            from litellm import acompletion, completion, OllamaConfig
 
+            if config.generation_config.add_generation_kwargs:
+                # We have provider-specific generation arguments, let's set them
+                # 1. Get the possible arguments for the OllamaConfig class
+                import inspect
+
+                ollama_config_options = inspect.signature(
+                    OllamaConfig
+                ).parameters
+                # 2. Collect the valid provider-specific arguments or complain
+                arguments_to_set = {}
+                given_custom_params = (
+                    config.generation_config.add_generation_kwargs
+                )
+                for key, value in given_custom_params.items():
+                    if key in ollama_config_options:
+                        arguments_to_set[key] = value
+                    else:
+                        logger.error(
+                            "Invalid provider-specific argument: %s (with value %s)",
+                            key,
+                            value,
+                        )
+                # 3. Set the valid provider-specific arguments
+                OllamaConfig(**arguments_to_set)
             self.acompletion = acompletion
             self.completion = completion
             logger.debug("LiteLLM imported successfully")
