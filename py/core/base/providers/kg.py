@@ -33,7 +33,7 @@ class KGConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "neo4j", "local"]
+        return [None, "neo4j", "memgraph", "local"]
 
 
 class KGProvider(ABC):

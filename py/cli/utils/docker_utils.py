@@ -16,7 +16,7 @@ from sdk import R2RClient
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f{compose_files['memgraph']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -104,6 +104,7 @@ def run_docker_serve(
     host: str,
     port: int,
     exclude_neo4j: bool,
+    exclude_memgraph: bool,
     exclude_ollama: bool,
     exclude_postgres: bool,
     project_name: str,
@@ -111,7 +112,9 @@ def run_docker_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
-    check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
+    check_set_docker_env_vars(
+        exclude_neo4j, exclude_memgraph, exclude_postgres
+    )
     set_ollama_api_base(exclude_ollama)
 
     if config_path and config_name:
@@ -131,6 +134,7 @@ def run_docker_serve(
         host,
         port,
         exclude_neo4j,
+        exclude_memgraph,
         exclude_ollama,
         exclude_postgres,
         project_name,
@@ -220,7 +224,9 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             sys.exit(1)
 
 
-def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
+def check_set_docker_env_vars(
+    exclude_neo4j=False, exclude_memgraph=False, exclude_postgres=False
+):
     env_vars = []
     if not exclude_neo4j:
         neo4j_vars = [
@@ -231,6 +237,13 @@ def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
             "OLLAMA_API_BASE",
         ]
         env_vars.extend(neo4j_vars)
+
+    if not exclude_memgraph:
+        memgraph_vars = [
+            "MEMGRAPH_USER",
+            "MEMGRAPH_PASSWORD",
+        ]
+        env_vars.extend(memgraph_vars)
 
     if not exclude_postgres:
         postgres_vars = [
@@ -289,6 +302,7 @@ def get_compose_files():
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),
         "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
+        "memgraph": os.path.join(package_dir, "compose.memgraph.yaml"),
         "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
         "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
     }
@@ -323,6 +337,7 @@ def build_docker_command(
     host,
     port,
     exclude_neo4j,
+    exclude_memgraph,
     exclude_ollama,
     exclude_postgres,
     project_name,
@@ -334,6 +349,8 @@ def build_docker_command(
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
         command += f" -f {compose_files['neo4j']}"
+    if not exclude_memgraph:
+        command += f" -f {compose_files['memgraph']}"
     if not exclude_ollama:
         command += f" -f {compose_files['ollama']}"
     if not exclude_postgres:

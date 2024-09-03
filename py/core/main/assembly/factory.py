@@ -229,6 +229,10 @@ class R2RProviderFactory:
             from core.providers import Neo4jKGProvider
 
             return Neo4jKGProvider(kg_config)
+        if kg_config.provider == "memgraph":
+            from core.providers import MemgraphKGProvider
+
+            return MemgraphKGProvider(kg_config)
         elif kg_config.provider is None:
             return None
         else:
