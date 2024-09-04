@@ -38,15 +38,20 @@ def server_stats(client):
 
 
 @cli.command()
-@click.option("--run-type-filter", help="Filter for log types")
 @click.option(
-    "--max-runs", default=None, help="Maximum number of runs to fetch"
+    "--offset", default=None, help="Pagination offset. Default is None."
 )
+@click.option(
+    "--limit", default=None, help="Pagination limit. Defaults to 100."
+)
+@click.option("--run-type-filter", help="Filter for log types")
 @click.pass_obj
-def logs(client, run_type_filter, max_runs):
+def logs(client, run_type_filter, offset, limit):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = client.logs(run_type_filter, max_runs)
+        response = client.logs(
+            offset=offset, limit=limit, run_type_filter=run_type_filter
+        )
 
     for log in response["results"]:
         click.echo(f"Run ID: {log['run_id']}")
@@ -58,7 +63,7 @@ def logs(client, run_type_filter, max_runs):
             click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
         click.echo("---")
 
-    click.echo(f"Total runs: {len(response)}")
+    click.echo(f"Total runs: {len(response['results'])}")
 
 
 @cli.command()
@@ -180,6 +185,11 @@ def generate_report():
     default=False,
     help="Exclude Postgres from Docker setup",
 )
+@click.option(
+    "--exclude-hatchet",
+    default=False,
+    help="Exclude Hatchet from Docker setup",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option("--image", help="Docker image to use")
 @click.option(
@@ -190,15 +200,14 @@ def generate_report():
     default=None,
     help="Path to a custom R2R configuration file",
 )
-@click.pass_obj
 def serve(
-    client,
     host,
     port,
     docker,
     exclude_neo4j,
     exclude_ollama,
     exclude_postgres,
+    exclude_hatchet,
     project_name,
     image,
     config_name,
@@ -224,6 +233,7 @@ def serve(
             exclude_neo4j,
             exclude_ollama,
             exclude_postgres,
+            exclude_hatchet,
             project_name,
             image,
             config_name,
@@ -244,7 +254,7 @@ def serve(
                 print(f"Navigating to dashboard in {i} seconds...")
                 time.sleep(1)
 
-            traefik_port = os.environ.get("TRAEFIK_PORT", "80")
+            traefik_port = os.environ.get("R2R_DASHBOARD_PORT", "80")
             url = f"http://localhost:{traefik_port}"
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)

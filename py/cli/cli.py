@@ -6,6 +6,7 @@ from cli.commands import (
     restructure,
     retrieval,
     server,
+    templates,
 )
 
 # Auth
@@ -26,6 +27,7 @@ cli.add_command(management.document_chunks)
 cli.add_command(management.inspect_knowledge_graph)
 
 # Restructure
+cli.add_command(restructure.create_graph)
 cli.add_command(restructure.enrich_graph)
 
 # Retrieval
@@ -41,6 +43,9 @@ cli.add_command(server.generate_report)
 cli.add_command(server.serve)
 cli.add_command(server.update)
 cli.add_command(server.version)
+
+# Templates
+cli.add_command(templates.clone)
 
 
 def main():

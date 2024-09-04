@@ -24,15 +24,10 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.pipelines import (
-    IngestionPipeline,
-    KGEnrichmentPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from core.pipelines import RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from .config import R2RConfig
+from ..config import R2RConfig
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +86,7 @@ class R2RProviderFactory:
             from core.providers import R2RParsingProvider
 
             return R2RParsingProvider(parsing_config)
-        elif (
-            parsing_config.provider == "unstructured"
-            or parsing_config.provider == "unstructured_api"
-        ):
+        elif parsing_config.provider in ["unstructured", "unstructured_api"]:
             from core.providers import UnstructuredParsingProvider
 
             return UnstructuredParsingProvider(
@@ -125,6 +117,17 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Chunking provider {chunking_config.provider} not supported"
             )
+
+    @staticmethod
+    def create_orchestration_provider(*args, **kwargs):
+        from core.base.providers import OrchestrationConfig
+        from core.providers import HatchetOrchestrationProvider
+
+        orchestration_provider = HatchetOrchestrationProvider(
+            OrchestrationConfig(provider="hatchet")
+        )
+        orchestration_provider.get_worker("r2r-worker")
+        return orchestration_provider
 
     def create_database_provider(
         self,
@@ -249,7 +252,7 @@ class R2RProviderFactory:
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
         parsing_provider_override: Optional[ParsingProvider] = None,
-        chunking_settings: Optional[ChunkingProvider] = None,
+        chunking_config: Optional[ChunkingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -294,10 +297,11 @@ class R2RProviderFactory:
                 self.config.parsing, *args, **kwargs
             )
         )
-        chunking_provider = chunking_settings or self.create_chunking_provider(
+        chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
 
+        orchestration_provider = self.create_orchestration_provider()
         return R2RProviders(
             auth=auth_provider,
             chunking=chunking_provider,
@@ -307,6 +311,7 @@ class R2RProviderFactory:
             parsing=parsing_provider,
             prompt=prompt_provider,
             kg=kg_provider,
+            orchestration=orchestration_provider,
         )
 
 
@@ -319,7 +324,7 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[AsyncPipe] = None,
         embedding_pipe_override: Optional[AsyncPipe] = None,
-        kg_pipe_override: Optional[AsyncPipe] = None,
+        kg_extraction_pipe_override: Optional[AsyncPipe] = None,
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
         kg_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
@@ -343,15 +348,16 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_pipe=kg_pipe_override or self.create_kg_pipe(*args, **kwargs),
+            kg_extraction_pipe=kg_extraction_pipe_override
+            or self.create_kg_extraction_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
-            kg_search_search_pipe=kg_search_pipe_override
-            or self.create_kg_search_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
             vector_search_pipe=vector_search_pipe_override
             or self.create_vector_search_pipe(*args, **kwargs),
+            kg_search_pipe=kg_search_pipe_override
+            or self.create_kg_search_pipe(*args, **kwargs),
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
@@ -407,7 +413,7 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
         )
 
-    def create_kg_pipe(self, *args, **kwargs) -> Any:
+    def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
         if self.config.kg.provider is None:
             return None
 
@@ -497,31 +503,6 @@ class R2RPipelineFactory:
         self.config = config
         self.pipes = pipes
 
-    def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
-        """factory method to create an ingestion pipeline."""
-        ingestion_pipeline = IngestionPipeline()
-
-        ingestion_pipeline.add_pipe(
-            pipe=self.pipes.parsing_pipe, parsing_pipe=True
-        )
-        ingestion_pipeline.add_pipe(
-            self.pipes.chunking_pipe, chunking_pipe=True
-        )
-
-        # Add embedding pipes if provider is set
-        if (
-            self.config.embedding.provider is not None
-            and self.config.database.provider is not None
-        ):
-            ingestion_pipeline.add_pipe(
-                self.pipes.embedding_pipe, embedding_pipe=True
-            )
-            ingestion_pipeline.add_pipe(
-                self.pipes.vector_storage_pipe, embedding_pipe=True
-            )
-
-        return ingestion_pipeline
-
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         """factory method to create an ingestion pipeline."""
         search_pipeline = SearchPipeline()
@@ -538,7 +519,7 @@ class R2RPipelineFactory:
         # Add KG pipes if provider is set
         if self.config.kg.provider is not None:
             search_pipeline.add_pipe(
-                self.pipes.kg_search_search_pipe, kg_pipe=True
+                self.pipes.kg_search_pipe, kg_extraction_pipe=True
             )
 
         return search_pipeline
@@ -559,29 +540,11 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
-    def create_kg_enrichment_pipeline(
-        self, *args, **kwargs
-    ) -> Optional[KGEnrichmentPipeline]:
-        if self.config.kg.provider is not None:
-            kg_enrichment_pipeline = KGEnrichmentPipeline()
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_pipe)
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_storage_pipe)
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
-            kg_enrichment_pipeline.add_pipe(
-                self.pipes.kg_node_description_pipe
-            )
-            kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
-            return kg_enrichment_pipeline
-        else:
-            return None
-
     def create_pipelines(
         self,
-        ingestion_pipeline: Optional[IngestionPipeline] = None,
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
-        kg_enrichment_pipeline: Optional[KGEnrichmentPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
@@ -593,8 +556,6 @@ class R2RPipelineFactory:
             *args, **kwargs
         )
         return R2RPipelines(
-            ingestion_pipeline=ingestion_pipeline
-            or self.create_ingestion_pipeline(*args, **kwargs),
             search_pipeline=search_pipeline,
             rag_pipeline=rag_pipeline
             or self.create_rag_pipeline(
@@ -610,8 +571,6 @@ class R2RPipelineFactory:
                 *args,
                 **kwargs,
             ),
-            kg_enrichment_pipeline=kg_enrichment_pipeline
-            or self.create_kg_enrichment_pipeline(*args, **kwargs),
         )
 
     def configure_logging(self):

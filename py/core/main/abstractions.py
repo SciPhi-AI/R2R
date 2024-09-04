@@ -11,25 +11,22 @@ from core.base.providers import (
     DatabaseProvider,
     EmbeddingProvider,
     KGProvider,
+    OrchestrationProvider,
     ParsingProvider,
     PromptProvider,
 )
-from core.pipelines import (
-    IngestionPipeline,
-    KGEnrichmentPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from core.pipelines import RAGPipeline, SearchPipeline
 
 
 class R2RProviders(BaseModel):
     auth: Optional[AuthProvider]
     chunking: Optional[ChunkingProvider]
-    llm: Optional[CompletionProvider]
     database: Optional[DatabaseProvider]
-    embedding: Optional[EmbeddingProvider]
-    prompt: Optional[PromptProvider]
     kg: Optional[KGProvider]
+    llm: Optional[CompletionProvider]
+    embedding: Optional[EmbeddingProvider]
+    orchestration: Optional[OrchestrationProvider]
+    prompt: Optional[PromptProvider]
     parsing: Optional[ParsingProvider]
 
     class Config:
@@ -44,9 +41,9 @@ class R2RPipes(BaseModel):
     vector_search_pipe: Optional[AsyncPipe]
     rag_pipe: Optional[AsyncPipe]
     streaming_rag_pipe: Optional[AsyncPipe]
-    kg_pipe: Optional[AsyncPipe]
+    kg_search_pipe: Optional[AsyncPipe]
+    kg_extraction_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
-    kg_search_search_pipe: Optional[AsyncPipe]
     kg_node_extraction_pipe: Optional[AsyncPipe]
     kg_node_description_pipe: Optional[AsyncPipe]
     kg_clustering_pipe: Optional[AsyncPipe]
@@ -57,11 +54,9 @@ class R2RPipes(BaseModel):
 
 
 class R2RPipelines(BaseModel):
-    ingestion_pipeline: IngestionPipeline
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
-    kg_enrichment_pipeline: Optional[KGEnrichmentPipeline]
 
     class Config:
         arbitrary_types_allowed = True

@@ -4,11 +4,14 @@ on:
   pull_request:
     paths:
       - 'py/**'
+  push:
+    branches:
+      - 'main'
 
 jobs:
   pre-commit:
     continue-on-error: true
-    runs-on: [ self-hosted, Linux ]
+    runs-on: amd1
 
     steps:
       - name: Checkout code
@@ -38,7 +41,7 @@ jobs:
 
   pytest:
     continue-on-error: true
-    runs-on: [ self-hosted, Linux ]
+    runs-on: amd1
     timeout-minutes: 15
 
     env:
@@ -75,6 +78,7 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: python
 
       - name: Clean up disk space
         uses: jlumbroso/free-disk-space@main

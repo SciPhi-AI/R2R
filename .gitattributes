@@ -1,2 +1,3 @@
 *.html linguist-documentation
 *.ipynb linguist-documentation
+templates/** linguist-vendored

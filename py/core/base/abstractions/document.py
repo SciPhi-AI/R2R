@@ -1,5 +1,6 @@
 """Abstractions for documents and their extractions."""
 
+import base64
 import json
 import logging
 from datetime import datetime
@@ -7,21 +8,13 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import NAMESPACE_DNS, UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+
+from .base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
 DataType = Union[str, bytes]
-
-
-class DocumentStatus(str, Enum):
-    """Status of document processing."""
-
-    PROCESSING = "processing"
-    # TODO - Extend support for `partial-failure`
-    # PARTIAL_FAILURE = "partial-failure"
-    FAILURE = "failure"
-    SUCCESS = "success"
 
 
 class DocumentType(str, Enum):
@@ -46,41 +39,67 @@ class DocumentType(str, Enum):
     MP4 = "mp4"
 
 
-class Document(BaseModel):
+class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
     group_ids: list[UUID]
     user_id: UUID
-
     type: DocumentType
     data: Union[str, bytes]
     metadata: dict
 
-    def __init__(self, *args, **kwargs):
-        doc_type = kwargs.get("type")
-        if isinstance(doc_type, str):
-            kwargs["type"] = DocumentType(doc_type)
+    @validator("data")
+    def validate_data(cls, v):
+        if isinstance(v, (str, bytes)):
+            return v
+        raise ValueError("Data must be either str or bytes")
 
-        # Generate UUID based on the hash of the data
-        if "id" not in kwargs:
-            data = kwargs["data"]
-            if isinstance(data, bytes):
-                data_str = data.decode("utf-8", errors="ignore")
-            else:
-                data_str = data
-            data_hash = uuid4(NAMESPACE_DNS, data_str)
-            kwargs["id"] = data_hash  # Set the id based on the data hash
+    def dict(self, *args, **kwargs):
+        d = super().dict(*args, **kwargs)
+        if isinstance(d["data"], bytes):
+            d["data"] = base64.b64encode(d["data"]).decode("utf-8")
+            d["_is_base64"] = True
+        else:
+            d["_is_base64"] = False
+        return d
 
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def parse_obj(cls, obj):
+        if obj.get("_is_base64", False):
+            obj["data"] = base64.b64decode(obj["data"])
+        obj.pop("_is_base64", None)
+        return super().parse_obj(obj)
 
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {
             UUID: str,
-            bytes: lambda v: v.decode("utf-8", errors="ignore"),
+            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
         }
 
 
-class DocumentInfo(BaseModel):
+class IngestionStatus(str, Enum):
+    """Status of document processing."""
+
+    PENDING = "pending"
+    PARSING = "parsing"
+    CHUNKING = "chunking"
+    EMBEDDING = "embedding"
+    STORING = "storing"
+
+    FAILURE = "failure"
+    SUCCESS = "success"
+
+
+class RestructureStatus(str, Enum):
+    """Status of document processing."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    FAILURE = "failure"
+    SUCCESS = "success"
+
+
+class DocumentInfo(R2RSerializable):
     """Base class for document information handling."""
 
     id: UUID
@@ -91,8 +110,8 @@ class DocumentInfo(BaseModel):
     title: Optional[str] = None
     version: str
     size_in_bytes: int
-    ingestion_status: DocumentStatus = DocumentStatus.PROCESSING
-    restructuring_status: DocumentStatus = DocumentStatus.PROCESSING
+    ingestion_status: IngestionStatus = IngestionStatus.PENDING
+    restructuring_status: RestructureStatus = RestructureStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -116,7 +135,7 @@ class DocumentInfo(BaseModel):
         }
 
 
-class DocumentExtraction(BaseModel):
+class DocumentExtraction(R2RSerializable):
     """An extraction from a document."""
 
     id: UUID
@@ -127,7 +146,7 @@ class DocumentExtraction(BaseModel):
     metadata: dict
 
 
-class DocumentFragment(BaseModel):
+class DocumentFragment(R2RSerializable):
     """A fragment extracted from a document."""
 
     id: UUID

@@ -64,7 +64,7 @@ class KGLocalSearchResult(BaseModel):
     communities: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"LocalSearchResult(query={self.query}, search_result={self.search_result})"
+        return f"KGLocalSearchResult(query={self.query}, entities={self.entities}, relationships={self.relationships}, communities={self.communities})"
 
     def __repr__(self) -> str:
         return self.__str__()
