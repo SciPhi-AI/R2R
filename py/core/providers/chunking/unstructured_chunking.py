@@ -1,10 +1,12 @@
+import logging
 from typing import AsyncGenerator, Union
 
 from core.base import ChunkingProvider, Method, UnstructuredChunkingConfig
 from core.base.abstractions.document import DocumentExtraction
-import logging
 
 logger = logging.getLogger(__name__)
+
+
 class UnstructuredChunkingProvider(ChunkingProvider):
     def __init__(self, config: UnstructuredChunkingConfig):
         try:
@@ -54,5 +56,7 @@ class UnstructuredChunkingProvider(ChunkingProvider):
                     yield chunk.text
 
             except Exception as e:
-                logger.error(f"If you are trying to use r2r for parsing and unstructured for chunking, please use the r2r-unstructured docker. You can do that using --docker flag with `r2r serve` command. Error: {e}")
+                logger.error(
+                    f"If you are trying to use r2r for parsing and unstructured for chunking, please use the r2r-unstructured docker. You can do that using --docker flag with `r2r serve` command. Error: {e}"
+                )
                 raise e

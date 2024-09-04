@@ -8,6 +8,7 @@ from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
+
 class Method(str, Enum):
     BY_TITLE = "by_title"
     BASIC = "basic"
@@ -66,7 +67,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     hi_res_model_name: Optional[str]
     include_orig_elements: Optional[bool]
     include_page_breaks: bool
-    
+
     languages: Optional[list[str]]
     max_characters: Optional[int]
     multipage_sections: bool = True
@@ -76,12 +77,12 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     overlap: int = 0
     overlap_all: bool = False
     pdf_infer_table_structure: bool = True
-    
-    similarity_threshold: Optional[float] 
-    skip_infer_table_types: Optional[list[str]] 
+
+    similarity_threshold: Optional[float]
+    skip_infer_table_types: Optional[list[str]]
     split_pdf_concurrency_level: int = 5
     split_pdf_page: bool = True
-    starting_page_number: Optional[int] 
+    starting_page_number: Optional[int]
     strategy: str = "auto"
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
@@ -90,6 +91,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
         super().validate()
         if self.strategy not in ["auto", "fast", "hi_res"]:
             raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
+
 
 class ChunkingProvider(Provider, ABC):
     def __init__(self, config: ChunkingConfig):

@@ -77,9 +77,9 @@ class UnstructuredParsingProvider(ParsingProvider):
 
             req = self.operations.PartitionRequest(
                 self.shared.PartitionParameters(
-                    files=files,
-                    **self.config.chunking_config.dict()
+                    files=files, **self.config.chunking_config.dict()
                 )
+            )
             elements = self.client.general.partition(req)
             elements = list(elements.elements)
 
