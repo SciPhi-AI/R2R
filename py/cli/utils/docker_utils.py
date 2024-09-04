@@ -389,6 +389,9 @@ def check_subnet_conflict():
             network_id = network["ID"]
             network_name = network["Name"]
 
+            if network_name == "r2r-network":
+                continue
+
             try:
                 network_info_output = subprocess.check_output(
                     ["docker", "network", "inspect", network_id]

@@ -131,7 +131,7 @@ class KGClusteringPipe(AsyncPipe):
         )
 
         community = Community(
-            id=str(community_id),
+            id=community_id,
             level=str(level),
             summary=description,
             summary_embedding=await self.embedding_provider.async_get_embedding(

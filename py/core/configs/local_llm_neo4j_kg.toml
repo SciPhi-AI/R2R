@@ -38,7 +38,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
   [kg.kg_enrichment_settings]
     max_knowledge_triples = 100
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_cluster_size = 1000 } # more params 
+    leiden_params = { max_cluster_size = 1000 } # more params
 
   [kg.kg_search_config]
     model = "ollama/llama3.1"
