@@ -1,7 +1,3 @@
-"""
-This module contains the `DocumentParsingPipe` class, which is responsible for parsing incoming documents into plaintext.
-"""
-
 import logging
 from typing import AsyncGenerator, Optional
 from uuid import UUID
@@ -54,18 +50,16 @@ class ParsingPipe(AsyncPipe):
         version: str,
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
-            # Retrieve file content using document ID
             file_name, file_wrapper, file_size = (
                 self.file_provider.retrieve_file(document.id)
             )
+
             with file_wrapper as file_content_stream:
                 file_content = file_content_stream.read()
 
-            # Update document with file content
-            document.data = file_content
-
-            # Use the parsing provider to parse the document
-            async for extraction in self.parsing_provider.parse(document):
+            async for extraction in self.parsing_provider.parse(
+                file_content, document
+            ):
                 extraction_id = generate_id_from_label(
                     f"{extraction.id}-{version}"
                 )

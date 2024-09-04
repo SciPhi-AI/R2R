@@ -34,7 +34,9 @@ class ParsingProvider(Provider, ABC):
         self.config = config
 
     @abstractmethod
-    async def parse(self, document: Document) -> AsyncGenerator[Any, None]:
+    async def parse(
+        self, file_content: bytes, document: Document
+    ) -> AsyncGenerator[Any, None]:
         """Parse the document using the configured parsing strategy."""
         pass
 

@@ -3,9 +3,6 @@ from io import BytesIO
 from typing import BinaryIO, Optional
 from uuid import UUID
 
-from core.base import DatabaseConfig, FileProvider
-from core.providers.database.vecs import Client
-
 from .base import Provider, ProviderConfig
 
 
