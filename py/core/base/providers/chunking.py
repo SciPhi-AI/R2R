@@ -57,7 +57,7 @@ class ChunkingConfig(ProviderConfig):
 
 
 class UnstructuredChunkingConfig(ChunkingConfig):
-    provider: str = "unstructured_local" # or unstructured_api
+    provider: str = "unstructured_local"  # or unstructured_api
 
     combine_under_n_chars: Optional[int]
     coordinates: bool = False
