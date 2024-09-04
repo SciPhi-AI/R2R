@@ -29,6 +29,7 @@ types-requests = "^2.31.0"
 click = "^8.0.0"
 python-dotenv = "^1.0.1"
 nltk = "^3.9.1"
+hatchet-sdk = "^0.36.13"
 
 # Core dependencies (optional)
 future = { version = "^1.0.0", optional = true }
