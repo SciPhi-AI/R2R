@@ -92,32 +92,14 @@ class IngestionService(Service):
 
     async def store_file(
         self,
+        document_id: UUID,
         file_name: str,
-        file_content: AsyncIterable[bytes],
+        file_content: BytesIO,
         file_type: Optional[str] = None,
-    ) -> UUID:
-        file_id = uuid4()
-
-        with self.vx.cursor() as cur:
-            with self.vx.lobject(mode="wb") as lobj:
-                oid = lobj.oid
-
-                async for chunk in file_content:
-                    lobj.write(chunk)
-
-                file_size = lobj.tell()
-
-        # Insert metadata into the file_storage table
-        query = f"""
-        INSERT INTO {self._get_table_name('file_storage')}
-        (file_id, file_name, file_oid, file_size, file_type)
-        VALUES (%s, %s, %s, %s, %s)
-        """
-        self.execute_query(
-            query, (file_id, file_name, oid, file_size, file_type)
+    ) -> None:
+        await self.providers.database.relational.store_file(
+            document_id, file_name, file_content, file_type
         )
-
-        return file_id
 
     @telemetry_event("IngestFile")
     async def ingest_file_ingress(
@@ -143,71 +125,47 @@ class IngestionService(Service):
 
         metadata = metadata or {}
 
-        file_content = BytesIO(base64.b64decode(file_data["content"]))
-        file_id = await self.store_file(
-            file_data["filename"], file_content, file_data["content_type"]
-        )
-
-        # document id is dynamically generated from the filename and user id, unless explicitly provided
         document_id = document_id or generate_user_document_id(
             file_data["filename"], user.id
         )
+        file_content = BytesIO(base64.b64decode(file_data["content"]))
+
+        await self.store_file(
+            document_id,
+            file_data["filename"],
+            file_content,
+            file_data["content_type"],
+        )
+
         version = version or STARTING_VERSION
-        document = self._file_data_to_document(
-            file_data, user, document_id, metadata, version
-        )
-        document.metadata["file_id"] = str(file_id)
-
-        document_lookup = (
-            (
-                self.providers.database.relational.get_documents_overview(
-                    filter_user_ids=[user.id],
-                    filter_document_ids=[document_id],
-                )
-            )
-            if self.providers.database
-            else []
+        document_info = self._create_document_info(
+            document_id,
+            user,
+            file_data["filename"],
+            metadata,
+            version,
+            len(file_content.getvalue()),
         )
 
-        existing_document_info = {
-            doc_info.id: doc_info for doc_info in document_lookup
-        }
-        if is_update:
-            if (
-                document_id not in existing_document_info
-                or (existing_document_info[document.id].version >= version)
-                and existing_document_info[document.id].ingestion_status
-                == "success"
-            ):
+        if existing_document_info := self.providers.database.relational.get_documents_overview(
+            filter_user_ids=[user.id],
+            filter_document_ids=[document_id],
+        ):
+            existing_doc = existing_document_info[0]
+            if is_update:
+                if (
+                    existing_doc.version >= version
+                    and existing_doc.ingestion_status == "success"
+                ):
+                    raise R2RException(
+                        status_code=409,
+                        message=f"Must increment version number before attempting to overwrite document {document_id}.",
+                    )
+            elif existing_doc.ingestion_status != "failure":
                 raise R2RException(
                     status_code=409,
-                    message=f"Must increment version number before attempting to overwrite document {document.id}.",
+                    message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
-        elif (
-            document.id in existing_document_info
-            and existing_document_info[document.id].ingestion_status
-            != "failure"
-        ):
-            raise R2RException(
-                status_code=409,
-                message=f"Document {document.id} was already ingested and is not in a failed state.",
-            )
-
-        now = datetime.now()
-
-        document_info = DocumentInfo(
-            id=document.id,
-            user_id=document.user_id,
-            group_ids=document.group_ids,
-            type=document.type,
-            title=document.metadata.pop("title", "N/A"),
-            metadata=document.metadata,
-            version=version,
-            size_in_bytes=len(document.data),
-            ingestion_status="pending",
-            created_at=now,
-            updated_at=now,
-        )
 
         self.providers.database.relational.upsert_documents_overview(
             document_info
@@ -215,24 +173,55 @@ class IngestionService(Service):
 
         return {
             "info": document_info,
-            "document": document,
         }
+
+    def _create_document_info(
+        self,
+        document_id: UUID,
+        user: UserResponse,
+        file_name: str,
+        metadata: dict,
+        version: str,
+        file_size: int,
+    ) -> DocumentInfo:
+        file_extension = file_name.split(".")[-1].lower()
+        if file_extension.upper() not in DocumentType.__members__:
+            raise R2RException(
+                status_code=415,
+                message=f"'{file_extension}' is not a valid DocumentType.",
+            )
+
+        metadata = metadata or {}
+        metadata["title"] = metadata.get("title") or file_name.split("/")[-1]
+        metadata["version"] = version
+
+        return DocumentInfo(
+            id=document_id,
+            user_id=user.id,
+            group_ids=metadata.get("group_ids", []),
+            type=DocumentType[file_extension.upper()],
+            title=metadata["title"],
+            metadata=metadata,
+            version=version,
+            size_in_bytes=file_size,
+            ingestion_status="pending",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
 
     @ingestion_step("parsing")
     async def parse_file(
         self,
         document_info: DocumentInfo,
-        document: Document,
     ) -> list[DocumentFragment]:
-        file_id = UUID(document.metadata["file_id"])
         file_name, file_wrapper, file_size = (
-            self.providers.database.relational.retrieve_file(file_id)
+            self.providers.database.relational.retrieve_file(document_info.id)
         )
 
         with file_wrapper as file_content_stream:
             return await self.pipes.parsing_pipe.run(
                 input=self.pipes.parsing_pipe.Input(
-                    message=document, file_stream=file_content_stream
+                    message=document_info, file_stream=file_content_stream
                 ),
                 run_manager=self.run_manager,
             )
@@ -313,32 +302,6 @@ class IngestionService(Service):
 
         return empty_generator()
 
-    def _file_to_document(
-        self,
-        file: UploadFile,
-        user: UserResponse,
-        document_id: UUID,
-        metadata: dict,
-    ) -> Document:
-        file_extension = file.filename.split(".")[-1].lower()
-        if file_extension.upper() not in DocumentType.__members__:
-            raise R2RException(
-                status_code=415,
-                message=f"'{file_extension}' is not a valid DocumentType.",
-            )
-
-        document_title = metadata.get("title") or file.filename.split("/")[-1]
-        metadata["title"] = document_title
-
-        return Document(
-            id=document_id,
-            group_ids=metadata.get("group_ids", []),
-            user_id=user.id,
-            type=DocumentType[file_extension.upper()],
-            data=file.file.read(),
-            metadata=metadata,
-        )
-
     async def _process_ingestion_results(
         self,
         ingestion_results: dict,
@@ -406,38 +369,6 @@ class IngestionService(Service):
         document_info.metadata["error"] = error.message
         self.providers.database.relational.upsert_documents_overview(
             document_info
-        )
-
-    def _file_data_to_document(
-        self,
-        file_info: dict,
-        user: UserResponse,
-        document_id: UUID,
-        metadata: dict,
-        version: str,
-    ) -> Document:
-        file_extension = file_info["filename"].split(".")[-1].lower()
-        if file_extension.upper() not in DocumentType.__members__:
-            raise R2RException(
-                status_code=415,
-                message=f"'{file_extension}' is not a valid DocumentType.",
-            )
-
-        document_title = (
-            metadata.get("title") or file_info["filename"].split("/")[-1]
-        )
-        metadata["title"] = document_title
-        metadata["version"] = version
-        # Decode the base64 encoded content
-        content = base64.b64decode(file_info["content"])
-
-        return Document(
-            id=document_id,
-            group_ids=metadata.get("group_ids", []),
-            user_id=user.id,
-            type=DocumentType[file_extension.upper()],
-            data=content,
-            metadata=metadata,
         )
 
     async def _collect_results(self, result_gen: Any) -> list[dict]:

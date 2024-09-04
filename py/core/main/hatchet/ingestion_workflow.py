@@ -25,18 +25,17 @@ class IngestFilesWorkflow:
             input_data
         )
 
-        documents_and_info = await self.ingestion_service.ingest_file_ingress(
+        document_info = await self.ingestion_service.ingest_file_ingress(
             **parsed_data
         )
 
         try:
             extractions = await self.ingestion_service.parse_file(
-                documents_and_info["info"],
-                documents_and_info["document"],
+                document_info["info"]
             )
             return {
                 "result": extractions,
-                "info": documents_and_info["info"].json(),
+                "info": document_info["info"].json(),
             }
         except Exception as e:
             raise ValueError(f"Failed to parse document extractions: {str(e)}")
@@ -84,6 +83,7 @@ class IngestFilesWorkflow:
         )
 
 
+# TODO: Implement a check to see if the file is actually changed before updating
 @r2r_hatchet.workflow(
     name="update-files", on_events=["file:update"], timeout=3600
 )
@@ -94,8 +94,8 @@ class UpdateFilesWorkflow:
     @r2r_hatchet.step(retries=3)
     async def update_files(self, context: Context) -> None:
         data = context.workflow_input()["request"]
-
         parsed_data = IngestionServiceAdapter.parse_update_files_input(data)
+
         file_datas = parsed_data["file_datas"]
         user = parsed_data["user"]
         document_ids = parsed_data["document_ids"]
@@ -114,7 +114,7 @@ class UpdateFilesWorkflow:
 
         documents_overview = self.ingestion_service.providers.database.relational.get_documents_overview(
             filter_document_ids=document_ids,
-            filter_user_ids=[user.id] if not user.is_superuser else None,
+            filter_user_ids=None if user.is_superuser else [user.id],
         )
 
         if len(documents_overview) != len(document_ids):
@@ -140,7 +140,7 @@ class UpdateFilesWorkflow:
 
             # Prepare input for ingest_file workflow
             ingest_input = {
-                "file_data": data.get("file_datas")[idx],
+                "file_data": file_data,
                 "user": data.get("user"),
                 "metadata": updated_metadata,
                 "document_id": str(doc_id),

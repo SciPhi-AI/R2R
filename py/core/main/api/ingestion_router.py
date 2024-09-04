@@ -111,15 +111,15 @@ class IngestionRouter(BaseRouter):
                 workflow_input = {
                     "file_data": file_data,
                     "document_id": (
-                        [str(doc_id) for doc_id in document_ids][it]
-                        if document_ids
-                        else None
+                        str(document_ids[it]) if document_ids else None
                     ),
                     "metadata": metadatas[it] if metadatas else None,
                     "chunking_config": (
-                        chunking_config.json() if chunking_config else None
+                        chunking_config.model_dump_json()
+                        if chunking_config
+                        else None
                     ),
-                    "user": auth_user.json(),
+                    "user": auth_user.model_dump_json(),
                     "is_update": False,
                 }
 
@@ -128,7 +128,7 @@ class IngestionRouter(BaseRouter):
                 )
                 messages.append(
                     {
-                        "message": f"Ingestion task queued successfully.",
+                        "message": "Ingestion task queued successfully.",
                         "task_id": str(task_id),
                     }
                 )
@@ -188,7 +188,13 @@ class IngestionRouter(BaseRouter):
                     # Set user_id in metadata for non-superusers
                     metadata["user_id"] = str(auth_user.id)
 
-            file_datas = await self._process_files(files)
+            file_datas = [
+                {
+                    "filename": file_data["filename"],
+                    "content_type": file_data["content_type"],
+                }
+                for file_data in await self._process_files(files)
+            ]
 
             workflow_input = {
                 "file_datas": file_datas,
@@ -205,7 +211,7 @@ class IngestionRouter(BaseRouter):
             )
 
             return {
-                "message": f"Update task queued successfully.",
+                "message": "Update task queued successfully.",
                 "task_id": str(task_id),
             }
 
