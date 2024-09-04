@@ -93,12 +93,31 @@ class IngestionService(Service):
     async def store_file(
         self,
         file_name: str,
-        file_content: BytesIO,
+        file_content: AsyncIterable[bytes],
         file_type: Optional[str] = None,
     ) -> UUID:
-        return self.providers.database.relational.store_file(
-            file_name, file_content, file_type
+        file_id = uuid4()
+
+        with self.vx.cursor() as cur:
+            with self.vx.lobject(mode="wb") as lobj:
+                oid = lobj.oid
+
+                async for chunk in file_content:
+                    lobj.write(chunk)
+
+                file_size = lobj.tell()
+
+        # Insert metadata into the file_storage table
+        query = f"""
+        INSERT INTO {self._get_table_name('file_storage')}
+        (file_id, file_name, file_oid, file_size, file_type)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+        self.execute_query(
+            query, (file_id, file_name, oid, file_size, file_type)
         )
+
+        return file_id
 
     @telemetry_event("IngestFile")
     async def ingest_file_ingress(
@@ -206,16 +225,17 @@ class IngestionService(Service):
         document: Document,
     ) -> list[DocumentFragment]:
         file_id = UUID(document.metadata["file_id"])
-        file_name, file_content, file_size = (
+        file_name, file_wrapper, file_size = (
             self.providers.database.relational.retrieve_file(file_id)
         )
 
-        document.data = file_content.read()
-
-        return await self.pipes.parsing_pipe.run(
-            input=self.pipes.parsing_pipe.Input(message=document),
-            run_manager=self.run_manager,
-        )
+        with file_wrapper as file_content_stream:
+            return await self.pipes.parsing_pipe.run(
+                input=self.pipes.parsing_pipe.Input(
+                    message=document, file_stream=file_content_stream
+                ),
+                run_manager=self.run_manager,
+            )
 
     @ingestion_step("chunking")
     async def chunk_document(

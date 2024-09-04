@@ -1,10 +1,13 @@
+import logging
 from io import BytesIO
-from typing import Optional
+from typing import BinaryIO, Optional
 from uuid import UUID, uuid4
 
-from core.base import DatabaseProvider
+from psycopg2 import Error as PostgresError
 
 from .base import DatabaseMixin
+
+logger = logging.getLogger(__name__)
 
 
 class FileInfo:
@@ -53,7 +56,14 @@ class PostgresFileProvider(DatabaseMixin):
         CREATE INDEX IF NOT EXISTS idx_file_name_{self.collection_name}
         ON {self._get_table_name('file_storage')} (file_name);
         """
-        self.execute_query(query)
+        try:
+            self.execute_query(query)
+            logger.info(
+                f"Created table {self._get_table_name('file_storage')}"
+            )
+        except PostgresError as e:
+            logger.error(f"Failed to create table: {e}")
+            raise
 
     def upsert_file(self, file_info: FileInfo) -> None:
         query = f"""
@@ -67,7 +77,12 @@ class PostgresFileProvider(DatabaseMixin):
             file_type = EXCLUDED.file_type,
             updated_at = EXCLUDED.updated_at;
         """
-        self.execute_query(query, file_info.convert_to_db_entry())
+        try:
+            self.execute_query(query, file_info.convert_to_db_entry())
+            logger.info(f"Upserted file {file_info.id}")
+        except PostgresError as e:
+            logger.error(f"Failed to upsert file {file_info.id}: {e}")
+            raise
 
     def store_file(
         self,
@@ -78,63 +93,101 @@ class PostgresFileProvider(DatabaseMixin):
         file_id = uuid4()
         file_size = file_content.getbuffer().nbytes
 
-        with self.vx.cursor() as cur:
-            # Create a Large Object
-            lobj = self.vx.lobject(mode="wb")
-            oid = lobj.oid
+        try:
+            with self.vx.cursor() as cur:
+                with self.vx.lobject(mode="wb") as lobj:
+                    oid = lobj.oid
+                    lobj.write(file_content.read())
 
-            # Write the file content to the Large Object
-            lobj.write(file_content.read())
-            lobj.close()
+            file_info = FileInfo(
+                id=file_id,
+                file_name=file_name,
+                file_oid=oid,
+                file_size=file_size,
+                file_type=file_type,
+                created_at=None,
+                updated_at=None,
+            )
+            self.upsert_file(file_info)
 
-        file_info = FileInfo(
-            id=file_id,
-            file_name=file_name,
-            file_oid=oid,
-            file_size=file_size,
-            file_type=file_type,
-            created_at=None,  # Let the database set these
-            updated_at=None,
-        )
-        self.upsert_file(file_info)
-
-        return file_id
+            logger.info(f"Stored file {file_id} successfully")
+            return file_id
+        except PostgresError as e:
+            logger.error(f"Failed to store file {file_name}: {e}")
+            raise
 
     def retrieve_file(
         self, file_id: UUID
-    ) -> Optional[tuple[str, BytesIO, int]]:
+    ) -> Optional[tuple[str, BinaryIO, int]]:
         query = f"""
         SELECT file_name, file_oid, file_size
         FROM {self._get_table_name('file_storage')}
-        WHERE file_id = :file_id
+        WHERE file_id = %s
         """
-        result = self.execute_query(query, {"file_id": file_id}).fetchone()
+        try:
+            result = self.execute_query(query, (file_id,)).fetchone()
 
-        if result is None:
-            return None
+            if result is None:
+                logger.warning(f"File {file_id} not found")
+                return None
 
-        file_name, oid, file_size = result
-        lobj = self.vx.lobject(oid=oid, mode="rb")
-        file_content = lobj.read()
-        lobj.close()
+            file_name, oid, file_size = result
 
-        return file_name, BytesIO(file_content), file_size
+            class LOBjectWrapper:
+                def __init__(self, vx, oid):
+                    self.vx = vx
+                    self.oid = oid
+                    self.lobj = None
+
+                def __enter__(self):
+                    self.lobj = self.vx.lobject(oid=self.oid, mode="rb")
+                    return self.lobj
+
+                def __exit__(self, exc_type, exc_val, exc_tb):
+                    if self.lobj:
+                        self.lobj.close()
+
+            logger.info(f"Retrieved file {file_id} successfully")
+            return file_name, LOBjectWrapper(self.vx, oid), file_size
+        except PostgresError as e:
+            logger.error(f"Failed to retrieve file {file_id}: {e}")
+            raise
 
     def delete_file(self, file_id: UUID) -> bool:
-        query = f"""
-        DELETE FROM {self._get_table_name('file_storage')}
-        WHERE file_id = :file_id
-        RETURNING file_oid
-        """
-        result = self.execute_query(query, {"file_id": file_id}).fetchone()
+        try:
+            with self.vx.cursor() as cur:
+                # First, get the OID
+                query = f"""
+                SELECT file_oid FROM {self._get_table_name('file_storage')}
+                WHERE file_id = %s
+                """
+                cur.execute(query, (file_id,))
+                result = cur.fetchone()
 
-        if result is None:
+                if result is None:
+                    logger.warning(f"File {file_id} not found for deletion")
+                    return False
+
+                oid = result[0]
+
+                # Then, delete the large object
+                lobj = self.vx.lobject(oid, mode="rb")
+                lobj.unlink()
+
+                # Finally, delete the metadata
+                query = f"""
+                DELETE FROM {self._get_table_name('file_storage')}
+                WHERE file_id = %s
+                """
+                cur.execute(query, (file_id,))
+
+            self.vx.commit()
+            logger.info(f"Deleted file {file_id} successfully")
+            return True
+        except PostgresError as e:
+            self.vx.rollback()
+            logger.error(f"Failed to delete file {file_id}: {e}")
             return False
-
-        oid = result[0]
-        self.vx.lobject(oid=oid).unlink()
-
-        return True
 
     def get_files_overview(
         self,
@@ -149,11 +202,11 @@ class PostgresFileProvider(DatabaseMixin):
             params["limit"] = limit
 
         if filter_file_ids:
-            conditions.append("file_id = ANY(:file_ids)")
+            conditions.append("file_id = ANY(%s)")
             params["file_ids"] = filter_file_ids
 
         if filter_file_names:
-            conditions.append("file_name = ANY(:file_names)")
+            conditions.append("file_name = ANY(%s)")
             params["file_names"] = filter_file_names
 
         query = f"""
@@ -163,23 +216,28 @@ class PostgresFileProvider(DatabaseMixin):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        limit_clause = "" if limit == -1 else "LIMIT :limit"
-        query += f"""
+        query += """
             ORDER BY created_at DESC
-            OFFSET :offset
-            {limit_clause}
+            OFFSET %(offset)s
         """
+        if limit != -1:
+            query += " LIMIT %(limit)s"
 
-        results = self.execute_query(query, params).fetchall()
-        return [
-            FileInfo(
-                id=row[0],
-                file_name=row[1],
-                file_oid=row[2],
-                file_size=row[3],
-                file_type=row[4],
-                created_at=row[5],
-                updated_at=row[6],
-            )
-            for row in results
-        ]
+        try:
+            results = self.execute_query(query, params).fetchall()
+            logger.info(f"Retrieved {len(results)} file overviews")
+            return [
+                FileInfo(
+                    id=row[0],
+                    file_name=row[1],
+                    file_oid=row[2],
+                    file_size=row[3],
+                    file_type=row[4],
+                    created_at=row[5],
+                    updated_at=row[6],
+                )
+                for row in results
+            ]
+        except PostgresError as e:
+            logger.error(f"Failed to get files overview: {e}")
+            raise
