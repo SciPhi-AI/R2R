@@ -10,6 +10,7 @@ from core.base import (
     AsyncState,
     Document,
     DocumentExtraction,
+    FileProvider,
     ParsingProvider,
     PipeType,
     RunLoggingSingleton,
@@ -28,6 +29,7 @@ class ParsingPipe(AsyncPipe):
     def __init__(
         self,
         parsing_provider: ParsingProvider,
+        file_provider: FileProvider,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
@@ -43,6 +45,7 @@ class ParsingPipe(AsyncPipe):
             **kwargs,
         )
         self.parsing_provider = parsing_provider
+        self.file_provider = file_provider
 
     async def _parse(
         self,
@@ -51,12 +54,22 @@ class ParsingPipe(AsyncPipe):
         version: str,
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
+            # Retrieve file content using document ID
+            file_name, file_wrapper, file_size = (
+                self.file_provider.retrieve_file(document.id)
+            )
+            with file_wrapper as file_content_stream:
+                file_content = file_content_stream.read()
+
+            # Update document with file content
+            document.data = file_content
+
+            # Use the parsing provider to parse the document
             async for extraction in self.parsing_provider.parse(document):
                 extraction_id = generate_id_from_label(
                     f"{extraction.id}-{version}"
                 )
                 extraction.id = extraction_id
-                # Add version to metadata
                 extraction.metadata["version"] = version
                 yield extraction
         except Exception as e:

@@ -44,36 +44,12 @@ class Document(R2RSerializable):
     group_ids: list[UUID]
     user_id: UUID
     type: DocumentType
-    data: Union[str, bytes]
     metadata: dict
-
-    @validator("data")
-    def validate_data(cls, v):
-        if isinstance(v, (str, bytes)):
-            return v
-        raise ValueError("Data must be either str or bytes")
-
-    def dict(self, *args, **kwargs):
-        d = super().dict(*args, **kwargs)
-        if isinstance(d["data"], bytes):
-            d["data"] = base64.b64encode(d["data"]).decode("utf-8")
-            d["_is_base64"] = True
-        else:
-            d["_is_base64"] = False
-        return d
-
-    @classmethod
-    def parse_obj(cls, obj):
-        if obj.get("_is_base64", False):
-            obj["data"] = base64.b64decode(obj["data"])
-        obj.pop("_is_base64", None)
-        return super().parse_obj(obj)
 
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {
             UUID: str,
-            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
         }
 
 
