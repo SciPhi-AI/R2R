@@ -132,7 +132,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
             # if embedding is present in the entity, just return it
             # in the future disable this to override and recompute the descriptions for all entities
-            if entity.description_embedding and entity.name_embedding:
+            if entity.description_embedding:
                 return entity
 
             entity_info = f"{entity.name}, {entity.description}"
@@ -203,6 +203,8 @@ class KGNodeDescriptionPipe(AsyncPipe):
         self.kg_provider.upsert_entities(
             processed_entities, with_embeddings=True
         )
+
+        logger.info("KG Node Description pipe: Upserted entities to the database")
 
         for entity in processed_entities:
             yield entity

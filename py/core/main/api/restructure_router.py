@@ -111,7 +111,8 @@ class RestructureRouter(BaseRouter):
                 pass
 
             workflow_input = {
-                "kg_enrichment_settings": kg_enrichment_settings.json(),
+                "generation_config": kg_enrichment_settings.generation_config.to_dict(),
+                "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
             }
 

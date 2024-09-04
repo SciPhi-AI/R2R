@@ -503,7 +503,7 @@ class Neo4jKGProvider(KGProvider):
                 }
             )"""
 
-        print(GRAPH_PROJECTION_QUERY)
+        # print(GRAPH_PROJECTION_QUERY)
 
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
@@ -514,11 +514,11 @@ class Neo4jKGProvider(KGProvider):
         include_intermediate_communities = leiden_params.get(
             "include_intermediate_communities", True
         )
-        max_levels = leiden_params.get("maxLevels", 10)
+        max_levels = leiden_params.get("max_levels", 10)
         gamma = leiden_params.get("gamma", 1.0)
         theta = leiden_params.get("theta", 0.01)
         tolerance = leiden_params.get("tolerance", 0.0001)
-        min_level_size = leiden_params.get("minLevelSize", 10)
+        min_community_size = leiden_params.get("min_community_size", 1)
         # don't use the seed property for now
         seed_property_config = (
             ""  # f"seedProperty: '{seed_property}'" if graph_exists else ""
@@ -530,8 +530,11 @@ class Neo4jKGProvider(KGProvider):
                 writeProperty: '{write_property}',
                 randomSeed: {random_seed},
                 includeIntermediateCommunities: {include_intermediate_communities},
-                maxLevels: {maxLevels},
-
+                maxLevels: {max_levels},
+                gamma: {gamma},
+                theta: {theta},
+                tolerance: {tolerance},
+                minCommunitySize: {min_community_size}
             }})
             YIELD communityCount, modularities;
         """

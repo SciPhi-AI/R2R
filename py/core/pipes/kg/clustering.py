@@ -184,8 +184,8 @@ class KGClusteringPipe(AsyncPipe):
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
 
-        leiden_params = input.message.leiden_params
-        generation_config = input.message.generation_config
+        leiden_params = input.message['leiden_params']
+        generation_config = input.message['generation_config']
 
         base_dimension = self.embedding_provider.config.base_dimension
         vector_index_fn = self.kg_provider.create_vector_index

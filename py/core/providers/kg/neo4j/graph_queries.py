@@ -76,7 +76,6 @@ PUT_ENTITIES_EMBEDDINGS_QUERY = """
 MATCH (e:__Entity__ {name: value.name})
 SET e += value {.description}
 WITH e, value
-CALL db.create.setNodeVectorProperty(e, "name_embedding", value.name_embedding)
 CALL db.create.setNodeVectorProperty(e, "description_embedding", value.description_embedding)
 """
 
