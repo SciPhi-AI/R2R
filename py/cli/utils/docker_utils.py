@@ -351,9 +351,15 @@ def build_docker_command(
 
     command += f" --project-name {project_name}"
 
-    os.environ["PORT"] = str(available_port)
+    # Find available ports
+    r2r_port = find_available_port(port)
+    r2r_dashboard_port = find_available_port(r2r_port + 1)
+    hatchet_dashboard_port = find_available_port(r2r_dashboard_port + 1)
+
+    os.environ["PORT"] = str(r2r_port)
     os.environ["HOST"] = host
-    os.environ["TRAEFIK_PORT"] = str(available_port + 1)
+    os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
+    os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""
 
     if config_name is not None:
@@ -362,7 +368,6 @@ def build_docker_command(
         os.environ["CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
-
     command += " up -d"
     return command
 

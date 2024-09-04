@@ -251,7 +251,7 @@ def serve(
                 print(f"Navigating to dashboard in {i} seconds...")
                 time.sleep(1)
 
-            traefik_port = os.environ.get("TRAEFIK_PORT", "80")
+            traefik_port = os.environ.get("R2R_DASHBOARD_PORT", "80")
             url = f"http://localhost:{traefik_port}"
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)

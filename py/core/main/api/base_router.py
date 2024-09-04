@@ -1,7 +1,7 @@
 import functools
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse

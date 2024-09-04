@@ -1,8 +1,6 @@
 import logging
-from pathlib import Path
 from typing import Optional
 
-import yaml
 from fastapi import Body, Depends
 from pydantic import Json
 
@@ -12,7 +10,6 @@ from core.base.api.models.restructure.responses import (
 )
 from core.base.providers import OrchestrationProvider
 
-from ...main.hatchet import r2r_hatchet
 from ..hatchet import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
@@ -84,7 +81,7 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = self.orchestration_provider.workflow(
                 "create-graph", {"request": workflow_input}
             )
 
@@ -127,7 +124,7 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = self.orchestration_provider.workflow(
                 "enrich-graph", {"request": workflow_input}
             )
 

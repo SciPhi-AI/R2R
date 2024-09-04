@@ -3,14 +3,10 @@
 
 """A module for clustering entities and triples into communities using hierarchical Leiden algorithm."""
 
-import asyncio
 import json
 import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
-
-import networkx as nx
-from tqdm.asyncio import tqdm_asyncio
 
 from core.base import (
     AsyncPipe,
@@ -20,7 +16,6 @@ from core.base import (
     EmbeddingProvider,
     Entity,
     GenerationConfig,
-    KGEnrichmentSettings,
     KGProvider,
     PipeType,
     PromptProvider,

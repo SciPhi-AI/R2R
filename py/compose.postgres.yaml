@@ -3,11 +3,6 @@ networks:
     name: r2r-network
 
 services:
-  r2r:
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   postgres:
     image: pgvector/pgvector:pg16
     environment:

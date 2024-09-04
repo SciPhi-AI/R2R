@@ -1,7 +1,7 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 import psutil

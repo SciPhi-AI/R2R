@@ -82,7 +82,6 @@ class EnrichGraphWorkflow:
 
     @r2r_hatchet.step(retries=3)
     async def kg_node_creation(self, context: Context) -> None:
-        print("kg node extraction ingress2...")
         await self.restructure_service.kg_node_creation()
         return {"result": None}
 
