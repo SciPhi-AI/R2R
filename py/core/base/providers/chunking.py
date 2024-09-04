@@ -58,30 +58,30 @@ class ChunkingConfig(ProviderConfig):
 class UnstructuredChunkingConfig(ChunkingConfig):
     provider: str = "unstructured"
 
-    combine_under_n_chars: Optional[int] = None
+    combine_under_n_chars: Optional[int]
     coordinates: bool = False
-    encoding: Optional[str] = None
-    extract_image_block_types: Optional[list[str]] = None
-    gz_uncompressed_content_type: Optional[str] = None
-    hi_res_model_name: Optional[str] = None
-    include_orig_elements: Optional[bool] = None
-    include_page_breaks: bool = False
+    encoding: Optional[str]
+    extract_image_block_types: Optional[list[str]]
+    gz_uncompressed_content_type: Optional[str]
+    hi_res_model_name: Optional[str]
+    include_orig_elements: Optional[bool]
+    include_page_breaks: bool
     
-    languages: Optional[list[str]] = None
-    max_characters: Optional[int] = None
+    languages: Optional[list[str]]
+    max_characters: Optional[int]
     multipage_sections: bool = True
-    new_after_n_chars: Optional[int] = None
-    ocr_languages: Optional[list[str]] = None
+    new_after_n_chars: Optional[int]
+    ocr_languages: Optional[list[str]]
     output_format: str = "application/json"
     overlap: int = 0
     overlap_all: bool = False
     pdf_infer_table_structure: bool = True
     
-    similarity_threshold: Optional[float] = None
-    skip_infer_table_types: Optional[list[str]] = None
+    similarity_threshold: Optional[float] 
+    skip_infer_table_types: Optional[list[str]] 
     split_pdf_concurrency_level: int = 5
     split_pdf_page: bool = True
-    starting_page_number: Optional[int] = None
+    starting_page_number: Optional[int] 
     strategy: str = "auto"
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
@@ -90,10 +90,6 @@ class UnstructuredChunkingConfig(ChunkingConfig):
         super().validate()
         if self.strategy not in ["auto", "fast", "hi_res"]:
             raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
-        
-        
-
-
 
 class ChunkingProvider(Provider, ABC):
     def __init__(self, config: ChunkingConfig):
