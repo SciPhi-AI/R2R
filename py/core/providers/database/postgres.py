@@ -101,10 +101,9 @@ class PostgresDBProvider(DatabaseProvider):
         )
 
     def _initialize_relational_db(self) -> RelationalDBProvider:
-        provider = PostgresRelationalDBProvider(
+        return PostgresRelationalDBProvider(
             self.config,
             vx=self.vx,
             crypto_provider=self.crypto_provider,
             collection_name=self.collection_name,
         )
-        return provider

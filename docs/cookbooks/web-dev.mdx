@@ -120,7 +120,7 @@ console.log("Ingest result:", JSON.stringify(ingestResult, null, 2));
 This command processes the ingested, splits them into chunks, embeds the chunks, and stores them into your specified Postgres database. Relational data is also stored to allow for downstream document management, which you can read about in the [quickstart](https://r2r-docs.sciphi.ai/quickstart).
 
 ### Performing RAG
-We'll make a RAG request, 
+We'll make a RAG request,
 
 ```javascript
 console.log("Performing RAG...");
@@ -275,7 +275,7 @@ const R2RQueryApp: React.FC = () => {
         className={styles.queryInput}
       />
       <button
-        onClick={performQuery} 
+        onClick={performQuery}
         disabled={isLoading}
         className={styles.submitButton}
       >

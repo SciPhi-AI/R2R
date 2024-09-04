@@ -5,12 +5,12 @@ description: 'Learn how to configure and use the authentication provider in R2R'
 
 ## Introduction
 
-R2R's `CryptoProvider` and `AuthProvider` combine to handle user authentication and cryptographic operations in your applications. This guide offers an in-depth look at the system's architecture, configuration options, and best practices for implementation. 
+R2R's `CryptoProvider` and `AuthProvider` combine to handle user authentication and cryptographic operations in your applications. This guide offers an in-depth look at the system's architecture, configuration options, and best practices for implementation.
 
 For a practical, step-by-step guide on implementing authentication in R2R, including code examples and common use cases, see our [User Auth Cookbook](/cookbooks/user-auth).
 
 <Note>
-When authentication is not required (require_authentication is set to false, which is the default in `r2r.toml`), unauthenticated requests will default to using the credentials of the default admin user. 
+When authentication is not required (require_authentication is set to false, which is the default in `r2r.toml`), unauthenticated requests will default to using the credentials of the default admin user.
 
 This behavior ensures that operations can proceed smoothly in development or testing environments where authentication may not be enforced, but it should be used with caution in production settings.
 </Note>
@@ -250,10 +250,10 @@ class OAuthAuthProvider(AuthProvider):
         # Handle OAuth callback
         token = await self.oauth_client.get_access_token(code)
         user_data = await self.oauth_client.get_user_info(token)
-        
+
         # Map external user data to R2R's user model
         r2r_user = self._map_oauth_user_to_r2r_user(user_data)
-        
+
         # Create and return R2R tokens
         access_token = self.create_access_token({"sub": r2r_user.email})
         refresh_token = self.create_refresh_token({"sub": r2r_user.email})

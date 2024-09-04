@@ -4,7 +4,7 @@ description: 'Configure the R2R ingestion pipeline'
 ---
 ## Introduction
 
-R2R's ingestion pipeline processes and stores documents efficiently for later retrieval. This guide covers the key configuration options for the ingestion process, focusing on embedding provider configuration. 
+R2R's ingestion pipeline processes and stores documents efficiently for later retrieval. This guide covers the key configuration options for the ingestion process, focusing on embedding provider configuration.
 
 We have the following components available for configuration:
 
@@ -120,7 +120,7 @@ Let's break down the embedding configuration options:
   <Tab title="OpenAI">
     Example configuration:
     ```toml example r2r.toml
-    provider = "litellm" 
+    provider = "litellm"
     base_model = "text-embedding-3-small"
     base_dimension = 512
     ```
@@ -146,7 +146,7 @@ Let's break down the embedding configuration options:
     base_model = "azure/<your deployment name>"
     base_dimension = XXX
     ```
-  
+
     ```bash
     export AZURE_API_KEY=your_azure_api_key
     export AZURE_API_BASE=your_azure_api_base
@@ -176,10 +176,10 @@ Let's break down the embedding configuration options:
     ```bash
     export COHERE_API_KEY=your_cohere_api_key
     # .. set other environment variables
-    
+
     r2r serve --config-path=r2r.toml
     ```
-    
+
     Supported models include:
     - embed-english-v3.0
     - embed-english-light-v3.0
@@ -210,13 +210,13 @@ Let's break down the embedding configuration options:
     # Ensure your Ollama server is running
     # Default Ollama server address: http://localhost:11434
     # <-- OR -->
-    # Use `r2r serve --docker --config-name=local_llm` 
+    # Use `r2r serve --docker --config-name=local_llm`
     # which bundles ollama with R2R in Docker by default!
 
     r2r serve --config-path=r2r.toml
     ```
 
-    Then, deploy your R2R server with `r2r serve --config-path=r2r.toml`. 
+    Then, deploy your R2R server with `r2r serve --config-path=r2r.toml`.
   </Tab>
 
   <Tab title="HuggingFace">
@@ -247,7 +247,7 @@ Let's break down the embedding configuration options:
     base_model = "amazon.titan-embed-text-v1"
     base_dimension = 1_024
     ```
-    
+
     ```bash
     export AWS_ACCESS_KEY_ID=your_access_key
     export AWS_SECRET_ACCESS_KEY=your_secret_key
@@ -392,7 +392,7 @@ You can customize the knowledge graph extraction and search processes by modifyi
 By leveraging the knowledge graph capabilities, you can enhance R2R's understanding of document relationships and improve the quality of search and retrieval operations.
 
 
-## Vector & Relational Databases 
+## Vector & Relational Databases
 
 # Postgres Configuration
 
@@ -450,4 +450,3 @@ Let's break down the Postgres configuration options:
 5. If you're using a cloud-hosted Postgres service, make sure to configure any necessary firewall rules or security groups to allow connections from your R2R application.
 
 By customizing these settings, you can configure R2R to use your specific Postgres database instance, allowing for flexibility in your deployment setup and data management.
-

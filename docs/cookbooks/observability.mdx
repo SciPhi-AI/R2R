@@ -12,7 +12,7 @@ This guide demonstrates how to leverage R2R's powerful analytics and logging fea
 <Note>
 The features described in this cookbook are typically restricted to superusers. Ensure you have the necessary permissions before attempting to access these features.
 </Note>
- 
+
 For more information on user roles and permissions, including how to set up and manage superuser accounts, please refer to our [User Auth Cookbook](/cookbooks/user-auth).
 
 ## Setup
@@ -57,7 +57,7 @@ curl -X POST http://localhost:8000/v2/logs \
     "log_type_filter": null,
     "max_runs_requested": 100
   }'
-```    
+```
 </Tab>
 
 </Tabs>
@@ -80,7 +80,7 @@ Expected Output:
 ]
 ```
 
-These logs provide detailed information about each operation, including search results, queries, latencies, and LLM responses. 
+These logs provide detailed information about each operation, including search results, queries, latencies, and LLM responses.
 
 
 To fetch the logs directly from an instantiated R2R object:
@@ -113,7 +113,7 @@ r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-type
 client.analytics(
   {"search_latencies": "search_latency"},
   {"search_latencies": ["basic_statistics", "search_latency"]}
-)  
+)
 ```
 </Tab>
 
@@ -144,14 +144,14 @@ curl -X POST http://localhost:8000/v2/analytics \
         "search_latencies": "search_latency"
       }
     },
-    "analysis_types": 
+    "analysis_types":
     {
         "analysis_types": {
             "search_latencies": ["basic_statistics", "search_latency"]
         }
     }
   }'
-```    
+```
 </Tab>
 
 

@@ -9,7 +9,7 @@ icon: 'bars-progress'
 
 Welcome to the R2R installation guide, here are some of the key features R2R offers for your RAG applications:
 
-- **Flexibility**: Run with cloud-based LLMs or entirely on your local machine 
+- **Flexibility**: Run with cloud-based LLMs or entirely on your local machine
 - **SoTA**: Advanced RAG techniques like [hybrid search](/cookbooks/hybrid-search), [GraphRAG](/cookbooks/graphrag), and [agentic RAG](/cookbooks/agent).
 - **Auth & Group permissions**: Features like authentication, document management, user & group permissioning, and more.
 
@@ -28,10 +28,10 @@ pip install r2r
 ## Start R2R with Docker
 The following guide assumes that Docker has already been installed on your system. Refer to the Docker [documentation here for installation help](https://docs.docker.com/engine/install/).
 
-<Note> 
-Neo4j and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`. 
+<Note>
+Neo4j and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
 
-Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`. 
+Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`.
 
 </Note>
 
@@ -41,7 +41,7 @@ Excluding postgres requires that a valid configuration be selected, such as `cor
         ```bash
         # Set cloud LLM settings
         export OPENAI_API_KEY=sk-...
-        
+
         r2r serve --docker --config-name=default
 
         # to run without docker, do `pip install 'r2r[core]'`, and set req. env. variables
@@ -74,12 +74,12 @@ Excluding postgres requires that a valid configuration be selected, such as `cor
     </Accordion>
   </AccordionGroup>
 
-  The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Neo4j`, `Postgres+pgvector`. 
+  The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Neo4j`, `Postgres+pgvector`.
 
   The end result is a live server at http://localhost:8000 serving the [R2R API](/api-reference/introduction).
 
  In addition to launching a RESTful API, the R2R Docker also launches an application at `localhost`, which you can [read more about here](/cookbooks/application). You should continue on to the [quickstart guide](/documentation/quickstart) as soon as the server is up and running.
- 
+
 ### Stopping R2R
 Safely stop your system by running `r2r docker-down` to avoid potential shutdown complications.
 
@@ -132,7 +132,7 @@ Safely stop your system by running `r2r docker-down` to avoid potential shutdown
       Refer [here for basic setup help](/other/neo4j-setup).
     </Accordion>
   </AccordionGroup>
-  
+
 ### Python Development Mode
 
 For those looking to develop R2R locally:

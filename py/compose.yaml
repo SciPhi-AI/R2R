@@ -31,26 +31,26 @@ services:
       sh -c "
         set -e
         echo 'Starting token creation process...'
-        
+
         # Attempt to create token and capture both stdout and stderr
         TOKEN_OUTPUT=$$(/hatchet/hatchet-admin token create --config /hatchet/config --tenant-id 707d0855-80ab-4e1f-a156-f1c4546cbf52 2>&1)
-        
+
         # Extract the token (assuming it's the only part that looks like a JWT)
         TOKEN=$$(echo "$$TOKEN_OUTPUT" | grep -Eo 'eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*')
-        
+
         if [ -z "$$TOKEN" ]; then
           echo 'Error: Failed to extract token. Full command output:' >&2
           echo "$$TOKEN_OUTPUT" >&2
           exit 1
         fi
-        
+
         echo "$$TOKEN" > /tmp/hatchet_api_key
         echo 'Token created and saved to /tmp/hatchet_api_key'
-        
+
         # Copy token to final destination
         echo -n "$$TOKEN" > /hatchet_api_key/api_key.txt
         echo 'Token copied to /hatchet_api_key/api_key.txt'
-        
+
         # Verify token was copied correctly
         if [ "$$(cat /tmp/hatchet_api_key)" != "$$(cat /hatchet_api_key/api_key.txt)" ]; then
           echo 'Error: Token copy failed, files do not match' >&2
@@ -60,7 +60,7 @@ services:
           cat /hatchet_api_key/api_key.txt
           exit 1
         fi
-        
+
         echo 'Hatchet API key has been saved successfully'
         echo 'Token length:' $${#TOKEN}
         echo 'Token (first 20 chars):' $${TOKEN:0:20}
@@ -103,7 +103,8 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod}
+    # image: ${R2R_IMAGE:-ragtoriches/prod}
+    image: r2r/test
     build:
       context: .
       args:

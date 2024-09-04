@@ -97,7 +97,7 @@ async def run(self, input: Any, *args: Any, **kwargs: Any) -> None:
         # ... signal completion ...
 
     enqueue_task = asyncio.create_task(enqueue_documents())
-    
+
     if self.embedding_pipeline:
         embedding_task = asyncio.create_task(self.embedding_pipeline.run(...))
     if self.kg_pipeline:
