@@ -7,8 +7,6 @@ from io import BytesIO
 from typing import Any, Callable, Coroutine, Optional
 from uuid import UUID
 
-from fastapi import UploadFile
-
 from core.base import (
     Document,
     DocumentExtraction,
@@ -90,14 +88,14 @@ class IngestionService(Service):
             logging_connection,
         )
 
-    async def store_file(
+    def store_file(
         self,
         document_id: UUID,
         file_name: str,
         file_content: BytesIO,
         file_type: Optional[str] = None,
     ) -> None:
-        await self.providers.database.relational.store_file(
+        self.providers.database.relational.store_file(
             document_id, file_name, file_content, file_type
         )
 
@@ -130,7 +128,7 @@ class IngestionService(Service):
         )
         file_content = BytesIO(base64.b64decode(file_data["content"]))
 
-        await self.store_file(
+        self.store_file(
             document_id,
             file_data["filename"],
             file_content,
@@ -219,9 +217,22 @@ class IngestionService(Service):
         )
 
         with file_wrapper as file_content_stream:
+            content = file_content_stream.read()
             return await self.pipes.parsing_pipe.run(
                 input=self.pipes.parsing_pipe.Input(
-                    message=document_info, file_stream=file_content_stream
+                    message=Document(
+                        id=document_info.id,
+                        group_ids=document_info.group_ids,
+                        user_id=document_info.user_id,
+                        type=document_info.type,
+                        data=content,
+                        metadata={
+                            "file_name": file_name,
+                            "file_size": file_size,
+                            "document_type": document_info.type.value,
+                            **document_info.metadata,
+                        },
+                    )
                 ),
                 run_manager=self.run_manager,
             )

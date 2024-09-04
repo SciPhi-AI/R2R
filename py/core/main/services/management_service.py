@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -45,13 +45,12 @@ class ManagementService(Service):
         )
 
     @telemetry_event("Logs")
-    async def alogs(
+    async def logs(
         self,
         offset: int = 0,
         limit: int = 100,
         run_type_filter: Optional[str] = None,
     ):
-        logger.info(f"alogs called with offset={offset}, limit={limit}")
         if self.logging_connection is None:
             raise R2RException(
                 status_code=404, message="Logging provider not found."
@@ -62,16 +61,10 @@ class ManagementService(Service):
             limit=limit,
             run_type_filter=run_type_filter,
         )
-        logger.info(
-            f"get_info_logs returned {len(run_info)} entries and they are: {run_info}"
-        )
         run_ids = [run.run_id for run in run_info]
         if not run_ids:
             return []
         logs = await self.logging_connection.get_logs(run_ids)
-        logger.info(
-            f"get_logs returned {len(logs)} entries and they are: {logs}"
-        )
 
         aggregated_logs = []
 
@@ -478,8 +471,8 @@ class ManagementService(Service):
         return {"group_ids": [str(group_id) for group_id in group_ids]}
 
     def _process_relationships(
-        self, relationships: List[Tuple[str, str, str]]
-    ) -> Tuple[Dict[str, List[str]], Dict[str, Dict[str, List[str]]]]:
+        self, relationships: list[Tuple[str, str, str]]
+    ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
         graph = defaultdict(list)
         grouped = defaultdict(lambda: defaultdict(list))
         for subject, relation, obj in relationships:
@@ -491,11 +484,11 @@ class ManagementService(Service):
 
     def generate_output(
         self,
-        grouped_relationships: Dict[str, Dict[str, List[str]]],
-        graph: Dict[str, List[str]],
+        grouped_relationships: Dict[str, Dict[str, list[str]]],
+        graph: Dict[str, list[str]],
         descriptions_dict: Dict[str, str],
         print_descriptions: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         output = []
         # Print grouped relationships
         for subject, relations in grouped_relationships.items():
@@ -535,7 +528,7 @@ class ManagementService(Service):
 
         return output
 
-    def _count_connected_components(self, graph: Dict[str, List[str]]) -> int:
+    def _count_connected_components(self, graph: Dict[str, list[str]]) -> int:
         visited = set()
         components = 0
 
@@ -553,28 +546,14 @@ class ManagementService(Service):
         return components
 
     def _get_central_nodes(
-        self, graph: Dict[str, List[str]]
-    ) -> List[Tuple[str, float]]:
+        self, graph: Dict[str, list[str]]
+    ) -> list[Tuple[str, float]]:
         degree = {node: len(neighbors) for node, neighbors in graph.items()}
         total_nodes = len(graph)
         centrality = {
             node: deg / (total_nodes - 1) for node, deg in degree.items()
         }
         return sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:5]
-
-    @telemetry_event("AppSettings")
-    async def app_settings(
-        self,
-        *args,
-        **kwargs,
-    ):
-        prompts = self.providers.prompt.get_all_prompts()
-        return {
-            "config": self.config.to_json(),
-            "prompts": {
-                name: prompt.dict() for name, prompt in prompts.items()
-            },
-        }
 
     @telemetry_event("CreateGroup")
     async def create_group(self, name: str, description: str = "") -> UUID:

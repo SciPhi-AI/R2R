@@ -4,6 +4,7 @@ from typing import BinaryIO, Optional
 from uuid import UUID
 
 from psycopg2 import Error as PostgresError
+from sqlalchemy import text
 
 from .base import DatabaseMixin
 
@@ -43,7 +44,8 @@ class FileInfo:
 
 class FileMixin(DatabaseMixin):
     def create_table(self):
-        query = f"""
+        query = text(
+            f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('file_storage')} (
             document_id UUID PRIMARY KEY,
             file_name TEXT NOT NULL,
@@ -56,6 +58,7 @@ class FileMixin(DatabaseMixin):
         CREATE INDEX IF NOT EXISTS idx_file_name_{self.collection_name}
         ON {self._get_table_name('file_storage')} (file_name);
         """
+        )
         try:
             self.execute_query(query)
             logger.info(
@@ -73,7 +76,8 @@ class FileMixin(DatabaseMixin):
         file_size: int,
         file_type: Optional[str] = None,
     ) -> None:
-        query = f"""
+        query = text(
+            f"""
         INSERT INTO {self._get_table_name('file_storage')}
         (document_id, file_name, file_oid, file_size, file_type)
         VALUES (:document_id, :file_name, :file_oid, :file_size, :file_type)
@@ -84,6 +88,7 @@ class FileMixin(DatabaseMixin):
             file_type = EXCLUDED.file_type,
             updated_at = NOW();
         """
+        )
         try:
             self.execute_query(
                 query,
@@ -112,15 +117,19 @@ class FileMixin(DatabaseMixin):
         file_size = file_content.getbuffer().nbytes
 
         try:
-            with self.vx.cursor() as cur:
-                with self.vx.lobject(mode="wb") as lobj:
-                    oid = lobj.oid
-                    lobj.write(file_content.read())
+            with self.vx.Session() as sess:
+                with sess.begin():
+                    conn = sess.connection().connection
+                    lobject = conn.lobject(mode="wb")
+                    oid = lobject.oid
+                    lobject.write(file_content.read())
 
-            self.upsert_file(document_id, file_name, oid, file_size, file_type)
+                self.upsert_file(
+                    document_id, file_name, oid, file_size, file_type
+                )
 
             logger.info(f"Stored file for document {document_id} successfully")
-        except PostgresError as e:
+        except Exception as e:
             logger.error(
                 f"Failed to store file for document {document_id}: {e}"
             )
@@ -129,39 +138,47 @@ class FileMixin(DatabaseMixin):
     def retrieve_file(
         self, document_id: UUID
     ) -> Optional[tuple[str, BinaryIO, int]]:
-        query = f"""
+        query = text(
+            f"""
         SELECT file_name, file_oid, file_size
         FROM {self._get_table_name('file_storage')}
-        WHERE document_id = %s
+        WHERE document_id = :document_id
         """
+        )
         try:
-            result = self.execute_query(query, (document_id,)).fetchone()
+            with self.vx.Session() as sess:
+                result = sess.execute(
+                    query, {"document_id": document_id}
+                ).fetchone()
 
-            if result is None:
-                logger.warning(f"File for document {document_id} not found")
-                return None
+                if result is None:
+                    logger.warning(
+                        f"File for document {document_id} not found"
+                    )
+                    return None
 
-            file_name, oid, file_size = result
+                file_name, oid, file_size = result
 
-            class LOBjectWrapper:
-                def __init__(self, vx, oid):
-                    self.vx = vx
-                    self.oid = oid
-                    self.lobj = None
+                class LOBjectWrapper:
+                    def __init__(self, sess, oid):
+                        self.sess = sess
+                        self.oid = oid
+                        self.lobj = None
 
-                def __enter__(self):
-                    self.lobj = self.vx.lobject(oid=self.oid, mode="rb")
-                    return self.lobj
+                    def __enter__(self):
+                        conn = self.sess.connection().connection
+                        self.lobj = conn.lobject(oid=self.oid, mode="rb")
+                        return self.lobj
 
-                def __exit__(self, exc_type, exc_val, exc_tb):
-                    if self.lobj:
-                        self.lobj.close()
+                    def __exit__(self, exc_type, exc_val, exc_tb):
+                        if self.lobj:
+                            self.lobj.close()
 
             logger.info(
                 f"Retrieved file for document {document_id} successfully"
             )
-            return file_name, LOBjectWrapper(self.vx, oid), file_size
-        except PostgresError as e:
+            return file_name, LOBjectWrapper(sess, oid), file_size
+        except Exception as e:
             logger.error(
                 f"Failed to retrieve file for document {document_id}: {e}"
             )
@@ -169,41 +186,46 @@ class FileMixin(DatabaseMixin):
 
     def delete_file(self, document_id: UUID) -> bool:
         try:
-            with self.vx.cursor() as cur:
-                # First, get the OID
-                query = f"""
-                SELECT file_oid FROM {self._get_table_name('file_storage')}
-                WHERE document_id = %s
-                """
-                cur.execute(query, (document_id,))
-                result = cur.fetchone()
-
-                if result is None:
-                    logger.warning(
-                        f"File for document {document_id} not found for deletion"
+            with self.vx.Session() as sess:
+                with sess.begin():
+                    # First, get the OID
+                    query = text(
+                        f"""
+                    SELECT file_oid FROM {self._get_table_name('file_storage')}
+                    WHERE document_id = :document_id
+                    """
                     )
-                    return False
+                    result = sess.execute(
+                        query, {"document_id": document_id}
+                    ).fetchone()
 
-                oid = result[0]
+                    if result is None:
+                        logger.warning(
+                            f"File for document {document_id} not found for deletion"
+                        )
+                        return False
 
-                # Then, delete the large object
-                lobj = self.vx.lobject(oid, mode="rb")
-                lobj.unlink()
+                    oid = result[0]
 
-                # Finally, delete the metadata
-                query = f"""
-                DELETE FROM {self._get_table_name('file_storage')}
-                WHERE document_id = %s
-                """
-                cur.execute(query, (document_id,))
+                    # Then, delete the large object
+                    conn = sess.connection().connection
+                    lobj = conn.lobject(oid, mode="rb")
+                    lobj.unlink()
 
-            self.vx.commit()
+                    # Finally, delete the metadata
+                    query = text(
+                        f"""
+                    DELETE FROM {self._get_table_name('file_storage')}
+                    WHERE document_id = :document_id
+                    """
+                    )
+                    sess.execute(query, {"document_id": document_id})
+
             logger.info(
                 f"Deleted file for document {document_id} successfully"
             )
             return True
-        except PostgresError as e:
-            self.vx.rollback()
+        except Exception as e:
             logger.error(
                 f"Failed to delete file for document {document_id}: {e}"
             )
@@ -222,11 +244,11 @@ class FileMixin(DatabaseMixin):
             params["limit"] = limit
 
         if filter_document_ids:
-            conditions.append("document_id = ANY(%s)")
+            conditions.append("document_id = ANY(:document_ids)")
             params["document_ids"] = filter_document_ids
 
         if filter_file_names:
-            conditions.append("file_name = ANY(%s)")
+            conditions.append("file_name = ANY(:file_names)")
             params["file_names"] = filter_file_names
 
         query = f"""
@@ -238,13 +260,16 @@ class FileMixin(DatabaseMixin):
 
         query += """
             ORDER BY created_at DESC
-            OFFSET %(offset)s
+            OFFSET :offset
         """
         if limit != -1:
-            query += " LIMIT %(limit)s"
+            query += " LIMIT :limit"
+
+        query = text(query)
 
         try:
-            results = self.execute_query(query, params).fetchall()
+            with self.vx.Session() as sess:
+                results = sess.execute(query, params).fetchall()
             logger.info(f"Retrieved {len(results)} file overviews")
             return [
                 {
@@ -258,6 +283,6 @@ class FileMixin(DatabaseMixin):
                 }
                 for row in results
             ]
-        except PostgresError as e:
+        except Exception as e:
             logger.error(f"Failed to get files overview: {e}")
             raise

@@ -81,7 +81,6 @@ class IngestFilesWorkflow:
         )
 
 
-
 # TODO: Implement a check to see if the file is actually changed before updating
 @r2r_hatchet.workflow(name="update-files", timeout=3600)
 class UpdateFilesWorkflow:
