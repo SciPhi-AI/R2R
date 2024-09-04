@@ -3,7 +3,8 @@ from hatchet_sdk import Context
 from ..services import RestructureService, RestructureServiceAdapter
 from .base import r2r_hatchet
 
-# TODO - 
+
+# TODO -
 # 1. Add status tracking for each step
 # 2. Add error handling for each step
 # 3. Add intelligent fan-out across the workflow
@@ -51,7 +52,5 @@ class EnrichGraphWorkflow:
         )
         kg_enrichment_settings = parsed_data["kg_enrichment_settings"]
 
-        await self.restructure_service.kg_clustering(
-            kg_enrichment_settings
-        )
+        await self.restructure_service.kg_clustering(kg_enrichment_settings)
         return {"result": None}

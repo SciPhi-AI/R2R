@@ -5,28 +5,6 @@ networks:
     name: r2r-network
 
 services:
-  hatchet-postgres:
-    image: postgres:15.6
-    command: postgres -c 'max_connections=200'
-    restart: always
-    hostname: "hatchet-postgres"
-    environment:
-      - POSTGRES_USER=hatchet
-      - POSTGRES_PASSWORD=hatchet
-      - POSTGRES_DB=hatchet
-    ports:
-      - "5435:5432"
-    volumes:
-      - hatchet_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "hatchet"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-    networks:
-      - r2r-network
-
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"
     hostname: "hatchet-rabbitmq"
@@ -46,13 +24,22 @@ services:
       retries: 5
     networks:
       - r2r-network
-
   hatchet-migration:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
     environment:
-      DATABASE_URL: "postgres://hatchet:hatchet@hatchet-postgres:5432/hatchet"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
+      DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      DATABASE_POSTGRES_DB_NAME: "${POSTGRES_DBNAME:-postgres}"
     depends_on:
-      hatchet-postgres:
+      postgres:
         condition: service_healthy
     networks:
       - r2r-network
@@ -61,9 +48,17 @@ services:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
     environment:
-      DATABASE_URL: "postgres://hatchet:hatchet@hatchet-postgres:5432/hatchet"
-      DATABASE_POSTGRES_PORT: "5432"
-      DATABASE_POSTGRES_HOST: "hatchet-postgres"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
+      DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      DATABASE_POSTGRES_DB_NAME: "${POSTGRES_DBNAME:-postgres}"
       SERVER_TASKQUEUE_RABBITMQ_URL: amqp://user:password@hatchet-rabbitmq:5672/
       SERVER_AUTH_COOKIE_DOMAIN: localhost:8080
       SERVER_AUTH_COOKIE_INSECURE: "t"
@@ -71,6 +66,7 @@ services:
       SERVER_GRPC_INSECURE: "t"
       SERVER_GRPC_BROADCAST_ADDRESS: localhost:7077
       SERVER_GRPC_MAX_MSG_SIZE: 13421772800
+
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
@@ -79,7 +75,7 @@ services:
         condition: service_completed_successfully
       hatchet-rabbitmq:
         condition: service_healthy
-      hatchet-postgres:
+      postgres:
         condition: service_healthy
     networks:
       - r2r-network
@@ -91,12 +87,15 @@ services:
     depends_on:
       hatchet-setup-config:
         condition: service_completed_successfully
-      hatchet-migration:
-        condition: service_completed_successfully
     ports:
       - "7077:7070"
     environment:
-      DATABASE_URL: "postgres://hatchet:hatchet@hatchet-postgres:5432/hatchet"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_INSECURE: "t"
       SERVER_GRPC_MAX_MSG_SIZE: 104857600
@@ -118,33 +117,37 @@ services:
     depends_on:
       hatchet-setup-config:
         condition: service_completed_successfully
-      hatchet-migration:
-        condition: service_completed_successfully
     environment:
-      DATABASE_URL: "postgres://hatchet:hatchet@hatchet-postgres:5432/hatchet"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
     networks:
       - r2r-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hatchet-api.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.hatchet-api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.hatchet-api.entrypoints=hatchet"
 
-  hatchet-frontend:
+  hatchet-dashboard:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-frontend:latest
     networks:
       - r2r-network
-
-  hatchet-caddy:
-    image: caddy:2.7.6-alpine
-    ports:
-      - 8081:8080
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-    networks:
-      - r2r-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hatchet-dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.services.hatchet-frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.hatchet-dashboard.entrypoints=hatchet"
 
 volumes:
-  hatchet_postgres_data:
   hatchet_rabbitmq_data:
   hatchet_rabbitmq.conf:
   hatchet_config:
   hatchet_certs:
+  hatchet_api_key:
