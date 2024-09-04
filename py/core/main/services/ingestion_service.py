@@ -39,8 +39,8 @@ MAX_FILES_PER_INGESTION = 100
 OVERVIEW_FETCH_PAGE_SIZE = 1_000
 
 
-def ingestion_step(step_name: str):
-    def decorator(func: Callable[..., Coroutine[Any, Any, Any]]):
+def ingestion_step(step_name: str) -> Callable[..., Any]:
+    def decorator(func: Callable[..., Coroutine[Any, Any, Any]]) -> Any:
         @functools.wraps(func)
         async def wrapper(self, document_info: DocumentInfo, *args, **kwargs):
             document_info.ingestion_status = getattr(
@@ -79,7 +79,7 @@ class IngestionService(Service):
         agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: RunLoggingSingleton,
-    ):
+    ) -> None:
         super().__init__(
             config,
             providers,
@@ -111,7 +111,7 @@ class IngestionService(Service):
         is_update: bool = False,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> dict:
         if not file_data:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
@@ -153,28 +153,26 @@ class IngestionService(Service):
         existing_document_info = {
             doc_info.id: doc_info for doc_info in document_lookup
         }
-        if not is_update:
-            if (
-                document.id in existing_document_info
-                and existing_document_info[document.id].ingestion_status
-                != "failure"
-            ):
-                raise R2RException(
-                    status_code=409,
-                    message=f"Document {document.id} was already ingested and is not in a failed state.",
-                )
-        else:
+        if is_update:
             if (
                 document_id not in existing_document_info
                 or (existing_document_info[document.id].version >= version)
                 and existing_document_info[document.id].ingestion_status
                 == "success"
             ):
-                # do something
                 raise R2RException(
                     status_code=409,
                     message=f"Must increment version number before attempting to overwrite document {document.id}.",
                 )
+        elif (
+            document.id in existing_document_info
+            and existing_document_info[document.id].ingestion_status
+            != "failure"
+        ):
+            raise R2RException(
+                status_code=409,
+                message=f"Document {document.id} was already ingested and is not in a failed state.",
+            )
 
         now = datetime.now()
 
@@ -326,7 +324,7 @@ class IngestionService(Service):
         ingestion_results: dict,
         document_infos: list[DocumentInfo],
         skipped_documents: list[dict[str, str]],
-    ):
+    ) -> dict:
         skipped_ids = [ele["id"] for ele in skipped_documents]
         failed_ids = []
         successful_ids = []
@@ -383,7 +381,7 @@ class IngestionService(Service):
         self,
         document_info: DocumentInfo,
         error: R2RDocumentProcessingError,
-    ):
+    ) -> None:
         document_info.ingestion_status = "failure"
         document_info.metadata["error"] = error.message
         self.providers.database.relational.upsert_documents_overview(
@@ -431,16 +429,18 @@ class IngestionService(Service):
 
 class IngestionServiceAdapter:
     @staticmethod
-    def _parse_user_data(user_data):
+    def _parse_user_data(user_data) -> UserResponse:
         if isinstance(user_data, str):
             try:
                 user_data = json.loads(user_data)
-            except json.JSONDecodeError:
-                raise ValueError(f"Invalid user data format: {user_data}")
+            except json.JSONDecodeError as e:
+                raise ValueError(
+                    f"Invalid user data format: {user_data}"
+                ) from e
         return UserResponse.from_dict(user_data)
 
     @staticmethod
-    def parse_ingest_file_input(data: dict):
+    def parse_ingest_file_input(data: dict) -> dict:
         return {
             "file_data": data["file_data"],
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
@@ -448,7 +448,7 @@ class IngestionServiceAdapter:
             "document_id": (
                 UUID(data["document_id"]) if data["document_id"] else None
             ),
-            "version": data.get("version", None),
+            "version": data.get("version"),
             "chunking_config": (
                 ChunkingConfig.from_dict(data["chunking_config"])
                 if data["chunking_config"]
@@ -458,7 +458,7 @@ class IngestionServiceAdapter:
         }
 
     @staticmethod
-    def parse_update_files_input(data: dict):
+    def parse_update_files_input(data: dict) -> dict:
         return {
             "file_datas": data["file_datas"],
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
