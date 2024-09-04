@@ -6,10 +6,11 @@
 
 A recommendation platform built on R2R and Google Maps, providing users with suggestions on what POPOS(Privately Owned Public Open Spaces) in San Francisco that they should visit.
 
-### [Preview a live demo of this template:](https://recommendation-g4bq828nm-my-team-88dd52c0.vercel.app/)
-<a href="https://recommendation-g4bq828nm-my-team-88dd52c0.vercel.app/" target="_blank">
+<!-- ### [Preview a live demo of this template:](https://recommendation-g4bq828nm-my-team-88dd52c0.vercel.app/) -->
+<img src="recommendation_platform.png" alt="Recommendation Platform Image">
+<!-- <a href="https://recommendation-g4bq828nm-my-team-88dd52c0.vercel.app/" target="_blank">
   <img src="recommendation_platform.png" alt="Recommendation Platform Image">
-</a>
+</a> -->
 
 ### Deploying
 Using the R2R CLI we can clone the template. First, we install the R2R CLI, followed by the clone command for this template:
