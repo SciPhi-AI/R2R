@@ -64,7 +64,7 @@ services:
       SERVER_AUTH_COOKIE_INSECURE: "t"
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_INSECURE: "t"
-      SERVER_GRPC_BROADCAST_ADDRESS: localhost:7077
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
       SERVER_GRPC_MAX_MSG_SIZE: 13421772800
 
     volumes:
@@ -88,7 +88,7 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
     ports:
-      - "7077:7070"
+      - "7077:7077"
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-postgres}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
@@ -97,15 +97,19 @@ services:
       POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
       DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
+      SERVER_GRPC_PORT: 7077
       SERVER_GRPC_INSECURE: "t"
       SERVER_GRPC_MAX_MSG_SIZE: 104857600
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
     networks:
-      - r2r-network
+      r2r-network:
+        aliases:
+          - host.docker.internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7070/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7077/health"]
       interval: 10s
       timeout: 5s
       retries: 5
