@@ -74,9 +74,9 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
                 task_prompt="multi_search_task_prompt",
             ),
         )
-        
+
         inner_search_pipe = super().create_vector_search_pipe(*args, **kwargs)
-        
+
         return MultiSearchPipe(
             query_transform_pipe=query_transform_pipe,
             inner_search_pipe=inner_search_pipe,

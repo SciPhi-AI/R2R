@@ -83,7 +83,7 @@ def execute_query(provider, query, params={}):
 def main(
     max_entries=50,
     local_mode=True,
-    base_url="http://localhost:8000",
+    base_url="http://localhost:7272",
 ):
 
     # Specify the entity types for the KG extraction prompt

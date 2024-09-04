@@ -54,7 +54,7 @@ class R2RApp:
             )
 
     def _apply_cors(self):
-        origins = ["*", "http://localhost:3000", "http://localhost:8000"]
+        origins = ["*", "http://localhost:3000", "http://localhost:7272"]
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
@@ -63,7 +63,7 @@ class R2RApp:
             allow_headers=["*"],
         )
 
-    def serve(self, host: str = "0.0.0.0", port: int = 8000):
+    def serve(self, host: str = "0.0.0.0", port: int = 7272):
         # Start the Hatchet worker in a separate thread
         self.orchestration_provider.start_worker()
 

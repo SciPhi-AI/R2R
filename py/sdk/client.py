@@ -75,7 +75,7 @@ async def handle_request_error_async(response):
 class R2RAsyncClient:
     def __init__(
         self,
-        base_url: str = "http://localhost:8000",
+        base_url: str = "http://localhost:7272",
         prefix: str = "/v2",
         custom_client=None,
         timeout: float = 300.0,

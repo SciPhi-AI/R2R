@@ -10,7 +10,7 @@
       "source": "/api-reference",
       "destination": "/api-reference/introduction"
     }
-  ],  
+  ],
   "analytics": {
     "posthog": {
       "apiKey": "phc_OPBbibOIErCGc4NDLQsOrMuYFTKDmRwXX6qxnTr6zpU"
@@ -78,15 +78,15 @@
       "pages": [
         "documentation/installation",
         "documentation/quickstart",
-        { 
-          "group": "API & SDKs", 
-          "icon": "code", 
+        {
+          "group": "API & SDKs",
+          "icon": "code",
           "pages" : [
             {
               "icon": "python",
               "group": "Python SDK",
               "pages": [
-                "documentation/python-sdk/introduction", 
+                "documentation/python-sdk/introduction",
                 "documentation/python-sdk/ingestion",
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
@@ -98,7 +98,7 @@
               "icon": "js",
               "group": "JS SDK",
               "pages": [
-                "documentation/js-sdk/introduction", 
+                "documentation/js-sdk/introduction",
                 "documentation/js-sdk/ingestion",
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
@@ -144,7 +144,7 @@
                 "documentation/configuration/retrieval/knowledge-graph",
                 "documentation/configuration/retrieval/llm",
                 "documentation/configuration/retrieval/rag"
-                
+
               ]
             }
           ]
@@ -240,7 +240,7 @@
         "api-reference/endpoint/change_password",
         "api-reference/endpoint/request_password_reset"
       ]
-    },    
+    },
     {
       "group": "Groups",
       "pages": [
@@ -258,7 +258,7 @@
         "api-reference/endpoint/remove_document_from_group",
         "api-reference/endpoint/get_document_groups"
       ]
-    },    
+    },
 
     {
       "group": "Admin",
@@ -317,7 +317,7 @@
   "footerSocials": {
     "github": "https://github.com/SciPhi-AI",
     "linkedin": "https://www.linkedin.com/company/sciphi-ai",
-    "discord": "https://discord.gg/p6KqD2kjtB", 
+    "discord": "https://discord.gg/p6KqD2kjtB",
     "twitter": "https://twitter.com/ocolegro"
-  }  
+  }
 }

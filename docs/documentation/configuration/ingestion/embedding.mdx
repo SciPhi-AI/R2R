@@ -37,7 +37,7 @@ Support for any of the embedding providers listed below is provided through Lite
   <Tab title="OpenAI">
     Example configuration:
     ```toml example r2r.toml
-    provider = "litellm" 
+    provider = "litellm"
     base_model = "text-embedding-3-small"
     base_dimension = 512
     ```
@@ -46,7 +46,7 @@ Support for any of the embedding providers listed below is provided through Lite
     export OPENAI_API_KEY=your_openai_key
     # .. set other environment variables
 
-    r2r serve --config-path=r2r.toml 
+    r2r serve --config-path=r2r.toml
     ```
     Supported models include:
     - text-embedding-3-small
@@ -63,14 +63,14 @@ Support for any of the embedding providers listed below is provided through Lite
     base_model = "azure/<your deployment name>"
     base_dimension = XXX
     ```
-  
+
     ```bash
     export AZURE_API_KEY=your_azure_api_key
     export AZURE_API_BASE=your_azure_api_base
     export AZURE_API_VERSION=your_azure_api_version
     # .. set other environment variables
 
-    r2r serve --config-path=r2r.toml 
+    r2r serve --config-path=r2r.toml
     ```
     Supported models include:
     - text-embedding-ada-002
@@ -93,10 +93,10 @@ Support for any of the embedding providers listed below is provided through Lite
     ```bash
     export COHERE_API_KEY=your_cohere_api_key
     # .. set other environment variables
-    
-    r2r serve --config-path=r2r.toml 
+
+    r2r serve --config-path=r2r.toml
     ```
-    
+
     Supported models include:
     - embed-english-v3.0
     - embed-english-light-v3.0
@@ -127,13 +127,13 @@ Support for any of the embedding providers listed below is provided through Lite
     # Ensure your Ollama server is running
     # Default Ollama server address: http://localhost:11434
     # <-- OR -->
-    # Use `r2r --config-name=local_llm serve --docker` 
+    # Use `r2r --config-name=local_llm serve --docker`
     # which bundles ollama with R2R in Docker by default!
 
-    r2r serve --config-path=r2r.toml 
+    r2r serve --config-path=r2r.toml
     ```
 
-    Then, deploy your R2R server with `r2r serve --config-path=r2r.toml `. 
+    Then, deploy your R2R server with `r2r serve --config-path=r2r.toml `.
   </Tab>
 
   <Tab title="HuggingFace">
@@ -164,7 +164,7 @@ Support for any of the embedding providers listed below is provided through Lite
     base_model = "amazon.titan-embed-text-v1"
     base_dimension = 1_024
     ```
-    
+
     ```bash
     export AWS_ACCESS_KEY_ID=your_access_key
     export AWS_SECRET_ACCESS_KEY=your_secret_key
@@ -231,4 +231,3 @@ Support for any of the embedding providers listed below is provided through Lite
     For detailed usage instructions, refer to the [LiteLLM Voyage AI Embedding documentation](https://docs.litellm.ai/docs/embedding/supported_embedding#voyage-ai-embedding-models).
   </Tab>
 </Tabs>
-
