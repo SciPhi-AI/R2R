@@ -5,18 +5,14 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
-from tqdm.asyncio import tqdm_asyncio
-
 from core.base import (
     AsyncState,
     ChunkingProvider,
     CompletionProvider,
     DatabaseProvider,
-    DocumentExtraction,
     DocumentFragment,
     Entity,
     GenerationConfig,
-    IngestionStatus,
     KGExtraction,
     KGProvider,
     PipeType,
@@ -204,8 +200,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
 
-        tasks = []
-        logger.info(f"Extracting KG for document: {document_id}")
         extractions = [
             DocumentFragment(
                 id=extraction["fragment_id"],
@@ -221,25 +215,22 @@ class KGTriplesExtractionPipe(AsyncPipe):
             )
         ]
 
-        tasks.extend(
-            [
-                asyncio.create_task(
-                    self.extract_kg(extraction, generation_config)
-                )
-                for extraction in extractions
-            ]
-        )
+        tasks = [
+            asyncio.create_task(self.extract_kg(extraction, generation_config))
+            for extraction in extractions
+        ]
 
-        logger.info(
-            f"Processing {len(tasks)} tasks for document {document_id}"
-        )
-        for completed_task in tqdm_asyncio.as_completed(
-            tasks,
-            desc="Extracting and updating KG Triples",
-            total=len(tasks),
-        ):
-            kg_extraction = await completed_task
-            yield kg_extraction
+        try:
+            self.database_provider.relational.execute_query(
+                f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'processing' WHERE document_id = '{document_id}'"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error updating document {document_id} to PROCESSING: {e}"
+            )
+
+        for completed_task in asyncio.as_completed(tasks):
+            yield await completed_task
 
         try:
             self.database_provider.relational.execute_query(

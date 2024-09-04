@@ -9,7 +9,7 @@ graphrag_triplet_extraction_zero_shot:
     - entity_type: Type of the entity
     - entity_description: Comprehensive description of the entity's attributes and activities that is explicitly mentioned in the text.
     Format each entity as ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>).
-    Output additional entities based on the entity_description if they contain more named entities. You will later use this to create relationships between them. 
+    Output additional entities based on the entity_description if they contain more named entities. You will later use this to create relationships between them.
     2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
     For each pair of related entities, extract the following information:
     - source_entity: name of the source entity, as identified in step 1
@@ -19,7 +19,7 @@ graphrag_triplet_extraction_zero_shot:
     - relationship_weight: a weight between 0 and 10 that represents the strength of the relationship between the source entity and the target entity
     Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>$$$$<relationship_weight>)
     3. Make sure that each entity has at least one relationship. If you are not able to find a relationship from the pair of entities above, first create a new entity based on the source entity description and then create a relationship connecting them.
-       Again, make sure that each entity has at least one relationship. If you don't do this, you will be fired. 
+       Again, make sure that each entity has at least one relationship. If you don't do this, you will be fired.
     3. When finished, output.
     -Real Data-
     ######################

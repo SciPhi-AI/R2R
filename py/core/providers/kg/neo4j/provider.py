@@ -277,11 +277,11 @@ class Neo4jKGProvider(KGProvider):
         """
 
         # get the entities and triples from the graph
-        query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__) 
+        query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__)
                 WHERE a.communityIds[$level] = $community_id
                 OR b.communityIds[$level] = $community_id
-                RETURN a.name AS source, b.name AS target, a.description AS source_description, 
-                b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels, 
+                RETURN a.name AS source, b.name AS target, a.description AS source_description,
+                b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels,
                 r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
         """
 
@@ -471,7 +471,7 @@ class Neo4jKGProvider(KGProvider):
             MATCH (s:__Entity__)-[r]->(t:__Entity__)
             RETURN gds.graph.project(
                 'kg_graph',
-                s, 
+                s,
                 t,
         """
 
@@ -491,7 +491,7 @@ class Neo4jKGProvider(KGProvider):
                 },
                 {
                     relationshipWeightProperty: 'weight',
-                    undirectedRelationshipTypes: ['*'] 
+                    undirectedRelationshipTypes: ['*']
                 }
             )
             """
@@ -504,7 +504,7 @@ class Neo4jKGProvider(KGProvider):
                 },
                 {
                     relationshipWeightProperty: 'weight',
-                    undirectedRelationshipTypes: ['*'] 
+                    undirectedRelationshipTypes: ['*']
                 }
             )"""
 
@@ -530,7 +530,7 @@ class Neo4jKGProvider(KGProvider):
         )
 
         GRAPH_CLUSTERING_QUERY = f"""
-            CALL gds.leiden.write('kg_graph', {{     
+            CALL gds.leiden.write('kg_graph', {{
                 {seed_property_config}
                 writeProperty: '{write_property}',
                 randomSeed: {random_seed},

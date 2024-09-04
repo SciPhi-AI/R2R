@@ -111,7 +111,7 @@ class DocumentInfo(R2RSerializable):
     version: str
     size_in_bytes: int
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    restructuring_status: RestructureStatus = RestructureStatus.PROCESSING
+    restructuring_status: RestructureStatus = RestructureStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
