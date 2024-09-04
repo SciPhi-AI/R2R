@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -117,6 +118,7 @@ def run_docker_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
+    check_docker_compose_version()
     check_set_docker_env_vars(exclude_neo4j, exclude_ollama, exclude_postgres)
 
     if config_path and config_name:
@@ -439,3 +441,61 @@ def check_subnet_conflict():
         return False, f"Error parsing Docker network information: {e}"
     except Exception as e:
         return False, f"Unexpected error while checking Docker networks: {e}"
+
+
+def check_docker_compose_version():
+    try:
+        version_output = (
+            subprocess.check_output(
+                ["docker", "compose", "version"], stderr=subprocess.STDOUT
+            )
+            .decode("utf-8")
+            .strip()
+        )
+
+        version_match = re.search(r"v?(\d+\.\d+\.\d+)", version_output)
+        if not version_match:
+            raise ValueError(f"Unexpected version format: {version_output}")
+
+        compose_version = version_match[1]
+        min_version = "2.25.0"
+
+        if parse_version(compose_version) < parse_version(min_version):
+            click.secho(
+                f"Warning: Docker Compose version {compose_version} is outdated. "
+                f"Please upgrade to version {min_version} or higher.",
+                fg="yellow",
+                bold=True,
+            )
+        else:
+            click.echo(
+                f"Docker Compose version {compose_version} is compatible."
+            )
+
+        return True
+
+    except subprocess.CalledProcessError as e:
+        click.secho(
+            f"Error: Docker Compose is not installed or not working properly. "
+            f"Error message: {e.output.decode('utf-8').strip()}",
+            fg="red",
+            bold=True,
+        )
+    except Exception as e:
+        click.secho(
+            f"Error checking Docker Compose version: {e}",
+            fg="red",
+            bold=True,
+        )
+
+    return False
+
+
+def parse_version(version_string):
+    parts = version_string.split(".")
+    if len(parts) != 3:
+        raise ValueError("Invalid version format")
+    try:
+        return tuple(map(int, parts))
+    except ValueError as e:
+        raise ValueError("Invalid version format") from e

@@ -200,9 +200,7 @@ def generate_report():
     default=None,
     help="Path to a custom R2R configuration file",
 )
-@click.pass_obj
 def serve(
-    client,
     host,
     port,
     docker,
