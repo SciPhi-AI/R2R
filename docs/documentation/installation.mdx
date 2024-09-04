@@ -1,0 +1,197 @@
+---
+title: 'Installation'
+description: 'Run R2R in your local environment or with Docker'
+icon: 'bars-progress'
+---
+
+
+## Why Choose R2R?
+
+Welcome to the R2R installation guide, here are some of the key features R2R offers for your RAG applications:
+
+- **Flexibility**: Run with cloud-based LLMs or entirely on your local machine 
+- **SoTA**: Advanced RAG techniques like [hybrid search](/cookbooks/hybrid-search), [GraphRAG](/cookbooks/graphrag), and [agentic RAG](/cookbooks/agent).
+- **Auth & Group permissions**: Features like authentication, document management, user & group permissioning, and more.
+
+<Tip>SciPhi Cloud includes a generous free tier and is the quickest way to get up and running with R2R. Check out the [documentation here](/sciphi-cloud/deploy) to skip the local installation! </Tip>
+
+
+## Install the R2R CLI & Python SDK
+
+Let's begin with installing the R2R CLI & python SDK, the gateway to interacting with your R2R system:
+
+```bash
+pip install r2r
+```
+<Info>We are actively developing a distinct CLI binary for R2R for easier installation. Please reach out if you have any specific needs or feature requests.</Info>
+
+## Start R2R with Docker
+The following guide assumes that Docker has already been installed on your system. Refer to the Docker [documentation here for installation help](https://docs.docker.com/engine/install/).
+
+<Note> 
+Neo4j and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`. 
+
+Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`. 
+
+</Note>
+
+  <AccordionGroup>
+    <Accordion title="Cloud LLM RAG" icon="cloud" defaultOpen={true}>
+    To start R2R with OpenAI as the default LLM inference provider:
+        ```bash
+        # Set cloud LLM settings
+        export OPENAI_API_KEY=sk-...
+        
+        r2r serve --docker --config-name=default
+
+        # to run without docker, do `pip install 'r2r[core]'`, and set req. env. variables
+        # then, run with `r2r serve --config-name=default`
+        ```
+    </Accordion>
+    <Accordion title="Local LLMs" icon="house" defaultOpen={true}>
+        To start R2R with your local computer as the default LLM inference provider:
+        ```bash
+        r2r serve --docker --config-name=local_llm
+
+        # to run without docker, do `pip install 'r2r[core]'`, and set req. env. variables
+        # then, run with `r2r serve --config-name=local_llm`
+        ```
+      Then, in a separate terminal you will need to run Ollama to provide completions:
+      ```bash
+        ollama pull llama3.1
+        ollama pull mxbai-embed-large
+        ollama serve
+      ```
+      The code above assumes that Ollama has already been installed. If you have not yet done so, then refer to the official Ollama webpage [for installation instructions](https://ollama.com/download).
+    </Accordion>
+    <Accordion title="Custom Configuration" icon="gear" defaultOpen={true}>
+      R2R offers flexibility in selecting and configuring LLMs, allowing you to optimize your RAG pipeline for various use cases. Execute the command below run deploy R2R with your own custom configuration:
+        ```bash
+        r2r serve --config-path=/abs/path/to/r2r.toml
+        ```
+
+      Learn in detail how to [customize your deploymnt here.](/documentation/configuration)
+    </Accordion>
+  </AccordionGroup>
+
+  The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Neo4j`, `Postgres+pgvector`. 
+
+  The end result is a live server at http://localhost:8000 serving the [R2R API](/api-reference/introduction).
+
+ In addition to launching a RESTful API, the R2R Docker also launches an application at `localhost`, which you can [read more about here](/cookbooks/application). You should continue on to the [quickstart guide](/documentation/quickstart) as soon as the server is up and running.
+ 
+### Stopping R2R
+Safely stop your system by running `r2r docker-down` to avoid potential shutdown complications.
+
+
+
+
+
+## Alternative Installation Methods
+
+
+### Env. Setup
+
+  **R2R can be served entirely from your local device**, but will require valid external connections with the providers listed below:
+
+
+  <AccordionGroup>
+    <Accordion title="Cloud LLM Providers" icon="language">
+      Note, cloud providers are optional as R2R can be ran entirely locally.
+       ```bash
+        # Set cloud LLM settings
+        export OPENAI_API_KEY=sk-...
+        # export ANTHROPIC_API_KEY=...
+        # ...
+      ```
+    </Accordion>
+    <Accordion title="Postgres+pgvector" icon="database">
+       With R2R you can connect to your own instance of Postgres+pgvector, a remote cloud, or use R2R Docker to manage it all.
+       ```bash
+        # Set Postgres+pgvector settings
+        export POSTGRES_USER=$YOUR_POSTGRES_USER
+        export POSTGRES_PASSWORD=$YOUR_POSTGRES_PASSWORD
+        export POSTGRES_HOST=$YOUR_POSTGRES_HOST
+        export POSTGRES_PORT=$YOUR_POSTGRES_PORT
+        export POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME
+        export POSTGRES_VECS_COLLECTION=$YOUR_VECS_COLLECTION # see note below
+      ```
+      <Note>
+      The `POSTGRES_VECS_COLLECTION` environment variable defines the collection within your Postgres database where R2R related tables reside. If the specified collection does not exist then it will be created by R2R during initialization.
+      </Note>
+    </Accordion>
+    <Accordion title="Neo4j" icon="chart-simple">
+       Use your own local instance of Neo4j, or use R2R Docker to manage it all.
+       ```bash
+        # Set Neo4j settings
+        export NEO4J_USER=$YOUR_NEO4J_USER
+        export NEO4J_PASSWORD=$YOUR_NEO4J_PASSWORD
+        export NEO4J_URL=$YOUR_NEO4J_URL
+        export NEO4J_DATABASE=$YOUR_NEO4J_DATABASE
+      ```
+      Refer [here for basic setup help](/other/neo4j-setup).
+    </Accordion>
+  </AccordionGroup>
+  
+### Python Development Mode
+
+For those looking to develop R2R locally:
+
+1. Install Poetry: Follow instructions on the [official Poetry website](https://python-poetry.org/docs/#installation).
+
+2. Clone and install dependencies:
+   ```bash
+   git clone git@github.com:SciPhi-AI/R2R.git
+   cd R2R/py
+   poetry install -E core
+   poetry run download-nltk-data
+   ```
+
+3. Setup environment:
+
+  Follow the steps listed in `Env. Setup` above. Additionally, you may introduce a local .env file to make development easier, and you may customize your local `r2r.toml` to suit your specific needs.
+
+4. Run methods individually as needed for development.
+  ```bash
+  # e.g. Run the server
+  poetry run r2r serve
+
+  # in a separate window
+  poetry run r2r ingest-sample-file
+  ```
+### Manual Docker Setup
+
+You can manually set up the Docker environment  if more control is needed:
+
+1. Clone the R2R repository:
+   ```bash
+   git clone https://github.com/SciPhi-AI/R2R.git
+   cd R2R/py
+   ```
+
+
+2. Run with docker compose directly:
+  ```
+  docker compose -f compose.yaml -f compose.neo4j.yaml -f compose.postgres.yaml --project-name r2r up -d
+  ```
+
+## Next Steps
+
+After successfully installing R2R:
+
+1. **Verify Installation**: Ensure all components are running correctly by accessing the R2R API at http://localhost:8000/v2/health.
+
+2. **Quick Start**: Follow our [R2R Quickstart Guide](/documentation/quickstart) to set up your first RAG application.
+
+3. **In-Depth Tutorial**: For a more comprehensive understanding, work through our [R2R Walkthrough](/cookbooks/walkthrough).
+
+4. **Customize Your Setup**: Configure R2R components with the [Configuration Guide](/documentation/configuration).
+
+5. **Cookbooks**: For more in-depth tutorials, check out the [Cookbooks](/cookbooks).
+
+6. **Join the Community**: For support, discussions, and to stay updated on the latest features:
+   - Join our [Discord community](https://discord.gg/p6KqD2kjtB)
+   - Follow us on [Twitter](https://twitter.com/SciPhiAI) for announcements
+   - Star our [GitHub repository](https://github.com/SciPhi-AI/R2R) for updates
+
+If you encounter any issues during installation or setup, please use Discord or Github to seek assistance.

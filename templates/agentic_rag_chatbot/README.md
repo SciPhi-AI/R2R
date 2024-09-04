@@ -41,6 +41,30 @@ from r2r import R2RClient
 # Our R2R base URL is the URL of our SciPhi deployed R2R server
 deployment_url = os.getenv("R2R_DEPLOYMENT_URL")
 client = R2RClient(deployment_url)
+=======
+### by SciPhi
+
+[!IMPORTANT]
+R2R templates are in beta! We value your feedback and contributions to make them more widely accessible.
+
+| Framework | Python, Next.js |
+|-----------|-----------------|
+| Use Case  | AI, RAG         |
+
+
+A boilerplate chatbot that uses the R2R Python SDK to connect to an R2R server. This template offers a simple and clean interfact for users to interact with the chatbot.
+
+### Deploying
+
+First, we can create a Python backend to ingest our data:
+
+```python
+from r2r import R2RClient
+import time
+
+# Our R2R base URL is the URL of our SciPhi deployed R2R server
+client = R2RClient("YOUR_SCIPHI_DEPLOYMENT_URL")
+
 
 # We'll make sure that we can connect to the server
 health_response = client.health()

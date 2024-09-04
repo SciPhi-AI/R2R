@@ -1,0 +1,323 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Build, scale, and manage user-facing Retrieval-Augmented Generation applications.",
+  "logo": {
+    "dark": "/logo/sciphi_dark.png",
+    "light": "/logo/sciphi_light.png"
+  },
+  "redirects": [
+    {
+      "source": "/api-reference",
+      "destination": "/api-reference/introduction"
+    }
+  ],  
+  "analytics": {
+    "posthog": {
+      "apiKey": "phc_OPBbibOIErCGc4NDLQsOrMuYFTKDmRwXX6qxnTr6zpU"
+    }
+  },
+  "feedback": {"thumbsRating": true, "suggestEdit": true},
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#3f54be",
+    "light": "#a0aadf",
+    "dark": "#a0aadf",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:founders@sciphi.ai"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "R2R GitHub",
+    "url": "https://github.com/SciPhi-AI/R2R"
+  },
+  "primaryTab": {
+    "name": "Introduction"
+  },
+  "tabs": [
+    {
+      "name": "Documentation",
+      "url": "documentation"
+    },
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    },
+    {
+      "name": "Cookbooks",
+      "url": "cookbooks"
+    },
+    {
+      "name": "SciPhi Cloud",
+      "url": "sciphi-cloud"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Community",
+      "icon": "discord",
+      "url": "https://discord.gg/p6KqD2kjtB"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "",
+      "pages": [
+        "introduction",
+        "introduction/whats-new"
+      ]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "documentation/installation",
+        "documentation/quickstart",
+        { 
+          "group": "API & SDKs", 
+          "icon": "code", 
+          "pages" : [
+            {
+              "icon": "python",
+              "group": "Python SDK",
+              "pages": [
+                "documentation/python-sdk/introduction", 
+                "documentation/python-sdk/ingestion",
+                "documentation/python-sdk/retrieval",
+                "documentation/python-sdk/auth",
+                "documentation/python-sdk/groups",
+                "documentation/python-sdk/observability"
+              ]
+            },
+            {
+              "icon": "js",
+              "group": "JS SDK",
+              "pages": [
+                "documentation/js-sdk/introduction", 
+                "documentation/js-sdk/ingestion",
+                "documentation/js-sdk/retrieval",
+                "documentation/js-sdk/auth",
+                "documentation/js-sdk/observability"
+              ]
+            },
+            "documentation/api-reference"
+          ]
+        },
+        {
+          "icon": "sliders",
+          "group": "Configuration",
+          "pages": [
+            "documentation/configuration/introduction",
+            {
+              "group": "Ingestion",
+              "pages": [
+                "documentation/configuration/ingestion/overview",
+                "documentation/configuration/ingestion/postgres",
+                {
+                  "group": "Parsing",
+                  "pages": [
+                    "documentation/configuration/ingestion/parsing",
+                    "documentation/configuration/ingestion/unstructured"
+                  ]
+                },
+                "documentation/configuration/ingestion/chunking",
+                "documentation/configuration/ingestion/embedding"
+              ]
+            },
+            {
+              "group": "Knowledge Graph",
+              "pages": [
+                "documentation/configuration/ingestion/knowledge-graph",
+                "documentation/configuration/restructuring"
+              ]
+            },
+            {
+              "group": "Retrieval",
+              "pages": [
+                "documentation/configuration/retrieval/overview",
+                "documentation/configuration/retrieval/vector-search",
+                "documentation/configuration/retrieval/knowledge-graph",
+                "documentation/configuration/retrieval/llm",
+                "documentation/configuration/retrieval/rag"
+                
+              ]
+            }
+          ]
+        },
+        "documentation/local-rag"
+      ]
+    },
+    {
+      "group": "Deep Dives",
+      "pages":[
+        {
+          "group": "R2R Main",
+          "pages": [
+            "documentation/deep-dive/main/introduction",
+            "documentation/deep-dive/main/config",
+            "documentation/deep-dive/main/builder",
+            "documentation/deep-dive/main/engine"
+          ]
+        },
+        {
+          "group": "Providers",
+          "pages": [
+            "documentation/deep-dive/providers/auth",
+            "documentation/deep-dive/providers/llms",
+            "documentation/deep-dive/providers/embeddings",
+            "documentation/deep-dive/providers/database",
+            "documentation/deep-dive/providers/knowledge-graph"
+          ]
+        },
+        {
+          "group": "Pipelines",
+          "pages": [
+            "documentation/deep-dive/pipelines/introduction",
+            "documentation/deep-dive/pipelines/ingestion",
+            "documentation/deep-dive/pipelines/search",
+            "documentation/deep-dive/pipelines/rag"
+          ]
+        },
+        {
+          "group": "Other",
+          "pages": [
+            "documentation/deep-dive/other/telemetry"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "API Documentation",
+      "pages": [
+        "api-reference/introduction"
+      ]
+    },
+    {
+      "group": "Document Ingestion",
+      "pages": [
+        "api-reference/endpoint/ingest_files",
+        "api-reference/endpoint/update_files"
+      ]
+    },
+    {
+      "group": "Knowledge Graph",
+      "pages": [
+        "api-reference/endpoint/enrich_graph"
+      ]
+    },
+    {
+      "group": "Retrieval",
+      "pages": [
+        "api-reference/endpoint/search",
+        "api-reference/endpoint/rag",
+        "api-reference/endpoint/agent"
+      ]
+    },
+    {
+      "group": "User Documents",
+      "pages": [
+        "api-reference/endpoint/document_chunks",
+        "api-reference/endpoint/delete",
+        "api-reference/endpoint/documents_overview"
+      ]
+    },
+    {
+      "group": "User Auth",
+      "pages": [
+        "api-reference/endpoint/register",
+        "api-reference/endpoint/verify_email",
+        "api-reference/endpoint/login",
+        "api-reference/endpoint/get_user_info",
+        "api-reference/endpoint/put_user_info",
+        "api-reference/endpoint/delete_user_info",
+        "api-reference/endpoint/refresh_access_token",
+        "api-reference/endpoint/logout",
+        "api-reference/endpoint/change_password",
+        "api-reference/endpoint/request_password_reset"
+      ]
+    },    
+    {
+      "group": "Groups",
+      "pages": [
+        "api-reference/endpoint/create_group",
+        "api-reference/endpoint/get_group",
+        "api-reference/endpoint/update_group",
+        "api-reference/endpoint/delete_group",
+        "api-reference/endpoint/list_groups",
+        "api-reference/endpoint/add_user_to_group",
+        "api-reference/endpoint/remove_user_from_group",
+        "api-reference/endpoint/get_users_in_group",
+        "api-reference/endpoint/get_groups_for_user",
+        "api-reference/endpoint/groups_overview",
+        "api-reference/endpoint/assign_document_to_group",
+        "api-reference/endpoint/remove_document_from_group",
+        "api-reference/endpoint/get_document_groups"
+      ]
+    },    
+
+    {
+      "group": "Admin",
+      "pages": [
+        "api-reference/endpoint/update_prompt",
+        "api-reference/endpoint/logs",
+        "api-reference/endpoint/users_overview",
+        "api-reference/endpoint/app_settings"
+      ]
+    },
+    {
+      "group": "Analytics and Observability",
+      "pages": [
+        "api-reference/endpoint/analytics",
+        "api-reference/endpoint/score_completion"
+      ]
+    },
+    {
+      "group": "Status",
+      "pages": [
+        "api-reference/endpoint/health"
+      ]
+    },
+    {
+      "group": "SciPhi Cloud",
+      "pages": [
+        "sciphi-cloud/introduction",
+        "sciphi-cloud/deploy",
+        "sciphi-cloud/projects",
+        "sciphi-cloud/quickstart",
+        "sciphi-cloud/security"
+      ]
+    },
+    {
+      "group": "General",
+      "pages": [
+        "cookbooks/walkthrough",
+        "cookbooks/knowledge-graph",
+        "cookbooks/graphrag",
+        "cookbooks/hybrid-search",
+        "cookbooks/advanced-rag",
+        "cookbooks/agent",
+        "cookbooks/web-dev"
+      ]
+    },
+    {
+      "group": "Auth & Admin",
+      "pages": [
+        "cookbooks/user-auth",
+        "cookbooks/groups",
+        "cookbooks/observability",
+        "cookbooks/application"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/SciPhi-AI",
+    "linkedin": "https://www.linkedin.com/company/sciphi-ai",
+    "discord": "https://discord.gg/p6KqD2kjtB", 
+    "twitter": "https://twitter.com/ocolegro"
+  }  
+}
