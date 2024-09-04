@@ -70,7 +70,8 @@ class RunLoggingProvider(Provider):
     @abstractmethod
     async def get_info_logs(
         self,
-        limit: int = 10,
+        offset: int = 0,
+        limit: int = 100,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
@@ -177,7 +178,8 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
     async def get_info_logs(
         self,
-        limit: int = 10,
+        offset: int = 0,
+        limit: int = 100,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
@@ -194,8 +196,8 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             params.extend([str(user_id) for user_id in user_ids])
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-        query += " ORDER BY timestamp DESC LIMIT ?"
-        params.append(limit)
+        query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
         return [
@@ -408,7 +410,8 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
 
     async def get_info_logs(
         self,
-        limit: int = 10,
+        offset: int = 0,
+        limit: int = 100,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
@@ -430,8 +433,8 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        query += f" ORDER BY timestamp DESC LIMIT ${param_count}"
-        params.append(limit)
+        query += f" ORDER BY timestamp DESC LIMIT ${param_count} OFFSET ${param_count + 1}"
+        params.extend([limit, offset])
 
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(query, *params)
@@ -599,12 +602,13 @@ class RedisRunLoggingProvider(RunLoggingProvider):
 
     async def get_info_logs(
         self,
-        limit: int = 10,
+        offset: int = 0,
+        limit: int = 100,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
         run_info_list = []
-        start = 0
+        start = offset
         count_per_batch = 100  # Adjust batch size as needed
 
         while len(run_info_list) < limit:
@@ -752,13 +756,15 @@ class RunLoggingSingleton:
     @classmethod
     async def get_info_logs(
         cls,
-        limit: int = 10,
+        offset: int = 0,
+        limit: int = 100,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
         async with cls.get_instance() as provider:
             return await provider.get_info_logs(
-                limit,
+                offset=offset,
+                limit=limit,
                 run_type_filter=run_type_filter,
                 user_ids=user_ids,
             )

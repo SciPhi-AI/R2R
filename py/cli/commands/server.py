@@ -38,15 +38,20 @@ def server_stats(client):
 
 
 @cli.command()
-@click.option("--run-type-filter", help="Filter for log types")
 @click.option(
-    "--max-runs", default=None, help="Maximum number of runs to fetch"
+    "--offset", default=None, help="Pagination offset. Default is None."
 )
+@click.option(
+    "--limit", default=None, help="Pagination limit. Defaults to 100."
+)
+@click.option("--run-type-filter", help="Filter for log types")
 @click.pass_obj
-def logs(client, run_type_filter, max_runs):
+def logs(client, run_type_filter, offset, limit):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = client.logs(run_type_filter, max_runs)
+        response = client.logs(
+            offset=offset, limit=limit, run_type_filter=run_type_filter
+        )
 
     for log in response["results"]:
         click.echo(f"Run ID: {log['run_id']}")
@@ -58,7 +63,7 @@ def logs(client, run_type_filter, max_runs):
             click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
         click.echo("---")
 
-    click.echo(f"Total runs: {len(response)}")
+    click.echo(f"Total runs: {len(response['results'])}")
 
 
 @cli.command()

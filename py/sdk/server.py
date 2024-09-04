@@ -19,22 +19,28 @@ class ServerMethods:
     @staticmethod
     async def logs(
         client,
+        offset: int = None,
+        limit: int = None,
         run_type_filter: Optional[str] = None,
-        max_runs: int = None,
     ) -> dict:
         """
         Get logs from the server.
 
         Args:
+            offset (Optional[int]): The offset to start from.
+            limit (Optional[int]): The maximum number of logs to return.
             run_type_filter (Optional[str]): The run type to filter by.
-            max_runs (int): Specifies the maximum number of runs to return. Values outside the range of 1 to 1000 will be adjusted to the nearest valid value with a default of 100.
 
         Returns:
             dict: The logs from the server.
         """
-        params = {}
-        if run_type_filter is not None:
-            params["run_type_filter"] = run_type_filter
-        if max_runs is not None:
-            params["max_runs"] = max_runs
+        params = {
+            key: value
+            for key, value in {
+                "offset": offset,
+                "limit": limit,
+                "run_type_filter": run_type_filter,
+            }.items()
+            if value is not None
+        }
         return await client._make_request("GET", "logs", params=params)
