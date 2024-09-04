@@ -39,7 +39,7 @@ config_path = os.getenv("CONFIG_PATH", None)
 if not config_path and not config_name:
     config_name = "default"
 host = os.getenv("HOST", "0.0.0.0")
-port = int(os.getenv("PORT", "8000"))
+port = int(os.getenv("PORT", "7272"))
 pipeline_type = os.getenv("PIPELINE_TYPE", "qna")
 
 logger.info(f"Environment CONFIG_NAME: {config_name}")

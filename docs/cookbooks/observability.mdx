@@ -51,7 +51,7 @@ client.logs()
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/logs \
+curl -X POST http://localhost:7272/v2/logs \
   -H "Content-Type: application/json" \
   -d '{
     "log_type_filter": null,
@@ -136,7 +136,7 @@ const filterCriteria = {
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/analytics \
+curl -X POST http://localhost:7272/v2/analytics \
   -H "Content-Type: application/json" \
   -d '{
     "filter_criteria": {

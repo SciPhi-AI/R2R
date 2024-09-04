@@ -25,7 +25,7 @@ Be sure to complete the [installation instructions](/documentation/installation)
 Start by checking that you have correctly deployed your R2R instance locally:
 
 ```bash
-curl http://localhost:8000/v2/health
+curl http://localhost:7272/v2/health
 # {"results":{"response":"ok"}}
 ```
 
@@ -134,7 +134,7 @@ Here's how to use the RAG Agent for a simple query:
 ```python
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 # when using auth, do client.login(...)
 
 messages = [

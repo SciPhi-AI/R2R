@@ -31,7 +31,7 @@ Let's start by registering a new user and logging in:
 ```python core/examples/scripts/run_auth_workflow.py
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000") # Replace with your R2R deployment URL
+client = R2RClient("http://localhost:7272") # Replace with your R2R deployment URL
 
 # Register a new user
 user_result = client.register("user1@test.com", "password123")
@@ -197,7 +197,7 @@ To access superuser features, you need to authenticate as the default admin or a
 
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 
 # Login as admin
 login_result = client.login("admin@example.com", "change_me_immediately")

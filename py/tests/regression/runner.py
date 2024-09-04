@@ -15,7 +15,7 @@ class RegressionTestRunner:
         self,
         check_only: bool = False,
         update_expected: bool = False,
-        base_url: str = "http://localhost:8000",
+        base_url: str = "http://localhost:7272",
     ):
         self.client = R2RClient(base_url=base_url)
         self.tests: List[BaseTest] = []

@@ -116,7 +116,7 @@ Key features of R2RApp:
 Example usage:
 ```python
 app = R2RApp(engine)
-app.serve(host="0.0.0.0", port=8000)
+app.serve(host="0.0.0.0", port=7272)
 ```
 
 ## R2R
@@ -147,7 +147,7 @@ results = r2r.search("query")
 fastapi_app = r2r.fapp
 
 # Starting the server
-r2r.serve(host="0.0.0.0", port=8000)
+r2r.serve(host="0.0.0.0", port=7272)
 ```
 
 By combining these core components, R2R provides a flexible and powerful system for building and deploying RAG applications. The R2RConfig allows for easy customization, the R2RBuilder facilitates the assembly process, the R2REngine provides core functionality, the R2RApp offers a robust API interface, and the R2R class brings it all together in a user-friendly package.

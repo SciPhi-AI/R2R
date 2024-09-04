@@ -1,7 +1,7 @@
 import { r2rClient } from "../src/index";
 const fs = require("fs");
 
-const baseUrl = "http://localhost:8000";
+const baseUrl = "http://localhost:7272";
 
 /**
  * raskolnikov.txt should have an id of `91662726-7271-51a5-a0ae-34818509e1fd`

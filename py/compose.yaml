@@ -108,12 +108,12 @@ services:
     build:
       context: .
       args:
-        PORT: ${PORT:-8000}
+        PORT: ${PORT:-7272}
     ports:
-      - "${PORT:-8000}:${PORT:-8000}"
+      - "${PORT:-7272}:${PORT:-7272}"
     environment:
       - PYTHONUNBUFFERED=1
-      - PORT=${PORT:-8000}
+      - PORT=${PORT:-7272}
       - HOST=${HOST:-0.0.0.0}
 
       # R2R
@@ -183,7 +183,7 @@ services:
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8000}/v2/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-7272}/v2/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -194,7 +194,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.r2r.rule=PathPrefix(`/r2r-api`)"
-      - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-8000}"
+      - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-7272}"
       - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
       - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/r2r-api"
       - "traefik.http.middlewares.r2r-add-v2.addprefix.prefix=/v2"

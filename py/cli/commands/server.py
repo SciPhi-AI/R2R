@@ -172,7 +172,7 @@ def generate_report():
 
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
-@click.option("--port", default=8000, help="Port to run the server on")
+@click.option("--port", default=7272, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
     "--exclude-neo4j", default=False, help="Exclude Neo4j from Docker setup"

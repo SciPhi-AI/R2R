@@ -48,7 +48,7 @@ R2R gives developers configurable vector search and RAG right out of the box, as
 ```python core/examples/hello_r2r.py
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 
 with open("test.txt", "w") as file:
     file.write("John is a person that works at Google.")
@@ -129,7 +129,7 @@ r2r ingest-sample-files
 from r2r import R2RClient
 from glob import glob
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 files = glob.glob('path/to/r2r/examples/data')
 client.ingest_files(files)
 ```
@@ -188,7 +188,7 @@ await client.documentsOverview()
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/documents_overview \
+curl -X POST http://localhost:7272/v2/documents_overview \
   -H "Content-Type: application/json" \
   -d '{
     "document_ids": null,
@@ -244,7 +244,7 @@ await client.documentChunks("93123a68-d668-51de-8291-92162730dc87"),
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/document_chunks \
+curl -X POST http://localhost:7272/v2/document_chunks \
   -H "Content-Type: application/json" \
   -d '{
     "document_id": "93123a68-d668-51de-8291-92162730dc87"
@@ -301,7 +301,7 @@ await client.delete(["document_id"], ["93123a68-d668-51de-8291-92162730dc87"]);
 
 <Tab title="Curl">
 ```bash
-curl -X DELETE http://localhost:8000/v2/delete \
+curl -X DELETE http://localhost:7272/v2/delete \
   -H "Content-Type: application/json" \
   -d '{
     "keys": ["document_id"],
@@ -366,7 +366,7 @@ This flexible deletion mechanism ensures precise control over document managemen
 
     <Tab title="Curl">
     ```bash
-    curl -X POST http://localhost:8000/v2/update_files \
+    curl -X POST http://localhost:7272/v2/update_files \
     -H "Content-Type: multipart/form-data" \
     -F "files=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
     -F 'document_ids=["93123a68-d668-51de-8291-92162730dc87"]'
@@ -436,7 +436,7 @@ await client.search("What was Uber's profit in 2020?", true, {}, 10, false, {
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What was Uber'\''s profit in 2020?",
@@ -536,7 +536,7 @@ await client.search("What was Uber's profit in 2020?", {
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What was Uber'\''s profit in 2020?",
@@ -609,7 +609,7 @@ await client.search("Who founded Airbnb?", true, {}, 10, false, {}, {
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Who founded Airbnb?",
@@ -673,7 +673,7 @@ await client.rag({ query: "What was Uber's profit in 2020?" });
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/rag \
+curl -X POST http://localhost:7272/v2/rag \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What was Uber'\''s profit in 2020?"
@@ -733,7 +733,7 @@ await client.rag({
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/rag \
+curl -X POST http://localhost:7272/v2/rag \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Who is John Snow?",
@@ -875,7 +875,7 @@ await client.rag({
 
 ```bash
 # requires ANTHROPIC_API_KEY is set
-curl -X POST http://localhost:8000/v2/rag \
+curl -X POST http://localhost:7272/v2/rag \
     -H "Content-Type: application/json" \
     -d '{
         "query": "Who is John Snow?",
@@ -912,7 +912,7 @@ To register a new user:
 ```python
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 register_response = client.register("test@example.com", "password123")
 print(f"Registration response: {register_response}")
 ```
@@ -920,7 +920,7 @@ print(f"Registration response: {register_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/register \
+curl -X POST http://localhost:7272/v2/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -971,7 +971,7 @@ print(f"Email verification response: {verify_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/verify_email/123456
+curl -X POST http://localhost:7272/v2/verify_email/123456
 ```
 </Tab>
 
@@ -996,7 +996,7 @@ print(f"Login response: {login_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/login \
+curl -X POST http://localhost:7272/v2/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=test@example.com&password=password123"
 ```
@@ -1043,7 +1043,7 @@ print(f"Current user: {user_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X GET http://localhost:8000/v2/user \
+curl -X GET http://localhost:7272/v2/user \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 </Tab>
@@ -1088,7 +1088,7 @@ print(f"Search results: {search_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1124,7 +1124,7 @@ print(f"Token refresh response: {refresh_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/refresh_access_token \
+curl -X POST http://localhost:7272/v2/refresh_access_token \
   -H "Authorization: Bearer YOUR_REFRESH_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1168,7 +1168,7 @@ print(f"Logout response: {logout_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/logout \
+curl -X POST http://localhost:7272/v2/logout \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 </Tab>
@@ -1225,7 +1225,7 @@ await  client.users_overview()
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/users_overview \
+curl -X POST http://localhost:7272/v2/users_overview \
   -H "Content-Type: application/json" \
   -d '{}'
 ```
@@ -1271,7 +1271,7 @@ await client.logs()
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/logs \
+curl -X POST http://localhost:7272/v2/logs \
   -H "Content-Type: application/json" \
   -d '{
     "log_type_filter": null,
@@ -1336,7 +1336,7 @@ const filterCriteria = {
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/analytics \
+curl -X POST http://localhost:7272/v2/analytics \
   -H "Content-Type: application/json" \
   -d '{
     "filter_criteria": {
