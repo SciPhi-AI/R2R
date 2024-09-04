@@ -1,4 +1,3 @@
-import base64
 import logging
 from pathlib import Path
 from typing import Optional
@@ -12,7 +11,6 @@ from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.providers import OrchestrationProvider
 
-from ...main.hatchet import r2r_hatchet
 from ..hatchet import IngestFilesWorkflow, UpdateFilesWorkflow
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
@@ -125,7 +123,7 @@ class IngestionRouter(BaseRouter):
                     "is_update": False,
                 }
 
-                task_id = r2r_hatchet.client.admin.run_workflow(
+                task_id = self.orchestration_provider.workflow(
                     "ingest-file", {"request": workflow_input}
                 )
                 messages.append(
@@ -169,9 +167,6 @@ class IngestionRouter(BaseRouter):
 
             This endpoint supports multipart/form-data requests, enabling you to update files and their associated metadatas into R2R.
 
-
-
-
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
 
@@ -205,7 +200,7 @@ class IngestionRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = self.orchestration_provider.workflow(
                 "update-files", {"request": workflow_input}
             )
 

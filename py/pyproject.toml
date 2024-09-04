@@ -29,6 +29,7 @@ types-requests = "^2.31.0"
 click = "^8.0.0"
 python-dotenv = "^1.0.1"
 nltk = "^3.9.1"
+hatchet-sdk = "^0.36.13"
 
 # Core dependencies (optional)
 future = { version = "^1.0.0", optional = true }
@@ -64,7 +65,6 @@ pyyaml = { version = "^6.0.1", optional = true }
 poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
-graspologic = { version = "^3.4.1", optional = true }
 unstructured-client = {version = "^0.25.5", optional = true, extras = ["core"]}
 
 [tool.poetry.extras]
@@ -73,7 +73,7 @@ core = [
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
     "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
-    "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff", "graspologic"
+    "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff",
 ]
 core-ingest-movies = ["opencv-python", "moviepy"]
 
