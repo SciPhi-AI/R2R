@@ -6,8 +6,8 @@
 
 A boilerplate chatbot that uses the R2R Python SDK to connect to an R2R server. This template offers a simple and clean interfact for users to interact with the chatbot.
 
-### [Preview a live demo of this template:](https://chat-8zq2p8i6u-my-team-88dd52c0.vercel.app/)
-<a href="https://chat-8zq2p8i6u-my-team-88dd52c0.vercel.app/" target="_blank">
+### [Preview a live demo of this template:](https://agentic-chatbot.vercel.app/)
+<a href="https://agentic-chatbot.vercel.app/" target="_blank">
   <img src="agentic_rag_chatbot.png" alt="Agentic RAG Chatbot Image">
 </a>
 
