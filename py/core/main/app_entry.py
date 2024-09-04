@@ -1,18 +1,12 @@
 import logging
 import os
-import threading
 from typing import Optional
 
 from fastapi import FastAPI
-from hatchet.base import worker
 
 from .assembly import R2RBuilder, R2RConfig
 
 logger = logging.getLogger(__name__)
-
-
-def start_hatchet_worker():
-    worker.start()
 
 
 def r2r_app(
@@ -30,12 +24,12 @@ def r2r_app(
         )
 
     # Build the FastAPI app
-    app = R2RBuilder(config=config).build().app
+    app = R2RBuilder(config=config).build()
 
     # Start the Hatchet worker in a separate thread
-    r2r_app.orchestration_provider.start_worker()
+    app.orchestration_provider.start_worker()
 
-    return app
+    return app.app
 
 
 logging.basicConfig(level=logging.INFO)

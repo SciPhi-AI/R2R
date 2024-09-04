@@ -71,16 +71,13 @@ class UnstructuredParsingProvider(ParsingProvider):
         if self.use_api:
             logger.info(f"Using API to parse document {document.id}")
             files = self.shared.Files(
-                content=data.read() if isinstance(data, BytesIO) else data,
-                file_name=document.metadata.get("filename", "unknown_file"),
+                content=data.read(),
+                file_name=document.metadata.get("title", "unknown_file"),
             )
 
             req = self.operations.PartitionRequest(
                 self.shared.PartitionParameters(
-                    files=files,
-                    split_pdf_page=True,
-                    split_pdf_allow_failed=True,
-                    split_pdf_concurrency_level=15,
+                    files=files, **self.config.chunking_config.dict()
                 )
             )
             elements = self.client.general.partition(req)
@@ -95,6 +92,10 @@ class UnstructuredParsingProvider(ParsingProvider):
             )
 
         for iteration, element in enumerate(elements):
+
+            if not isinstance(element, dict):
+                element = element.to_dict()
+
             for key, value in element.items():
                 if key == "text":
                     text = value
@@ -130,4 +131,4 @@ class UnstructuredParsingProvider(ParsingProvider):
         )
 
     def get_parser_for_document_type(self, doc_type: DocumentType) -> str:
-        return "unstructured"
+        return "unstructured_local"
