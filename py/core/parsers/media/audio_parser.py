@@ -13,10 +13,6 @@ class AudioParser(AsyncParser[bytes]):
     ):
         self.api_base = api_base
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-        if not self.openai_api_key:
-            raise ValueError(
-                "Error, environment variable `OPENAI_API_KEY` is required to run `AudioParser`."
-            )
 
     async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
         """Ingest audio data and yield a transcription."""

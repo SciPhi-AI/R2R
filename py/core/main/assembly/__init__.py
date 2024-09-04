@@ -1,5 +1,5 @@
+from ..config import R2RConfig
 from .builder import R2RBuilder
-from .config import R2RConfig
 from .factory import (
     R2RAgentFactory,
     R2RPipeFactory,

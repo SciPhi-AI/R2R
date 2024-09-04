@@ -26,6 +26,7 @@ cli.add_command(management.document_chunks)
 cli.add_command(management.inspect_knowledge_graph)
 
 # Restructure
+cli.add_command(restructure.create_graph)
 cli.add_command(restructure.enrich_graph)
 
 # Retrieval

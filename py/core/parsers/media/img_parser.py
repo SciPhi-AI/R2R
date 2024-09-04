@@ -23,10 +23,6 @@ class ImageParser(AsyncParser[DataType]):
         self.model = model
         self.max_tokens = max_tokens
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-        if not self.openai_api_key:
-            raise ValueError(
-                "Error, environment variable `OPENAI_API_KEY` is required to run `ImageParser`."
-            )
         self.api_base = api_base
         self.max_image_size = max_image_size
 

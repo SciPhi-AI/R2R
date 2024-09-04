@@ -1,4 +1,34 @@
 import asyncio
+import json
+from typing import Any, Type, TypeVar, Union
+
+from pydantic import BaseModel
+
+T = TypeVar("T", bound="R2RSerializable")
+
+
+class R2RSerializable(BaseModel):
+    @classmethod
+    def from_dict(cls: Type[T], data: Union[dict[str, Any], str]) -> T:
+        if isinstance(data, str):
+            data = json.loads(data)
+        return cls(**data)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.dict(exclude_unset=True)
+
+    def to_json(self) -> str:
+        return self.json(exclude_unset=True)
+
+    @classmethod
+    def from_json(cls: Type[T], json_str: str) -> T:
+        return cls.parse_raw(json_str)
+
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            bytes: lambda v: v.decode("utf-8", errors="ignore"),
+        }
 
 
 class AsyncSyncMeta(type):

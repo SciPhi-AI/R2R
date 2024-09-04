@@ -148,8 +148,6 @@ class AsyncPipeline:
                     prev_output_field
                 ]
 
-        # Handle the pipe generator
-
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,

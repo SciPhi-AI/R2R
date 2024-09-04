@@ -9,6 +9,7 @@ from .embeddings import (
 )
 from .kg import Neo4jKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
+from .orchestration import HatchetOrchestrationProvider
 from .parsing import R2RParsingProvider, UnstructuredParsingProvider
 from .prompts import R2RPromptProvider
 
@@ -29,6 +30,8 @@ __all__ = [
     "OpenAIEmbeddingProvider",
     # KG
     "Neo4jKGProvider",
+    # Orchestration
+    "HatchetOrchestrationProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",

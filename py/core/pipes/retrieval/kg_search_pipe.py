@@ -130,12 +130,22 @@ class KGSearchSearchPipe(GeneratorPipe):
                         search_type
                     ],
                     query_embedding=query_embedding,
+                    embedding_type=(
+                        "summary_embedding"
+                        if search_type == "__Community__"
+                        else "description_embedding"
+                    ),
+                    property_names=(
+                        ["summary"]
+                        if search_type == "__Community__"
+                        else ["name", "description"]
+                    ),
                 )
                 all_search_results.append(search_result)
 
             if len(all_search_results[0]) == 0:
                 raise R2RException(
-                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph",
+                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
                     400,
                 )
 
@@ -161,6 +171,12 @@ class KGSearchSearchPipe(GeneratorPipe):
             communities = self.kg_provider.get_communities(
                 level=kg_search_settings.kg_search_level
             )
+
+            if len(communities) == 0:
+                raise R2RException(
+                    "No communities found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
+                    400,
+                )
 
             async def preprocess_communities(communities):
                 merged_report = ""
@@ -238,16 +254,17 @@ class KGSearchSearchPipe(GeneratorPipe):
         **kwargs: Any,
     ) -> KGSearchResult:
 
-        logger.info("Performing global search")
         kg_search_type = kg_search_settings.kg_search_type
 
         if kg_search_type == "local":
+            logger.info("Performing KG local search")
             async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
                 yield KGSearchResult(local_result=result)
 
         else:
+            logger.info("Performing KG global search")
             async for result in self.global_search(
                 input, state, run_id, kg_search_settings
             ):

@@ -185,6 +185,11 @@ def generate_report():
     default=False,
     help="Exclude Postgres from Docker setup",
 )
+@click.option(
+    "--exclude-hatchet",
+    default=False,
+    help="Exclude Hatchet from Docker setup",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option("--image", help="Docker image to use")
 @click.option(
@@ -204,6 +209,7 @@ def serve(
     exclude_neo4j,
     exclude_ollama,
     exclude_postgres,
+    exclude_hatchet,
     project_name,
     image,
     config_name,
@@ -229,6 +235,7 @@ def serve(
             exclude_neo4j,
             exclude_ollama,
             exclude_postgres,
+            exclude_hatchet,
             project_name,
             image,
             config_name,
@@ -249,7 +256,7 @@ def serve(
                 print(f"Navigating to dashboard in {i} seconds...")
                 time.sleep(1)
 
-            traefik_port = os.environ.get("TRAEFIK_PORT", "80")
+            traefik_port = os.environ.get("R2R_DASHBOARD_PORT", "80")
             url = f"http://localhost:{traefik_port}"
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)

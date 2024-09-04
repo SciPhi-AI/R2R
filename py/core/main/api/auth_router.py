@@ -1,5 +1,5 @@
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -11,23 +11,24 @@ from core.base.api.models.auth.responses import (
     WrappedTokenResponse,
     WrappedUserResponse,
 )
+from core.base.providers import OrchestrationProvider
 
-from ..base_router import BaseRouter, RunType
-
-if TYPE_CHECKING:
-    from ....engine import R2REngine
+from ..services.auth_service import AuthService
+from .base_router import BaseRouter, RunType
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class AuthRouter(BaseRouter):
     def __init__(
-        self, engine: "R2REngine", run_type: RunType = RunType.INGESTION
+        self,
+        auth_service: AuthService,
+        run_type: RunType = RunType.INGESTION,
+        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(engine, run_type)
-        self.setup_routes()
+        super().__init__(auth_service, run_type, orchestration_provider)
 
-    def setup_routes(self):
+    def _setup_routes(self):
         @self.router.post("/register", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def register_app(
@@ -37,7 +38,7 @@ class AuthRouter(BaseRouter):
             """
             Register a new user with the given email and password.
             """
-            result = await self.engine.aregister(email, password)
+            result = await self.service.register(email, password)
             return result
 
         @self.router.post(
@@ -56,7 +57,7 @@ class AuthRouter(BaseRouter):
             This endpoint is used to confirm a user's email address using the verification code
             sent to their email after registration.
             """
-            result = await self.engine.averify_email(email, verification_code)
+            result = await self.service.verify_email(email, verification_code)
             return GenericMessageResponse(message=result["message"])
 
         @self.router.post("/login", response_model=WrappedTokenResponse)
@@ -70,7 +71,7 @@ class AuthRouter(BaseRouter):
             This endpoint authenticates a user using their email (username) and password,
             and returns access and refresh tokens upon successful authentication.
             """
-            login_result = await self.engine.alogin(
+            login_result = await self.service.login(
                 form_data.username, form_data.password
             )
             return login_result
@@ -81,20 +82,20 @@ class AuthRouter(BaseRouter):
         @self.base_endpoint
         async def logout_app(
             token: str = Depends(oauth2_scheme),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
             Log out the current user.
 
             This endpoint invalidates the user's current access token, effectively logging them out.
             """
-            result = await self.engine.alogout(token)
+            result = await self.service.logout(token)
             return GenericMessageResponse(message=result["message"])
 
         @self.router.get("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def get_user_app(
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
             Get the current user's profile information.
@@ -114,14 +115,14 @@ class AuthRouter(BaseRouter):
             profile_picture: str | None = Body(
                 None, description="Updated profile picture URL"
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
             Update the current user's profile information.
 
             This endpoint allows the authenticated user to update their profile information.
             """
-            return await self.engine.aupdate_user(
+            return await self.service.update_user(
                 user_id=auth_user.id,
                 email=email,
                 name=name,
@@ -141,7 +142,7 @@ class AuthRouter(BaseRouter):
 
             This endpoint allows users to obtain a new access token using their refresh token.
             """
-            refresh_result = await self.engine.arefresh_access_token(
+            refresh_result = await self.service.refresh_access_token(
                 refresh_token=refresh_token,
             )
             return refresh_result
@@ -153,7 +154,7 @@ class AuthRouter(BaseRouter):
         async def change_password_app(
             current_password: str = Body(..., description="Current password"),
             new_password: str = Body(..., description="New password"),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
             Change the authenticated user's password.
@@ -161,7 +162,7 @@ class AuthRouter(BaseRouter):
             This endpoint allows users to change their password by providing their current password
             and a new password.
             """
-            result = await self.engine.achange_password(
+            result = await self.service.change_password(
                 auth_user,
                 current_password,
                 new_password,
@@ -182,7 +183,7 @@ class AuthRouter(BaseRouter):
             This endpoint initiates the password reset process by sending a reset link
             to the specified email address.
             """
-            result = await self.engine.arequest_password_reset(email)
+            result = await self.service.request_password_reset(email)
             return GenericMessageResponse(message=result["message"])
 
         @self.router.post(
@@ -194,7 +195,7 @@ class AuthRouter(BaseRouter):
             reset_token: str = Body(..., description="Password reset token"),
             new_password: str = Body(..., description="New password"),
         ):
-            result = await self.engine.aconfirm_password_reset(
+            result = await self.service.confirm_password_reset(
                 reset_token, new_password
             )
             return GenericMessageResponse(message=result["message"])
@@ -212,7 +213,7 @@ class AuthRouter(BaseRouter):
                 False,
                 description="Whether to delete the user's vector data",
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
             Delete a user account.
@@ -225,7 +226,7 @@ class AuthRouter(BaseRouter):
             if not auth_user.is_superuser and not password:
                 raise Exception("Password is required for non-superusers")
             user_uuid = uuid.UUID(user_id)
-            result = await self.engine.adelete_user(
+            result = await self.service.delete_user(
                 user_uuid, password, delete_vector_data
             )
             return GenericMessageResponse(message=result["message"])

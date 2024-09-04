@@ -14,7 +14,7 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -77,14 +77,21 @@ def run_local_serve(
     config_path: Optional[str] = None,
 ) -> None:
     try:
-        from r2r import R2R
-    except ImportError:
+        from r2r import R2RBuilder, R2RConfig
+    except ImportError as e:
         click.echo(
-            "You must install the `r2r core` package to run the R2R server locally."
+            f"Error: {e}\n\nNote, you must install the `r2r core` package to run the R2R server locally."
         )
         sys.exit(1)
 
-    r2r_instance = R2R(config_name=config_name, config_path=config_path)
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config_path and config_name")
+    if not config_path and not config_name:
+        config_name = "default"
+
+    r2r_instance = R2RBuilder(
+        config=R2RConfig.load(config_name, config_path)
+    ).build()
 
     if config_name or config_path:
         completion_config = r2r_instance.config.completion
@@ -104,6 +111,7 @@ def run_docker_serve(
     exclude_neo4j: bool,
     exclude_ollama: bool,
     exclude_postgres: bool,
+    exclude_hatchet: bool,
     project_name: str,
     image: str,
     config_name: Optional[str] = None,
@@ -130,6 +138,7 @@ def run_docker_serve(
         exclude_neo4j,
         exclude_ollama,
         exclude_postgres,
+        exclude_hatchet,
         project_name,
         image,
         config_name,
@@ -287,6 +296,7 @@ def get_compose_files():
         "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
         "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
         "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
+        "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -321,6 +331,7 @@ def build_docker_command(
     exclude_neo4j,
     exclude_ollama,
     exclude_postgres,
+    exclude_hatchet,
     project_name,
     image,
     config_name,
@@ -335,12 +346,20 @@ def build_docker_command(
         command += f" -f {compose_files['ollama']}"
     if not exclude_postgres:
         command += f" -f {compose_files['postgres']}"
+    if not exclude_hatchet:
+        command += f" -f {compose_files['hatchet']}"
 
     command += f" --project-name {project_name}"
 
-    os.environ["PORT"] = str(available_port)
+    # Find available ports
+    r2r_port = find_available_port(port)
+    r2r_dashboard_port = find_available_port(r2r_port + 1)
+    hatchet_dashboard_port = find_available_port(r2r_dashboard_port + 1)
+
+    os.environ["PORT"] = str(r2r_port)
     os.environ["HOST"] = host
-    os.environ["TRAEFIK_PORT"] = str(available_port + 1)
+    os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
+    os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""
 
     if config_name is not None:
@@ -349,7 +368,6 @@ def build_docker_command(
         os.environ["CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
-
     command += " up -d"
     return command
 

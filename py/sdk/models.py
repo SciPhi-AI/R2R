@@ -388,18 +388,35 @@ class VectorSearchSettings(BaseModel):
         return dump
 
 
-class KGEnrichmentSettings(BaseModel):
+class KGCreationSettings(BaseModel):
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
-        description="The generation configuration for the KG enrichment.",
+        description="The generation configuration for the KG creation.",
     )
+
+    def to_dict(self):
+        return self.model_dump()
+
+    def model_dump_json(self, **kwargs):
+        return super().model_dump_json(**kwargs)
+
+
+class KGEnrichmentSettings(BaseModel):
+
     leiden_params: dict = Field(
         default_factory=dict,
         description="The parameters for the Leiden algorithm.",
+    )
+
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="The generation configuration for the KG enrichment.",
     )
 
 
