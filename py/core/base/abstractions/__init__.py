@@ -29,7 +29,7 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
-from .restructure import KGEnrichmentSettings
+from .restructure import KGCreationSettings, KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
     KGGlobalSearchResult,
@@ -89,6 +89,7 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     # Restructure abstractions
+    "KGCreationSettings",
     "KGEnrichmentSettings",
     # User abstractions
     "Token",

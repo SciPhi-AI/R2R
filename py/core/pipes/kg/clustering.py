@@ -18,6 +18,8 @@ from core.base import (
     Community,
     CompletionProvider,
     EmbeddingProvider,
+    Entity,
+    GenerationConfig,
     KGEnrichmentSettings,
     KGProvider,
     PipeType,
@@ -59,171 +61,138 @@ class KGClusteringPipe(AsyncPipe):
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
-    def _compute_leiden_communities(
+    def community_summary_prompt(
+        self, prompt: str, entities: list[Entity], triples: list[Triple]
+    ):
+        """
+        Preparing the list of entities and triples to be summarized and created into a community summary.
+        """
+        entities_info = "\n".join(
+            [f"{entity.name}, {entity.description}" for entity in entities]
+        )
+
+        triples_info = "\n".join(
+            [
+                f"{triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
+                for triple in triples
+            ]
+        )
+
+        return prompt.format(entities=entities_info, triples=triples_info)
+
+    async def process_community(
         self,
-        graph: nx.Graph,
-        settings: KGEnrichmentSettings,
-    ) -> dict[int, dict[str, int]]:
-        """Compute Leiden communities."""
-        try:
-            from graspologic.partition import hierarchical_leiden
+        level: int,
+        community_id: str,
+        generation_config: GenerationConfig,
+    ) -> dict:
+        """
+        Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
 
-            community_mapping = hierarchical_leiden(
-                graph, **settings.leiden_params
+        Input:
+        - level: The level of the hierarchy.
+        - community_id: The ID of the community to process.
+
+        Output:
+        - A dictionary with the community id and the title of the community.
+        - Output format: {"id": community_id, "title": title}
+        """
+
+        input_text = """
+
+            Entities:
+            {entities}
+
+            Triples:
+            {triples}
+
+        """
+
+        entities, triples = (
+            self.kg_provider.get_community_entities_and_triples(
+                level=level, community_id=community_id
             )
-            results: dict[int, dict[str, int]] = {}
-            for partition in community_mapping:
-                results[partition.level] = results.get(partition.level, {})
-                results[partition.level][partition.node] = partition.cluster
+        )
 
-            return results
-        except ImportError as e:
-            raise ImportError(
-                f"Clustering failed with: {e}\nPlease install the graspologic package."
-            ) from e
+        if entities == [] or triples == []:
+            return None
+
+        description = (
+            (
+                await self.llm_provider.aget_completion(
+                    messages=self.prompt_provider._get_message_payload(
+                        task_prompt_name="graphrag_community_reports",
+                        task_inputs={
+                            "input_text": self.community_summary_prompt(
+                                input_text, entities, triples
+                            ),
+                        },
+                    ),
+                    generation_config=generation_config,
+                )
+            )
+            .choices[0]
+            .message.content
+        )
+
+        community = Community(
+            id=str(community_id),
+            level=str(level),
+            summary=description,
+            summary_embedding=await self.embedding_provider.async_get_embedding(
+                description
+            ),
+        )
+
+        self.kg_provider.upsert_communities([community])
+
+        try:
+            summary = json.loads(community.summary)
+        except:
+            summary = {"title": ""}
+
+        return {"id": community.id, "title": summary["title"]}
 
     async def cluster_kg(
         self,
-        triples: list[Triple],
-        settings: KGEnrichmentSettings = KGEnrichmentSettings(),
-    ) -> AsyncGenerator[Community, None]:
+        leiden_params: dict,
+        generation_config: GenerationConfig,
+    ):
         """
-        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
+        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
-
-        logger.info(f"Clustering with settings: {str(settings)}")
-
-        G = nx.Graph()
-        for triple in triples:
-            G.add_edge(
-                triple.subject,
-                triple.object,
-                weight=triple.weight,
-                description=triple.description,
-                predicate=triple.predicate,
-                id=f"{triple.subject}->{triple.predicate}->{triple.object}",
-            )
-
-        hierarchical_communities = self._compute_leiden_communities(
-            G, settings=settings
+        num_communities, num_hierarchies = (
+            self.kg_provider.perform_graph_clustering(leiden_params)
         )
 
-        community_details = {}
-
-        for level, level_communities in hierarchical_communities.items():
-            for node, cluster in level_communities.items():
-                if f"{level}_{cluster}" not in community_details:
-                    community_details[f"{level}_{cluster}"] = Community(
-                        id=f"{level}_{cluster}",
-                        level=str(level),
-                        entity_ids=[],
-                        relationship_ids=[],
-                        short_id=f"{level}.{cluster}",
-                        title=f"Community {level}.{cluster}",
-                        attributes={
-                            "name": f"Community {level}.{cluster}",
-                            "community_report": None,
-                        },
-                    )
-
-                community_details[f"{level}_{cluster}"].entity_ids.append(node)
-                for neighbor in G.neighbors(node):
-                    edge_info = G.get_edge_data(node, neighbor)
-                    if edge_info and edge_info.get("id"):
-                        community_details[
-                            f"{level}_{cluster}"
-                        ].relationship_ids.append(edge_info.get("id"))
-
-        async def async_iterate_dict(dictionary):
-            for key, value in dictionary.items():
-                yield key, value
-
-        async def process_community(community_key, community):
-            input_text = """
-
-                Entities:
-                {entities}
-
-                Relationships:
-                {relationships}
-
-            """
-
-            entities_info = self.kg_provider.get_entities(community.entity_ids)
-            entities_info = "\n".join(
-                [
-                    f"{entity.name}, {entity.description}"
-                    for entity in entities_info
-                ]
-            )
-
-            relationships_info = self.kg_provider.get_triples(
-                community.relationship_ids
-            )
-            relationships_info = "\n".join(
-                [
-                    f"{relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}"
-                    for relationship in relationships_info
-                ]
-            )
-
-            input_text = input_text.format(
-                entities=entities_info, relationships=relationships_info
-            )
-
-            description = await self.llm_provider.aget_completion(
-                messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="graphrag_community_reports",
-                    task_inputs={
-                        "input_text": input_text,
-                    },
-                ),
-                generation_config=settings.generation_config_enrichment,
-            )
-
-            description = description.choices[0].message.content
-            community.summary = description
-            summary_embedding = (
-                await self.embedding_provider.async_get_embedding(
-                    community.summary
-                )
-            )
-            community.summary_embedding = summary_embedding
-            self.kg_provider.upsert_communities([community])
-            try:
-                summary = json.loads(community.summary)
-            except:
-                summary = {"title": "_"}
-            return {"id": community.id, "title": summary["title"]}
-
-        tasks = []
-        async for community_key, community in async_iterate_dict(
-            community_details
-        ):
-            tasks.append(
-                asyncio.create_task(
-                    process_community(community_key, community)
-                )
-            )
-
-        results = await tqdm_asyncio.gather(
-            *tasks, desc="Processing communities"
+        logger.info(
+            f"Clustering completed. Generated {num_communities} communities with {num_hierarchies} hierarchies."
         )
-        for result in results:
-            yield result
+
+        for level in range(num_hierarchies):
+            for community_id in range(1, num_communities + 1):
+                res = await self.process_community(
+                    level, community_id, generation_config
+                )
+                # all values may not be present each level
+                if not res:
+                    continue
+                yield res
 
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Community, None]:
         """
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
+
+        leiden_params = input.message["leiden_params"]
+        generation_config = input.message["generation_config"]
 
         base_dimension = self.embedding_provider.config.base_dimension
         vector_index_fn = self.kg_provider.create_vector_index
@@ -232,9 +201,7 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        triples = self.kg_provider.get_triples()
-
         async for community in self.cluster_kg(
-            triples, kg_enrichment_settings
+            leiden_params, generation_config
         ):
             yield community

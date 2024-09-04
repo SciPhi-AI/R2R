@@ -1,7 +1,18 @@
+from uuid import UUID
+
 from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
+
+
+class KGCreationSettings(R2RSerializable):
+    """Settings for knowledge graph creation."""
+
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="Configuration for text generation during graph enrichment.",
+    )
 
 
 class KGEnrichmentSettings(R2RSerializable):
@@ -12,12 +23,7 @@ class KGEnrichmentSettings(R2RSerializable):
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
 
-    generation_config_triplet: GenerationConfig = Field(
-        default_factory=GenerationConfig,
-        description="Configuration for text generation during graph enrichment.",
-    )
-
-    generation_config_enrichment: GenerationConfig = Field(
+    generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph enrichment.",
     )

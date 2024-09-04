@@ -170,4 +170,4 @@ def inspect_knowledge_graph(client, offset, limit):
     with timer():
         response = client.inspect_knowledge_graph(offset, limit)
 
-    click.echo(response)
+    click.echo(response["results"])

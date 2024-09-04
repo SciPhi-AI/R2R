@@ -32,12 +32,13 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
   stream = false
   add_generation_kwargs = { }
 
+  [kg.kg_creation_settings]
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     max_knowledge_triples = 100
-    generation_config_triplet = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
-    generation_config_enrichment = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_cluster_size = 1000 } # more params in graspologic/partition/leiden.py
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_cluster_size = 1000 } # more params 
 
   [kg.kg_search_config]
     model = "ollama/llama3.1"

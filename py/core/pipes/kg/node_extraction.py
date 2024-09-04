@@ -61,15 +61,9 @@ class KGNodeExtractionPipe(AsyncPipe):
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
 
-        len_input = 0
-        for message in input.message:
-            len_input += len(message)
-
-        logger.info(f"Processing {len_input} chunks")
-
         nodes = self.kg_provider.get_entity_map()
 
-        for node_value, node_info in nodes.items():
+        for _, node_info in nodes.items():
             for entity in node_info["entities"]:
                 yield entity, node_info[
                     "triples"
@@ -138,7 +132,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
             # if embedding is present in the entity, just return it
             # in the future disable this to override and recompute the descriptions for all entities
-            if entity.description_embedding and entity.name_embedding:
+            if entity.description_embedding:
                 return entity
 
             entity_info = f"{entity.name}, {entity.description}"
@@ -168,7 +162,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
             else:
                 completion = await self.llm_provider.aget_completion(
                     messages,
-                    self.kg_provider.config.kg_enrichment_settings.generation_config_enrichment,
+                    self.kg_provider.config.kg_enrichment_settings.generation_config,
                 )
                 entity.description = completion.choices[0].message.content
 
@@ -181,12 +175,13 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 entity.description_embedding = description_embedding[0]
 
                 # name embedding
-                name_embedding = (
-                    await self.embedding_provider.async_get_embeddings(
-                        [entity.name]
-                    )
-                )
-                entity.name_embedding = name_embedding[0]
+                # turned it off because we aren't using it for now
+                # name_embedding = (
+                #     await self.embedding_provider.async_get_embeddings(
+                #         [entity.name]
+                #     )
+                # )
+                # entity.name_embedding = name_embedding[0]
 
                 out_entity = entity
 
@@ -207,6 +202,10 @@ class KGNodeDescriptionPipe(AsyncPipe):
         # upsert to the database
         self.kg_provider.upsert_entities(
             processed_entities, with_embeddings=True
+        )
+
+        logger.info(
+            "KG Node Description pipe: Upserted entities to the database"
         )
 
         for entity in processed_entities:
