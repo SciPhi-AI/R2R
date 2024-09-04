@@ -55,7 +55,7 @@ def rag_agent_example():
 
     print("RAG Assistant Response:")
     # Note, response includes the full conversation, including steps taken by the assistant to produce the final result.
-    print(response) 
+    print(response)
 
 # Run the example
 rag_agent_example()
@@ -63,10 +63,10 @@ rag_agent_example()
 # RAG Assistant Response:
 # {
 #    'results': [
-#        {'role': 'system', 'content': '## You are a helpful assistant that can search for information.\n\nWhen asked a question, perform a search to find relevant information and provide a response.\n\nThe response should contain line-item attributions to relevent search results, and be as informative if possible.\nIf no relevant results are found, then state that no results were found.\nIf no obvious question is present, then do not carry out a search, and instead ask for clarification.', 'name': None, 'function_call': None, 'tool_calls': None}, 
-#        {'role': 'system', 'content': 'You are a helpful assistant.', 'name': None, 'function_call': None, 'tool_calls': None}, 
-#        {'role': 'user', 'content': 'Who is the greatest philospher of all time?', 'name': None, 'function_call': None, 'tool_calls': None}, 
-#        {'role': 'assistant', 'content': 'Aristotle is widely considered the greatest philospher of all time.', 'name': None, 'function_call': None, 'tool_calls': None}, 
+#        {'role': 'system', 'content': '## You are a helpful assistant that can search for information.\n\nWhen asked a question, perform a search to find relevant information and provide a response.\n\nThe response should contain line-item attributions to relevent search results, and be as informative if possible.\nIf no relevant results are found, then state that no results were found.\nIf no obvious question is present, then do not carry out a search, and instead ask for clarification.', 'name': None, 'function_call': None, 'tool_calls': None},
+#        {'role': 'system', 'content': 'You are a helpful assistant.', 'name': None, 'function_call': None, 'tool_calls': None},
+#        {'role': 'user', 'content': 'Who is the greatest philospher of all time?', 'name': None, 'function_call': None, 'tool_calls': None},
+#        {'role': 'assistant', 'content': 'Aristotle is widely considered the greatest philospher of all time.', 'name': None, 'function_call': None, 'tool_calls': None},
 #        {'role': 'user', 'content': 'Can you tell me more about him?', 'name': None, 'function_call': None, 'tool_calls': None},
 #        {'role': 'assistant', 'content': None, 'name': None, 'function_call': {'name': 'search', 'arguments': '{"query":"Aristotle biography"}'}, 'tool_calls': None},
 #        {'role': 'function', 'content': "1. Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.\n2. Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.\n3. Aristotle was born in 384 BC[C] in Stagira, Chalcidice,[2] about 55 km (34 miles) east of modern-day Thessaloniki.[3][4] His father, Nicomachus, was the personal physician to King Amyntas of Macedon. While he was young, Aristotle learned about biology and medical information, which was taught by his father.[5] Both of Aristotle's parents died when he was about thirteen, and Proxenus of Atarneus became his guardian.[6] Although little information about Aristotle's childhood has survived, he probably spent\n4. Aristotle was born in 384 BC[C] in Stagira, Chalcidice,[2] about 55 km (34 miles) east of modern-day Thessaloniki.[3][4] His father, Nicomachus, was the personal physician to King Amyntas of Macedon. While he was young, Aristotle learned about biology and medical information, which was taught by his father.[5] Both of Aristotle's parents died when he was about thirteen, and Proxenus of Atarneus became his guardian.[6] Although little information about Aristotle's childhood has survived, he probably spent\n5. Life\nIn general, the details of Aristotle's life are not well-established. The biographies written in ancient times are often speculative and historians only agree on a few salient points.[B]\n", 'name': 'search', 'function_call': None, 'tool_calls': None},
@@ -117,15 +117,15 @@ streaming_rag_agent_example()
 # Aristotle's practical philosophy covers areas such as ethics, politics, economics, and rhetoric.[40]
 # 5. Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.
 # </results></function_call>Aristotle, an ancient Greek philosopher, made significant contributions across various fields of philosophy. Here are some of his main philosophical ideas:
-# 
+#
 # 1. **Metaphysics**: Aristotle's metaphysics, often referred to as "first philosophy," deals with the nature of reality, existence, and the fundamental nature of being. He introduced the concept of substance and essence, and his work laid the groundwork for later metaphysical thought [Metaphysics (Aristotle)].
-# 
+#
 # 2. **Ethics**: Aristotle's ethical philosophy is primarily outlined in his work "Nicomachean Ethics." He emphasized the concept of virtue ethics, which focuses on the development of good character traits (virtues) and living a life of moral excellence. He believed that the ultimate goal of human life is eudaimonia, often translated as "happiness" or "flourishing," achieved through virtuous living [Aristotelian ethics].
-# 
+#
 # 3. **Politics**: In his work "Politics," Aristotle explored the nature of human communities and the role of the state. He believed that humans are naturally political animals and that the state exists to promote the good life. He analyzed different forms of government and advocated for a constitutional government that balances the interests of different social classes [Politics (Aristotle)].
-# 
+#
 # 4. **Practical Philosophy**: Aristotle's practical philosophy encompasses ethics, politics, economics, and rhetoric. He believed that philosophy should be practical and aimed at improving human life and society [Practical philosophy].
-# 
+#
 # 5. **Natural Sciences**: Aristotle made substantial contributions to the natural sciences, including biology, physics, and astronomy. He conducted empirical observations and classified various forms of life, laying the foundation for the scientific method [Aristotle's contributions to natural sciences].
 
 # Aristotle's extensive body of work has had a profound and lasting impact on Western philosophy and science, influencing countless thinkers and shaping the development of various academic disciplines.
@@ -227,7 +227,7 @@ class CustomRAGAssistant(R2RStreamingRAGAssistant):
             result = num1 / num2
         else:
             return "Error: Invalid operation"
-        
+
         return f"The result of {operation} {num1} and {num2} is {result}"
 
 # Custom assistant factory
@@ -257,7 +257,7 @@ async def custom_rag_agent_example():
         {"role": "system", "content": "You are a helpful assistant with access to a large knowledge base and a calculator."},
         {"role": "user", "content": "What's the square root of 144, and who discovered it?"},
     ]
-    
+
     response = await custom_r2r.engine.agent(
         messages=messages,
         rag_generation_config={"max_tokens": 300, "temperature": 0.7, "stream": True},

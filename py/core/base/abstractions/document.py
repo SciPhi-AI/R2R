@@ -6,9 +6,9 @@ import logging
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
-from uuid import NAMESPACE_DNS, UUID, uuid4
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from .base import R2RSerializable
 

@@ -2,7 +2,7 @@
 provider = "unstructured_api" # or unstructured_local
 
 [chunking]
-provider = "unstructured_api" # or unstructured_local 
+provider = "unstructured_api" # or unstructured_local
 
 [chunking.chunking_config]
 
@@ -25,7 +25,7 @@ provider = "unstructured_api" # or unstructured_local
     # output_format=
     # overlap=
     # overlap_all=
-    # pdf_infer_table_structure= 
+    # pdf_infer_table_structure=
     # similarity_threshold=
     # skip_infer_table_types=
     # split_pdf_concurrency_level=

@@ -69,7 +69,7 @@ def test_build_docker_command():
     command = build_docker_command(
         compose_files,
         "localhost",
-        8000,
+        7272,
         False,
         False,
         False,

@@ -49,7 +49,7 @@ npm install r2r-js
 ```javascript
 const { r2rClient } = require("r2r-js");
 
-const client = new r2rClient("http://localhost:8000");
+const client = new r2rClient("http://localhost:7272");
 ```
 
 ## Login

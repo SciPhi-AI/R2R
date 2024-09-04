@@ -68,7 +68,7 @@ Key generation configuration options:
         # .. set other environment variables
 
         # Optional - Update default model
-        # Set '"model": "openai/gpt-3.5-turbo"' in `r2r.toml` 
+        # Set '"model": "openai/gpt-3.5-turbo"' in `r2r.toml`
         # then call
         r2r serve --config-path=r2r.toml
         ```
@@ -89,7 +89,7 @@ Key generation configuration options:
         # .. set other environment variables
 
         # Optional - Update default model
-        # Set '"model": "azure/<your deployment name>"' in `r2r.toml` 
+        # Set '"model": "azure/<your deployment name>"' in `r2r.toml`
         # then call
         r2r serve --config-path=r2r.toml
         ```
@@ -104,14 +104,14 @@ Key generation configuration options:
     </Tab>
 
     <Tab title="Anthropic">
-    
+
         ```python
         export ANTHROPIC_API_KEY=your_anthropic_key
         # export ANTHROPIC_API_BASE=your_anthropic_base_url
         # .. set other environment variables
 
         # Optional - Update default model
-        # Set '"model": "anthropic/claude-3-opus-20240229"' in `r2r.toml` 
+        # Set '"model": "anthropic/claude-3-opus-20240229"' in `r2r.toml`
         # then call
         r2r serve --config-path=r2r.toml
         ```
@@ -133,7 +133,7 @@ Key generation configuration options:
     export VERTEX_PROJECT=your_project_id
     export VERTEX_LOCATION=your_project_location
     # .. set other environment variables
-    
+
     # Optional - Update default model
     # Set '"model": "vertex_ai/gemini-pro"' in `r2r.toml`
     # then call
@@ -182,13 +182,13 @@ Key generation configuration options:
     ```python
     export GROQ_API_KEY=your_groq_api_key
     # .. set other environment variables
-    
+
     # Optional - Update default model
     # Set '"model": "groq/llama3-8b-8192"' in `r2r.toml`
     # then call
     r2r serve --config-path=r2r.toml
     ```
-    
+
     Supported models include:
     - llama-3.1-8b-instant
     - llama-3.1-70b-versatile
@@ -197,32 +197,32 @@ Key generation configuration options:
     - llama3-70b-8192
     - mixtral-8x7b-32768
     - gemma-7b-it
-    
+
     For a complete list of supported Groq models and detailed usage instructions, please refer to the [LiteLLM Groq documentation](https://docs.litellm.ai/docs/providers/groq).
-    
+
     Note: Groq supports ALL models available on their platform. Use the prefix `groq/` when specifying the model name.
-    
+
     Additional features:
     - Supports streaming responses
     - Function/Tool calling available for compatible models
     - Speech-to-Text capabilities with Whisper model
   </Tab>
-  
+
   <Tab title="Ollama">
     ```python
     # Ensure your Ollama server is running
     # Default Ollama server address: http://localhost:11434
     # <-- OR -->
-    # Use `r2r serve --docker --config-name=local_llm` 
+    # Use `r2r serve --docker --config-name=local_llm`
     # which bundles ollama with R2R in Docker by default!
-    
+
     # Optional - Update default model
     # Copy `r2r/examples/configs/local_llm.toml` into `my_r2r_local_llm.toml`
     # Set '"model": "ollama/llama3.1"' in `my_r2r_local_llm.toml`
     # then call
     r2r serve --config-path=my_r2r_local_llm.toml
     ```
-    
+
     Supported models include:
     - llama2
     - mistral
@@ -230,11 +230,11 @@ Key generation configuration options:
     - mixtral-8x7B-Instruct-v0.1
     - codellama
     - llava (vision model)
-    
+
     For a complete list of supported Ollama models and detailed usage instructions, please refer to the [LiteLLM Ollama documentation](https://docs.litellm.ai/docs/providers/ollama).
-    
+
     <Note>Ollama supports local deployment of various open-source models. Ensure you have the desired model pulled and running on your Ollama server. [See here](/documentation/local-rag) for more detailed instructions on local RAG setup.</Note>
-    
+
   </Tab>
 
     <Tab title="Cohere">

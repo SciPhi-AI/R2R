@@ -25,7 +25,7 @@ const ingestResponse = await client.ingestFiles(files, {
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="object">
-      The response from the R2R system after ingesting the files. 
+      The response from the R2R system after ingesting the files.
       ```bash
       {'results': {'processed_documents': [{'id': 'c3291abf-8a4e-5d9d-80fd-232ef6fd8526', 'title': 'file1.txt', ...}], 'failed_documents': [], 'skipped_documents': []}}
       ```
@@ -157,14 +157,14 @@ const documentsOverview = await client.documentsOverview();
       ```bash
       [
         {
-          'document_id': '93123a68-d668-51de-8291-92162730dc87', 
+          'document_id': '93123a68-d668-51de-8291-92162730dc87',
           'version': 'v1',
           'size_in_bytes': 73353,
           'metadata': {},
           'status': 'success',
           'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-          'title': 'aristotle.txt', 
-          'created_at': '2024-07-21T20:09:14.218741Z', 
+          'title': 'aristotle.txt',
+          'created_at': '2024-07-21T20:09:14.218741Z',
           'updated_at': '2024-07-21T20:09:14.218741Z',
           'metadata': {'x': 'y'}
         },

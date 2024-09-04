@@ -5,7 +5,7 @@ search:
         source: |
           from r2r import R2RClient
 
-          client = R2RClient("http://localhost:8000")
+          client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
 
           result = client.search(
@@ -44,7 +44,7 @@ rag:
         source: |
           from r2r import R2RClient
 
-          client = R2RClient("http://localhost:8000")
+          client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
 
           result = client.rag(
@@ -95,7 +95,7 @@ agent:
         source: |
           from r2r import R2RClient
 
-          client = R2RClient("http://localhost:8000")
+          client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
 
           result = client.agent(

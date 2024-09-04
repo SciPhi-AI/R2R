@@ -33,7 +33,7 @@ model = "anthropic/claude-3-opus-20240229"
 
 3. Launch R2R with the CLI using your custom configuration:
 
-```bash 
+```bash
 r2r serve --config-path=r2r.toml
 ```
 
@@ -46,7 +46,7 @@ When calling endpoints, you can override server configurations on-the-fly. This 
 For example, using the Python SDK:
 
 ```python
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 
 response = client.rag(
     "Who was Aristotle?",

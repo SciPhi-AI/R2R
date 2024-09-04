@@ -1,8 +1,7 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from core.base import DocumentInfo, DocumentType, IngestionStatus, R2RException
-from core.base.api.models.management.responses import GroupResponse
+from core.base import DocumentInfo, DocumentType, IngestionStatus
 
 from .base import DatabaseMixin
 

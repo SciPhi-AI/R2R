@@ -86,7 +86,10 @@ class R2RProviderFactory:
             from core.providers import R2RParsingProvider
 
             return R2RParsingProvider(parsing_config)
-        elif parsing_config.provider in ["unstructured_local", "unstructured_api"]:
+        elif parsing_config.provider in [
+            "unstructured_local",
+            "unstructured_api",
+        ]:
             from core.providers import UnstructuredParsingProvider
 
             return UnstructuredParsingProvider(

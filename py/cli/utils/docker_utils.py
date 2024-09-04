@@ -101,6 +101,7 @@ def run_local_serve(
         model_provider = llm_model.split("/")[0]
         check_llm_reqs(llm_provider, model_provider, include_ollama=True)
 
+    click.echo("R2R now runs on port 7272 by default!")
     available_port = find_available_port(port)
 
     r2r_instance.serve(host, available_port)
@@ -147,6 +148,7 @@ def run_docker_serve(
         config_path,
     )
 
+    click.echo("R2R now runs on port 7272 by default!")
     click.echo("Starting Docker Compose setup...")
     os.system(docker_command)
 
@@ -339,7 +341,6 @@ def build_docker_command(
     config_name,
     config_path,
 ):
-    available_port = find_available_port(port)
 
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
@@ -354,11 +355,10 @@ def build_docker_command(
     command += f" --project-name {project_name}"
 
     # Find available ports
-    r2r_port = find_available_port(port)
-    r2r_dashboard_port = find_available_port(r2r_port + 1)
-    hatchet_dashboard_port = find_available_port(r2r_dashboard_port + 1)
+    r2r_dashboard_port = port + 1
+    hatchet_dashboard_port = r2r_dashboard_port + 1
 
-    os.environ["PORT"] = str(r2r_port)
+    os.environ["PORT"] = str(port)
     os.environ["HOST"] = host
     os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
     os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)

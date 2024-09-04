@@ -117,7 +117,7 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
 </ParamField>
 
 
-### Search custom settings 
+### Search custom settings
 
 Search with custom settings, such as bespoke document filters and larger search limits
 ```javascript
@@ -150,7 +150,7 @@ const hybrid_search_response = client.search(
 
 ```javascript
 hybrid_search_response = client.search(
-    "What was Uber's profit in 2020?", 
+    "What was Uber's profit in 2020?",
     { use_hybrid_search: true}
 )
 ```
@@ -206,7 +206,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
             'id': 'chatcmpl-9ySStnC0oEhnGPPV1k8ZYnxBKOuW8',
             'choices': [{
               'finish_reason': 'stop',
-              'index': 0, 
+              'index': 0,
               'logprobs': None,
               'message': {
                 'content': "Uber's profit in 2020 was a net loss of $6.77 billion."

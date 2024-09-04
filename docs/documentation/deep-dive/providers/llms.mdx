@@ -224,7 +224,7 @@ class CustomLLMProvider(LLMProvider):
     ) -> LLMChatCompletion:
         # Implement the logic to get a completion from your custom LLM
         response = self.custom_client.generate(messages, **generation_config.dict(), **kwargs)
-        
+
         # Convert the response to LLMChatCompletion format
         return LLMChatCompletion(
             id=response.id,
@@ -252,7 +252,7 @@ class CustomLLMProvider(LLMProvider):
     ) -> Generator[LLMChatCompletionChunk, None, None]:
         # Implement the logic to get a streaming completion from your custom LLM
         stream = self.custom_client.generate_stream(messages, **generation_config.dict(), **kwargs)
-        
+
         for chunk in stream:
             yield LLMChatCompletionChunk(
                 id=chunk.id,

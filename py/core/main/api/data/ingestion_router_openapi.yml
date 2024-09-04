@@ -5,7 +5,7 @@ ingest_files:
         source: |
           from r2r import R2RClient
 
-          client = R2RClient("http://localhost:8000")
+          client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
 
           result = client.ingest_files(
@@ -39,7 +39,7 @@ update_files:
         source: |
           from r2r import R2RClient
 
-          client = R2RClient("http://localhost:8000")
+          client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
 
           result = client.update_files(
