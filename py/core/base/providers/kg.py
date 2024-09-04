@@ -25,9 +25,7 @@ class KGConfig(ProviderConfig):
     kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
         KGEnrichmentSettings()
     )
-    kg_creation_settings: Optional[KGCreationSettings] = (
-        KGCreationSettings()
-    )
+    kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

@@ -204,7 +204,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
             processed_entities, with_embeddings=True
         )
 
-        logger.info("KG Node Description pipe: Upserted entities to the database")
+        logger.info(
+            "KG Node Description pipe: Upserted entities to the database"
+        )
 
         for entity in processed_entities:
             yield entity

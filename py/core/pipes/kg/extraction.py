@@ -15,6 +15,7 @@ from core.base import (
     DocumentExtraction,
     DocumentFragment,
     Entity,
+    GenerationConfig,
     IngestionStatus,
     KGExtraction,
     KGProvider,
@@ -23,7 +24,6 @@ from core.base import (
     R2RDocumentProcessingError,
     RunLoggingSingleton,
     Triple,
-    GenerationConfig,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
@@ -223,7 +223,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         tasks.extend(
             [
-                asyncio.create_task(self.extract_kg(extraction, generation_config))
+                asyncio.create_task(
+                    self.extract_kg(extraction, generation_config)
+                )
                 for extraction in extractions
             ]
         )

@@ -1,6 +1,10 @@
 from typing import Union
 
-from .models import KGEnrichmentResponse, KGEnrichmentSettings, KGCreationSettings
+from .models import (
+    KGCreationSettings,
+    KGEnrichmentResponse,
+    KGEnrichmentSettings,
+)
 
 
 class RestructureMethods:
@@ -24,7 +28,6 @@ class RestructureMethods:
             "kg_creation_settings": kg_creation_settings,
         }
         return await client._make_request("POST", "create_graph", json=data)
-    
 
     @staticmethod
     async def enrich_graph(

@@ -19,13 +19,13 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
     Entity,
+    GenerationConfig,
     KGEnrichmentSettings,
     KGProvider,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
     Triple,
-    GenerationConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,10 @@ class KGClusteringPipe(AsyncPipe):
         return prompt.format(entities=entities_info, triples=triples_info)
 
     async def process_community(
-        self, level: int, community_id: str, generation_config: GenerationConfig
+        self,
+        level: int,
+        community_id: str,
+        generation_config: GenerationConfig,
     ) -> dict:
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
@@ -105,8 +108,10 @@ class KGClusteringPipe(AsyncPipe):
 
         """
 
-        entities, triples = self.kg_provider.get_community_entities_and_triples(
-            level=level, community_id=community_id
+        entities, triples = (
+            self.kg_provider.get_community_entities_and_triples(
+                level=level, community_id=community_id
+            )
         )
 
         if entities == [] or triples == []:
@@ -160,7 +165,9 @@ class KGClusteringPipe(AsyncPipe):
             self.kg_provider.perform_graph_clustering(leiden_params)
         )
 
-        logger.info(f"Clustering completed. Generated {num_communities} communities with {num_hierarchies} hierarchies.")
+        logger.info(
+            f"Clustering completed. Generated {num_communities} communities with {num_hierarchies} hierarchies."
+        )
 
         for level in range(num_hierarchies):
             for community_id in range(1, num_communities + 1):
@@ -184,8 +191,8 @@ class KGClusteringPipe(AsyncPipe):
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
 
-        leiden_params = input.message['leiden_params']
-        generation_config = input.message['generation_config']
+        leiden_params = input.message["leiden_params"]
+        generation_config = input.message["generation_config"]
 
         base_dimension = self.embedding_provider.config.base_dimension
         vector_index_fn = self.kg_provider.create_vector_index
@@ -194,5 +201,7 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        async for community in self.cluster_kg(leiden_params, generation_config):
+        async for community in self.cluster_kg(
+            leiden_params, generation_config
+        ):
             yield community

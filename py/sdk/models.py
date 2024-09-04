@@ -386,10 +386,10 @@ class VectorSearchSettings(BaseModel):
             str(uuid) for uuid in dump["selected_group_ids"]
         ]
         return dump
-    
+
 
 class KGCreationSettings(BaseModel):
-    
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
@@ -402,7 +402,7 @@ class KGCreationSettings(BaseModel):
 
     def to_dict(self):
         return self.model_dump()
-    
+
     def model_dump_json(self, **kwargs):
         return super().model_dump_json(**kwargs)
 

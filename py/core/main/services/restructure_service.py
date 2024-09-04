@@ -1,10 +1,14 @@
 import json
 import logging
-from uuid import UUID
 from typing import Any, AsyncGenerator, Dict, Optional, Union
+from uuid import UUID
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
-from core.base.abstractions import KGCreationSettings, KGEnrichmentSettings, GenerationConfig
+from core.base.abstractions import (
+    GenerationConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+)
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -46,9 +50,9 @@ class RestructureService(Service):
     ):
         triples = await self.pipes.kg_extraction_pipe.run(
             input=self.pipes.kg_extraction_pipe.Input(
-                message = {
+                message={
                     "document_id": document_id,
-                    "generation_config": generation_config
+                    "generation_config": generation_config,
                 }
             ),
             run_manager=self.run_manager,
@@ -75,10 +79,12 @@ class RestructureService(Service):
 
     async def kg_clustering(self, leiden_params, generation_config):
         result_gen = await self.pipes.kg_clustering_pipe.run(
-            input=self.pipes.kg_clustering_pipe.Input(message={
-                "leiden_params": leiden_params,
-                "generation_config": generation_config
-            }),
+            input=self.pipes.kg_clustering_pipe.Input(
+                message={
+                    "leiden_params": leiden_params,
+                    "generation_config": generation_config,
+                }
+            ),
             run_manager=self.run_manager,
         )
         return await _collect_results(result_gen)

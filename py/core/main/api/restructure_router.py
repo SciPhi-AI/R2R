@@ -13,7 +13,11 @@ from core.base.api.models.restructure.responses import (
 from core.base.providers import OrchestrationProvider
 
 from ...main.hatchet import r2r_hatchet
-from ..hatchet import EnrichGraphWorkflow, KgExtractAndStoreWorkflow, CreateGraphWorkflow
+from ..hatchet import (
+    CreateGraphWorkflow,
+    EnrichGraphWorkflow,
+    KgExtractAndStoreWorkflow,
+)
 from ..services.restructure_service import RestructureService
 from .base_router import BaseRouter, RunType
 

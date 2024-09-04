@@ -6,7 +6,12 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import KGConfig, KGCreationSettings, KGEnrichmentSettings, KGProvider
+from core.base import (
+    KGConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGProvider,
+)
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -462,13 +467,6 @@ class Neo4jKGProvider(KGProvider):
         result = self.structured_query(GRAPH_EXISTS_QUERY)
         graph_exists = result.records[0]["graphExists"]
 
-        if graph_exists:
-            logger.info(f"Graph exists, dropping it")
-            GRAPH_DROP_QUERY = (
-                "CALL gds.graph.drop('kg_graph') YIELD graphName;"
-            )
-            result = self.structured_query(GRAPH_DROP_QUERY)
-
         GRAPH_PROJECTION_QUERY = """
             MATCH (s:__Entity__)-[r]->(t:__Entity__)
             RETURN gds.graph.project(
@@ -478,6 +476,13 @@ class Neo4jKGProvider(KGProvider):
         """
 
         if graph_exists:
+
+            logger.info(f"Graph exists, dropping it")
+            GRAPH_DROP_QUERY = (
+                "CALL gds.graph.drop('kg_graph') YIELD graphName;"
+            )
+            result = self.structured_query(GRAPH_DROP_QUERY)
+
             GRAPH_PROJECTION_QUERY += """
                 {
                     sourceNodeProperties: s { },

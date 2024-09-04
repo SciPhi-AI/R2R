@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
-from uuid import UUID
+
 
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
@@ -11,6 +13,7 @@ class KGCreationSettings(R2RSerializable):
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph enrichment.",
     )
+
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
