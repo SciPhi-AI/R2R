@@ -51,14 +51,17 @@ class RestructureRouter(BaseRouter):
         )
         @self.base_endpoint
         async def create_graph(
-            document_ids: list[str] = None,
+            document_ids: Optional[list[str]],
             kg_creation_settings: Json[KGCreationSettings] = Body(
                 default_factory=KGCreationSettings
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
-            Create a new graph.
+            Input:
+            - document_ids: list[str], optional, if not provided, all documents will be used
+            - kg_creation_settings: KGCreationSettings
+            - auth_user: AuthUser
 
             This endpoint supports JSON requests, enabling you to create a new knowledge graph in R2R.
 
@@ -97,6 +100,10 @@ class RestructureRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
+            Input:
+            - kg_enrichment_settings: KGEnrichmentSettings
+            - auth_user: AuthUser
+
             Perform graph enrichment, over the entire graph.
 
             This endpoint supports JSON requests, enabling you to enrich the knowledge graph in R2R.

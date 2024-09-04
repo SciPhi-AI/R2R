@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
 
+from core.base.abstractions.base import R2RSerializable
+
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
 
@@ -28,7 +30,7 @@ class RAGCompletion:
         self.search_results = search_results
 
 
-class GenerationConfig(BaseModel):
+class GenerationConfig(R2RSerializable):
     _defaults: ClassVar[dict] = {
         "model": "openai/gpt-4o",
         "temperature": 0.1,
@@ -92,19 +94,6 @@ class GenerationConfig(BaseModel):
 
     def __str__(self):
         return json.dumps(self.to_dict())
-
-    def to_dict(self):
-        return {
-            "model": self.model,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "max_tokens_to_sample": self.max_tokens_to_sample,
-            "stream": self.stream,
-            "functions": self.functions,
-            "tools": self.tools,
-            "add_generation_kwargs": self.add_generation_kwargs,
-            "api_base": self.api_base
-        }
 
     class Config:
         json_schema_extra = {
