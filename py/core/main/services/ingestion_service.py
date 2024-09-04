@@ -374,7 +374,7 @@ class IngestionService(Service):
     async def _collect_results(self, result_gen: Any) -> list[dict]:
         results = []
         async for res in result_gen:
-            results.append(res.json())
+            results.append(res.model_dump_json())
         return results
 
 

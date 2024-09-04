@@ -35,7 +35,7 @@ class IngestFilesWorkflow:
             )
             return {
                 "result": extractions,
-                "info": document_info["info"].json(),
+                "info": document_info["info"].model_dump_json(),
             }
         except Exception as e:
             raise ValueError(f"Failed to parse document extractions: {str(e)}")
@@ -146,7 +146,9 @@ class UpdateFilesWorkflow:
                 "document_id": str(doc_id),
                 "version": new_version,
                 "chunking_config": (
-                    chunking_config.json() if chunking_config else None
+                    chunking_config.model_dump_json()
+                    if chunking_config
+                    else None
                 ),
                 "is_update": True,
             }

@@ -201,9 +201,11 @@ class IngestionRouter(BaseRouter):
                 "document_ids": [str(doc_id) for doc_id in document_ids],
                 "metadatas": metadatas,
                 "chunking_config": (
-                    chunking_config.json() if chunking_config else None
+                    chunking_config.model_dump_json()
+                    if chunking_config
+                    else None
                 ),
-                "user": auth_user.json(),
+                "user": auth_user.model_dump_json(),
             }
 
             task_id = self.orchestration_provider.workflow(
