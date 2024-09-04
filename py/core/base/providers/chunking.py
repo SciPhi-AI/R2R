@@ -33,7 +33,7 @@ class ChunkingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api", None]
 
     class Config:
         json_schema_extra = {
@@ -57,7 +57,7 @@ class ChunkingConfig(ProviderConfig):
 
 
 class UnstructuredChunkingConfig(ChunkingConfig):
-    provider: str = "unstructured"
+    provider: str = "unstructured_local" # or unstructured_api
 
     combine_under_n_chars: Optional[int]
     coordinates: bool = False

@@ -131,4 +131,4 @@ class UnstructuredParsingProvider(ParsingProvider):
         )
 
     def get_parser_for_document_type(self, doc_type: DocumentType) -> str:
-        return "unstructured"
+        return "unstructured_local"

@@ -1,8 +1,8 @@
 [parsing]
-provider = "unstructured_api"
+provider = "unstructured_api" # or unstructured_local
 
 [chunking]
-provider = "unstructured_api"
+provider = "unstructured_api" # or unstructured_local 
 
 [chunking.chunking_config]
 
