@@ -11,6 +11,7 @@ from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.providers import OrchestrationProvider
 
+from ...main.hatchet import r2r_hatchet
 from ..hatchet import IngestFilesWorkflow, UpdateFilesWorkflow
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
@@ -123,7 +124,7 @@ class IngestionRouter(BaseRouter):
                     "is_update": False,
                 }
 
-                task_id = self.orchestration_provider.workflow(
+                task_id = r2r_hatchet.client.admin.run_workflow(
                     "ingest-file", {"request": workflow_input}
                 )
                 messages.append(
@@ -132,6 +133,7 @@ class IngestionRouter(BaseRouter):
                         "task_id": str(task_id),
                     }
                 )
+            print("messages = ", messages)
 
             return messages
 
@@ -208,10 +210,9 @@ class IngestionRouter(BaseRouter):
                 "user": auth_user.model_dump_json(),
             }
 
-            task_id = self.orchestration_provider.workflow(
+            task_id = r2r_hatchet.client.admin.run_workflow(
                 "update-files", {"request": workflow_input}
             )
-
             return {
                 "message": "Update task queued successfully.",
                 "task_id": str(task_id),

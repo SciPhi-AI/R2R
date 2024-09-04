@@ -10,9 +10,7 @@ from ..services import IngestionService, IngestionServiceAdapter
 from .base import r2r_hatchet
 
 
-@r2r_hatchet.workflow(
-    name="ingest-file", on_events=["file:ingest"], timeout=3600
-)
+@r2r_hatchet.workflow(name="ingest-file", timeout=3600)
 class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
@@ -83,10 +81,9 @@ class IngestFilesWorkflow:
         )
 
 
+
 # TODO: Implement a check to see if the file is actually changed before updating
-@r2r_hatchet.workflow(
-    name="update-files", on_events=["file:update"], timeout=3600
-)
+@r2r_hatchet.workflow(name="update-files", timeout=3600)
 class UpdateFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service

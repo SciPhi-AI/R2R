@@ -128,7 +128,7 @@ class ManagementRouter(BaseRouter):
             run_type_filter: Optional[str] = Query(""),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedLogResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
