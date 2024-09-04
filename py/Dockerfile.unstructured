@@ -6,8 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr libtesseract-dev libleptonica-dev pkg-config \
     poppler-utils libmagic1 \
     libgl1-mesa-glx libglib2.0-0 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install runtime dependencies
 RUN apt-get update \
@@ -21,7 +20,6 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN pip install --no-cache-dir poetry
 
 RUN pip install --no-cache-dir "unstructured[all-docs]" \
-    && pip install --no-cache-dir "unstructured_client" \
     && pip install --no-cache-dir gunicorn uvicorn
 
 RUN python -c "import ssl; import nltk; ssl._create_default_https_context = ssl._create_unverified_context; nltk.download('wordnet', quiet=True)"
