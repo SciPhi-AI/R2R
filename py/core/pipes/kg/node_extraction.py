@@ -61,15 +61,6 @@ class KGNodeExtractionPipe(AsyncPipe):
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
 
-<<<<<<< HEAD
-        len_input = 0
-        for message in input.message:
-            len_input += len(message)
-
-        logger.info(f"Processing {len_input} chunks")
-
-=======
->>>>>>> cbe0f1937f265e7f53cdbbb6706657787192b38a
         nodes = self.kg_provider.get_entity_map()
 
         for _, node_info in nodes.items():
