@@ -4,20 +4,20 @@ description: 'Learn how to build and use GraphRAG with R2R'
 icon: 'signal'
 ---
 
-## Introduction 
+## Introduction
 
-GraphRAG is a powerful feature of R2R that allows you to perform graph-based search and retrieval. This guide will walk you through the process of setting up and using Graph RAG using R2R. 
+GraphRAG is a powerful feature of R2R that allows you to perform graph-based search and retrieval. This guide will walk you through the process of setting up and using Graph RAG using R2R.
 
 
 ![YC S24 Knowledge Graph](../images/yc_s24.png)
 
 
 <Note>
-Note that graph construction may take long for local LLMs, we recommend using cloud LLMs for faster results. 
+Note that graph construction may take long for local LLMs, we recommend using cloud LLMs for faster results.
 </Note>
 
 
-## Start server 
+## Start server
 
 <Tabs>
 <Tab title="Cloud LLMs">
@@ -145,33 +145,33 @@ tool_names = ["search"]
 
 ## Ingesting files
 
-You can ingest the sample aristotle file as follows: 
+You can ingest the sample aristotle file as follows:
 
 ```
 r2r ingest-sample-file
 ```
 
-You can also ingest your own files. 
+You can also ingest your own files.
 
 ```
 r2r ingest-files /path/to/your/files
 ```
 
-This step will ingest your files into the database and enable semantic search over them. In order to create the graph and perform graphrag, you need to create the knowledge graph and enrich it. 
+This step will ingest your files into the database and enable semantic search over them. In order to create the graph and perform graphrag, you need to create the knowledge graph and enrich it.
 
 
 ## Create Knowledge Graph
 
-You can create a knowledge graph with the following command. Note that document ids are optional, but if you want to create a knowledge graph for a specific set of documents, you can pass the document ids to the command. 
+You can create a knowledge graph with the following command. Note that document ids are optional, but if you want to create a knowledge graph for a specific set of documents, you can pass the document ids to the command.
 
 ```
 r2r create-graph --document-ids <document_ids>
 ```
 
-This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways: 
+This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
 
 
-1. Using the `r2r inspect-knowledge-graph` command. 
+1. Using the `r2r inspect-knowledge-graph` command.
 
 ```bash
 r2r inspect-knowledge-graph
@@ -205,7 +205,7 @@ Number of connected components: 7
   Nicomachus: 0.0189
 ```
 
-2. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser: 
+2. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
 
 ```
 MATCH (a)
@@ -218,7 +218,7 @@ RETURN a
 
 ## Graph Enrichment
 
-Now we have a graph, but this graph is not searchable yet. We need to perform the graph enrichment step. 
+Now we have a graph, but this graph is not searchable yet. We need to perform the graph enrichment step.
 
 The graph enrichment step adds node and relationship descriptions, performs hierarchical leiden clustering to create communities, and embeds the descriptions. These embeddings will be used later in the local search stage of the pipeline. If you are more interested in the algorithm, please refer to the blog post [here](https://www.sciphi.ai/blog/graphrag).
 
@@ -226,25 +226,25 @@ The graph enrichment step adds node and relationship descriptions, performs hier
 r2r enrich-graph
 ```
 
-Now you can see that the graph is enriched with the following information. We have added descriptions and embeddings to the nodes and relationships. Also, each node is mapped to a community. 
+Now you can see that the graph is enriched with the following information. We have added descriptions and embeddings to the nodes and relationships. Also, each node is mapped to a community.
 
 ![Enriched Graph](../images/enriched.png)
 
 
-## Search 
+## Search
 
-GraphRAG currently supports two types of searches: local and global. 
+GraphRAG currently supports two types of searches: local and global.
 
 
 ### Local search
 
-Local searches are faster and cheaper, they perform similarity search on the entity, relationship and community description embeddings. 
+Local searches are faster and cheaper, they perform similarity search on the entity, relationship and community description embeddings.
 
-```bash 
+```bash
 r2r search --query="What does Parley do?" --use-kg-search --kg-search-type=local
 ```
 
-The answer will be returned in JSON format and contains results from entities, relationships and communities. Following is a snippet of the output:  
+The answer will be returned in JSON format and contains results from entities, relationships and communities. Following is a snippet of the output:
 
 ```json
 {
@@ -259,11 +259,11 @@ The answer will be returned in JSON format and contains results from entities, r
 
 Global searches can be used for queries that require reasoning over the whole dataset. They provide more accurate results, however they use a large amount of queries and are expensive. We recommend checking the number of clusters created in the graph and setting the `max-llm-queries` to be a fraction (> 0.1) of that number.
 
-```bash 
+```bash
 r2r search --query="In this batch, which companies are building AI agents?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
 ```
 
-The answer will be returned in markdown format as follows: 
+The answer will be returned in markdown format as follows:
 
 ```markdown
 
@@ -332,9 +332,9 @@ Arva AI automates the KYB onboarding process for banks and fintechs, significant
 ClaimSorted focuses on automating insurance claims management through AI, enhancing the efficiency of insurance
 ```
 
-## Rag 
+## Rag
 
-You can directly use these search results as part of your RAG pipeline. 
+You can directly use these search results as part of your RAG pipeline.
 
 ```bash
 r2r rag --query="Which companies in this batch have the highest chance of success?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
@@ -356,9 +356,9 @@ These companies stand out due to their innovative approaches, strategic market p
 ```
 
 
-# Conclusion 
+# Conclusion
 
-In conclusion, integrating R2R with GraphRAG significantly enhances the capabilities of your RAG applications. By leveraging the power of graph-based knowledge representations, GraphRAG allows for more nuanced and context-aware information retrieval. This is evident in the example query we ran using R2R, which not only retrieved relevant information but also provided a structured analysis of the companies most likely to succeed. 
+In conclusion, integrating R2R with GraphRAG significantly enhances the capabilities of your RAG applications. By leveraging the power of graph-based knowledge representations, GraphRAG allows for more nuanced and context-aware information retrieval. This is evident in the example query we ran using R2R, which not only retrieved relevant information but also provided a structured analysis of the companies most likely to succeed.
 
 In essence, combining R2R with GraphRAG empowers your RAG applications to deliver more intelligent, context-aware, and insightful responses, making it a powerful tool for advanced information retrieval and analysis tasks.
 

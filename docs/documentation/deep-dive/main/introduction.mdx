@@ -17,17 +17,17 @@ flowchart TD
         direction TB
         Config[R2RConfig]
         Builder[R2RBuilder]
-        
+
         subgraph Factories
             PF[R2RProviderFactory]
             PiF[R2RPipeFactory]
             PlF[R2RPipelineFactory]
         end
-        
+
         Engine[R2REngine]
         App[R2RApp]
         R2R[R2R]
-        
+
         Config --> Builder
         Builder --> PF
         Builder --> PiF
@@ -39,7 +39,7 @@ flowchart TD
         Engine --> R2R
         App --> R2R
     end
-    
+
     User[Developer] --> |Customizes| Config
     User --> |Uses| Builder
     User --> |Overrides| Factories

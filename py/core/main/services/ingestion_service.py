@@ -3,6 +3,7 @@ import functools
 import json
 import logging
 from datetime import datetime
+from io import BytesIO
 from typing import Any, Callable, Coroutine, Optional
 from uuid import UUID
 
@@ -89,6 +90,16 @@ class IngestionService(Service):
             logging_connection,
         )
 
+    async def store_file(
+        self,
+        file_name: str,
+        file_content: BytesIO,
+        file_type: Optional[str] = None,
+    ) -> UUID:
+        return self.providers.database.relational.store_file(
+            file_name, file_content, file_type
+        )
+
     @telemetry_event("IngestFile")
     async def ingest_file_ingress(
         self,
@@ -113,6 +124,11 @@ class IngestionService(Service):
 
         metadata = metadata or {}
 
+        file_content = BytesIO(base64.b64decode(file_data["content"]))
+        file_id = await self.store_file(
+            file_data["filename"], file_content, file_data["content_type"]
+        )
+
         # document id is dynamically generated from the filename and user id, unless explicitly provided
         document_id = document_id or generate_user_document_id(
             file_data["filename"], user.id
@@ -121,6 +137,7 @@ class IngestionService(Service):
         document = self._file_data_to_document(
             file_data, user, document_id, metadata, version
         )
+        document.metadata["file_id"] = str(file_id)
 
         document_lookup = (
             (
@@ -190,6 +207,13 @@ class IngestionService(Service):
         document_info: DocumentInfo,
         document: Document,
     ) -> list[DocumentFragment]:
+        file_id = UUID(document.metadata["file_id"])
+        file_name, file_content, file_size = (
+            self.providers.database.relational.retrieve_file(file_id)
+        )
+
+        document.data = file_content.read()
+
         return await self.pipes.parsing_pipe.run(
             input=self.pipes.parsing_pipe.Input(message=document),
             run_manager=self.run_manager,

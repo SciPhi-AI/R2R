@@ -100,10 +100,10 @@ The code above builds R2R with a custom factory which changes retrieval such tha
 
 Now, to serve it in non-production settings, we can run the following:
 
-```bash 
+```bash
 python $r2r_workdir/py/core/examples/scripts/serve_with_hyde.py
 ```
-This results in output like this - 
+This results in output like this -
 
 ```bash
 2024-08-22 10:06:01,563 - INFO - core.providers.prompts.r2r_prompts - Loading prompts from SciPhi/r2r/py/core/providers/prompts/defaults
@@ -127,7 +127,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 
 The script above works by using a custom pipe factory, `R2RPipeFactoryWithMultiSearch` alongside the `R2RBuilder`. The custom factory overrides the default `create_vector_search_pipe` method of `R2RPipeFactory` to create a `MultiSearchPipe`. The `MultiSearchPipe` is a pre-built implementation in R2R which facilitates the conversion of an incoming query into multiple downstream queries. The implementation is actually rather simle, as we can see below:
 
-```python 
+```python
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
     ...
     def create_vector_search_pipe(self, *args, **kwargs):
@@ -154,7 +154,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
                 task_prompt=task_prompt_name,
             ),
         )
-        
+
         # Create search pipe override and pipes
         inner_search_pipe = kwargs.get(
             "multi_inner_search_pipe_override", None
@@ -166,7 +166,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
             config=multi_search_config,
         )
 
-        
+
 ```
 
 
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
 ### Running Web Search RAG
 
-Now that the server is running we perform search or RAG exactly as above, except now the results will be rooted in web sources. 
+Now that the server is running we perform search or RAG exactly as above, except now the results will be rooted in web sources.
 This will produce output similar to:
 
 ```
@@ -341,4 +341,3 @@ Where to go from here?
 1. Experiment with different HyDE prompts to optimize for your specific domain.
 2. Try combining HyDE with other R2R features like knowledge graph integration for even more powerful RAG systems.
 3. Dive into R2R's documentation to discover more advanced techniques and customization options. For more information, refer [here](/documentation/deep-dive/main/introduction).
-

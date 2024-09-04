@@ -71,7 +71,7 @@ curl -X POST http://localhost:8000/v2/search \
 ```
 The `use_hybrid_search` flag can also be passed as an argument for the RAG method.
 
-### Sample Code 
+### Sample Code
 Passing the flag above modifies downstream a downstream `VectorSearchSettings` object, which is used as when searching with R2R as shown:
 
 ```python
@@ -97,7 +97,7 @@ search_results = app.search(
 <Accordion icon="code" title="Implementation Details" defaultOpen={true}>
 R2R's hybrid search algorithm in Postgres combines results from traditional keyword searches and semantic searches using Reciprocal Rank Fusion (RRF):
 
-1. **Full-Text Search**: 
+1. **Full-Text Search**:
    - Uses Postgres's full-text search with `ts_rank` and `websearch_to_tsquery`.
    - Creates a ranking index (`rank_ix`) for matching documents.
 
@@ -109,7 +109,7 @@ R2R's hybrid search algorithm in Postgres combines results from traditional keyw
    - Merges full-text and semantic search results.
    - Calculates final scores using the formula:
      ```
-     COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight + 
+     COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
      COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
      ```
    - Balances keyword relevance and semantic similarity for comprehensive results.

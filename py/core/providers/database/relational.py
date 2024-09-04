@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from core.providers.database.base import DatabaseMixin, execute_query
 from core.providers.database.document import DocumentMixin
+from core.providers.database.file import PostgresFileProvider
 from core.providers.database.group import GroupMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
 from core.providers.database.user import UserMixin
@@ -12,7 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresRelationalDBProvider(
-    GroupMixin, UserMixin, BlacklistedTokensMixin, DocumentMixin
+    GroupMixin,
+    UserMixin,
+    BlacklistedTokensMixin,
+    DocumentMixin,
+    PostgresFileProvider,
 ):
     def __init__(self, config, vx, crypto_provider, collection_name):
         self.config = config

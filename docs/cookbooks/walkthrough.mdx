@@ -21,7 +21,7 @@ Be sure to complete the [installation instructions](/documentation/installation)
 
 R2R is an engine for building user-facing Retrieval-Augmented Generation (RAG) applications. At its core, R2R provides this service through an architecture of providers, services, and an integrated RESTful API. This cookbook provides a detailed walkthrough of how to interact with R2R. [Refer here](/documentation/deep-dive/main/introduction) for a deeper dive on the R2R system architecture.
 
-## R2R Application Lifecycle 
+## R2R Application Lifecycle
 
 The following diagram illustrates how R2R assembles a user-facing application:
 
@@ -99,7 +99,7 @@ You can read more about [configuration here](/documentation/configuration).
 
 ## Document Ingestion and Management
 
-R2R efficiently handles diverse document types using Postgres with pgvector, combining relational data management with vector search capabilities. This approach enables seamless ingestion, storage, and retrieval of multimodal data, while supporting flexible document management and user permissions. 
+R2R efficiently handles diverse document types using Postgres with pgvector, combining relational data management with vector search capabilities. This approach enables seamless ingestion, storage, and retrieval of multimodal data, while supporting flexible document management and user permissions.
 
 Key features include:
 
@@ -204,14 +204,14 @@ This command returns document metadata, including:
 ```bash
 [
   {
-    'document_id': '93123a68-d668-51de-8291-92162730dc87', 
+    'document_id': '93123a68-d668-51de-8291-92162730dc87',
     'version': 'v1',
     'size_in_bytes': 73353,
     'metadata': {},
     'status': 'success',
     'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-    'title': 'aristotle.txt', 
-    'created_at': '2024-07-21T20:09:14.218741Z', 
+    'title': 'aristotle.txt',
+    'created_at': '2024-07-21T20:09:14.218741Z',
     'updated_at': '2024-07-21T20:09:14.218741Z',
     'metadata': {}
   },
@@ -260,12 +260,12 @@ This command returns detailed chunk information:
 ```bash
 [
   {
-    'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+    'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
     'title': 'aristotle.txt',
-    'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 
-    'version': 'v0', 
-    'chunk_order': 0, 
-    'document_id': '93123a68-d668-51de-8291-92162730dc87', 
+    'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+    'version': 'v0',
+    'chunk_order': 0,
+    'document_id': '93123a68-d668-51de-8291-92162730dc87',
     'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
     'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3',
   },
@@ -285,7 +285,7 @@ R2R supports flexible document deletion through a method that can run arbitrary 
 ```python
 client.delete(
   {
-    "document_id": 
+    "document_id":
       {"$eq": "93123a68-d668-51de-8291-92162730dc87"}
   }
 )
@@ -342,10 +342,10 @@ This flexible deletion mechanism ensures precise control over document managemen
 
   Executing the command below will update one of the sample documents ingested earlier.
   <Tabs>
-  
+
 
     <Tab title="Python">
-    ```python 
+    ```python
     file_paths = ["/path/to/r2r/examples/data/aristotle_v2.txt"]
     document_ids = ["93123a68-d668-51de-8291-92162730dc87"]
     client.update_files(file_paths, document_ids)
@@ -370,7 +370,7 @@ This flexible deletion mechanism ensures precise control over document managemen
     -H "Content-Type: multipart/form-data" \
     -F "files=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
     -F 'document_ids=["93123a68-d668-51de-8291-92162730dc87"]'
-    ```    
+    ```
     </Tab>
   </Tabs>
   **Expected Output:**
@@ -450,7 +450,7 @@ curl -X POST http://localhost:8000/v2/search \
       "ef_search": 40
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -458,16 +458,16 @@ curl -X POST http://localhost:8000/v2/search \
   <Accordion title="Expected Output">
   ```json
   { 'results':
-    {'vector_search_results': 
+    {'vector_search_results':
       [
         {
-          'fragment_id': 'ab6d0830-6101-51ea-921e-364984bfd177', 
-          'extraction_id': '429976dd-4350-5033-b06d-8ffb67d7e8c8', 
-          'document_id': '26e0b128-3043-5674-af22-a6f7b0e54769', 
-          'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 
-          'group_ids': [], 
-          'score': 0.285747126074015, 
-          'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted', 
+          'fragment_id': 'ab6d0830-6101-51ea-921e-364984bfd177',
+          'extraction_id': '429976dd-4350-5033-b06d-8ffb67d7e8c8',
+          'document_id': '26e0b128-3043-5674-af22-a6f7b0e54769',
+          'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+          'group_ids': [],
+          'score': 0.285747126074015,
+          'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted',
           'metadata': {'title': 'uber_2021.pdf', 'version': 'v0', 'chunk_order': 5, 'associatedQuery': "What was Uber's profit in 2020?"}
         },
       ...
@@ -555,7 +555,7 @@ curl -X POST http://localhost:8000/v2/search \
       "ef_search": 100
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -564,7 +564,7 @@ curl -X POST http://localhost:8000/v2/search \
 
 R2R integrates knowledge graph capabilities to enhance search results with structured relationships. Knowledge graph search can be configured to focus on specific entity types, relationships, or search levels. Here's how to utilize knowledge graph search:
 
-<Warning> 
+<Warning>
 Knowledge Graphs are not constructed by default, refer to the [cookbook here](/cookbooks/knowledge-graph) before attempting to run the command below!
 </Warning>
 
@@ -628,7 +628,7 @@ curl -X POST http://localhost:8000/v2/search \
       }
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -678,7 +678,7 @@ curl -X POST http://localhost:8000/v2/rag \
   -d '{
     "query": "What was Uber'\''s profit in 2020?"
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -744,7 +744,7 @@ curl -X POST http://localhost:8000/v2/rag \
       "use_hybrid_search": true
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -788,7 +788,7 @@ R2R also supports streaming RAG responses, which can be useful for real-time app
 <Tab title="Python">
 ```python
 response = client.rag(
-  "who was aristotle", 
+  "who was aristotle",
   rag_generation_config={"stream": True},
   vector_search_settings={"use_hybrid_search": True},
 )
@@ -851,7 +851,7 @@ r2r rag --query="who was aristotle?" --rag-model="anthropic/claude-3-haiku-20240
   ```python
   # requires ANTHROPIC_API_KEY is set
   response = client.rag(
-    "Who was Aristotle?", 
+    "Who was Aristotle?",
     rag_generation_config={"model":"anthropic/claude-3-haiku-20240307", "stream": True}
   )
   for chunk in response:
@@ -898,7 +898,7 @@ curl -X POST http://localhost:8000/v2/rag \
 Behind the scenes, R2R's RetrievalService handles RAG requests, combining the power of vector search, optional knowledge graph integration, and language model generation. The flexible architecture allows for easy customization and extension of the RAG pipeline to meet diverse requirements.
 
 
-## User Auth 
+## User Auth
 
 R2R provides robust user auth and management capabilities. This section briefly covers user authentication features and how they relate to document management.
 
@@ -941,15 +941,15 @@ Example output:
 ```bash
 {
   'results': {
-    'email': 'test@example.com', 
-    'id': '60af344f-7bd2-43c9-98fd-da53fe5e6d05', 
-    'is_superuser': False, 
-    'is_active': True, 
-    'is_verified': False, 
-    'verification_code_expiry': None, 
-    'name': None, 
-    'bio': None, 
-    'profile_picture': None, 
+    'email': 'test@example.com',
+    'id': '60af344f-7bd2-43c9-98fd-da53fe5e6d05',
+    'is_superuser': False,
+    'is_active': True,
+    'is_verified': False,
+    'verification_code_expiry': None,
+    'name': None,
+    'bio': None,
+    'profile_picture': None,
     'created_at': '2024-07-16T21:50:57.017675Z', 'updated_at': '2024-07-16T21:50:57.017675Z'
   }
 }
@@ -1017,11 +1017,11 @@ await client.login("test@example.com", "password123")
 Registration response: {
   'results': {
     'access_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs',
       'token_type': 'access'
-    }, 
+    },
     'refresh_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE',
       'token_type': 'refresh'
     }
   }
@@ -1037,7 +1037,7 @@ To retrieve information about the currently authenticated user:
 ```python
 # requires client.login(...)
 user_response = client.user()["results"]
-print(f"Current user: {user_response}") 
+print(f"Current user: {user_response}")
 ```
 </Tab>
 
@@ -1060,11 +1060,11 @@ await client.usersOverview()
 Current user: {
   'results': {
     'access_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs',
       'token_type': 'access'
-    }, 
+    },
     'refresh_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE',
       'token_type': 'refresh'
     }
   }
@@ -1140,14 +1140,14 @@ await client.refreshAccessToken()
 </Tab>
 </Tabs>
 ```bash
-Token refresh response: 
+Token refresh response:
 {
   'access_token': {
     'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU5NTYuODEzNDg0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-CJy_cH7DRH5FKpZZauAFPP4mncnSa1j8NnaM7utGHo',
     'token_type': 'access'
-  }, 
+  },
   'refresh_token': {
-    'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE5NTYsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.uGsgTYaUd3Mn5h24uE4ydCWhOr2vFNA9ziRAAaYgnfk', 
+    'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE5NTYsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.uGsgTYaUd3Mn5h24uE4ydCWhOr2vFNA9ziRAAaYgnfk',
     'token_type': 'refresh'
   }
 }
@@ -1228,7 +1228,7 @@ await  client.users_overview()
 curl -X POST http://localhost:8000/v2/users_overview \
   -H "Content-Type: application/json" \
   -d '{}'
-```    
+```
 </Tab>
 
 </Tabs>
@@ -1277,7 +1277,7 @@ curl -X POST http://localhost:8000/v2/logs \
     "log_type_filter": null,
     "max_runs_requested": 100
   }'
-```    
+```
 </Tab>
 
 </Tabs>
@@ -1313,7 +1313,7 @@ R2R offers an analytics feature that allows you to aggregate and analyze log dat
 client.analytics(
   {"search_latencies": "search_latency"},
   {"search_latencies": ["basic_statistics", "search_latency"]}
-)  
+)
 ```
 </Tab>
 
@@ -1344,14 +1344,14 @@ curl -X POST http://localhost:8000/v2/analytics \
         "search_latencies": "search_latency"
       }
     },
-    "analysis_types": 
+    "analysis_types":
     {
         "analysis_types": {
             "search_latencies": ["basic_statistics", "search_latency"]
         }
     }
   }'
-```    
+```
 </Tab>
 
 

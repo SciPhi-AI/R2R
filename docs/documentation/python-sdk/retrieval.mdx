@@ -28,7 +28,7 @@ search_response = client.search("What was Uber's profit in 2020?")
                 'extraction_id': '2b8ff2e9-c135-573d-bf8a-7a2db60a0a11',
                 'document_id': '3e157b3a-8469-51db-90d9-52e7d896b49b',
                 'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-                'group_ids': [], 
+                'group_ids': [],
                 'score': 0.7449709925072809,
                 'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement ...',
                 'metadata': {'title': 'uber_2021.pdf', 'version': 'v0', 'chunk_order': 5, 'associatedQuery': "What was Uber's profit in 2020?"}
@@ -157,16 +157,16 @@ search_response = client.search("What was Uber's profit in 2020?")
 
 
 
-### Search custom settings 
+### Search custom settings
 
 Search with custom settings, such as bespoke document filters and larger search limits
 ```python
 # returns only chunks from documents with title `document_title`
 filtered_search_response = client.search(
-    "What was Uber's profit in 2020?", 
+    "What was Uber's profit in 2020?",
     vector_search_settings={
         # restrict results to the Uber document
-        "search_filters": {"title": {"$eq": "uber_2021.pdf"}}, 
+        "search_filters": {"title": {"$eq": "uber_2021.pdf"}},
         "search_limit": 100
     }
 )
@@ -179,7 +179,7 @@ Combine traditional keyword-based search with vector search:
 
 ```python
 hybrid_search_response = client.search(
-    "What was Uber's profit in 2020?", 
+    "What was Uber's profit in 2020?",
     vector_search_settings={
         "use_hybrid_search": True,
         "search_limit": 20,
@@ -199,7 +199,7 @@ Utilize knowledge graph capabilities to enhance search results:
 
 ```python
 kg_search_response = client.search(
-    "What is a fierce nerd?", 
+    "What is a fierce nerd?",
     vector_search_settings={"use_vector_search": False}
     kg_search_settings={"use_kg_search": True}
 )
@@ -245,7 +245,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
             'id': 'chatcmpl-9ySStnC0oEhnGPPV1k8ZYnxBKOuW8',
             'choices': [{
               'finish_reason': 'stop',
-              'index': 0, 
+              'index': 0,
               'logprobs': None,
               'message': {
                 'content': "Uber's profit in 2020 was a net loss of $6.77 billion."
@@ -427,7 +427,7 @@ Use hybrid search in RAG:
 
 ```python
 hybrid_rag_response = client.rag(
-    "Who is John Snow?", 
+    "Who is John Snow?",
     vector_search_settings={"use_hybrid_search": True}
 )
 ```
@@ -438,7 +438,7 @@ Using Anthropic at runtime:
 
 ```python
 anthropic_rag_response = client.rag(
-    "What is R2R?", 
+    "What is R2R?",
     rag_generation_config={"model":"anthropic/claude-3-opus-20240229"}
 )
 ```
@@ -450,7 +450,7 @@ Stream RAG responses for real-time applications:
 
 ```python
 stream_response = client.rag(
-    "Who was Aristotle?", 
+    "Who was Aristotle?",
     rag_generation_config={"stream": True}
 )
 for chunk in stream_response:
@@ -489,8 +489,8 @@ custom_rag_response = client.rag(
         "use_kg_search": True
     },
     rag_generation_config={
-        "model": "anthropic/claude-3-haiku-20240307", 
-        "temperature": 0.7, 
+        "model": "anthropic/claude-3-haiku-20240307",
+        "temperature": 0.7,
         "stream": True
     },
     task_prompt_override="Only answer the question if the context is SUPER relevant!!\n\nQuery:\n{query}\n\nContext:\n{context}"
@@ -522,13 +522,13 @@ Note that any of the customization seen in AI powered search and RAG documentati
     <ResponseField name="response" type="Object">
     The agent endpoint will return the entire conversation as a response, including internal tool calls.
         ```bash
-        {   'results': 
+        {   'results':
             [
-                {'role': 'system', 'content': '## You are a helpful agent that can search for information.\n\nWhen asked a question, perform a search to find relevant information and provide a response.\n\nThe response should contain line-item attributions to relevent search results, and be as informative if possible.\nIf no relevant results are found, then state that no results were found.\nIf no obvious question is present, then do not carry out a search, and instead ask for clarification.\n', 'name': None, 'function_call': None, 'tool_calls': None}, 
+                {'role': 'system', 'content': '## You are a helpful agent that can search for information.\n\nWhen asked a question, perform a search to find relevant information and provide a response.\n\nThe response should contain line-item attributions to relevent search results, and be as informative if possible.\nIf no relevant results are found, then state that no results were found.\nIf no obvious question is present, then do not carry out a search, and instead ask for clarification.\n', 'name': None, 'function_call': None, 'tool_calls': None},
                 {'role': 'user', 'content': "What was Aristotle's main contribution to philosophy?", 'name': None, 'function_call': None, 'tool_calls': None},
                 {'role': 'assistant', 'content': 'Aristotle made numerous significant contributions to philosophy, but one of his main contributions was in the field of logic and reasoning. He developed a system of formal logic, which is considered the first comprehensive system of its kind in Western philosophy. This system, often referred to as Aristotelian logic or term logic, provided a framework for deductive reasoning and laid the groundwork for scientific thinking.', 'name': None, 'function_call': None, 'tool_calls': None},
-                {'role': 'user', 'content': 'Can you elaborate on how this influenced later thinkers?', 'name': None, 'function_call': None, 'tool_calls': None}, 
-                {'role': 'assistant', 'content': None, 'name': None, 'function_call': {'name': 'search', 'arguments': '{"query":"Aristotle\'s influence on later thinkers in philosophy"}'}, 'tool_calls': None}, 
+                {'role': 'user', 'content': 'Can you elaborate on how this influenced later thinkers?', 'name': None, 'function_call': None, 'tool_calls': None},
+                {'role': 'assistant', 'content': None, 'name': None, 'function_call': {'name': 'search', 'arguments': '{"query":"Aristotle\'s influence on later thinkers in philosophy"}'}, 'tool_calls': None},
                 {'role': 'function', 'content': '1. ormation: List of writers influenced by Aristotle More than 2300 years after his death, Aristotle remains one of the most influential people who ever lived.[142][143][144] He contributed to almost every field of human knowledge then in existence, and he was the founder of many new fields. According to the philosopher Bryan Magee, "it is doubtful whether any human being has ever known as much as he did".[145]\n2. subject of contemporary philosophical discussion. Aristotle\'s views profoundly shaped medieval scholarship. The influence of his physical science extended from late antiquity and the Early Middle Ages into the Renaissance, and was not replaced systematically until the Enlightenment and theories such as classical mechanics were developed. He influenced Judeo-Islamic philosophies during the Middle Ages, as well as Christian theology, especially the Neoplatonism of the Early Church and the scholastic tradition\n3. the scholastic tradition of the Catholic Church. Aristotle was revered among medieval Muslim scholars as "The First Teacher", and among medieval Christians like Thomas Aquinas as simply "The Philosopher", while the poet Dante called him "the master of those who know". His works contain the earliest known formal study of logic, and were studied by medieval scholars such as Peter Abelard and Jean Buridan. Aristotle\'s influence on logic continued well into the 19th century. In addition, his ethics, although\n4. hilosophy\nFurther information: Peripatetic school The immediate influence of Aristotle\'s work was felt as the Lyceum grew into the Peripatetic school. Aristotle\'s students included Aristoxenus, Dicaearchus, Demetrius of Phalerum, Eudemos of Rhodes, Harpalus, Hephaestion, Mnason of Phocis, Nicomachus, and Theophrastus. Aristotle\'s influence over Alexander the Great is seen in the latter\'s bringing with him on his expedition a host of zoologists, botanists, and researchers. He had also learned a great deal\n5. scholastic philosophers. Alkindus greatly admired Aristotle\'s philosophy,[168] and Averroes spoke of Aristotle as the "exemplar" for all future philosophers.[169] Medieval Muslim scholars regularly described Aristotle as the "First Teacher".[167] The title was later used by Western philosophers (as in the famous poem of Dante) who were influenced by the tradition of Islamic philosophy.[170]\n\nMedieval Europe\nFurther information: Aristotelianism and Syllogism § Medieval\n6. those by James of Venice and William of Moerbeke. After the Scholastic Thomas Aquinas wrote his Summa Theologica, working from Moerbeke\'s translations and calling Aristotle "The Philosopher",[172] the demand for Aristotle\'s writings grew, and the Greek manuscripts returned to the West, stimulating a revival of Aristotelianism in Europe that continued into the Renaissance.[173] These thinkers blended Aristotelian philosophy with Christianity, bringing the thought of Ancient Greece into the Middle Ages.\n7. Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.\n8. , individualism, teleology, and meteorology.[151] The scholar Taneli Kukkonen notes that "in the best 20th-century scholarship Aristotle comes alive as a thinker wrestling with the full weight of the Greek philosophical tradition."[148] What follows is an overview of the transmission and influence of his texts and ideas into the modern era.\n\nHis successor, Theophrastus\nMain articles: Theophrastus and Historia Plantarum (Theophrastus)\n9. man being has ever known as much as he did".[145] Among countless other achievements, Aristotle was the founder of formal logic,[146] pioneered the study of zoology, and left every future scientist and philosopher in his debt through his contributions to the scientific method.[2][147][148] Taneli Kukkonen, observes that his achievement in founding two sciences is unmatched, and his reach in influencing "every branch of intellectual enterprise" including Western ethical and political theory, theology,\n10. ight) in the Kitāb naʿt al-ḥayawān, c.\u20091220.[166] Aristotle was one of the most revered Western thinkers in early Islamic theology. Most of the still extant works of Aristotle,[167] as well as a number of the original Greek commentaries, were translated into Arabic and studied by Muslim philosophers, scientists and scholars. Averroes, Avicenna and Alpharabius, who wrote on Aristotle in great depth, also influenced Thomas Aquinas and other Western Christian scholastic philosophers. Alkindus greatly admired\n', 'name': 'search', 'function_call': None, 'tool_calls': None},
                 {'role': 'assistant', 'content': 'Aristotle\'s contributions to philosophy, particularly his development of formal logic, had a profound influence on later thinkers across various cultures and eras. Here are some key ways in which his work influenced subsequent intellectual traditions:\n\n1. **Medieval Islamic Philosophy**: Aristotle was highly revered among medieval Muslim scholars, who referred to him as "The First Teacher." His works were extensively studied and commented upon by philosophers such as Averroes and Avicenna. These scholars played a crucial role in preserving and expanding upon Aristotle\'s ideas, which later influenced Western thought [5][10].\n\n2. **Christian Scholasticism**: In medieval Europe, Aristotle\'s works were integrated into Christian theology, particularly through the efforts of Thomas Aquinas, who referred to Aristotle as "The Philosopher." Aquinas\' synthesis of Aristotelian philosophy with Christian doctrine became a cornerstone of Scholasticism, a dominant intellectual tradition in medieval Europe [3][6].\n\n3. **Renaissance and Enlightenment**: Aristotle\'s influence persisted into the Renaissance, where his works were revived and studied extensively. This period saw a renewed interest in classical texts, and Aristotle\'s ideas continued to shape scientific and philosophical inquiry until the Enlightenment, when new scientific paradigms began to emerge [2][6].\n\n4. **Development of Logic**: Aristotle\'s system of formal logic remained the standard for centuries and was studied by medieval scholars such as Peter Abelard and Jean Buridan. His influence on logic extended well into the 19th century, shaping the development of this field [3].\n\n5. **Peripatetic School**: Aristotle\'s immediate influence was also felt through the Peripatetic school, which he founded. His students, including Theophrastus, carried on his work and further developed his ideas, ensuring that his intellectual legacy continued [4][8].\n\nOverall, Aristotle\'s contributions laid the groundwork for many fields of study and influenced a wide range of thinkers, making him one of the most significant figures in the history of Western philosophy.', 'name': None, 'function_call': None, 'tool_calls': None}
             ]

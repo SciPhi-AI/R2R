@@ -8,9 +8,9 @@ icon: 'house'
 
 To run R2R with default local LLM settings, execute `r2r serve --docker --config-name=local_llm`.
 
-R2R supports RAG with local LLMs through the Ollama library. You may follow the instructions on their [official website](https://ollama.com/) to install Ollama outside of the R2R Docker. To include Ollama inside the R2R Docker, pass the selection `--exclude-ollama=False` in the command shown previously. 
+R2R supports RAG with local LLMs through the Ollama library. You may follow the instructions on their [official website](https://ollama.com/) to install Ollama outside of the R2R Docker. To include Ollama inside the R2R Docker, pass the selection `--exclude-ollama=False` in the command shown previously.
 
-<Warning> 
+<Warning>
 For MacBooks with M1 or newer processors, we recommend setting `--exclude-ollama` flag to True and installing Ollama outside of Docker.
 
 This approach is recommended because Docker doesn't fully support hardware acceleration on Apple Silicon, which can limit performance.
