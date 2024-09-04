@@ -216,7 +216,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         ]
 
         tasks = [
-            asyncio.create_task(self.extract_kg(extraction))
+            asyncio.create_task(self.extract_kg(extraction, generation_config))
             for extraction in extractions
         ]
 
