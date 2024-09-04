@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import KGConfig, KGEnrichmentSettings, KGProvider
+from core.base import KGConfig, KGCreationSettings, KGEnrichmentSettings, KGProvider
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -443,7 +443,7 @@ class Neo4jKGProvider(KGProvider):
         Perform graph clustering on the graph.
 
         Input:
-        - settings: a KGEnrichmentSettings object that contains the settings for the graph clustering.
+        - leiden_params: a dictionary that contains the parameters for the graph clustering.
 
         Output:
         - Total number of communities

@@ -185,7 +185,7 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         leiden_params = input.message.leiden_params
-        generation_config_enrichment = input.message.generation_config_enrichment
+        generation_config = input.message.generation_config
 
         base_dimension = self.embedding_provider.config.base_dimension
         vector_index_fn = self.kg_provider.create_vector_index
@@ -194,5 +194,5 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        async for community in self.cluster_kg(leiden_params, generation_config_enrichment):
+        async for community in self.cluster_kg(leiden_params, generation_config):
             yield community

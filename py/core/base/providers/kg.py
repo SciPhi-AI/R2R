@@ -7,7 +7,7 @@ from typing import Any, Optional, Tuple
 from ...base.utils.base_utils import RelationshipType
 from ..abstractions.graph import Entity, KGExtraction, Triple
 from ..abstractions.llm import GenerationConfig
-from ..abstractions.restructure import KGEnrichmentSettings
+from ..abstractions.restructure import KGCreationSettings, KGEnrichmentSettings
 from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,9 @@ class KGConfig(ProviderConfig):
     kg_store_path: Optional[str] = None
     kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
         KGEnrichmentSettings()
+    )
+    kg_creation_settings: Optional[KGCreationSettings] = (
+        KGCreationSettings()
     )
 
     def validate(self) -> None:

@@ -162,7 +162,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
             else:
                 completion = await self.llm_provider.aget_completion(
                     messages,
-                    self.kg_provider.config.kg_enrichment_settings.generation_config_enrichment,
+                    self.kg_provider.config.kg_enrichment_settings.generation_config,
                 )
                 entity.description = completion.choices[0].message.content
 

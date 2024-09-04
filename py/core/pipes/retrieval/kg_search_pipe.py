@@ -145,7 +145,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             if len(all_search_results[0]) == 0:
                 raise R2RException(
-                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph",
+                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
                     400,
                 )
 
@@ -174,7 +174,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             if len(communities) == 0:
                 raise R2RException(
-                    "No communities found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph",
+                    "No communities found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
                     400,
                 )
 

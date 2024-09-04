@@ -386,33 +386,37 @@ class VectorSearchSettings(BaseModel):
             str(uuid) for uuid in dump["selected_group_ids"]
         ]
         return dump
+    
 
-
-class KGEnrichmentSettings(BaseModel):
-
-    document_ids: list[UUID] = Field(
-        default_factory=list,
-        description="The document IDs to enrich.",
-    )
-
+class KGCreationSettings(BaseModel):
+    
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
-    
-    generation_config_triplet: GenerationConfig = Field(
+
+    generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
-        description="The generation configuration for the KG enrichment.",
+        description="The generation configuration for the KG creation.",
     )
 
-    generation_config_enrichment: GenerationConfig = Field(
-        default_factory=GenerationConfig,
-        description="The generation configuration for the KG enrichment.",
-    )
+    def to_dict(self):
+        return self.model_dump()
+    
+    def model_dump_json(self, **kwargs):
+        return super().model_dump_json(**kwargs)
+
+
+class KGEnrichmentSettings(BaseModel):
 
     leiden_params: dict = Field(
         default_factory=dict,
         description="The parameters for the Leiden algorithm.",
+    )
+
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="The generation configuration for the KG enrichment.",
     )
 
 

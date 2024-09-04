@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import Any, AsyncGenerator, Dict, Optional, Union
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
-from core.base.abstractions import KGEnrichmentSettings, GenerationConfig
+from core.base.abstractions import KGCreationSettings, KGEnrichmentSettings, GenerationConfig
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -82,13 +82,3 @@ class RestructureService(Service):
             run_manager=self.run_manager,
         )
         return await _collect_results(result_gen)
-
-
-class RestructureServiceAdapter:
-    @staticmethod
-    def parse_enrich_graph_input(data: dict):
-        return {
-            "kg_enrichment_settings": KGEnrichmentSettings.from_dict(
-                json.loads(data["kg_enrichment_settings"])
-            )
-        }
