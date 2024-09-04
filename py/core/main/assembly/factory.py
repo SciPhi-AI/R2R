@@ -86,7 +86,7 @@ class R2RProviderFactory:
             from core.providers import R2RParsingProvider
 
             return R2RParsingProvider(parsing_config)
-        elif parsing_config.provider in ["unstructured", "unstructured_api"]:
+        elif parsing_config.provider in ["unstructured_local", "unstructured_api"]:
             from core.providers import UnstructuredParsingProvider
 
             return UnstructuredParsingProvider(
@@ -106,7 +106,10 @@ class R2RProviderFactory:
             from core.providers import R2RChunkingProvider
 
             return R2RChunkingProvider(chunking_config)
-        elif chunking_config.provider == "unstructured":
+        elif (
+            chunking_config.provider == "unstructured_local"
+            or chunking_config.provider == "unstructured_api"
+        ):
             from core.providers import UnstructuredChunkingProvider
 
             return UnstructuredChunkingProvider(chunking_config)
