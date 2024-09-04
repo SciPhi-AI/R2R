@@ -1,4 +1,7 @@
 import os
+import subprocess
+import sys
+from io import StringIO
 from unittest.mock import patch
 
 import pytest
@@ -7,7 +10,9 @@ from click.testing import CliRunner
 from cli.utils.docker_utils import (
     bring_down_docker_compose,
     build_docker_command,
+    check_docker_compose_version,
     check_llm_reqs,
+    parse_version,
     remove_r2r_network,
 )
 
@@ -79,3 +84,111 @@ def test_build_docker_command():
     )
     assert "--project-name test_project" in command
     assert "up -d" in command
+
+
+@pytest.mark.parametrize(
+    "version_output,expected_result,expected_message",
+    [
+        (
+            "Docker Compose version v2.29.0",
+            True,
+            "Docker Compose version 2.29.0 is compatible.",
+        ),
+        (
+            "Docker Compose version v2.24.5",
+            True,
+            "Warning: Docker Compose version 2.24.5 is outdated. Please upgrade to version 2.25.0 or higher.",
+        ),
+        (
+            "Docker Compose version v3.0.0",
+            True,
+            "Docker Compose version 3.0.0 is compatible.",
+        ),
+        (
+            "Docker Compose version 2.29.0",
+            True,
+            "Docker Compose version 2.29.0 is compatible.",
+        ),
+        (
+            "Docker Compose version 2.29.0-desktop.1",
+            True,
+            "Docker Compose version 2.29.0 is compatible.",
+        ),
+    ],
+)
+def test_check_docker_compose_version_success(
+    version_output, expected_result, expected_message
+):
+    with patch(
+        "subprocess.check_output", return_value=version_output.encode()
+    ):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        result = check_docker_compose_version()
+        sys.stdout = sys.__stdout__
+        assert result == expected_result
+        assert expected_message in captured_output.getvalue()
+
+
+@pytest.mark.parametrize(
+    "version_output,expected_message",
+    [
+        (
+            "Docker Compose version unknown",
+            "Unexpected version format: Docker Compose version unknown",
+        ),
+        (
+            "Not a valid output",
+            "Unexpected version format: Not a valid output",
+        ),
+    ],
+)
+def test_check_docker_compose_version_invalid_format(
+    version_output, expected_message
+):
+    with patch(
+        "subprocess.check_output", return_value=version_output.encode()
+    ):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        result = check_docker_compose_version()
+        sys.stdout = sys.__stdout__
+        assert result == False
+        assert (
+            "Error checking Docker Compose version"
+            in captured_output.getvalue()
+        )
+        assert expected_message in captured_output.getvalue()
+
+
+def test_check_docker_compose_version_not_installed():
+    error_message = "docker: command not found"
+    mock_error = subprocess.CalledProcessError(
+        1, "docker compose version", error_message.encode()
+    )
+    with patch("subprocess.check_output", side_effect=mock_error):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        result = check_docker_compose_version()
+        sys.stdout = sys.__stdout__
+        assert result == False
+        assert (
+            "Error: Docker Compose is not installed or not working properly."
+            in captured_output.getvalue()
+        )
+        assert error_message in captured_output.getvalue()
+
+
+def test_check_docker_compose_version_unexpected_error():
+    with patch(
+        "subprocess.check_output", side_effect=Exception("Unexpected error")
+    ):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        result = check_docker_compose_version()
+        sys.stdout = sys.__stdout__
+        assert result == False
+        assert (
+            "Error checking Docker Compose version: Unexpected error"
+            in captured_output.getvalue()
+        )
