@@ -76,7 +76,15 @@
     {
       "group": "Getting Started",
       "pages": [
-        "documentation/installation",
+        {
+          "group": "Installation",
+          "icon": "bars-progress",
+          "pages" : [
+            "documentation/installation/overview",
+            "documentation/installation/docker",
+            "documentation/installation/local-system"
+          ]
+        },
         "documentation/quickstart",
         {
           "group": "API & SDKs",
@@ -296,9 +304,8 @@
       "group": "General",
       "pages": [
         "cookbooks/walkthrough",
-        "cookbooks/knowledge-graph",
-        "cookbooks/graphrag",
         "cookbooks/hybrid-search",
+        "cookbooks/graphrag",
         "cookbooks/advanced-rag",
         "cookbooks/agent",
         "cookbooks/web-dev"

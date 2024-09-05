@@ -181,7 +181,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `semantic_search`."
             )
-        results = self.collection.query(
+        results = self.collection.semantic_search(
             vector=query_vector, search_settings=search_settings
         )
         return [

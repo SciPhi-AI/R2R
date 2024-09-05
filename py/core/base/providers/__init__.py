@@ -1,6 +1,6 @@
 from .auth import AuthConfig, AuthProvider
 from .base import Provider, ProviderConfig
-from .chunking import ChunkingConfig, ChunkingProvider, Method
+from .chunking import ChunkingConfig, ChunkingProvider, Method, UnstructuredChunkingConfig
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     DatabaseConfig,
@@ -23,6 +23,7 @@ __all__ = [
     "AuthConfig",
     "AuthProvider",
     # Chunking provider
+    "UnstructuredChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
     "Method",
