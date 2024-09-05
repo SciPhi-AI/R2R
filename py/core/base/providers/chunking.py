@@ -60,7 +60,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     provider: str = "unstructured_local"  # or unstructured_api
 
     combine_under_n_chars: Optional[int]
-    chunk_max_characters: Optional[int]
+    max_characters: Optional[int]
     coordinates: bool = False
     encoding: Optional[str]
     extract_image_block_types: Optional[list[str]]
@@ -70,7 +70,6 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     include_page_breaks: bool
 
     languages: Optional[list[str]]
-    max_characters: Optional[int]
     multipage_sections: bool = True
     new_after_n_chars: Optional[int]
     ocr_languages: Optional[list[str]]
@@ -85,6 +84,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     split_pdf_page: bool = True
     starting_page_number: Optional[int]
     strategy: str = "auto"
+    chunking_strategy: Optional[str] = "by_title"
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 

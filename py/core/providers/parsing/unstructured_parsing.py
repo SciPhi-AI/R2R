@@ -4,6 +4,7 @@ import time
 from io import BytesIO
 from typing import AsyncGenerator
 
+from unstructured.chunking.basic import chunk_elements
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
@@ -66,6 +67,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             file_content = BytesIO(file_content)
 
         # TODO - Include check on excluded parsers here.
+        print('self.config.chunking_config = ', self.config.chunking_config)
         t0 = time.time()
         if self.use_api:
             logger.info(f"Using API to parse document {document.id}")
@@ -87,15 +89,14 @@ class UnstructuredParsingProvider(ParsingProvider):
                 f"Using local unstructured to parse document {document.id}"
             )
             elements = self.partition(
-                file=file_content, **self.config.chunking_config.model_dump()
-            )
-
+                file=file_content, **self.config.chunking_config.extra_fields['chunking_config']
+            )            
+        
         for iteration, element in enumerate(elements):
-
             if not isinstance(element, dict):
                 element = element.to_dict()
 
-            for key, value in element.items():
+            for key, value in elements.items():
                 if key == "text":
                     text = value
                 elif key == "metadata":
@@ -113,11 +114,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             # nullifies the need for chunking in the pipeline
             document.metadata["partitioned_by_unstructured"] = True
 
-            print(f"found a text:\n\n{text}")
-            print("-" * 100)
-
-            if text == "":
-                continue
             # creating the text extraction
             yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),

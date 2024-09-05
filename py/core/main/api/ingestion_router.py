@@ -155,8 +155,6 @@ class IngestionRouter(BaseRouter):
                         "task_id": str(task_id),
                     }
                 )
-            print("messages = ", messages)
-
             return messages
 
         update_files_extras = self.openapi_extras.get("update_files", {})
