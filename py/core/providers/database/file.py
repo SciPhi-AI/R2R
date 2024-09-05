@@ -1,5 +1,5 @@
 import logging
-from io import BytesIO
+from contextlib import contextmanager
 from typing import BinaryIO, Optional
 from uuid import UUID
 
@@ -109,32 +109,33 @@ class FileMixin(DatabaseMixin):
                 message=f"Failed to upsert file for document {document_id}",
             )
 
-    def store_file(
-        self,
-        document_id: UUID,
-        file_name: str,
-        file_content: BytesIO,
-        file_type: Optional[str] = None,
-    ) -> None:
+    def store_file(self, document_id, file_name, file_content, file_type=None):
         file_size = file_content.getbuffer().nbytes
 
-        create_lo_query = text("SELECT lo_create(-1)")
+        try:
+            with self.vx.Session() as session:
+                conn = session.connection().connection
+                with conn.cursor() as cur:
+                    cur.execute("BEGIN")
+                    try:
+                        cur.execute("SELECT lo_create(0)")
+                        oid = cur.fetchone()[0]
+                        large_obj = conn.lobject(oid, "wb")
+                        large_obj.write(file_content.getvalue())
+                        large_obj.close()
 
-        result = self.execute_query(create_lo_query).fetchone()
-        if not result:
+                        self.upsert_file(
+                            document_id, file_name, oid, file_size, file_type
+                        )
+                        cur.execute("COMMIT")
+                    except Exception as e:
+                        cur.execute("ROLLBACK")
+                        raise
+        except Exception as e:
             raise R2RException(
                 status_code=500,
-                message=f"Failed to store file for document {document_id}",
+                message=f"Failed to store file for document {document_id}: {e}",
             )
-
-        oid = result[0]
-
-        query = text("SELECT lo_put(:oid, :data)")
-        self.execute_query(
-            query, {"oid": oid, "data": file_content.getvalue()}
-        )
-
-        self.upsert_file(document_id, file_name, oid, file_size, file_type)
 
     def retrieve_file(
         self, document_id: UUID
@@ -180,39 +181,45 @@ class FileMixin(DatabaseMixin):
         return file_name, LOBjectWrapper(self.vx, oid), file_size
 
     def delete_file(self, document_id: UUID) -> bool:
-        query = text(
-            f"""
-            SELECT file_oid FROM {self._get_table_name('file_storage')}
-            WHERE document_id = :document_id
-            """
-        )
-        result = self.execute_query(
-            query, {"document_id": document_id}
-        ).fetchone()
-
-        if result is None:
-            raise R2RException(
-                status_code=404,
-                message=f"File for document {document_id} not found",
+        try:
+            query = text(
+                f"""
+                SELECT file_oid FROM {self._get_table_name('file_storage')}
+                WHERE document_id = :document_id
+                """
             )
+            result = self.execute_query(
+                query, {"document_id": document_id}
+            ).fetchone()
 
-        oid = result[0]
+            if result is None:
+                logger.warning(
+                    f"File for document {document_id} not found for deletion"
+                )
+                return False
 
-        # Delete the large object
-        delete_lo_query = text("SELECT lo_unlink(:oid)")
-        self.execute_query(delete_lo_query, {"oid": oid})
+            oid = result[0]
 
-        # Delete the metadata
-        delete_query = text(
-            f"""
-            DELETE FROM {self._get_table_name('file_storage')}
-            WHERE document_id = :document_id
-            """
-        )
-        self.execute_query(delete_query, {"document_id": document_id})
+            def delete_large_object(conn):
+                with conn.cursor() as cur:
+                    cur.execute("SELECT lo_unlink(%s)", (oid,))
 
-        logger.info(f"Deleted file for document {document_id} successfully")
-        return True
+            self.execute_with_connection(delete_large_object)
+
+            delete_query = text(
+                f"""
+                DELETE FROM {self._get_table_name('file_storage')}
+                WHERE document_id = :document_id
+                """
+            )
+            self.execute_query(delete_query, {"document_id": document_id})
+
+            return True
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Failed to delete file for document {document_id}: {e}",
+            )
 
     def get_files_overview(
         self,
@@ -279,6 +286,14 @@ class PostgresFileProvider(FileProvider, FileMixin):
         FileProvider.__init__(self, config)
         self.vx = vx
         self.collection_name = collection_name
+
+    @contextmanager
+    def get_session(self):
+        with self.vx.Session() as sess:
+            yield sess
+
+    def create_table(self):
+        return FileMixin.create_table(self)
 
     def store_file(self, document_id, file_name, file_content, file_type=None):
         return FileMixin.store_file(
