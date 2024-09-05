@@ -211,7 +211,7 @@ class R2RProviderFactory:
 
             logger.info("Initializing PostgresFileProvider")
 
-            file_provider = PostgresFileProvider(db_provider)
+            file_provider = PostgresFileProvider(file_config, db_provider)
         elif file_config.provider is None:
             return None
         else:

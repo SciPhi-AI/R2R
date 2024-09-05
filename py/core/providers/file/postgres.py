@@ -10,7 +10,7 @@ from psycopg2.extensions import lobject
 from sqlalchemy import text
 from sqlalchemy.sql.elements import TextClause
 
-from core.base import R2RException
+from core.base import FileConfig, R2RException
 from core.base.providers import FileProvider
 from core.providers.database.postgres import PostgresDBProvider
 
@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresFileProvider(FileProvider):
-    def __init__(self, db_provider: PostgresDBProvider):
+    def __init__(self, config: FileConfig, db_provider: PostgresDBProvider):
         super().__init__()
+        self.config = config
         self.db_provider = db_provider
         self.vx = db_provider.vx
         self.create_table()
@@ -89,11 +90,6 @@ class PostgresFileProvider(FileProvider):
                     )
                 cur.execute(query, params or {})
                 return cur.fetchone()
-
-    @contextmanager
-    def get_session(self):
-        with self.vx.Session() as sess:
-            yield sess
 
     def create_table(self):
         query = text(

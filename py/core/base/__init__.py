@@ -31,8 +31,6 @@ __all__ = [
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",
-    # File abstractions
-    "FileConfig",
     # KG abstractions
     "Entity",
     "KGExtraction",
@@ -130,6 +128,9 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
+    # File provider
+    "FileConfig",
+    "FileProvider",
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",
