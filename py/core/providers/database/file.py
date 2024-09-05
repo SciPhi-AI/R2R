@@ -6,6 +6,7 @@ from uuid import UUID
 from psycopg2 import Error as PostgresError
 from sqlalchemy import text
 
+from core.base import R2RException
 from core.base.providers import DatabaseConfig, FileProvider
 from core.providers.database.vecs import Client
 
@@ -92,23 +93,21 @@ class FileMixin(DatabaseMixin):
             updated_at = NOW();
         """
         )
-        try:
-            self.execute_query(
-                query,
-                {
-                    "document_id": document_id,
-                    "file_name": file_name,
-                    "file_oid": file_oid,
-                    "file_size": file_size,
-                    "file_type": file_type,
-                },
+        result = self.execute_query(
+            query,
+            {
+                "document_id": document_id,
+                "file_name": file_name,
+                "file_oid": file_oid,
+                "file_size": file_size,
+                "file_type": file_type,
+            },
+        )
+        if not result:
+            raise R2RException(
+                status_code=500,
+                message=f"Failed to upsert file for document {document_id}",
             )
-            logger.info(f"Upserted file for document {document_id}")
-        except PostgresError as e:
-            logger.error(
-                f"Failed to upsert file for document {document_id}: {e}"
-            )
-            raise
 
     def store_file(
         self,
@@ -119,24 +118,23 @@ class FileMixin(DatabaseMixin):
     ) -> None:
         file_size = file_content.getbuffer().nbytes
 
-        try:
-            with self.vx.Session() as sess:
-                with sess.begin():
-                    conn = sess.connection().connection
-                    lobject = conn.lobject(mode="wb")
-                    oid = lobject.oid
-                    lobject.write(file_content.read())
+        create_lo_query = text("SELECT lo_create(-1)")
 
-                self.upsert_file(
-                    document_id, file_name, oid, file_size, file_type
-                )
-
-            logger.info(f"Stored file for document {document_id} successfully")
-        except Exception as e:
-            logger.error(
-                f"Failed to store file for document {document_id}: {e}"
+        result = self.execute_query(create_lo_query).fetchone()
+        if not result:
+            raise R2RException(
+                status_code=500,
+                message=f"Failed to store file for document {document_id}",
             )
-            raise
+
+        oid = result[0]
+
+        query = text("SELECT lo_put(:oid, :data)")
+        self.execute_query(
+            query, {"oid": oid, "data": file_content.getvalue()}
+        )
+
+        self.upsert_file(document_id, file_name, oid, file_size, file_type)
 
     def retrieve_file(
         self, document_id: UUID
@@ -148,91 +146,73 @@ class FileMixin(DatabaseMixin):
         WHERE document_id = :document_id
         """
         )
-        try:
-            with self.vx.Session() as sess:
-                result = sess.execute(
-                    query, {"document_id": document_id}
-                ).fetchone()
 
-                if result is None:
-                    logger.warning(
-                        f"File for document {document_id} not found"
-                    )
-                    return None
-
-                file_name, oid, file_size = result
-
-                class LOBjectWrapper:
-                    def __init__(self, sess, oid):
-                        self.sess = sess
-                        self.oid = oid
-                        self.lobj = None
-
-                    def __enter__(self):
-                        conn = self.sess.connection().connection
-                        self.lobj = conn.lobject(oid=self.oid, mode="rb")
-                        return self.lobj
-
-                    def __exit__(self, exc_type, exc_val, exc_tb):
-                        if self.lobj:
-                            self.lobj.close()
-
-            logger.info(
-                f"Retrieved file for document {document_id} successfully"
+        result = self.execute_query(
+            query, {"document_id": document_id}
+        ).fetchone()
+        if not result:
+            raise R2RException(
+                status_code=404,
+                message=f"File for document {document_id} not found",
             )
-            return file_name, LOBjectWrapper(sess, oid), file_size
-        except Exception as e:
-            logger.error(
-                f"Failed to retrieve file for document {document_id}: {e}"
-            )
-            raise
+
+        file_name, oid, file_size = result
+
+        class LOBjectWrapper:
+            def __init__(self, vx, oid):
+                self.vx = vx
+                self.oid = oid
+                self.lobj = None
+                self.sess = None
+
+            def __enter__(self):
+                self.sess = self.vx.Session()
+                conn = self.sess.connection().connection
+                self.lobj = conn.lobject(oid=self.oid, mode="rb")
+                return self.lobj
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                if self.lobj:
+                    self.lobj.close()
+                if self.sess:
+                    self.sess.close()
+
+        return file_name, LOBjectWrapper(self.vx, oid), file_size
 
     def delete_file(self, document_id: UUID) -> bool:
-        try:
-            with self.vx.Session() as sess:
-                with sess.begin():
-                    # First, get the OID
-                    query = text(
-                        f"""
-                    SELECT file_oid FROM {self._get_table_name('file_storage')}
-                    WHERE document_id = :document_id
-                    """
-                    )
-                    result = sess.execute(
-                        query, {"document_id": document_id}
-                    ).fetchone()
+        query = text(
+            f"""
+            SELECT file_oid FROM {self._get_table_name('file_storage')}
+            WHERE document_id = :document_id
+            """
+        )
+        result = self.execute_query(
+            query, {"document_id": document_id}
+        ).fetchone()
 
-                    if result is None:
-                        logger.warning(
-                            f"File for document {document_id} not found for deletion"
-                        )
-                        return False
-
-                    oid = result[0]
-
-                    # Then, delete the large object
-                    conn = sess.connection().connection
-                    lobj = conn.lobject(oid, mode="rb")
-                    lobj.unlink()
-
-                    # Finally, delete the metadata
-                    query = text(
-                        f"""
-                    DELETE FROM {self._get_table_name('file_storage')}
-                    WHERE document_id = :document_id
-                    """
-                    )
-                    sess.execute(query, {"document_id": document_id})
-
-            logger.info(
-                f"Deleted file for document {document_id} successfully"
+        if result is None:
+            raise R2RException(
+                status_code=404,
+                message=f"File for document {document_id} not found",
             )
-            return True
-        except Exception as e:
-            logger.error(
-                f"Failed to delete file for document {document_id}: {e}"
-            )
-            return False
+
+        oid = result[0]
+
+        # Delete the large object
+        delete_lo_query = text("SELECT lo_unlink(:oid)")
+        self.execute_query(delete_lo_query, {"oid": oid})
+
+        # Delete the metadata
+        delete_query = text(
+            f"""
+            DELETE FROM {self._get_table_name('file_storage')}
+            WHERE document_id = :document_id
+            """
+        )
+        self.execute_query(delete_query, {"document_id": document_id})
+
+        logger.info(f"Deleted file for document {document_id} successfully")
+        return True
 
     def get_files_overview(
         self,
@@ -270,25 +250,26 @@ class FileMixin(DatabaseMixin):
 
         query = text(query)
 
-        try:
-            with self.vx.Session() as sess:
-                results = sess.execute(query, params).fetchall()
-            logger.info(f"Retrieved {len(results)} file overviews")
-            return [
-                {
-                    "document_id": row[0],
-                    "file_name": row[1],
-                    "file_oid": row[2],
-                    "file_size": row[3],
-                    "file_type": row[4],
-                    "created_at": row[5],
-                    "updated_at": row[6],
-                }
-                for row in results
-            ]
-        except Exception as e:
-            logger.error(f"Failed to get files overview: {e}")
-            raise
+        results = self.execute_query(query, params).fetchall()
+
+        if results is None:
+            raise R2RException(
+                status_code=404,
+                message="No files found with the given filters",
+            )
+
+        return [
+            {
+                "document_id": row[0],
+                "file_name": row[1],
+                "file_oid": row[2],
+                "file_size": row[3],
+                "file_type": row[4],
+                "created_at": row[5],
+                "updated_at": row[6],
+            }
+            for row in results
+        ]
 
 
 class PostgresFileProvider(FileProvider, FileMixin):
