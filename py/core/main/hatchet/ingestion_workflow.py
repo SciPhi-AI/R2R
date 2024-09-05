@@ -15,7 +15,9 @@ class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
-    @r2r_hatchet.step(retries=3)
+    # TODO - Move these to separate steps after hatchet releases the feature
+    # that allows us to uncap message size
+    @r2r_hatchet.step(retries=0)
     async def parse_file(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
 
@@ -23,62 +25,37 @@ class IngestFilesWorkflow:
             input_data
         )
 
-        document_info = await self.ingestion_service.ingest_file_ingress(
+        ingestion_result = await self.ingestion_service.ingest_file_ingress(
             **parsed_data
         )
-
-        try:
-            extractions = await self.ingestion_service.parse_file(
-                document_info["info"]
-            )
-            return {
-                "result": extractions,
-                "info": document_info["info"].model_dump_json(),
-            }
-        except Exception as e:
-            raise ValueError(f"Failed to parse document extractions: {str(e)}")
-
-    @r2r_hatchet.step(retries=3, parents=["parse_file"])
-    async def chunk_document(self, context: Context) -> None:
-        prev_step = context.step_output("parse_file")
+        document_info = ingestion_result["info"]
+        extractions = await self.ingestion_service.parse_file(
+            document_info
+        )
         chunking_config = context.workflow_input()["request"].get(
             "chunking_config"
         )
 
         chunks = await self.ingestion_service.chunk_document(
-            self.get_document_info(context),
-            [json.loads(extraction) for extraction in prev_step["result"]],
+            document_info,
+            extractions,
             chunking_config,
         )
-        return {"result": chunks}
-
-    @r2r_hatchet.step(retries=3, parents=["chunk_document"])
-    async def embed_and_store(self, context: Context) -> None:
-        prev_step = context.step_output("chunk_document")
-        document_info = self.get_document_info(context)
 
         embeddings = await self.ingestion_service.embed_document(
-            document_info, [json.loads(chunk) for chunk in prev_step["result"]]
+            document_info, chunks
         )
         await self.ingestion_service.store_embeddings(
-            document_info, [json.loads(embedding) for embedding in embeddings]
+            document_info, embeddings
         )
-        return {}
-
-    @r2r_hatchet.step(retries=3, parents=["embed_and_store"])
-    async def finalize_ingestion(self, context: Context) -> None:
         is_update = context.workflow_input()["request"].get("is_update")
 
         await self.ingestion_service.finalize_ingestion(
-            self.get_document_info(context), is_update=is_update
+            document_info, is_update=is_update
         )
 
         return None
 
-    def get_document_info(self, context: Context) -> DocumentInfo:
-        return DocumentInfo.from_dict(
-            json.loads(context.step_output("parse_file")["info"])
-        )
 
 
 # TODO: Implement a check to see if the file is actually changed before updating
@@ -87,7 +64,7 @@ class UpdateFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
-    @r2r_hatchet.step(retries=3)
+    @r2r_hatchet.step(retries=0)
     async def update_files(self, context: Context) -> None:
         data = context.workflow_input()["request"]
         parsed_data = IngestionServiceAdapter.parse_update_files_input(data)
