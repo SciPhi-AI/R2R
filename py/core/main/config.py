@@ -15,6 +15,7 @@ from ..base.providers.chunking import ChunkingConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
 from ..base.providers.embedding import EmbeddingConfig
+from ..base.providers.file import FileConfig
 from ..base.providers.kg import KGConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.parsing import ParsingConfig
@@ -60,6 +61,7 @@ class R2RConfig:
         "prompt": ["provider"],
         "database": ["provider"],
         "agent": ["generation_config"],
+        "file": ["provider"],
     }
     auth: AuthConfig
     chunking: ChunkingConfig
@@ -72,6 +74,7 @@ class R2RConfig:
     parsing: ParsingConfig
     prompt: PromptConfig
     agent: AgentConfig
+    file: FileConfig
 
     def __init__(
         self, config_data: dict[str, Any], base_path: Optional[Path] = None
@@ -126,11 +129,12 @@ class R2RConfig:
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
         self.logging = LoggingConfig.create(**self.logging)
-        if not "chunking_config" in self.parsing:
+        if "chunking_config" not in self.parsing:
             self.parsing["chunking_config"] = self.chunking
         self.parsing = ParsingConfig.create(**self.parsing)
         self.prompt = PromptConfig.create(**self.prompt)
         self.agent = AgentConfig.create(**self.agent)
+        self.file = FileConfig.create(**self.file)
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list

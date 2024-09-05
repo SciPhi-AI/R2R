@@ -58,3 +58,6 @@ provider = "r2r"
 [agent]
 system_instruction_name = "rag_agent"
 tool_names = ["search"]
+
+[file]
+provider = "postgres"

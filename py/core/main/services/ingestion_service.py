@@ -230,7 +230,6 @@ class IngestionService(Service):
                             "document_type": document_info.type.value,
                             **document_info.metadata,
                         },
-                        data=file_content_stream.read(),
                     )
                 ),
                 run_manager=self.run_manager,

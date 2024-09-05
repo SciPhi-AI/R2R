@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, List
+from typing import Any, AsyncGenerator
 
 from pydantic import BaseModel, Field
 
@@ -15,8 +15,8 @@ class OverrideParser(BaseModel):
 
 class ParsingConfig(ProviderConfig):
     provider: str = "r2r"
-    excluded_parsers: List[DocumentType] = Field(default_factory=list)
-    override_parsers: List[OverrideParser] = Field(default_factory=list)
+    excluded_parsers: list[DocumentType] = Field(default_factory=list)
+    override_parsers: list[OverrideParser] = Field(default_factory=list)
     chunking_config: ChunkingConfig = Field(default_factory=ChunkingConfig)
 
     @property

@@ -90,7 +90,6 @@ class UpdateFilesWorkflow:
     @r2r_hatchet.step(retries=3)
     async def update_files(self, context: Context) -> None:
         data = context.workflow_input()["request"]
-        print(f"Data is {data} and type is {type(data)}")
         parsed_data = IngestionServiceAdapter.parse_update_files_input(data)
 
         file_datas = parsed_data["file_datas"]

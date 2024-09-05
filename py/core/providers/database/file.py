@@ -300,10 +300,12 @@ class PostgresFileProvider(FileProvider, FileMixin):
         self.collection_name = collection_name
 
     def store_file(self, document_id, file_name, file_content, file_type=None):
-        return self.store_file(document_id, file_name, file_content, file_type)
+        return FileMixin.store_file(
+            self, document_id, file_name, file_content, file_type
+        )
 
     def retrieve_file(self, document_id):
-        return self.retrieve_file(document_id)
+        return FileMixin.retrieve_file(self, document_id)
 
     def delete_file(self, document_id):
         return self.delete_file(document_id)
@@ -315,8 +317,8 @@ class PostgresFileProvider(FileProvider, FileMixin):
         offset=0,
         limit=100,
     ):
-        return self.get_files_overview(
-            filter_document_ids, filter_file_names, offset, limit
+        return FileMixin.get_files_overview(
+            self, filter_document_ids, filter_file_names, offset, limit
         )
 
     def _get_table_name(self, base_name: str) -> str:
