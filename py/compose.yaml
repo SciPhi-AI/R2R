@@ -103,7 +103,7 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
   r2r:
-    image: r2r-local
+    image: ${R2R_IMAGE:-ragtoriches/prod:main-unstructured}
     build:
       context: .
       args:
