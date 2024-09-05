@@ -176,7 +176,7 @@ class IngestionService(Service):
             user_id=user.id,
             group_ids=metadata.get("group_ids", []),
             type=DocumentType[file_extension.upper()],
-            title=file_name.split("/")[-1],
+            title=metadata.pop("title", file_name.split("/")[-1]),
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,
