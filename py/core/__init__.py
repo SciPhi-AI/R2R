@@ -142,6 +142,7 @@ __all__ = [
     "ChunkingConfig",
     "ChunkingProvider",
     "Method",
+    "UnstructuredChunkingConfig",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",

@@ -1,6 +1,11 @@
 from .auth import AuthConfig, AuthProvider
 from .base import Provider, ProviderConfig
-from .chunking import ChunkingConfig, ChunkingProvider, Method, UnstructuredChunkingConfig
+from .chunking import (
+    ChunkingConfig,
+    ChunkingProvider,
+    Method,
+    UnstructuredChunkingConfig,
+)
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     DatabaseConfig,
@@ -9,6 +14,7 @@ from .database import (
     VectorDBProvider,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
+from .file import FileConfig, FileProvider
 from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider
@@ -26,6 +32,7 @@ __all__ = [
     "UnstructuredChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
+    "UnstructuredChunkingConfig",
     "Method",
     # Crypto provider
     "CryptoConfig",
@@ -54,4 +61,7 @@ __all__ = [
     # Prompt provider
     "PromptConfig",
     "PromptProvider",
+    # File provider
+    "FileConfig",
+    "FileProvider",
 ]

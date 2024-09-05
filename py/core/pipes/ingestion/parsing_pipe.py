@@ -1,7 +1,3 @@
-"""
-This module contains the `DocumentParsingPipe` class, which is responsible for parsing incoming documents into plaintext.
-"""
-
 import logging
 from typing import AsyncGenerator, Optional
 from uuid import UUID
@@ -10,6 +6,7 @@ from core.base import (
     AsyncState,
     Document,
     DocumentExtraction,
+    FileProvider,
     ParsingProvider,
     PipeType,
     RunLoggingSingleton,
@@ -28,6 +25,7 @@ class ParsingPipe(AsyncPipe):
     def __init__(
         self,
         parsing_provider: ParsingProvider,
+        file_provider: FileProvider,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
@@ -43,6 +41,7 @@ class ParsingPipe(AsyncPipe):
             **kwargs,
         )
         self.parsing_provider = parsing_provider
+        self.file_provider = file_provider
 
     async def _parse(
         self,
@@ -51,12 +50,20 @@ class ParsingPipe(AsyncPipe):
         version: str,
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
-            async for extraction in self.parsing_provider.parse(document):
+            file_name, file_wrapper, file_size = (
+                self.file_provider.retrieve_file(document.id)
+            )
+
+            with file_wrapper as file_content_stream:
+                file_content = file_content_stream.read()
+
+            async for extraction in self.parsing_provider.parse(
+                file_content, document
+            ):
                 extraction_id = generate_id_from_label(
                     f"{extraction.id}-{version}"
                 )
                 extraction.id = extraction_id
-                # Add version to metadata
                 extraction.metadata["version"] = version
                 yield extraction
         except Exception as e:

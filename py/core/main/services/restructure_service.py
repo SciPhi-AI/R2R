@@ -9,6 +9,8 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
+from core.telemetry.telemetry_decorator import telemetry_event
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,7 @@ class RestructureService(Service):
             logging_connection,
         )
 
+    @telemetry_event("kg_extract_and_store")
     async def kg_extract_and_store(
         self, document_id: UUID, generation_config: GenerationConfig
     ):
@@ -59,6 +62,7 @@ class RestructureService(Service):
 
         return await _collect_results(result_gen)
 
+    @telemetry_event("kg_node_creation")
     async def kg_node_creation(self):
         node_extrations = await self.pipes.kg_node_extraction_pipe.run(
             input=self.pipes.kg_node_extraction_pipe.Input(message=None),
@@ -72,6 +76,7 @@ class RestructureService(Service):
         )
         return await _collect_results(result_gen)
 
+    @telemetry_event("kg_clustering")
     async def kg_clustering(self, leiden_params, generation_config):
         result_gen = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(

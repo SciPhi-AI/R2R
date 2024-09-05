@@ -10,6 +10,7 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
+    FileProvider,
     KGProvider,
     OrchestrationProvider,
     ParsingProvider,
@@ -28,6 +29,7 @@ class R2RProviders(BaseModel):
     orchestration: Optional[OrchestrationProvider]
     prompt: Optional[PromptProvider]
     parsing: Optional[ParsingProvider]
+    file: Optional[FileProvider]
 
     class Config:
         arbitrary_types_allowed = True
