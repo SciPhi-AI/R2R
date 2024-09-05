@@ -12,7 +12,6 @@ search:
               query="What is the capital of France?",
               vector_search_settings={
                   "use_vector_search": True,
-                  "use_kg_search": False, # to enable this, please read the graphrag cookbook
                   "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                   "search_limit": 20,
                   "use_hybrid_search": True
@@ -80,7 +79,6 @@ rag:
               "query": "What is the capital of France?",
               "vector_search_settings": {
                 "use_vector_search": true,
-                "use_kg_search": false, # to enable this, please read the graphrag cookbook
                 "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                 "search_limit": 20,
                 "use_hybrid_search": true
