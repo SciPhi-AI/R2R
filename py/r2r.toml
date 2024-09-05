@@ -1,13 +1,22 @@
+[auth]
+provider = "r2r"
+access_token_lifetime_in_minutes = 60
+refresh_token_lifetime_in_days = 7
+require_authentication = false
+require_email_verification = false
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
+
 [chunking]
 provider = "unstructured_local"
 method = "by_title"
-
 [chunking.chunking_config]
-
     strategy = "hi_res" # fast or hi_res
-    chunking_strategy = "by_title" # by_title or recursive
-    combine_under_n_chars = 512
-    chunk_max_characters = 2_048
+    chunking_strategy = "basic" # by_title or recursive
+    new_after_n_chars = 512
+    max_characters = 1_024
+    combine_under_n_chars = 128
+    overlap = 20
 
 [completion]
 provider = "litellm"
