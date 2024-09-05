@@ -223,7 +223,7 @@ class R2RBuilder:
         self.kg_enrichment_pipeline = pipeline
         return self
 
-    def with_assistant_factory(self, factory: R2RAgentFactory):
+    def with_assistant_factory(self, factory: Type[R2RAgentFactory]):
         self.assistant_factory_override = factory
         return self
 
@@ -274,7 +274,9 @@ class R2RBuilder:
             **kwargs,
         )
 
-        assistant_factory = self.assistant_factory_override or R2RAgentFactory(
+        assistant_factory = self.assistant_factory_override(
+            self.config, providers, pipelines
+        ) or R2RAgentFactory(
             self.config, providers, pipelines
         )
         agents = assistant_factory.create_agents(
