@@ -169,7 +169,6 @@ class IngestionService(Service):
 
         metadata = metadata or {}
         metadata["version"] = version
-        print('metadata = ', metadata)
 
         return DocumentInfo(
             id=document_id,
