@@ -29,9 +29,7 @@ class IngestFilesWorkflow:
             **parsed_data
         )
         document_info = ingestion_result["info"]
-        extractions = await self.ingestion_service.parse_file(
-            document_info
-        )
+        extractions = await self.ingestion_service.parse_file(document_info)
         chunking_config = context.workflow_input()["request"].get(
             "chunking_config"
         )
@@ -55,7 +53,6 @@ class IngestFilesWorkflow:
         )
 
         return None
-
 
 
 # TODO: Implement a check to see if the file is actually changed before updating

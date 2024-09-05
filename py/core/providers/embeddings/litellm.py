@@ -64,7 +64,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
-            print('bad texts = ', texts)
+            print("bad texts = ", texts)
 
             raise R2RException(error_msg, 400)
 

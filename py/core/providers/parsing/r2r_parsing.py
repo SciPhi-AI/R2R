@@ -81,8 +81,8 @@ class R2RParsingProvider(ParsingProvider):
 
         iteration = 0
         async for text in texts:
-            print(f'found a text:\n\n{text}')
-            print('-'*100)
+            print(f"found a text:\n\n{text}")
+            print("-" * 100)
             yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,

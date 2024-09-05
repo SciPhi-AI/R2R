@@ -113,8 +113,8 @@ class UnstructuredParsingProvider(ParsingProvider):
             # nullifies the need for chunking in the pipeline
             document.metadata["partitioned_by_unstructured"] = True
 
-            print(f'found a text:\n\n{text}')
-            print('-'*100)
+            print(f"found a text:\n\n{text}")
+            print("-" * 100)
 
             if text == "":
                 continue
