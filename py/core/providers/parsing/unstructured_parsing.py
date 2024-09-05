@@ -67,7 +67,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             file_content = BytesIO(file_content)
 
         # TODO - Include check on excluded parsers here.
-        print('self.config.chunking_config = ', self.config.chunking_config)
         t0 = time.time()
         if self.use_api:
             logger.info(f"Using API to parse document {document.id}")
@@ -96,7 +95,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             if not isinstance(element, dict):
                 element = element.to_dict()
 
-            for key, value in elements.items():
+            for key, value in element.items():
                 if key == "text":
                     text = value
                 elif key == "metadata":
