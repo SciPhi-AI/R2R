@@ -35,6 +35,7 @@ WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/share/tesseract-ocr /usr/share/tesseract-ocr
 COPY --from=builder /root/nltk_data /root/nltk_data
 
 # Download NLTK packages and initialize models

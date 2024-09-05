@@ -251,7 +251,7 @@ def check_set_docker_env_vars(
             "POSTGRES_PASSWORD",
             "POSTGRES_PORT",
             "POSTGRES_DBNAME",
-            "POSTGRES_VECS_COLLECTION",
+            # "POSTGRES_VECS_COLLECTION",
         ]
         env_vars.extend(postgres_vars)
 

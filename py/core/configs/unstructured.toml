@@ -4,7 +4,7 @@ provider = "unstructured_api" # or unstructured_local
 [chunking]
 provider = "unstructured_api" # or unstructured_local
 
-[chunking.chunking_config]
+    [chunking.chunking_config]
 
     strategy = "hi_res" # fast or hi_res
     chunking_strategy = "by_title" # by_title or recursive

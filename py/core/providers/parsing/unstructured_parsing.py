@@ -65,7 +65,10 @@ class UnstructuredParsingProvider(ParsingProvider):
         if isinstance(file_content, bytes):
             file_content = BytesIO(file_content)
 
+        print("chunking config = " , self.config.chunking_config.dict())
+
         # TODO - Include check on excluded parsers here.
+        print(f"Document metadata: {document.metadata}")
         t0 = time.time()
         if self.use_api:
             logger.info(f"Using API to parse document {document.id}")
@@ -87,7 +90,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 f"Using local unstructured to parse document {document.id}"
             )
             elements = self.partition(
-                file=file_content, **self.config.chunking_config.model_dump()
+                file=file_content, **self.config.chunking_config.dict()
             )
 
         for iteration, element in enumerate(elements):
