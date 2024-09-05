@@ -3,8 +3,10 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Any
 
+from pydantic import BaseModel
+from core import parsers
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
@@ -13,14 +15,51 @@ from core.base import (
     DocumentExtraction,
     DocumentType,
     ParsingProvider,
+    ParsingConfig,
     generate_id_from_label,
 )
 
 logger = logging.getLogger(__name__)
 
+class FallbackElement(BaseModel):
+    text: str
+    metadata: dict[str, Any]
+
+class FallbackResponse(BaseModel):
+    elements: list[FallbackElement]
 
 class UnstructuredParsingProvider(ParsingProvider):
-    def __init__(self, use_api, config):
+
+    AVAILABLE_PARSERS = { 
+        # Commented filetypes go to unstructured, uncommented fallback to R2R parsers (LLM based)
+        # DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
+        # DocumentType.DOCX: [parsers.DOCXParser],
+        # DocumentType.HTML: [parsers.HTMLParser],
+        # DocumentType.HTM: [parsers.HTMLParser],
+        # DocumentType.JSON: [parsers.JSONParser],
+        # DocumentType.MD: [parsers.MDParser],
+        # DocumentType.PDF: [parsers.PDFParser, parsers.PDFParserUnstructured],
+        # DocumentType.PPTX: [parsers.PPTParser],
+        # DocumentType.TXT: [parsers.TextParser],
+        # DocumentType.XLSX: [parsers.XLSXParser, parsers.XLSXParserAdvanced],
+        DocumentType.GIF: [parsers.ImageParser],
+        DocumentType.JPEG: [parsers.ImageParser],
+        DocumentType.JPG: [parsers.ImageParser],
+        DocumentType.PNG: [parsers.ImageParser],
+        DocumentType.SVG: [parsers.ImageParser],
+        DocumentType.MP3: [parsers.AudioParser],
+        DocumentType.MP4: [parsers.MovieParser],
+    }
+
+    IMAGE_TYPES = {
+        DocumentType.GIF,
+        DocumentType.JPG,
+        DocumentType.JPEG,
+        DocumentType.PNG,
+        DocumentType.SVG,
+    }
+
+    def __init__(self, use_api: bool, config: ParsingConfig):
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
@@ -59,6 +98,36 @@ class UnstructuredParsingProvider(ParsingProvider):
                 ) from e
 
         super().__init__(config)
+        self.parsers = {}
+        self._initialize_parsers()
+
+    def _initialize_parsers(self):
+        for doc_type, parser_infos in self.AVAILABLE_PARSERS.items():
+            for parser_info in parser_infos:
+                if (
+                    doc_type not in self.config.excluded_parsers
+                    and doc_type not in self.parsers
+                ):
+                    # will choose the first parser in the list
+                    self.parsers[doc_type] = parser_info()
+
+        # Apply overrides if specified
+        for parser_override in self.config.override_parsers:
+            if parser_name := getattr(parsers, parser_override.parser):
+                self.parsers[parser_override.document_type] = parser_name()
+
+    async def parse_fallback(
+        self, file_content: bytes, document: Document
+    ) -> AsyncGenerator[FallbackResponse, None]:
+        if isinstance(file_content, bytes):
+            file_content = BytesIO(file_content)
+
+        texts = self.parsers[document.type].ingest(file_content)
+
+        for chunk_id, text in enumerate(texts):
+            yield FallbackResponse(
+                elements=[FallbackElement(text=text, metadata={"chunk_id": chunk_id})]
+            )
 
     async def parse(
         self, file_content: bytes, document: Document
@@ -66,31 +135,36 @@ class UnstructuredParsingProvider(ParsingProvider):
         if isinstance(file_content, bytes):
             file_content = BytesIO(file_content)
 
-        # TODO - Include check on excluded parsers here.
-        t0 = time.time()
-        if self.use_api:
-            logger.info(f"Using API to parse document {document.id}")
-            files = self.shared.Files(
-                content=file_content.read(),
-                file_name=document.metadata.get("title", "unknown_file"),
-            )
-
-            req = self.operations.PartitionRequest(
-                self.shared.PartitionParameters(
-                    files=files, **self.config.chunking_config.dict()
-                )
-            )
-            elements = self.client.general.partition(req)
-            elements = list(elements.elements)
-
+        if document.type in self.AVAILABLE_PARSERS.keys():
+            elements = self.parse_fallback(file_content, document)
         else:
-            logger.info(
-                f"Using local unstructured to parse document {document.id}"
-            )
-            elements = self.partition(
-                file=file_content,
-                **self.config.chunking_config.extra_fields["chunking_config"],
-            )
+            # TODO - Include check on excluded parsers here.
+            t0 = time.time()
+            if self.use_api:
+                logger.info(f"Using API to parse document {document.id}")
+                files = self.shared.Files(
+                    content=file_content.read(),
+                    file_name=document.metadata.get("title", "unknown_file")
+                )
+
+
+
+                req = self.operations.PartitionRequest(
+                    self.shared.PartitionParameters(
+                        files=files, **self.config.chunking_config.dict()
+                    )
+                )
+                elements = self.client.general.partition(req)
+                elements = list(elements.elements)
+
+            else:
+                logger.info(
+                    f"Using local unstructured to parse document {document.id}"
+                )
+                elements = self.partition(
+                    file=file_content,
+                    **self.config.chunking_config.extra_fields["chunking_config"],
+                )
 
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
