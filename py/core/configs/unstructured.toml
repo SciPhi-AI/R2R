@@ -1,13 +1,7 @@
 [parsing]
-provider = "unstructured_api"
+provider = "unstructured_api" # or unstructured_local
 
 [chunking]
-<<<<<<< Updated upstream
-provider = "unstructured"
-method = "recursive"
-chunk_size = 512
-chunk_overlap = 50
-=======
 provider = "unstructured_api" # or unstructured_local
 
 [chunking.chunking_config]
@@ -29,7 +23,7 @@ provider = "unstructured_api" # or unstructured_local
     # new_after_n_chars=
     # ocr_languages=
     # output_format=
-    # overlap= 
+    # overlap=
     # overlap_all=
     # pdf_infer_table_structure=
     # similarity_threshold=
@@ -40,4 +34,3 @@ provider = "unstructured_api" # or unstructured_local
     # strategy=
     # unique_element_ids=
     # xml_keep_tags=
->>>>>>> Stashed changes

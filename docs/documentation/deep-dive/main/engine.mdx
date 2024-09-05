@@ -1,0 +1,166 @@
+---
+title: 'R2REngine'
+introduction: 'Learn how the R2R engine and application function'
+---
+
+## Introduction
+
+The R2R Engine and R2R App are core components of the R2R framework, working together to provide a powerful and flexible system for building Retrieval-Augmented Generation (RAG) applications. This documentation page covers the structure, functionality, and usage of these crucial components.
+
+## R2R Engine
+
+The R2R Engine is the central orchestrator of the R2R system, integrating various services and providing the main interface for R2R operations.
+
+### Key Features
+
+1. **Service Integration**: Initializes and manages various services (ingestion, retrieval, management, auth).
+2. **Async/Sync Interface**: Provides both asynchronous and synchronous methods for all operations.
+3. **Extensibility**: Can be extended or overridden to add custom functionality.
+
+### Structure
+
+The R2R Engine is composed of several key components:
+
+- **Configuration**: Utilizes `R2RConfig` for system settings.
+- **Providers**: Manages `R2RProviders` for various functionalities.
+- **Pipelines**: Handles `R2RPipelines` for processing workflows.
+- **Run Manager**: Uses `RunManager` for execution tracking.
+- **Logging**: Implements `KVLoggingSingleton` for consistent logging.
+
+### Services
+
+The R2R Engine initializes and manages four primary services:
+
+1. **Auth Service**: Handles user authentication and account management.
+2. **Ingestion Service**: Handles document and file ingestion and updates.
+3. **Retrieval Service**: Manages search, RAG, and evaluation operations.
+4. **Management Service**: Deals with system management tasks like updating prompts, logs, analytics, and user/document management.
+
+### Auth Service
+
+The Auth Service provides methods for user authentication and account management:
+
+- `register`: User registration
+- `verify_email`: Email verification
+- `login`: User login
+- `user`: Get current user information
+- `refresh_access_token`: Refresh user's access token
+- `change_password`: Change user's password
+- `request_password_reset`: Request a password reset
+- `confirm_password_reset`: Confirm a password reset
+- `logout`: User logout
+- `get_user_profile`: Get user profile information
+- `update_user_profile`: Update user profile
+- `delete_user_account`: Delete user account
+- `clean_expired_blacklisted_tokens`: Clean expired blacklisted tokens
+
+### Ingestion Service
+
+The Ingestion Service handles document and file ingestion:
+
+- `ingest_documents`: Ingest documents
+- `update_documents`: Update existing documents
+- `ingest_files`: Ingest files
+- `update_files`: Update existing files
+
+### Retrieval Service
+
+The Retrieval Service manages search and RAG operations:
+
+- `search`: Perform a search query
+- `rag`: Perform a RAG operation
+- `evaluate`: Evaluate RAG results
+
+### Management Service
+
+The Management Service handles various management tasks:
+
+- `update_prompt`: Update a prompt
+- `alogs`: Retrieve logs
+- `aanalytics`: Retrieve analytics
+- `aapp_settings`: Get application settings
+- `ausers_overview`: Get users overview
+- `delete`: Delete entries
+- `adocuments_overview`: Get documents overview
+- `document_chunks`: Get document chunks
+- `inspect_knowledge_graph`: Inspect the knowledge graph
+
+### Usage
+
+Here's a basic example of initializing and using the R2R Engine:
+
+```python
+engine = R2REngine(config, providers, pipelines)
+
+# Asynchronous usage
+results = await engine.asearch("query")
+
+# Synchronous usage
+results_sync = engine.search("query")
+```
+
+## R2R App
+
+The R2R App is responsible for setting up the FastAPI application that serves as the RESTful API interface for the R2R system.
+
+### Key Features
+
+1. **FastAPI Integration**: Creates and configures a FastAPI application.
+2. **Automatic Route Setup**: Sets up routes for ingestion, management, retrieval, and authentication based on the provided R2REngine.
+3. **API Endpoints**: Exposes the functionality of the R2R Engine through RESTful API endpoints.
+4. **Serving Capability**: Includes a `serve` method to easily start the FastAPI server.
+5. **CORS Configuration**: Applies Cross-Origin Resource Sharing (CORS) settings to the FastAPI application.
+
+### Structure
+
+The R2R App is built around these main components:
+
+- **Engine**: Uses the `R2REngine` for core functionality.
+- **FastAPI App**: The main FastAPI application instance.
+- **Routers**: Separate routers for different functional areas (ingestion, management, retrieval, auth).
+
+### Route Setup
+
+The `_setup_routes` method initializes four main routers, each corresponding to a service in the R2R Engine:
+
+1. **Auth Router**: Endpoints for user authentication and account management.
+2. **Ingestion Router**: Endpoints for document and file ingestion.
+3. **Retrieval Router**: Endpoints for search and RAG operations.
+4. **Management Router**: Endpoints for system management tasks.
+
+Each router exposes the methods of its corresponding service as API endpoints.
+
+### Usage
+
+Here's a basic example of initializing and using the R2R App:
+
+```python
+engine = R2REngine(config, providers, pipelines)
+app = R2RApp(engine)
+
+# Start the server
+app.serve(host="0.0.0.0", port=7272)
+```
+
+## Integration of Engine and App
+
+The R2R Engine and App work together to provide a complete RAG application framework:
+
+1. The Engine manages the core logic and services.
+2. The App wraps the Engine in a RESTful API interface.
+3. API routes in the App correspond directly to methods in the Engine's services.
+
+This integration allows developers to easily build and deploy scalable RAG applications with a well-defined API interface.
+
+## Best Practices
+
+1. **Configuration Management**: Use separate configurations for different environments (development, staging, production).
+2. **Error Handling**: Implement proper error handling in custom components and provide meaningful error messages.
+3. **Testing**: Create unit tests for Engine methods and integration tests for API endpoints.
+4. **Logging**: Utilize the built-in logging functionality for debugging and monitoring.
+5. **Security**: Always use HTTPS in production and implement proper authentication mechanisms.
+6. **API Documentation**: Keep API documentation up-to-date with any changes to endpoints or functionality.
+
+## Conclusion
+
+The R2R Engine and App form the backbone of the R2R framework, providing a powerful and flexible system for building RAG applications. By understanding and leveraging these components, developers can create sophisticated, scalable, and maintainable RAG solutions with a clear and consistent API interface.

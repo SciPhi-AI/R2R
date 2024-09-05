@@ -1,9 +1,11 @@
+import os
 import time
 
 from r2r import R2RClient
 
 # Our R2R base URL is the URL of our SciPhi deployed R2R server
-client = R2RClient("YOUR_SCIPHI_DEPLOYMENT_URL")
+deployment_url = os.getenv("R2R_DEPLOYMENT_URL")
+client = R2RClient(deployment_url)
 
 # We'll make sure that we can connect to the server
 health_response = client.health()

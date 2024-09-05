@@ -1,57 +1,52 @@
-from typing import TYPE_CHECKING
-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
-if TYPE_CHECKING:
-    from .engine import R2REngine
+from core.base.providers import OrchestrationProvider
+
+from .api.auth_router import AuthRouter
+from .api.ingestion_router import IngestionRouter
+from .api.management_router import ManagementRouter
+from .api.restructure_router import RestructureRouter
+from .api.retrieval_router import RetrievalRouter
+from .config import R2RConfig
+from .services.ingestion_service import IngestionService
+from .services.restructure_service import RestructureService
 
 
 class R2RApp:
-    def __init__(self, engine: "R2REngine"):
-        self.engine = engine
+    def __init__(
+        self,
+        config: R2RConfig,
+        orchestration_provider: OrchestrationProvider,
+        auth_router: AuthRouter,
+        ingestion_router: IngestionRouter,
+        management_router: ManagementRouter,
+        retrieval_router: RestructureRouter,
+        restructure_router: RetrievalRouter,
+    ):
+        self.config = config
+        self.ingestion_router = ingestion_router
+        self.management_router = management_router
+        self.retrieval_router = retrieval_router
+        self.auth_router = auth_router
+        self.restructure_router = restructure_router
+        self.orchestration_provider = orchestration_provider
+        self.app = FastAPI()
         self._setup_routes()
         self._apply_cors()
 
-    def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        import uvicorn
-
-        uvicorn.run(self.app, host=host, port=port)
-
     def _setup_routes(self):
-        from .api.routes.auth import base as auth_base
-        from .api.routes.ingestion import base as ingestion_base
-        from .api.routes.management import base as management_base
-        from .api.routes.restructure import base as restructure_base
-        from .api.routes.retrieval import base as retrieval_base
-
-        self.app = FastAPI()
-
-        # Create routers with the engine
-        ingestion_router = ingestion_base.IngestionRouter.build_router(
-            self.engine
-        )
-        management_router = management_base.ManagementRouter.build_router(
-            self.engine
-        )
-        retrieval_router = retrieval_base.RetrievalRouter.build_router(
-            self.engine
-        )
-        auth_router = auth_base.AuthRouter.build_router(self.engine)
-        restructure_router = restructure_base.RestructureRouter.build_router(
-            self.engine
-        )
 
         # Include routers in the app
-        self.app.include_router(ingestion_router, prefix="/v2")
-        self.app.include_router(management_router, prefix="/v2")
-        self.app.include_router(retrieval_router, prefix="/v2")
-        self.app.include_router(auth_router, prefix="/v2")
-        self.app.include_router(restructure_router, prefix="/v2")
+        self.app.include_router(self.ingestion_router, prefix="/v2")
+        self.app.include_router(self.management_router, prefix="/v2")
+        self.app.include_router(self.retrieval_router, prefix="/v2")
+        self.app.include_router(self.auth_router, prefix="/v2")
+        self.app.include_router(self.restructure_router, prefix="/v2")
 
-        @self.app.router.get("/v2/openapi_spec")
+        @self.app.get("/v2/openapi_spec")
         async def openapi_spec():
-            from fastapi.openapi.utils import get_openapi
-
             return get_openapi(
                 title="R2R Application API",
                 version="1.0.0",
@@ -59,9 +54,7 @@ class R2RApp:
             )
 
     def _apply_cors(self):
-        from fastapi.middleware.cors import CORSMiddleware
-
-        origins = ["*", "http://localhost:3000", "http://localhost:8000"]
+        origins = ["*", "http://localhost:3000", "http://localhost:7272"]
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
@@ -69,3 +62,12 @@ class R2RApp:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+    def serve(self, host: str = "0.0.0.0", port: int = 7272):
+        # Start the Hatchet worker in a separate thread
+        self.orchestration_provider.start_worker()
+
+        import uvicorn
+
+        # Run the FastAPI app
+        uvicorn.run(self.app, host=host, port=port)

@@ -27,7 +27,6 @@ class KGEnrichmentPipeline(AsyncPipeline):
         *args,
         **kwargs,
     ) -> None:
-        print("pipe = ", pipe)
         logger.debug(
             f"Adding pipe {pipe.config.name} to the KGEnrichmentPipeline"
         )

@@ -1,0 +1,28 @@
+---
+title: 'Security'
+description: 'Secure deployments through SciPhi Cloud'
+icon: 'shield'
+---
+
+## Data Storage and Security Policy
+
+At SciPhi, we prioritize the security and privacy of our customers' data. We have implemented robust measures to ensure the highest level of protection for sensitive information. This policy outlines our data storage practices, encryption protocols, and compliance adherence.
+
+## Data Storage
+
+1.  **User Tenancy Databases**: Each SciPhi cloud user is provided with their own dedicated tenancy database through [Lantern.dev](https://lantern.dev). This ensures that each user's data is isolated and stored separately, preventing unauthorized access and maintaining data integrity.
+2.  **Secure Infrastructure**: Our infrastructure is hosted on Google Cloud, a trusted and secure cloud platform. We leverage Google Cloud's robust security features and best practices to protect our customers' data.
+3.  **Data Retention**: We adhere to strict data retention policies to minimize the amount of data we store. Data is retained only for the duration necessary to fulfill the intended purpose and is securely deleted when no longer required.
+4.  **Data Usage**: We respect the privacy of our customers and ensure that their data is used solely for the purpose it was collected. We do not use customer data for training purposes without explicit consent.
+
+## Secret Management
+
+1.  **Secure Secret Storage**: We utilize Google Cloud's Secret Manager to store and manage sensitive information such as API keys and other secrets. Secret Manager provides a secure and centralized location for storing secrets, ensuring they are encrypted and access-controlled.
+2.  **Encryption of Secrets**: All secrets stored in Google Cloud's Secret Manager are encrypted at rest and in transit. This adds an extra layer of protection to sensitive information, making it inaccessible to unauthorized parties.
+3.  **Secure Secret Provisioning**: During the deployment process, users are required to provide necessary secrets through a secure form. These secrets are transmitted securely and stored encrypted in Secret Manager. Only authorized processes and services can access these secrets, minimizing the risk of exposure.
+
+## Compliance
+
+**Industry Standards**: We adhere to industry best practices and standards for data security and privacy. Our infrastructure and processes are designed to meet the requirements of relevant regulations and frameworks.
+
+By leveraging the power of Google Cloud, providing dedicated user tenancy databases, and implementing robust encryption and secret management practices, SciPhi ensures the utmost security and privacy for our customers' data. We are committed to maintaining the highest standards of data protection and continuously improving our security measures to meet the evolving needs of our customers.

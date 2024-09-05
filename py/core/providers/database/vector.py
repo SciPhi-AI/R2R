@@ -1,7 +1,6 @@
 import logging
 import os
 from typing import Any, Optional
-from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.engine.url import make_url
@@ -182,7 +181,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `semantic_search`."
             )
-        results = self.collection.query(
+        results = self.collection.semantic_search(
             vector=query_vector, search_settings=search_settings
         )
         return [
@@ -484,23 +483,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
         """
         )
 
-        count_query = text(
-            f"""
-            SELECT COUNT(*)
-            FROM vecs."{table_name}"
-            WHERE document_id = :document_id
-        """
-        )
-
         params = {"document_id": document_id, "offset": offset}
         if limit != -1:
             params["limit"] = limit
 
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
-            total_count = sess.execute(
-                count_query, {"document_id": document_id}
-            ).scalar()
 
         return [
             {
