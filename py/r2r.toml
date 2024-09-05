@@ -12,7 +12,6 @@ provider = "unstructured_local"
 method = "by_title"
 
 [chunking.chunking_config]
-
     strategy = "auto"
     chunking_strategy = "basic" 
     new_after_n_chars = 512
