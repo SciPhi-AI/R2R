@@ -339,19 +339,6 @@ class ManagementService(Service):
         self.providers.prompt.update_prompt(name, template, input_types)
         return {"message": f"Prompt '{name}' updated successfully."}
 
-    @telemetry_event("UsersOverview")
-    async def users_overview(
-        self,
-        user_ids: Optional[list[UUID]],
-        offset: int = 0,
-        limit: int = 100,
-        *args,
-        **kwargs,
-    ):
-        return self.providers.database.relational.get_users_overview(
-            [str(ele) for ele in user_ids], offset=offset, limit=limit
-        )
-
     @telemetry_event("InspectKnowledgeGraph")
     async def inspect_knowledge_graph(
         self,
