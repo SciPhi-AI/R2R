@@ -121,13 +121,13 @@
     {
       "group": "Configuration",
       "pages": [
-          "documentation/configuration/introduction",
-          {
+        "documentation/configuration/introduction",
+        "documentation/configuration/postgres",
+        {
             "group": "Ingestion",
             "icon": "upload",
             "pages": [
               "documentation/configuration/ingestion/overview",
-              "documentation/configuration/ingestion/postgres",
               {
                 "group": "Parsing",
                 "pages": [

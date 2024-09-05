@@ -10,13 +10,14 @@ default_admin_password = "change_me_immediately"
 [chunking]
 provider = "unstructured_local"
 method = "by_title"
-[chunking.chunking_config]
-    strategy = "auto"
-    chunking_strategy = "basic" 
-    new_after_n_chars = 512
-    max_characters = 1_024
-    combine_under_n_chars = 128
-    overlap = 20
+
+  [chunking.chunking_config]
+  strategy = "auto"
+  chunking_strategy = "basic" 
+  new_after_n_chars = 512
+  max_characters = 1_024
+  combine_under_n_chars = 128
+  overlap = 20
 
 [completion]
 provider = "litellm"

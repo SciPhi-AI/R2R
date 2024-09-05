@@ -1,10 +1,24 @@
 ---
 title: 'Postgres'
+description: "Configure your R2R Postgres database"
+icon: "database"
 ---
 
-## Postgres Databases
+## Postgres Database
 
-R2R uses Postgres as its default database provider for relational and vector search queries. To customize the database settings, you can modify the `database` section in your `r2r.toml` file and set corresponding environment variables or provide the settings directly in the configuration file.
+R2R uses Postgres as its default database provider for relational and vector search queries. This means that Postgres is invovled in handling authentication, document management, and search across R2R. For robust search, R2R uses the `pgvector` extension and `ts_rank` to implement [customizable hybrid search](cookbooks/hybrid-search).
+
+<Note>
+  R2R chose Postgres as its core technology for several reasons:
+  
+  - **Versatility**: Postgres is a robust, advanced database that can handle both relational data and vector embeddings.
+  - **Simplicity**: By using Postgres for both traditional data and vector search, R2R eliminates the need for complex syncing between separate databases.
+  - **Familiarity**: Many developers are already comfortable with Postgres, making it easier to integrate R2R into existing workflows.
+  - **Extensibility**: Postgres's rich ecosystem of extensions allows R2R to leverage advanced features and optimizations.
+
+  Read more about [Postgres here](https://www.postgresql.org/).
+</Note>
+To customize the database settings, you can modify the `database` section in your `r2r.toml` file and set corresponding environment variables or provide the settings directly in the configuration file.
 
 ## Postgres Configuration
 
@@ -12,7 +26,7 @@ R2R uses Postgres as its default database provider for relational and vector sea
 
 ```toml r2r.toml
 [database]
-provider = "postgres"
+provider = "postgres" # currently only `postgres` is supported
   [database.extra_fields]
   user = "your_postgres_user"
   password = "your_postgres_password"

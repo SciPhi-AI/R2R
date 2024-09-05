@@ -28,8 +28,9 @@ provider = "litellm"
 base_model = "text-embedding-3-large"
 base_dimension = 1536
 
-[completion.generation_config]
-model = "anthropic/claude-3-opus-20240229"
+[completion]
+    [completion.generation_config]
+    model = "anthropic/claude-3-opus-20240229"
 ```
 
 3. Launch R2R with the CLI using your custom configuration:
