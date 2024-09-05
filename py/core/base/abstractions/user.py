@@ -7,12 +7,16 @@ from pydantic import BaseModel, Field
 from ..utils import generate_id_from_label
 
 
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
 class Group(BaseModel):
     id: UUID = Field(default=None)
     name: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     class Config:
         from_attributes = True
