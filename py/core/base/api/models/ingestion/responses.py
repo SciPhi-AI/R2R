@@ -7,17 +7,6 @@ from core.base.api.models.base import ResultsWrapper
 
 T = TypeVar("T")
 
-
-class ProcessedDocument(BaseModel):
-    id: UUID
-    title: str
-
-
-class FailedDocument(BaseModel):
-    document_id: UUID
-    result: Any
-
-
 class IngestionResponse(BaseModel):
     message: str = Field(
         ...,
@@ -26,6 +15,10 @@ class IngestionResponse(BaseModel):
     task_id: UUID = Field(
         ...,
         description="The task ID of the ingestion request.",
+    )
+    document_id: UUID = Field(
+        ...,
+        description="The ID of the document that was ingested.",
     )
 
 

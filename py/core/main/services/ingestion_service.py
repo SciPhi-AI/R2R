@@ -168,15 +168,15 @@ class IngestionService(Service):
             )
 
         metadata = metadata or {}
-        metadata["title"] = metadata.get("title") or file_name.split("/")[-1]
         metadata["version"] = version
+        print('metadata = ', metadata)
 
         return DocumentInfo(
             id=document_id,
             user_id=user.id,
             group_ids=metadata.get("group_ids", []),
             type=DocumentType[file_extension.upper()],
-            title=metadata["title"],
+            title=file_name.split("/")[-1],
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,

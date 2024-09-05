@@ -153,6 +153,7 @@ class IngestionRouter(BaseRouter):
                     {
                         "message": "Ingestion task queued successfully.",
                         "task_id": str(task_id),
+                        "document_id": str(document_id),
                     }
                 )
             return messages
