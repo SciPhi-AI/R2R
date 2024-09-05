@@ -31,6 +31,7 @@ __all__ = [
     # Chunking provider
     "UnstructuredChunkingConfig",
     "ChunkingConfig",
+    "UnstructuredChunkingConfig",
     "ChunkingProvider",
     "UnstructuredChunkingConfig",
     "Method",

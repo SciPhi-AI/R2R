@@ -217,6 +217,7 @@
     {
       "group": "Knowledge Graph",
       "pages": [
+        "api-reference/endpoint/create_graph",
         "api-reference/endpoint/enrich_graph"
       ]
     },
