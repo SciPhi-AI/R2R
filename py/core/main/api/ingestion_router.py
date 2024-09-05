@@ -142,7 +142,7 @@ class IngestionRouter(BaseRouter):
                 )
 
                 file_name = file_data["filename"]
-                self.service.providers.database.relational.store_file(
+                self.service.providers.file.store_file(
                     document_id,
                     file_name,
                     file_content,

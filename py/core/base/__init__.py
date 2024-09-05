@@ -128,6 +128,9 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
+    # File provider
+    "FileConfig",
+    "FileProvider",
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",

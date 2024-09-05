@@ -7,6 +7,7 @@ from .embeddings import (
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
 )
+from .file import PostgresFileProvider
 from .kg import Neo4jKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .orchestration import HatchetOrchestrationProvider
@@ -28,6 +29,8 @@ __all__ = [
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    # File
+    "PostgresFileProvider",
     # KG
     "Neo4jKGProvider",
     # Orchestration
