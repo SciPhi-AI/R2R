@@ -1,21 +1,14 @@
-[chunking] # use larger chunk sizes for kg extraction
-provider = "r2r"
-method = "recursive"
-chunk_size = 4096
-chunk_overlap = 200
+[chunking]
+provider = "unstructured_local"
+method = "by_title"
 
-
-[completion]
-provider = "litellm"
-concurrent_request_limit = 256
-
-  [completion.generation_config]
-  model = "gpt-4o-mini"
-  temperature = 0.1
-  top_p = 1
-  max_tokens_to_sample = 1_024
-  stream = false
-  add_generation_kwargs = { }
+[chunking.chunking_config]
+    strategy = "auto"
+    chunking_strategy = "basic" 
+    new_after_n_chars = 2_048
+    max_characters = 4_096 # use larger max_characters for KG construction
+    combine_under_n_chars = 512
+    overlap = 20
 
 [kg]
 provider = "neo4j"

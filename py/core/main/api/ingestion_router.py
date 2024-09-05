@@ -142,7 +142,7 @@ class IngestionRouter(BaseRouter):
                 )
 
                 file_name = file_data["filename"]
-                self.service.providers.database.relational.store_file(
+                self.service.providers.file.store_file(
                     document_id,
                     file_name,
                     file_content,
@@ -153,10 +153,9 @@ class IngestionRouter(BaseRouter):
                     {
                         "message": "Ingestion task queued successfully.",
                         "task_id": str(task_id),
+                        "document_id": str(document_id),
                     }
                 )
-            print("messages = ", messages)
-
             return messages
 
         update_files_extras = self.openapi_extras.get("update_files", {})

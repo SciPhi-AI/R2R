@@ -10,14 +10,14 @@ from ..services import IngestionService, IngestionServiceAdapter
 from .base import r2r_hatchet
 
 
-@r2r_hatchet.workflow(name="ingest-file", timeout=3600)
+@r2r_hatchet.workflow(name="ingest-file", timeout="60m")
 class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
     # TODO - Move these to separate steps after hatchet releases the feature
     # that allows us to uncap message size
-    @r2r_hatchet.step(retries=0)
+    @r2r_hatchet.step(retries=0, timeout="60m")
     async def parse_file(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
 
@@ -56,12 +56,12 @@ class IngestFilesWorkflow:
 
 
 # TODO: Implement a check to see if the file is actually changed before updating
-@r2r_hatchet.workflow(name="update-files", timeout=3600)
+@r2r_hatchet.workflow(name="update-files", timeout="60m")
 class UpdateFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
-    @r2r_hatchet.step(retries=0)
+    @r2r_hatchet.step(retries=0, timeout="60m")
     async def update_files(self, context: Context) -> None:
         data = context.workflow_input()["request"]
         parsed_data = IngestionServiceAdapter.parse_update_files_input(data)

@@ -6,12 +6,10 @@ from core.base import (
     CryptoProvider,
     DatabaseConfig,
     DatabaseProvider,
-    FileProvider,
     RelationalDBProvider,
     VectorDBProvider,
 )
 
-from .file import PostgresFileProvider
 from .relational import PostgresRelationalDBProvider
 from .vecs import Client, create_client
 from .vector import PostgresVectorDBProvider
@@ -107,12 +105,5 @@ class PostgresDBProvider(DatabaseProvider):
             self.config,
             vx=self.vx,
             crypto_provider=self.crypto_provider,
-            collection_name=self.collection_name,
-        )
-
-    def _initialize_file_provider(self) -> FileProvider:
-        return PostgresFileProvider(
-            self.config,
-            vx=self.vx,
             collection_name=self.collection_name,
         )

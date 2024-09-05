@@ -8,7 +8,7 @@
 
 <img width="1041" alt="r2r" src="https://github.com/user-attachments/assets/b6ee6a78-5d37-496d-ae10-ce18eee7a1d6">
 <h3 align="center">
-The Elasticsearch for RAG. 
+The Elasticsearch for RAG.
 
 Build, scale, and deploy production-ready Retrieval-Augmented Generation applications.
 </h3>

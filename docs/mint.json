@@ -115,50 +115,52 @@
             },
             "documentation/api-reference"
           ]
-        },
-        {
-          "icon": "sliders",
-          "group": "Configuration",
-          "pages": [
-            "documentation/configuration/introduction",
-            {
-              "group": "Ingestion",
-              "pages": [
-                "documentation/configuration/ingestion/overview",
-                "documentation/configuration/ingestion/postgres",
-                {
-                  "group": "Parsing",
-                  "pages": [
-                    "documentation/configuration/ingestion/parsing",
-                    "documentation/configuration/ingestion/unstructured"
-                  ]
-                },
-                "documentation/configuration/ingestion/chunking",
-                "documentation/configuration/ingestion/embedding"
-              ]
-            },
-            {
-              "group": "Knowledge Graph",
-              "pages": [
-                "documentation/configuration/ingestion/knowledge-graph",
-                "documentation/configuration/restructuring"
-              ]
-            },
-            {
-              "group": "Retrieval",
-              "pages": [
-                "documentation/configuration/retrieval/overview",
-                "documentation/configuration/retrieval/vector-search",
-                "documentation/configuration/retrieval/knowledge-graph",
-                "documentation/configuration/retrieval/llm",
-                "documentation/configuration/retrieval/rag"
-
-              ]
-            }
-          ]
-        },
-        "documentation/local-rag"
+        }
       ]
+    },
+    {
+      "group": "Configuration",
+      "pages": [
+          "documentation/configuration/introduction",
+          {
+            "group": "Ingestion",
+            "icon": "upload",
+            "pages": [
+              "documentation/configuration/ingestion/overview",
+              "documentation/configuration/ingestion/postgres",
+              {
+                "group": "Parsing",
+                "pages": [
+                  "documentation/configuration/ingestion/parsing",
+                  "documentation/configuration/ingestion/unstructured"
+                ]
+              },
+              "documentation/configuration/ingestion/chunking",
+              "documentation/configuration/ingestion/embedding"
+            ]
+          },
+          {
+            "group": "Knowledge Graph",
+            "icon": "signal",
+            "pages": [
+              "documentation/configuration/ingestion/knowledge-graph",
+              "documentation/configuration/restructuring"
+            ]
+          },
+          {
+            "group": "Retrieval",
+            "icon": "magnifying-glass",
+            "pages": [
+              "documentation/configuration/retrieval/overview",
+              "documentation/configuration/retrieval/vector-search",
+              "documentation/configuration/retrieval/knowledge-graph",
+              "documentation/configuration/retrieval/llm",
+              "documentation/configuration/retrieval/rag"
+
+            ]
+          },
+          "documentation/local-rag"          
+        ]
     },
     {
       "group": "Deep Dives",

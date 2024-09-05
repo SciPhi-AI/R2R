@@ -1,8 +1,6 @@
 from .auth.responses import GenericMessageResponse, TokenResponse, UserResponse
 from .ingestion.responses import (
-    FailedDocument,
     IngestionResponse,
-    ProcessedDocument,
     WrappedIngestionResponse,
 )
 from .management.responses import (
@@ -54,8 +52,6 @@ __all__ = [
     "TokenResponse",
     "UserResponse",
     # Ingestion Responses
-    "ProcessedDocument",
-    "FailedDocument",
     "IngestionResponse",
     "WrappedIngestionResponse",
     # Restructure Responses

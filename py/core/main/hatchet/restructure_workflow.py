@@ -10,7 +10,7 @@ from ..services import RestructureService
 from .base import r2r_hatchet
 
 
-@r2r_hatchet.workflow(name="kg-extract-and-store", timeout=3600)
+@r2r_hatchet.workflow(name="kg-extract-and-store", timeout="60m")
 class KgExtractAndStoreWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
@@ -26,7 +26,7 @@ class KgExtractAndStoreWorkflow:
         return {"result": None}
 
 
-@r2r_hatchet.workflow(name="create-graph", timeout=3600)
+@r2r_hatchet.workflow(name="create-graph", timeout="60m")
 class CreateGraphWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
@@ -71,7 +71,7 @@ class CreateGraphWorkflow:
         return {"result": "success"}
 
 
-@r2r_hatchet.workflow(name="enrich-graph", timeout=3600)
+@r2r_hatchet.workflow(name="enrich-graph", timeout="60m")
 class EnrichGraphWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
