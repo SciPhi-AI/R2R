@@ -77,27 +77,6 @@ class QueryBuilder:
 
         return query, self.params
     
-    def upsert_file(self, document_id: UUID, file_name: str, file_oid: int, file_size: int, file_type: Optional[str] = None) -> None:
-        query_builder = QueryBuilder(self._get_table_name('file_storage'))
-        query, params = query_builder.insert({
-            "document_id": document_id,
-            "file_name": file_name,
-            "file_oid": file_oid,
-            "file_size": file_size,
-            "file_type": file_type
-        }).build()
-        
-        # Add ON CONFLICT clause
-        query += " ON CONFLICT (document_id) DO UPDATE SET " \
-                "file_name = EXCLUDED.file_name, " \
-                "file_oid = EXCLUDED.file_oid, " \
-                "file_size = EXCLUDED.file_size, " \
-                "file_type = EXCLUDED.file_type, " \
-                "updated_at = NOW()"
-        
-        result = self.execute_query(text(query), params)
-        if not result:
-            raise R2RException(status_code=500, message=f"Failed to upsert file for document {document_id}")
 
 
 class DatabaseMixin:
