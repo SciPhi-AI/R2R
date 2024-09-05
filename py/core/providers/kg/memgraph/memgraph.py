@@ -60,8 +60,9 @@ class MemgraphKGProvider(KGProvider):
             "MEMGRAPH_PASSWORD"
         )
         url = config.extra_fields.get("url", None) or os.getenv("MEMGRAPH_URL")
+
         database = config.extra_fields.get("database", None) or os.getenv(
-            "MEMGRAPH_DATABASE", "neo4j"
+            "MEMGRAPH_DATABASE", "memgraph"
         )
 
         if not username or not password or not url:
