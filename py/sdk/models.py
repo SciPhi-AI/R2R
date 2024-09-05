@@ -420,9 +420,33 @@ class KGEnrichmentSettings(BaseModel):
     )
 
 
-class KGEnrichmentResponse(BaseModel):
-    enriched_content: Dict[str, Any]
+class KGCreationResponse(BaseModel):
 
+    message: str
+    task_id: UUID
+
+    def __str__(self) -> str:
+        return f"KGCreationResponse(message={self.message}, task_id={self.task_id})"
+    
+    class Config: 
+        json_schema_extra = {
+            "message": "Knowledge graph creation task queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+        }
+
+class KGEnrichmentResponse(BaseModel):
+    
+    message: str
+    task_id: UUID
+
+    def __str__(self) -> str:
+        return f"KGEnrichmentResponse(message={self.message}, task_id={self.task_id})"
+    
+    class Config:
+        json_schema_extra = {
+            "message": "Knowledge graph enrichment task queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+        }
 
 class UserResponse(BaseModel):
     id: UUID

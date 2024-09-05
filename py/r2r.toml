@@ -10,7 +10,6 @@ default_admin_password = "change_me_immediately"
 [chunking]
 provider = "unstructured_local"
 method = "by_title"
-
 [chunking.chunking_config]
     strategy = "auto"
     chunking_strategy = "basic" 

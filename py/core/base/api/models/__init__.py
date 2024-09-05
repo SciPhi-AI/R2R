@@ -32,6 +32,8 @@ from .management.responses import (
     WrappedUserOverviewResponse,
 )
 from .restructure.responses import (
+    KGCreationResponse,
+    WrappedKGCreationResponse,
     KGEnrichmentResponse,
     WrappedKGEnrichmentResponse,
 )
@@ -53,6 +55,8 @@ __all__ = [
     "IngestionResponse",
     "WrappedIngestionResponse",
     # Restructure Responses
+    "KGCreationResponse",
+    "WrappedKGCreationResponse",
     "KGEnrichmentResponse",
     "WrappedKGEnrichmentResponse",
     # Management Responses

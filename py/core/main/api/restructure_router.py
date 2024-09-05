@@ -1,6 +1,9 @@
 import logging
 from typing import Optional
 
+from pathlib import Path
+import yaml
+
 from fastapi import Body, Depends
 from pydantic import Json
 
@@ -36,6 +39,14 @@ class RestructureRouter(BaseRouter):
         super().__init__(service, run_type, orchestration_provider)
         self.service: RestructureService = service
 
+        def _load_openapi_extras(self):
+            yaml_path = (
+                Path(__file__).parent / "data" / "restructure_router_openapi.yml"
+            )
+            with open(yaml_path, "r") as yaml_file:
+                yaml_content = yaml.safe_load(yaml_file)
+            return yaml_content
+
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
             EnrichGraphWorkflow(self.service)
@@ -60,14 +71,11 @@ class RestructureRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
-            Input:
-            - document_ids: list[str], optional, if not provided, all documents will be used
-            - kg_creation_settings: KGCreationSettings
-            - auth_user: AuthUser
+                Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
-            This endpoint supports JSON requests, enabling you to create a new knowledge graph in R2R.
+                This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information. You can view the graph through the neo4j browser.
 
-            A valid user authentication token is required to access this endpoint.
+                In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
             # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser
@@ -102,15 +110,7 @@ class RestructureRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
-            Input:
-            - kg_enrichment_settings: KGEnrichmentSettings
-            - auth_user: AuthUser
-
-            Perform graph enrichment, over the entire graph.
-
-            This endpoint supports JSON requests, enabling you to enrich the knowledge graph in R2R.
-
-            A valid user authentication token is required to access this endpoint.
+                This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
             # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser
