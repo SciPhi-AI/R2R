@@ -2,6 +2,7 @@ from typing import Union
 
 from .models import (
     KGCreationSettings,
+    KGCreationResponse,
     KGEnrichmentResponse,
     KGEnrichmentSettings,
 )
@@ -14,7 +15,7 @@ class RestructureMethods:
         client,
         document_ids: list[str] = None,
         kg_creation_settings: Union[dict, KGCreationSettings] = None,
-    ) -> KGEnrichmentResponse:
+    ) -> KGCreationResponse:
         """
         Create a graph from the given settings.
         """

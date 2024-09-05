@@ -11,12 +11,13 @@ default_admin_password = "change_me_immediately"
 provider = "unstructured_local"
 method = "by_title"
 
-[chunking.chunking_config]
-
-    strategy = "hi_res" # fast or hi_res
-    chunking_strategy = "by_title" # by_title or recursive
-    combine_under_n_chars = 512
-    chunk_max_characters = 2_048
+  [chunking.chunking_config]
+  strategy = "auto"
+  chunking_strategy = "basic" 
+  new_after_n_chars = 512
+  max_characters = 1_024
+  combine_under_n_chars = 128
+  overlap = 20
 
 [completion]
 provider = "litellm"

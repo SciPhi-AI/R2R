@@ -1,3 +1,15 @@
+[chunking]
+provider = "unstructured_local"
+method = "by_title"
+
+[chunking.chunking_config]
+    strategy = "auto"
+    chunking_strategy = "basic" 
+    new_after_n_chars = 2_048
+    max_characters = 4_096 # use larger max_characters for KG construction
+    combine_under_n_chars = 512
+    overlap = 20
+    
 [completion]
 provider = "litellm"
 concurrent_request_limit = 1

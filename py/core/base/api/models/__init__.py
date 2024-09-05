@@ -1,8 +1,6 @@
 from .auth.responses import GenericMessageResponse, TokenResponse, UserResponse
 from .ingestion.responses import (
-    FailedDocument,
     IngestionResponse,
-    ProcessedDocument,
     WrappedIngestionResponse,
 )
 from .management.responses import (
@@ -34,6 +32,8 @@ from .management.responses import (
     WrappedUserOverviewResponse,
 )
 from .restructure.responses import (
+    KGCreationResponse,
+    WrappedKGCreationResponse,
     KGEnrichmentResponse,
     WrappedKGEnrichmentResponse,
 )
@@ -52,11 +52,11 @@ __all__ = [
     "TokenResponse",
     "UserResponse",
     # Ingestion Responses
-    "ProcessedDocument",
-    "FailedDocument",
     "IngestionResponse",
     "WrappedIngestionResponse",
     # Restructure Responses
+    "KGCreationResponse",
+    "WrappedKGCreationResponse",
     "KGEnrichmentResponse",
     "WrappedKGEnrichmentResponse",
     # Management Responses
