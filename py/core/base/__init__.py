@@ -110,6 +110,7 @@ __all__ = [
     "AuthProvider",
     # Chunking provider
     "ChunkingConfig",
+    "UnstructuredChunkingConfig",
     "ChunkingProvider",
     "Method",
     # Crypto provider
