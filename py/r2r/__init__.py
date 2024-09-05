@@ -6,11 +6,6 @@ __all__ = [
     "R2RClient",
 ]
 
-import core
-from core import *
-
-__all__ += core.__all__
-
 # try:
 #     import core
 #     from core import *

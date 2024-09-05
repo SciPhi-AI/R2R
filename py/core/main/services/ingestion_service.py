@@ -88,17 +88,6 @@ class IngestionService(Service):
             logging_connection,
         )
 
-    def store_file(
-        self,
-        document_id: UUID,
-        file_name: str,
-        file_content: BytesIO,
-        file_type: Optional[str] = None,
-    ) -> None:
-        self.providers.database.relational.store_file(
-            document_id, file_name, file_content, file_type
-        )
-
     @telemetry_event("IngestFile")
     async def ingest_file_ingress(
         self,
@@ -108,6 +97,7 @@ class IngestionService(Service):
         document_id: Optional[UUID] = None,
         version: Optional[str] = None,
         is_update: bool = False,
+        size_in_bytes: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -123,18 +113,6 @@ class IngestionService(Service):
 
         metadata = metadata or {}
 
-        document_id = document_id or generate_user_document_id(
-            file_data["filename"], user.id
-        )
-        file_content = BytesIO(base64.b64decode(file_data["content"]))
-
-        self.store_file(
-            document_id,
-            file_data["filename"],
-            file_content,
-            file_data["content_type"],
-        )
-
         version = version or STARTING_VERSION
         document_info = self._create_document_info(
             document_id,
@@ -142,7 +120,7 @@ class IngestionService(Service):
             file_data["filename"],
             metadata,
             version,
-            len(file_content.getvalue()),
+            size_in_bytes,
         )
 
         if existing_document_info := self.providers.database.relational.get_documents_overview(
@@ -180,7 +158,7 @@ class IngestionService(Service):
         file_name: str,
         metadata: dict,
         version: str,
-        file_size: int,
+        size_in_bytes: int,
     ) -> DocumentInfo:
         file_extension = file_name.split(".")[-1].lower()
         if file_extension.upper() not in DocumentType.__members__:
@@ -201,7 +179,7 @@ class IngestionService(Service):
             title=metadata["title"],
             metadata=metadata,
             version=version,
-            size_in_bytes=file_size,
+            size_in_bytes=size_in_bytes,
             ingestion_status="pending",
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -212,8 +190,8 @@ class IngestionService(Service):
         self,
         document_info: DocumentInfo,
     ) -> list[DocumentFragment]:
-        file_name, file_wrapper, file_size = self.providers.file.retrieve_file(
-            document_info.id
+        file_name, file_wrapper, size_in_bytes = (
+            self.providers.file.retrieve_file(document_info.id)
         )
 
         with file_wrapper as file_content_stream:
@@ -226,7 +204,7 @@ class IngestionService(Service):
                         type=document_info.type,
                         metadata={
                             "file_name": file_name,
-                            "file_size": file_size,
+                            "size_in_bytes": size_in_bytes,
                             "document_type": document_info.type.value,
                             **document_info.metadata,
                         },
@@ -402,7 +380,6 @@ class IngestionServiceAdapter:
     @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
         return {
-            "file_data": data["file_data"],
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadata": data["metadata"],
             "document_id": (
@@ -415,12 +392,13 @@ class IngestionServiceAdapter:
                 else None
             ),
             "is_update": data.get("is_update", False),
+            "file_data": data["file_data"],
+            "size_in_bytes": data["size_in_bytes"],
         }
 
     @staticmethod
     def parse_update_files_input(data: dict) -> dict:
         return {
-            "file_datas": data["file_datas"],
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "document_ids": [UUID(doc_id) for doc_id in data["document_ids"]],
             "metadatas": data["metadatas"],

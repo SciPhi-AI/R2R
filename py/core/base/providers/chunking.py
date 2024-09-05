@@ -60,6 +60,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     provider: str = "unstructured_local"  # or unstructured_api
 
     combine_under_n_chars: Optional[int]
+    chunk_max_characters: Optional[int]
     coordinates: bool = False
     encoding: Optional[str]
     extract_image_block_types: Optional[list[str]]

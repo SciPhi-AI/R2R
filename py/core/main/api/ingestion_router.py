@@ -1,4 +1,6 @@
+import base64
 import logging
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
 from uuid import UUID
@@ -7,7 +9,7 @@ import yaml
 from fastapi import Depends, File, Form, UploadFile
 from pydantic import Json
 
-from core.base import ChunkingConfig, R2RException
+from core.base import ChunkingConfig, R2RException, generate_user_document_id
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.providers import OrchestrationProvider
 
@@ -109,11 +111,21 @@ class IngestionRouter(BaseRouter):
 
             messages = []
             for it, file_data in enumerate(file_datas):
+                content_length = len(file_data["content"])
+                file_content = BytesIO(base64.b64decode(file_data["content"]))
+
+                file_data.pop("content", None)
+                document_id = (
+                    document_ids[it]
+                    if document_ids
+                    else generate_user_document_id(
+                        file_data["filename"], auth_user.id
+                    )
+                )
+
                 workflow_input = {
                     "file_data": file_data,
-                    "document_id": (
-                        str(document_ids[it]) if document_ids else None
-                    ),
+                    "document_id": str(document_id),
                     "metadata": metadatas[it] if metadatas else None,
                     "chunking_config": (
                         chunking_config.model_dump_json()
@@ -121,12 +133,22 @@ class IngestionRouter(BaseRouter):
                         else None
                     ),
                     "user": auth_user.model_dump_json(),
+                    "size_in_bytes": content_length,
                     "is_update": False,
                 }
 
                 task_id = r2r_hatchet.client.admin.run_workflow(
                     "ingest-file", {"request": workflow_input}
                 )
+
+                file_name = file_data["filename"]
+                self.service.providers.database.relational.store_file(
+                    document_id,
+                    file_name,
+                    file_content,
+                    file_data["content_type"],
+                )
+
                 messages.append(
                     {
                         "message": "Ingestion task queued successfully.",

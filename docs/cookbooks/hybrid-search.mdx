@@ -6,119 +6,144 @@ icon: 'magnifying-glass'
 
 ## Introduction
 
-R2R's hybrid search combines the strengths of traditional keyword-based searching and modern semantic understanding. This approach provides more contextually accurate and comprehensive results, particularly for complex queries. Here's an example demonstrating how R2R's hybrid search outperforms traditional RAG:
+R2R's hybrid search combines traditional keyword-based searching with modern semantic understanding, providing more accurate and contextually relevant results. This approach is particularly effective for complex queries where both specific terms and overall meaning are crucial.
 
-### Example: UK Exports in 2023
+## How R2R Hybrid Search Works
 
-**Query**: "What were the UK's top exports in 2023?"
+1. **Full-Text Search**: Utilizes PostgreSQL's full-text search with `ts_rank` and `websearch_to_tsquery`.
+2. **Semantic Search**: Performs vector similarity search using the query's embedded representation.
+3. **Reciprocal Rank Fusion (RRF)**: Merges results from full-text and semantic searches using the formula:
+   ```
+   COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
+   COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
+   ```
+4. **Result Ranking**: Orders final results based on the combined RRF score.
 
-**R2R's hybrid search identifies documents mentioning "UK exports" and "2023", whereas semantic search alone might typically find related concepts like trade balance and economic reports**. The hybrid approach ensures that the results are both relevant to the specific year and focused on exports, rather than broader economic topics.
+## Key Features
 
-## Setup
+### Query Expansion
 
-This guide assumes R2R is already installed and the basic [quickstart](/documentation/quickstart) has been completed.
+R2R implements sophisticated query expansion to enhance full-text search:
 
-# Executing a Hybrid Search
-To execute a hybrid search, simply pass the additional flag `use_hybrid_search` the quickstart search command:
+1. Tokenization
+2. Stemming using Snowball Stemmer
+3. Synonym expansion using WordNet
+4. Combination of original words, stems, and synonyms
 
-<Tabs>
-<Tab title="CLI">
-```bash
-r2r search --query="who was aristotle?" --use-hybrid-search
-```
-</Tab>
+### Advanced Full-Text Search
 
-<Tab title="Python">
-```bash
-python -m r2r.main.execution search --query="who was aristotle?" --use-hybrid-search
-```
-</Tab>
+The full-text search component incorporates:
 
-<Tab title="Curl">
-```bash
-curl -X POST http://localhost:7272/v2/search \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "who was aristotle?",
-    "vector_search_settings": {
-      "use_vector_search": true,
-      "search_filters": {},
-      "search_limit": 10,
-      "use_hybrid_search": true
-    },
-    "kg_search_settings": {
-      "use_kg_search": false
-    }
-  }'
-```
-</Tab>
-</Tabs>
+- Expanded query using `to_tsquery`
+- Phrase matching with `phraseto_tsquery`
+- Partial matching using `:*` wildcard
+- Text similarity scoring
 
-```ansi Expected Output:
-{
-  ...
-  'text': 'in taking the results personally.Fierce nerds also tend to be somewhat overconfident, especially\nwhen young. It might seem like it would be a disadvantage to be\nmistaken about one's abilities, but empirically it isn't. Up to a\npoint, confidence is a self-fullfilling prophecy.Another quality you find in most fierce nerds is intelligence. Not\nall nerds are smart, but the fierce ones are always at least\nmoderately so. If they weren't, they wouldn't have the confidence\nto be fierce.'
-},
-{
-  ...
-  'text': 'over a certain size without being fierce, so now that nerds can win\nat business, fierce nerds will increasingly monopolize the really\nbig successes.The bad news is that if it's not exercised, your fierceness will\nturn to bitterness, and you will become an intellectual playground\nbully: the grumpy sysadmin, the forum troll, the \nhater, the shooter\ndown of new ideas.How do you avoid this fate? Work on ambitious projects. If you\nsucceed, it will bring you a kind of satisfaction that neutralizes'
-},
-{
-  ...
-  'text': 'nerds have traditionally solved. As the world progresses, the number\nof things you can win at by getting the right answer increases.\nRecently getting rich became \none of them: 7 of the 8 richest people\nin America are now fierce nerds.Indeed, being a fierce nerd is probably even more helpful in business\nthan in nerds' original territory of scholarship. Fierceness seems\noptional there. Darwin for example doesn't seem to have been\nespecially fierce. Whereas it's impossible to be the CEO of a company'
-},
-...
-```
-The `use_hybrid_search` flag can also be passed as an argument for the RAG method.
+## Configuration
 
-### Sample Code
-Passing the flag above modifies downstream a downstream `VectorSearchSettings` object, which is used as when searching with R2R as shown:
+### VectorSearchSettings
+
+Key settings for vector search configuration:
 
 ```python
-from r2r import R2RBuilder, VectorSearchSettings
-
-app = R2R()
-
-vector_search_settings = VectorSearchSettings(
-    use_hybrid_search = True,
-    ...
-)
-
-search_results = app.search(
-    query="What is AI?", vector_search_settings=vector_search_settings
-)
+class VectorSearchSettings(BaseModel):
+    use_hybrid_search: bool
+    search_limit: int
+    filters: dict[str, Any]
+    hybrid_search_settings: Optional[HybridSearchSettings]
+    # ... other settings
 ```
 
+### HybridSearchSettings
 
-## How Hybrid Search Works
+Specific parameters for hybrid search:
 
-<AccordionGroup >
+```python
+class HybridSearchSettings(BaseModel):
+    full_text_weight: float
+    semantic_weight: float
+    full_text_limit: int
+    rrf_k: int
+```
 
-<Accordion icon="code" title="Implementation Details" defaultOpen={true}>
-R2R's hybrid search algorithm in Postgres combines results from traditional keyword searches and semantic searches using Reciprocal Rank Fusion (RRF):
+## Usage Example
 
-1. **Full-Text Search**:
-   - Uses Postgres's full-text search with `ts_rank` and `websearch_to_tsquery`.
-   - Creates a ranking index (`rank_ix`) for matching documents.
+```python
+from r2r import R2RClient
 
-2. **Semantic Search**:
-   - Ranks documents based on vector similarity to the query vector.
-   - Creates a ranking index (`rank_ix`) based on vector distances.
+client = R2RClient()
 
-3. **Combining Results with RRF**:
-   - Merges full-text and semantic search results.
-   - Calculates final scores using the formula:
-     ```
-     COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
-     COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
-     ```
-   - Balances keyword relevance and semantic similarity for comprehensive results.
-</Accordion>
+vector_settings = {
+    "use_hybrid_search": True,
+    "search_limit": 20,
+    "filters":{"category": {"$eq": "technology"}},
+    "hybrid_search_settings" : {
+        "full_text_weight": 1.0,
+        "semantic_weight": 5.0,
+        "full_text_limit": 200,
+        "rrf_k": 50
+    }
+}
 
-</AccordionGroup>
+results = client.search(
+    query="Who was Aristotle?",
+    vector_search_settings=vector_settings
+)
+print(results)
+```
 
-## Summary
+## Results Comparison
 
-Hybrid search in R2R combines the strengths of traditional keyword-based searching and modern semantic understanding. By integrating full-text and vector-based searches, it provides more contextually accurate and comprehensive results, particularly for complex queries.
+### Basic Vector Search
 
-For detailed setup and basic functionality, refer back to the [R2R Quickstart](/documentation/quickstart). For more advanced usage and customization options, join the [R2R Discord community](https://discord.gg/p6KqD2kjtB).
+```json
+{
+  "results": {
+    "vector_search_results": [
+      {
+        "score": 0.780314067545999,
+        "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...",
+        "metadata": {
+          "title": "aristotle.txt",
+          "version": "v0",
+          "chunk_order": 0
+        }
+      }, ...
+    ]
+  }
+}
+```
+
+### Hybrid Search with RRF
+
+```json
+{
+  "results": {
+    "vector_search_results": [
+      {
+        "score": 0.0185185185185185,
+        "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...",
+        "metadata": {
+          "title": "aristotle.txt",
+          "version": "v0",
+          "chunk_order": 0,
+          "semantic_rank": 1,
+          "full_text_rank": 3
+        }, ...
+      }
+    ]
+  }
+}
+```
+
+## Best Practices
+
+1. Optimize PostgreSQL indexing for both full-text and vector searches
+2. Implement query preprocessing techniques
+3. Regularly update search indices
+4. Monitor performance and adjust weights as needed
+5. Customize synonym expansion and stemming for your domain
+
+## Conclusion
+
+R2R's hybrid search offers a powerful solution for complex information retrieval needs, combining the strengths of keyword matching and semantic understanding. Its flexible configuration and advanced techniques like query expansion and RRF make it adaptable to a wide range of use cases, from technical documentation to broad, context-dependent queries.

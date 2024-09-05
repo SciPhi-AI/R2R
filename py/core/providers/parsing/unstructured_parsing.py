@@ -60,18 +60,17 @@ class UnstructuredParsingProvider(ParsingProvider):
         super().__init__(config)
 
     async def parse(
-        self, document: Document
+        self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
-        data = document.data
-        if isinstance(data, bytes):
-            data = BytesIO(data)
+        if isinstance(file_content, bytes):
+            file_content = BytesIO(file_content)
 
         # TODO - Include check on excluded parsers here.
         t0 = time.time()
         if self.use_api:
             logger.info(f"Using API to parse document {document.id}")
             files = self.shared.Files(
-                content=data.read(),
+                content=file_content.read(),
                 file_name=document.metadata.get("title", "unknown_file"),
             )
 
@@ -88,7 +87,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 f"Using local unstructured to parse document {document.id}"
             )
             elements = self.partition(
-                file=data, **self.config.chunking_config.model_dump()
+                file=file_content, **self.config.chunking_config.model_dump()
             )
 
         for iteration, element in enumerate(elements):
@@ -114,6 +113,11 @@ class UnstructuredParsingProvider(ParsingProvider):
             # nullifies the need for chunking in the pipeline
             document.metadata["partitioned_by_unstructured"] = True
 
+            print(f"found a text:\n\n{text}")
+            print("-" * 100)
+
+            if text == "":
+                continue
             # creating the text extraction
             yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),

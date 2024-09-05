@@ -554,7 +554,7 @@ class Collection:
             raise KeyError("no item found with requested id")
         return row[0]
 
-    def query(
+    def semantic_search(
         self,
         vector: list[float],
         search_settings: VectorSearchSettings,
