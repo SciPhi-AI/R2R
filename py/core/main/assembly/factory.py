@@ -199,6 +199,29 @@ class R2RProviderFactory:
         return embedding_provider
 
     @staticmethod
+    def create_file_provider(
+        file_config: FileConfig,
+        db_provider: Any,
+        *args,
+        **kwargs,
+    ) -> FileProvider:
+        file_provider: Optional[FileProvider] = None
+        if file_config.provider == "postgres":
+            from core.providers import PostgresFileProvider
+
+            logger.info("Initializing PostgresFileProvider")
+
+            file_provider = PostgresFileProvider(db_provider)
+        elif file_config.provider is None:
+            return None
+        else:
+            raise ValueError(
+                f"File provider {file_config.provider} not supported."
+            )
+
+        return file_provider
+
+    @staticmethod
     def create_llm_provider(
         llm_config: CompletionConfig, *args, **kwargs
     ) -> CompletionProvider:
@@ -245,28 +268,6 @@ class R2RProviderFactory:
         else:
             raise ValueError(
                 f"KG provider {kg_config.provider} not supported."
-            )
-
-    @staticmethod
-    def create_file_provider(
-        file_config: FileConfig,
-        database_provider: DatabaseProvider,
-        *args,
-        **kwargs,
-    ) -> FileProvider:
-        if file_config.provider == "postgres":
-            from core.providers.database.file import PostgresFileProvider
-
-            return PostgresFileProvider(
-                file_config,
-                database_provider.vx,
-                database_provider.collection_name,
-            )
-        elif file_config.provider is None:
-            return None
-        else:
-            raise ValueError(
-                f"File provider {file_config.provider} not supported."
             )
 
     def create_providers(

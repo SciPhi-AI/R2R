@@ -31,6 +31,8 @@ __all__ = [
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",
+    # File abstractions
+    "FileConfig",
     # KG abstractions
     "Entity",
     "KGExtraction",
