@@ -27,7 +27,7 @@ class MessageType(Enum):
 class CompletionRecord(BaseModel):
     message_id: UUID
     message_type: MessageType
-    timestamp: datetime = (datetime.now(timezone.utc),)
+    timestamp: datetime = datetime.now(timezone.utc)
     feedback: Optional[List[str]] = None
     score: Optional[List[float]] = None
     completion_start_time: Optional[datetime] = None

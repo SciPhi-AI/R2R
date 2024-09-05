@@ -204,7 +204,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             RunInfoLog(
                 run_id=UUID(row[0]),
                 run_type=row[1],
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(timezone.utc).timestamp(),
                 user_id=UUID(row[3]),
             )
             for row in rows
@@ -569,7 +569,7 @@ class RedisRunLoggingProvider(RunLoggingProvider):
         key: str,
         value: str,
     ):
-        timestamp = datetime.now().timestamp()
+        timestamp = datetime.now(timezone.utc).timestamp()
         log_entry = {
             "timestamp": timestamp,
             "run_id": str(run_id),
@@ -586,7 +586,7 @@ class RedisRunLoggingProvider(RunLoggingProvider):
         run_type: RunType,
         user_id: UUID,
     ):
-        timestamp = datetime.now().timestamp()
+        timestamp = datetime.now(timezone.utc).timestamp()
         log_entry = {
             "timestamp": timestamp,
             "run_id": str(run_id),
