@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -19,14 +20,13 @@ from core.base import (
     generate_id_from_label,
 )
 
+from core.base.abstractions.base import R2RSerializable
+
 logger = logging.getLogger(__name__)
 
-class FallbackElement(BaseModel):
+class FallbackElement(R2RSerializable):
     text: str
     metadata: dict[str, Any]
-
-class FallbackResponse(BaseModel):
-    elements: list[FallbackElement]
 
 class UnstructuredParsingProvider(ParsingProvider):
 
@@ -118,36 +118,38 @@ class UnstructuredParsingProvider(ParsingProvider):
 
     async def parse_fallback(
         self, file_content: bytes, document: Document
-    ) -> AsyncGenerator[FallbackResponse, None]:
-        if isinstance(file_content, bytes):
-            file_content = BytesIO(file_content)
-
+    ) -> AsyncGenerator[FallbackElement, None]:
+        
         texts = self.parsers[document.type].ingest(file_content)
 
-        for chunk_id, text in enumerate(texts):
-            yield FallbackResponse(
-                elements=[FallbackElement(text=text, metadata={"chunk_id": chunk_id})]
-            )
+        chunk_id = 0
+        async for text in texts:
+            if text and text != "":
+                yield FallbackElement(text=text, metadata={"chunk_id": chunk_id})
+                chunk_id += 1
 
     async def parse(
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
-        if isinstance(file_content, bytes):
-            file_content = BytesIO(file_content)
 
+        t0 = time.time()
         if document.type in self.AVAILABLE_PARSERS.keys():
-            elements = self.parse_fallback(file_content, document)
+            logger.info(f"Parsing document {document.id} of type {document.type} with fallback parser")
+            elements = []
+            async for element in self.parse_fallback(file_content, document):
+                elements.append(element)
         else:
+            logger.info(f"Parsing document {document.id} of type {document.type} with unstructured")
+            if isinstance(file_content, bytes):
+                file_content = BytesIO(file_content)
+
             # TODO - Include check on excluded parsers here.
-            t0 = time.time()
             if self.use_api:
                 logger.info(f"Using API to parse document {document.id}")
                 files = self.shared.Files(
                     content=file_content.read(),
                     file_name=document.metadata.get("title", "unknown_file")
                 )
-
-
 
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
@@ -169,6 +171,9 @@ class UnstructuredParsingProvider(ParsingProvider):
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
                 element = element.to_dict()
+
+            if element.get("text", "") == "":
+                continue
 
             metadata = copy(document.metadata)
             for key, value in element.items():

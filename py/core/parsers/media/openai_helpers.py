@@ -2,6 +2,9 @@
 
 import requests
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def process_frame_with_openai(
     data: bytes,
@@ -39,7 +42,6 @@ def process_frame_with_openai(
     response_json = response.json()
     return response_json["choices"][0]["message"]["content"]
 
-
 def process_audio_with_openai(
     audio_file,
     api_key: str,
@@ -55,4 +57,4 @@ def process_audio_with_openai(
     )
     transcription = transcription_response.json()
 
-    return transcription.text
+    return transcription["text"]

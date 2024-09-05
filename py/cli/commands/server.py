@@ -200,6 +200,12 @@ def generate_report():
     default=None,
     help="Path to a custom R2R configuration file",
 )
+@click.option(
+    "--debug",
+    is_flag=True,
+    default=False,
+    help="Run in debug mode. Only for development.",
+)
 def serve(
     host,
     port,
@@ -212,9 +218,14 @@ def serve(
     image,
     config_name,
     config_path,
+    debug,
 ):
     """Start the R2R server."""
     load_dotenv()
+
+    if image and debug:
+        os.environ["R2R_IMAGE"] = image
+        os.system(f'docker build -t {image} -f Dockerfile.unstructured .')
 
     if config_path:
         config_path = os.path.abspath(config_path)

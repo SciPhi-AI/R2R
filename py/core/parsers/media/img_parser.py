@@ -8,7 +8,7 @@ from PIL import Image
 from core.base.abstractions.document import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_frame_with_openai
-
+from core.telemetry.telemetry_decorator import telemetry_event
 
 class ImageParser(AsyncParser[DataType]):
     """A parser for image data."""
@@ -34,8 +34,10 @@ class ImageParser(AsyncParser[DataType]):
         )
         return img_byte_arr.getvalue()
 
+    @telemetry_event("ingest_image")
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
+
         if isinstance(data, bytes):
             # Resize the image if it's too large
             if len(data) > self.max_image_size:
