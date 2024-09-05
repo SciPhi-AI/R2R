@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import AsyncGenerator, Optional, Union
 
-from pydantic import Field
-
 from ..abstractions.document import DocumentExtraction
 from .base import Provider, ProviderConfig
 
@@ -59,13 +57,36 @@ class ChunkingConfig(ProviderConfig):
 
 
 class UnstructuredChunkingConfig(ChunkingConfig):
-    
-    from unstructured_client.models.shared import PartitionParameters
-    
     provider: str = "unstructured_local"  # or unstructured_api
-    chunking_config: PartitionParameters = Field(
-        default_factory=PartitionParameters
-    )
+
+    combine_under_n_chars: Optional[int]
+    chunk_max_characters: Optional[int]
+    coordinates: bool = False
+    encoding: Optional[str]
+    extract_image_block_types: Optional[list[str]]
+    gz_uncompressed_content_type: Optional[str]
+    hi_res_model_name: Optional[str]
+    include_orig_elements: Optional[bool]
+    include_page_breaks: bool
+
+    languages: Optional[list[str]]
+    max_characters: Optional[int]
+    multipage_sections: bool = True
+    new_after_n_chars: Optional[int]
+    ocr_languages: Optional[list[str]]
+    output_format: str = "application/json"
+    overlap: int = 0
+    overlap_all: bool = False
+    pdf_infer_table_structure: bool = True
+
+    similarity_threshold: Optional[float]
+    skip_infer_table_types: Optional[list[str]]
+    split_pdf_concurrency_level: int = 5
+    split_pdf_page: bool = True
+    starting_page_number: Optional[int]
+    strategy: str = "auto"
+    unique_element_ids: bool = False
+    xml_keep_tags: bool = False
 
     def validate(self) -> None:
         super().validate()

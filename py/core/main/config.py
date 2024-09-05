@@ -11,7 +11,7 @@ from ..base.abstractions.llm import GenerationConfig
 from ..base.agent.agent import AgentConfig
 from ..base.logging.run_logger import LoggingConfig
 from ..base.providers.auth import AuthConfig
-from ..base.providers.chunking import ChunkingConfig, UnstructuredChunkingConfig
+from ..base.providers.chunking import ChunkingConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
 from ..base.providers.embedding import EmbeddingConfig
@@ -55,7 +55,7 @@ class R2RConfig:
             "kg_enrichment_settings",
         ],
         "parsing": ["provider", "excluded_parsers"],
-        "chunking": ["provider"],
+        "chunking": ["provider", "method"],
         "completion": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
@@ -123,12 +123,7 @@ class R2RConfig:
         )
 
         self.auth = AuthConfig.create(**self.auth)
-
-        if self.parsing['provider'] == 'unstructured_local' or self.parsing['provider'] == 'unstructured_api':
-            self.chunking = UnstructuredChunkingConfig.create(**self.chunking)
-        else:    
-            self.chunking = ChunkingConfig.create(**self.chunking)
-
+        self.chunking = ChunkingConfig.create(**self.chunking)
         self.crypto = CryptoConfig.create(**self.crypto)
         self.database = DatabaseConfig.create(**self.database)
         self.embedding = EmbeddingConfig.create(**self.embedding)
