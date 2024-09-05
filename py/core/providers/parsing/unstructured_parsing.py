@@ -24,13 +24,15 @@ from core.base.abstractions.base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
+
 class FallbackElement(R2RSerializable):
     text: str
     metadata: dict[str, Any]
 
+
 class UnstructuredParsingProvider(ParsingProvider):
 
-    AVAILABLE_PARSERS = { 
+    AVAILABLE_PARSERS = {
         # Commented filetypes go to unstructured, uncommented fallback to R2R parsers (LLM based)
         # DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
         # DocumentType.DOCX: [parsers.DOCXParser],
@@ -119,13 +121,15 @@ class UnstructuredParsingProvider(ParsingProvider):
     async def parse_fallback(
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[FallbackElement, None]:
-        
+
         texts = self.parsers[document.type].ingest(file_content)
 
         chunk_id = 0
         async for text in texts:
             if text and text != "":
-                yield FallbackElement(text=text, metadata={"chunk_id": chunk_id})
+                yield FallbackElement(
+                    text=text, metadata={"chunk_id": chunk_id}
+                )
                 chunk_id += 1
 
     async def parse(
@@ -134,12 +138,16 @@ class UnstructuredParsingProvider(ParsingProvider):
 
         t0 = time.time()
         if document.type in self.AVAILABLE_PARSERS.keys():
-            logger.info(f"Parsing document {document.id} of type {document.type} with fallback parser")
+            logger.info(
+                f"Parsing document {document.id} of type {document.type} with fallback parser"
+            )
             elements = []
             async for element in self.parse_fallback(file_content, document):
                 elements.append(element)
         else:
-            logger.info(f"Parsing document {document.id} of type {document.type} with unstructured")
+            logger.info(
+                f"Parsing document {document.id} of type {document.type} with unstructured"
+            )
             if isinstance(file_content, bytes):
                 file_content = BytesIO(file_content)
 
@@ -148,7 +156,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 logger.info(f"Using API to parse document {document.id}")
                 files = self.shared.Files(
                     content=file_content.read(),
-                    file_name=document.metadata.get("title", "unknown_file")
+                    file_name=document.metadata.get("title", "unknown_file"),
                 )
 
                 req = self.operations.PartitionRequest(
@@ -165,7 +173,9 @@ class UnstructuredParsingProvider(ParsingProvider):
                 )
                 elements = self.partition(
                     file=file_content,
-                    **self.config.chunking_config.extra_fields["chunking_config"],
+                    **self.config.chunking_config.extra_fields[
+                        "chunking_config"
+                    ],
                 )
 
         for iteration, element in enumerate(elements):

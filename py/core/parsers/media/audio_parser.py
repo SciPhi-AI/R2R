@@ -5,6 +5,7 @@ from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_audio_with_openai
 from core.telemetry.telemetry_decorator import telemetry_event
 
+
 class AudioParser(AsyncParser[bytes]):
     """A parser for audio data."""
 

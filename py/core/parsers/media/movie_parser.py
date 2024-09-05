@@ -9,6 +9,7 @@ from core.parsers.media.openai_helpers import (
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
+
 class MovieParser(AsyncParser):
     """A parser for movie data."""
 

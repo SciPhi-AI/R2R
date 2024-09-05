@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from core.base.api.models.base import ResultsWrapper
 
+
 class KGCreationResponse(BaseModel):
     message: str
     task_id: UUID
@@ -16,6 +17,7 @@ class KGCreationResponse(BaseModel):
                 "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
             }
         }
+
 
 class KGEnrichmentResponse(BaseModel):
     message: str

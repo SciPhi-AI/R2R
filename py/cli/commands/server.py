@@ -225,7 +225,7 @@ def serve(
 
     if image and debug:
         os.environ["R2R_IMAGE"] = image
-        os.system(f'docker build -t {image} -f Dockerfile.unstructured .')
+        os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
 
     if config_path:
         config_path = os.path.abspath(config_path)

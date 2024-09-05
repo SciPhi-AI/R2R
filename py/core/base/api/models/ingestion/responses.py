@@ -7,6 +7,7 @@ from core.base.api.models.base import ResultsWrapper
 
 T = TypeVar("T")
 
+
 class IngestionResponse(BaseModel):
     message: str = Field(
         ...,
