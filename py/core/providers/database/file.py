@@ -1,3 +1,4 @@
+import io
 import logging
 from contextlib import contextmanager
 from typing import BinaryIO, Optional
@@ -109,6 +110,7 @@ class FileMixin(DatabaseMixin):
                 message=f"Failed to upsert file for document {document_id}",
             )
 
+    # TODO: Move this to the DatabaseMixin class. Causing problems due to async context management with lobjects
     def store_file(self, document_id, file_name, file_content, file_type=None):
         file_size = file_content.getbuffer().nbytes
 
@@ -144,13 +146,10 @@ class FileMixin(DatabaseMixin):
             f"""
         SELECT file_name, file_oid, file_size
         FROM {self._get_table_name('file_storage')}
-        WHERE document_id = :document_id
+        WHERE document_id = %(document_id)s
         """
         )
-
-        result = self.execute_query(
-            query, {"document_id": document_id}
-        ).fetchone()
+        result = self.execute_lob_query(query, {"document_id": document_id})
         if not result:
             raise R2RException(
                 status_code=404,
@@ -158,68 +157,32 @@ class FileMixin(DatabaseMixin):
             )
 
         file_name, oid, file_size = result
-
-        class LOBjectWrapper:
-            def __init__(self, vx, oid):
-                self.vx = vx
-                self.oid = oid
-                self.lobj = None
-                self.sess = None
-
-            def __enter__(self):
-                self.sess = self.vx.Session()
-                conn = self.sess.connection().connection
-                self.lobj = conn.lobject(oid=self.oid, mode="rb")
-                return self.lobj
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                if self.lobj:
-                    self.lobj.close()
-                if self.sess:
-                    self.sess.close()
-
-        return file_name, LOBjectWrapper(self.vx, oid), file_size
+        file_content = self.read_lob(oid)
+        return file_name, io.BytesIO(file_content), file_size
 
     def delete_file(self, document_id: UUID) -> bool:
-        try:
-            query = text(
-                f"""
-                SELECT file_oid FROM {self._get_table_name('file_storage')}
-                WHERE document_id = :document_id
-                """
-            )
-            result = self.execute_query(
-                query, {"document_id": document_id}
-            ).fetchone()
+        query = f"""
+        SELECT file_oid FROM {self._get_table_name('file_storage')}
+        WHERE document_id = :document_id
+        """
+        result = self.execute_lob_query(query, {"document_id": document_id})
 
-            if result is None:
-                logger.warning(
-                    f"File for document {document_id} not found for deletion"
-                )
-                return False
-
-            oid = result[0]
-
-            def delete_large_object(conn):
-                with conn.cursor() as cur:
-                    cur.execute("SELECT lo_unlink(%s)", (oid,))
-
-            self.execute_with_connection(delete_large_object)
-
-            delete_query = text(
-                f"""
-                DELETE FROM {self._get_table_name('file_storage')}
-                WHERE document_id = :document_id
-                """
-            )
-            self.execute_query(delete_query, {"document_id": document_id})
-
-            return True
-        except Exception as e:
+        if result is None:
             raise R2RException(
-                status_code=500,
-                message=f"Failed to delete file for document {document_id}: {e}",
+                status_code=404,
+                message=f"File for document {document_id} not found",
             )
+
+        oid = result[0]
+        self.delete_lob(oid)
+
+        delete_query = f"""
+        DELETE FROM {self._get_table_name('file_storage')}
+        WHERE document_id = :document_id
+        """
+        self.execute_query(delete_query, {"document_id": document_id})
+
+        return True
 
     def get_files_overview(
         self,

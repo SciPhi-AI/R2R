@@ -8,8 +8,8 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [chunking]
-provider = "r2r"
-method = "recursive"
+provider = "unstructured_local"
+method = "by_title"
 
 [chunking.chunking_config]
 
@@ -54,7 +54,7 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [parsing]
-provider = "r2r"
+provider = "unstructured_local"
 excluded_parsers = ["mp4"]
 
 [prompt]
