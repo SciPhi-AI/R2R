@@ -17,6 +17,8 @@ from core.base import (
     DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
+    FileConfig,
+    FileProvider,
     KGProvider,
     ParsingConfig,
     ParsingProvider,
@@ -109,10 +111,10 @@ class R2RProviderFactory:
             from core.providers import R2RChunkingProvider
 
             return R2RChunkingProvider(chunking_config)
-        elif (
-            chunking_config.provider == "unstructured_local"
-            or chunking_config.provider == "unstructured_api"
-        ):
+        elif chunking_config.provider in [
+            "unstructured_local",
+            "unstructured_api",
+        ]:
             from core.providers import UnstructuredChunkingProvider
 
             return UnstructuredChunkingProvider(chunking_config)
@@ -245,6 +247,28 @@ class R2RProviderFactory:
                 f"KG provider {kg_config.provider} not supported."
             )
 
+    @staticmethod
+    def create_file_provider(
+        file_config: FileConfig,
+        database_provider: DatabaseProvider,
+        *args,
+        **kwargs,
+    ) -> FileProvider:
+        if file_config.provider == "postgres":
+            from core.providers.database.file import PostgresFileProvider
+
+            return PostgresFileProvider(
+                file_config,
+                database_provider.vx,
+                database_provider.collection_name,
+            )
+        elif file_config.provider is None:
+            return None
+        else:
+            raise ValueError(
+                f"File provider {file_config.provider} not supported."
+            )
+
     def create_providers(
         self,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
@@ -256,6 +280,7 @@ class R2RProviderFactory:
         database_provider_override: Optional[DatabaseProvider] = None,
         parsing_provider_override: Optional[ParsingProvider] = None,
         chunking_config: Optional[ChunkingProvider] = None,
+        file_provider_override: Optional[FileProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -303,6 +328,9 @@ class R2RProviderFactory:
         chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
+        file_provider = file_provider_override or self.create_file_provider(
+            self.config.file, database_provider, *args, **kwargs
+        )
 
         orchestration_provider = self.create_orchestration_provider()
         return R2RProviders(
@@ -315,6 +343,7 @@ class R2RProviderFactory:
             prompt=prompt_provider,
             kg=kg_provider,
             orchestration=orchestration_provider,
+            file=file_provider,
         )
 
 
@@ -378,7 +407,10 @@ class R2RPipeFactory:
     def create_parsing_pipe(self, *args, **kwargs) -> Any:
         from core.pipes import ParsingPipe
 
-        return ParsingPipe(parsing_provider=self.providers.parsing)
+        return ParsingPipe(
+            parsing_provider=self.providers.parsing,
+            file_provider=self.providers.file,
+        )
 
     def create_chunking_pipe(self, *args, **kwargs) -> Any:
         from core.pipes import ChunkingPipe

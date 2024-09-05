@@ -212,12 +212,11 @@ class IngestionService(Service):
         self,
         document_info: DocumentInfo,
     ) -> list[DocumentFragment]:
-        file_name, file_wrapper, file_size = (
-            self.providers.database.relational.retrieve_file(document_info.id)
+        file_name, file_wrapper, file_size = self.providers.file.retrieve_file(
+            document_info.id
         )
 
         with file_wrapper as file_content_stream:
-            content = file_content_stream.read()
             return await self.pipes.parsing_pipe.run(
                 input=self.pipes.parsing_pipe.Input(
                     message=Document(
@@ -225,7 +224,6 @@ class IngestionService(Service):
                         group_ids=document_info.group_ids,
                         user_id=document_info.user_id,
                         type=document_info.type,
-                        data=content,
                         metadata={
                             "file_name": file_name,
                             "file_size": file_size,

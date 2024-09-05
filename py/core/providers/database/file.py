@@ -6,6 +6,9 @@ from uuid import UUID
 from psycopg2 import Error as PostgresError
 from sqlalchemy import text
 
+from core.base.providers import DatabaseConfig, FileProvider
+from core.providers.database.vecs import Client
+
 from .base import DatabaseMixin
 
 logger = logging.getLogger(__name__)
@@ -286,3 +289,37 @@ class FileMixin(DatabaseMixin):
         except Exception as e:
             logger.error(f"Failed to get files overview: {e}")
             raise
+
+
+class PostgresFileProvider(FileProvider, FileMixin):
+    def __init__(
+        self, config: DatabaseConfig, vx: Client, collection_name: str
+    ):
+        FileProvider.__init__(self, config)
+        self.vx = vx
+        self.collection_name = collection_name
+
+    def store_file(self, document_id, file_name, file_content, file_type=None):
+        return FileMixin.store_file(
+            self, document_id, file_name, file_content, file_type
+        )
+
+    def retrieve_file(self, document_id):
+        return FileMixin.retrieve_file(self, document_id)
+
+    def delete_file(self, document_id):
+        return self.delete_file(document_id)
+
+    def get_files_overview(
+        self,
+        filter_document_ids=None,
+        filter_file_names=None,
+        offset=0,
+        limit=100,
+    ):
+        return FileMixin.get_files_overview(
+            self, filter_document_ids, filter_file_names, offset, limit
+        )
+
+    def _get_table_name(self, base_name: str) -> str:
+        return f"{base_name}_{self.collection_name}"
