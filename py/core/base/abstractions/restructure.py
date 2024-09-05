@@ -9,6 +9,11 @@ from .llm import GenerationConfig
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
+    max_knowledge_triples: int = Field(
+        default=100,
+        description="The maximum number of knowledge triples to extract from each chunk.",
+    )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph enrichment.",
@@ -17,11 +22,6 @@ class KGCreationSettings(R2RSerializable):
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
-
-    max_knowledge_triples: int = Field(
-        default=100,
-        description="The maximum number of knowledge triples to extract from each chunk.",
-    )
 
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
