@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -135,7 +135,7 @@ class RetrievalService(Service):
                     if isinstance(value, UUID):
                         vector_search_settings.filters[filter] = str(value)
 
-                completion_start_time = datetime.now()
+                completion_start_time = datetime.now(timezone.utc)
                 message_id = generate_id_from_label(
                     f"{query}-{completion_start_time.isoformat()}"
                 )
@@ -187,7 +187,9 @@ class RetrievalService(Service):
                     if hasattr(results[0], "completion")
                     else None
                 )
-                completion_record.completion_end_time = datetime.now()
+                completion_record.completion_end_time = datetime.now(
+                    timezone.utc
+                )
 
                 await self.logging_connection.log(
                     run_id=run_id,

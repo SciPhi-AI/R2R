@@ -1,5 +1,5 @@
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 import pytest
@@ -64,7 +64,7 @@ def test_group(pg_db):
 def test_user(pg_db):
 
     created_user = pg_db.relational.create_user(
-        email=f"test_{datetime.now().timestamp()}@example.com",
+        email=f"test_{datetime.now(timezone.utc).timestamp()}@example.com",
         password="password",
     )
     yield created_user

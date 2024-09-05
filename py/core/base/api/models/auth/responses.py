@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -19,8 +19,8 @@ class UserResponse(R2RSerializable):
     email: str
     is_active: bool = True
     is_superuser: bool = False
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
+    created_at: datetime = (datetime.now(timezone.utc),)
+    updated_at: datetime = (datetime.now(timezone.utc),)
     is_verified: bool = False
     group_ids: list[UUID] = []
 

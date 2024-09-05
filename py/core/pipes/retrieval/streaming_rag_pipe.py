@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Generator, Optional
 from uuid import UUID
 
@@ -89,7 +89,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
 
             completion_record.search_results = search_results
             completion_record.llm_response = response
-            completion_record.completion_end_time = datetime.now()
+            completion_record.completion_end_time = datetime.now(timezone.utc)
             await self.log_completion_record(run_id, completion_record)
 
     async def _yield_chunks(

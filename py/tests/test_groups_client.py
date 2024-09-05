@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -7,7 +7,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
-from core import R2RApp, R2RBuilder, R2REngine, Token, UserResponse
+from core import R2RApp, R2RBuilder, Token, UserResponse
 from core.base import GroupResponse
 from r2r import R2RClient
 
@@ -25,8 +25,8 @@ def create_superuser(email: str, password: str):
         name="Test Superuser",
         bio="Test Superuser Bio",
         profile_picture="http://example.com/superuser_pic.jpg",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
 
 
@@ -66,8 +66,8 @@ def mock_db():
             name=user.name,
             bio=user.bio,
             profile_picture=user.profile_picture,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
     db.relational.update_user.side_effect = mock_update_user
@@ -77,8 +77,8 @@ def mock_db():
             group_id=uuid.uuid4(),
             name=kwargs.get("name", "Test Group"),
             description=kwargs.get("description", "A test group"),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         ).dict()
 
     db.relational.create_group = MagicMock(side_effect=mock_create_group)
@@ -88,8 +88,8 @@ def mock_db():
             group_id=group_id,
             name="Test Group",
             description="A test group",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         ).dict()
 
     db.relational.get_group = MagicMock(side_effect=mock_get_group)
@@ -99,8 +99,8 @@ def mock_db():
             group_id=group_id,
             name=name,
             description=description,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         ).dict()
 
     db.relational.update_group = MagicMock(side_effect=mock_update_group)
@@ -113,8 +113,8 @@ def mock_db():
                 group_id=uuid.uuid4(),
                 name=f"Group {i}",
                 description=f"Description {i}",
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             ).dict()
             for i in range(1, 3)
         ]
@@ -132,8 +132,8 @@ def mock_db():
                 is_active=True,
                 is_superuser=True,
                 is_verified=True,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             ),
             UserResponse(
                 id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
@@ -142,8 +142,8 @@ def mock_db():
                 is_active=True,
                 is_superuser=True,
                 is_verified=True,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             ),
         ]
     )
@@ -155,8 +155,8 @@ def mock_db():
                 "group_id": str(uuid.uuid4()),
                 "name": f"Group {i}",
                 "description": f"Description {i}",
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow(),
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc),
                 "user_count": i * 2,
                 "document_count": i * 2,
             }

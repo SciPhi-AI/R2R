@@ -2,7 +2,7 @@ import base64
 import functools
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any, Callable, Coroutine, Optional
 from uuid import UUID
@@ -203,8 +203,8 @@ class IngestionService(Service):
             version=version,
             size_in_bytes=file_size,
             ingestion_status="pending",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
     @ingestion_step("parsing")

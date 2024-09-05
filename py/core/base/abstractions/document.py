@@ -1,14 +1,13 @@
 """Abstractions for documents and their extractions."""
 
-import base64
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from pydantic import Field, validator
+from pydantic import Field
 
 from .base import R2RSerializable
 
@@ -93,7 +92,7 @@ class DocumentInfo(R2RSerializable):
 
     def convert_to_db_entry(self):
         """Prepare the document info for database entry, extracting certain fields from metadata."""
-        now = datetime.now()
+        now = (datetime.now(timezone.utc),)
 
         return {
             "document_id": self.id,

@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from abc import abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -204,7 +204,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             RunInfoLog(
                 run_id=UUID(row[0]),
                 run_type=row[1],
-                timestamp=datetime.fromisoformat(row[2]),
+                timestamp=datetime.now(timezone.utc),
                 user_id=UUID(row[3]),
             )
             for row in rows

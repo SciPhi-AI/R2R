@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, ClassVar, Dict, Optional, Type, Union
 from uuid import UUID
@@ -429,8 +429,8 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool = True
     is_superuser: bool = False
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
+    created_at: datetime = datetime.now(timezone.utc)
+    updated_at: datetime = datetime.now(timezone.utc)
     is_verified: bool = False
     group_ids: list[UUID] = []
 

@@ -2,7 +2,7 @@ import asyncio
 import io
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
@@ -126,8 +126,8 @@ async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
             metadata={},
             title=str(document.id),
             type="txt",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             ingestion_status="success",
         )
     ]

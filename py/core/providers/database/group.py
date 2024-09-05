@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -36,7 +36,7 @@ class GroupMixin(DatabaseMixin):
         return bool(result)
 
     def create_group(self, name: str, description: str = "") -> GroupResponse:
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         query = f"""
             INSERT INTO {self._get_table_name('groups')} (name, description, created_at, updated_at)
             VALUES (:name, :description, :created_at, :updated_at)

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from .base import DatabaseMixin, QueryBuilder
@@ -21,7 +21,7 @@ class BlacklistedTokensMixin(DatabaseMixin):
 
     def blacklist_token(self, token: str, current_time: datetime = None):
         if current_time is None:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
 
         query, params = (
             QueryBuilder(self._get_table_name("blacklisted_tokens"))
@@ -47,7 +47,7 @@ class BlacklistedTokensMixin(DatabaseMixin):
         current_time: Optional[datetime] = None,
     ):
         if current_time is None:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
         expiry_time = current_time - timedelta(hours=max_age_hours)
 
         query, params = (

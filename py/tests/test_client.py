@@ -1,9 +1,9 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi import Body, Depends
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
@@ -33,8 +33,8 @@ def create_user(email: str, password: str):
         name="Test User",
         bio="Test Bio",
         profile_picture="http://example.com/pic.jpg",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
 
 
@@ -107,8 +107,8 @@ def mock_db():
             title=f"Document {i}",
             type="txt",
             group_ids=[uuid.uuid4()],
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             version="1",
             metadata={},
             size_in_bytes=1000,
