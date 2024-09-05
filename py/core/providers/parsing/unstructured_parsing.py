@@ -1,10 +1,10 @@
 import logging
 import os
 import time
+from copy import copy
 from io import BytesIO
 from typing import AsyncGenerator
 
-from unstructured.chunking.basic import chunk_elements
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
@@ -88,30 +88,27 @@ class UnstructuredParsingProvider(ParsingProvider):
                 f"Using local unstructured to parse document {document.id}"
             )
             elements = self.partition(
-                file=file_content, **self.config.chunking_config.extra_fields['chunking_config']
-            )            
-        
+                file=file_content,
+                **self.config.chunking_config.extra_fields["chunking_config"],
+            )
+
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
                 element = element.to_dict()
 
+            metadata = copy(document.metadata)
             for key, value in element.items():
                 if key == "text":
                     text = value
                 elif key == "metadata":
                     for k, v in value.items():
-                        if k not in document.metadata:
-                            document.metadata[k] = v
-                        else:
-                            document.metadata[f"unstructured_{k}"] = v
-                elif key in document.metadata:
-                    document.metadata[f"unstructured_{key}"] = value
-                else:
-                    document.metadata[key] = value
+                        if k not in metadata:
+                            if k != "orig_elements":
+                                metadata[f"unstructured_{k}"] = v
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline
-            document.metadata["partitioned_by_unstructured"] = True
+            metadata["partitioned_by_unstructured"] = True
 
             # creating the text extraction
             yield DocumentExtraction(
@@ -120,7 +117,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 user_id=document.user_id,
                 group_ids=document.group_ids,
                 data=text,
-                metadata=document.metadata,
+                metadata=metadata,
             )
 
         logger.debug(

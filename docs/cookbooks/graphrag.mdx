@@ -6,11 +6,13 @@ icon: 'signal'
 
 ## Introduction
 
-GraphRAG is a powerful feature of R2R that allows you to perform graph-based search and retrieval. This guide will walk you through the process of setting up and using Graph RAG using R2R.
+GraphRAG is a powerful feature of R2R that allows you to perform graph-based search and retrieval. This guide will walk you through the process of setting it up and running your first queries.
 
 
-![YC S24 Knowledge Graph](../images/yc_s24.png)
 
+<Frame caption="An example knowledge graph constructed from companies in the YC directory.">
+  <img src="../images/yc_s24.png" />
+</Frame>
 
 <Note>
 Note that graph construction may take long for local LLMs, we recommend using cloud LLMs for faster results.
@@ -27,24 +29,17 @@ r2r serve --config-name=neo4j_kg
 
 <Accordion icon="gear" title="Configuration: neo4j_kg">
 ``` toml
-[chunking] # use larger chunk sizes for kg extraction
-provider = "r2r"
-method = "recursive"
-chunk_size = 4096
-chunk_overlap = 200
+[chunking]
+provider = "unstructured_local"
+method = "by_title"
 
-
-[completion]
-provider = "litellm"
-concurrent_request_limit = 256
-
-  [completion.generation_config]
-  model = "gpt-4o-mini"
-  temperature = 0.1
-  top_p = 1
-  max_tokens_to_sample = 1_024
-  stream = false
-  add_generation_kwargs = { }
+[chunking.chunking_config]
+    strategy = "auto"
+    chunking_strategy = "basic" 
+    new_after_n_chars = 512
+    max_characters = 1_024
+    combine_under_n_chars = 128
+    overlap = 20
 
 [kg]
 provider = "neo4j"
@@ -145,27 +140,48 @@ tool_names = ["search"]
 
 ## Ingesting files
 
-You can ingest the sample aristotle file as follows:
+We begin the cookbook by ingesting the default sample file `aristotle.txt` used across R2R tutorials and cookbooks:
 
-```
+```bash
 r2r ingest-sample-file
 ```
 
-You can also ingest your own files.
-
-```
-r2r ingest-files /path/to/your/files
+```bash Example Response
+[{'message': 'Ingestion task queued successfully.', 'task_id': '18e9fcdf-165d-481c-9d7b-18dd18d6df7c'}]
 ```
 
-This step will ingest your files into the database and enable semantic search over them. In order to create the graph and perform graphrag, you need to create the knowledge graph and enrich it.
+You can also ingest your own files:
 
+```
+r2r ingest-files /path/to/your/files_or_directory
+```
+
+The initial ingestion step adds parses the given documents and inserts them into R2R's relational and vector databases, enabling document management and semantic search over them. The `aristotle.txt` example file is typically ingested in under 10s. You can confirm ingestion is complete by querying the documents overview table:
+
+```bash
+r2r documents-overview
+```
+
+```bash Example Response
+{'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 'title': 'aristotle.txt', 'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 'type': 'txt', 'created_at': '2024-09-05T18:20:47.921933Z', 'updated_at': '2024-09-05T18:20:47.921938Z', 'ingestion_status': 'success', 'restructuring_status': 'pending', 'version': 'v0', 'group_ids': [], 'metadata': {'version': 'v0'}}
+```
+
+When ingestion completes successfully for a given file we will find that `ingestion_status` reads `success` in the corresponding output. 
 
 ## Create Knowledge Graph
 
-You can create a knowledge graph with the following command. Note that document ids are optional, but if you want to create a knowledge graph for a specific set of documents, you can pass the document ids to the command.
+Knowledge graph creation is done in two steps:
 
+1. `create-graph`: Extracts nodes and relationships from your input document collection.
+2. `enrich-graph`: Enhances the graph structure through clustering and explaining entities (commonly referred to as `GraphRAG`).
+
+```bash
+# document-ids are optional
+r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
 ```
-r2r create-graph --document-ids <document_ids>
+
+```bash Example Response
+[{'message': 'Graph creation task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
 ```
 
 This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
@@ -177,7 +193,7 @@ This step will create a knowledge graph with nodes and relationships. You can vi
 r2r inspect-knowledge-graph
 ```
 
-The output should be as follows:
+The output should be roughly as follows:
 
 ```
 == Meteorologica ==
@@ -233,26 +249,45 @@ Now you can see that the graph is enriched with the following information. We ha
 
 ## Search
 
-GraphRAG currently supports two types of searches: local and global.
+GraphRAG currently supports two types of searches: `local` and `global`.
 
 
 ### Local search
 
-Local searches are faster and cheaper, they perform similarity search on the entity, relationship and community description embeddings.
+Local searches are faster and cheaper than global.  A local knowledge graph search performs similarity search on the entity, relationship and community description embeddings.
 
 ```bash
-r2r search --query="What does Parley do?" --use-kg-search --kg-search-type=local
+r2r search --query="Who is Aristotle?" --use-kg-search --kg-search-type=local
 ```
 
 The answer will be returned in JSON format and contains results from entities, relationships and communities. Following is a snippet of the output:
 
-```json
+```bash
+Vector search results:
+[
+  {
+    'fragment_id': 'ecc754cd-380d-585f-84ac-021542ef3c1d', 
+    'extraction_id': '92d78034-8447-5046-bf4d-e019932fbc20', 
+    'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 
+    'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 
+    'group_ids': [], 
+    'score': 0.7393344796100582, 
+    'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.\n\nLittle is known about Aristotle's life. He was born in the city of Stagira in northern Greece during the Classical period. His father, Nicomachus, died when Aristotle was a child, and he was brought up by a guardian. At 17 or 18, he joined Plato's Academy in Athens and remained there until the age of 37 (c.\u2009347 BC). Shortly after Plato died, Aristotle left Athens and, at the request of Philip II of Macedon, tutored his son Alexander the Great beginning in 343 BC. He established a library in the Lyceum, which helped him to produce many of his hundreds of books on papyrus scrolls.\n\nThough Aristotle wrote many elegant treatises and dia ...",
+    'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'file_name': 'tmpm3ceiqs__aristotle.txt', 'chunk_order': 0, 'document_type': 'txt', 'size_in_bytes': 73353, 'unstructured_filetype': 'text/plain', 'unstructured_languages': ['eng'], 'partitioned_by_unstructured': True, 'associatedQuery': 'Who is Aristotle?'}}
+  }, ...
+]
+
+KG search results:
 {
-  "Parley": {
-    "name": "Parley",
-    "description": "Parley is a San Francisco-based startup founded in 2024 that specializes in automating visa application processes to enhance the efficiency of immigration attorneys. The company, which is part of Y Combinator's S24 cohort, develops tools like the O-1A Visa Writer to streamline the drafting of visa petitions. With a small team of three co-founders, including Ian Edwards, Jackson, and Philip, Parley aims to simplify immigration complexities through innovative legaltech solutions."
-  }
+  'local_result': {
+    'query': 'Who is Aristotle?', 
+    'entities': {'0': {'name': 'Aristotle', 'description': 'Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...'}},
+    'relationships': {}, 
+    'communities': {'0': {'summary': '```json\n{\n    "title": "Aristotle and His Contributions",\n    "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.",\n    "rating": 9.5,\n    "rating_explanation": "The impact severity rating is high due to Aristotle's foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.",\n    "findings": [\n        {\n            "summary": "Aristotle's Foundational Role in Logic",\n            "explanation": "Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six bo ...}}}}
+  },
+  'global_result': None
 }
+Time taken: 2.39 seconds    
 ```
 
 ### Global search
@@ -260,79 +295,51 @@ The answer will be returned in JSON format and contains results from entities, r
 Global searches can be used for queries that require reasoning over the whole dataset. They provide more accurate results, however they use a large amount of queries and are expensive. We recommend checking the number of clusters created in the graph and setting the `max-llm-queries` to be a fraction (> 0.1) of that number.
 
 ```bash
-r2r search --query="In this batch, which companies are building AI agents?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
+r2r search --query="What were Aristotles key contributions to philosophy?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
 ```
 
-The answer will be returned in markdown format as follows:
+Extracting the `global_result` from the payload that is returned above we find the following:
 
 ```markdown
 
-### Companies Working with AI Agents
+### Aristotle's Key Contributions to Philosophy
 
-Several companies in this batch are actively working with AI agents, leveraging advanced technologies to enhance their operations across various sectors. Below is a detailed overview of these companies and their specific applications of AI agents.
+Aristotle, an ancient Greek philosopher and polymath, made foundational contributions to numerous fields, including philosophy, logic, biology, and political science. His works have had a lasting impact on Western thought and the development of modern science.
 
-#### Ångström AI
-Ångström AI specializes in generative AI molecular simulations, particularly for drug discovery. Their technology aims to replace traditional wet lab experiments with AI-driven simulations, significantly accelerating drug development processes [Data: Reports (1, 2, 3, 4, 5)].
+#### Foundational Role in Various Fields
 
-#### Kastle
-Kastle provides AI solutions for mortgage lenders, automating labor-intensive tasks such as collecting payments and handling customer inquiries. This automation significantly enhances operational efficiency for traditional lenders [Data: Reports (1, 2, 3, 4, 5)].
+Aristotle is recognized as the father of several disciplines. His significant works, such as the *Nicomachean Ethics* and *Politics*, explore concepts of virtue, governance, and the nature of reality. These texts are foundational in ethical theory and political science, examining the best ways to achieve a virtuous and potentially happy character [Data: Reports (2, 51, 52, 53, 54, 55, +more)].
 
-#### Scale AI
-Scale AI focuses on artificial intelligence solutions and the Miru deployment platform, facilitating connections between developers and data providers. This enhances user experience and fosters innovation in AI technologies [Data: Reports (1, 2, 3, 4, 5)].
+#### Contributions to Logic
 
-#### Zenbase AI
-Zenbase AI automates the process of prompt engineering, enhancing the efficiency of developers working with AI technologies. Their SDK facilitates the integration of its capabilities into production environments [Data: Reports (Zenbase AI)].
+Aristotle is credited with the earliest study of formal logic, which remained the dominant form of Western logic until the 19th century. His works, compiled into a set of six books called the *Organon*, are foundational to the field of logic [Data: Reports (21, 22, 23, 24, 25, +more)].
 
-#### Corgi
-Corgi leverages artificial intelligence to streamline insurance processes such as policy acquisition and claims filing. Their model provides users with instant support for claims and facilitates document retrieval and application autofilling [Data: Reports (Corgi, HAMMURABI)].
+#### Influence on Medieval and Modern Thought
 
-#### Mineflow
-Mineflow utilizes artificial intelligence to enhance mineral exploration and improve the accuracy of predictions related to mineral deposits. This technology assists mining companies in making informed decisions during exploration [Data: Reports (Mineflow)].
+Aristotle's influence extended well beyond his lifetime, impacting medieval scholars and modern thinkers alike. His works were translated into Arabic and studied by Muslim philosophers, contributing to the intellectual heritage of the Islamic Golden Age. In the Middle Ages, Aristotle's ideas were integrated into Christian theology and philosophy, shaping the scholastic tradition [Data: Reports (5)].
 
-#### AI Applied Engineers
-AI Applied Engineers focus on the development of AI technologies, relying heavily on venture capital for funding and often operating in stealth mode to protect their innovations [Data: Reports (1, 2, 3, 4)].
+#### Classification of the Rational Soul
 
-#### Child and AI Buddy Community
-This community involves AI agents in the form of AI buddies designed to support children's learning and play, enhancing educational experiences in a digital environment [Data: Reports (1, 2, 3, 4)].
+According to Aristotle's classification, humans possess the rational soul, which is unique to them. This rational soul is responsible for higher-order thinking and reasoning, distinguishing humans from other beings that may only possess vegetative or sensitive souls. The rational soul enables humans to engage in philosophical thought, ethical reasoning, and scientific inquiry [Data: Reports (3)].
 
-#### Lilac
-Lilac specializes in automating order-taking at drive-thrus using voice AI technology, aiming to enhance operational efficiency in the fast food sector [Data: Reports (1, 2, 3, 4)].
+#### Exploration of Memory and Cognition
 
-#### Laminar AI
-Laminar AI is developing a platform for building and deploying large language model (LLM) agents, enabling developers to create AI systems more efficiently [Data: Reports (1, 2)].
+Aristotle's exploration of memory in relation to sensation and perception laid the groundwork for understanding human cognition and perception. His methodological approach to studying memory and other cognitive processes involved systematic observation and logical analysis, influencing the scientific method and the way researchers study human cognition and behavior [Data: Reports (1, 2, 3, 4, 5)].
 
-#### Pipeshift AI
-Pipeshift AI focuses on providing infrastructure for fine-tuning and inferencing open-source language models (LLMs), playing a significant role in AI operations [Data: Reports (4)].
+#### Concept of Aether
 
-#### Wordware
-Wordware provides a collaborative IDE for building AI agents and applications, enabling users to create complex AI solutions efficiently [Data: Reports (Wordware and AI Innovation Community, 1, 4)].
+Aristotle proposed Aether as a divine substance within the framework of classical elements. It is associated with circular motion in the heavens and is seen as encompassing all classical elements. This concept highlights its central role in ancient philosophical thought and its influence on the conceptualization of the universe [Data: Reports (4)].
 
-#### Overeasy
-Overeasy is developing IRIS, an AI agent that automates the labeling of visual data for computer vision models, known for its state-of-the-art performance in zero-shot detection [Data: Reports (2, 6, 12)].
+#### Influence on Dante
 
-#### &AI
-&AI focuses on automating patent due diligence processes using AI, enhancing the efficiency of legal practices by quickly analyzing thousands of patents [Data: Reports (8, 9, 10; 14, 15, 16)].
+Dante Alighieri, the renowned Italian poet, referred to Aristotle as "the master of those who know," highlighting the profound respect and influence Aristotle had on his work. Dante's philosophy is deeply rooted in Aristotelian thought, particularly in the context of his *Comedy* [Data: Reports (3)].
 
-#### Henry
-Henry is an AI copilot designed for commercial real estate brokers, integrating internal brokerage data with external sources to enhance transaction insights and operational efficiency [Data: Reports (Henry, Brokerage, Aids in Transactions)].
+### Conclusion
 
-#### Distro
-Distro is an AI-powered sales platform designed for industrial wholesale distributors, streamlining point-of-sale processes by converting complex customer requests into real-time product information and quotes [Data: Reports (1, 2, 3, 4, 5)].
-
-#### Remade
-Remade utilizes generative AI technology to enhance product photography, providing businesses with high-quality images at reduced costs and time [Data: Reports (2)].
-
-#### Maitai
-Maitai offers a fully managed, self-healing LLM stack that competes with leading models like GPT-4, allowing organizations to leverage advanced AI technology without the complexity typically associated with such integrations [Data: Reports (1, 2, 3, 4, 5)].
-
-#### Arva AI
-Arva AI automates the KYB onboarding process for banks and fintechs, significantly reducing the time and cost associated with traditional onboarding methods [Data: Reports (1, 8, 10, 12)].
-
-#### ClaimSorted
-ClaimSorted focuses on automating insurance claims management through AI, enhancing the efficiency of insurance
+Aristotle's contributions to philosophy are vast and multifaceted, spanning ethics, logic, political science, and cognitive science. His works have influenced a wide range of disciplines and continue to be studied and revered for their profound insights into human nature and the world.
 ```
 
-## Rag
+## RAG
 
 You can directly use these search results as part of your RAG pipeline.
 
@@ -341,20 +348,38 @@ r2r rag --query="Which companies in this batch have the highest chance of succes
 ```
 
 The output is as follows:
-```markdown
-Based on the provided context, the companies with the highest chance of success in this batch are:
-
-1. **Corgi**: This company has a strong team with four co-founders, including two successful repeat founders who have built products for hundreds of millions of users [2]. Their experience and industry knowledge significantly increase their chances of success.
-
-2. **Unbound Security**: The founders of Unbound Security have impressive backgrounds, with experience at notable companies like Palo Alto Networks, Adobe, Shogun, and Tophatter [3]. Their expertise in building data security for Gen AI apps positions them well for success.
-
-3. **SureBright Technologies, Inc.**: The CTO and co-founder, Sanket Munjal, is a second-time founder with a strong background in leading engineering teams at major companies like Policybazaar.com, Philips, and Samsung [4]. This experience, combined with their rapid progress and recognition in the fintech space, enhances their potential for success [5].
-
-4. **Formula Insight**: Co-founder and CEO Will Tong brings a decade of financial expertise, including managing a healthcare equities portfolio at Citadel, where he was recognized as a top equity analyst [9]. This strong financial background and industry knowledge are critical for their success in the SaaS and enterprise software space [10].
-
-These companies stand out due to their innovative approaches, strategic market positioning, and strong leadership, making them the most likely to succeed in this batch
 ```
-
+'results': {
+  'completion': {
+    'id': 'chatcmpl-A4CPZfvJWHNdbSU0EaUYW2jVjpOgi', 
+    'choices': [
+      {
+        'finish_reason': 'stop', 
+        'index': 0, 
+        'logprobs': None, 
+        'message': {
+          'content': 'Aristotle's contributions that still impact modern society span a wide range of fields:
+          1. **Logic**: Aristotle is often called the father of formal logic. His work in this area laid the groundwork for the development of logical reasoning, which continues to be a fundamental aspect of modern philosophy, mathematics, and computer science [2].
+          
+          2. **Biology**: Aristotle is considered the first person to study biology systematically. His observations and classifications in zoology and embryology have influenced the field significantly. Modern zoologists still refer to him as the father of biology, and his methods of empirical observation are foundational to the scientific method [2], [6].
+          
+          3. **Political Science**: Aristotle's work in political science, particularly his book "Politics," has had a lasting influence on the field. His ideas about the nature of the city, the role of citizens, and the classification of political systems continue to be relevant in contemporary political theory and practice [2], [8].
+          
+          4. **Ethics**: Aristotle's "Nicomachean Ethics" explores the concept of virtue and the good life, which remains a cornerstone of modern ethical theory. His ideas have seen a resurgence with the modern advent of virtue ethics [1], [12].
+          
+          5. **Scientific Method**: Aristotle's contributions to the scientific method, including his emphasis on empirical observation and systematic inquiry, have left every future scientist and philosopher in his debt. His approach to studying the natural world laid the groundwork for modern scientific inquiry [2], [12].
+          
+          6. **Literature and the Arts**: Aristotle's "Poetics" has profoundly influenced literary theory, particularly the structure of tragedy. His analysis of plot, character, and catharsis continues to be a reference point for writers and critics [4].
+          
+          7. **Economics**: Aristotle made substantial contributions to economic thought, particularly in his discussions on property, trade, and the origin of money. His ideas influenced medieval economic thought and continue to be relevant in discussions about the nature and function of money [5].
+          
+          8. **Psychology**: Aristotle's exploration of the rational soul and its capabilities has significantly influenced philosophical thought and ethical reasoning. His classification of the rational soul underscores the unique capabilities of human cognition [12].
+          
+          These contributions highlight Aristotle's enduring legacy and his profound impact on various fields of modern knowledge and society.', 'refusal': None, 'role': 'assistant', 'function_call': None, 'tool_calls': None}}], 'created': 1725564385, 'model': 'gpt-4o-2024-05-13
+          ',
+          ....
+}
+```
 
 # Conclusion
 

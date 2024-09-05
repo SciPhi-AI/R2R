@@ -66,7 +66,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     extract_image_block_types: Optional[list[str]]
     gz_uncompressed_content_type: Optional[str]
     hi_res_model_name: Optional[str]
-    include_orig_elements: Optional[bool]
+    include_orig_elements: Optional[bool] = False
     include_page_breaks: bool
 
     languages: Optional[list[str]]
