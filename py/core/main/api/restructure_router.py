@@ -8,6 +8,7 @@ from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
 from core.base.api.models.restructure.responses import (
+    WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider
@@ -70,7 +71,7 @@ class RestructureRouter(BaseRouter):
                 default_factory=KGCreationSettings
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
+        ) -> WrappedKGCreationResponse:
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
@@ -95,10 +96,10 @@ class RestructureRouter(BaseRouter):
                 "create-graph", {"request": workflow_input}
             )
 
-            return {
-                "message": "Graph creation task queued successfully.",
-                "task_id": str(task_id),
-            }
+            return WrappedKGCreationResponse(
+                message="Graph creation task queued successfully.",
+                task_id=str(task_id),
+            )
 
         @self.router.post(
             "/enrich_graph",
@@ -130,7 +131,7 @@ class RestructureRouter(BaseRouter):
                 "enrich-graph", {"request": workflow_input}
             )
 
-            return {
-                "message": "Graph enrichment task queued successfully.",
-                "task_id": str(task_id),
-            }
+            return WrappedKGEnrichmentResponse(
+                message="Graph enrichment task queued successfully.",
+                task_id=str(task_id),
+            )
