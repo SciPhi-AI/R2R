@@ -8,8 +8,8 @@ from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
 from core.base.api.models.restructure.responses import (
-    KGCreationResponse,
-    KGEnrichmentResponse
+    WrappedKGCreationResponse,
+    WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider
 
@@ -71,7 +71,7 @@ class RestructureRouter(BaseRouter):
                 default_factory=KGCreationSettings
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> KGCreationResponse:
+        ) -> WrappedKGCreationResponse:
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
@@ -110,7 +110,7 @@ class RestructureRouter(BaseRouter):
                 default_factory=KGEnrichmentSettings
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> KGEnrichmentResponse:
+        ) -> WrappedKGEnrichmentResponse:
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
