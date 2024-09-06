@@ -42,8 +42,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "openai/gpt-3.5-turbo"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
         Supported models include:
         - openai/gpt-4o
@@ -63,8 +62,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "azure/<your deployment name>"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
         Supported models include:
         - azure/gpt-4o
@@ -85,8 +83,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "anthropic/claude-3-opus-20240229"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
         Supported models include:
 
@@ -109,8 +106,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "vertex_ai/gemini-pro"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -134,8 +130,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "bedrock/anthropic.claude-v2"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
 
         Supported models include:
@@ -158,8 +153,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "groq/llama3-8b-8192"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -193,7 +187,6 @@ Key generation configuration options:
     # Copy `r2r/examples/configs/local_llm.toml` into `my_r2r_local_llm.toml`
     # Set '"model": "ollama/llama3.1"' in `my_r2r_local_llm.toml`
     # then call `r2r --config-path=my_r2r_local_llm.toml`
-    r2r --config-name=local_llm serve
     ```
 
     Supported models include:
@@ -217,8 +210,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "command-r"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -238,8 +230,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "anyscale/mistralai/Mistral-7B-Instruct-v0.1"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
