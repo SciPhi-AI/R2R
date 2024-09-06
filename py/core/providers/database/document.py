@@ -1,7 +1,12 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from core.base import DocumentInfo, DocumentType, IngestionStatus
+from core.base import (
+    DocumentInfo,
+    DocumentType,
+    IngestionStatus,
+    RestructureStatus,
+)
 
 from .base import DatabaseMixin
 
@@ -123,7 +128,7 @@ class DocumentMixin(DatabaseMixin):
                 ingestion_status=IngestionStatus(row[8]),
                 created_at=row[9],
                 updated_at=row[10],
-                restructuring_status=row[11],
+                restructuring_status=RestructureStatus(row[11]),
             )
             for row in results
         ]

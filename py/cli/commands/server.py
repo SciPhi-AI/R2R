@@ -223,9 +223,10 @@ def serve(
     """Start the R2R server."""
     load_dotenv()
 
-    if image and build:
+    if image:
         os.environ["R2R_IMAGE"] = image
-        os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
+        if build:
+            os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
 
     if config_path:
         config_path = os.path.abspath(config_path)
