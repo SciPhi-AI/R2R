@@ -30,8 +30,7 @@ enrich_graph:
 
           client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
-
-          settings = KGEnrichmentSettings(max_knowledge_triples=100)
+          settings = KGEnrichmentSettings()
 
           result = client.enrich_graph(settings)
       - lang: Shell

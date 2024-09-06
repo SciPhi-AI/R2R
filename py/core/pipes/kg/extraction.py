@@ -90,7 +90,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         task_inputs = {"input": fragment.data}
         task_inputs["max_knowledge_triples"] = (
-            self.kg_provider.config.kg_enrichment_settings.max_knowledge_triples
+            self.kg_provider.config.kg_creation_settings.max_knowledge_triples
         )
 
         messages = self.prompt_provider._get_message_payload(
