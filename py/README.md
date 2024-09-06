@@ -83,7 +83,6 @@ r2r --config-name=default serve
 
 - Knowledge Graphs
   - [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Walkthrough of GraphRAG
-  - [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): Automatic knowledge graph generation
 
 - Auth & Admin Features
   - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
