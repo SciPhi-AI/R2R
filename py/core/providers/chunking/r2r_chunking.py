@@ -2,9 +2,9 @@ import logging
 from typing import Any, AsyncGenerator, Union
 
 from core.base import (
-    R2RChunkingConfig,
     ChunkingProvider,
     Method,
+    R2RChunkingConfig,
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )

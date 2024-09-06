@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 
 from core import DatabaseConfig, R2RException
-from core.base.abstractions import DocumentInfo, DocumentStatus, DocumentType
+from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
 
 
@@ -23,7 +23,7 @@ def test_documents(pg_db, test_group):
             title=f"Test Document {i}",
             version="1.0",
             size_in_bytes=1000,
-            ingestion_status=DocumentStatus.PROCESSING,
+            ingestion_status=IngestionStatus.PARSING,
         )
         pg_db.relational.upsert_documents_overview([doc])
         documents.append(doc)
@@ -303,7 +303,7 @@ def test_get_users_in_group_with_pagination(pg_db, test_group):
 
     # Ensure all users are different
     all_users = first_page + second_page
-    assert len(set(u.id for u in all_users)) == 5
+    assert len({u.id for u in all_users}) == 5
 
     # Clean up
     for user in users:
@@ -327,7 +327,7 @@ def test_get_groups_overview_with_pagination(pg_db):
 
     # Ensure all groups are different
     all_groups = first_page + second_page
-    assert len(set(g.group_id for g in all_groups)) == 5
+    assert len({g.group_id for g in all_groups}) == 5
 
     # Clean up
     for group in groups:
@@ -356,7 +356,7 @@ def test_get_groups_for_user_with_pagination(pg_db, test_user):
 
     # Ensure all groups are different
     all_groups = first_page + second_page
-    assert len(set(g.group_id for g in all_groups)) == 5
+    assert len({g.group_id for g in all_groups}) == 5
 
     # Clean up
     for group in groups:
@@ -384,7 +384,7 @@ def test_documents_in_group(pg_db, test_group, test_documents):
 
     # Ensure all documents are different
     all_docs = first_page + second_page
-    assert len(set(doc.id for doc in all_docs)) == 5
+    assert len({doc.id for doc in all_docs}) == 5
 
     # Test ordering (should be in descending order of created_at)
     assert all(
