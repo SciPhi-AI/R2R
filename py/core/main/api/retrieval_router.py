@@ -229,7 +229,7 @@ class RetrievalRouter(BaseRouter):
             vector_search_settings.filters = filters
 
             try:
-                response = await self.service.arag_agent(
+                response = await self.service.agent(
                     messages=messages,
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,

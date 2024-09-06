@@ -10,13 +10,47 @@ logger = logging.getLogger(__name__)
 
 
 class Method(str, Enum):
+    # Unstructured methods
     BY_TITLE = "by_title"
     BASIC = "basic"
+    # R2R methods
     RECURSIVE = "recursive"
     CHARACTER = "character"
 
 
 class ChunkingConfig(ProviderConfig):
+    provider: str = "r2r"
+
+    def validate(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider {self.provider} is not supported.")
+
+    @property
+    def supported_providers(self) -> list[str]:
+        return ["r2r", "unstructured_local", "unstructured_api", None]
+
+    class Config:
+        json_schema_extra = {
+            "type": "object",
+            "properties": {
+                "provider": {"type": "string"},
+                "method": {"type": "string"},
+            },
+            "required": ["provider", "method"],
+            "example": {
+                "provider": "unstructured_local",
+                "method": "by_title",
+                "strategy": "auto",
+                "chunking_strategy": "by_title",
+                "new_after_n_chars": 512,
+                "max_characters": 1_024,
+                "combine_under_n_chars": 128,
+                "overlap": 20,
+            },
+        }
+
+
+class R2RChunkingConfig(ProviderConfig):
     provider: str = "r2r"
     method: Method = Method.RECURSIVE
     chunk_size: int = 512
@@ -84,7 +118,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     split_pdf_page: bool = True
     starting_page_number: Optional[int] = None
     strategy: str = "auto"
-    chunking_strategy: Optional[str] = None
+    chunking_strategy: Method = Method.BY_TITLE
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 

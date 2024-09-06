@@ -114,10 +114,8 @@ __all__ = [
     # Chunking provider
     "UnstructuredChunkingConfig",
     "ChunkingConfig",
-    "UnstructuredChunkingConfig",
     "ChunkingProvider",
     "Method",
-    "UnstructuredChunkingConfig",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",

@@ -36,7 +36,6 @@ class UnstructuredChunkingProvider(ChunkingProvider):
         else:
 
             try:
-                print("self.config = ", self.config)
                 if self.config.method == Method.BY_TITLE:
                     chunks = self.chunk_by_title(
                         [self.Text(text=parsed_document.data)],

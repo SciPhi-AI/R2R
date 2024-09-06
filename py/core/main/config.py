@@ -55,7 +55,7 @@ class R2RConfig:
             "kg_enrichment_settings",
         ],
         "parsing": ["provider", "excluded_parsers"],
-        "chunking": ["provider", "method"],
+        "chunking": ["provider"],
         "completion": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
