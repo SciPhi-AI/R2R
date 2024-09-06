@@ -30,33 +30,14 @@ class ImageParser(AsyncParser[DataType]):
         self.api_base = api_base
         self.max_image_size = max_image_size
 
-    def _resize_image(self, image_data: bytes, compression_ratio) -> bytes:
-        img = Image.open(BytesIO(image_data))
-        img_byte_arr = BytesIO()
-        img.save(
-            img_byte_arr, format="JPEG", quality=int(100 * compression_ratio)
-        )
-        return img_byte_arr.getvalue()
-
     async def ingest(
         self, data: DataType, chunk_size: int = 1024
     ) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
 
-        logger.info(f"Processing image with OpenAI model {self.model}")
-
         if isinstance(data, bytes):
-            # Resize the image if it's too large
-            # if len(data) > self.max_image_size:
-            #     data = self._resize_image(
-            #         data, float(self.max_image_size) / len(data)
-            #     )
-
             # Encode to base64
             data = base64.b64encode(data).decode("utf-8")
-
-        print("processing image")
-        logger.info(f"Processing image with OpenAI model {self.model}")
 
         openai_text = process_frame_with_openai(
             data,

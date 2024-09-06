@@ -7,8 +7,6 @@ from core.parsers.media.openai_helpers import (
     process_audio_with_openai,
     process_frame_with_openai,
 )
-from core.telemetry.telemetry_decorator import telemetry_event
-
 
 class MovieParser(AsyncParser):
     """A parser for movie data."""
