@@ -137,7 +137,7 @@
           },
           {
             "group": "Knowledge Graph",
-            "icon": "signal",
+            "icon": "diagram-project",
             "pages": [
               "documentation/configuration/knowledge-graph/overview",
               "documentation/configuration/knowledge-graph/enrichment"

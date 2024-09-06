@@ -282,6 +282,7 @@ class R2RProviderFactory:
         parsing_provider_override: Optional[ParsingProvider] = None,
         chunking_config: Optional[ChunkingProvider] = None,
         file_provider_override: Optional[FileProvider] = None,
+        orchestration_provider_override: Optional[Any] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -307,6 +308,7 @@ class R2RProviderFactory:
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
+        print("database_provider_override = ", database_provider_override)
         database_provider = (
             database_provider_override
             or self.create_database_provider(
@@ -333,7 +335,10 @@ class R2RProviderFactory:
             self.config.file, database_provider, *args, **kwargs
         )
 
-        orchestration_provider = self.create_orchestration_provider()
+        orchestration_provider = (
+            orchestration_provider_override
+            or self.create_orchestration_provider()
+        )
         return R2RProviders(
             auth=auth_provider,
             chunking=chunking_provider,

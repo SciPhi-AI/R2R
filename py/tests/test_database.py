@@ -51,6 +51,7 @@ def pg_vector_db():
         provider="postgres", vecs_collection=random_collection_name
     )
     db = PostgresDBProvider(config, dimension=3)
+    print("config.vecs_collection = ", config.vecs_collection)
     yield db
     # Teardown
     db.vx.delete_collection(db.config.vecs_collection)
@@ -169,6 +170,7 @@ def test_upsert(request, db_fixture):
     results = db.vector.semantic_search(
         query_vector=[0.5, 0.5, 0.5], search_settings=VectorSearchSettings()
     )
+    print("results = ", results)
     assert len(results) == 1
     assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].metadata["key"] == "new_value"
