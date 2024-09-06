@@ -115,7 +115,7 @@ def documents_overview(client, document_ids, offset, limit):
 
 
 @cli.command()
-@click.option("--id", help="Document ID to retrieve chunks for")
+@click.option("--document-id", help="Document ID to retrieve chunks for")
 @click.option(
     "--offset",
     default=None,
