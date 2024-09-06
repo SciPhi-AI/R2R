@@ -185,7 +185,7 @@ services:
       - r2r-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT:-7272}/v2/health"]
-      interval: 10s
+      interval: 6s
       timeout: 5s
       retries: 5
     restart: on-failure
@@ -218,8 +218,6 @@ services:
     image: emrgntcmplxty/r2r-dashboard:latest
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:${R2R_DASHBOARD_PORT:-8001}/r2r-api
-    depends_on:
-      - r2r
     networks:
       - r2r-network
     labels:

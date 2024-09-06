@@ -500,3 +500,41 @@ def parse_version(version_string):
         return tuple(map(int, parts))
     except ValueError as e:
         raise ValueError("Invalid version format") from e
+
+
+def wait_for_container_health(project_name, service_name, timeout=300):
+    container_name = f"{project_name}-{service_name}-1"
+    end_time = time.time() + timeout
+
+    while time.time() < end_time:
+        try:
+            result = subprocess.run(
+                ["docker", "inspect", container_name],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            container_info = json.loads(result.stdout)[0]
+
+            health_status = (
+                container_info["State"].get("Health", {}).get("Status")
+            )
+            if health_status == "healthy":
+                return True
+            if health_status is None:
+                click.echo(
+                    f"{service_name} does not have a health check defined."
+                )
+                return True
+
+        except subprocess.CalledProcessError:
+            click.echo(f"Error checking health of {service_name}")
+        except (json.JSONDecodeError, IndexError):
+            click.echo(
+                "Error parsing Docker inspect output or container not found"
+            )
+
+        time.sleep(5)
+
+    click.echo(f"Timeout waiting for {service_name} to be healthy.")
+    return False
