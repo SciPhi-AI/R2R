@@ -1,5 +1,7 @@
 ---
 title: 'LLM'
+description: 'Learn how to configure LLMs in your R2R deployment'
+icon: 'language'
 ---
 
 R2R uses language models to generate responses based on retrieved context. Configure the generation settings in `r2r.toml`:
@@ -20,14 +22,14 @@ concurrent_request_limit = 16
 
 Key generation configuration options:
 
-- `provider`: The LLM provider (e.g., "litellm" for flexibility).
+- `provider`: The LLM provider (defaults to "LiteLLM" for maximum flexibility).
 - `concurrent_request_limit`: Maximum number of concurrent LLM requests.
 - `model`: The language model to use for generation.
 - `temperature`: Controls the randomness of the output (0.0 to 1.0).
 - `top_p`: Nucleus sampling parameter (0.0 to 1.0).
 - `max_tokens_to_sample`: Maximum number of tokens to generate.
 - `stream`: Enable/disable streaming of generated text.
-
+- `api_base`: The base URL for remote communication, e.g. `https://api.openai.com/v1`
 
 #### Serving select LLM providers
 
@@ -307,3 +309,16 @@ response = client.agent(
 The agent can break down complex queries into sub-tasks, leveraging both retrieval and generation capabilities to provide comprehensive responses.
 
 By leveraging these configuration options, you can fine-tune R2R's retrieval and generation process to best suit your specific use case and requirements.
+
+
+
+
+## Next Steps
+
+For more detailed information on configuring specific components of R2R, please refer to the following pages:
+
+- [Postgres Configuration](/documentation/configuration/postgres)
+- [RAG Configuration](/documentation/configuration/rag)
+- [Ingestion Configuration](/documentation/configuration/ingestion/overview)
+- [Knowledge Graph Configuration](/documentation/configuration/knowledge-graph/overview)
+- [Retrieval Configuration](/documentation/configuration/retrieval/overview)

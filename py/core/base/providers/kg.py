@@ -17,6 +17,11 @@ class KGConfig(ProviderConfig):
     """A base KG config class"""
 
     provider: Optional[str] = None
+    user: Optional[str] = None
+    password: Optional[str] = None
+    url: Optional[str] = None
+    database: Optional[str] = None
+
     batch_size: Optional[int] = 1
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"

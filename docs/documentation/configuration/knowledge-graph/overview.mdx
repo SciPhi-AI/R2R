@@ -1,10 +1,13 @@
 ---
-title: 'Provider Config'
+title: 'Overview'
 description: 'Configure your R2R knowledge graph provider.'
 ---
 ## Knowledge Graph Provider
 
-R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R uses Neo4j as the knowledge graph provider. To configure the knowledge graph settings:
+R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R uses [Neo4j](https://neo4j.com/) as the knowledge graph provider. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [Knowledge Graphs Guide](/cookbooks/graphrag).
+
+
+To configure the knowledge graph settings:
 
 1. Edit the `kg` section in your `r2r.toml` file:
 
@@ -53,15 +56,16 @@ When using Neo4j as the knowledge graph provider, you need to set up the followi
 export NEO4J_USER=your_neo4j_username
 export NEO4J_PASSWORD=your_neo4j_password
 export NEO4J_URL=bolt://your_neo4j_host:7687
-export NEO4J_DATABASE=neo4j # Optional, defaults to "neo4j"
+export NEO4J_DATABASE=neo4j 
 ```
 
 ```toml r2r.toml
-[kg.extra_fields]
+[kg]
+provider = "neo4j"
 user = "your_neo4j_username"
 password = "your_neo4j_password"
 url = "bolt://your_neo4j_host:7687"
-database = "neo4j" # Optional, defaults to "neo4j"
+database = "neo4j" 
 ```
 
 
@@ -80,3 +84,13 @@ The Neo4jKGProvider supports various operations:
 You can customize the knowledge graph extraction and search processes by modifying the `kg_extraction_prompt` and adjusting the model configurations in `kg_extraction_config` and `kg_search_config`. Moreover, you can customize the LLM models used in various parts of the knowledge graph creation process. All of these options can be selected at runtime, with the only exception being the specified database provider. For more details, refer to the knowledge graph settings in the [search API](/api-reference/endpoint/search).
 
 By leveraging the knowledge graph capabilities, you can enhance R2R's understanding of document relationships and improve the quality of search and retrieval operations.
+
+
+
+## Next Steps
+
+For more detailed information on configuring specific components of the ingestion pipeline, please refer to the following pages:
+
+- [Ingestion Configuration](/documentation/configuration/ingestion/overview)
+- [Enrichment Configuration](/documentation/configuration/knowledge-graph/enrichment)
+- [Retrieval Configuration](/documentation/configuration/retrieval/overview)

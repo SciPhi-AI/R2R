@@ -1,9 +1,7 @@
-import base64
 import functools
 import json
 import logging
 from datetime import datetime
-from io import BytesIO
 from typing import Any, Callable, Coroutine, Optional
 from uuid import UUID
 
@@ -404,4 +402,6 @@ class IngestionServiceAdapter:
                 if data["chunking_config"]
                 else None
             ),
+            "file_sizes_in_bytes": data["file_sizes_in_bytes"],
+            "file_datas": data["file_datas"],
         }
