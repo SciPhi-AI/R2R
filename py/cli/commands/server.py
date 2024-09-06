@@ -13,6 +13,7 @@ from cli.utils.docker_utils import (
     remove_r2r_network,
     run_docker_serve,
     run_local_serve,
+    wait_for_container_health,
 )
 from cli.utils.timer import timer
 
@@ -259,16 +260,19 @@ def serve(
             click.echo("Test environment detected. Skipping browser open.")
         else:
             # Open browser after Docker setup is complete
-            import time
             import webbrowser
 
-            for i in range(3, 0, -1):
-                print(f"Navigating to dashboard in {i} seconds...")
-                time.sleep(1)
+            click.echo("Waiting for all services to become healthy...")
+
+            if not wait_for_container_health(project_name, "r2r"):
+                click.secho(
+                    "r2r container failed to become healthy.", fg="red"
+                )
 
             traefik_port = os.environ.get("R2R_DASHBOARD_PORT", "80")
             url = f"http://localhost:{traefik_port}"
-            click.echo(f"Opening browser to {url}")
+
+            click.secho(f"Navigating to R2R application at {url}.", fg="blue")
             webbrowser.open(url)
     else:
         run_local_serve(host, port, config_name, config_path)
