@@ -79,14 +79,12 @@ When running with local RAG, you must have the Triplex model available locally. 
 [completion]
 provider = "litellm"
 concurrent_request_limit = 1
-
-  [completion.generation_config]
-  model = "ollama/llama3.1"
-  temperature = 0.1
-  top_p = 1
-  max_tokens_to_sample = 1_024
-  stream = false
-  add_generation_kwargs = { }
+model = "ollama/llama3.1"
+temperature = 0.1
+top_p = 1
+max_tokens_to_sample = 1_024
+stream = false
+add_generation_kwargs = { }
 
 [embedding]
 provider = "ollama"

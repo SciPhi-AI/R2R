@@ -272,7 +272,7 @@ class RetrievalService(Service):
                     )
 
                     async def stream_response():
-                        async with manage_run(self.run_manager, "arag_agent"):
+                        async with manage_run(self.run_manager, "rag_agent"):
                             async for (
                                 chunk
                             ) in self.agents.streaming_rag_agent.arun(

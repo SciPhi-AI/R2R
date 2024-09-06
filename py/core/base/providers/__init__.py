@@ -4,6 +4,7 @@ from .chunking import (
     ChunkingConfig,
     ChunkingProvider,
     Method,
+    R2RChunkingConfig,
     UnstructuredChunkingConfig,
 )
 from .crypto import CryptoConfig, CryptoProvider
@@ -31,9 +32,8 @@ __all__ = [
     # Chunking provider
     "UnstructuredChunkingConfig",
     "ChunkingConfig",
-    "UnstructuredChunkingConfig",
+    "R2RChunkingConfig",
     "ChunkingProvider",
-    "UnstructuredChunkingConfig",
     "Method",
     # Crypto provider
     "CryptoConfig",

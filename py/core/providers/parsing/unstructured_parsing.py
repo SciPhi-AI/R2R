@@ -146,7 +146,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             async for element in self.parse_fallback(
                 file_content,
                 document,
-                chunk_size=self.config.chunking_config.extra_fields[
+                chunk_size=self.config.extra_fields[
                     "chunking_config"
                 ].get("combine_under_n_chars", 128),
             ):
@@ -170,9 +170,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
                         files=files,
-                        **self.config.chunking_config.extra_fields[
-                            "chunking_config"
-                        ],
+                        **self.config.extra_fields,
                     )
                 )
                 elements = self.client.general.partition(req)
@@ -184,9 +182,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 )
                 elements = self.partition(
                     file=file_content,
-                    **self.config.chunking_config.extra_fields[
-                        "chunking_config"
-                    ],
+                    **self.config.extra_fields,
                 )
 
         for iteration, element in enumerate(elements):

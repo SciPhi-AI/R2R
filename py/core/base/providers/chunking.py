@@ -10,23 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 class Method(str, Enum):
+    # Unstructured methods
     BY_TITLE = "by_title"
     BASIC = "basic"
+    # R2R methods
     RECURSIVE = "recursive"
     CHARACTER = "character"
 
 
 class ChunkingConfig(ProviderConfig):
     provider: str = "r2r"
-    method: Method = Method.RECURSIVE
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
-        if self.chunk_size <= 0:
-            raise ValueError("chunk_size must be greater than 0")
-        if self.chunk_overlap < 0:
-            raise ValueError("chunk_overlap must be non-negative")
 
     @property
     def supported_providers(self) -> list[str]:
@@ -121,7 +118,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     split_pdf_page: bool = True
     starting_page_number: Optional[int] = None
     strategy: str = "auto"
-    chunking_strategy: Optional[str] = None
+    chunking_strategy: Method = Method.BY_TITLE
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 
