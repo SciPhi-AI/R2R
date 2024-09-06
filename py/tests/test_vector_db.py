@@ -1,5 +1,5 @@
 import random
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -30,7 +30,7 @@ def sample_entries(vector_db):
             document_id=uuid4(),
             user_id=uuid4(),
             group_ids=[uuid4()],
-            vector=Vector([0.1, 0.2, 0.3]),
+            vector=Vector(data=[0.1, 0.2, 0.3]),
             text="Apple",
             metadata={
                 "category": "fruit",
@@ -44,7 +44,7 @@ def sample_entries(vector_db):
             document_id=uuid4(),
             user_id=uuid4(),
             group_ids=[uuid4()],
-            vector=Vector([0.2, 0.3, 0.4]),
+            vector=Vector(data=[0.2, 0.3, 0.4]),
             text="Banana",
             metadata={
                 "category": "fruit",
@@ -58,7 +58,7 @@ def sample_entries(vector_db):
             document_id=uuid4(),
             user_id=uuid4(),
             group_ids=[uuid4()],
-            vector=Vector([0.3, 0.4, 0.5]),
+            vector=Vector(data=[0.3, 0.4, 0.5]),
             text="Carrot",
             metadata={
                 "category": "vegetable",
@@ -72,7 +72,7 @@ def sample_entries(vector_db):
             document_id=uuid4(),
             user_id=uuid4(),
             group_ids=[uuid4()],
-            vector=Vector([0.4, 0.5, 0.6]),
+            vector=Vector(data=[0.4, 0.5, 0.6]),
             text="Durian",
             metadata={
                 "category": "fruit",
@@ -87,7 +87,7 @@ def sample_entries(vector_db):
 
 
 def test_search_equality_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -99,7 +99,7 @@ def test_search_equality_filter(vector_db, sample_entries):
 
 
 def test_search_not_equal_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -111,7 +111,7 @@ def test_search_not_equal_filter(vector_db, sample_entries):
 
 
 def test_search_greater_than_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(search_limit=10, filters={"price": {"$gt": 1.0}}),
@@ -121,7 +121,7 @@ def test_search_greater_than_filter(vector_db, sample_entries):
 
 
 def test_search_less_than_or_equal_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -133,7 +133,7 @@ def test_search_less_than_or_equal_filter(vector_db, sample_entries):
 
 
 def test_search_in_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -145,7 +145,7 @@ def test_search_in_filter(vector_db, sample_entries):
 
 
 def test_search_complex_and_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -164,7 +164,7 @@ def test_search_complex_and_filter(vector_db, sample_entries):
 
 
 def test_search_complex_or_filter(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -183,7 +183,7 @@ def test_search_complex_or_filter(vector_db, sample_entries):
 
 
 def test_search_nested_and_or_filters(vector_db, sample_entries):
-    query_vector = Vector([0.2, 0.3, 0.4])
+    query_vector = Vector(data=[0.2, 0.3, 0.4])
     results = vector_db.semantic_search(
         query_vector.data,
         VectorSearchSettings(
@@ -213,7 +213,8 @@ def test_delete_equality(vector_db, sample_entries):
     deleted_ids = vector_db.delete({"category": {"$eq": "vegetable"}})
     assert len(deleted_ids) == 1
     remaining = vector_db.semantic_search(
-        Vector([0.2, 0.3, 0.4]).data, VectorSearchSettings(search_limit=10)
+        Vector(data=[0.2, 0.3, 0.4]).data,
+        VectorSearchSettings(search_limit=10),
     )
     assert len(remaining) == 3
     assert all(r.metadata["category"] == "fruit" for r in remaining)
@@ -223,7 +224,8 @@ def test_delete_greater_than(vector_db, sample_entries):
     deleted_ids = vector_db.delete({"price": {"$gt": 1.0}})
     assert len(deleted_ids) == 1
     remaining = vector_db.semantic_search(
-        Vector([0.2, 0.3, 0.4]).data, VectorSearchSettings(search_limit=10)
+        Vector(data=[0.2, 0.3, 0.4]).data,
+        VectorSearchSettings(search_limit=10),
     )
     assert len(remaining) == 3
     assert all(r.metadata["price"] <= 1.0 for r in remaining)
@@ -233,7 +235,8 @@ def test_delete_in(vector_db, sample_entries):
     deleted_ids = vector_db.delete({"color": {"$in": ["red", "yellow"]}})
     assert len(deleted_ids) == 2
     remaining = vector_db.semantic_search(
-        Vector([0.2, 0.3, 0.4]).data, VectorSearchSettings(search_limit=10)
+        Vector(data=[0.2, 0.3, 0.4]).data,
+        VectorSearchSettings(search_limit=10),
     )
     assert len(remaining) == 2
     assert all(r.metadata["color"] not in ["red", "yellow"] for r in remaining)
@@ -250,7 +253,8 @@ def test_delete_complex_and(vector_db, sample_entries):
     )
     assert len(deleted_ids) == 1
     remaining = vector_db.semantic_search(
-        Vector([0.2, 0.3, 0.4]).data, VectorSearchSettings(search_limit=10)
+        Vector(data=[0.2, 0.3, 0.4]).data,
+        VectorSearchSettings(search_limit=10),
     )
     assert len(remaining) == 3
     assert not any(
@@ -270,7 +274,8 @@ def test_delete_complex_or(vector_db, sample_entries):
     )
     assert len(deleted_ids) == 2
     remaining = vector_db.semantic_search(
-        Vector([0.2, 0.3, 0.4]).data, VectorSearchSettings(search_limit=10)
+        Vector(data=[0.2, 0.3, 0.4]).data,
+        VectorSearchSettings(search_limit=10),
     )
     assert len(remaining) == 2
     assert all(
@@ -295,7 +300,8 @@ def test_delete_nested_and_or(vector_db, sample_entries):
     )
     assert len(deleted_ids) == 3
     remaining = vector_db.semantic_search(
-        Vector([0.2, 0.3, 0.4]).data, VectorSearchSettings(search_limit=10)
+        Vector(data=[0.2, 0.3, 0.4]).data,
+        VectorSearchSettings(search_limit=10),
     )
     assert len(remaining) == 1
     assert remaining[0].metadata["category"] == "vegetable"

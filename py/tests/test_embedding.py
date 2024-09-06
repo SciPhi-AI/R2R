@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import patch
+import contextlib
 
 import pytest
 
@@ -52,12 +52,10 @@ def test_litellm_get_embedding(litellm_provider):
 
 @pytest.mark.asyncio
 async def test_litellm_async_get_embedding(litellm_provider):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         embedding = await litellm_provider.async_get_embedding("test text")
         assert len(embedding) == 1536
         assert isinstance(embedding, list)
-    except asyncio.CancelledError:
-        pass  # Task cancelled as expected
 
 
 def test_litellm_get_embeddings(litellm_provider):
@@ -68,14 +66,12 @@ def test_litellm_get_embeddings(litellm_provider):
 
 @pytest.mark.asyncio
 async def test_litellm_async_get_embeddings(litellm_provider):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         embeddings = await litellm_provider.async_get_embeddings(
             ["text1", "text2"]
         )
         assert len(embeddings) == 2
         assert all(len(emb) == 1536 for emb in embeddings)
-    except asyncio.CancelledError:
-        pass  # Task cancelled as expected
 
 
 def test_litellm_missing_provider():
@@ -233,12 +229,10 @@ def test_openai_get_embedding(openai_provider):
 
 @pytest.mark.asyncio
 async def test_openai_async_get_embedding(openai_provider):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         embedding = await openai_provider.async_get_embedding("test text")
         assert len(embedding) == 1536
         assert isinstance(embedding, list)
-    except asyncio.CancelledError:
-        pass  # Task cancelled as expected
 
 
 def test_openai_get_embeddings(openai_provider):
@@ -249,14 +243,12 @@ def test_openai_get_embeddings(openai_provider):
 
 @pytest.mark.asyncio
 async def test_openai_async_get_embeddings(openai_provider):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         embeddings = await openai_provider.async_get_embeddings(
             ["text1", "text2"]
         )
         assert len(embeddings) == 2
         assert all(len(emb) == 1536 for emb in embeddings)
-    except asyncio.CancelledError:
-        pass  # Task cancelled as expected
 
 
 def test_openai_tokenize_string(openai_provider):
