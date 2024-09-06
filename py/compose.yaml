@@ -248,4 +248,4 @@ services:
 volumes:
   hatchet_certs:
   hatchet_config:
-  hatchet_api_key:      
+  hatchet_api_key:
