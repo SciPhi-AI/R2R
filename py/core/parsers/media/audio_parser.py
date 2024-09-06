@@ -16,7 +16,9 @@ class AudioParser(AsyncParser[bytes]):
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
 
     @telemetry_event("ingest_audio")
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: bytes, chunk_size: int = 1024
+    ) -> AsyncGenerator[str, None]:
         """Ingest audio data and yield a transcription."""
         temp_audio_path = "temp_audio.wav"
         with open(temp_audio_path, "wb") as f:
@@ -25,6 +27,11 @@ class AudioParser(AsyncParser[bytes]):
             transcription_text = process_audio_with_openai(
                 open(temp_audio_path, "rb"), self.openai_api_key
             )
-            yield transcription_text
+
+            # split text into small chunks and yield them
+            for i in range(0, len(transcription_text), chunk_size):
+                text = transcription_text[i : i + chunk_size]
+                if text and text != "":
+                    yield text
         finally:
             os.remove(temp_audio_path)

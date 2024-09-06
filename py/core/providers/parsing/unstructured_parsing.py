@@ -4,22 +4,21 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import AsyncGenerator, Any
+from typing import Any, AsyncGenerator
 
 from pydantic import BaseModel
-from core import parsers
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
+from core import parsers
 from core.base import (
     Document,
     DocumentExtraction,
     DocumentType,
-    ParsingProvider,
     ParsingConfig,
+    ParsingProvider,
     generate_id_from_label,
 )
-
 from core.base.abstractions.base import R2RSerializable
 
 logger = logging.getLogger(__name__)
@@ -119,10 +118,10 @@ class UnstructuredParsingProvider(ParsingProvider):
                 self.parsers[parser_override.document_type] = parser_name()
 
     async def parse_fallback(
-        self, file_content: bytes, document: Document
+        self, file_content: bytes, document: Document, chunk_size: int
     ) -> AsyncGenerator[FallbackElement, None]:
 
-        texts = self.parsers[document.type].ingest(file_content)
+        texts = self.parsers[document.type].ingest(file_content, chunk_size)
 
         chunk_id = 0
         async for text in texts:
@@ -136,18 +135,27 @@ class UnstructuredParsingProvider(ParsingProvider):
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
+        logger.info(f"Chunking config: {self.config.chunking_config}")
+
         t0 = time.time()
         if document.type in self.AVAILABLE_PARSERS.keys():
             logger.info(
                 f"Parsing document {document.id} of type {document.type} with fallback parser"
             )
             elements = []
-            async for element in self.parse_fallback(file_content, document):
+            async for element in self.parse_fallback(
+                file_content,
+                document,
+                chunk_size=self.config.chunking_config.extra_fields[
+                    "chunking_config"
+                ].get("combine_under_n_chars", 128),
+            ):
                 elements.append(element)
         else:
             logger.info(
                 f"Parsing document {document.id} of type {document.type} with unstructured"
             )
+
             if isinstance(file_content, bytes):
                 file_content = BytesIO(file_content)
 
@@ -161,7 +169,10 @@ class UnstructuredParsingProvider(ParsingProvider):
 
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
-                        files=files, **self.config.chunking_config.dict()
+                        files=files,
+                        **self.config.chunking_config.extra_fields[
+                            "chunking_config"
+                        ],
                     )
                 )
                 elements = self.client.general.partition(req)

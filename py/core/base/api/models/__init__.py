@@ -1,8 +1,5 @@
 from .auth.responses import GenericMessageResponse, TokenResponse, UserResponse
-from .ingestion.responses import (
-    IngestionResponse,
-    WrappedIngestionResponse,
-)
+from .ingestion.responses import IngestionResponse, WrappedIngestionResponse
 from .management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
@@ -33,8 +30,8 @@ from .management.responses import (
 )
 from .restructure.responses import (
     KGCreationResponse,
-    WrappedKGCreationResponse,
     KGEnrichmentResponse,
+    WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
 from .retrieval.responses import (

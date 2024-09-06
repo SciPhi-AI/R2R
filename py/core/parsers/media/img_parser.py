@@ -36,7 +36,9 @@ class ImageParser(AsyncParser[DataType]):
         return img_byte_arr.getvalue()
 
     @telemetry_event("ingest_image")
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: DataType, chunk_size: int = 1024
+    ) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
 
         if isinstance(data, bytes):
@@ -49,10 +51,18 @@ class ImageParser(AsyncParser[DataType]):
             # Encode to base64
             data = base64.b64encode(data).decode("utf-8")
 
-        yield process_frame_with_openai(
+        text = process_frame_with_openai(
             data,
             self.openai_api_key,
             self.model,
             self.max_tokens,
             self.api_base,
         )
+
+        print(text)
+
+        # split text into small chunks and yield them
+        for i in range(0, len(text), chunk_size):
+            text = text[i : i + chunk_size]
+            if text and text != "":
+                yield text

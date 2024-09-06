@@ -1,8 +1,8 @@
 """Implementations of parsers for different data types."""
 
-import requests
-
 import logging
+
+import requests
 
 logger = logging.getLogger(__name__)
 

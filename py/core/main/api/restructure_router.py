@@ -1,9 +1,8 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
-from pathlib import Path
 import yaml
-
 from fastapi import Body, Depends
 from pydantic import Json
 
