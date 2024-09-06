@@ -249,13 +249,13 @@ class KGSearchResult(BaseModel):
                     "entities": {
                         "0": {
                             "name": "Aristotle",
-                            "description": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ..."
+                            "description": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...",
                         }
                     },
                     "relationships": {
                         "0": {
                             "name": "Influenced",
-                            "description": "Aristotle influenced numerous thinkers and philosophers, including Plato, who was his student. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced thinkers from antiquity through the Middle Ages and beyond."
+                            "description": "Aristotle influenced numerous thinkers and philosophers, including Plato, who was his student. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced thinkers from antiquity through the Middle Ages and beyond.",
                         }
                     },
                     "communities": {
@@ -269,7 +269,7 @@ class KGSearchResult(BaseModel):
                     "search_result": [
                         """### Aristotle's Key Contributions to Philosophy
                         Aristotle, an ancient Greek philosopher and polymath, made foundational contributions to numerous fields, including philosophy, logic, biology, and political science. His works have had a lasting impact on Western thought and the development of modern science.
-                        
+
                         ...."""
                     ],
                 },

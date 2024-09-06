@@ -16,7 +16,7 @@ search:
                   "search_limit": 20,
                   "use_hybrid_search": True
               },
-              kg_search_settings={ 
+              kg_search_settings={
                   "use_kg_search": True, # graph needs to be constructed first
                   "kg_search_type": "local",
                   "kg_search_level": 0,
@@ -88,7 +88,7 @@ rag:
                   "use_hybrid_search": True
               },
               kg_search_settings={
-                  "use_kg_search": True, 
+                  "use_kg_search": True,
                   "kg_search_type": "local",
                   "kg_search_level": 0,
                   "kg_search_generation_config": {
