@@ -32,7 +32,7 @@ r2r serve --config-name=neo4j_kg
 [chunking]
 provider = "unstructured_local"
 strategy = "auto"
-chunking_strategy = "basic" 
+chunking_strategy = "basic"
 new_after_n_chars = 512
 max_characters = 1_024
 combine_under_n_chars = 128
@@ -161,7 +161,7 @@ r2r documents-overview
 {'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 'title': 'aristotle.txt', 'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 'type': 'txt', 'created_at': '2024-09-05T18:20:47.921933Z', 'updated_at': '2024-09-05T18:20:47.921938Z', 'ingestion_status': 'success', 'restructuring_status': 'pending', 'version': 'v0', 'group_ids': [], 'metadata': {'version': 'v0'}}
 ```
 
-When ingestion completes successfully for a given file we will find that `ingestion_status` reads `success` in the corresponding output. 
+When ingestion completes successfully for a given file we will find that `ingestion_status` reads `success` in the corresponding output.
 
 ## Create Knowledge Graph
 
@@ -261,12 +261,12 @@ The answer will be returned in JSON format and contains results from entities, r
 Vector search results:
 [
   {
-    'fragment_id': 'ecc754cd-380d-585f-84ac-021542ef3c1d', 
-    'extraction_id': '92d78034-8447-5046-bf4d-e019932fbc20', 
-    'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 
-    'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 
-    'group_ids': [], 
-    'score': 0.7393344796100582, 
+    'fragment_id': 'ecc754cd-380d-585f-84ac-021542ef3c1d',
+    'extraction_id': '92d78034-8447-5046-bf4d-e019932fbc20',
+    'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+    'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+    'group_ids': [],
+    'score': 0.7393344796100582,
     'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.\n\nLittle is known about Aristotle's life. He was born in the city of Stagira in northern Greece during the Classical period. His father, Nicomachus, died when Aristotle was a child, and he was brought up by a guardian. At 17 or 18, he joined Plato's Academy in Athens and remained there until the age of 37 (c.\u2009347 BC). Shortly after Plato died, Aristotle left Athens and, at the request of Philip II of Macedon, tutored his son Alexander the Great beginning in 343 BC. He established a library in the Lyceum, which helped him to produce many of his hundreds of books on papyrus scrolls.\n\nThough Aristotle wrote many elegant treatises and dia ...",
     'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'file_name': 'tmpm3ceiqs__aristotle.txt', 'chunk_order': 0, 'document_type': 'txt', 'size_in_bytes': 73353, 'unstructured_filetype': 'text/plain', 'unstructured_languages': ['eng'], 'partitioned_by_unstructured': True, 'associatedQuery': 'Who is Aristotle?'}}
   }, ...
@@ -275,14 +275,14 @@ Vector search results:
 KG search results:
 {
   'local_result': {
-    'query': 'Who is Aristotle?', 
+    'query': 'Who is Aristotle?',
     'entities': {'0': {'name': 'Aristotle', 'description': 'Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...'}},
-    'relationships': {}, 
+    'relationships': {},
     'communities': {'0': {'summary': '```json\n{\n    "title": "Aristotle and His Contributions",\n    "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.",\n    "rating": 9.5,\n    "rating_explanation": "The impact severity rating is high due to Aristotle's foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.",\n    "findings": [\n        {\n            "summary": "Aristotle's Foundational Role in Logic",\n            "explanation": "Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six bo ...}}}}
   },
   'global_result': None
 }
-Time taken: 2.39 seconds    
+Time taken: 2.39 seconds
 ```
 
 ### Global search
@@ -339,37 +339,37 @@ Aristotle's contributions to philosophy are vast and multifaceted, spanning ethi
 You can directly use these search results as part of your RAG pipeline.
 
 ```bash
-r2r rag --query="Which companies in this batch have the highest chance of success?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
+r2r rag --query="What are the key contributions of Aristotle to modern society?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
 ```
 
 The output is as follows:
 ```
 'results': {
   'completion': {
-    'id': 'chatcmpl-A4CPZfvJWHNdbSU0EaUYW2jVjpOgi', 
+    'id': 'chatcmpl-A4CPZfvJWHNdbSU0EaUYW2jVjpOgi',
     'choices': [
       {
-        'finish_reason': 'stop', 
-        'index': 0, 
-        'logprobs': None, 
+        'finish_reason': 'stop',
+        'index': 0,
+        'logprobs': None,
         'message': {
           'content': 'Aristotle's contributions that still impact modern society span a wide range of fields:
           1. **Logic**: Aristotle is often called the father of formal logic. His work in this area laid the groundwork for the development of logical reasoning, which continues to be a fundamental aspect of modern philosophy, mathematics, and computer science [2].
-          
+
           2. **Biology**: Aristotle is considered the first person to study biology systematically. His observations and classifications in zoology and embryology have influenced the field significantly. Modern zoologists still refer to him as the father of biology, and his methods of empirical observation are foundational to the scientific method [2], [6].
-          
+
           3. **Political Science**: Aristotle's work in political science, particularly his book "Politics," has had a lasting influence on the field. His ideas about the nature of the city, the role of citizens, and the classification of political systems continue to be relevant in contemporary political theory and practice [2], [8].
-          
+
           4. **Ethics**: Aristotle's "Nicomachean Ethics" explores the concept of virtue and the good life, which remains a cornerstone of modern ethical theory. His ideas have seen a resurgence with the modern advent of virtue ethics [1], [12].
-          
+
           5. **Scientific Method**: Aristotle's contributions to the scientific method, including his emphasis on empirical observation and systematic inquiry, have left every future scientist and philosopher in his debt. His approach to studying the natural world laid the groundwork for modern scientific inquiry [2], [12].
-          
+
           6. **Literature and the Arts**: Aristotle's "Poetics" has profoundly influenced literary theory, particularly the structure of tragedy. His analysis of plot, character, and catharsis continues to be a reference point for writers and critics [4].
-          
+
           7. **Economics**: Aristotle made substantial contributions to economic thought, particularly in his discussions on property, trade, and the origin of money. His ideas influenced medieval economic thought and continue to be relevant in discussions about the nature and function of money [5].
-          
+
           8. **Psychology**: Aristotle's exploration of the rational soul and its capabilities has significantly influenced philosophical thought and ethical reasoning. His classification of the rational soul underscores the unique capabilities of human cognition [12].
-          
+
           These contributions highlight Aristotle's enduring legacy and his profound impact on various fields of modern knowledge and society.', 'refusal': None, 'role': 'assistant', 'function_call': None, 'tool_calls': None}}], 'created': 1725564385, 'model': 'gpt-4o-2024-05-13
           ',
           ....
@@ -378,7 +378,7 @@ The output is as follows:
 
 # Conclusion
 
-In conclusion, integrating R2R with GraphRAG significantly enhances the capabilities of your RAG applications. By leveraging the power of graph-based knowledge representations, GraphRAG allows for more nuanced and context-aware information retrieval. This is evident in the example query we ran using R2R, which not only retrieved relevant information but also provided a structured analysis of the companies most likely to succeed.
+In conclusion, integrating R2R with GraphRAG significantly enhances the capabilities of your RAG applications. By leveraging the power of graph-based knowledge representations, GraphRAG allows for more nuanced and context-aware information retrieval. This is evident in the example query we ran using R2R, which not only retrieved relevant information but also provided a structured analysis of the key contributions of Aristotle to modern society.
 
 In essence, combining R2R with GraphRAG empowers your RAG applications to deliver more intelligent, context-aware, and insightful responses, making it a powerful tool for advanced information retrieval and analysis tasks.
 

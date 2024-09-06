@@ -5,7 +5,7 @@ description: 'Configure your R2R ingestion pipeline'
 ## Introduction
 
 
-The Ingestion Pipeline is a core component of the R2R framework that processes and stores incoming documents. It supports various document formats and can store data in vector databases and knowledge graphs, enabling efficient retrieval and analysis in downstream processes. 
+The Ingestion Pipeline is a core component of the R2R framework that processes and stores incoming documents. It supports various document formats and can store data in vector databases and knowledge graphs, enabling efficient retrieval and analysis in downstream processes.
 
 R2R integrates Unstructured's open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) by default to parse supported file types.
 
@@ -20,7 +20,7 @@ provider = "postgres"
 [chunking]
 provider = "unstructured_local"
 strategy = "auto"
-chunking_strategy = "basic" 
+chunking_strategy = "basic"
 new_after_n_chars = 512
 max_characters = 1_024
 combine_under_n_chars = 128

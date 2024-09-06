@@ -574,9 +574,7 @@ Knowledge Graphs are not constructed by default, refer to the [cookbook here](/c
 client.search("Who founded Airbnb?", kg_search_settings={
     "use_kg_search": True,
     "kg_search_type": "global",
-    "kg_search_level": "global",
-    "entity_types": ["Person", "Organization"],
-    "relationships": ["founder", "CEO"],
+    "kg_search_level": 0, # level of community to search
     "max_community_description_length": 16384,
     "max_llm_queries_for_global_search": 250,
     "local_search_limits": {
@@ -593,9 +591,7 @@ client.search("Who founded Airbnb?", kg_search_settings={
 await client.search("Who founded Airbnb?", true, {}, 10, false, {}, {
     useKgSearch: true,
     kgSearchType: "global",
-    kgSearchLevel: "global",
-    entityTypes: ["Person", "Organization"],
-    relationships: ["founder", "CEO"],
+    kgSearchLevel: 0,
     maxCommunityDescriptionLength: 16384,
     maxLlmQueriesForGlobalSearch: 250,
     localSearchLimits: {
@@ -616,9 +612,7 @@ curl -X POST http://localhost:7272/v2/search \
     "kg_search_settings": {
       "use_kg_search": true,
       "kg_search_type": "global",
-      "kg_search_level": "global",
-      "entity_types": ["Person", "Organization"],
-      "relationships": ["founder", "CEO"],
+      "kg_search_level": "1",
       "max_community_description_length": 16384,
       "max_llm_queries_for_global_search": 250,
       "local_search_limits": {
@@ -636,7 +630,7 @@ Key configurable parameters for knowledge graph search include:
 
 - `use_kg_search`: Enable knowledge graph search.
 - `kg_search_type`: Choose between "global" or "local" search.
-- `kg_search_level`: Specify the level of search (e.g., "global", "community", "entity").
+- `kg_search_level`: Specify the level of community to search.
 - `entity_types`: List of entity types to include in the search.
 - `relationships`: List of relationship types to include in the search.
 - `max_community_description_length`: Maximum length of community descriptions.
