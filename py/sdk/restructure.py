@@ -28,7 +28,8 @@ class RestructureMethods:
             "document_ids": document_ids,
             "kg_creation_settings": kg_creation_settings,
         }
-        return await client._make_request("POST", "create_graph", json=data)
+        response = await client._make_request("POST", "create_graph", json=data)
+        return response
 
     @staticmethod
     async def enrich_graph(
@@ -52,4 +53,5 @@ class RestructureMethods:
         data = {
             "kg_enrichment_settings": kg_enrichment_settings,
         }
-        return await client._make_request("POST", "enrich_graph", json=data)
+        response = await client._make_request("POST", "enrich_graph", json=data)
+        return response

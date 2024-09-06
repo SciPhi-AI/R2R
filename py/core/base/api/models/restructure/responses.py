@@ -1,14 +1,20 @@
 from typing import Any, Dict
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.base.api.models.base import ResultsWrapper
 
 
 class KGCreationResponse(BaseModel):
-    message: str
-    task_id: UUID
+    message: str = Field(
+        ...,
+        description="A message describing the result of the restructure request.",
+    )
+    task_id: UUID = Field(
+        ...,
+        description="The task ID of the restructure request.",
+    )
 
     class Config:
         json_schema_extra = {
@@ -20,8 +26,14 @@ class KGCreationResponse(BaseModel):
 
 
 class KGEnrichmentResponse(BaseModel):
-    message: str
-    task_id: UUID
+    message: str = Field(
+        ...,
+        description="A message describing the result of the restructure request.",
+    )
+    task_id: UUID = Field(
+        ...,
+        description="The task ID of the restructure request.",
+    )
 
     class Config:
         json_schema_extra = {

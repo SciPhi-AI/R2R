@@ -8,8 +8,8 @@ from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
 from core.base.api.models.restructure.responses import (
-    WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponse,
+    KGCreationResponse,
+    KGEnrichmentResponse
 )
 from core.base.providers import OrchestrationProvider
 
@@ -71,7 +71,7 @@ class RestructureRouter(BaseRouter):
                 default_factory=KGCreationSettings
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
+        ) -> KGCreationResponse:
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
@@ -96,10 +96,10 @@ class RestructureRouter(BaseRouter):
                 "create-graph", {"request": workflow_input}
             )
 
-            return WrappedKGCreationResponse(
-                message="Graph creation task queued successfully.",
-                task_id=str(task_id),
-            )
+            return {
+                "message": "Graph creation task queued successfully.",
+                "task_id": str(task_id),
+            }
 
         @self.router.post(
             "/enrich_graph",
@@ -110,7 +110,7 @@ class RestructureRouter(BaseRouter):
                 default_factory=KGEnrichmentSettings
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
+        ) -> KGEnrichmentResponse:
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
@@ -131,7 +131,7 @@ class RestructureRouter(BaseRouter):
                 "enrich-graph", {"request": workflow_input}
             )
 
-            return WrappedKGEnrichmentResponse(
-                message="Graph enrichment task queued successfully.",
-                task_id=str(task_id),
-            )
+            return {
+                "message": "Graph enrichment task queued successfully.",
+                "task_id": str(task_id),
+            }
