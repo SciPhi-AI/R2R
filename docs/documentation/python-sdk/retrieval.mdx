@@ -486,7 +486,8 @@ custom_rag_response = client.rag(
         },
     },
     kg_search_settings={
-        "use_kg_search": True
+        "use_kg_search": True,
+        "kg_search_type": "local",
     },
     rag_generation_config={
         "model": "anthropic/claude-3-haiku-20240307",

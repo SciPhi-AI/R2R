@@ -57,6 +57,7 @@ def process_audio_with_openai(
         files={"file": audio_file},
         data={"model": "whisper-1"},
     )
+
     transcription = transcription_response.json()
 
     return transcription["text"]
