@@ -166,6 +166,141 @@ This example demonstrates how to:
 
 ...
 
+## Advanced Usage: Customizing R2R's RAG Agent
+
+For developers who need deep customization of the RAG process, R2R allows you to extend the `R2RStreamingRAGAssistant` class and add custom tools. You can then use the `R2RBuilder` to integrate your custom assistant into the R2R framework. Here's an example of how to create a custom RAG assistant with additional tools:
+
+```python
+from r2r import R2RBuilder, R2RConfig
+from r2r.assistants import R2RStreamingRAGAssistant
+from r2r.base import Tool, LLMProvider, PromptProvider, AssistantConfig
+from r2r.pipelines import SearchPipeline
+import asyncio
+
+class CustomRAGAssistant(R2RStreamingRAGAssistant):
+    def __init__(
+        self,
+        llm_provider: LLMProvider,
+        prompt_provider: PromptProvider,
+        search_pipeline: SearchPipeline,
+        config: AssistantConfig,
+    ):
+        super().__init__(
+            llm_provider=llm_provider,
+            prompt_provider=prompt_provider,
+            search_pipeline=search_pipeline,
+            config=config,
+        )
+        self.add_custom_tools()
+
+    def add_custom_tools(self):
+        calculator_tool = Tool(
+            name="calculator",
+            description="Perform basic arithmetic operations",
+            function=self.calculate,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "operation": {
+                        "type": "string",
+                        "enum": ["add", "subtract", "multiply", "divide"],
+                        "description": "The arithmetic operation to perform",
+                    },
+                    "num1": {"type": "number", "description": "The first number"},
+                    "num2": {"type": "number", "description": "The second number"},
+                },
+                "required": ["operation", "num1", "num2"],
+            },
+        )
+        self.config.tools.append(calculator_tool)
+
+    async def calculate(self, operation: str, num1: float, num2: float) -> str:
+        if operation == "add":
+            result = num1 + num2
+        elif operation == "subtract":
+            result = num1 - num2
+        elif operation == "multiply":
+            result = num1 * num2
+        elif operation == "divide":
+            if num2 == 0:
+                return "Error: Division by zero"
+            result = num1 / num2
+        else:
+            return "Error: Invalid operation"
+
+        return f"The result of {operation} {num1} and {num2} is {result}"
+
+# Custom assistant factory
+def create_custom_assistant(
+    llm_provider: LLMProvider,
+    prompt_provider: PromptProvider,
+    search_pipeline: SearchPipeline,
+    config: AssistantConfig,
+):
+    return CustomRAGAssistant(
+        llm_provider=llm_provider,
+        prompt_provider=prompt_provider,
+        search_pipeline=search_pipeline,
+        config=config,
+    )
+
+# Build custom R2R instance with the custom assistant
+custom_r2r = (
+    R2RBuilder(config_name="default")
+    .with_assistant_factory(create_custom_assistant)
+    .build()
+)
+
+# Use the custom R2R instance
+async def custom_rag_agent_example():
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant with access to a large knowledge base and a calculator."},
+        {"role": "user", "content": "What's the square root of 144, and who discovered it?"},
+    ]
+
+    response = await custom_r2r.engine.agent(
+        messages=messages,
+        rag_generation_config={"max_tokens": 300, "temperature": 0.7, "stream": True},
+        vector_search_settings={"use_vector_search": True, "search_limit": 5},
+        kg_search_settings={"use_kg_search": True},
+    )
+
+    print("Custom RAG Agent Response:")
+    async for chunk in response:
+        print(chunk, end="", flush=True)
+    print()
+
+# Run the example
+asyncio.run(custom_rag_agent_example())
+```
+
+This example demonstrates how to:
+
+1. Create a `CustomRAGAssistant` class that inherits from `R2RStreamingRAGAssistant`.
+2. Add a custom calculator tool to the assistant.
+3. Implement the `calculate` method to handle arithmetic operations.
+4. Create a custom assistant factory function.
+5. Use the `R2RBuilder` to integrate the custom assistant into R2R.
+6. Use the custom R2R instance to perform a RAG chat operation.
+
+Key points about this approach:
+
+- **Extensibility**: You can add any number of custom tools to your assistant, expanding its capabilities beyond the default RAG functionality.
+- **Inheritance**: By inheriting from `R2RStreamingRAGAssistant`, you maintain all the core RAG capabilities while adding your own features.
+- **Integration**: The `R2RBuilder` allows you to seamlessly integrate your custom assistant into the R2R framework.
+- **Flexibility**: This approach allows you to customize not just the tools, but also the behavior of the assistant itself if needed.
+
+To further customize your RAG assistant, you can:
+
+- Add more complex tools that interact with external APIs or databases.
+- Implement custom pre-processing or post-processing logic for the assistant's responses.
+- Override methods from the base `R2RStreamingRAGAssistant` class to modify core behaviors.
+
+By extending the `R2RStreamingRAGAssistant` and using the `R2RBuilder`, you have the flexibility to create highly customized RAG assistants while still benefiting from R2R's robust architecture and built-in functionality.
+
+This direct API call gives you full control over the request parameters and can be useful for debugging or when integrating R2R's RAG capabilities into other applications.
+
+
 ## Conclusion
 
 The R2R RAG assistant is a powerful tool that combines large language models with advanced search capabilities. By leveraging your ingested documents and the flexible `agent` endpoint, you can create dynamic, context-aware conversational experiences.
