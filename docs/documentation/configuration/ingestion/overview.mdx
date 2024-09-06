@@ -5,7 +5,9 @@ description: 'Configure your R2R ingestion pipeline'
 ## Introduction
 
 
-The Ingestion Pipeline is a core component of the R2R framework, responsible for processing and storing incoming documents. It supports a wide range of document formats and can store data in vector databases and knowledge graphs, enabling efficient retrieval and analysis in downstream processes.
+The Ingestion Pipeline is a core component of the R2R framework that processes and stores incoming documents. It supports various document formats and can store data in vector databases and knowledge graphs, enabling efficient retrieval and analysis in downstream processes. 
+
+R2R integrates Unstructured's open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) by default to parse supported file types.
 
 ## Key Configuration Areas
 
@@ -16,10 +18,17 @@ Many of the settings managed by the `r2r.toml` relate to the ingestion process, 
 provider = "postgres"
 
 [chunking]
-provider = "r2r"
-method = "recursive"
-chunk_size = 512
-chunk_overlap = 50
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "basic" 
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
+
+[parsing]
+provider = "unstructured_local"
+excluded_parsers = ["mp4"]
 
 [embedding]
 provider = "litellm"
@@ -30,23 +39,19 @@ add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
 
-[kg]
-provider = "None"
-
 [parsing]
 provider = "r2r"
 excluded_parsers = ["mp4"]
 ```
-
-These settings directly impact how R2R performs retrieval operations:
+These settings directly impact how R2R performs ingestion:
 
 - The `[database]` section configures the vector database used for semantic search. During retrieval, this database is queried to find the most relevant document chunks based on vector similarity.
 
+- The `[chunking]` section defines how documents are split into smaller, manageable pieces. This affects the granularity of information storage and retrieval.
+
+- The `[parsing]` section determines how different file types are processed and converted into text. This impacts the initial extraction of content from various document formats.
+
 - The `[embedding]` section defines the model and parameters for converting text into vector embeddings. In the retrieval process, these settings are used to embed the user's query, allowing it to be compared against the stored document embeddings.
-
-- The `[kg]` section, when configured, enables knowledge graph-based retrieval. This allows for more structured and relationship-aware searches, complementing vector-based retrieval.
-
-- The `[completion]` section sets up the language model used for generating responses in the RAG pipeline. This model takes the retrieved context and the user's query to produce a final, contextually relevant response.
 
 
 ## Key Features
@@ -78,7 +83,7 @@ graph TD
 For more detailed information on configuring specific components of the ingestion pipeline, please refer to the following pages:
 
 - [Parsing Configuration](/documentation/configuration/ingestion/parsing)
-- [Postgres Database Configuration](/documentation/configuration/ingestion/postgres)
 - [Chunking Configuration](/documentation/configuration/ingestion/chunking)
 - [Embedding Configuration](/documentation/configuration/ingestion/embedding)
-- [Knowledge Graph Configuration](/documentation/configuration/ingestion/knowledge-graph)
+- [Knowledge Graph Configuration](/documentation/configuration/knowledge-graph/overview)
+- [Retrieval Configuration](/documentation/configuration/retrieval/overview)

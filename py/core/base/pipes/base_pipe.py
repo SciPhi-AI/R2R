@@ -78,7 +78,7 @@ class AsyncPipe:
     class Input(BaseModel):
         """Input for a pipe."""
 
-        message: AsyncGenerator[Any, None]
+        message: Any
 
         class Config:
             extra = "forbid"
@@ -124,7 +124,7 @@ class AsyncPipe:
     async def run(
         self,
         input: Input,
-        state: AsyncState,
+        state: Optional[AsyncState] = None,
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
@@ -140,13 +140,25 @@ class AsyncPipe:
                 )
                 try:
                     async for result in self._run_logic(
-                        input, state, run_id=run_id, *args, **kwargs
+                        input, state=state, run_id=run_id, *args, **kwargs
                     ):
                         yield result
                 finally:
-                    await self.log_queue.join()
-                    self.log_worker_task.cancel()
-                    self.log_queue = asyncio.Queue()
+                    # Ensure the log queue is empty
+                    while not self.log_queue.empty():
+                        await self.log_queue.get()
+                        self.log_queue.task_done()
+
+                    # Cancel and wait for the log worker task
+                    if (
+                        self.log_worker_task
+                        and not self.log_worker_task.done()
+                    ):
+                        self.log_worker_task.cancel()
+                        try:
+                            await self.log_worker_task
+                        except asyncio.CancelledError:
+                            pass
 
         return wrapped_run()
 
@@ -154,7 +166,6 @@ class AsyncPipe:
     async def _run_logic(
         self,
         input: Input,
-        state: AsyncState,
         run_id: UUID,
         *args: Any,
         **kwargs: Any,

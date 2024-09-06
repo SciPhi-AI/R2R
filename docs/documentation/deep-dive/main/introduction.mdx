@@ -17,17 +17,16 @@ flowchart TD
         direction TB
         Config[R2RConfig]
         Builder[R2RBuilder]
-        
+
         subgraph Factories
             PF[R2RProviderFactory]
             PiF[R2RPipeFactory]
             PlF[R2RPipelineFactory]
         end
-        
-        Engine[R2REngine]
-        App[R2RApp]
-        R2R[R2R]
-        
+
+        Engine[Orchestration]
+        API[API]
+
         Config --> Builder
         Builder --> PF
         Builder --> PiF
@@ -35,11 +34,9 @@ flowchart TD
         PF --> Engine
         PiF --> Engine
         PlF --> Engine
-        Engine --> App
-        Engine --> R2R
-        App --> R2R
+        Engine --> API
     end
-    
+
     User[Developer] --> |Customizes| Config
     User --> |Uses| Builder
     User --> |Overrides| Factories
@@ -83,25 +80,6 @@ builder.with_llm_provider(custom_llm_provider)
 r2r = builder.build()
 ```
 
-## R2REngine
-
-R2REngine is the core component that orchestrates the RAG functionality. It integrates various services and provides the main interface for R2R operations.
-
-Key features of R2REngine:
-
-1. **Service Integration**: Initializes and manages various services (ingestion, retrieval, management, auth).
-2. **Async/Sync Interface**: Provides both asynchronous and synchronous methods for all operations.
-3. **Extensibility**: Can be extended or overridden to add custom functionality.
-
-Example usage:
-```python
-engine = R2REngine(config, providers, pipelines)
-results = await engine.asearch("query")
-
-# everything can be ran synchronously
-results_sync = engine.search("query")
-```
-
 ## R2RApp
 
 R2RApp is the class responsible for setting up the FastAPI application that serves as the interface for the R2R system. It encapsulates the routing and CORS configuration for the R2R API.
@@ -115,39 +93,9 @@ Key features of R2RApp:
 
 Example usage:
 ```python
-app = R2RApp(engine)
-app.serve(host="0.0.0.0", port=8000)
+app = r2r.app
+app.serve(host="0.0.0.0", port=7272)
 ```
 
-## R2R
 
-R2R is the main class that ties everything together. It serves as the primary interface for users of the R2R framework, encapsulating both the R2REngine (which handles the core RAG functionality) and the R2RApp (which provides the API interface).
-
-Key features of R2R:
-
-1. **Unified Interface**: Provides a single point of access to both the engine functionality and the API application.
-2. **Flexible Initialization**: Can be initialized either with pre-built engine and app instances, or by providing a configuration to build these components.
-3. **Attribute Delegation**: Delegates attribute access to the underlying engine, allowing direct access to engine methods.
-
-Example usage:
-```python
-# Using pre-built components
-engine = R2REngine(config, providers, pipelines)
-app = R2RApp(engine)
-r2r = R2R(engine=engine, app=app)
-
-# Using configuration
-config = R2RConfig.from_toml("path/to/config.toml")
-r2r = R2R(config=config)
-
-# Accessing engine methods
-results = r2r.search("query")
-
-# Accessing the FastAPI application
-fastapi_app = r2r.fapp
-
-# Starting the server
-r2r.serve(host="0.0.0.0", port=8000)
-```
-
-By combining these core components, R2R provides a flexible and powerful system for building and deploying RAG applications. The R2RConfig allows for easy customization, the R2RBuilder facilitates the assembly process, the R2REngine provides core functionality, the R2RApp offers a robust API interface, and the R2R class brings it all together in a user-friendly package.
+By combining these core components, R2R provides a flexible and powerful system for building and deploying RAG applications. The R2RConfig allows for easy customization while the R2RBuilder facilitates the assembly process. Lastly, the R2RApp offers a robust API interface.

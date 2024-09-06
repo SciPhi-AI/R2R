@@ -25,7 +25,7 @@ const ingestResponse = await client.ingestFiles(files, {
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="object">
-      The response from the R2R system after ingesting the files. 
+      The response from the R2R system after ingesting the files.
       ```bash
       {'results': {'processed_documents': [{'id': 'c3291abf-8a4e-5d9d-80fd-232ef6fd8526', 'title': 'file1.txt', ...}], 'failed_documents': [], 'skipped_documents': []}}
       ```
@@ -49,31 +49,135 @@ const ingestResponse = await client.ingestFiles(files, {
   <ParamField path="user_ids" type="Array<string | null>">
     An optional array of user IDs associated with the ingested files.
   </ParamField>
+</ParamField>
 
-  <ParamField path="chunking_settings" type="Record<string, any>">
-    The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
-    <Expandable title="properties">
-    <ParamField path="provider" type="str" default="r2r">
-    Which chunking provider to use, `r2r` or `unstructured`. Selecting `unstructured` is generally recommended when parsing with `unstructured` or `unstructured_api`.
+<ParamField path="chunking_config" type="Optional[Union[dict, ChunkingConfig]]">
+  The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
+  <Expandable title="properties">
+    <ParamField path="provider" type="str" default="unstructured_local">
+      Which chunking provider to use. Options are "r2r", "unstructured_local", or "unstructured_api".
     </ParamField>
 
-    <ParamField path="method" type="str" default="recursive">
-    Which chunking method to apply? When using unstructured, `by_title` or `basic` are supported.
+    <ParamField path="method" type="str" default="by_title">
+      Which chunking method to apply. Options are "by_title", "basic", "recursive", or "character".
     </ParamField>
 
     <ParamField path="chunk_size" type="int" default="512">
-    The average size of chunks, in tokens.
+      The average size of chunks, in tokens.
     </ParamField>
 
     <ParamField path="chunk_overlap" type="int" default="20">
-    The default overlap between chunks.
+      The default overlap between chunks.
     </ParamField>
 
     <ParamField path="max_chunk_size" type="Optional[int]" default="None">
-    Sets a maximum size on output chunks.
+      Sets a maximum size on output chunks.
+    </ParamField>
+
+    <ParamField path="combine_under_n_chars" type="Optional[int]">
+      Combine chunks smaller than this number of characters.
+    </ParamField>
+
+    <ParamField path="max_characters" type="Optional[int]">
+      Maximum number of characters per chunk.
+    </ParamField>
+
+    <ParamField path="coordinates" type="bool" default="False">
+      Whether to include coordinates in the output.
+    </ParamField>
+
+    <ParamField path="encoding" type="Optional[str]">
+      Encoding to use for text files.
+    </ParamField>
+
+    <ParamField path="extract_image_block_types" type="Optional[list[str]]">
+      Types of image blocks to extract.
+    </ParamField>
+
+    <ParamField path="gz_uncompressed_content_type" type="Optional[str]">
+      Content type for uncompressed gzip files.
+    </ParamField>
+
+    <ParamField path="hi_res_model_name" type="Optional[str]">
+      Name of the high-resolution model to use.
+    </ParamField>
+
+    <ParamField path="include_orig_elements" type="Optional[bool]" default="False">
+      Whether to include original elements in the output.
+    </ParamField>
+
+    <ParamField path="include_page_breaks" type="bool">
+      Whether to include page breaks in the output.
+    </ParamField>
+
+    <ParamField path="languages" type="Optional[list[str]]">
+      List of languages to consider for text processing.
+    </ParamField>
+
+    <ParamField path="multipage_sections" type="bool" default="True">
+      Whether to allow sections to span multiple pages.
+    </ParamField>
+
+    <ParamField path="new_after_n_chars" type="Optional[int]">
+      Start a new chunk after this many characters.
+    </ParamField>
+
+    <ParamField path="ocr_languages" type="Optional[list[str]]">
+      Languages to use for OCR.
+    </ParamField>
+
+    <ParamField path="output_format" type="str" default="application/json">
+      Format of the output.
+    </ParamField>
+
+    <ParamField path="overlap" type="int" default="0">
+      Number of characters to overlap between chunks.
+    </ParamField>
+
+    <ParamField path="overlap_all" type="bool" default="False">
+      Whether to overlap all chunks.
+    </ParamField>
+
+    <ParamField path="pdf_infer_table_structure" type="bool" default="True">
+      Whether to infer table structure in PDFs.
+    </ParamField>
+
+    <ParamField path="similarity_threshold" type="Optional[float]">
+      Threshold for considering chunks similar.
+    </ParamField>
+
+    <ParamField path="skip_infer_table_types" type="Optional[list[str]]">
+      Types of tables to skip inferring.
+    </ParamField>
+
+    <ParamField path="split_pdf_concurrency_level" type="int" default="5">
+      Concurrency level for splitting PDFs.
+    </ParamField>
+
+    <ParamField path="split_pdf_page" type="bool" default="True">
+      Whether to split PDFs by page.
+    </ParamField>
+
+    <ParamField path="starting_page_number" type="Optional[int]">
+      Page number to start processing from.
+    </ParamField>
+
+    <ParamField path="strategy" type="str" default="auto">
+      Strategy for processing. Options are "auto", "fast", or "hi_res".
+    </ParamField>
+
+    <ParamField path="chunking_strategy" type="Optional[str]" default="by_title">
+      Strategy for chunking. Options are "by_title" or "basic".
+    </ParamField>
+
+    <ParamField path="unique_element_ids" type="bool" default="False">
+      Whether to generate unique IDs for elements.
+    </ParamField>
+
+    <ParamField path="xml_keep_tags" type="bool" default="False">
+      Whether to keep XML tags in the output.
     </ParamField>
   </Expandable>
-  </ParamField>
 </ParamField>
 
 ### Update Files
@@ -115,7 +219,7 @@ const updateResponse = await client.updateFiles(files, {
     An optional array of metadata objects for the updated files.
   </ParamField>
 
-  <ParamField path="chunking_settings" type="Record<string, any>">
+  <ParamField path="chunking_config" type="Record<string, any>">
     The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
     <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">
@@ -157,14 +261,14 @@ const documentsOverview = await client.documentsOverview();
       ```bash
       [
         {
-          'document_id': '93123a68-d668-51de-8291-92162730dc87', 
+          'document_id': '93123a68-d668-51de-8291-92162730dc87',
           'version': 'v1',
           'size_in_bytes': 73353,
           'metadata': {},
           'status': 'success',
           'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-          'title': 'aristotle.txt', 
-          'created_at': '2024-07-21T20:09:14.218741Z', 
+          'title': 'aristotle.txt',
+          'created_at': '2024-07-21T20:09:14.218741Z',
           'updated_at': '2024-07-21T20:09:14.218741Z',
           'metadata': {'x': 'y'}
         },

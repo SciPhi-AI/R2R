@@ -1,3 +1,12 @@
+[chunking]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "basic" 
+new_after_n_chars = 2_048
+max_characters = 4_096 # use larger max_characters for KG construction
+combine_under_n_chars = 512
+overlap = 20
+    
 [completion]
 provider = "litellm"
 concurrent_request_limit = 1
@@ -8,7 +17,7 @@ concurrent_request_limit = 1
   top_p = 1
   max_tokens_to_sample = 1_024
   stream = false
-  add_generation_kwargs = { }
+  add_generation_kwargs = {}
 
 [embedding]
 provider = "ollama"
@@ -22,6 +31,7 @@ excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 
 [kg]
 provider = "neo4j"
+batch_size = 256
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_extraction_config]
@@ -32,12 +42,13 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
   stream = false
   add_generation_kwargs = { }
 
+  [kg.kg_creation_settings]
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     max_knowledge_triples = 100
-    generation_config_triplet = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
-    generation_config_enrichment = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_cluster_size = 1000 } # more params in graspologic/partition/leiden.py
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_cluster_size = 1000 } # more params
 
   [kg.kg_search_config]
     model = "ollama/llama3.1"

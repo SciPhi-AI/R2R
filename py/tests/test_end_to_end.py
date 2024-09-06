@@ -8,7 +8,6 @@ from fastapi.datastructures import UploadFile
 from core import (
     Document,
     DocumentInfo,
-    DocumentStatus,
     DocumentType,
     GenerationConfig,
     R2RConfig,
@@ -43,9 +42,7 @@ def app(request):
     config.logging.logging_path = uuid.uuid4().hex
 
     config.database.provider = "postgres"
-    config.database.extra_fields["vecs_collection"] = (
-        config.logging.logging_path
-    )
+    config.database.vecs_collection = config.logging.logging_path
     try:
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()
@@ -144,7 +141,7 @@ async def test_ingest_txt_file(app, user):
         file.file.seek(0, 2)  # Move to the end of the file
         file.size = file.file.tell()  # Get the file size
         file.file.seek(0)  # Move back to the start of the file
-    await app.aingest_files(metadatas=[metadata], files=files, user=user)
+    await app.ingest_files(metadatas=[metadata], files=files, user=user)
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
@@ -182,7 +179,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
     # Convert metadata to JSON string
     run_info = await logging_connection.get_info_logs(run_type_filter="search")
 
-    ingestion_result = await app.aingest_files(
+    ingestion_result = await app.ingest_files(
         files=files, user=user, metadatas=[metadata]
     )
 
@@ -206,7 +203,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
         in search_results["vector_search_results"][0]["text"]
     )
     ## test stream
-    response = await app.arag(
+    response = await app.rag(
         query="Who was aristotle?",
         rag_generation_config=GenerationConfig(
             **{"model": "gpt-3.5-turbo", "stream": True}

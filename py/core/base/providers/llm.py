@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: Optional[GenerationConfig] = None
-    concurrency_limit: int = 16
+    concurrent_request_limit: int = 256
     max_retries: int = 2
     initial_backoff: float = 1.0
     max_backoff: float = 60.0
@@ -44,9 +44,9 @@ class CompletionProvider(Provider):
         logger.info(f"Initializing CompletionProvider with config: {config}")
         super().__init__(config)
         self.config: CompletionConfig = config
-        self.semaphore = asyncio.Semaphore(config.concurrency_limit)
+        self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
         self.thread_pool = ThreadPoolExecutor(
-            max_workers=config.concurrency_limit
+            max_workers=config.concurrent_request_limit
         )
 
     async def _execute_with_backoff_async(self, task: dict[str, Any]):

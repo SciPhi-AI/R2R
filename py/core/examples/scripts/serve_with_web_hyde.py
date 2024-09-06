@@ -30,7 +30,7 @@ def run_rag_pipeline():
     }
 
     # Build the R2R application with the custom pipeline
-    app = (
+    (
         R2RBuilder()
         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
         .build(

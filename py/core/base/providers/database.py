@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from .base import Provider, ProviderConfig
 
@@ -7,6 +8,16 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConfig(ProviderConfig):
+    """A base database configuration class"""
+
+    provider: str = "postgres"
+    user: Optional[str] = None
+    password: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
+    db_name: Optional[str] = None
+    vecs_collection: Optional[str] = None
+
     def __post_init__(self):
         self.validate()
         # Capture additional fields

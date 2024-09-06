@@ -66,7 +66,7 @@ class R2RParsingProvider(ParsingProvider):
                 self.parsers[parser_override.document_type] = parser_name()
 
     async def parse(
-        self, document: Document
+        self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
         if document.type not in self.parsers:
             yield R2RDocumentProcessingError(
@@ -76,11 +76,13 @@ class R2RParsingProvider(ParsingProvider):
             return
 
         parser = self.parsers[document.type]
-        texts = parser.ingest(document.data)
+        texts = parser.ingest(file_content)
         t0 = time.time()
 
         iteration = 0
         async for text in texts:
+            print(f"found a text:\n\n{text}")
+            print("-" * 100)
             yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,

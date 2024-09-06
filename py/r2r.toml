@@ -8,10 +8,13 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [chunking]
-provider = "r2r"
-method = "recursive"
-chunk_size = 512
-chunk_overlap = 50
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title" 
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
 
 [completion]
 provider = "litellm"
@@ -49,7 +52,7 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [parsing]
-provider = "r2r"
+provider = "unstructured_local"
 excluded_parsers = ["mp4"]
 
 [prompt]
@@ -58,3 +61,9 @@ provider = "r2r"
 [agent]
 system_instruction_name = "rag_agent"
 tool_names = ["search"]
+
+[file]
+provider = "postgres"
+
+[orchestration]
+provider = "hatchet"

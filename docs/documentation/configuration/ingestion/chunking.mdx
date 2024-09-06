@@ -9,20 +9,23 @@ Chunking is the process of breaking down parsed documents into smaller, manageab
 
 ```toml r2r.toml
 [chunking]
-provider = "r2r"
-method = "recursive"
-chunk_size = 512
-chunk_overlap = 50
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title" 
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
 ```
 
 ### Supported Chunkers
-- `r2r`: Default chunking method provided by R2R
-- `unstructured`: Chunking methods from the Unstructured library (requires additional installation)
+- `unstructured_local`: Default chunking provider, uses the open source Unstructured library 
+- `unstructured_api`: Uses the Unstructured platform API
+- `r2r`:  Lightweight chunking provided by R2R
 
 Chunking methods:
 - `by_title`, supported by unstructured
 - `basic`, supported by unstructured
-- `recursive`, supported by R2R
+- `recursive`, supported by r2r
 
 Chunking providers can be specified at runtime with the [`ingest_files`](/api-reference/endpoint/ingest_files) endpoint.
-

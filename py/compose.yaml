@@ -5,6 +5,8 @@ x-depends-on:
     condition: service_healthy
   postgres: &postgres-dependency
     condition: service_healthy
+  hatchet-engine: &hatchet-dependency
+    condition: service_healthy
 
 networks:
   r2r-network:
@@ -19,18 +21,98 @@ networks:
       - "com.docker.compose.recreate=always"
 
 
+
 services:
+
+  setup-token:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+
+    command: >
+      sh -c "
+        set -e
+        echo 'Starting token creation process...'
+
+        # Attempt to create token and capture both stdout and stderr
+        TOKEN_OUTPUT=$$(/hatchet/hatchet-admin token create --config /hatchet/config --tenant-id 707d0855-80ab-4e1f-a156-f1c4546cbf52 2>&1)
+
+        # Extract the token (assuming it's the only part that looks like a JWT)
+        TOKEN=$$(echo "$$TOKEN_OUTPUT" | grep -Eo 'eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*')
+
+        if [ -z "$$TOKEN" ]; then
+          echo 'Error: Failed to extract token. Full command output:' >&2
+          echo "$$TOKEN_OUTPUT" >&2
+          exit 1
+        fi
+
+        echo "$$TOKEN" > /tmp/hatchet_api_key
+        echo 'Token created and saved to /tmp/hatchet_api_key'
+
+        # Copy token to final destination
+        echo -n "$$TOKEN" > /hatchet_api_key/api_key.txt
+        echo 'Token copied to /hatchet_api_key/api_key.txt'
+
+        # Verify token was copied correctly
+        if [ "$$(cat /tmp/hatchet_api_key)" != "$$(cat /hatchet_api_key/api_key.txt)" ]; then
+          echo 'Error: Token copy failed, files do not match' >&2
+          echo 'Content of /tmp/hatchet_api_key:'
+          cat /tmp/hatchet_api_key
+          echo 'Content of /hatchet_api_key/api_key.txt:'
+          cat /hatchet_api_key/api_key.txt
+          exit 1
+        fi
+
+        echo 'Hatchet API key has been saved successfully'
+        echo 'Token length:' $${#TOKEN}
+        echo 'Token (first 20 chars):' $${TOKEN:0:20}
+        echo 'Token structure:' $$(echo $$TOKEN | awk -F. '{print NF-1}') 'parts'
+        # Check each part of the token
+        for i in 1 2 3; do
+          PART=$$(echo $$TOKEN | cut -d. -f$$i)
+          echo 'Part' $$i 'length:' $${#PART}
+          echo 'Part' $$i 'base64 check:' $$(echo $$PART | base64 -d >/dev/null 2>&1 && echo 'Valid' || echo 'Invalid')
+        done
+        # Final validation attempt
+        if ! echo $$TOKEN | awk -F. '{print $$2}' | base64 -d 2>/dev/null | jq . >/dev/null 2>&1; then
+          echo 'Warning: Token payload is not valid JSON when base64 decoded' >&2
+        else
+          echo 'Token payload appears to be valid JSON'
+        fi
+      "
+
+    networks:
+      - r2r-network
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
+      DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      DATABASE_POSTGRES_DB_NAME: "${POSTGRES_DBNAME:-postgres}"
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+      - hatchet_api_key:/hatchet_api_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      hatchet-setup-config:
+        condition: service_completed_successfully
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod}
+    image: ${R2R_IMAGE:-ragtoriches/prod:main-unstructured}
     build:
       context: .
       args:
-        PORT: ${PORT:-8000}
+        PORT: ${PORT:-7272}
     ports:
-      - "${PORT:-8000}:${PORT:-8000}"
+      - "${PORT:-7272}:${PORT:-7272}"
     environment:
       - PYTHONUNBUFFERED=1
-      - PORT=${PORT:-8000}
+      - PORT=${PORT:-7272}
       - HOST=${HOST:-0.0.0.0}
 
       # R2R
@@ -88,21 +170,34 @@ services:
       - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
       - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
 
+      # Hatchet
+      - HATCHET_CLIENT_TLS_STRATEGY=none
+      - HATCHET_CLIENT_TOKEN
+
+        HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-13421772800}
+        HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}
+    command: >
+      sh -c '
+        export HATCHET_CLIENT_TOKEN=$(cat /hatchet_api_key/api_key.txt) &&
+        exec uvicorn core.main.app_entry:app --host $$HOST --port $$PORT
+      '
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8000}/v2/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-7272}/v2/health"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: on-failure
     volumes:
       - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
+      - hatchet_api_key:/hatchet_api_key:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.r2r.rule=PathPrefix(`/api`)"
-      - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-8000}"
+      - "traefik.http.routers.r2r.rule=PathPrefix(`/r2r-api`)"
+      - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-7272}"
       - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/r2r-api"
       - "traefik.http.middlewares.r2r-add-v2.addprefix.prefix=/v2"
       - "traefik.http.routers.r2r.middlewares=r2r-strip-prefix,r2r-add-v2,r2r-headers"
       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Origin=*"
@@ -111,32 +206,37 @@ services:
       - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
     extra_hosts:
       - host.docker.internal:host-gateway
+    depends_on:
+      setup-token:
+        condition: service_completed_successfully
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
     environment:
-      - NEXT_PUBLIC_API_URL=http://traefik:${TRAEFIK_PORT:-80}/api
+      - NEXT_PUBLIC_API_URL=http://localhost:${R2R_DASHBOARD_PORT:-8001}/r2r-api
     depends_on:
       - r2r
     networks:
       - r2r-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=3000"
-
+      - "traefik.http.routers.r2r-dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.services.r2r-dashboard.loadbalancer.server.port=3000"
+      - "traefik.http.routers.r2r-dashboard.entrypoints=r2r"
   traefik:
     image: traefik:v2.9
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:${TRAEFIK_PORT:-80}"
+      - "--entrypoints.r2r.address=:${R2R_DASHBOARD_PORT:-8001}"
+      - "--entrypoints.hatchet.address=:${HATCHET_DASHBOARD_PORT:-8002}"
       - "--accesslog=true"
       - "--accesslog.filepath=/var/log/traefik/access.log"
     ports:
-      - "${TRAEFIK_PORT:-80}:${TRAEFIK_PORT:-80}"
-      - "${TRAEFIK_DASHBOARD_PORT:-8080}:${TRAEFIK_DASHBOARD_PORT:-8080}"
+      - "${R2R_DASHBOARD_PORT:-8001}:${R2R_DASHBOARD_PORT:-8001}"
+      - "${HATCHET_DASHBOARD_PORT:-8002}:${HATCHET_DASHBOARD_PORT:-8002}"
+      - "${TRAEFIK_DASHBOARD_PORT:-8081}:${TRAEFIK_DASHBOARD_PORT:-8081}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:

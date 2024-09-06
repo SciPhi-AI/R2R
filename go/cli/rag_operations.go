@@ -22,7 +22,7 @@ var inspectKnowledgeGraphCmd = &cobra.Command{
 	Use:   "inspect-knowledge-graph",
 	Short: "Print relationships from the knowledge graph",
 	Run: withTimer(func(cmd *cobra.Command, args []string) {
-		client := sdk.NewClient("http://localhost:8000/v2", sdk.LogConfig{Verbose: true})
+		client := sdk.NewClient("http://localhost:7272/v2", sdk.LogConfig{Verbose: true})
 		limit, _ := cmd.Flags().GetInt("limit")
 		// printDescriptions, _ := cmd.Flags().GetBool("print-descriptions")
 
@@ -39,7 +39,7 @@ var ragCmd = &cobra.Command{
 	Use:   "rag",
 	Short: "Perform a RAG query",
 	Run: withTimer(func(cmd *cobra.Command, args []string) {
-		client := sdk.NewClient("http://localhost:8000/v2", sdk.LogConfig{Verbose: true})
+		client := sdk.NewClient("http://localhost:7272/v2", sdk.LogConfig{Verbose: true})
 		query, _ := cmd.Flags().GetString("query")
 		useVectorSearch, _ := cmd.Flags().GetBool("use-vector-search")
 		filtersStr, _ := cmd.Flags().GetString("filters")
@@ -99,7 +99,7 @@ var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Perform a search query",
 	Run: withTimer(func(cmd *cobra.Command, args []string) {
-		client := sdk.NewClient("http://localhost:8000/v2", sdk.LogConfig{Verbose: true})
+		client := sdk.NewClient("http://localhost:7272/v2", sdk.LogConfig{Verbose: true})
 		query, _ := cmd.Flags().GetString("query")
 		useVectorSearch, _ := cmd.Flags().GetBool("use-vector-search")
 		filtersStr, _ := cmd.Flags().GetString("filters")

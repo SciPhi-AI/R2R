@@ -1,7 +1,7 @@
 const { r2rClient } = require("r2r-js");
 
-// http://localhost:8000 or the address that you are running the R2R server
-const client = new r2rClient("http://localhost:8000");
+// http://localhost:7272 or the address that you are running the R2R server
+const client = new r2rClient("http://localhost:7272");
 
 async function main() {
   const EMAIL = "admin@example.com";
