@@ -266,7 +266,7 @@ def serve(
             click.echo("Waiting for R2R service to be ready...")
             while True:
                 result = subprocess.run(
-                    ["docker-compose", "-p", project_name, "ps", "-q", "r2r"],
+                    ["docker", "compose", "-p", project_name, "ps", "-q", "r2r"],
                     capture_output=True,
                     text=True,
                 )
