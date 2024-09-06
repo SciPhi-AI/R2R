@@ -20,21 +20,11 @@ class SearchResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "vector_search_results": [
-                    {
-                        "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                        "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                        "group_ids": [],
-                        "score": 0.23943702876567796,
-                        "text": "Example text from the document",
-                        "metadata": {
-                            "title": "example_document.pdf",
-                            "associatedQuery": "What is the capital of France?",
-                        },
-                    }
+                    VectorSearchResult.Config.json_schema_extra,
                 ],
-                "kg_search_results": None,
+                "kg_search_results": [
+                    KGSearchResult.Config.json_schema_extra,
+                ],
             }
         }
 
@@ -68,22 +58,11 @@ class RAGResponse(BaseModel):
                 },
                 "search_results": {
                     "vector_search_results": [
-                        {
-                            "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                            "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                            "group_ids": [],
-                            "score": 0.23943702876567796,
-                            "text": "Paris is the capital and most populous city of France.",
-                            "metadata": {
-                                "text": "Paris is the capital and most populous city of France.",
-                                "title": "france_info.pdf",
-                                "associatedQuery": "What is the capital of France?",
-                            },
-                        }
+                        VectorSearchResult.Config.json_schema_extra,
                     ],
-                    "kg_search_results": None,
+                    "kg_search_results": [
+                        KGSearchResult.Config.json_schema_extra,
+                    ],
                 },
             }
         }

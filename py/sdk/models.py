@@ -245,20 +245,32 @@ class KGSearchResult(BaseModel):
         json_schema_extra = {
             "example": {
                 "local_result": {
-                    "query": "What is the capital of France?",
+                    "query": "Who is Aristotle?",
                     "entities": {
-                        "Paris": {
-                            "name": "Paris",
-                            "description": "Paris is the capital of France.",
+                        "0": {
+                            "name": "Aristotle",
+                            "description": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ..."
                         }
                     },
-                    "relationships": {},
-                    "communities": {},
+                    "relationships": {
+                        "0": {
+                            "name": "Influenced",
+                            "description": "Aristotle influenced numerous thinkers and philosophers, including Plato, who was his student. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced thinkers from antiquity through the Middle Ages and beyond."
+                        }
+                    },
+                    "communities": {
+                        "0": {
+                            "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought."
+                        }
+                    },
                 },
                 "global_result": {
-                    "query": "What is the capital of France?",
+                    "query": "Who is Aristotle?",
                     "search_result": [
-                        "Paris is the capital and most populous city of France."
+                        """### Aristotle's Key Contributions to Philosophy
+                        Aristotle, an ancient Greek philosopher and polymath, made foundational contributions to numerous fields, including philosophy, logic, biology, and political science. His works have had a lasting impact on Western thought and the development of modern science.
+                        
+                        ...."""
                     ],
                 },
             }
@@ -528,21 +540,11 @@ class SearchResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "vector_search_results": [
-                    {
-                        "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                        "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                        "group_ids": [],
-                        "score": 0.23943702876567796,
-                        "text": "Example text from the document",
-                        "metadata": {
-                            "title": "example_document.pdf",
-                            "associatedQuery": "What is the capital of France?",
-                        },
-                    }
+                    VectorSearchResult.Config.json_schema_extra,
                 ],
-                "kg_search_results": None,
+                "kg_search_results": [
+                    KGSearchResult.Config.json_schema_extra,
+                ],
             }
         }
 

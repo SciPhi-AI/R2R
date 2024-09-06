@@ -68,6 +68,35 @@ class KGLocalSearchResult(BaseModel):
 
     def __repr__(self) -> str:
         return self.__str__()
+    
+
+    class Config:
+        json_schema_extra = {
+            'query': 'Who is Aristotle?',
+            'entities': {
+                '0': {
+                    'name': 'Aristotle',
+                    'description': 'Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...'
+                }
+            },
+            'relationships': {},
+            'communities': {
+                '0': {
+                    'summary': {
+                        'title': 'Aristotle and His Contributions',
+                        'summary': 'The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as \'Politics\' and \'Nicomachean Ethics\', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.',
+                        'rating': 9.5,
+                        'rating_explanation': 'The impact severity rating is high due to Aristotle\'s foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.',
+                        'findings': [
+                            {
+                                'summary': 'Aristotle\'s Foundational Role in Logic',
+                                'explanation': 'Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six books ...'
+                            }
+                        ]
+                    }
+                }
+            }
+        }
 
 
 class KGGlobalSearchResult(BaseModel):
@@ -84,6 +113,51 @@ class KGGlobalSearchResult(BaseModel):
 
     def dict(self) -> dict:
         return {"query": self.query, "search_result": self.search_result}
+
+    class Config:
+        json_schema_extra = {
+            'query': 'What were Aristotles key contributions to philosophy?',
+            'search_result': [
+                    "### Aristotle's Key Contributions to Philosophy\n\n"
+                    "Aristotle's extensive body of work laid the foundation for numerous fields within philosophy and beyond, "
+                    "significantly shaping the trajectory of Western thought. His systematic approach to data collection and "
+                    "analysis has had a lasting impact on modern scientific methods. Below, we explore some of his most "
+                    "influential contributions.\n\n"
+                    "#### Foundational Works and Systematic Approach\n\n"
+                    "Aristotle's writings cover a broad spectrum of topics, including logic, biology, ethics, and political science. "
+                    "His key works such as 'Physics,' 'On the Soul,' and 'Nicomachean Ethics' delve into fundamental concepts "
+                    "like substance, memory, and the nature of the city [Data: Reports (1, 2, 3, 4, 5, +more)]. These texts not "
+                    "only provided a comprehensive framework for understanding various aspects of the natural and human world "
+                    "but also established methodologies that continue to influence contemporary scientific inquiry.\n\n"
+                    "#### Ethical and Political Philosophy\n\n"
+                    "In 'Nicomachean Ethics,' Aristotle explores the concept of a virtuous character, emphasizing the importance "
+                    "of moral virtues and the development of good habits. His work 'Politics' further examines the structure and "
+                    "function of the city (polis), addressing issues related to property, trade, and governance. Aristotle's "
+                    "classification of political constitutions and his definition of the city as the natural political community "
+                    "have had a profound and enduring impact on political thought [Data: Reports (11, 12); Triples (21, 22, 23, 24, 25)].\n\n"
+                    "#### Theories on Memory and Perception\n\n"
+                    "Aristotle's theories on memory and perception are articulated in his works 'On the Soul' and 'De Anima iii 3.' "
+                    "He defines memory as the retention of experiences shaped by sensation and discusses the faculty of imagination "
+                    "(phantasia). These theories have significantly influenced subsequent philosophical and psychological studies "
+                    "on cognition and perception [Data: Reports (13, 14); Triples (26, 27, 28, 29, 30)].\n\n"
+                    "#### Epistemology and Scientific Method\n\n"
+                    "Aristotle's epistemology, known as immanent realism, is based on the study of things that exist or happen in "
+                    "the world. This approach emphasizes empirical observation and has been instrumental in shaping the development "
+                    "of scientific methods. His insistence on grounding knowledge in observable phenomena laid the groundwork for "
+                    "future empirical research [Data: Reports (3)].\n\n"
+                    "#### Engagement with Predecessors and Contemporaries\n\n"
+                    "Aristotle was also known for his critical engagement with the ideas of his predecessors and contemporaries. "
+                    "For instance, he refuted Democritus's claim about the Milky Way and criticized Empedocles's materialist theory "
+                    "of 'survival of the fittest.' These critiques highlight Aristotle's active participation in the broader "
+                    "philosophical discourse of his time and his contributions to refining and advancing philosophical thought "
+                    "[Data: Reports (15, 16); Triples (31, 32, 33, 34, 35)].\n\n"
+                    "### Conclusion\n\n"
+                    "Aristotle's contributions to philosophy are vast and multifaceted, encompassing ethics, politics, epistemology, "
+                    "and more. His works continue to be studied and revered for their depth, rigor, and enduring relevance. Through "
+                    "his systematic approach and critical engagement with existing ideas, Aristotle has left an indelible mark on "
+                    "the landscape of Western philosophy."
+            ]
+        }
 
 
 class KGSearchResult(BaseModel):
@@ -108,6 +182,11 @@ class KGSearchResult(BaseModel):
             ),
         }
 
+    class Config:
+        json_schema_extra = {
+            "local_result": KGLocalSearchResult.Config.json_schema_extra,
+            "global_result": KGGlobalSearchResult.Config.json_schema_extra,
+        }
 
 class AggregateSearchResult(BaseModel):
     """Result of an aggregate search operation."""
@@ -249,8 +328,9 @@ class KGSearchSettings(BaseModel):
     kg_search_generation_config: Optional[GenerationConfig] = Field(
         default_factory=GenerationConfig
     )
-    entity_types: list = []
-    relationships: list = []
+    # TODO: add these back in
+    # entity_types: list = []
+    # relationships: list = []
     max_community_description_length: int = 4096 * 4
     max_llm_queries_for_global_search: int = 250
     local_search_limits: dict[str, int] = {
@@ -264,10 +344,10 @@ class KGSearchSettings(BaseModel):
         json_schema_extra = {
             "use_kg_search": True,
             "kg_search_type": "global",
-            "kg_search_level": "global",
+            "kg_search_level": 0,
             "kg_search_generation_config": GenerationConfig.Config.json_schema_extra,
-            "entity_types": ["Person", "Organization"],
-            "relationships": ["founder", "CEO"],
+            # "entity_types": ["Person", "Organization"],
+            # "relationships": ["founder", "CEO"],
             "max_community_description_length": 4096 * 4,
             "max_llm_queries_for_global_search": 250,
             "local_search_limits": {
