@@ -137,8 +137,6 @@ class UnstructuredParsingProvider(ParsingProvider):
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
-        logger.info(f"Chunking config: {self.config.chunking_config}")
-
         t0 = time.time()
         if document.type in self.AVAILABLE_PARSERS.keys():
             logger.info(
