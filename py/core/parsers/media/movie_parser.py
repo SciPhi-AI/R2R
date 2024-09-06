@@ -46,7 +46,9 @@ class MovieParser(AsyncParser):
                 "Error, environment variable `OPENAI_API_KEY` is required to run `MovieParser`."
             )
 
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: bytes, chunk_size: int = 1024
+    ) -> AsyncGenerator[str, None]:
         """Ingest movie data and yield a description."""
         temp_video_path = "temp_movie.mp4"
         with open(temp_video_path, "wb") as f:
@@ -63,7 +65,11 @@ class MovieParser(AsyncParser):
                 transcription_text = process_audio_with_openai(
                     audio_file, self.openai_api_key
                 )
-                yield transcription_text
+                # split text into small chunks and yield them
+                for i in range(0, len(transcription_text), chunk_size):
+                    text = transcription_text[i : i + chunk_size]
+                    if text and text != "":
+                        yield text
         finally:
             os.remove(temp_video_path)
 

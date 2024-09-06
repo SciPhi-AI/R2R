@@ -59,32 +59,32 @@ class ChunkingConfig(ProviderConfig):
 class UnstructuredChunkingConfig(ChunkingConfig):
     provider: str = "unstructured_local"  # or unstructured_api
 
-    combine_under_n_chars: Optional[int]
-    max_characters: Optional[int]
+    combine_under_n_chars: Optional[int] = 128
+    max_characters: Optional[int] = 500
     coordinates: bool = False
-    encoding: Optional[str]
-    extract_image_block_types: Optional[list[str]]
-    gz_uncompressed_content_type: Optional[str]
-    hi_res_model_name: Optional[str]
-    include_orig_elements: Optional[bool] = False
-    include_page_breaks: bool
+    encoding: Optional[str] = "utf-8"
+    extract_image_block_types: Optional[list[str]] = None
+    gz_uncompressed_content_type: Optional[str] = None
+    hi_res_model_name: Optional[str] = None
+    include_orig_elements: Optional[bool] = True
+    include_page_breaks: bool = False
 
-    languages: Optional[list[str]]
+    languages: Optional[list[str]] = None
     multipage_sections: bool = True
-    new_after_n_chars: Optional[int]
-    ocr_languages: Optional[list[str]]
+    new_after_n_chars: Optional[int] = 1500
+    ocr_languages: Optional[list[str]] = None
     output_format: str = "application/json"
     overlap: int = 0
     overlap_all: bool = False
     pdf_infer_table_structure: bool = True
 
-    similarity_threshold: Optional[float]
-    skip_infer_table_types: Optional[list[str]]
+    similarity_threshold: Optional[float] = None
+    skip_infer_table_types: Optional[list[str]] = None
     split_pdf_concurrency_level: int = 5
     split_pdf_page: bool = True
-    starting_page_number: Optional[int]
+    starting_page_number: Optional[int] = None
     strategy: str = "auto"
-    chunking_strategy: Optional[str] = "by_title"
+    chunking_strategy: Optional[str] = None
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 
