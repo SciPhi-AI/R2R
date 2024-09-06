@@ -139,6 +139,7 @@ __all__ = [
     "AuthProvider",
     # Chunking provider
     "UnstructuredChunkingConfig",
+    "R2RChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
     "Method",
