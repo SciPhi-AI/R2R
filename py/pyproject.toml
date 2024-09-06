@@ -67,6 +67,7 @@ psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
 unstructured-client = {version = "^0.25.5", optional = true, extras = ["core"]}
+numpy = ">=1.22.4,<1.29.0"
 
 [tool.poetry.extras]
 core = [

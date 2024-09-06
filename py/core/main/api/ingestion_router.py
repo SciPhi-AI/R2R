@@ -10,7 +10,10 @@ from fastapi import Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import ChunkingConfig, R2RException, generate_user_document_id
-from core.base.api.models.ingestion.responses import WrappedIngestionResponse
+from core.base.api.models.ingestion.responses import (
+    WrappedIngestionResponse,
+    WrappedUpdateResponse,
+)
 from core.base.providers import OrchestrationProvider
 
 from ...main.hatchet import r2r_hatchet
@@ -137,16 +140,16 @@ class IngestionRouter(BaseRouter):
                     "is_update": False,
                 }
 
-                task_id = r2r_hatchet.client.admin.run_workflow(
-                    "ingest-file", {"request": workflow_input}
-                )
-
                 file_name = file_data["filename"]
                 self.service.providers.file.store_file(
                     document_id,
                     file_name,
                     file_content,
                     file_data["content_type"],
+                )
+
+                task_id = r2r_hatchet.client.admin.run_workflow(
+                    "ingest-file", {"request": workflow_input}
                 )
 
                 messages.append(
@@ -173,8 +176,7 @@ class IngestionRouter(BaseRouter):
                 ..., description=update_files_descriptions.get("files")
             ),
             document_ids: Optional[Json[list[UUID]]] = Form(
-                None,
-                description=ingest_files_descriptions.get("document_ids"),
+                None, description=ingest_files_descriptions.get("document_ids")
             ),
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
@@ -184,7 +186,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):  # -> WrappedIngestionResponse:
+        ) -> WrappedUpdateResponse:
             """
             Update existing files in the system.
 
@@ -192,12 +194,9 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
-
             self._validate_chunking_config(chunking_config)
-            # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser
 
-            # Handle user management logic at the request level
             if not is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and metadata["user_id"] != str(
@@ -207,21 +206,44 @@ class IngestionRouter(BaseRouter):
                             status_code=403,
                             message="Non-superusers cannot set user_id in metadata.",
                         )
-
-                    # Set user_id in metadata for non-superusers
                     metadata["user_id"] = str(auth_user.id)
 
-            file_datas = [
-                {
-                    "filename": file_data["filename"],
-                    "content_type": file_data["content_type"],
-                }
-                for file_data in await self._process_files(files)
-            ]
+            file_datas = await self._process_files(files)
+
+            processed_data = []
+            for it, file_data in enumerate(file_datas):
+                content = base64.b64decode(file_data.pop("content"))
+                document_id = (
+                    document_ids[it]
+                    if document_ids
+                    else generate_user_document_id(
+                        file_data["filename"], auth_user.id
+                    )
+                )
+
+                self.service.providers.file.store_file(
+                    document_id,
+                    file_data["filename"],
+                    BytesIO(content),
+                    file_data["content_type"],
+                )
+
+                processed_data.append(
+                    {
+                        "file_data": file_data,
+                        "file_length": len(content),
+                        "document_id": str(document_id),
+                    }
+                )
 
             workflow_input = {
-                "file_datas": file_datas,
-                "document_ids": [str(doc_id) for doc_id in document_ids],
+                "file_datas": [item["file_data"] for item in processed_data],
+                "file_sizes_in_bytes": [
+                    item["file_length"] for item in processed_data
+                ],
+                "document_ids": [
+                    item["document_id"] for item in processed_data
+                ],
                 "metadatas": metadatas,
                 "chunking_config": (
                     chunking_config.model_dump_json()
@@ -229,14 +251,17 @@ class IngestionRouter(BaseRouter):
                     else None
                 ),
                 "user": auth_user.model_dump_json(),
+                "is_update": True,
             }
 
             task_id = r2r_hatchet.client.admin.run_workflow(
                 "update-files", {"request": workflow_input}
             )
+
             return {
                 "message": "Update task queued successfully.",
                 "task_id": str(task_id),
+                "document_ids": workflow_input["document_ids"],
             }
 
     @staticmethod

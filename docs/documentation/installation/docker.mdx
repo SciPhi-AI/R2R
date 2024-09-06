@@ -28,7 +28,7 @@ pip install r2r
       r2r serve --docker --config-name=default
       ```
   </Accordion>
-  <Accordion title="Local LLMs" icon="house" defaultOpen={true}>
+  <Accordion title="Local LLMs" icon="house" defaultOpen={false}>
       To start R2R with your local computer as the default LLM inference provider:
       ```bash
       r2r serve --docker --config-name=local_llm
@@ -41,7 +41,7 @@ pip install r2r
     ```
     The code above assumes that Ollama has already been installed. If you have not yet done so, then refer to the official Ollama webpage [for installation instructions](https://ollama.com/download).
   </Accordion>
-  <Accordion title="Custom Configuration" icon="gear" defaultOpen={true}>
+  <Accordion title="Custom Configuration" icon="gear" defaultOpen={false}>
     R2R offers flexibility in selecting and configuring LLMs, allowing you to optimize your RAG pipeline for various use cases. Execute the command below run deploy R2R with your own custom configuration:
       ```bash
       r2r serve --config-path=/abs/path/to/r2r.toml

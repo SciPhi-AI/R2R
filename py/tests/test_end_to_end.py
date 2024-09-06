@@ -42,9 +42,7 @@ def app(request):
     config.logging.logging_path = uuid.uuid4().hex
 
     config.database.provider = "postgres"
-    config.database.extra_fields["vecs_collection"] = (
-        config.logging.logging_path
-    )
+    config.database.vecs_collection = config.logging.logging_path
     try:
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()

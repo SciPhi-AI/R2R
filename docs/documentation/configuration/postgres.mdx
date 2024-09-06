@@ -6,7 +6,7 @@ icon: "database"
 
 ## Postgres Database
 
-R2R uses Postgres as its default database provider for relational and vector search queries. This means that Postgres is invovled in handling authentication, document management, and search across R2R. For robust search, R2R uses the `pgvector` extension and `ts_rank` to implement [customizable hybrid search](cookbooks/hybrid-search).
+R2R uses Postgres the sole provider for relational and vector search queries. This means that Postgres is invovled in handling authentication, document management, and search across R2R. For robust search, R2R uses the `pgvector` extension and `ts_rank` to implement [customizable hybrid search](/cookbooks/hybrid-search).
 
 <Note>
   R2R chose Postgres as its core technology for several reasons:
@@ -27,13 +27,14 @@ To customize the database settings, you can modify the `database` section in you
 ```toml r2r.toml
 [database]
 provider = "postgres" # currently only `postgres` is supported
-  [database.extra_fields]
-  user = "your_postgres_user"
-  password = "your_postgres_password"
-  host = "your_postgres_host"
-  port = "your_postgres_port"
-  db_name = "your_database_name"
-  vecs_collection = "your_vector_collection_name"
+
+# optional parameters which can be set by environment instead 
+user = "your_postgres_user"
+password = "your_postgres_password"
+host = "your_postgres_host"
+port = "your_postgres_port"
+db_name = "your_database_name"
+vecs_collection = "your_vector_collection_name"
 ```
 
 2. Alternatively, you can set the following environment variables:
@@ -58,11 +59,11 @@ Let's break down the Postgres configuration options:
 - `db_name`: The name of the database you want to use for R2R.
 - `vecs_collection`: The name of the collection to use for storing vector embeddings.
 
-### Important Notes:
+### Important Notes
 
-1. If you provide both environment variables and `extra_fields` in the `r2r.toml` file, the `extra_fields` values will take precedence.
+1. If you provide both environment variables and configuration options to the `r2r.toml` file,  `r2r.toml` values will take precedence.
 
-2. Ensure that all required fields are set either through environment variables or in the `r2r.toml` file. If any required field is missing, R2R will raise a `ValueError` with a descriptive error message.
+2. Ensure that all required fields are set either through environment variables or in the `r2r.toml` file. If any required field is missing, R2R will raise a descriptive error message.
 
 3. The database connection string is constructed as follows:
    ```
@@ -73,4 +74,16 @@ Let's break down the Postgres configuration options:
 
 5. If you're using a cloud-hosted Postgres service, make sure to configure any necessary firewall rules or security groups to allow connections from your R2R application.
 
-By customizing these settings, you can configure R2R to use your specific Postgres database instance, allowing for flexibility in your deployment setup and data management.
+By customizing these settings, you can configure R2R to use your specific Postgres database instance, allowing for flexibility in your deployment setup and data management. If you need more customizability or have any questions, please reach us at founders@sciphi.ai.
+
+
+
+## Next Steps
+
+For more detailed information on configuring specific components of R2R, please refer to the following pages:
+
+- [LLM Configuration](/documentation/configuration/llm)
+- [RAG Configuration](/documentation/configuration/rag)
+- [Ingestion Configuration](/documentation/configuration/ingestion/overview)
+- [Knowledge Graph Configuration](/documentation/configuration/knowledge-graph/overview)
+- [Retrieval Configuration](/documentation/configuration/retrieval/overview)

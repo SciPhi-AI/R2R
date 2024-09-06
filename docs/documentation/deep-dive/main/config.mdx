@@ -40,7 +40,7 @@ r2r = R2RBuilder(config_name="neo4j_kg").build()
 ## Configuration Sections
 
 ### Authentication
-Refer to the [`AuthProvider`](documentation/deep-dive/providers/auth) to learn more about how R2R supports auth providers.
+Refer to the [`AuthProvider`](/documentation/deep-dive/providers/auth) to learn more about how R2R supports auth providers.
 
 ```toml
 [auth]
@@ -62,19 +62,20 @@ default_admin_password = "change_me_immediately"
 
 ### Completion (LLM)
 
-Refer to the [`LLMProvider`](documentation/deep-dive/providers/llms) to learn more about how R2R supports LLM providers.
+Refer to the [`LLMProvider`](/documentation/deep-dive/providers/llms) to learn more about how R2R supports LLM providers.
 ```toml
+
 [completion]
 provider = "litellm"
 concurrent_request_limit = 16
 
-[completion.generation_config]
-model = "openai/gpt-4o"
-temperature = 0.1
-top_p = 1
-max_tokens_to_sample = 1_024
-stream = false
-add_generation_kwargs = { }
+  [completion.generation_config]
+  model = "openai/gpt-4o"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
 ```
 
 - `provider`: LLM provider. Options include "litellm" and "openai".
@@ -88,7 +89,7 @@ add_generation_kwargs = { }
 
 ### Cryptography
 
-Refer to the [`CryptoProvider`](documentation/deep-dive/providers/auth) to learn more about how R2R supports cryptography.
+Refer to the [`CryptoProvider`](/documentation/deep-dive/providers/auth) to learn more about how R2R supports cryptography.
 
 ```toml
 [crypto]
@@ -99,18 +100,23 @@ provider = "bcrypt"
 
 ### Database
 
-Refer to the [`DatabaseProvider`](documentation/deep-dive/providers/database) to learn more about how R2R supports databases.
+Refer to the [`DatabaseProvider`](/documentation/deep-dive/providers/database) to learn more about how R2R supports databases.
 
 ```toml
 [database]
 provider = "postgres"
 ```
 
-- `provider`: Database provider. Options include "postgres" and others depending on your setup.
+- `provider`: Database provider. Only "postgres" is supported.
+- `user`: Default username for accessing database.
+- `password`: Default password for accessing database.
+- `host`: Default host for accessing database.
+- `port`: Default port for accessing database.
+- `db_name`: Default db_name for accessing database.
 
 ### Embedding
 
-Refer to the [`EmbeddingProvider`](documentation/deep-dive/providers/embeddings) to learn more about how R2R supports embeddings.
+Refer to the [`EmbeddingProvider`](/documentation/deep-dive/providers/embeddings) to learn more about how R2R supports embeddings.
 
 ```toml
 [embedding]
