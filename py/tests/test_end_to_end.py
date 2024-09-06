@@ -11,6 +11,7 @@ from core import (
     DocumentType,
     GenerationConfig,
     R2RConfig,
+    R2REngine,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
