@@ -29,3 +29,30 @@ Chunking methods:
 - `recursive`, supported by r2r
 
 Chunking providers can be specified at runtime with the [`ingest_files`](/api-reference/endpoint/ingest_files) endpoint.
+
+When using unstructured as the chunking provider, the following parameters can be specified in the configuration file.
+
+```toml r2r.toml
+coordinates = false
+encoding = "utf-8"
+extract_image_block_types = []
+gz_uncompressed_content_type = ""
+hi_res_model_name = ""
+include_orig_elements = true
+include_page_breaks = false
+
+languages = []
+multipage_sections = true
+ocr_languages = []
+output_format = "application/json"
+overlap_all = false
+pdf_infer_table_structure = true
+
+similarity_threshold = 0.0
+skip_infer_table_types = []
+split_pdf_concurrency_level = 5
+split_pdf_page = true
+starting_page_number = 0
+unique_element_ids = false
+xml_keep_tags = false
+```

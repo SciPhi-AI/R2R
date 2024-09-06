@@ -134,7 +134,7 @@ def run_docker_serve(
             return
 
     compose_files = get_compose_files()
-    docker_command = build_docker_command(
+    pull_command, up_command = build_docker_command(
         compose_files,
         host,
         port,
@@ -148,9 +148,12 @@ def run_docker_serve(
         config_path,
     )
 
-    click.echo("R2R now runs on port 7272 by default!")
+    click.secho("R2R now runs on port 7272 by default!", fg="yellow")
+    click.echo("Pulling Docker images...")
+    os.system(pull_command)
+
     click.echo("Starting Docker Compose setup...")
-    os.system(docker_command)
+    os.system(up_command)
 
 
 def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
@@ -341,18 +344,17 @@ def build_docker_command(
     config_name,
     config_path,
 ):
-
-    command = f"docker compose -f {compose_files['base']}"
+    base_command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
-        command += f" -f {compose_files['neo4j']}"
+        base_command += f" -f {compose_files['neo4j']}"
     if not exclude_ollama:
-        command += f" -f {compose_files['ollama']}"
+        base_command += f" -f {compose_files['ollama']}"
     if not exclude_postgres:
-        command += f" -f {compose_files['postgres']}"
+        base_command += f" -f {compose_files['postgres']}"
     if not exclude_hatchet:
-        command += f" -f {compose_files['hatchet']}"
+        base_command += f" -f {compose_files['hatchet']}"
 
-    command += f" --project-name {project_name}"
+    base_command += f" --project-name {project_name}"
 
     # Find available ports
     r2r_dashboard_port = port + 1
@@ -370,8 +372,11 @@ def build_docker_command(
         os.environ["CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
-    command += " up -d"
-    return command
+
+    pull_command = f"{base_command} pull"
+    up_command = f"{base_command} up -d"
+
+    return pull_command, up_command
 
 
 def check_subnet_conflict():
@@ -466,10 +471,6 @@ def check_docker_compose_version():
                 f"Please upgrade to version {min_version} or higher.",
                 fg="yellow",
                 bold=True,
-            )
-        else:
-            click.echo(
-                f"Docker Compose version {compose_version} is compatible."
             )
 
         return True
