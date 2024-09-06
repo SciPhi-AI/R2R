@@ -125,8 +125,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             file_content, chunk_size=chunk_size
         )
 
-        logger.info(f"Texts: {texts}")
-
         chunk_id = 0
         async for text in texts:
             if text and text != "":

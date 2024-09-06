@@ -47,8 +47,6 @@ class ImageParser(AsyncParser[DataType]):
             self.api_base,
         )
 
-        logger.info(f"OpenAI text: {openai_text}")
-        print(openai_text)
         # split text into small chunks and yield them
         for i in range(0, len(openai_text), chunk_size):
             text = openai_text[i : i + chunk_size]
