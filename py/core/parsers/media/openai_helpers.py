@@ -1,6 +1,10 @@
 """Implementations of parsers for different data types."""
 
+import logging
+
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 def process_frame_with_openai(
@@ -55,4 +59,4 @@ def process_audio_with_openai(
     )
     transcription = transcription_response.json()
 
-    return transcription.text
+    return transcription["text"]
