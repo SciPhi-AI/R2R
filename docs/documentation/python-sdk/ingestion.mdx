@@ -18,11 +18,13 @@ ingest_response = client.ingest_files(
     file_paths=file_paths,
     metadatas=metadatas,
     # optionally override chunking settings at runtime
-    chunking_settings={
-        "provider": "r2r",
-        "chunk_size": 1_024,
-        "max_chunk_size": 2_048,
-        "chunk_overlap": 100,
+    chunking_config={
+        "strategy": "auto",
+        "chunking_strategy": "by_title",
+        "new_after_n_chars": 256, # soft maximum
+        "max_characters": 512, # hard maximum
+        "combine_under_n_chars": 64, # hard minimum
+        "overlap": 100,
     }
 )
 
@@ -54,7 +56,7 @@ ingest_response = client.ingest_files(
   An optional list of version strings for the ingested files. If provided, the length should match the number of files being ingested.
 </ParamField>
 
-<ParamField path="chunking_settings" type="Optional[Union[dict, ChunkingConfig]]">
+<ParamField path="chunking_config" type="Optional[Union[dict, ChunkingConfig]]">
   The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
   <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">

@@ -19,6 +19,43 @@ class Method(str, Enum):
 class ChunkingConfig(ProviderConfig):
     provider: str = "r2r"
     method: Method = Method.RECURSIVE
+
+    def validate(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider {self.provider} is not supported.")
+        if self.chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than 0")
+        if self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be non-negative")
+
+    @property
+    def supported_providers(self) -> list[str]:
+        return ["r2r", "unstructured_local", "unstructured_api", None]
+
+    class Config:
+        json_schema_extra = {
+            "type": "object",
+            "properties": {
+                "provider": {"type": "string"},
+                "method": {"type": "string"},
+            },
+            "required": ["provider", "method"],
+            "example": {
+                "provider": "unstructured_local",
+                "method": "by_title",
+                "strategy": "auto",
+                "chunking_strategy": "by_title",
+                "new_after_n_chars": 512,
+                "max_characters": 1_024,
+                "combine_under_n_chars": 128,
+                "overlap": 20,
+            },
+        }
+
+
+class R2RChunkingConfig(ProviderConfig):
+    provider: str = "r2r"
+    method: Method = Method.RECURSIVE
     chunk_size: int = 512
     chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None

@@ -50,15 +50,15 @@ const ingestResponse = await client.ingestFiles(files, {
     An optional array of user IDs associated with the ingested files.
   </ParamField>
 
-  <ParamField path="chunking_settings" type="Record<string, any>">
+  <ParamField path="chunking_config" type="Record<string, any>">
     The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
     <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">
-    Which chunking provider to use, `r2r` or `unstructured`. Selecting `unstructured` is generally recommended when parsing with `unstructured` or `unstructured_api`.
+    Which chunking provider to use, select from `r2r`, `unstructured_local`, and `unstructured_api`.
     </ParamField>
 
-    <ParamField path="method" type="str" default="recursive">
-    Which chunking method to apply? When using unstructured, `by_title` or `basic` are supported.
+    <ParamField path="method" type="str" default="by_title">
+    Which chunking method to apply? When using unstructured, `by_title` or `basic` are supported by unstructured.
     </ParamField>
 
     <ParamField path="chunk_size" type="int" default="512">
@@ -115,7 +115,7 @@ const updateResponse = await client.updateFiles(files, {
     An optional array of metadata objects for the updated files.
   </ParamField>
 
-  <ParamField path="chunking_settings" type="Record<string, any>">
+  <ParamField path="chunking_config" type="Record<string, any>">
     The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
     <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">

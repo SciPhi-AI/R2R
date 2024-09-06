@@ -15,7 +15,7 @@ class KgExtractAndStoreWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
 
-    @r2r_hatchet.step(retries=3)
+    @r2r_hatchet.step(retries=3, timeout="60m")
     async def kg_extract_and_store(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
         print()
@@ -76,12 +76,12 @@ class EnrichGraphWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
 
-    @r2r_hatchet.step(retries=3)
+    @r2r_hatchet.step(retries=3, timeout="60m")
     async def kg_node_creation(self, context: Context) -> None:
         await self.restructure_service.kg_node_creation()
         return {"result": None}
 
-    @r2r_hatchet.step(retries=3, parents=["kg_node_creation"])
+    @r2r_hatchet.step(retries=3, parents=["kg_node_creation"], timeout="60m")
     async def kg_clustering(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
         leiden_params = input_data["leiden_params"]
