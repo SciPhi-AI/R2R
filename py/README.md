@@ -28,12 +28,6 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 - [**🖥️ Dashboard**](https://github.com/SciPhi-AI/R2R-Dashboard): An open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
 
 
-## Getting Started
-
-- [Installation](https://r2r-docs.sciphi.ai/documentation/installation): Quick installation of R2R using Docker or pip
-- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
-
-
 ## [What's New](https://r2r-docs.sciphi.ai/introduction/whats-new)
 
 - Release 3.1.0&nbsp;&nbsp;&nbsp;&nbsp;September 6, 2024&nbsp;&nbsp;&nbsp;&nbsp;
