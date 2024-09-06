@@ -53,7 +53,17 @@ def mock_embedding_model():
 
 
 @pytest.fixture
-def ingestion_service(mock_vector_db, mock_embedding_model):
+def mock_pipes():
+    pipes = Mock()
+    pipes.parsing_pipe = AsyncMock()
+    pipes.chunking_pipe = AsyncMock()
+    pipes.embedding_pipe = AsyncMock()
+    pipes.vector_storage_pipe = AsyncMock()
+    return pipes
+
+
+@pytest.fixture
+def ingestion_service(mock_vector_db, mock_embedding_model, mock_pipes):
     config = MagicMock()
     config.app.get.return_value = 32  # Default max file size
     providers = Mock(spec=R2RProviders)
@@ -68,19 +78,21 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
     logging_connection = Mock()
     agents = Mock(spec=R2RAgents)
 
-    service = IngestionService(
+    return IngestionService(
         config,
         providers,
+        mock_pipes,
         pipelines,
         agents,
         run_manager,
         logging_connection=logging_connection,
     )
-    return service
 
 
 @pytest.mark.asyncio
-async def test_ingest_single_document(ingestion_service, mock_vector_db):
+async def test_ingest_single_document(
+    ingestion_service, mock_vector_db, mock_pipes
+):
     document = Document(
         id=generate_id_from_label("test_id"),
         group_ids=[],
@@ -89,6 +101,13 @@ async def test_ingest_single_document(ingestion_service, mock_vector_db):
         data="Test content",
         metadata={},
     )
+
+    mock_pipes.parsing_pipe.run.return_value = [{"content": "Test content"}]
+    mock_pipes.chunking_pipe.run.return_value = [{"chunk": "Test content"}]
+    mock_pipes.embedding_pipe.run.return_value = [
+        {"embedding": [0.1, 0.2, 0.3]}
+    ]
+    mock_pipes.vector_storage_pipe.run.return_value = ["stored_id"]
 
     ingestion_service.pipelines.ingestion_pipeline.run.return_value = {
         "embedding_pipeline_output": [(document.id, None)]
@@ -105,6 +124,11 @@ async def test_ingest_single_document(ingestion_service, mock_vector_db):
     assert not result["failed_documents"]
     assert not result["skipped_documents"]
 
+    mock_pipes.parsing_pipe.run.assert_called_once()
+    mock_pipes.chunking_pipe.run.assert_called_once()
+    mock_pipes.embedding_pipe.run.assert_called_once()
+    mock_pipes.vector_storage_pipe.run.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
@@ -113,7 +137,6 @@ async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
         group_ids=[],
         user_id=generate_id_from_label("user_1"),
         type="txt",
-        data="Test content",
         metadata={},
     )
     mock_vector_db.relational.get_documents_overview.return_value = [
@@ -122,7 +145,7 @@ async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
             group_ids=[],
             user_id=generate_id_from_label("user_1"),
             version="v0",
-            size_in_bytes=len(document.data),
+            size_in_bytes=1024,
             metadata={},
             title=str(document.id),
             type="txt",

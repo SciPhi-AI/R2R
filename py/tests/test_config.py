@@ -95,6 +95,7 @@ def mock_file():
                 "tool_names": ["search"],
             },
             "prompt": {"provider": "r2r"},
+            "file": {"provider": "postgres"},
         }
     )
     with patch("builtins.open", mock_open(read_data=mock_data)) as m:

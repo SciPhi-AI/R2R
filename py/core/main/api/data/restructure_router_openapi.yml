@@ -21,7 +21,7 @@ create_graph:
             }'
 
 
-enrich_graph: 
+enrich_graph:
   openapi_extra:
     x-codeSamples:
       - lang: Python
