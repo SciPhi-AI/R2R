@@ -8,6 +8,7 @@ from core.parsers.media.openai_helpers import (
     process_frame_with_openai,
 )
 
+
 class MovieParser(AsyncParser):
     """A parser for movie data."""
 
