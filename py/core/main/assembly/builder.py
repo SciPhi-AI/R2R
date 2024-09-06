@@ -142,7 +142,7 @@ class R2RBuilder:
             if v is not None
         }
         return provider_factory(self.config).create_providers(
-            overrides=overrides, *args, **kwargs
+            *args, **kwargs, **overrides
         )
 
     def _create_pipes(

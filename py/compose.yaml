@@ -178,8 +178,8 @@ services:
         HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}
     command: >
       sh -c '
-        export HATCHET_CLIENT_TOKEN=$(cat /hatchet_api_key/api_key.txt) &&
-        exec uvicorn core.main.app_entry:app --host $$HOST --port $$PORT
+        export HATCHET_CLIENT_TOKEN=$$(cat /hatchet_api_key/api_key.txt) &&
+        exec uvicorn core.main.app_entry:app --host $${HOST} --port $${PORT}
       '
     networks:
       - r2r-network
@@ -209,6 +209,10 @@ services:
     depends_on:
       setup-token:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
@@ -241,3 +245,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
+volumes:
+  hatchet_certs:
+  hatchet_config:
+  hatchet_api_key:      
