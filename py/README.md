@@ -72,7 +72,7 @@ r2r --config-name=default serve
 
 - [SDK](https://r2r-docs.sciphi.ai/documentation/python-sdk): API reference and Python/JS SDKs for interacting with R2R
 - [API](https://r2r-docs.sciphi.ai/api-reference/introduction): API reference and Python/JS SDKs for interacting with R2R
-- [Configuration](/documentation/configuration): A guide on how to configure your R2R system
+- [Configuration](https://r2r-docs.sciphi.ai/documentation/configuration/introduction): A guide on how to configure your R2R system
 
 ## Cookbooks
 
