@@ -1,0 +1,40 @@
+---
+title: 'Orchestration'
+description: 'Learn orchestration is handled inside R2R'
+icon: 'music'
+---
+R2R uses Hatchet for orchestrating complex workflows, particularly for ingestion and knowledge graph construction processes.
+
+## Introduction to Hatchet
+
+Hatchet is a distributed, fault-tolerant task queue that solves scaling problems like concurrency, fairness, and rate limiting. It allows R2R to distribute functions between workers with minimal configuration.
+
+### Key Concepts
+
+1. **Workflows**: Sets of functions executed in response to external triggers.
+2. **Workers**: Long-running processes that execute workflow functions.
+3. **Managed Queue**: Low-latency queue for handling real-time tasks.
+
+## Hatchet in R2R
+
+R2R leverages Hatchet primarily for orchestrating ingestion and knowledge graph construction processes.
+
+
+### Benefits of Using Hatchet in R2R
+
+1. **Scalability**: Efficiently handles large-scale tasks.
+2. **Fault Tolerance**: Built-in retry mechanisms and error handling.
+3. **Flexibility**: Easy to add or modify workflows as R2R's capabilities expand.
+
+### Workflows in R2R
+
+1. **IngestFilesWorkflow**: Handles file ingestion, parsing, chunking, and embedding.
+2. **UpdateFilesWorkflow**: Manages the process of updating existing files.
+3. **KgExtractAndStoreWorkflow**: Extracts and stores knowledge graph information.
+4. **CreateGraphWorkflow**: Orchestrates the creation of knowledge graphs.
+5. **EnrichGraphWorkflow**: Handles graph enrichment processes like node creation and clustering.
+
+
+## Orchestration GUI
+
+By default, the R2R Docker ships with with Hatchet's front-end application on port 7274. This can be accessed by navigating to `http://localhost:7274`.

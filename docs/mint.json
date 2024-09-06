@@ -295,6 +295,7 @@
         "cookbooks/graphrag",
         "cookbooks/advanced-rag",
         "cookbooks/agent",
+        "cookbooks/orchestration",
         "cookbooks/web-dev"
       ]
     },
