@@ -84,7 +84,7 @@ concurrent_request_limit = 16
 [chunking]
 provider = "unstructured_local"
 strategy = "auto"
-chunking_strategy = "by_title" 
+chunking_strategy = "by_title"
 new_after_n_chars = 512
 max_characters = 1_024
 combine_under_n_chars = 128
@@ -221,8 +221,8 @@ This command returns document metadata, including:
     'updated_at': '2024-09-06T03:32:02.991744Z',
     'ingestion_status': 'success',
     'restructuring_status': 'pending',
-    'version': 'v0', 
-    'group_ids': [], 
+    'version': 'v0',
+    'group_ids': [],
     'metadata': {'title': 'aristotle.txt', 'version': 'v0'}
   }
   ...
@@ -412,7 +412,7 @@ This flexible deletion mechanism ensures precise control over document managemen
         "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
       ]
     }
-  }  
+  }
   ```
 
   Behind the scenes, this command utilizes the `update_files` endpoint. The process involves:

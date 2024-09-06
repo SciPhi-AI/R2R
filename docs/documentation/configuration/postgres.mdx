@@ -10,7 +10,7 @@ R2R uses Postgres the sole provider for relational and vector search queries. Th
 
 <Note>
   R2R chose Postgres as its core technology for several reasons:
-  
+
   - **Versatility**: Postgres is a robust, advanced database that can handle both relational data and vector embeddings.
   - **Simplicity**: By using Postgres for both traditional data and vector search, R2R eliminates the need for complex syncing between separate databases.
   - **Familiarity**: Many developers are already comfortable with Postgres, making it easier to integrate R2R into existing workflows.
@@ -28,7 +28,7 @@ To customize the database settings, you can modify the `database` section in you
 [database]
 provider = "postgres" # currently only `postgres` is supported
 
-# optional parameters which can be set by environment instead 
+# optional parameters which can be set by environment instead
 user = "your_postgres_user"
 password = "your_postgres_password"
 host = "your_postgres_host"

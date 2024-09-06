@@ -11,7 +11,7 @@ Chunking is the process of breaking down parsed documents into smaller, manageab
 [chunking]
 provider = "unstructured_local"
 strategy = "auto"
-chunking_strategy = "by_title" 
+chunking_strategy = "by_title"
 new_after_n_chars = 512
 max_characters = 1_024
 combine_under_n_chars = 128
@@ -19,7 +19,7 @@ overlap = 20
 ```
 
 ### Supported Chunkers
-- `unstructured_local`: Default chunking provider, uses the open source Unstructured library 
+- `unstructured_local`: Default chunking provider, uses the open source Unstructured library
 - `unstructured_api`: Uses the Unstructured platform API
 - `r2r`:  Lightweight chunking provided by R2R
 
