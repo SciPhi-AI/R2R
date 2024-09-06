@@ -30,9 +30,7 @@ def pg_vector_db():
     )
     yield db
     # Teardown
-    db.vx.delete_collection(
-        db.config.extra_fields.get("vecs_collection", None)
-    )
+    db.vx.delete_collection(db.config.vecs_collection)
 
 
 @pytest.fixture

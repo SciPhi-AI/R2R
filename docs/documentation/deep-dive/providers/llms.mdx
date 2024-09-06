@@ -69,49 +69,6 @@ The provided `generation_config` is used to establish the default generation par
 This allows you to fine-tune the behavior of your language model interactions on a per-use basis while maintaining a consistent baseline configuration.
 </Note>
 
-## LLM Service Endpoints
-
-The LLMProvider is responsible for providing functionality to support these core endpoints in R2R:
-
-
-1. `search`: Perform vector and knowledge graph search
-2. `rag`: Retrieval-Augmented Generation
-3. `evaluate`: Evaluate RAG responses
-
-## Implementation Guide
-
-### Basic Usage
-
-```python
-from r2r import R2R, GenerationConfig
-
-app = R2R()
-
-messages = [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "What is the capital of France?"}
-]
-
-generation_config = GenerationConfig(model="gpt-3.5-turbo", temperature=0.7)
-response = app.get_completion(messages, generation_config)
-print(response.choices[0].message.content)
-```
-
-### Switching Between Providers
-
-```python
-# Using OpenAI
-openai_config = GenerationConfig(model="gpt-4", temperature=0.7)
-openai_response = app.get_completion(messages, openai_config)
-
-# Using Anthropic
-anthropic_config = GenerationConfig(model="claude-3-opus-20240229", temperature=0.7)
-anthropic_response = app.get_completion(messages, anthropic_config)
-
-# Using a local model via Ollama
-local_config = GenerationConfig(model="ollama/llama3.1", temperature=0.7)
-local_response = app.get_completion(messages, local_config)
-```
 
 ## Security Best Practices
 
