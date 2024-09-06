@@ -121,7 +121,14 @@ class UnstructuredParsingProvider(ParsingProvider):
         self, file_content: bytes, document: Document, chunk_size: int
     ) -> AsyncGenerator[FallbackElement, None]:
 
-        texts = self.parsers[document.type].ingest(file_content, chunk_size)
+        logger.info(f"Parsing document {document.id} of type {document.type} with fallback parser")
+        logger.info(f"Parser: {self.parsers[document.type]}")
+        logger.info(f"Chunk size: {chunk_size}")
+        logger.info(f"Document: {document}")
+
+        texts = self.parsers[document.type].ingest(file_content, chunk_size = chunk_size)
+
+        logger.info(f"Texts: {texts}")
 
         chunk_id = 0
         async for text in texts:

@@ -10,13 +10,16 @@ from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_frame_with_openai
 from core.telemetry.telemetry_decorator import telemetry_event
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ImageParser(AsyncParser[DataType]):
     """A parser for image data."""
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model: str = "gpt-4o-mini",
         max_tokens: int = 2_048,
         api_base: str = "https://api.openai.com/v1/chat/completions",
         max_image_size: int = 1 * 1024 * 1024,  # 4MB limit
@@ -35,23 +38,27 @@ class ImageParser(AsyncParser[DataType]):
         )
         return img_byte_arr.getvalue()
 
-    @telemetry_event("ingest_image")
     async def ingest(
         self, data: DataType, chunk_size: int = 1024
     ) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
 
+        logger.info(f"Processing image with OpenAI model {self.model}")
+
         if isinstance(data, bytes):
             # Resize the image if it's too large
-            if len(data) > self.max_image_size:
-                data = self._resize_image(
-                    data, float(self.max_image_size) / len(data)
-                )
+            # if len(data) > self.max_image_size:
+            #     data = self._resize_image(
+            #         data, float(self.max_image_size) / len(data)
+            #     )
 
             # Encode to base64
             data = base64.b64encode(data).decode("utf-8")
 
-        text = process_frame_with_openai(
+        print("processing image")
+        logger.info(f"Processing image with OpenAI model {self.model}")
+
+        openai_text = process_frame_with_openai(
             data,
             self.openai_api_key,
             self.model,
@@ -59,10 +66,10 @@ class ImageParser(AsyncParser[DataType]):
             self.api_base,
         )
 
-        print(text)
-
+        logger.info(f"OpenAI text: {openai_text}")
+        print(openai_text)
         # split text into small chunks and yield them
-        for i in range(0, len(text), chunk_size):
-            text = text[i : i + chunk_size]
+        for i in range(0, len(openai_text), chunk_size):
+            text = openai_text[i : i + chunk_size]
             if text and text != "":
                 yield text

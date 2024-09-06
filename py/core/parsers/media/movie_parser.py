@@ -47,7 +47,6 @@ class MovieParser(AsyncParser):
                 "Error, environment variable `OPENAI_API_KEY` is required to run `MovieParser`."
             )
 
-    @telemetry_event("ingest_movie")
     async def ingest(
         self, data: bytes, chunk_size: int = 1024
     ) -> AsyncGenerator[str, None]:

@@ -15,7 +15,6 @@ class AudioParser(AsyncParser[bytes]):
         self.api_base = api_base
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
 
-    @telemetry_event("ingest_audio")
     async def ingest(
         self, data: bytes, chunk_size: int = 1024
     ) -> AsyncGenerator[str, None]:
