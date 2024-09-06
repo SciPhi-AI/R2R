@@ -5,7 +5,7 @@ from r2r import R2RClient
 if __name__ == "__main__":
     # Initialize the R2R client
     client = R2RClient(
-        "http://localhost:8000"
+        "http://localhost:7272"
     )  # Replace with your R2R deployment URL
 
     # Admin login

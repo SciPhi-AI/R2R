@@ -5,7 +5,7 @@ icon: 'window'
 ---
 
 Web developers can easily integrate R2R into their projects using the [R2R JavaScript client](https://github.com/SciPhi-AI/r2r-js).
-For more extensive reference and examples of how to use te r2r-js library, we encourage you to look at the [R2R Application](/cookbooks/application) and its source code.
+For more extensive reference and examples of how to use the r2r-js library, we encourage you to look at the [R2R Application](/cookbooks/application) and its source code.
 
 ## Hello R2R—JavaScript
 
@@ -14,7 +14,7 @@ R2R gives developers configurable vector search and RAG right out of the box, as
 
 const { r2rClient } = require("r2r-js");
 
-const client = new r2rClient("http://localhost:8000");
+const client = new r2rClient("http://localhost:7272");
 
 async function main() {
   const files = [
@@ -78,8 +78,8 @@ First, we create the R2R client and specify the base URL where the R2R server is
 ```javascript
 const { r2rClient } = require("r2r-js");
 
-// http://localhost:8000 or the address that you are running the R2R server
-const client = new r2rClient("http://localhost:8000");
+// http://localhost:7272 or the address that you are running the R2R server
+const client = new r2rClient("http://localhost:7272");
 ```
 
 ### Log into the server
@@ -120,7 +120,7 @@ console.log("Ingest result:", JSON.stringify(ingestResult, null, 2));
 This command processes the ingested, splits them into chunks, embeds the chunks, and stores them into your specified Postgres database. Relational data is also stored to allow for downstream document management, which you can read about in the [quickstart](https://r2r-docs.sciphi.ai/quickstart).
 
 ### Performing RAG
-We'll make a RAG request, 
+We'll make a RAG request,
 
 ```javascript
 console.log("Performing RAG...");
@@ -184,7 +184,7 @@ First, we'll create an API route to handle R2R queries. Create a file named `r2r
 import { NextApiRequest, NextApiResponse } from 'next';
 import { r2rClient } from 'r2r-js';
 
-const client = new r2rClient("http://localhost:8000");
+const client = new r2rClient("http://localhost:7272");
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
@@ -275,7 +275,7 @@ const R2RQueryApp: React.FC = () => {
         className={styles.queryInput}
       />
       <button
-        onClick={performQuery} 
+        onClick={performQuery}
         disabled={isLoading}
         className={styles.submitButton}
       >

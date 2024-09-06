@@ -9,17 +9,16 @@ import GithubButtons from '../components/GithubButtons';
 
 ![r2r](./images/r2r.png)
 
-R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. R2R is built around a simple [RESTful API](/api-reference/introduction), making it easy to use and fast to implement.
+R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. Built around a containerized [RESTful API](/api-reference/introduction), R2R offers multimodal support, hybrid search, GraphRAG, user management, and observability / analytics features.
 
 ## Key Features
-
-- **📁 Multimodal Support**: Ingest .txt, .pdf, .json, .png, .mp3, and other file types
-- **🔍 Hybrid Search**: Combine semantic and keyword search for enhanced RAG
-- **🔗 Graph RAG**: Automatically build knowledge graphs and run GraphRAG on them
-- **👤 User Management**: Easily manage users, documents, and permissions with full authentication.
-- **🔭 Observability**: Observe and analyze performance of your production RAG deployments
-- **🔌 Extensibility**: Develop your application further with easy builder + factory pattern.
-- **🖥️ WebApp**: Interact with and manage R2R with the [R2R Application](https://github.com/SciPhi-AI/R2R-Application), an open-source React+Next.js front-end with integrated authentication for user-facing applications.
+- [**📁 Multimodal Ingestion**](/documentation/configuration/ingestion/overview): Parse `.txt`, `.pdf`, `.json`, `.png`, `.mp3`, and more.
+- [**🔍 Hybrid Search**](/cookbooks/hybrid-search): Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
+- [**🔗 Graph RAG**](/cookbooks/graphrag): Automatically extract relationships and build knowledge graphs.
+- [**🗂️ App Management**](/cookbooks/user-auth): Efficiently manage documents and users with full authentication.
+- [**🔭 Observability**](/cookbooks/observability): Observe and analyze your RAG engine performance.
+- [**🧩 Configurable**](/documentation/configuration/introduction): Provision your application using intuitive configuration files.
+- [**🖥️ Dashboard**](https://github.com/SciPhi-AI/R2R-Dashboard): An open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
 
 ## Getting Started
 
@@ -34,7 +33,7 @@ R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experime
 
 ## Cookbooks
 
-- Advanced RAG Pipelines 
+- Advanced RAG Pipelines
   - [RAG Agent](/cookbooks/agent): R2R's powerful RAG agent
   - [Hybrid Search](/cookbooks/hybrid-search): Introduction to hybrid search
   - [Advanced RAG](/cookbooks/advanced-rag): Advanced RAG features

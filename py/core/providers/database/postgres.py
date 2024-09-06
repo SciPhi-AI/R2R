@@ -26,48 +26,38 @@ class PostgresDBProvider(DatabaseProvider):
         *args,
         **kwargs,
     ):
-        user = config.extra_fields.get("user", None) or os.getenv(
-            "POSTGRES_USER"
-        )
+        user = config.user or os.getenv("POSTGRES_USER")
         if not user:
             raise ValueError(
                 "Error, please set a valid POSTGRES_USER environment variable or set a 'user' in the 'database' settings of your `r2r.toml`."
             )
-        password = config.extra_fields.get("password", None) or os.getenv(
-            "POSTGRES_PASSWORD"
-        )
+        password = config.password or os.getenv("POSTGRES_PASSWORD")
         if not password:
             raise ValueError(
                 "Error, please set a valid POSTGRES_PASSWORD environment variable or set a 'password' in the 'database' settings of your `r2r.toml`."
             )
 
-        host = config.extra_fields.get("host", None) or os.getenv(
-            "POSTGRES_HOST"
-        )
+        host = config.host or os.getenv("POSTGRES_HOST")
         if not host:
             raise ValueError(
                 "Error, please set a valid POSTGRES_HOST environment variable or set a 'host' in the 'database' settings of your `r2r.toml`."
             )
 
-        port = config.extra_fields.get("port", None) or os.getenv(
-            "POSTGRES_PORT"
-        )
+        port = config.port or os.getenv("POSTGRES_PORT")
         if not port:
             raise ValueError(
                 "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'database' settings of your `r2r.toml`."
             )
 
-        db_name = config.extra_fields.get("db_name", None) or os.getenv(
-            "POSTGRES_DBNAME"
-        )
+        db_name = config.db_name or os.getenv("POSTGRES_DBNAME")
         if not db_name:
             raise ValueError(
                 "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'database' settings of your `r2r.toml`."
             )
 
-        collection_name = config.extra_fields.get(
-            "vecs_collection", None
-        ) or os.getenv("POSTGRES_VECS_COLLECTION")
+        collection_name = config.vecs_collection or os.getenv(
+            "POSTGRES_VECS_COLLECTION"
+        )
         if not collection_name:
             raise ValueError(
                 "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
@@ -101,10 +91,9 @@ class PostgresDBProvider(DatabaseProvider):
         )
 
     def _initialize_relational_db(self) -> RelationalDBProvider:
-        provider = PostgresRelationalDBProvider(
+        return PostgresRelationalDBProvider(
             self.config,
             vx=self.vx,
             crypto_provider=self.crypto_provider,
             collection_name=self.collection_name,
         )
-        return provider

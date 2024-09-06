@@ -10,7 +10,7 @@
       "source": "/api-reference",
       "destination": "/api-reference/introduction"
     }
-  ],  
+  ],
   "analytics": {
     "posthog": {
       "apiKey": "phc_OPBbibOIErCGc4NDLQsOrMuYFTKDmRwXX6qxnTr6zpU"
@@ -76,17 +76,25 @@
     {
       "group": "Getting Started",
       "pages": [
-        "documentation/installation",
+        {
+          "group": "Installation",
+          "icon": "bars-progress",
+          "pages" : [
+            "documentation/installation/overview",
+            "documentation/installation/docker",
+            "documentation/installation/local-system"
+          ]
+        },
         "documentation/quickstart",
-        { 
-          "group": "API & SDKs", 
-          "icon": "code", 
+        {
+          "group": "API & SDKs",
+          "icon": "code",
           "pages" : [
             {
               "icon": "python",
               "group": "Python SDK",
               "pages": [
-                "documentation/python-sdk/introduction", 
+                "documentation/python-sdk/introduction",
                 "documentation/python-sdk/ingestion",
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
@@ -98,7 +106,7 @@
               "icon": "js",
               "group": "JS SDK",
               "pages": [
-                "documentation/js-sdk/introduction", 
+                "documentation/js-sdk/introduction",
                 "documentation/js-sdk/ingestion",
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
@@ -107,50 +115,46 @@
             },
             "documentation/api-reference"
           ]
-        },
-        {
-          "icon": "sliders",
-          "group": "Configuration",
-          "pages": [
-            "documentation/configuration/introduction",
-            {
-              "group": "Ingestion",
-              "pages": [
-                "documentation/configuration/ingestion/overview",
-                "documentation/configuration/ingestion/postgres",
-                {
-                  "group": "Parsing",
-                  "pages": [
-                    "documentation/configuration/ingestion/parsing",
-                    "documentation/configuration/ingestion/unstructured"
-                  ]
-                },
-                "documentation/configuration/ingestion/chunking",
-                "documentation/configuration/ingestion/embedding"
-              ]
-            },
-            {
-              "group": "Knowledge Graph",
-              "pages": [
-                "documentation/configuration/ingestion/knowledge-graph",
-                "documentation/configuration/restructuring"
-              ]
-            },
-            {
-              "group": "Retrieval",
-              "pages": [
-                "documentation/configuration/retrieval/overview",
-                "documentation/configuration/retrieval/vector-search",
-                "documentation/configuration/retrieval/knowledge-graph",
-                "documentation/configuration/retrieval/llm",
-                "documentation/configuration/retrieval/rag"
-                
-              ]
-            }
-          ]
-        },
-        "documentation/local-rag"
+        }
       ]
+    },
+    {
+      "group": "Configuration",
+      "pages": [
+        "documentation/configuration/introduction",
+        "documentation/configuration/postgres",
+        "documentation/configuration/llm",
+        "documentation/configuration/rag",
+        {
+            "group": "Ingestion",
+            "icon": "upload",
+            "pages": [
+              "documentation/configuration/ingestion/overview",
+              "documentation/configuration/ingestion/parsing",
+              "documentation/configuration/ingestion/chunking",
+              "documentation/configuration/ingestion/embedding"
+            ]
+          },
+          {
+            "group": "Knowledge Graph",
+            "icon": "diagram-project",
+            "pages": [
+              "documentation/configuration/knowledge-graph/overview",
+              "documentation/configuration/knowledge-graph/enrichment"
+            ]
+          },
+          {
+            "group": "Retrieval",
+            "icon": "magnifying-glass",
+            "pages": [
+              "documentation/configuration/retrieval/overview",
+              "documentation/configuration/retrieval/vector-search",
+              "documentation/configuration/retrieval/knowledge-graph"
+
+            ]
+          },
+          "documentation/local-rag"
+        ]
     },
     {
       "group": "Deep Dives",
@@ -160,8 +164,7 @@
           "pages": [
             "documentation/deep-dive/main/introduction",
             "documentation/deep-dive/main/config",
-            "documentation/deep-dive/main/builder",
-            "documentation/deep-dive/main/engine"
+            "documentation/deep-dive/main/builder"
           ]
         },
         {
@@ -172,15 +175,6 @@
             "documentation/deep-dive/providers/embeddings",
             "documentation/deep-dive/providers/database",
             "documentation/deep-dive/providers/knowledge-graph"
-          ]
-        },
-        {
-          "group": "Pipelines",
-          "pages": [
-            "documentation/deep-dive/pipelines/introduction",
-            "documentation/deep-dive/pipelines/ingestion",
-            "documentation/deep-dive/pipelines/search",
-            "documentation/deep-dive/pipelines/rag"
           ]
         },
         {
@@ -207,6 +201,7 @@
     {
       "group": "Knowledge Graph",
       "pages": [
+        "api-reference/endpoint/create_graph",
         "api-reference/endpoint/enrich_graph"
       ]
     },
@@ -240,7 +235,7 @@
         "api-reference/endpoint/change_password",
         "api-reference/endpoint/request_password_reset"
       ]
-    },    
+    },
     {
       "group": "Groups",
       "pages": [
@@ -258,7 +253,7 @@
         "api-reference/endpoint/remove_document_from_group",
         "api-reference/endpoint/get_document_groups"
       ]
-    },    
+    },
 
     {
       "group": "Admin",
@@ -296,11 +291,11 @@
       "group": "General",
       "pages": [
         "cookbooks/walkthrough",
-        "cookbooks/knowledge-graph",
-        "cookbooks/graphrag",
         "cookbooks/hybrid-search",
+        "cookbooks/graphrag",
         "cookbooks/advanced-rag",
         "cookbooks/agent",
+        "cookbooks/orchestration",
         "cookbooks/web-dev"
       ]
     },
@@ -317,7 +312,7 @@
   "footerSocials": {
     "github": "https://github.com/SciPhi-AI",
     "linkedin": "https://www.linkedin.com/company/sciphi-ai",
-    "discord": "https://discord.gg/p6KqD2kjtB", 
+    "discord": "https://discord.gg/p6KqD2kjtB",
     "twitter": "https://twitter.com/ocolegro"
-  }  
+  }
 }

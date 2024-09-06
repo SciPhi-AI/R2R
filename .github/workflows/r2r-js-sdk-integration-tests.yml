@@ -41,7 +41,7 @@ jobs:
           POSTGRES_VECS_COLLECTION: ${{ secrets.POSTGRES_VECS_COLLECTION }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          r2r serve --port=8000 > r2r_server.log 2>&1 &
+          r2r serve --port=7272 > r2r_server.log 2>&1 &
           sleep 15
 
       - name: Use Node.js
@@ -54,7 +54,7 @@ jobs:
 
       - name: Check if R2R server is running
         run: |
-          curl http://localhost:8000/v2/health || echo "Server not responding"
+          curl http://localhost:7272/v2/health || echo "Server not responding"
 
       - name: Display R2R server logs if server not responding
         if: failure()

@@ -73,7 +73,7 @@ Environment variables take precedence over the config settings in case of confli
 ```python
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 
 result = client.ingest_files(["path/to/your/file.txt"])
 print(f"Ingestion Result: {result}")
@@ -152,7 +152,7 @@ class CustomKGProvider(KGProvider):
 
     def search(self, query: str, use_kg_search: bool = True):
         # Custom implementation...
-    
+
     # Implement other required methods...
 ```
 

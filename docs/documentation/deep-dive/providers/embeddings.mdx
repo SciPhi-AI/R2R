@@ -447,7 +447,7 @@ class CustomEmbeddingProvider(EmbeddingProvider):
         query_embedding = self.get_embedding(query, stage, EmbeddingPurpose.QUERY)
         for result in results:
             result.score = np.dot(query_embedding, result.embedding)
-        
+
         reranked_results = sorted(results, key=lambda x: x.score, reverse=True)
         return reranked_results[:limit]
 

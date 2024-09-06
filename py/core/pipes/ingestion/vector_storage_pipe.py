@@ -8,6 +8,7 @@ from core.base import (
     DatabaseProvider,
     PipeType,
     RunLoggingSingleton,
+    StorageResult,
     VectorEntry,
 )
 from core.base.abstractions.exception import R2RDocumentProcessingError
@@ -18,9 +19,7 @@ logger = logging.getLogger(__name__)
 
 class VectorStoragePipe(AsyncPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[
-            Union[R2RDocumentProcessingError, VectorEntry], None
-        ]
+        message: list[VectorEntry]
 
     def __init__(
         self,
@@ -65,7 +64,7 @@ class VectorStoragePipe(AsyncPipe):
     async def _run_logic(
         self,
         input: Input,
-        state: AsyncState,
+        state: Optional[AsyncState],
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
@@ -75,11 +74,7 @@ class VectorStoragePipe(AsyncPipe):
         vector_batch = []
         document_counts = {}
 
-        async for msg in input.message:
-            if isinstance(msg, R2RDocumentProcessingError):
-                yield (msg.document_id, msg)
-                continue
-
+        for msg in input.message:
             vector_batch.append(msg)
             document_counts[msg.document_id] = (
                 document_counts.get(msg.document_id, 0) + 1
@@ -99,7 +94,9 @@ class VectorStoragePipe(AsyncPipe):
                 logger.error(f"Failed to store final vector batch: {e}")
 
         for document_id, count in document_counts.items():
-            yield (
-                document_id,
-                f"Processed {count} vectors for document {document_id}.",
+            logger.info(
+                f"Successful ingestion for document_id: {document_id}, with vector: {count}"
+            )
+            yield StorageResult(
+                document_id=document_id, num_chunks=count, success=True
             )

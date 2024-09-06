@@ -2,9 +2,9 @@ import logging
 from typing import Any, AsyncGenerator, Union
 
 from core.base import (
-    ChunkingConfig,
     ChunkingProvider,
     Method,
+    R2RChunkingConfig,
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class R2RChunkingProvider(ChunkingProvider):
-    def __init__(self, config: ChunkingConfig):
+    def __init__(self, config: R2RChunkingConfig):
         super().__init__(config)
         self.text_splitter = self._initialize_text_splitter()
         logger.info(
@@ -57,7 +57,7 @@ class R2RChunkingProvider(ChunkingProvider):
     def validate(self) -> bool:
         return self.config.chunk_size > 0 and self.config.chunk_overlap >= 0
 
-    def update_config(self, config_override: ChunkingConfig):
+    def update_config(self, config_override: R2RChunkingConfig):
         if self.config != config_override:
             self.config = config_override
             self.text_splitter = self._initialize_text_splitter()
@@ -83,7 +83,7 @@ class R2RChunkingProvider(ChunkingProvider):
     async def chunk_with_override(
         self,
         parsed_document: Union[str, DocumentExtraction],
-        config_override: ChunkingConfig,
+        config_override: R2RChunkingConfig,
     ) -> AsyncGenerator[Any, None]:
         original_config = self.config
         original_splitter = self.text_splitter
@@ -99,8 +99,8 @@ class R2RChunkingProvider(ChunkingProvider):
     def with_override(
         cls,
         original_provider: "R2RChunkingProvider",
-        config_override: ChunkingConfig,
+        config_override: R2RChunkingConfig,
     ) -> "R2RChunkingProvider":
-        new_config = ChunkingConfig(**original_provider.config.model_dump())
+        new_config = R2RChunkingConfig(**original_provider.config.model_dump())
         new_config.update(config_override.model_dump(exclude_unset=True))
         return cls(new_config)

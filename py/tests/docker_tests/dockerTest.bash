@@ -37,7 +37,7 @@ test_instance_1() {
   cid="$(docker run -d \
     --name r2r_test \
     --add-host=host.docker.internal:host-gateway \
-    -p 8000:8000 \
+    -p 7272:7272 \
     -e OPENAI_API_KEY=$OPENAI_API_KEY \
     $dockerImage)"
 
@@ -51,8 +51,8 @@ test_instance_1() {
   fi
 
   # Check if the network socket is available
-  if ! nc -zv 127.0.0.1 8000; then
-    echo "Error: Port 8000 is not available."
+  if ! nc -zv 127.0.0.1 7272; then
+    echo "Error: Port 7272 is not available."
     return 1
   fi
 
@@ -89,7 +89,7 @@ test_instance_2() {
   cid="$(docker run -d \
     --name r2r_test \
     --add-host=host.docker.internal:host-gateway \
-    -p 8000:8000 \
+    -p 7272:7272 \
     -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
     -e CONFIG_OPTION=local_llm \
     $dockerImage)"
@@ -104,8 +104,8 @@ test_instance_2() {
   fi
 
   # Check if the network socket is available
-  if ! nc -zv 127.0.0.1 8000; then
-    echo "Error: Port 8000 is not available."
+  if ! nc -zv 127.0.0.1 7272; then
+    echo "Error: Port 7272 is not available."
     return 1
   fi
 

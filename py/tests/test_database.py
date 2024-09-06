@@ -19,7 +19,7 @@ load_dotenv()
 
 # Sample vector entries
 def generate_random_vector_entry(id: str, dimension: int) -> VectorEntry:
-    vector = [random.random() for _ in range(dimension)]
+    vector_data = [random.random() for _ in range(dimension)]
     metadata = {"key": f"value_{id}"}
     return VectorEntry(
         fragment_id=generate_id_from_label(id),
@@ -27,7 +27,7 @@ def generate_random_vector_entry(id: str, dimension: int) -> VectorEntry:
         document_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         group_ids=[uuid.uuid4()],
-        vector=Vector(vector),
+        vector=Vector(data=vector_data),
         text=f"Sample text for {id}",
         metadata=metadata,
     )
@@ -53,9 +53,7 @@ def pg_vector_db():
     db = PostgresDBProvider(config, dimension=3)
     yield db
     # Teardown
-    db.vx.delete_collection(
-        db.config.extra_fields.get("vecs_collection", None)
-    )
+    db.vx.delete_collection(db.config.vecs_collection)
 
 
 @pytest.mark.parametrize("db_fixture", ["pg_vector_db"])
@@ -162,7 +160,7 @@ def test_upsert(request, db_fixture):
         document_id=sample_entries[0].document_id,
         user_id=sample_entries[0].user_id,
         group_ids=sample_entries[0].group_ids,
-        vector=Vector([0.5, 0.5, 0.5]),
+        vector=Vector(data=[0.5, 0.5, 0.5]),
         text="Modified text",
         metadata={"key": "new_value"},
     )

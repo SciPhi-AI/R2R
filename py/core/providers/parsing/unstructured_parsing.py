@@ -1,25 +1,66 @@
+import asyncio
 import logging
 import os
 import time
+from copy import copy
 from io import BytesIO
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
+from pydantic import BaseModel
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
+from core import parsers
 from core.base import (
     Document,
     DocumentExtraction,
     DocumentType,
+    ParsingConfig,
     ParsingProvider,
     generate_id_from_label,
 )
+from core.base.abstractions.base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
 
+class FallbackElement(R2RSerializable):
+    text: str
+    metadata: dict[str, Any]
+
+
 class UnstructuredParsingProvider(ParsingProvider):
-    def __init__(self, use_api, config):
+
+    AVAILABLE_PARSERS = {
+        # Commented filetypes go to unstructured, uncommented fallback to R2R parsers (LLM based)
+        # DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
+        # DocumentType.DOCX: [parsers.DOCXParser],
+        # DocumentType.HTML: [parsers.HTMLParser],
+        # DocumentType.HTM: [parsers.HTMLParser],
+        # DocumentType.JSON: [parsers.JSONParser],
+        # DocumentType.MD: [parsers.MDParser],
+        # DocumentType.PDF: [parsers.PDFParser, parsers.PDFParserUnstructured],
+        # DocumentType.PPTX: [parsers.PPTParser],
+        # DocumentType.TXT: [parsers.TextParser],
+        # DocumentType.XLSX: [parsers.XLSXParser, parsers.XLSXParserAdvanced],
+        DocumentType.GIF: [parsers.ImageParser],
+        DocumentType.JPEG: [parsers.ImageParser],
+        DocumentType.JPG: [parsers.ImageParser],
+        DocumentType.PNG: [parsers.ImageParser],
+        DocumentType.SVG: [parsers.ImageParser],
+        DocumentType.MP3: [parsers.AudioParser],
+        DocumentType.MP4: [parsers.MovieParser],
+    }
+
+    IMAGE_TYPES = {
+        DocumentType.GIF,
+        DocumentType.JPG,
+        DocumentType.JPEG,
+        DocumentType.PNG,
+        DocumentType.SVG,
+    }
+
+    def __init__(self, use_api: bool, config: ParsingConfig):
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
@@ -58,60 +99,112 @@ class UnstructuredParsingProvider(ParsingProvider):
                 ) from e
 
         super().__init__(config)
+        self.parsers = {}
+        self._initialize_parsers()
+
+    def _initialize_parsers(self):
+        for doc_type, parser_infos in self.AVAILABLE_PARSERS.items():
+            for parser_info in parser_infos:
+                if (
+                    doc_type not in self.config.excluded_parsers
+                    and doc_type not in self.parsers
+                ):
+                    # will choose the first parser in the list
+                    self.parsers[doc_type] = parser_info()
+
+        # Apply overrides if specified
+        for parser_override in self.config.override_parsers:
+            if parser_name := getattr(parsers, parser_override.parser):
+                self.parsers[parser_override.document_type] = parser_name()
+
+    async def parse_fallback(
+        self, file_content: bytes, document: Document, chunk_size: int
+    ) -> AsyncGenerator[FallbackElement, None]:
+
+        texts = self.parsers[document.type].ingest(
+            file_content, chunk_size=chunk_size
+        )
+
+        chunk_id = 0
+        async for text in texts:
+            if text and text != "":
+                yield FallbackElement(
+                    text=text, metadata={"chunk_id": chunk_id}
+                )
+                chunk_id += 1
 
     async def parse(
-        self, document: Document
+        self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
-        data = document.data
-        if isinstance(data, bytes):
-            data = BytesIO(data)
 
-        # TODO - Include check on excluded parsers here.
         t0 = time.time()
-        if self.use_api:
-            logger.info(f"Using API to parse document {document.id}")
-            files = self.shared.Files(
-                content=data.read() if isinstance(data, BytesIO) else data,
-                file_name=document.metadata.get("filename", "unknown_file"),
+        if document.type in self.AVAILABLE_PARSERS.keys():
+            logger.info(
+                f"Parsing {document.type}: {document.id} with fallback parser"
             )
-
-            req = self.operations.PartitionRequest(
-                self.shared.PartitionParameters(
-                    files=files,
-                    split_pdf_page=True,
-                    split_pdf_allow_failed=True,
-                    split_pdf_concurrency_level=15,
-                )
-            )
-            elements = self.client.general.partition(req)
-            elements = list(elements.elements)
-
+            elements = []
+            async for element in self.parse_fallback(
+                file_content,
+                document,
+                chunk_size=self.config.chunking_config.extra_fields.get(
+                    "combine_under_n_chars", 128
+                ),
+            ):
+                elements.append(element)
         else:
             logger.info(
-                f"Using local unstructured to parse document {document.id}"
-            )
-            elements = self.partition(
-                file=data, **self.config.chunking_config.model_dump()
+                f"Parsing {document.type}: {document.id} with unstructured"
             )
 
+            if isinstance(file_content, bytes):
+                file_content = BytesIO(file_content)
+
+            # TODO - Include check on excluded parsers here.
+            if self.use_api:
+                logger.info(f"Using API to parse document {document.id}")
+                files = self.shared.Files(
+                    content=file_content.read(),
+                    file_name=document.metadata.get("title", "unknown_file"),
+                )
+
+                req = self.operations.PartitionRequest(
+                    self.shared.PartitionParameters(
+                        files=files,
+                        **self.config.extra_fields,
+                    )
+                )
+                elements = self.client.general.partition(req)
+                elements = list(elements.elements)
+
+            else:
+                logger.info(
+                    f"Using local unstructured to parse document {document.id}"
+                )
+                elements = self.partition(
+                    file=file_content,
+                    **self.config.extra_fields,
+                )
+
         for iteration, element in enumerate(elements):
+            if not isinstance(element, dict):
+                element = element.to_dict()
+
+            if element.get("text", "") == "":
+                continue
+
+            metadata = copy(document.metadata)
             for key, value in element.items():
                 if key == "text":
                     text = value
                 elif key == "metadata":
                     for k, v in value.items():
-                        if k not in document.metadata:
-                            document.metadata[k] = v
-                        else:
-                            document.metadata[f"unstructured_{k}"] = v
-                elif key in document.metadata:
-                    document.metadata[f"unstructured_{key}"] = value
-                else:
-                    document.metadata[key] = value
+                        if k not in metadata:
+                            if k != "orig_elements":
+                                metadata[f"unstructured_{k}"] = v
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline
-            document.metadata["partitioned_by_unstructured"] = True
+            metadata["partitioned_by_unstructured"] = True
 
             # creating the text extraction
             yield DocumentExtraction(
@@ -120,7 +213,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 user_id=document.user_id,
                 group_ids=document.group_ids,
                 data=text,
-                metadata=document.metadata,
+                metadata=metadata,
             )
 
         logger.debug(
@@ -130,4 +223,4 @@ class UnstructuredParsingProvider(ParsingProvider):
         )
 
     def get_parser_for_document_type(self, doc_type: DocumentType) -> str:
-        return "unstructured"
+        return "unstructured_local"

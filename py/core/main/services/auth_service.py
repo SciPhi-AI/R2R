@@ -6,8 +6,8 @@ from core.base import R2RException, RunLoggingSingleton, RunManager, Token
 from core.base.api.models.auth.responses import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..assembly.config import R2RConfig
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from ..config import R2RConfig
 from .base import Service
 
 
@@ -16,6 +16,7 @@ class AuthService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipes,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
@@ -24,6 +25,7 @@ class AuthService(Service):
         super().__init__(
             config,
             providers,
+            pipes,
             pipelines,
             agents,
             run_manager,

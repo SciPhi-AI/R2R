@@ -1,0 +1,41 @@
+create_graph:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:7272")
+          # when using auth, do client.login(...)
+
+          result = client.create_graph(
+            document_ids = ["3e157b3a-8469-51db-90d9-52e7d896b49b"], # optional
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/create_graph" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -d '{
+              "document_ids": ["3e157b3a-8469-51db-90d9-52e7d896b49b"]
+            }'
+
+
+enrich_graph:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient, KGEnrichmentSettings
+
+          client = R2RClient("http://localhost:7272")
+          # when using auth, do client.login(...)
+
+          settings = KGEnrichmentSettings()
+
+          result = client.enrich_graph(settings)
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/enrich_graph" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_API_KEY"

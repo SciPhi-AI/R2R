@@ -21,7 +21,7 @@ Be sure to complete the [installation instructions](/documentation/installation)
 
 R2R is an engine for building user-facing Retrieval-Augmented Generation (RAG) applications. At its core, R2R provides this service through an architecture of providers, services, and an integrated RESTful API. This cookbook provides a detailed walkthrough of how to interact with R2R. [Refer here](/documentation/deep-dive/main/introduction) for a deeper dive on the R2R system architecture.
 
-## R2R Application Lifecycle 
+## R2R Application Lifecycle
 
 The following diagram illustrates how R2R assembles a user-facing application:
 
@@ -48,7 +48,7 @@ R2R gives developers configurable vector search and RAG right out of the box, as
 ```python core/examples/hello_r2r.py
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 
 with open("test.txt", "w") as file:
     file.write("John is a person that works at Google.")
@@ -82,10 +82,13 @@ concurrent_request_limit = 16
   temperature = 0.5
 
 [chunking]
-provider = "r2r"
-method = "recursive"
-chunk_size = 1024
-chunk_overlap = 256
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title"
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
 ```
 
 Then, use the `config-path` argument to specify your custom configuration when launching R2R:
@@ -99,7 +102,7 @@ You can read more about [configuration here](/documentation/configuration).
 
 ## Document Ingestion and Management
 
-R2R efficiently handles diverse document types using Postgres with pgvector, combining relational data management with vector search capabilities. This approach enables seamless ingestion, storage, and retrieval of multimodal data, while supporting flexible document management and user permissions. 
+R2R efficiently handles diverse document types using Postgres with pgvector, combining relational data management with vector search capabilities. This approach enables seamless ingestion, storage, and retrieval of multimodal data, while supporting flexible document management and user permissions.
 
 Key features include:
 
@@ -129,7 +132,7 @@ r2r ingest-sample-files
 from r2r import R2RClient
 from glob import glob
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 files = glob.glob('path/to/r2r/examples/data')
 client.ingest_files(files)
 ```
@@ -157,7 +160,7 @@ await client.ingestFiles(files, {
 This command initiates the ingestion process, producing output similar to:
 
 ```bash
-{'results': {'processed_documents': [{'id': '93123a68-d668-51de-8291-92162730dc87', 'title': 'aristotle.txt', ...}], 'failed_documents': [], 'skipped_documents': []}}
+[{'message': 'Ingestion task queued successfully.', 'task_id': '6e27dfca-606d-422d-b73f-2d9e138661b4', 'document_id': '28a7266e-6cee-5dd2-b7fa-e4fc8f2b49c6'}, {'message': 'Ingestion task queued successfully.', 'task_id': 'd37deef1-af08-4576-bd79-6d2a7fb6ec33', 'document_id': '2c91b66f-e960-5ff5-a482-6dd0a523d6a1'}, {'message': 'Ingestion task queued successfully.', 'task_id': '4c1240f0-0692-4b67-8d2b-1428f71ea9bc', 'document_id': '638f0ed6-e0dc-5f86-9282-1f7f5243d9fa'}, {'message': 'Ingestion task queued successfully.', 'task_id': '369abcea-79a2-480c-9ade-bbc89f5c500e', 'document_id': 'f25fd516-5cac-5c09-b120-0fc841270c7e'}, {'message': 'Ingestion task queued successfully.', 'task_id': '7c99c168-97ee-4253-8a6f-694437f3e5cb', 'document_id': '77f67c65-6406-5076-8176-3844f3ef3688'}, {'message': 'Ingestion task queued successfully.', 'task_id': '9a6f94b0-8fbc-4507-9435-53e0973aaad0', 'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1'}, {'message': 'Ingestion task queued successfully.', 'task_id': '61d0e2e0-45ec-43db-9837-ff4da5166ee9', 'document_id': '0032a7a7-cb2a-5d08-bfc1-93d3b760deb4'}, {'message': 'Ingestion task queued successfully.', 'task_id': '1479390e-c295-47b0-a570-370b05b86c8b', 'document_id': 'f55616fb-7d48-53d5-89c2-15d7b8e3834c'}, {'message': 'Ingestion task queued successfully.', 'task_id': '92f73a07-2286-4c42-ac02-d3eba0f252e0', 'document_id': '916b0ed7-8440-566f-98cf-ed7c0f5dba9b'}]
 ```
 
 Key features of the ingestion process:
@@ -174,6 +177,12 @@ R2R allows retrieval of high-level document information stored in a relational t
 
 <Tabs>
 
+<Tab title="CLI">
+```bash
+r2r documents-overview
+```
+</Tab>
+
 <Tab title="Python">
 ```python
 client.documents_overview()
@@ -188,7 +197,7 @@ await client.documentsOverview()
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/documents_overview \
+curl -X POST http://localhost:7272/v2/documents_overview \
   -H "Content-Type: application/json" \
   -d '{
     "document_ids": null,
@@ -204,17 +213,18 @@ This command returns document metadata, including:
 ```bash
 [
   {
-    'document_id': '93123a68-d668-51de-8291-92162730dc87', 
-    'version': 'v1',
-    'size_in_bytes': 73353,
-    'metadata': {},
-    'status': 'success',
+    'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+    'title': 'aristotle.txt',
     'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-    'title': 'aristotle.txt', 
-    'created_at': '2024-07-21T20:09:14.218741Z', 
-    'updated_at': '2024-07-21T20:09:14.218741Z',
-    'metadata': {}
-  },
+    'type': 'txt',
+    'created_at': '2024-09-06T03:32:02.991742Z',
+    'updated_at': '2024-09-06T03:32:02.991744Z',
+    'ingestion_status': 'success',
+    'restructuring_status': 'pending',
+    'version': 'v0',
+    'group_ids': [],
+    'metadata': {'title': 'aristotle.txt', 'version': 'v0'}
+  }
   ...
 ]
 ```
@@ -230,24 +240,30 @@ R2R enables retrieval of specific document chunks and associated metadata. To fe
 
 <Tabs>
 
+<Tab title="CLI">
+```bash
+r2r document-chunks --document-id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+```
+</Tab>
+
 <Tab title="Python">
 ```python
-client.document_chunks("93123a68-d668-51de-8291-92162730dc87")
+client.document_chunks("9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
 ```
 </Tab>
 
 <Tab title="JavaScript">
 ```javascript
-await client.documentChunks("93123a68-d668-51de-8291-92162730dc87"),
+await client.documentChunks("9fbe403b-c11c-5aae-8ade-ef22980c3ad1"),
 ```
 </Tab>
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/document_chunks \
+curl -X POST http://localhost:7272/v2/document_chunks \
   -H "Content-Type: application/json" \
   -d '{
-    "document_id": "93123a68-d668-51de-8291-92162730dc87"
+    "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
   }'
 ```
 </Tab>
@@ -260,12 +276,12 @@ This command returns detailed chunk information:
 ```bash
 [
   {
-    'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+    'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
     'title': 'aristotle.txt',
-    'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 
-    'version': 'v0', 
-    'chunk_order': 0, 
-    'document_id': '93123a68-d668-51de-8291-92162730dc87', 
+    'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+    'version': 'v0',
+    'chunk_order': 0,
+    'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
     'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
     'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3',
   },
@@ -281,12 +297,18 @@ R2R supports flexible document deletion through a method that can run arbitrary 
 
 <Tabs>
 
+<Tab title="CLI">
+```bash
+r2r delete --filter=document_id:eq:9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+```
+</Tab>
+
 <Tab title="Python">
 ```python
 client.delete(
   {
-    "document_id": 
-      {"$eq": "93123a68-d668-51de-8291-92162730dc87"}
+    "document_id":
+      {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}
   }
 )
 ```
@@ -294,18 +316,18 @@ client.delete(
 
 <Tab title="JavaScript">
 ```javascript
-await client.delete(["document_id"], ["93123a68-d668-51de-8291-92162730dc87"]);
+await client.delete(["document_id"], ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]);
 ```
 </Tab>
 
 
 <Tab title="Curl">
 ```bash
-curl -X DELETE http://localhost:8000/v2/delete \
+curl -X DELETE http://localhost:7272/v2/delete \
   -H "Content-Type: application/json" \
   -d '{
     "keys": ["document_id"],
-    "values": ["93123a68-d668-51de-8291-92162730dc87"]
+    "values": ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]
   }'
 ```
 </Tab>
@@ -342,12 +364,18 @@ This flexible deletion mechanism ensures precise control over document managemen
 
   Executing the command below will update one of the sample documents ingested earlier.
   <Tabs>
-  
+
+    <Tab title="CLI">
+    ```bash
+    r2r update-files core/examples/data/aristotle_v2.txt --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+    ```
+    </Tab>
+
 
     <Tab title="Python">
-    ```python 
+    ```python
     file_paths = ["/path/to/r2r/examples/data/aristotle_v2.txt"]
-    document_ids = ["93123a68-d668-51de-8291-92162730dc87"]
+    document_ids = ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]
     client.update_files(file_paths, document_ids)
     ```
     </Tab>
@@ -358,7 +386,7 @@ This flexible deletion mechanism ensures precise control over document managemen
         { path: "/path/to/r2r/examples/data/aristotle_v2.txt", name: "aristotle_v2.txt" },
       ];
       await client.updateFiles(updated_file, {
-        document_ids: ["93123a68-d668-51de-8291-92162730dc87"],
+        document_ids: ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"],
         metadatas: [{ title: "aristotle_v2.txt" }],
       }),
       ```
@@ -366,17 +394,25 @@ This flexible deletion mechanism ensures precise control over document managemen
 
     <Tab title="Curl">
     ```bash
-    curl -X POST http://localhost:8000/v2/update_files \
+    curl -X POST http://localhost:7272/v2/update_files \
     -H "Content-Type: multipart/form-data" \
     -F "files=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
-    -F 'document_ids=["93123a68-d668-51de-8291-92162730dc87"]'
-    ```    
+    -F 'document_ids=["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]'
+    ```
     </Tab>
   </Tabs>
   **Expected Output:**
 
   ```bash
-  {'results': {'processed_documents': [{'id': '93123a68-d668-51de-8291-92162730dc87', 'title': 'aristotle.txt'}], 'failed_documents': [], 'skipped_documents': []}}
+  {
+    "results": {
+      "message": "Update task queued successfully.",
+      "task_id": "00fc8484-179f-47db-a474-d81b95d80cf2",
+      "document_ids": [
+        "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+      ]
+    }
+  }
   ```
 
   Behind the scenes, this command utilizes the `update_files` endpoint. The process involves:
@@ -413,6 +449,13 @@ Vector search inside of R2R is highly configurable, allowing you to fine-tune yo
 
 <Tabs>
 
+<Tab title="CLI">
+```python
+r2r search --query="What was Uber's profit in 2020?"
+```
+</Tab>
+
+
 <Tab title="Python">
 ```python
 client.search("What was Uber's profit in 2020?", {
@@ -436,7 +479,7 @@ await client.search("What was Uber's profit in 2020?", true, {}, 10, false, {
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What was Uber'\''s profit in 2020?",
@@ -450,7 +493,7 @@ curl -X POST http://localhost:8000/v2/search \
       "ef_search": 40
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -458,16 +501,16 @@ curl -X POST http://localhost:8000/v2/search \
   <Accordion title="Expected Output">
   ```json
   { 'results':
-    {'vector_search_results': 
+    {'vector_search_results':
       [
         {
-          'fragment_id': 'ab6d0830-6101-51ea-921e-364984bfd177', 
-          'extraction_id': '429976dd-4350-5033-b06d-8ffb67d7e8c8', 
-          'document_id': '26e0b128-3043-5674-af22-a6f7b0e54769', 
-          'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 
-          'group_ids': [], 
-          'score': 0.285747126074015, 
-          'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted', 
+          'fragment_id': 'ab6d0830-6101-51ea-921e-364984bfd177',
+          'extraction_id': '429976dd-4350-5033-b06d-8ffb67d7e8c8',
+          'document_id': '26e0b128-3043-5674-af22-a6f7b0e54769',
+          'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+          'group_ids': [],
+          'score': 0.285747126074015,
+          'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted',
           'metadata': {'title': 'uber_2021.pdf', 'version': 'v0', 'chunk_order': 5, 'associatedQuery': "What was Uber's profit in 2020?"}
         },
       ...
@@ -492,6 +535,12 @@ Key configurable parameters for vector search include:
 R2R supports hybrid search, which combines traditional keyword-based search with vector search for improved results. Here's how to perform a hybrid search:
 
 <Tabs>
+
+<Tab title="CLI">
+```python
+r2r search --query="What was Uber's profit in 2020?" --use-hybrid-search
+```
+</Tab>
 
 <Tab title="Python">
 ```python
@@ -536,7 +585,7 @@ await client.search("What was Uber's profit in 2020?", {
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What was Uber'\''s profit in 2020?",
@@ -555,7 +604,7 @@ curl -X POST http://localhost:8000/v2/search \
       "ef_search": 100
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -564,11 +613,17 @@ curl -X POST http://localhost:8000/v2/search \
 
 R2R integrates knowledge graph capabilities to enhance search results with structured relationships. Knowledge graph search can be configured to focus on specific entity types, relationships, or search levels. Here's how to utilize knowledge graph search:
 
-<Warning> 
+<Warning>
 Knowledge Graphs are not constructed by default, refer to the [cookbook here](/cookbooks/knowledge-graph) before attempting to run the command below!
 </Warning>
 
 <Tabs>
+<Tab title="CLI">
+```python
+r2r search --query="Who founded Airbnb?" --use-kg-search --kg-search-type=local
+```
+</Tab>
+
 <Tab title="Python">
 ```python
 client.search("Who founded Airbnb?", kg_search_settings={
@@ -609,7 +664,7 @@ await client.search("Who founded Airbnb?", true, {}, 10, false, {}, {
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Who founded Airbnb?",
@@ -628,7 +683,7 @@ curl -X POST http://localhost:8000/v2/search \
       }
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -659,6 +714,13 @@ To generate a response using RAG, use the following command:
 
 <Tabs>
 
+<Tab title="CLI">
+```bash
+r2r rag --query="What was Uber's profit in 2020?"
+```
+</Tab>
+
+
 <Tab title="Python">
 ```python
 client.rag(query="What was Uber's profit in 2020?")
@@ -673,12 +735,12 @@ await client.rag({ query: "What was Uber's profit in 2020?" });
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/rag \
+curl -X POST http://localhost:7272/v2/rag \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What was Uber'\''s profit in 2020?"
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -717,6 +779,13 @@ This command performs a search on the ingested documents and uses the retrieved 
 R2R also supports hybrid search in RAG, combining the power of vector search and keyword-based search. To use hybrid search in RAG, simply add the `use_hybrid_search` flag to your search settings input:
 
 <Tabs>
+<Tab title="CLI">
+```bash
+r2r rag --query="Who is John Snow?" --use-hybrid-search
+```
+</Tab>
+
+
 <Tab title="Python">
 ```javascript
 results = client.rag("Who is John Snow?", {"use_hybrid_search": True})
@@ -733,7 +802,7 @@ await client.rag({
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/rag \
+curl -X POST http://localhost:7272/v2/rag \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Who is John Snow?",
@@ -744,7 +813,7 @@ curl -X POST http://localhost:8000/v2/rag \
       "use_hybrid_search": true
     }
   }'
-```    
+```
 </Tab>
 </Tabs>
 
@@ -785,10 +854,17 @@ This example demonstrates how hybrid search can enhance the RAG process by combi
 R2R also supports streaming RAG responses, which can be useful for real-time applications. To use streaming RAG:
 
 <Tabs>
+<Tab title="CLI">
+```bash
+r2r rag --query="who was aristotle" --use-hybrid-search --stream
+```
+</Tab>
+
+
 <Tab title="Python">
 ```python
 response = client.rag(
-  "who was aristotle", 
+  "who was aristotle",
   rag_generation_config={"stream": True},
   vector_search_settings={"use_hybrid_search": True},
 )
@@ -851,7 +927,7 @@ r2r rag --query="who was aristotle?" --rag-model="anthropic/claude-3-haiku-20240
   ```python
   # requires ANTHROPIC_API_KEY is set
   response = client.rag(
-    "Who was Aristotle?", 
+    "Who was Aristotle?",
     rag_generation_config={"model":"anthropic/claude-3-haiku-20240307", "stream": True}
   )
   for chunk in response:
@@ -875,7 +951,7 @@ await client.rag({
 
 ```bash
 # requires ANTHROPIC_API_KEY is set
-curl -X POST http://localhost:8000/v2/rag \
+curl -X POST http://localhost:7272/v2/rag \
     -H "Content-Type: application/json" \
     -d '{
         "query": "Who is John Snow?",
@@ -898,7 +974,7 @@ curl -X POST http://localhost:8000/v2/rag \
 Behind the scenes, R2R's RetrievalService handles RAG requests, combining the power of vector search, optional knowledge graph integration, and language model generation. The flexible architecture allows for easy customization and extension of the RAG pipeline to meet diverse requirements.
 
 
-## User Auth 
+## User Auth
 
 R2R provides robust user auth and management capabilities. This section briefly covers user authentication features and how they relate to document management.
 
@@ -912,7 +988,7 @@ To register a new user:
 ```python
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:8000")
+client = R2RClient("http://localhost:7272")
 register_response = client.register("test@example.com", "password123")
 print(f"Registration response: {register_response}")
 ```
@@ -920,7 +996,7 @@ print(f"Registration response: {register_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/register \
+curl -X POST http://localhost:7272/v2/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -941,15 +1017,15 @@ Example output:
 ```bash
 {
   'results': {
-    'email': 'test@example.com', 
-    'id': '60af344f-7bd2-43c9-98fd-da53fe5e6d05', 
-    'is_superuser': False, 
-    'is_active': True, 
-    'is_verified': False, 
-    'verification_code_expiry': None, 
-    'name': None, 
-    'bio': None, 
-    'profile_picture': None, 
+    'email': 'test@example.com',
+    'id': '60af344f-7bd2-43c9-98fd-da53fe5e6d05',
+    'is_superuser': False,
+    'is_active': True,
+    'is_verified': False,
+    'verification_code_expiry': None,
+    'name': None,
+    'bio': None,
+    'profile_picture': None,
     'created_at': '2024-07-16T21:50:57.017675Z', 'updated_at': '2024-07-16T21:50:57.017675Z'
   }
 }
@@ -971,7 +1047,7 @@ print(f"Email verification response: {verify_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/verify_email/123456
+curl -X POST http://localhost:7272/v2/verify_email/123456
 ```
 </Tab>
 
@@ -996,7 +1072,7 @@ print(f"Login response: {login_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/login \
+curl -X POST http://localhost:7272/v2/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=test@example.com&password=password123"
 ```
@@ -1017,11 +1093,11 @@ await client.login("test@example.com", "password123")
 Registration response: {
   'results': {
     'access_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs',
       'token_type': 'access'
-    }, 
+    },
     'refresh_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE',
       'token_type': 'refresh'
     }
   }
@@ -1037,13 +1113,13 @@ To retrieve information about the currently authenticated user:
 ```python
 # requires client.login(...)
 user_response = client.user()["results"]
-print(f"Current user: {user_response}") 
+print(f"Current user: {user_response}")
 ```
 </Tab>
 
 <Tab title="Curl">
 ```bash
-curl -X GET http://localhost:8000/v2/user \
+curl -X GET http://localhost:7272/v2/user \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 </Tab>
@@ -1060,11 +1136,11 @@ await client.usersOverview()
 Current user: {
   'results': {
     'access_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU3NDQuNzQ1MTM0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-HrQlguPW4EmPupOYyn5793luaDb-YhEpEsIyQ2CbLs',
       'token_type': 'access'
-    }, 
+    },
     'refresh_token': {
-      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE', 
+      'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE3NDQsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.auuux_0Gg6_b5gTlUOQVCcdPuZl0eM-NFlC1OHdBqiE',
       'token_type': 'refresh'
     }
   }
@@ -1088,7 +1164,7 @@ print(f"Search results: {search_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/search \
+curl -X POST http://localhost:7272/v2/search \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1124,7 +1200,7 @@ print(f"Token refresh response: {refresh_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/refresh_access_token \
+curl -X POST http://localhost:7272/v2/refresh_access_token \
   -H "Authorization: Bearer YOUR_REFRESH_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1140,14 +1216,14 @@ await client.refreshAccessToken()
 </Tab>
 </Tabs>
 ```bash
-Token refresh response: 
+Token refresh response:
 {
   'access_token': {
     'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjExOTU5NTYuODEzNDg0LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.-CJy_cH7DRH5FKpZZauAFPP4mncnSa1j8NnaM7utGHo',
     'token_type': 'access'
-  }, 
+  },
   'refresh_token': {
-    'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE5NTYsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.uGsgTYaUd3Mn5h24uE4ydCWhOr2vFNA9ziRAAaYgnfk', 
+    'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0cXFAZXhhbXBsZS5jb20iLCJleHAiOjE3MjE3NzE5NTYsInRva2VuX3R5cGUiOiJyZWZyZXNoIn0.uGsgTYaUd3Mn5h24uE4ydCWhOr2vFNA9ziRAAaYgnfk',
     'token_type': 'refresh'
   }
 }
@@ -1168,7 +1244,7 @@ print(f"Logout response: {logout_response}")
 
 <Tab title="Curl">
 ```bash
-curl -X POST http://localhost:8000/v2/logout \
+curl -X POST http://localhost:7272/v2/logout \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 </Tab>
@@ -1210,6 +1286,13 @@ R2R offers high level user observability for superusers
 
 <Tabs>
 
+<Tab title="CLI">
+```bash
+r2r users-overview
+```
+</Tab>
+
+
 <Tab title="Python">
 ```python
 client.users_overview()
@@ -1225,10 +1308,10 @@ await  client.users_overview()
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/users_overview \
+curl -X POST http://localhost:7272/v2/users_overview \
   -H "Content-Type: application/json" \
   -d '{}'
-```    
+```
 </Tab>
 
 </Tabs>
@@ -1238,7 +1321,7 @@ curl -X POST http://localhost:8000/v2/users_overview \
 This command returns detailed log user information, here's some example output:
 
 ```bash
-{'results': [{'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 'num_files': 9, 'total_size_in_bytes': 4027056, 'document_ids': ['93123a68-d668-51de-8291-92162730dc87', 'e0fc8bbc-95be-5a98-891f-c17a43fa2c3d', 'cafdf784-a1dc-5103-8098-5b0a97db1707', 'b21a46a4-2906-5550-9529-087697da2944', '93123a68-d668-51de-8291-92162730dc87', 'f17eac52-a22e-5c75-af8f-0b25b82d43f8', '022fdff4-f87d-5b0c-82e4-95d53bcc4e60', 'c5b31b3a-06d2-553e-ac3e-47c56139b484', 'e0c2de57-171d-5385-8081-b546a2c63ce3']}, ...]}}
+{'results': [{'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 'num_files': 9, 'total_size_in_bytes': 4027056, 'document_ids': ['9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 'e0fc8bbc-95be-5a98-891f-c17a43fa2c3d', 'cafdf784-a1dc-5103-8098-5b0a97db1707', 'b21a46a4-2906-5550-9529-087697da2944', '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 'f17eac52-a22e-5c75-af8f-0b25b82d43f8', '022fdff4-f87d-5b0c-82e4-95d53bcc4e60', 'c5b31b3a-06d2-553e-ac3e-47c56139b484', 'e0c2de57-171d-5385-8081-b546a2c63ce3']}, ...]}}
 ```
 
 
@@ -1271,13 +1354,13 @@ await client.logs()
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/logs \
+curl -X POST http://localhost:7272/v2/logs \
   -H "Content-Type: application/json" \
   -d '{
     "log_type_filter": null,
     "max_runs_requested": 100
   }'
-```    
+```
 </Tab>
 
 </Tabs>
@@ -1313,7 +1396,7 @@ R2R offers an analytics feature that allows you to aggregate and analyze log dat
 client.analytics(
   {"search_latencies": "search_latency"},
   {"search_latencies": ["basic_statistics", "search_latency"]}
-)  
+)
 ```
 </Tab>
 
@@ -1336,7 +1419,7 @@ const filterCriteria = {
 <Tab title="Curl">
 
 ```bash
-curl -X POST http://localhost:8000/v2/analytics \
+curl -X POST http://localhost:7272/v2/analytics \
   -H "Content-Type: application/json" \
   -d '{
     "filter_criteria": {
@@ -1344,14 +1427,14 @@ curl -X POST http://localhost:8000/v2/analytics \
         "search_latencies": "search_latency"
       }
     },
-    "analysis_types": 
+    "analysis_types":
     {
         "analysis_types": {
             "search_latencies": ["basic_statistics", "search_latency"]
         }
     }
   }'
-```    
+```
 </Tab>
 
 

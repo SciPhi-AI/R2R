@@ -166,7 +166,7 @@ class ChunkingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured", None]
+        return ["r2r", "unstructured_local", "unstructured_api", None]
 
     class Config:
         json_schema_extra = {
@@ -388,23 +388,66 @@ class VectorSearchSettings(BaseModel):
         return dump
 
 
-class KGEnrichmentSettings(BaseModel):
+class KGCreationSettings(BaseModel):
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
-        description="The generation configuration for the KG enrichment.",
+        description="The generation configuration for the KG creation.",
     )
+
+    def to_dict(self):
+        return self.model_dump()
+
+    def model_dump_json(self, **kwargs):
+        return super().model_dump_json(**kwargs)
+
+
+class KGEnrichmentSettings(BaseModel):
+
     leiden_params: dict = Field(
         default_factory=dict,
         description="The parameters for the Leiden algorithm.",
     )
 
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="The generation configuration for the KG enrichment.",
+    )
+
+
+class KGCreationResponse(BaseModel):
+
+    message: str
+    task_id: UUID
+
+    def __str__(self) -> str:
+        return f"KGCreationResponse(message={self.message}, task_id={self.task_id})"
+
+    class Config:
+        json_schema_extra = {
+            "message": "Knowledge graph creation task queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+        }
+
 
 class KGEnrichmentResponse(BaseModel):
-    enriched_content: Dict[str, Any]
+
+    message: str
+    task_id: UUID
+
+    def __str__(self) -> str:
+        return f"KGEnrichmentResponse(message={self.message}, task_id={self.task_id})"
+
+    class Config:
+        json_schema_extra = {
+            "message": "Knowledge graph enrichment task queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+        }
 
 
 class UserResponse(BaseModel):

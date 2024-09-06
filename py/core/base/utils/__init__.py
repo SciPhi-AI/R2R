@@ -1,4 +1,5 @@
 from .base_utils import (
+    decrement_version,
     format_entity_types,
     format_relations,
     generate_id_from_label,
@@ -17,6 +18,7 @@ __all__ = [
     "generate_run_id",
     "generate_user_document_id",
     "increment_version",
+    "decrement_version",
     "run_pipeline",
     "to_async_generator",
     # Text splitter

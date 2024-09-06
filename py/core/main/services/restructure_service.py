@@ -1,14 +1,23 @@
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import AsyncGenerator
+from uuid import UUID
 
-from core.base import R2RException, RunLoggingSingleton, RunManager
-from core.base.abstractions import KGEnrichmentSettings
+from core.base import RunLoggingSingleton, RunManager
+from core.base.abstractions import GenerationConfig
+from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..assembly.config import R2RConfig
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger(__name__)
+
+
+async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
+    results = []
+    async for res in result_gen:
+        results.append(res.json() if hasattr(res, "json") else res)
+    return results
 
 
 class RestructureService(Service):
@@ -16,52 +25,65 @@ class RestructureService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipes,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: RunLoggingSingleton,
     ):
-
         super().__init__(
             config,
             providers,
+            pipes,
             pipelines,
             agents,
             run_manager,
             logging_connection,
         )
 
-    async def enrich_graph(
-        self,
-        kg_enrichment_settings: Optional[
-            Union[dict, KGEnrichmentSettings]
-        ] = None,
-    ) -> Dict[str, Any]:
-        """
-        Perform graph enrichment.
+    @telemetry_event("kg_extract_and_store")
+    async def kg_extract_and_store(
+        self, document_id: UUID, generation_config: GenerationConfig
+    ):
+        triples = await self.pipes.kg_extraction_pipe.run(
+            input=self.pipes.kg_extraction_pipe.Input(
+                message={
+                    "document_id": document_id,
+                    "generation_config": generation_config,
+                }
+            ),
+            run_manager=self.run_manager,
+        )
+        result_gen = await self.pipes.kg_storage_pipe.run(
+            input=self.pipes.kg_storage_pipe.Input(message=triples),
+            run_manager=self.run_manager,
+        )
 
-        Returns:
-            Dict[str, Any]: Results of the graph enrichment process.
-        """
-        try:
-            # Assuming there's a graph enrichment pipeline
+        return await _collect_results(result_gen)
 
-            async def input_generator():
-                input = []
-                for doc in input:
-                    yield doc
+    @telemetry_event("kg_node_creation")
+    async def kg_node_creation(self):
+        node_extrations = await self.pipes.kg_node_extraction_pipe.run(
+            input=self.pipes.kg_node_extraction_pipe.Input(message=None),
+            run_manager=self.run_manager,
+        )
+        result_gen = await self.pipes.kg_node_description_pipe.run(
+            input=self.pipes.kg_node_description_pipe.Input(
+                message=node_extrations
+            ),
+            run_manager=self.run_manager,
+        )
+        return await _collect_results(result_gen)
 
-            if not kg_enrichment_settings or kg_enrichment_settings == {}:
-                kg_enrichment_settings = self.config.kg.kg_enrichment_settings
-
-            return await self.pipelines.kg_enrichment_pipeline.run(
-                input=input_generator(),
-                kg_enrichment_settings=kg_enrichment_settings,
-                run_manager=self.run_manager,
-            )
-
-        except Exception as e:
-            logger.error(f"Error during graph enrichment: {str(e)}")
-            raise R2RException(
-                status_code=500, message=f"Graph enrichment failed: {str(e)}"
-            )
+    @telemetry_event("kg_clustering")
+    async def kg_clustering(self, leiden_params, generation_config):
+        result_gen = await self.pipes.kg_clustering_pipe.run(
+            input=self.pipes.kg_clustering_pipe.Input(
+                message={
+                    "leiden_params": leiden_params,
+                    "generation_config": generation_config,
+                }
+            ),
+            run_manager=self.run_manager,
+        )
+        return await _collect_results(result_gen)
