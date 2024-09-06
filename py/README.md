@@ -28,10 +28,14 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 - [**🖥️ Dashboard**](https://github.com/SciPhi-AI/R2R-Dashboard): An open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
 
 
-## Getting Started
+## [What's New](https://r2r-docs.sciphi.ai/introduction/whats-new)
 
-- [Installation](https://r2r-docs.sciphi.ai/documentation/installation): Quick installation of R2R using Docker or pip
-- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
+- Release 3.1.0&nbsp;&nbsp;&nbsp;&nbsp;September 6, 2024&nbsp;&nbsp;&nbsp;&nbsp;
+
+  Warning: These changes are breaking! We will be releasing a migration script soon.
+  - Orchestration with [Hatchet](https://github.com/hatchet-dev/hatchet)
+  - Default ingestion provider set to [Unstructured](https://docs.unstructured.io/welcome)
+  - Improved knowledge graph construction process
 
 
 ## Install with pip
@@ -68,7 +72,7 @@ r2r --config-name=default serve
 
 - [SDK](https://r2r-docs.sciphi.ai/documentation/python-sdk): API reference and Python/JS SDKs for interacting with R2R
 - [API](https://r2r-docs.sciphi.ai/api-reference/introduction): API reference and Python/JS SDKs for interacting with R2R
-- [Configuration](/documentation/configuration): A guide on how to configure your R2R system
+- [Configuration](https://r2r-docs.sciphi.ai/documentation/configuration/introduction): A guide on how to configure your R2R system
 
 ## Cookbooks
 
@@ -79,7 +83,6 @@ r2r --config-name=default serve
 
 - Knowledge Graphs
   - [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Walkthrough of GraphRAG
-  - [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): Automatic knowledge graph generation
 
 - Auth & Admin Features
   - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R

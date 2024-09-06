@@ -223,9 +223,10 @@ def serve(
     """Start the R2R server."""
     load_dotenv()
 
-    if image and build:
+    if image:
         os.environ["R2R_IMAGE"] = image
-        os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
+        if build:
+            os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
 
     if config_path:
         config_path = os.path.abspath(config_path)
@@ -261,6 +262,36 @@ def serve(
             import time
             import webbrowser
 
+            # Wait for R2R service to be healthy
+            click.echo("Waiting for R2R service to be ready...")
+            while True:
+                result = subprocess.run(
+                    ["docker-compose", "-p", project_name, "ps", "-q", "r2r"],
+                    capture_output=True,
+                    text=True,
+                )
+                print("result = ", result)
+                if result.returncode == 0 and result.stdout.strip():
+                    container_id = result.stdout.strip()
+                    health_check = subprocess.run(
+                        [
+                            "docker",
+                            "inspect",
+                            "--format",
+                            "{{.State.Health.Status}}",
+                            container_id,
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
+                    if health_check.stdout.strip() == "healthy":
+                        click.echo("R2R service is ready!")
+                        break
+                else:
+                    click.echo(
+                        f"R2R service not found or not ready. Error: {result.stderr}"
+                    )
+                time.sleep(5)
             for i in range(3, 0, -1):
                 print(f"Navigating to dashboard in {i} seconds...")
                 time.sleep(1)

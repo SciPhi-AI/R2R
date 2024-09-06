@@ -248,6 +248,6 @@ class RetrievalRouter(BaseRouter):
                         stream_generator(), media_type="application/json"
                     )
                 else:
-                    return response
+                    return {"messages": response}
             except Exception as e:
                 raise R2RException(str(e), 500)

@@ -72,9 +72,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
             ) from e
 
-        self.collection_name = self.config.extra_fields.get(
-            "vecs_collection"
-        ) or os.getenv("POSTGRES_VECS_COLLECTION")
+        self.collection_name = self.config.vecs_collection or os.getenv(
+            "POSTGRES_VECS_COLLECTION"
+        )
         if not self.collection_name:
             raise ValueError(
                 "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."

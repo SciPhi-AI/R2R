@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 from unittest.mock import MagicMock, patch
 
@@ -41,31 +42,27 @@ async def test_text_parser():
 
 @pytest.mark.asyncio
 async def test_json_parser():
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         parser = JSONParser()
         data = json.dumps({"key": "value", "null_key": None})
         async for result in parser.ingest(data):
             assert "key: value" in result
             assert "null_key" not in result
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 async def test_html_parser():
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         parser = HTMLParser()
         data = "<html><body><p>Hello World</p></body></html>"
         async for result in parser.ingest(data):
             assert result.strip() == "Hello World"
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 @patch("pypdf.PdfReader")
 async def test_pdf_parser(mock_pdf_reader):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         parser = PDFParser()
         mock_pdf_reader.return_value.pages = [
             MagicMock(extract_text=lambda: "Page text")
@@ -73,14 +70,12 @@ async def test_pdf_parser(mock_pdf_reader):
         data = b"fake PDF data"
         async for result in parser.ingest(data):
             assert result == "Page text"
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 @patch("pptx.Presentation")
 async def test_ppt_parser(mock_presentation):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         mock_slide = MagicMock()
         mock_shape = MagicMock(text="Slide text")
         mock_slide.shapes = [mock_shape]
@@ -89,40 +84,34 @@ async def test_ppt_parser(mock_presentation):
         data = b"fake PPT data"
         async for result in parser.ingest(data):
             assert result == "Slide text"
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 @patch("docx.Document")
 async def test_docx_parser(mock_document):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         mock_paragraph = MagicMock(text="Paragraph text")
         mock_document.return_value.paragraphs = [mock_paragraph]
         parser = DOCXParser()
         data = b"fake DOCX data"
         async for result in parser.ingest(data):
             assert result == "Paragraph text"
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 async def test_csv_parser():
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         parser = CSVParser()
         data = "col1,col2\nvalue1,value2"
         async for result in parser.ingest(data):
             assert result == "col1, col2"
             break
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 @patch("openpyxl.load_workbook")
 async def test_xlsx_parser(mock_load_workbook):
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         mock_sheet = MagicMock()
         mock_sheet.iter_rows.return_value = [(1, 2), (3, 4)]
         mock_workbook = MagicMock(worksheets=[mock_sheet])
@@ -132,16 +121,12 @@ async def test_xlsx_parser(mock_load_workbook):
         async for result in parser.ingest(data):
             assert result == "1, 2"
             break
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio
 async def test_markdown_parser():
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         parser = MDParser()
         data = "# Header\nContent"
         async for result in parser.ingest(data):
             assert result.strip() == "Header\nContent"
-    except asyncio.CancelledError:
-        pass

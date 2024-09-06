@@ -20,7 +20,7 @@ pip install r2r
 
 <AccordionGroup>
   <Accordion title="Cloud LLM RAG" icon="cloud" defaultOpen={true}>
-  To start R2R with OpenAI as the default LLM inference provider:
+  To start R2R with OpenAI as the default LLM inference and embedding provider:
       ```bash
       # Set cloud LLM settings
       export OPENAI_API_KEY=sk-...
@@ -44,20 +44,20 @@ pip install r2r
   <Accordion title="Custom Configuration" icon="gear" defaultOpen={false}>
     R2R offers flexibility in selecting and configuring LLMs, allowing you to optimize your RAG pipeline for various use cases. Execute the command below run deploy R2R with your own custom configuration:
       ```bash
-      r2r serve --config-path=/abs/path/to/r2r.toml
+      r2r serve --config-path=/abs/path/to/my_r2r.toml
       ```
 
-    Learn in detail how to [customize your deployment here](/documentation/configuration).
+    Learn in detail how to [configure your deployment here](/documentation/configuration).
   </Accordion>
 </AccordionGroup>
 
 <Note>
-Neo4j and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
+Hatchet (RabbitMQ based orchestration), Neo4j, and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
 
 Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`.
 </Note>
 
-The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Neo4j`, `Postgres+pgvector`.
+The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Hatchet`, `Neo4j`, and `Postgres+pgvector`.
 
 The end result is a live server at http://localhost:7272 serving the [R2R API](/api-reference/introduction).
 

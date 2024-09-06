@@ -65,11 +65,13 @@ def test_build_docker_command():
         "neo4j": "neo4j.yaml",
         "ollama": "ollama.yaml",
         "postgres": "postgres.yaml",
+        "hatchet": "hatchet.yaml",
     }
     command = build_docker_command(
         compose_files,
         "localhost",
         7272,
+        False,
         False,
         False,
         False,
@@ -79,7 +81,7 @@ def test_build_docker_command():
         None,
     )
     assert (
-        "docker compose -f base.yaml -f neo4j.yaml -f ollama.yaml -f postgres.yaml"
+        "docker compose -f base.yaml -f neo4j.yaml -f ollama.yaml -f postgres.yaml -f hatchet.yaml"
         in command
     )
     assert "--project-name test_project" in command

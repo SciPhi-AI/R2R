@@ -146,7 +146,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             async for element in self.parse_fallback(
                 file_content,
                 document,
-                chunk_size=self.config.extra_fields["chunking_config"].get(
+                chunk_size=self.config.chunking_config.extra_fields.get(
                     "combine_under_n_chars", 128
                 ),
             ):

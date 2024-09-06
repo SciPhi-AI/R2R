@@ -199,21 +199,21 @@ def test_document_chunks_no_id(runner, mock_r2r_client):
     assert "Error: Document ID is required." in result.output
 
 
-def test_inspect_knowledge_graph(runner, mock_r2r_client):
+def test_inspect_knowledge_graph_no_kg_provider_specified(
+    runner, mock_r2r_client
+):
     result = runner.invoke(cli, ["inspect-knowledge-graph", "--limit", "100"])
 
-    assert result.exit_code == 0
-    assert "nodes" in result.output
-    assert "500" in result.output
+    assert result.exit_code == 1
     mock_r2r_client.inspect_knowledge_graph.assert_called_once_with(
         None, "100"
     )
 
 
-def test_inspect_knowledge_graph_no_limit(runner, mock_r2r_client):
+def test_inspect_knowledge_graph_no_limit_no_kg_provider_specified(
+    runner, mock_r2r_client
+):
     result = runner.invoke(cli, ["inspect-knowledge-graph"])
 
-    assert result.exit_code == 0
-    assert "nodes" in result.output
-    assert "500" in result.output
+    assert result.exit_code == 1
     mock_r2r_client.inspect_knowledge_graph.assert_called_once_with(None, None)

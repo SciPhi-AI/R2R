@@ -1,5 +1,3 @@
-version: "3.8"
-
 networks:
   r2r-network:
     name: r2r-network

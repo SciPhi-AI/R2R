@@ -226,10 +226,10 @@ async def multiply_then_fan_out(
 async def test_fan_in_sum(pipe_factory, multiplier, delay, name):
     # Create fan-out to generate multiple streams
     fan_out_pipe = pipe_factory(
-        "fan_out", multiplier=multiplier, delay=delay, name=name + "_a"
+        "fan_out", multiplier=multiplier, delay=delay, name=f"{name}_a"
     )
     # Summing fan-in pipe
-    fan_in_sum_pipe = pipe_factory("fan_in", delay=delay, name=name + "_b")
+    fan_in_sum_pipe = pipe_factory("fan_in", delay=delay, name=f"{name}_b")
 
     async def input_generator():
         for i in [1, 2, 3]:
@@ -243,7 +243,7 @@ async def test_fan_in_sum(pipe_factory, multiplier, delay, name):
 
     # Calculate expected results based on the multiplier and the sum of inputs
     expected_result = sum(
-        [sum([j * i for j in [1, 2, 3]]) for i in range(1, multiplier + 1)]
+        sum(j * i for j in [1, 2, 3]) for i in range(1, multiplier + 1)
     )
     assert (
         result[0] == expected_result
@@ -281,10 +281,8 @@ async def test_fan_out_then_multiply(
     result = await pipeline.run(input_generator())
 
     expected_result = sum(
-        [
-            sum([j * i * multiplier_a for j in [1, 2, 3]])
-            for i in range(1, multiplier_b + 1)
-        ]
+        sum(j * i * multiplier_a for j in [1, 2, 3])
+        for i in range(1, multiplier_b + 1)
     )
     assert (
         result[0] == expected_result
