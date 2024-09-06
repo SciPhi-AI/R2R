@@ -1,8 +1,8 @@
 from typing import Union
 
 from .models import (
-    KGCreationSettings,
     KGCreationResponse,
+    KGCreationSettings,
     KGEnrichmentResponse,
     KGEnrichmentSettings,
 )

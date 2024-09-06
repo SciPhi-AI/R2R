@@ -38,65 +38,31 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
             )
 
-        # Check if a complete Postgres URI is provided
-        if postgres_uri := self.config.extra_fields.get(
-            "postgres_uri"
-        ) or os.getenv("POSTGRES_URI"):
-            # Log loudly that Postgres URI is being used
-            logger.warning("=" * 50)
-            logger.warning(
-                "ATTENTION: Using provided Postgres URI for connection"
+        # Fall back to existing logic for individual connection parameters
+        user = self.config.user or os.getenv("POSTGRES_USER")
+        password = self.config.password or os.getenv("POSTGRES_PASSWORD")
+        host = self.config.extra_fields.get("host", None) or os.getenv(
+            "POSTGRES_HOST"
+        )
+        port = self.config.port or os.getenv("POSTGRES_PORT")
+        db_name = self.config.db_name or os.getenv("POSTGRES_DBNAME")
+
+        if not all([user, password, host, db_name]):
+            raise ValueError(
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_DBNAME environment variables or provide them in the config."
             )
-            logger.warning("=" * 50)
 
-            # Validate and use the provided URI
-            try:
-                parsed_uri = make_url(postgres_uri)
-                if not all([parsed_uri.username, parsed_uri.database]):
-                    raise ValueError(
-                        "The provided Postgres URI is missing required components."
-                    )
-                DB_CONNECTION = postgres_uri
-
-                # Log the sanitized URI (without password)
-                sanitized_uri = parsed_uri.set(password="*****")
-                logger.info(f"Connecting using URI: {sanitized_uri}")
-            except Exception as e:
-                raise ValueError(f"Invalid Postgres URI provided: {e}") from e
+        # Check if it's a Unix socket connection
+        if host.startswith("/") and not port:
+            DB_CONNECTION = (
+                f"postgresql://{user}:{password}@/{db_name}?host={host}"
+            )
+            logger.info("Using Unix socket connection")
         else:
-            # Fall back to existing logic for individual connection parameters
-            user = self.config.extra_fields.get("user", None) or os.getenv(
-                "POSTGRES_USER"
+            DB_CONNECTION = (
+                f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
             )
-            password = self.config.extra_fields.get(
-                "password", None
-            ) or os.getenv("POSTGRES_PASSWORD")
-            host = self.config.extra_fields.get("host", None) or os.getenv(
-                "POSTGRES_HOST"
-            )
-            port = self.config.extra_fields.get("port", None) or os.getenv(
-                "POSTGRES_PORT"
-            )
-            db_name = self.config.extra_fields.get(
-                "db_name", None
-            ) or os.getenv("POSTGRES_DBNAME")
-
-            if not all([user, password, host, db_name]):
-                raise ValueError(
-                    "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_DBNAME environment variables or provide them in the config."
-                )
-
-            # Check if it's a Unix socket connection
-            if host.startswith("/") and not port:
-                DB_CONNECTION = (
-                    f"postgresql://{user}:{password}@/{db_name}?host={host}"
-                )
-                logger.info("Using Unix socket connection")
-            else:
-                DB_CONNECTION = (
-                    f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
-                )
-                logger.info("Using TCP connection")
+            logger.info("Using TCP connection")
 
         # The rest of the initialization remains the same
         try:

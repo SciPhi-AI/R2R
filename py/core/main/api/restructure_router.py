@@ -1,9 +1,8 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
-from pathlib import Path
 import yaml
-
 from fastapi import Body, Depends
 from pydantic import Json
 
@@ -41,7 +40,9 @@ class RestructureRouter(BaseRouter):
 
         def _load_openapi_extras(self):
             yaml_path = (
-                Path(__file__).parent / "data" / "restructure_router_openapi.yml"
+                Path(__file__).parent
+                / "data"
+                / "restructure_router_openapi.yml"
             )
             with open(yaml_path, "r") as yaml_file:
                 yaml_content = yaml.safe_load(yaml_file)
@@ -71,11 +72,11 @@ class RestructureRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
-                Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
+            Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
-                This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information. You can view the graph through the neo4j browser.
+            This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information. You can view the graph through the neo4j browser.
 
-                In order to do GraphRAG, you will need to run the enrich_graph endpoint.
+            In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
             # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser
@@ -110,7 +111,7 @@ class RestructureRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
-                This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
+            This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
             # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser

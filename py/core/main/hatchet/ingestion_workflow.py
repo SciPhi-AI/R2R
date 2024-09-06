@@ -20,6 +20,7 @@ class IngestFilesWorkflow:
     @r2r_hatchet.step(retries=0, timeout="60m")
     async def parse_file(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
+        print("input_data = ", input_data)
 
         parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
             input_data
@@ -65,12 +66,14 @@ class UpdateFilesWorkflow:
     async def update_files(self, context: Context) -> None:
         data = context.workflow_input()["request"]
         parsed_data = IngestionServiceAdapter.parse_update_files_input(data)
+        print("parsed_data = ", parsed_data)
 
         file_datas = parsed_data["file_datas"]
         user = parsed_data["user"]
         document_ids = parsed_data["document_ids"]
         metadatas = parsed_data["metadatas"]
         chunking_config = parsed_data["chunking_config"]
+        file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
 
         if not file_datas:
             raise R2RException(
@@ -95,8 +98,18 @@ class UpdateFilesWorkflow:
 
         results = []
 
-        for idx, (file_data, doc_id, doc_info) in enumerate(
-            zip(file_datas, document_ids, documents_overview)
+        for idx, (
+            file_data,
+            doc_id,
+            doc_info,
+            file_size_in_bytes,
+        ) in enumerate(
+            zip(
+                file_datas,
+                document_ids,
+                documents_overview,
+                file_sizes_in_bytes,
+            )
         ):
             new_version = increment_version(doc_info.version)
 
@@ -120,6 +133,7 @@ class UpdateFilesWorkflow:
                     if chunking_config
                     else None
                 ),
+                "size_in_bytes": file_size_in_bytes,
                 "is_update": True,
             }
 

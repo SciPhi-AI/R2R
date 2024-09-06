@@ -53,9 +53,7 @@ def pg_vector_db():
     db = PostgresDBProvider(config, dimension=3)
     yield db
     # Teardown
-    db.vx.delete_collection(
-        db.config.extra_fields.get("vecs_collection", None)
-    )
+    db.vx.delete_collection(db.config.vecs_collection)
 
 
 @pytest.mark.parametrize("db_fixture", ["pg_vector_db"])

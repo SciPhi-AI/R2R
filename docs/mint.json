@@ -123,18 +123,14 @@
       "pages": [
         "documentation/configuration/introduction",
         "documentation/configuration/postgres",
+        "documentation/configuration/llm",
+        "documentation/configuration/rag",
         {
             "group": "Ingestion",
             "icon": "upload",
             "pages": [
               "documentation/configuration/ingestion/overview",
-              {
-                "group": "Parsing",
-                "pages": [
-                  "documentation/configuration/ingestion/parsing",
-                  "documentation/configuration/ingestion/unstructured"
-                ]
-              },
+              "documentation/configuration/ingestion/parsing",
               "documentation/configuration/ingestion/chunking",
               "documentation/configuration/ingestion/embedding"
             ]
@@ -143,8 +139,8 @@
             "group": "Knowledge Graph",
             "icon": "signal",
             "pages": [
-              "documentation/configuration/ingestion/knowledge-graph",
-              "documentation/configuration/restructuring"
+              "documentation/configuration/knowledge-graph/overview",
+              "documentation/configuration/knowledge-graph/enrichment"
             ]
           },
           {
@@ -153,9 +149,7 @@
             "pages": [
               "documentation/configuration/retrieval/overview",
               "documentation/configuration/retrieval/vector-search",
-              "documentation/configuration/retrieval/knowledge-graph",
-              "documentation/configuration/retrieval/llm",
-              "documentation/configuration/retrieval/rag"
+              "documentation/configuration/retrieval/knowledge-graph"
 
             ]
           },
@@ -170,8 +164,7 @@
           "pages": [
             "documentation/deep-dive/main/introduction",
             "documentation/deep-dive/main/config",
-            "documentation/deep-dive/main/builder",
-            "documentation/deep-dive/main/engine"
+            "documentation/deep-dive/main/builder"
           ]
         },
         {
@@ -182,15 +175,6 @@
             "documentation/deep-dive/providers/embeddings",
             "documentation/deep-dive/providers/database",
             "documentation/deep-dive/providers/knowledge-graph"
-          ]
-        },
-        {
-          "group": "Pipelines",
-          "pages": [
-            "documentation/deep-dive/pipelines/introduction",
-            "documentation/deep-dive/pipelines/ingestion",
-            "documentation/deep-dive/pipelines/search",
-            "documentation/deep-dive/pipelines/rag"
           ]
         },
         {
