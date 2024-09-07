@@ -5,6 +5,7 @@ from typing import Optional
 import yaml
 from fastapi import Body, Depends
 from pydantic import Json
+from typing import Union
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
 from core.base.api.models.restructure.responses import (
@@ -66,9 +67,13 @@ class RestructureRouter(BaseRouter):
         )
         @self.base_endpoint
         async def create_graph(
-            document_ids: Optional[list[str]],
-            kg_creation_settings: Json[KGCreationSettings] = Body(
-                default_factory=KGCreationSettings
+            document_ids: Optional[list[str]] = Body(
+                default=None,
+                description="List of document IDs to create the graph on.",
+            ),
+            kg_creation_settings: Optional[Json[KGCreationSettings]] = Body(
+                default=None,
+                description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGCreationResponse:
@@ -85,6 +90,9 @@ class RestructureRouter(BaseRouter):
             if not is_superuser:
                 # Add any necessary permission checks here
                 pass
+
+            if kg_creation_settings is None:
+                kg_creation_settings = self.service.providers.kg.config.kg_creation_settings
 
             workflow_input = {
                 "document_ids": document_ids,
@@ -106,8 +114,13 @@ class RestructureRouter(BaseRouter):
         )
         @self.base_endpoint
         async def enrich_graph(
-            kg_enrichment_settings: Json[KGEnrichmentSettings] = Body(
-                default_factory=KGEnrichmentSettings
+            perform_clustering: bool = Body(
+                default=True,
+                description="Whether to perform leiden clustering on the graph or not.",
+            ),
+            kg_enrichment_settings: Optional[Json[KGEnrichmentSettings]] = Body(
+                default=None,
+                description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
@@ -121,7 +134,11 @@ class RestructureRouter(BaseRouter):
                 # Add any necessary permission checks here
                 pass
 
+            if kg_enrichment_settings is None:
+                kg_enrichment_settings = self.service.providers.kg.config.kg_enrichment_settings
+
             workflow_input = {
+                "perform_clustering": perform_clustering,
                 "generation_config": kg_enrichment_settings.generation_config.to_dict(),
                 "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
