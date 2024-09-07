@@ -9,7 +9,6 @@ from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from ..services import RestructureService
 from .base import r2r_hatchet
 
-
 @r2r_hatchet.workflow(name="kg-extract-and-store", timeout="60m")
 class KgExtractAndStoreWorkflow:
     def __init__(self, restructure_service: RestructureService):
@@ -84,10 +83,17 @@ class EnrichGraphWorkflow:
     @r2r_hatchet.step(retries=3, parents=["kg_node_creation"], timeout="60m")
     async def kg_clustering(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
+        perform_clustering = input_data["perform_clustering"]
         leiden_params = input_data["leiden_params"]
         generation_config = GenerationConfig(**input_data["generation_config"])
 
-        await self.restructure_service.kg_clustering(
-            leiden_params, generation_config
-        )
+        if perform_clustering:
+            await self.restructure_service.kg_clustering(
+                leiden_params, generation_config, perform_clustering
+            )
+        else:
+            logger.info(
+                "Skipping Leiden clustering as perform_clustering is False"
+            )
+
         return {"result": None}

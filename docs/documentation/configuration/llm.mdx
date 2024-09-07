@@ -41,15 +41,16 @@ Key generation configuration options:
         # .. set other environment variables
 
         # Optional - Update default model
-        # Set '"model": "openai/gpt-3.5-turbo"' in `r2r.toml`
-        r2r serve --config-path=my_r2r.toml
+        # Set '"model": "openai/gpt-4o-mini"' in `r2r.toml`
+        # then call `r2r serve --config-path=r2r.toml`
+        r2r serve
         ```
         Supported models include:
         - openai/gpt-4o
         - openai/gpt-4-turbo
         - openai/gpt-4
-        - openai/gpt-3.5-turbo
-        - openai/gpt-3.5-turbo-16k
+        - openai/gpt-4o-mini
+        - openai/gpt-4o-mini
 
         For a complete list of supported OpenAI models and detailed usage instructions, please refer to the [LiteLLM OpenAI documentation](https://docs.litellm.ai/docs/providers/openai).
     </Tab>
@@ -68,8 +69,7 @@ Key generation configuration options:
         - azure/gpt-4o
         - azure/gpt-4-turbo
         - azure/gpt-4
-        - azure/gpt-3.5-turbo
-        - azure/gpt-3.5-turbo-16k
+        - azure/gpt-4o-mini
         For a complete list of supported Azure models and detailed usage instructions, please refer to the [LiteLLM Azure documentation](https://docs.litellm.ai/docs/providers/azure).
 
     </Tab>

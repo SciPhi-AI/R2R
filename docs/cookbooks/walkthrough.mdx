@@ -58,7 +58,7 @@ client.ingest_files(file_paths=["test.txt"])
 # Call RAG directly
 rag_response = client.rag(
     query="Who is john",
-    rag_generation_config={"model": "gpt-3.5-turbo", "temperature": 0.0},
+    rag_generation_config={"model": "gpt-4o-mini", "temperature": 0.0},
 )
 results = rag_response["results"]
 print(f"Search Results:\n{results['search_results']}")
@@ -759,7 +759,7 @@ curl -X POST http://localhost:7272/v2/rag \
                 )
             ],
         created=1716268695,
-        model='gpt-3.5-turbo-0125',
+        model='gpt-4o-mini',
         object='chat.completion',
         system_fingerprint=None,
         usage=CompletionUsage(completion_tokens=20, prompt_tokens=1470, total_tokens=1490)

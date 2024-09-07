@@ -16,7 +16,7 @@ class MockCompletionResponse:
     def __init__(self, content):
         self.id = "mock_id"
         self.created = int(time.time())
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o-mini"
         self.object = "chat.completion"
         self.choices = [
             {
@@ -40,7 +40,7 @@ class MockStreamResponse:
     def __init__(self, content):
         self.id = "mock_id"
         self.created = int(time.time())
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o-mini"
         self.object = "chat.completion.chunk"
         self.choices = [
             {"index": 0, "delta": {"content": content}, "finish_reason": None}
@@ -81,7 +81,7 @@ def messages():
 @pytest.fixture
 def generation_config():
     return GenerationConfig(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         temperature=0.0,
         top_p=0.9,
         max_tokens_to_sample=50,
@@ -101,7 +101,7 @@ def test_get_completion(request, llm_fixture, messages, generation_config):
         assert completion.choices[0].message.role == "assistant"
         assert completion.choices[0].message.content.strip() == "True"
         assert completion.id == "mock_id"
-        assert completion.model == "gpt-3.5-turbo"
+        assert completion.model == "gpt-4o-mini"
         assert completion.object == "chat.completion"
 
 
@@ -148,7 +148,7 @@ async def test_aget_completion(
         assert completion.choices[0].message.role == "assistant"
         assert completion.choices[0].message.content.strip() == "True"
         assert completion.id == "mock_id"
-        assert completion.model == "gpt-3.5-turbo"
+        assert completion.model == "gpt-4o-mini"
         assert completion.object == "chat.completion"
 
 
