@@ -7,11 +7,6 @@ from .models import (
     KGEnrichmentSettings,
 )
 
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 class RestructureMethods:
 
     @staticmethod
