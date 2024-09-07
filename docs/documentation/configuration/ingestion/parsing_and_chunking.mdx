@@ -1,0 +1,192 @@
+---
+title: 'Parsing & Chunking'
+description: 'Learn how to configure document chunking in your R2R deployment'
+---
+
+## Parsing
+
+R2R supports different parsing providers to extract text from various document formats. To configure the parsing provider:
+
+```toml example r2r.toml
+[parsing]
+provider = "unstructured_local" # | rag | unstructured_api
+excluded_parsers = ["mp4"]
+```
+Available providers:
+- `r2r`: Liteweight parser provided by R2R
+- `unstructured_local`: Default offering, makes use of open source Unstructured package.
+- `unstructured_api`: Cloud offering of Unstructured
+
+### Supported File Types
+
+**R2R supports parsing for the following file types:**
+
+- CSV (Comma-Separated Values)
+- DOCX (Microsoft Word Document)
+- HTML (HyperText Markup Language)
+- JSON (JavaScript Object Notation)
+- MD (Markdown)
+- PDF (Portable Document Format)
+- PPTX (Microsoft PowerPoint Presentation)
+- TXT (Plain Text)
+- XLSX (Microsoft Excel Spreadsheet)
+- GIF (Graphics Interchange Format)
+- JPEG/JPG (Joint Photographic Experts Group)
+- PNG (Portable Network Graphics)
+- SVG (Scalable Vector Graphics)
+- MP3 (MPEG Audio Layer III)
+- MP4 (MPEG-4 Part 14)
+
+<Note> Parsing providers for an R2R system cannot be configured at runtime and are instead configured server side. </Note>
+
+**Refer to the [Unstructured documentation](https://docs.unstructured.io/welcome) for details about their ingestion capabilities and limitations.**
+
+## Chunking
+
+R2R uses chunking to break down parsed documents into smaller, manageable pieces for efficient processing and retrieval. Configure the chunking settings in `r2r.toml`:
+
+```toml r2r.toml
+[chunking]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title"
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
+```
+
+Key chunking configuration options:
+
+- `provider`: The chunking provider (defaults to "unstructured_local").
+- `strategy`: The overall chunking strategy ("auto", "fast", or "hi_res").
+- `chunking_strategy`: The specific chunking method ("by_title" or "basic").
+- `new_after_n_chars`: Soft maximum size for a chunk.
+- `max_characters`: Hard maximum size for a chunk.
+- `combine_under_n_chars`: Minimum size for combining small sections.
+- `overlap`: Number of characters to overlap between chunks.
+
+## Supported Providers
+
+<Tabs>
+  <Tab title="Unstructured Local">
+    ```python
+    # No additional setup required
+    # Ensure unstructured is installed: pip install unstructured
+
+
+    # Set 'provider = "unstructured_local"' for `[parsing]` and `[chunking]` in `my_r2r.toml`
+    r2r serve --config-path=my_r2r.toml
+    ```
+    Supported chunking strategies:
+    - by_title
+    - basic
+
+    This is the default provider, using the open-source Unstructured library for local processing.
+  </Tab>
+
+  <Tab title="Unstructured API">
+    ```python
+    export UNSTRUCTURED_API_KEY=your_unstructured_api_key
+    export UNSTRUCTURED_API_URL=your_unstructured_api_url
+    # .. set other environment variables
+
+    # Optional - Update default provider
+    # Set 'provider = "unstructured_api"' for `[parsing]` and `[chunking]` in `my_r2r.toml`
+    r2r serve --config-path=my_r2r.toml
+    ```
+    Supported chunking strategies:
+    - by_title
+    - basic
+
+    Uses the Unstructured platform API for chunking, which may offer additional features or performance benefits.
+  </Tab>
+
+  <Tab title="R2R">
+    ```python
+    # No additional setup required
+
+    # Optional - Update default provider
+    # Set 'provider = "r2r"' for `[parsing]` and `[chunking]` in `my_r2r.toml`
+    r2r serve --config-path=my_r2r.toml
+    ```
+    Supported chunking strategies:
+    - recursive
+
+    A lightweight chunking method provided by R2R, suitable for basic chunking needs.
+  </Tab>
+</Tabs>
+
+### Advanced Configuration Options
+
+When using the Unstructured chunking provider, you can specify additional parameters in the configuration file:
+
+```toml
+[chunking]
+provider = "unstructured_local"  # or "unstructured_api"
+strategy = "auto"  # "auto", "fast", or "hi_res"
+chunking_strategy = "by_title"  # "by_title" or "basic"
+
+# Core chunking parameters
+combine_under_n_chars = 128
+max_characters = 500
+new_after_n_chars = 1500
+overlap = 0
+
+# Additional chunking options
+coordinates = false
+encoding = "utf-8"
+extract_image_block_types = []  # List of image block types to extract
+gz_uncompressed_content_type = null
+hi_res_model_name = null
+include_orig_elements = true
+include_page_breaks = false
+
+languages = []  # List of languages to consider
+multipage_sections = true
+ocr_languages = []  # List of languages for OCR
+output_format = "application/json"
+overlap_all = false
+pdf_infer_table_structure = true
+
+similarity_threshold = null
+skip_infer_table_types = []  # List of table types to skip inference
+split_pdf_concurrency_level = 5
+split_pdf_page = true
+starting_page_number = null
+unique_element_ids = false
+xml_keep_tags = false
+```
+
+These options allow fine-tuning of the chunking process for specific document types or requirements. Refer to the Unstructured [documentation here](https://docs.unstructured.io/open-source/core-functionality/chunking) for more details on the available settings.
+
+### Runtime Configuration
+
+The chunking configuration can be specified at runtime with the [`ingest_files`](/api-reference/endpoint/ingest_files) endpoint, allowing dynamic adjustment of chunking parameters based on the input documents or specific use cases.
+
+### Combining Chunking with Other R2R Components
+
+Chunking is a crucial part of the document processing pipeline in R2R. It works in conjunction with other components such as parsing, embedding, and retrieval. For example:
+
+```python
+response = client.ingest_files(
+    files=["document.pdf"],
+    chunking_config={
+        "provider": "unstructured_local",
+        "chunking_strategy": "by_title",
+        "max_characters": 1000
+    },
+    embedding_config={...},
+    # ... other configurations
+)
+```
+
+For more detailed information on configuring chunking and other ingestion settings, please refer to the [Ingestion Configuration documentation](/documentation/configuration/ingestion/overview).
+
+## Next Steps
+
+To learn more about configuring other components of R2R, explore the following pages:
+
+- [Embedding Configuration](/documentation/configuration/ingestion/embedding)
+- [Knowledge Graph Configuration](/documentation/configuration/knowledge-graph/overview)
+- [Retrieval Configuration](/documentation/configuration/retrieval/overview)
