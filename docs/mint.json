@@ -130,8 +130,7 @@
             "icon": "upload",
             "pages": [
               "documentation/configuration/ingestion/overview",
-              "documentation/configuration/ingestion/parsing",
-              "documentation/configuration/ingestion/chunking",
+              "documentation/configuration/ingestion/parsing_and_chunking",
               "documentation/configuration/ingestion/embedding"
             ]
           },

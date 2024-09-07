@@ -63,8 +63,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "azure/<your deployment name>"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
         Supported models include:
         - azure/gpt-4o
@@ -84,8 +83,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "anthropic/claude-3-opus-20240229"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
         Supported models include:
 
@@ -108,8 +106,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "vertex_ai/gemini-pro"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -133,8 +130,7 @@ Key generation configuration options:
 
         # Optional - Update default model
         # Set '"model": "bedrock/anthropic.claude-v2"' in `r2r.toml`
-        # then call `r2r serve --config-path=r2r.toml`
-        r2r serve
+        r2r serve --config-path=my_r2r.toml
         ```
 
         Supported models include:
@@ -157,8 +153,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "groq/llama3-8b-8192"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -192,7 +187,6 @@ Key generation configuration options:
     # Copy `r2r/examples/configs/local_llm.toml` into `my_r2r_local_llm.toml`
     # Set '"model": "ollama/llama3.1"' in `my_r2r_local_llm.toml`
     # then call `r2r --config-path=my_r2r_local_llm.toml`
-    r2r --config-name=local_llm serve
     ```
 
     Supported models include:
@@ -216,8 +210,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "command-r"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -237,8 +230,7 @@ Key generation configuration options:
 
     # Optional - Update default model
     # Set '"model": "anyscale/mistralai/Mistral-7B-Instruct-v0.1"' in `r2r.toml`
-    # then call `r2r serve --config-path=r2r.toml`
-    r2r serve
+    r2r serve --config-path=my_r2r.toml
     ```
 
     Supported models include:
@@ -271,45 +263,11 @@ response = client.rag(
 )
 ```
 
-### Task Prompt Override
+### Runtime Configuration of LLM Provider
 
-For specialized tasks, you can override the default system prompt:
+R2R supports runtime configuration of the LLM provider, allowing you to dynamically change the model or provider for each request. This flexibility enables you to use different models or providers based on specific requirements or use cases.
 
-```python
-task_prompt_override = """You are an AI assistant specializing in quantum computing.
-Your task is to provide a concise summary of the latest advancements in the field,
-focusing on practical applications and breakthroughs from the past year."""
-
-response = client.rag(
-    "What are the latest advancements in quantum computing?",
-    rag_generation_config=rag_generation_config,
-    task_prompt_override=task_prompt_override
-)
-```
-
-## Agent-based Interaction
-
-R2R supports multi-turn conversations and complex query processing through its agent endpoint:
-
-```python
-messages = [
-    {"role": "system", "content": "You are a helpful AI assistant."},
-    {"role": "user", "content": "What are the key differences between quantum and classical computing?"}
-]
-
-response = client.agent(
-    messages=messages,
-    vector_search_settings=vector_search_settings,
-    kg_search_settings=kg_search_settings,
-    rag_generation_config=rag_generation_config,
-)
-```
-
-The agent can break down complex queries into sub-tasks, leveraging both retrieval and generation capabilities to provide comprehensive responses.
-
-By leveraging these configuration options, you can fine-tune R2R's retrieval and generation process to best suit your specific use case and requirements.
-
-
+For more detailed information on configuring LLMs and other RAG settings, please refer to the [RAG Configuration documentation](/documentation/configuration/rag).
 
 
 ## Next Steps
