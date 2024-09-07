@@ -76,7 +76,9 @@ class RestructureService(Service):
         return await _collect_results(result_gen)
 
     @telemetry_event("kg_clustering")
-    async def kg_clustering(self, leiden_params, generation_config, perform_clustering):
+    async def kg_clustering(
+        self, leiden_params, generation_config, perform_clustering
+    ):
         result_gen = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={

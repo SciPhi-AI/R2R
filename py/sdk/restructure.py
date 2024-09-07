@@ -9,7 +9,8 @@ from .models import (
 
 import logging
 
-logger = logging.getLogger(__name__)    
+logger = logging.getLogger(__name__)
+
 
 class RestructureMethods:
 
@@ -22,8 +23,6 @@ class RestructureMethods:
         """
         Create a graph from the given settings.
         """
-
-        print(f"Inside client, KG creation settings: {kg_creation_settings}")
 
         data = {
             "document_ids": document_ids,
@@ -49,8 +48,7 @@ class RestructureMethods:
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
-        
-        print(f"Inside client, KG enrichment settings: {kg_enrichment_settings}")
+
         data = {
             "perform_clustering": perform_clustering,
             "kg_enrichment_settings": kg_enrichment_settings,

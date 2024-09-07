@@ -27,7 +27,9 @@ class KGConfig(ProviderConfig):
     kg_search_prompt: Optional[str] = "kg_search"
     kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: Optional[KGEnrichmentSettings] = KGEnrichmentSettings()
+    kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
+        KGEnrichmentSettings()
+    )
     kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
 
     def validate(self) -> None:

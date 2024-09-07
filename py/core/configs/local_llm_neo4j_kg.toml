@@ -40,7 +40,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_enrichment_settings]
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more parms on neo4j's website
+    leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
   [kg.kg_search_config]
     model = "ollama/llama3.1"

@@ -188,7 +188,7 @@ class KGClusteringPipe(AsyncPipe):
 
         leiden_params = input.message["leiden_params"]
         generation_config = input.message["generation_config"]
-        
+
         base_dimension = self.embedding_provider.config.base_dimension
         vector_index_fn = self.kg_provider.create_vector_index
         vector_index_fn("__ENTITY__", "name_embedding", base_dimension)

@@ -12,6 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @r2r_hatchet.workflow(name="kg-extract-and-store", timeout="60m")
 class KgExtractAndStoreWorkflow:
     def __init__(self, restructure_service: RestructureService):
@@ -95,6 +96,8 @@ class EnrichGraphWorkflow:
                 leiden_params, generation_config, perform_clustering
             )
         else:
-            logger.info("Skipping Leiden clustering as perform_clustering is False")
+            logger.info(
+                "Skipping Leiden clustering as perform_clustering is False"
+            )
 
         return {"result": None}

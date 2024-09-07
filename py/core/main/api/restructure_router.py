@@ -92,7 +92,9 @@ class RestructureRouter(BaseRouter):
                 pass
 
             if kg_creation_settings is None:
-                kg_creation_settings = self.service.providers.kg.config.kg_creation_settings
+                kg_creation_settings = (
+                    self.service.providers.kg.config.kg_creation_settings
+                )
 
             workflow_input = {
                 "document_ids": document_ids,
@@ -118,7 +120,9 @@ class RestructureRouter(BaseRouter):
                 default=True,
                 description="Whether to perform leiden clustering on the graph or not.",
             ),
-            kg_enrichment_settings: Optional[Json[KGEnrichmentSettings]] = Body(
+            kg_enrichment_settings: Optional[
+                Json[KGEnrichmentSettings]
+            ] = Body(
                 default=None,
                 description="Settings for the graph enrichment process.",
             ),
@@ -135,7 +139,9 @@ class RestructureRouter(BaseRouter):
                 pass
 
             if kg_enrichment_settings is None:
-                kg_enrichment_settings = self.service.providers.kg.config.kg_enrichment_settings
+                kg_enrichment_settings = (
+                    self.service.providers.kg.config.kg_enrichment_settings
+                )
 
             workflow_input = {
                 "perform_clustering": perform_clustering,
