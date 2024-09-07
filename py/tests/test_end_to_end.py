@@ -206,7 +206,7 @@
 #     response = await app.rag(
 #         query="Who was aristotle?",
 #         rag_generation_config=GenerationConfig(
-#             **{"model": "gpt-3.5-turbo", "stream": True}
+#             **{"model": "gpt-4o-mini", "stream": True}
 #         ),
 #     )
 #     collector = ""
