@@ -308,7 +308,6 @@ class R2RProviderFactory:
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
-        print("database_provider_override = ", database_provider_override)
         database_provider = (
             database_provider_override
             or self.create_database_provider(

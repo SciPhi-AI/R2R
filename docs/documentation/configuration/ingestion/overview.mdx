@@ -4,14 +4,13 @@ description: 'Configure your R2R ingestion pipeline'
 ---
 ## Introduction
 
+R2R's ingestion pipeline efficiently processes various document formats, transforming them into searchable content. It seamlessly integrates with vector databases and knowledge graphs for optimal retrieval and analysis.
 
-The Ingestion Pipeline is a core component of the R2R framework that processes and stores incoming documents. It supports various document formats and can store data in vector databases and knowledge graphs, enabling efficient retrieval and analysis in downstream processes.
-
-R2R integrates Unstructured's open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) by default to parse supported file types.
+By default, R2R leverages Unstructured's open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) to handle supported file types. For formats not covered by Unstructured, such as `.mp3`, R2R implements custom ingestion logic to ensure comprehensive support.
 
 ## Key Configuration Areas
 
-Many of the settings managed by the `r2r.toml` relate to the ingestion process, some of which are shown below
+Many of the settings managed by the [`r2r.toml`](https://github.com/SciPhi-AI/R2R/blob/main/py/r2r.toml) relate to the ingestion process, some of which are shown below
 
 ```toml default_ingestion_settings.toml
 [database]
@@ -38,14 +37,10 @@ batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
-
-[parsing]
-provider = "r2r"
-excluded_parsers = ["mp4"]
 ```
 These settings directly impact how R2R performs ingestion:
 
-- The `[database]` section configures the vector database used for semantic search. During retrieval, this database is queried to find the most relevant document chunks based on vector similarity.
+- The `[database]` section configures the Postgres database used for semantic search and document management. During retrieval, this database is queried to find the most relevant document chunks based on vector similarity.
 
 - The `[chunking]` section defines how documents are split into smaller, manageable pieces. This affects the granularity of information storage and retrieval.
 

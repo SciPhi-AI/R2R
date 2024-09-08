@@ -332,7 +332,7 @@ class VectorSearchSettings(BaseModel):
     )
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="Filters to apply to the vector search",
+        description="Complex logic filters to apply to the vector search, such as `{'document_id': {'$eq': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1'}}`.",
     )
     search_limit: int = Field(
         default=10,

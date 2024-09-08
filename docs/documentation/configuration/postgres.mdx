@@ -65,7 +65,7 @@ Let's break down the Postgres configuration options:
 
 2. Ensure that all required fields are set either through environment variables or in the `r2r.toml` file. If any required field is missing, R2R will raise a descriptive error message.
 
-3. The database connection string is constructed as follows:
+3. The input variables form a database connection string is constructed as follows:
    ```
    postgresql://{user}:{password}@{host}:{port}/{db_name}
    ```

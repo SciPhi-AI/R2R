@@ -159,7 +159,7 @@ search_response = client.search("What was Uber's profit in 2020?")
 
 ### Search custom settings
 
-Search with custom settings, such as bespoke document filters and larger search limits
+Learn more about the search [API here](/api-reference/endpoint/search). It allows searching with custom settings, such as bespoke document filters and larger search limits:
 ```python
 # returns only chunks from documents with title `document_title`
 filtered_search_response = client.search(
@@ -175,7 +175,8 @@ filtered_search_response = client.search(
 
 ### Hybrid Search
 
-Combine traditional keyword-based search with vector search:
+
+Learn more about the dedicated knowledge graph capabilities [in R2R here](/cookbooks/hybrid-search). Combine traditional keyword-based search with vector search:
 
 ```python
 hybrid_search_response = client.search(
@@ -195,13 +196,28 @@ hybrid_search_response = client.search(
 
 ### Knowledge Graph Search
 
-Utilize knowledge graph capabilities to enhance search results:
+Learn more about the dedicated knowledge graph capabilities [in R2R here](/cookbooks/graphrag). You can utilize knowledge graph capabilities to enhance search results, as shown below:
 
 ```python
 kg_search_response = client.search(
-    "What is a fierce nerd?",
+    "What is airbnb",
     vector_search_settings={"use_vector_search": False}
-    kg_search_settings={"use_kg_search": True}
+    kg_search_settings={
+      "use_kg_search": True, 
+      "kg_search_type": "local", 
+      "kg_search_level": 0,
+      "kg_search_generation_config": {
+          "model": "gpt-4o-mini",
+          "temperature": 0.7,
+      },
+      "local_search_limits": {
+          "__Entity__": 20,
+          "__Relationship__": 20,
+          "__Community__": 20,
+      },
+      "max_community_description_length": 4096 * 4,
+      "max_llm_queries_for_global_search": 250
+    }
 )
 ```
 
@@ -209,15 +225,41 @@ kg_search_response = client.search(
   <Accordion title="Response">
     <ResponseField name="response" type="dict">
       The knowledge graph search results from the R2R system.
-      ```python
+      ```bash
       {
-        'results': {
-          'vector_search_results': [],
-          'kg_search_results': [
-            ('MATCH (p:PERSON)-[:FOUNDED]->(c:COMPANY) WHERE c.name = "Airbnb" RETURN p.name',
-             [{'name': 'Brian Chesky'}, {'name': 'Joe Gebbia'}, {'name': 'Nathan Blecharczyk'}])
-          ]
-        }
+        "kg_search_results": 
+        [
+          {
+            "global_result": None,
+            "local_result": {
+              "communities": {
+                "0": {
+                  "summary": {
+                    "findings": [
+                      {
+                        "explanation": "Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six books ...",
+                        "summary": "Aristotle's Foundational Role in Logic"
+                      }
+                    ],
+                    "rating": 9.5,
+                    "rating_explanation": "The impact severity rating is high due to Aristotle's foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.",
+                    "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.",
+                    "title": "Aristotle and His Contributions"
+                  }
+                }
+              },
+              "entities": {
+                "0": {
+                  "description": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...",
+                  "name": "Aristotle"
+                }
+              },
+              "query": "Who is Aristotle?",
+              "relationships": {}
+            }
+          }
+        ],
+        "vector_search_results": None
       }
       ```
     </ResponseField>
@@ -423,7 +465,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
 
 ### RAG with custom search settings
 
-Use hybrid search in RAG:
+Learn more about the RAG [API here](/api-reference/endpoint/rag). It allows performing RAG with custom settings, such as hybrid search:
 
 ```python
 hybrid_rag_response = client.rag(
@@ -434,7 +476,7 @@ hybrid_rag_response = client.rag(
 
 ### RAG with custom completion LLM
 
-Using Anthropic at runtime:
+R2R supports configuration on server-side and at runtime, which you can [read about here](/documentation/configuration/rag). An example below, using Anthropic at runtime:
 
 ```python
 anthropic_rag_response = client.rag(
@@ -446,7 +488,7 @@ anthropic_rag_response = client.rag(
 
 ### Streaming RAG
 
-Stream RAG responses for real-time applications:
+R2R supports streaming RAG responses for real-time applications:
 
 ```python
 stream_response = client.rag(
