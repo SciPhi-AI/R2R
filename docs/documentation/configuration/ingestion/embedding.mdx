@@ -38,7 +38,7 @@ Support for any of the embedding providers listed below is provided through Lite
     Example configuration:
     ```toml example r2r.toml
     provider = "litellm"
-    base_model = "text-embedding-3-small"
+    base_model = "openai/text-embedding-3-small"
     base_dimension = 512
     ```
 
@@ -86,7 +86,7 @@ Support for any of the embedding providers listed below is provided through Lite
     Example configuration:
     ```toml example r2r.toml
     provider = "litellm"
-    base_model = "embed-english-v3.0"
+    base_model = "cohere/embed-english-v3.0"
     base_dimension = 1_024
     ```
 
@@ -116,7 +116,7 @@ Support for any of the embedding providers listed below is provided through Lite
     ```toml example r2r.toml
     [embedding]
     provider = "ollama"
-    base_model = "mxbai-embed-large"
+    base_model = "ollama/mxbai-embed-large"
     base_dimension = 1_024
     batch_size = 32
     add_title_as_prefix = true
@@ -161,7 +161,7 @@ Support for any of the embedding providers listed below is provided through Lite
 
     ```toml example r2r.toml
     provider = "litellm"
-    base_model = "amazon.titan-embed-text-v1"
+    base_model = "bedrock/amazon.titan-embed-text-v1"
     base_dimension = 1_024
     ```
 
