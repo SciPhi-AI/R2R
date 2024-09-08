@@ -27,6 +27,7 @@ pip install r2r
 
       r2r serve --docker --config-name=default
       ```
+  [Refer here](/documentation/configuration/llm) for more information on how to configure various LLM providers.
   </Accordion>
   <Accordion title="Local LLMs" icon="house" defaultOpen={false}>
       To start R2R with your local computer as the default LLM inference provider:
@@ -39,7 +40,7 @@ pip install r2r
       ollama pull mxbai-embed-large
       ollama serve
     ```
-    The code above assumes that Ollama has already been installed. If you have not yet done so, then refer to the official Ollama webpage [for installation instructions](https://ollama.com/download).
+    The code above assumes that Ollama has already been installed. If you have not yet done so, then refer to the official Ollama webpage [for installation instructions](https://ollama.com/download). For more information on local installation, [refer here](/documentation/local-rag).
   </Accordion>
   <Accordion title="Custom Configuration" icon="gear" defaultOpen={false}>
     R2R offers flexibility in selecting and configuring LLMs, allowing you to optimize your RAG pipeline for various use cases. Execute the command below run deploy R2R with your own custom configuration:
@@ -52,7 +53,7 @@ pip install r2r
 </AccordionGroup>
 
 <Note>
-Hatchet (RabbitMQ based orchestration), Neo4j, and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
+Hatchet (RabbitMQ based orchestration), Neo4j, and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either Neo4j or Postgres, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
 
 Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`.
 </Note>

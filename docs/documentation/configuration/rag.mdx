@@ -18,18 +18,44 @@ RAG (Retrieval-Augmented Generation) in R2R can be extensively customized to sui
 Refer to the LLM configuration [page here](/documentation/configuration/llm).
 
 
-### Search Configuration
+### Retrieval Configuration
 
-Refer to the search configuration [page here](/documentation/configuration/retrieval/overview).
-
-
-### Combining Search and Generation
+Refer to the retrieval configuration [page here](/documentation/configuration/retrieval/overview).
 
 
+### Combining LLM and Retrieval Configuration for RAG
 
-The `rag_generation_config` parameter allows you to customize the language model's behavior. Default settings are set on the server-side using the `r2r.toml`, as described in the LLM configuration guide, and they can be overridden at runtime as shown below:
+
+
+The `rag_generation_config` parameter allows you to customize the language model's behavior. Default settings are set on the server-side using the `r2r.toml`, as described in in previous configuraiton guides. These settings can be overridden at runtime as shown below:
 
 ```python
+# Configure knowledge graph search
+vector_search_settings = {
+    "use_vector_search": True,
+    "filters": {"metadata.document_type": "article"},
+    "search_limit": 20,
+    "use_hybrid_search": True,
+    "selected_group_ids": ["c3291abf-8a4e-5d9d-80fd-232ef6fd8526"]
+}
+
+# Configure graphRAG search
+kg_search_settings = {
+    "use_kg_search": True,
+    "kg_search_type": "global",
+    "kg_search_level": None,
+    "kg_search_generation_config": {
+        "model": "gpt-4",
+        "temperature": 0.1
+    },
+    "entity_types": ["Person", "Organization"],
+    "relationships": ["worksFor", "foundedBy"],
+    "max_community_description_length": 16384,
+    "max_llm_queries_for_global_search": 250,
+    "local_search_limits": {"__Entity__": 20, "__Relationship__": 20, "__Community__": 20}
+}
+
+# Configure LLM generation
 rag_generation_config = {
     "model": "anthropic/claude-3-opus-20240229",
     "temperature": 0.7,
@@ -43,9 +69,7 @@ rag_generation_config = {
 }
 ```
 
-Similarly, the vector search and knowledge graph settings can be overridden at runtime.
-
-When performing a RAG query you can combine vector search, knowledge graph search, and generation settings:
+When performing a RAG query you can combine these vector search, knowledge graph search, and generation settings at runtime:
 
 ```python
 from r2r import R2RClient
@@ -60,9 +84,10 @@ response = client.rag(
 )
 ```
 
-### Task Prompt Override
+R2R defaults to the specified server-side settings when no runtime overrides are specified.
+### RAG Prompt Override
 
-For specialized tasks, you can override the default system prompt:
+For specialized tasks, you can override the default RAG task prompt at runtime:
 
 ```python
 task_prompt_override = """You are an AI assistant specializing in quantum computing.
@@ -75,6 +100,8 @@ response = client.rag(
     task_prompt_override=task_prompt_override
 )
 ```
+
+This prompt can also be set statically on as part of the server configuration process.
 
 ## Agent-based Interaction
 
@@ -94,7 +121,7 @@ response = client.agent(
 )
 ```
 
-The agent can break down complex queries into sub-tasks, leveraging both retrieval and generation capabilities to provide comprehensive responses.
+The agent can break down complex queries into sub-tasks, leveraging both retrieval and generation capabilities to provide comprehensive responses. The settings specified in the example above will propagate to the agent and it's tools.
 
 By leveraging these configuration options, you can fine-tune R2R's retrieval and generation process to best suit your specific use case and requirements.
 

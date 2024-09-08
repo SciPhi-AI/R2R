@@ -4,7 +4,7 @@ description: 'Learn how to configure LLMs in your R2R deployment'
 icon: 'language'
 ---
 
-R2R uses language models to generate responses based on retrieved context. Configure the generation settings in `r2r.toml`:
+R2R uses language models to generate responses based on retrieved context. You can configure R2R's server-side LLM generation settings with the [`r2r.toml`](https://github.com/SciPhi-AI/R2R/blob/main/py/r2r.toml):
 
 ```toml r2r.toml
 [completion]
@@ -249,24 +249,28 @@ Key generation configuration options:
 </Tabs>
 
 
-### Combining Search and Generation
-
-To perform a RAG query, you can combine vector search, knowledge graph search, and generation settings:
-
-```python
-response = client.rag(
-    "What are the latest advancements in quantum computing?",
-    vector_search_settings=vector_search_settings,
-    kg_search_settings=kg_search_settings,
-    rag_generation_config=rag_generation_config
-)
-```
 
 ### Runtime Configuration of LLM Provider
 
 R2R supports runtime configuration of the LLM provider, allowing you to dynamically change the model or provider for each request. This flexibility enables you to use different models or providers based on specific requirements or use cases.
 
-For more detailed information on configuring LLMs and other RAG settings, please refer to the [RAG Configuration documentation](/documentation/configuration/rag).
+### Combining Search and Generation
+
+When performing a RAG query, you can dynamically set the LLM generation settings:
+
+```python
+response = client.rag(
+    "What are the latest advancements in quantum computing?",
+    rag_generation_config={
+        "stream": False,
+        "model": "openai/gpt-4o-mini",
+        "temperature": 0.7,
+        "max_tokens": 150
+    }
+)
+```
+
+For more detailed information on configuring other search and RAG settings, please refer to the [RAG Configuration documentation](/documentation/configuration/rag).
 
 
 ## Next Steps
