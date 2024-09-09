@@ -29,7 +29,7 @@ from .management.responses import (
     WrappedLogResponse,
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
-    WrappedUpdatePromptResponse,
+    WrappedPromptMessageResponse,
     WrappedUserOverviewResponse,
 )
 from .restructure.responses import (
@@ -74,7 +74,7 @@ __all__ = [
     "KnowledgeGraphResponse",
     "GroupResponse",
     "GroupOverviewResponse",
-    "WrappedUpdatePromptResponse",
+    "WrappedPromptMessageResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",

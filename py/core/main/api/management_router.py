@@ -23,7 +23,7 @@ from core.base.api.models.management.responses import (
     WrappedLogResponse,
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
-    WrappedUpdatePromptResponse,
+    WrappedPromptMessageResponse,
     WrappedUserOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
@@ -81,7 +81,7 @@ class ManagementRouter(BaseRouter):
                 {}, description="Input types"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUpdatePromptResponse:
+        ) -> WrappedPromptMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `update_prompt` endpoint.",
@@ -100,7 +100,7 @@ class ManagementRouter(BaseRouter):
             template: str = Body(..., description="Prompt template"),
             input_types: dict[str, str] = Body({}, description="Input types"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGenericPromptResponse:
+        ) -> WrappedPromptMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `add_prompt` endpoint.",
@@ -113,10 +113,10 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_prompt_app(
             prompt_name: str = Path(..., description="Prompt name"),
-            inputs: Optional[str] = Query(None, description="JSON-encoded prompt inputs"),
+            inputs: Optional[Json[dict]] = Query(None, description="JSON-encoded prompt inputs"),
             prompt_override: Optional[str] = Query(None, description="Prompt override"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGenericPromptResponse:
+        ) -> WrappedPromptMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_prompt` endpoint.",
