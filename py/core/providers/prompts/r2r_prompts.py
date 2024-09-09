@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import yaml
 from sqlalchemy import text
