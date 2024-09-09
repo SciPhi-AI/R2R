@@ -1,0 +1,57 @@
+[chunking]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "basic"
+new_after_n_chars = 2_048
+max_characters = 4_096 # use larger max_characters for KG construction
+combine_under_n_chars = 512
+overlap = 20
+
+[completion]
+provider = "litellm"
+concurrent_request_limit = 1
+
+  [completion.generation_config]
+  model = "ollama/llama3.1"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = {}
+
+[embedding]
+provider = "ollama"
+base_model = "mxbai-embed-large"
+base_dimension = 1_024
+batch_size = 32
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
+[parsing]
+excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+
+[kg]
+provider = "memgraph"
+batch_size = 256
+kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+
+  [kg.kg_creation_settings]
+    max_knowledge_triples = 100
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
+
+  [kg.kg_enrichment_settings]
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+
+  [kg.kg_search_config]
+    model = "ollama/llama3.1"
+
+[database]
+provider = "postgres"
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+  [agent.generation_config]
+  model = "ollama/llama3.1"
