@@ -35,6 +35,7 @@ class LiteCompletionProvider(CompletionProvider):
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
+            "api_base": generation_config.api_base,
         }
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
@@ -51,11 +52,8 @@ class LiteCompletionProvider(CompletionProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        try:
-            response = await self.acompletion(**args)
-            return response
-        except Exception as e:
-            raise
+        response = await self.acompletion(**args)
+        return response
 
     def _execute_task_sync(self, task: dict[str, Any]):
         messages = task["messages"]

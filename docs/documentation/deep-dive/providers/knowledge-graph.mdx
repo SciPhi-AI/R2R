@@ -1,0 +1,193 @@
+---
+title: 'Knowledge Graph'
+description: 'Learn how to configure and use the knowledge graph provider in R2R'
+---
+
+## Introduction
+
+R2R's `KGProvider` handles the creation, management, and querying of knowledge graphs in your applications. This guide offers an in-depth look at the system's architecture, configuration options, and best practices for implementation.
+
+For a practical, step-by-step guide on implementing knowledge graphs in R2R, including code examples and common use cases, see our [Knowledge Graph Cookbook](/cookbooks/graphrag).
+
+## Providers
+
+The default `Neo4jKGProvider` offers a complete knowledge graph solution.
+
+Key features:
+- Neo4j-based graph database
+- Entity and relationship extraction from text
+- Graph querying and traversal
+- Integration with vector search
+
+## Configuration
+
+### Knowledge Graph Configuration
+
+Update the `kg` section in your `r2r.toml` as follows:
+
+```toml
+[kg]
+provider = "neo4j"
+batch_size = 1
+user = "your_neo4j_user"
+password = "your_neo4j_password"
+url = "your_neo4j_url"
+database = "your_neo4j_database"
+
+[kg.text_splitter]
+type = "recursive_character"
+chunk_size = 1024
+chunk_overlap = 0
+
+[kg.kg_extraction_config]
+model = "ollama/sciphi/triplex"
+temperature = 1.0
+top_p = 1.0
+top_k = 100
+max_tokens_to_sample = 1024
+stream = false
+```
+
+
+
+Alternatively, instead of setting `user`, `password`, `url`, and `database` in your `r2r.toml`, you can set these values using environment variables:
+
+
+
+```bash
+export NEO4J_USER=your_username
+export NEO4J_PASSWORD=your_password
+export NEO4J_URL=your_neo4j_url
+export NEO4J_DATABASE=neo4j
+```
+
+
+Environment variables take precedence over the config settings in case of conflicts. The R2R Docker includes configuration options that facilitate integration with a combined Postgres+pgvector database setup.
+
+
+
+## Implementation Guide
+
+### File Ingestion and Graph Construction
+
+```python
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+
+result = client.ingest_files(["path/to/your/file.txt"])
+print(f"Ingestion Result: {result}")
+```
+
+<Note> Ingestion automatically populates the Neo4J knowledge graph when the `neo4j` provider is specified for `kg` in the `r2r.toml`. </Note>
+
+### Graph-based Search
+
+```python
+search_result = client.search(
+    query="Find founders who worked at Google",
+    kg_search_settings={"use_kg_search":True}
+)
+print(f"Search Result: {search_result}")
+```
+
+### Retrieval-Augmented Generation
+
+```python
+rag_result = client.rag(
+    query="Summarize the achievements of founders who worked at Google",
+    kg_search_settings={"use_kg_search":True}
+)
+print(f"RAG Result: {rag_result}")
+```
+
+### Customizing Entity Types and Relations
+
+```python
+from r2r import EntityType, Relation
+
+entity_types = [
+    EntityType("ORGANIZATION"),
+    EntityType("PERSON"),
+    EntityType("PRODUCT")
+]
+
+relations = [
+    Relation("FOUNDED"),
+    Relation("WORKED_AT"),
+    Relation("PRODUCT_OF")
+]
+
+client.update_kg_prompt(
+    prompt_name="zero_shot_ner_kg_extraction",
+    entity_types=entity_types,
+    relations=relations
+)
+```
+
+## Best Practices
+
+1. **Optimize Chunk Size**: Adjust the `chunk_size` based on your data and model capabilities.
+2. **Use Domain-Specific Entity Types and Relations**: Customize these for more accurate graph construction.
+3. **Balance Batch Size**: Adjust `batch_size` for optimal performance and resource usage.
+4. **Implement Caching**: Cache frequently accessed graph data for improved performance.
+5. **Regular Graph Maintenance**: Periodically clean and optimize your knowledge graph.
+
+## Advanced Topics
+
+### Custom Knowledge Graph Providers
+
+Extend the `KGProvider` class to implement custom knowledge graph providers:
+
+```python
+from r2r.base import KGProvider, KGConfig
+
+class CustomKGProvider(KGProvider):
+    def __init__(self, config: KGConfig):
+        super().__init__(config)
+        # Custom initialization...
+
+    def ingest_files(self, file_paths: List[str]):
+        # Custom implementation...
+
+    def search(self, query: str, use_kg_search: bool = True):
+        # Custom implementation...
+
+    # Implement other required methods...
+```
+
+### Integrating External Graph Databases
+
+To integrate with external graph databases:
+
+1. Implement a custom `KGProvider`.
+2. Handle data synchronization between R2R and the external database.
+3. Implement custom querying methods to leverage the external database's features.
+
+### Scaling Knowledge Graphs
+
+For large-scale applications:
+
+1. Implement graph partitioning for distributed storage and processing.
+2. Use graph-specific indexing techniques for faster querying.
+3. Consider using a graph computing framework for complex analytics.
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Ingestion Errors**: Check file formats and encoding.
+2. **Query Performance**: Optimize graph structure and use appropriate indexes.
+3. **Memory Issues**: Adjust batch sizes and implement pagination for large graphs.
+
+## Performance Considerations
+
+1. **Query Optimization**: Use efficient Cypher queries for Neo4j.
+2. **Embedding Caching**: Cache embeddings for frequently accessed entities.
+3. **Asynchronous Processing**: Use async methods for non-blocking operations.
+
+## Conclusion
+
+R2R's Knowledge Graph system provides a powerful foundation for building applications that require structured data representation and complex querying capabilities. By understanding its components, following best practices, and leveraging its flexibility, you can create sophisticated information retrieval and analysis systems tailored to your specific needs.
+
+For further customization and advanced use cases, refer to the [R2R API Documentation](/api-reference) and [Knowledge Graph provider documentation](/documentation/deep-dive/providers/knowledge-graph).

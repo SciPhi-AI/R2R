@@ -1,0 +1,39 @@
+---
+title: 'Observability'
+description: 'Manage and observe your R2R system.'
+---
+
+## Analytics and Observability
+R2R provides various tools for analytics and observability to help you monitor and improve the performance of your RAG system.
+
+### Completion Scores
+Scores act as an observability metric and are attached to RAG completions in R2R.
+
+Scores are bound to values between -1 (a strong negative association) and 1 (a strong positive association), where:
+- A score close to 1 may indicate a highly relevant and accurate completion
+- A score close to 0 may indicate a neutral or uncertain quality
+- A score close to -1 may indicate a potentially irrelevant or incorrect completion
+
+```python
+response = client.score_completion("message_id_here", 0.75)
+```
+
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system.
+      ```python
+      { 'results': 'ok' }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+
+<ParamField path="message_id" type="uuid.UUID" default="None" required>
+The unique identifier of the completion message to be scored. Found in logs for a message.
+</ParamField>
+<ParamField path="score" type="float" default="None" required>
+The score to assign to the completion, ranging from -1 to 1.
+</ParamField>

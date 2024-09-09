@@ -9,9 +9,10 @@ from core.base import (
     AsyncState,
     ChunkingProvider,
     CompletionProvider,
-    DocumentExtraction,
+    DatabaseProvider,
     DocumentFragment,
     Entity,
+    GenerationConfig,
     KGExtraction,
     KGProvider,
     PipeType,
@@ -37,13 +38,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
     """
 
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[
-            Union[DocumentExtraction, R2RDocumentProcessingError], None
-        ]
+        message: dict
 
     def __init__(
         self,
         kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
@@ -64,6 +64,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         )
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.chunking_provider = chunking_provider
         self.kg_batch_size = kg_batch_size
@@ -79,6 +80,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
     async def extract_kg(
         self,
         fragment: DocumentFragment,
+        generation_config: GenerationConfig,
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
@@ -88,7 +90,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         task_inputs = {"input": fragment.data}
         task_inputs["max_knowledge_triples"] = (
-            self.kg_provider.config.kg_enrichment_settings.max_knowledge_triples
+            self.kg_provider.config.kg_creation_settings.max_knowledge_triples
         )
 
         messages = self.prompt_provider._get_message_payload(
@@ -100,7 +102,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
             try:
                 response = await self.llm_provider.aget_completion(
-                    messages, self.kg_provider.config.kg_extraction_config
+                    messages,
+                    generation_config=generation_config,
                 )
 
                 kg_extraction = response.choices[0].message.content
@@ -117,7 +120,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                     entities_dict = {}
                     for entity in entities:
-                        logger.info(f"Entity: {entity}")
                         entity_value = entity[0]
                         entity_category = entity[1]
                         entity_description = entity[2]
@@ -132,7 +134,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                     relations_arr = []
                     for relationship in relationships:
-                        logger.info(f"Relationship: {relationship}")
                         subject = relationship[0]
                         object = relationship[1]
                         predicate = relationship[2]
@@ -158,7 +159,10 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                 entities, triples = parse_fn(kg_extraction)
                 return KGExtraction(
-                    entities=list(entities.values()), triples=triples
+                    fragment_id=fragment.id,
+                    document_id=fragment.document_id,
+                    entities=entities,
+                    triples=triples,
                 )
 
             except (
@@ -175,7 +179,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         # add metadata to entities and triples
 
-        return KGExtraction(entities={}, triples=[])
+        return KGExtraction(
+            fragment_id=fragment.id,
+            document_id=fragment.document_id,
+            entities={},
+            triples=[],
+        )
 
     async def _run_logic(
         self,
@@ -186,16 +195,49 @@ class KGTriplesExtractionPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
 
-        async def process_extraction(extraction):
-            return await self.extract_kg(extraction)
+        logger.info("Running KG Extraction Pipe")
 
-        extractions = []
-        async for extraction in input.message:
-            extractions.append(extraction)
+        document_id = input.message["document_id"]
+        generation_config = input.message["generation_config"]
 
-        kg_extractions = await asyncio.gather(
-            *[process_extraction(extraction) for extraction in extractions]
-        )
+        extractions = [
+            DocumentFragment(
+                id=extraction["fragment_id"],
+                extraction_id=extraction["extraction_id"],
+                document_id=extraction["document_id"],
+                user_id=extraction["user_id"],
+                group_ids=extraction["group_ids"],
+                data=extraction["text"],
+                metadata=extraction["metadata"],
+            )
+            for extraction in self.database_provider.vector.get_document_chunks(
+                document_id=document_id
+            )
+        ]
 
-        for kg_extraction in kg_extractions:
-            yield kg_extraction
+        tasks = [
+            asyncio.create_task(self.extract_kg(extraction, generation_config))
+            for extraction in extractions
+        ]
+
+        try:
+            self.database_provider.relational.execute_query(
+                f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'processing' WHERE document_id = '{document_id}'"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error updating document {document_id} to PROCESSING: {e}"
+            )
+
+        for completed_task in asyncio.as_completed(tasks):
+            yield await completed_task
+
+        try:
+            self.database_provider.relational.execute_query(
+                f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'success' WHERE document_id = '{document_id}'"
+            )
+            logger.info(f"Updated document {document_id} to SUCCESS")
+        except Exception as e:
+            logger.error(
+                f"Error updating document {document_id} to SUCCESS: {e}"
+            )

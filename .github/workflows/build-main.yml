@@ -8,41 +8,16 @@ on:
         required: false
         type: string
 
+env:
+  REGISTRY_IMAGE: ragtoriches/prod
+
 jobs:
-  build-and-publish:
-    runs-on: [ self-hosted, Linux ]
-    permissions:
-      packages: write
-      contents: read
-      id-token: write
-      actions: write
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Google Auth
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-
-      - name: Set up Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: Configure SDK
-        run: 'gcloud auth configure-docker us-east1-docker.pkg.dev'
-
-      - name: Docker Auth
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
-          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Determine version to use
         id: version
         run: |
@@ -52,33 +27,85 @@ jobs:
             echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
           fi
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ragtoriches/prod
-            us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r
-          tags: |
-            type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
-            type=raw,value=latest
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"amd2\"},{\"platform\":\"arm64\",\"runner\":\"arm2\"}]}" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Docker Image
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+
+      - name: Build and push default image
         uses: docker/build-push-action@v5
         with:
           context: ./py
           file: ./py/Dockerfile
+          platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
+          provenance: false
+          sbom: false
 
-      - name: Build and Push Docker Image
+      - name: Build and push unstructured image
         uses: docker/build-push-action@v5
         with:
           context: ./py
           file: ./py/Dockerfile.unstructured
+          platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}-unstructured
-          labels: ${{ steps.meta.outputs.labels }}-unstructured
-          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-${{ matrix.platform }}
+          provenance: false
+          sbom: false
+
+  create-manifest:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+
+      - name: Create and push default manifest
+        run: |
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+
+      - name: Create and push unstructured manifest
+        run: |
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-arm64
+
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest-unstructured \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-arm64
+
+      - name: Verify manifests
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest-unstructured

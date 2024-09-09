@@ -30,7 +30,7 @@ class RAGAgentMixin:
         return Tool(
             name="search",
             description="Search for information using the R2R framework",
-            results_function=self.asearch,
+            results_function=self.search,
             llm_format_function=RAGAgentMixin.format_search_results_for_llm,
             stream_function=RAGAgentMixin.format_search_results_for_stream,
             parameters={
@@ -45,7 +45,7 @@ class RAGAgentMixin:
             },
         )
 
-    async def asearch(
+    async def search(
         self,
         query: str,
         vector_search_settings: VectorSearchSettings,
@@ -66,7 +66,7 @@ class RAGAgentMixin:
     ) -> str:
         formatted_results = ""
         for i, result in enumerate(results):
-            text = result.metadata.get("text", "N/A")
+            text = result.text
             formatted_results += f"{i+1}. {text}\n"
         return formatted_results
 

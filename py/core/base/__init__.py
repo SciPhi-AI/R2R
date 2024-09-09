@@ -22,7 +22,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentFragment",
     "DocumentInfo",
-    "DocumentStatus",
+    "IngestionStatus",
+    "RestructureStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -50,6 +51,7 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     # Restructure abstractions
+    "KGCreationSettings",
     "KGEnrichmentSettings",
     # User abstractions
     "Token",
@@ -59,6 +61,7 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "StorageResult",
     ## AGENT
     # Agent abstractions
     "Agent",
@@ -109,6 +112,8 @@ __all__ = [
     "AuthConfig",
     "AuthProvider",
     # Chunking provider
+    "R2RChunkingConfig",
+    "UnstructuredChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
     "Method",
@@ -123,6 +128,9 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
+    # File provider
+    "FileConfig",
+    "FileProvider",
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",

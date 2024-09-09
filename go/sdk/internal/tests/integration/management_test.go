@@ -13,7 +13,7 @@ func TestServerStatsIntegration(t *testing.T) {
 		LogWriter: os.Stderr, // or any io.Writer
 	}
 
-	client := sdk.NewClient("http://localhost:8000/v2", logConfig)
+	client := sdk.NewClient("http://localhost:7272/v2", logConfig)
 
 	// Call Health
 	health, err := client.Health()

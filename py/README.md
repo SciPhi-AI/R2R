@@ -8,29 +8,34 @@
 
 <img width="1041" alt="r2r" src="https://github.com/user-attachments/assets/b6ee6a78-5d37-496d-ae10-ce18eee7a1d6">
 <h3 align="center">
-Build, scale, and manage user-facing Retrieval-Augmented Generation applications in production.
+The Elasticsearch for RAG.
+
+Build, scale, and deploy production-ready Retrieval-Augmented Generation applications.
 </h3>
 
 # About
-R2R (RAG to Riches), the Supabase for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. R2R is built around a simple [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), making it easy to use and fast to implement.
+R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. Built around a containerized [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), R2R offers multimodal ingestion support, hybrid search, GraphRAG capabilities, user management, and observability features.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
 ## Key Features
-- **📁 Multimodal Support**: Ingest files ranging from `.txt`, `.pdf`, `.json` to `.png`, `.mp3`, and more.
-- **🔍 Hybrid Search**: Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
-- **🔗 Graph RAG**: Automatically extract relationships and build knowledge graphs.
-- **🗂️ App Management**: Efficiently manage documents and users with full authentication.
-- **🔭 Observability**: Observe and analyze your RAG engine performance.
-- **🧩 Configurable**: Provision your application using intuitive configuration files.
-- **🔌 Extensibility**: Develop your application further with easy builder + factory pattern.
-- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
+- [**📁 Multimodal Ingestion**](https://r2r-docs.sciphi.ai/documentation/configuration/ingestion/overview): Parse `.txt`, `.pdf`, `.json`, `.png`, `.mp3`, and more.
+- [**🔍 Hybrid Search**](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
+- [**🔗 Graph RAG**](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Automatically extract relationships and build knowledge graphs.
+- [**🗂️ App Management**](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Efficiently manage documents and users with full authentication.
+- [**🔭 Observability**](https://r2r-docs.sciphi.ai/cookbooks/observability): Observe and analyze your RAG engine performance.
+- [**🧩 Configurable**](https://r2r-docs.sciphi.ai/documentation/configuration/introduction): Provision your application using intuitive configuration files.
+- [**🖥️ Dashboard**](https://github.com/SciPhi-AI/R2R-Dashboard): An open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
 
 
-## Getting Started
+## [What's New](https://r2r-docs.sciphi.ai/introduction/whats-new)
 
-- [Installation](https://r2r-docs.sciphi.ai/documentation/installation): Quick installation of R2R using Docker or pip
-- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
+- Release 3.1.0&nbsp;&nbsp;&nbsp;&nbsp;September 6, 2024&nbsp;&nbsp;&nbsp;&nbsp;
+
+  Warning: These changes are breaking! We will be releasing a migration script soon.
+  - Orchestration with [Hatchet](https://github.com/hatchet-dev/hatchet)
+  - Default ingestion provider set to [Unstructured](https://docs.unstructured.io/welcome)
+  - Improved knowledge graph construction process
 
 
 ## Install with pip
@@ -67,18 +72,17 @@ r2r --config-name=default serve
 
 - [SDK](https://r2r-docs.sciphi.ai/documentation/python-sdk): API reference and Python/JS SDKs for interacting with R2R
 - [API](https://r2r-docs.sciphi.ai/api-reference/introduction): API reference and Python/JS SDKs for interacting with R2R
-- [Configuration](/documentation/configuration): A guide on how to configure your R2R system
+- [Configuration](https://r2r-docs.sciphi.ai/documentation/configuration/introduction): A guide on how to configure your R2R system
 
 ## Cookbooks
 
-- Advanced RAG Pipelines 
+- Advanced RAG Pipelines
   - [RAG Agent](https://r2r-docs.sciphi.ai/cookbooks/agent): R2R's powerful RAG agent
   - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Introduction to hybrid search
   - [Advanced RAG](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): Advanced RAG features
 
 - Knowledge Graphs
   - [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Walkthrough of GraphRAG
-  - [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): Automatic knowledge graph generation
 
 - Auth & Admin Features
   - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R

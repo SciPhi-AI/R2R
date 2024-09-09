@@ -1,0 +1,149 @@
+---
+title: 'Hybrid Search'
+description: 'Learn how to implement and use hybrid search with R2R'
+icon: 'magnifying-glass'
+---
+
+## Introduction
+
+R2R's hybrid search combines traditional keyword-based searching with modern semantic understanding, providing more accurate and contextually relevant results. This approach is particularly effective for complex queries where both specific terms and overall meaning are crucial.
+
+## How R2R Hybrid Search Works
+
+1. **Full-Text Search**: Utilizes PostgreSQL's full-text search with `ts_rank` and `websearch_to_tsquery`.
+2. **Semantic Search**: Performs vector similarity search using the query's embedded representation.
+3. **Reciprocal Rank Fusion (RRF)**: Merges results from full-text and semantic searches using the formula:
+   ```
+   COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
+   COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
+   ```
+4. **Result Ranking**: Orders final results based on the combined RRF score.
+
+## Key Features
+
+### Query Expansion
+
+R2R implements sophisticated query expansion to enhance full-text search:
+
+1. Tokenization
+2. Stemming using Snowball Stemmer
+3. Synonym expansion using WordNet
+4. Combination of original words, stems, and synonyms
+
+### Advanced Full-Text Search
+
+The full-text search component incorporates:
+
+- Expanded query using `to_tsquery`
+- Phrase matching with `phraseto_tsquery`
+- Partial matching using `:*` wildcard
+- Text similarity scoring
+
+## Configuration
+
+### VectorSearchSettings
+
+Key settings for vector search configuration:
+
+```python
+class VectorSearchSettings(BaseModel):
+    use_hybrid_search: bool
+    search_limit: int
+    filters: dict[str, Any]
+    hybrid_search_settings: Optional[HybridSearchSettings]
+    # ... other settings
+```
+
+### HybridSearchSettings
+
+Specific parameters for hybrid search:
+
+```python
+class HybridSearchSettings(BaseModel):
+    full_text_weight: float
+    semantic_weight: float
+    full_text_limit: int
+    rrf_k: int
+```
+
+## Usage Example
+
+```python
+from r2r import R2RClient
+
+client = R2RClient()
+
+vector_settings = {
+    "use_hybrid_search": True,
+    "search_limit": 20,
+    "filters":{"category": {"$eq": "technology"}},
+    "hybrid_search_settings" : {
+        "full_text_weight": 1.0,
+        "semantic_weight": 5.0,
+        "full_text_limit": 200,
+        "rrf_k": 50
+    }
+}
+
+results = client.search(
+    query="Who was Aristotle?",
+    vector_search_settings=vector_settings
+)
+print(results)
+```
+
+## Results Comparison
+
+### Basic Vector Search
+
+```json
+{
+  "results": {
+    "vector_search_results": [
+      {
+        "score": 0.780314067545999,
+        "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...",
+        "metadata": {
+          "title": "aristotle.txt",
+          "version": "v0",
+          "chunk_order": 0
+        }
+      }, ...
+    ]
+  }
+}
+```
+
+### Hybrid Search with RRF
+
+```json
+{
+  "results": {
+    "vector_search_results": [
+      {
+        "score": 0.0185185185185185,
+        "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...",
+        "metadata": {
+          "title": "aristotle.txt",
+          "version": "v0",
+          "chunk_order": 0,
+          "semantic_rank": 1,
+          "full_text_rank": 3
+        }, ...
+      }
+    ]
+  }
+}
+```
+
+## Best Practices
+
+1. Optimize PostgreSQL indexing for both full-text and vector searches
+2. Implement query preprocessing techniques
+3. Regularly update search indices
+4. Monitor performance and adjust weights as needed
+5. Customize synonym expansion and stemming for your domain
+
+## Conclusion
+
+R2R's hybrid search offers a powerful solution for complex information retrieval needs, combining the strengths of keyword matching and semantic understanding. Its flexible configuration and advanced techniques like query expansion and RRF make it adaptable to a wide range of use cases, from technical documentation to broad, context-dependent queries.

@@ -16,7 +16,6 @@ from core.base import (
 )
 from core.base.abstractions.graph import Entity, Triple
 from core.base.pipes.base_pipe import AsyncPipe
-from core.base.providers.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class KGNodeExtractionPipe(AsyncPipe):
 
         nodes = self.kg_provider.get_entity_map()
 
-        for node_value, node_info in nodes.items():
+        for _, node_info in nodes.items():
             for entity in node_info["entities"]:
                 yield entity, node_info[
                     "triples"
@@ -109,38 +108,6 @@ class KGNodeDescriptionPipe(AsyncPipe):
         Extracts description from the input.
         """
 
-        # summarization_content  = """
-
-        #     You are given the following entity and its associated triples:
-        #     Entity: {entity_info}
-        #     Triples: {triples_txt}
-        #     Your tasks:
-
-        #     Entity Description:
-        #     Provide a concise description of the entity based on the given information and triples.
-
-        #     Entity Analysis:
-        #     a) Determine if this entity represents a single concept or a combination of multiple entities.
-        #     b) If it's a combination, list the separate entities that make up this composite entity.
-        #     c) Map each separate entity to the relationship(s) it came from in the original triples.
-        #     d) Suggest more appropriate names for each separate entity if applicable.
-
-        #     Formatted Output:
-        #     For each entity (original or separate), provide the following formatted output:
-        #     ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>$$$$<associated_triples>)
-
-        #     Where:
-        #     <entity_name>: The name of the entity (original or improved)
-        #     <entity_type>: The type or category of the entity
-        #     <entity_description>: A concise description of the entity
-        #     <associated_triples>: List of triples associated with this specific entity
-
-        #     Explanation:
-        #     Briefly explain your reasoning for separating entities (if applicable) and any name changes you suggested.
-
-        #     Please ensure your response is clear, concise, and follows the requested format.
-        # """
-
         summarization_content = """
             Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
 
@@ -162,7 +129,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
             # if embedding is present in the entity, just return it
             # in the future disable this to override and recompute the descriptions for all entities
-            if entity.description_embedding and entity.name_embedding:
+            if entity.description_embedding:
                 return entity
 
             entity_info = f"{entity.name}, {entity.description}"
@@ -191,7 +158,8 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 logger.info(f"Hit cache for entity {entity.name}")
             else:
                 completion = await self.llm_provider.aget_completion(
-                    messages, GenerationConfig(model="gpt-4o-mini")
+                    messages,
+                    self.kg_provider.config.kg_enrichment_settings.generation_config,
                 )
                 entity.description = completion.choices[0].message.content
 
@@ -204,12 +172,13 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 entity.description_embedding = description_embedding[0]
 
                 # name embedding
-                name_embedding = (
-                    await self.embedding_provider.async_get_embeddings(
-                        [entity.name]
-                    )
-                )
-                entity.name_embedding = name_embedding[0]
+                # turned it off because we aren't using it for now
+                # name_embedding = (
+                #     await self.embedding_provider.async_get_embeddings(
+                #         [entity.name]
+                #     )
+                # )
+                # entity.name_embedding = name_embedding[0]
 
                 out_entity = entity
 
@@ -220,14 +189,18 @@ class KGNodeDescriptionPipe(AsyncPipe):
         async for entity, triples in input.message:
             tasks.append(asyncio.create_task(process_entity(entity, triples)))
             count += 1
-            if count == 4:
-                break
 
+        logger.info(f"KG Node Description pipe: Created {count} tasks")
+        # do gather because we need to wait for all descriptions before kicking off the next step
         processed_entities = await asyncio.gather(*tasks)
 
         # upsert to the database
         self.kg_provider.upsert_entities(
             processed_entities, with_embeddings=True
+        )
+
+        logger.info(
+            "KG Node Description pipe: Upserted entities to the database"
         )
 
         for entity in processed_entities:

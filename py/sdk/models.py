@@ -146,6 +146,7 @@ class Method(str, Enum):
     BY_TITLE = "by_title"
     BASIC = "basic"
     RECURSIVE = "recursive"
+    CHARACTER = "character"
 
 
 class ChunkingConfig(ProviderConfig):
@@ -165,7 +166,7 @@ class ChunkingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured", None]
+        return ["r2r", "unstructured_local", "unstructured_api", None]
 
     class Config:
         json_schema_extra = {
@@ -244,20 +245,32 @@ class KGSearchResult(BaseModel):
         json_schema_extra = {
             "example": {
                 "local_result": {
-                    "query": "What is the capital of France?",
+                    "query": "Who is Aristotle?",
                     "entities": {
-                        "Paris": {
-                            "name": "Paris",
-                            "description": "Paris is the capital of France.",
+                        "0": {
+                            "name": "Aristotle",
+                            "description": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...",
                         }
                     },
-                    "relationships": {},
-                    "communities": {},
+                    "relationships": {
+                        "0": {
+                            "name": "Influenced",
+                            "description": "Aristotle influenced numerous thinkers and philosophers, including Plato, who was his student. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced thinkers from antiquity through the Middle Ages and beyond.",
+                        }
+                    },
+                    "communities": {
+                        "0": {
+                            "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought."
+                        }
+                    },
                 },
                 "global_result": {
-                    "query": "What is the capital of France?",
+                    "query": "Who is Aristotle?",
                     "search_result": [
-                        "Paris is the capital and most populous city of France."
+                        """### Aristotle's Key Contributions to Philosophy
+                        Aristotle, an ancient Greek philosopher and polymath, made foundational contributions to numerous fields, including philosophy, logic, biology, and political science. His works have had a lasting impact on Western thought and the development of modern science.
+
+                        ...."""
                     ],
                 },
             }
@@ -319,7 +332,7 @@ class VectorSearchSettings(BaseModel):
     )
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="Filters to apply to the vector search",
+        description="Complex logic filters to apply to the vector search, such as `{'document_id': {'$eq': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1'}}`.",
     )
     search_limit: int = Field(
         default=10,
@@ -387,23 +400,66 @@ class VectorSearchSettings(BaseModel):
         return dump
 
 
-class KGEnrichmentSettings(BaseModel):
+class KGCreationSettings(BaseModel):
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
-        description="The generation configuration for the KG enrichment.",
+        description="The generation configuration for the KG creation.",
     )
+
+    def to_dict(self):
+        return self.model_dump()
+
+    def model_dump_json(self, **kwargs):
+        return super().model_dump_json(**kwargs)
+
+
+class KGEnrichmentSettings(BaseModel):
+
     leiden_params: dict = Field(
         default_factory=dict,
         description="The parameters for the Leiden algorithm.",
     )
 
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="The generation configuration for the KG enrichment.",
+    )
+
+
+class KGCreationResponse(BaseModel):
+
+    message: str
+    task_id: UUID
+
+    def __str__(self) -> str:
+        return f"KGCreationResponse(message={self.message}, task_id={self.task_id})"
+
+    class Config:
+        json_schema_extra = {
+            "message": "Knowledge graph creation task queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+        }
+
 
 class KGEnrichmentResponse(BaseModel):
-    enriched_content: Dict[str, Any]
+
+    message: str
+    task_id: UUID
+
+    def __str__(self) -> str:
+        return f"KGEnrichmentResponse(message={self.message}, task_id={self.task_id})"
+
+    class Config:
+        json_schema_extra = {
+            "message": "Knowledge graph enrichment task queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+        }
 
 
 class UserResponse(BaseModel):
@@ -484,21 +540,11 @@ class SearchResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "vector_search_results": [
-                    {
-                        "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                        "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                        "group_ids": [],
-                        "score": 0.23943702876567796,
-                        "text": "Example text from the document",
-                        "metadata": {
-                            "title": "example_document.pdf",
-                            "associatedQuery": "What is the capital of France?",
-                        },
-                    }
+                    VectorSearchResult.Config.json_schema_extra,
                 ],
-                "kg_search_results": None,
+                "kg_search_results": [
+                    KGSearchResult.Config.json_schema_extra,
+                ],
             }
         }
 

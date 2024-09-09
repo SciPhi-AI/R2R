@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 from io import BytesIO
 from typing import AsyncGenerator
@@ -8,6 +9,9 @@ from PIL import Image
 from core.base.abstractions.document import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_frame_with_openai
+from core.telemetry.telemetry_decorator import telemetry_event
+
+logger = logging.getLogger(__name__)
 
 
 class ImageParser(AsyncParser[DataType]):
@@ -15,7 +19,7 @@ class ImageParser(AsyncParser[DataType]):
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model: str = "gpt-4o-mini",
         max_tokens: int = 2_048,
         api_base: str = "https://api.openai.com/v1/chat/completions",
         max_image_size: int = 1 * 1024 * 1024,  # 4MB limit
@@ -23,37 +27,28 @@ class ImageParser(AsyncParser[DataType]):
         self.model = model
         self.max_tokens = max_tokens
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-        if not self.openai_api_key:
-            raise ValueError(
-                "Error, environment variable `OPENAI_API_KEY` is required to run `ImageParser`."
-            )
         self.api_base = api_base
         self.max_image_size = max_image_size
 
-    def _resize_image(self, image_data: bytes, compression_ratio) -> bytes:
-        img = Image.open(BytesIO(image_data))
-        img_byte_arr = BytesIO()
-        img.save(
-            img_byte_arr, format="JPEG", quality=int(100 * compression_ratio)
-        )
-        return img_byte_arr.getvalue()
-
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: DataType, chunk_size: int = 1024
+    ) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
-        if isinstance(data, bytes):
-            # Resize the image if it's too large
-            if len(data) > self.max_image_size:
-                data = self._resize_image(
-                    data, float(self.max_image_size) / len(data)
-                )
 
+        if isinstance(data, bytes):
             # Encode to base64
             data = base64.b64encode(data).decode("utf-8")
 
-        yield process_frame_with_openai(
+        openai_text = process_frame_with_openai(
             data,
             self.openai_api_key,
             self.model,
             self.max_tokens,
             self.api_base,
         )
+
+        # split text into small chunks and yield them
+        for i in range(0, len(openai_text), chunk_size):
+            text = openai_text[i : i + chunk_size]
+            if text and text != "":
+                yield text

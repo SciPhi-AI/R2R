@@ -1,10 +1,13 @@
 import json
 import logging
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional, Union
 
 from pydantic import BaseModel
+
+from .base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
@@ -28,32 +31,32 @@ class Named(Identified):
     """The name/title of the item."""
 
 
-class EntityType(BaseModel):
+class EntityType(R2RSerializable):
     id: str
     name: str
     description: str | None = None
 
 
-class RelationshipType(BaseModel):
+class RelationshipType(R2RSerializable):
     id: str
     name: str
     description: str | None = None
 
 
-class Entity(BaseModel):
+class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     category: str
     name: str
     description: Optional[str] = None
-    description_embedding: list[float] = None
-    name_embedding: list[float] = None
-    graph_embedding: list[float] = None
-    community_ids: list[str] = None
-    text_unit_ids: list[str] = None
-    document_ids: list[str] = None
-    rank: int | None = 1
-    attributes: dict[str, Any] | str = None
+    description_embedding: Optional[list[float]] = None
+    name_embedding: Optional[list[float]] = None
+    graph_embedding: Optional[list[float]] = None
+    community_ids: Optional[list[str]] = None
+    text_unit_ids: Optional[list[str]] = None
+    document_ids: Optional[list[str]] = None
+    rank: Optional[int] = 1
+    attributes: Optional[Union[dict[str, Any], str]] = None
 
     def __str__(self):
         return (
@@ -394,8 +397,10 @@ class TextUnit(Identified):
 TextEmbedder = Callable[[str], list[float]]
 
 
-class KGExtraction(BaseModel):
+class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
-    entities: Union[list[Entity], dict[str, Entity]]
+    fragment_id: uuid.UUID
+    document_id: uuid.UUID
+    entities: dict[str, Entity]
     triples: list[Triple]

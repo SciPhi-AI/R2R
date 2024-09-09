@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -11,12 +12,12 @@ import click
 import requests
 from requests.exceptions import RequestException
 
-from sdk import R2RClient
-
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f{compose_files['memgraph']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
+
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']} -f{compose_files['memgraph']}"
+
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -79,14 +80,21 @@ def run_local_serve(
     config_path: Optional[str] = None,
 ) -> None:
     try:
-        from r2r import R2R
-    except ImportError:
+        from r2r import R2RBuilder, R2RConfig
+    except ImportError as e:
         click.echo(
-            "You must install the `r2r core` package to run the R2R server locally."
+            f"Error: {e}\n\nNote, you must install the `r2r core` package to run the R2R server locally."
         )
         sys.exit(1)
 
-    r2r_instance = R2R(config_name=config_name, config_path=config_path)
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config_path and config_name")
+    if not config_path and not config_name:
+        config_name = "default"
+
+    r2r_instance = R2RBuilder(
+        config=R2RConfig.load(config_name, config_path)
+    ).build()
 
     if config_name or config_path:
         completion_config = r2r_instance.config.completion
@@ -95,6 +103,7 @@ def run_local_serve(
         model_provider = llm_model.split("/")[0]
         check_llm_reqs(llm_provider, model_provider, include_ollama=True)
 
+    click.echo("R2R now runs on port 7272 by default!")
     available_port = find_available_port(port)
 
     r2r_instance.serve(host, available_port)
@@ -107,15 +116,15 @@ def run_docker_serve(
     exclude_memgraph: bool,
     exclude_ollama: bool,
     exclude_postgres: bool,
+    exclude_hatchet: bool,
     project_name: str,
     image: str,
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
-    check_set_docker_env_vars(
-        exclude_neo4j, exclude_memgraph, exclude_postgres
-    )
-    set_ollama_api_base(exclude_ollama)
+
+    check_docker_compose_version()
+    check_set_docker_env_vars(exclude_neo4j, exclude_memgraph, exclude_ollama, exclude_postgres)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -124,12 +133,12 @@ def run_docker_serve(
     if not no_conflict:
         click.secho(f"Warning: {message}", fg="red", bold=True)
         click.echo("This may cause issues when starting the Docker setup.")
-        if not click.confirm("Do you want to continue?", default=False):
+        if not click.confirm("Do you want to continue?", default=True):
             click.echo("Aborting Docker setup.")
             return
 
     compose_files = get_compose_files()
-    docker_command = build_docker_command(
+    pull_command, up_command = build_docker_command(
         compose_files,
         host,
         port,
@@ -137,13 +146,19 @@ def run_docker_serve(
         exclude_memgraph,
         exclude_ollama,
         exclude_postgres,
+        exclude_hatchet,
         project_name,
-        config_path,
         image,
+        config_name,
+        config_path,
     )
 
+    click.secho("R2R now runs on port 7272 by default!", fg="yellow")
+    click.echo("Pulling Docker images...")
+    os.system(pull_command)
+
     click.echo("Starting Docker Compose setup...")
-    os.system(docker_command)
+    os.system(up_command)
 
 
 def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
@@ -225,7 +240,9 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 
 
 def check_set_docker_env_vars(
-    exclude_neo4j=False, exclude_memgraph=False, exclude_postgres=False
+
+    exclude_neo4j=False, exclude_memgraph=False, exclude_ollama=True, exclude_postgres=False
+
 ):
     env_vars = []
     if not exclude_neo4j:
@@ -234,7 +251,6 @@ def check_set_docker_env_vars(
             "NEO4J_PASSWORD",
             "NEO4J_URL",
             "NEO4J_DATABASE",
-            "OLLAMA_API_BASE",
         ]
         env_vars.extend(neo4j_vars)
 
@@ -256,6 +272,12 @@ def check_set_docker_env_vars(
         ]
         env_vars.extend(postgres_vars)
 
+    if not exclude_ollama:
+        ollama_vars = [
+            "OLLAMA_API_BASE",
+        ]
+        env_vars.extend(ollama_vars)
+
     is_test = (
         "pytest" in sys.modules
         or "unittest" in sys.modules
@@ -268,7 +290,6 @@ def check_set_docker_env_vars(
                 warning_text = click.style("Warning:", fg="red", bold=True)
                 prompt = (
                     f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
-                    f"Set --exclude-postgres=true to avoid deploying a Postgres instance with R2R.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"
                 )
                 if click.confirm(prompt, default=True):
@@ -285,14 +306,6 @@ def set_config_env_vars(obj):
         os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
 
 
-def set_ollama_api_base(exclude_ollama):
-    os.environ["OLLAMA_API_BASE"] = (
-        "http://host.docker.internal:11434"
-        if exclude_ollama
-        else "http://ollama:11434"
-    )
-
-
 def get_compose_files():
     package_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -305,6 +318,7 @@ def get_compose_files():
         "memgraph": os.path.join(package_dir, "compose.memgraph.yaml"),
         "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
         "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
+        "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -340,36 +354,47 @@ def build_docker_command(
     exclude_memgraph,
     exclude_ollama,
     exclude_postgres,
+    exclude_hatchet,
     project_name,
-    config_path,
     image,
+    config_name,
+    config_path,
 ):
-    available_port = find_available_port(port)
-
-    command = f"docker compose -f {compose_files['base']}"
+    base_command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
-        command += f" -f {compose_files['neo4j']}"
+        base_command += f" -f {compose_files['neo4j']}"
     if not exclude_memgraph:
-        command += f" -f {compose_files['memgraph']}"
+        base_command += f" -f {compose_files['memgraph']}"
     if not exclude_ollama:
-        command += f" -f {compose_files['ollama']}"
+        base_command += f" -f {compose_files['ollama']}"
     if not exclude_postgres:
-        command += f" -f {compose_files['postgres']}"
+        base_command += f" -f {compose_files['postgres']}"
+    if not exclude_hatchet:
+        base_command += f" -f {compose_files['hatchet']}"
 
-    command += f" --project-name {project_name}"
+    base_command += f" --project-name {project_name}"
 
-    os.environ["PORT"] = str(available_port)
+    # Find available ports
+    r2r_dashboard_port = port + 1
+    hatchet_dashboard_port = r2r_dashboard_port + 1
+
+    os.environ["PORT"] = str(port)
     os.environ["HOST"] = host
-    os.environ["TRAEFIK_PORT"] = str(available_port + 1)
-
-    os.environ["CONFIG_PATH"] = (
-        os.path.abspath(config_path) if config_path else ""
-    )
-
+    os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
+    os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""
 
-    command += " up -d"
-    return command
+    if config_name is not None:
+        os.environ["CONFIG_NAME"] = config_name
+    elif config_path:
+        os.environ["CONFIG_PATH"] = (
+            os.path.abspath(config_path) if config_path else ""
+        )
+
+    pull_command = f"{base_command} pull"
+    up_command = f"{base_command} up -d"
+
+    return pull_command, up_command
 
 
 def check_subnet_conflict():
@@ -388,6 +413,9 @@ def check_subnet_conflict():
         for network in networks:
             network_id = network["ID"]
             network_name = network["Name"]
+
+            if network_name == "r2r-network":
+                continue
 
             try:
                 network_info_output = subprocess.check_output(
@@ -436,3 +464,95 @@ def check_subnet_conflict():
         return False, f"Error parsing Docker network information: {e}"
     except Exception as e:
         return False, f"Unexpected error while checking Docker networks: {e}"
+
+
+def check_docker_compose_version():
+    try:
+        version_output = (
+            subprocess.check_output(
+                ["docker", "compose", "version"], stderr=subprocess.STDOUT
+            )
+            .decode("utf-8")
+            .strip()
+        )
+
+        version_match = re.search(r"v?(\d+\.\d+\.\d+)", version_output)
+        if not version_match:
+            raise ValueError(f"Unexpected version format: {version_output}")
+
+        compose_version = version_match[1]
+        min_version = "2.25.0"
+
+        if parse_version(compose_version) < parse_version(min_version):
+            click.secho(
+                f"Warning: Docker Compose version {compose_version} is outdated. "
+                f"Please upgrade to version {min_version} or higher.",
+                fg="yellow",
+                bold=True,
+            )
+
+        return True
+
+    except subprocess.CalledProcessError as e:
+        click.secho(
+            f"Error: Docker Compose is not installed or not working properly. "
+            f"Error message: {e.output.decode('utf-8').strip()}",
+            fg="red",
+            bold=True,
+        )
+    except Exception as e:
+        click.secho(
+            f"Error checking Docker Compose version: {e}",
+            fg="red",
+            bold=True,
+        )
+
+    return False
+
+
+def parse_version(version_string):
+    parts = version_string.split(".")
+    if len(parts) != 3:
+        raise ValueError("Invalid version format")
+    try:
+        return tuple(map(int, parts))
+    except ValueError as e:
+        raise ValueError("Invalid version format") from e
+
+
+def wait_for_container_health(project_name, service_name, timeout=300):
+    container_name = f"{project_name}-{service_name}-1"
+    end_time = time.time() + timeout
+
+    while time.time() < end_time:
+        try:
+            result = subprocess.run(
+                ["docker", "inspect", container_name],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            container_info = json.loads(result.stdout)[0]
+
+            health_status = (
+                container_info["State"].get("Health", {}).get("Status")
+            )
+            if health_status == "healthy":
+                return True
+            if health_status is None:
+                click.echo(
+                    f"{service_name} does not have a health check defined."
+                )
+                return True
+
+        except subprocess.CalledProcessError:
+            click.echo(f"Error checking health of {service_name}")
+        except (json.JSONDecodeError, IndexError):
+            click.echo(
+                "Error parsing Docker inspect output or container not found"
+            )
+
+        time.sleep(5)
+
+    click.echo(f"Timeout waiting for {service_name} to be healthy.")
+    return False

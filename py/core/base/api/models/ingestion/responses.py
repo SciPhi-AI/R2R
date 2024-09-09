@@ -1,4 +1,4 @@
-from typing import Any, List, TypeVar
+from typing import Any, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,70 +8,53 @@ from core.base.api.models.base import ResultsWrapper
 T = TypeVar("T")
 
 
-class ProcessedDocument(BaseModel):
-    id: UUID
-    title: str
-
-
-class FailedDocument(BaseModel):
-    document_id: UUID
-    result: Any
-
-
 class IngestionResponse(BaseModel):
-    processed_documents: List[ProcessedDocument] = Field(
+    message: str = Field(
         ...,
-        description="List of successfully processed documents",
-        example=[
-            {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
-                "title": "Document 1",
-            },
-            {
-                "id": "223e4567-e89b-12d3-a456-426614174000",
-                "title": "Document 2",
-            },
-        ],
+        description="A message describing the result of the ingestion request.",
     )
-    failed_documents: List[FailedDocument] = Field(
+    task_id: UUID = Field(
         ...,
-        description="List of documents that failed to process",
-        example=[
-            {
-                "document_id": "323e4567-e89b-12d3-a456-426614174000",
-                "result": "Error: Invalid format",
-            }
-        ],
+        description="The task ID of the ingestion request.",
     )
-    skipped_documents: List[UUID] = Field(
+    document_id: UUID = Field(
         ...,
-        description="List of document IDs that were skipped during processing",
-        example=["423e4567-e89b-12d3-a456-426614174000"],
+        description="The ID of the document that was ingested.",
     )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "processed_documents": [
-                    {
-                        "id": "123e4567-e89b-12d3-a456-426614174000",
-                        "title": "Document 1",
-                    },
-                    {
-                        "id": "223e4567-e89b-12d3-a456-426614174000",
-                        "title": "Document 2",
-                    },
-                ],
-                "failed_documents": [
-                    {
-                        "document_id": "323e4567-e89b-12d3-a456-426614174000",
-                        "result": "Error: Invalid format",
-                    }
-                ],
-                "skipped_documents": ["423e4567-e89b-12d3-a456-426614174000"],
+                "message": "Ingestion task queued successfully.",
+                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
             }
         }
 
 
-# Create wrapped version of the response
-WrappedIngestionResponse = ResultsWrapper[IngestionResponse]
+class UpdateResponse(BaseModel):
+    message: str = Field(
+        ...,
+        description="A message describing the result of the ingestion request.",
+    )
+    task_id: UUID = Field(
+        ...,
+        description="The task ID of the ingestion request.",
+    )
+    document_ids: list[UUID] = Field(
+        ...,
+        description="The ID of the document that was ingested.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Update task queued successfully.",
+                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "document_ids": ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"],
+            }
+        }
+
+
+WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
+WrappedUpdateResponse = ResultsWrapper[UpdateResponse]

@@ -1,8 +1,12 @@
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
-from core.base import DocumentInfo, DocumentStatus, DocumentType, R2RException
-from core.base.api.models.management.responses import GroupResponse
+from core.base import (
+    DocumentInfo,
+    DocumentType,
+    IngestionStatus,
+    RestructureStatus,
+)
 
 from .base import DatabaseMixin
 
@@ -20,7 +24,8 @@ class DocumentMixin(DatabaseMixin):
             title TEXT,
             version TEXT,
             size_in_bytes INT,
-            status TEXT DEFAULT 'processing',
+            ingestion_status TEXT DEFAULT 'pending',
+            restructuring_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -30,13 +35,17 @@ class DocumentMixin(DatabaseMixin):
         self.execute_query(query)
 
     def upsert_documents_overview(
-        self, documents_overview: list[DocumentInfo]
+        self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
     ) -> None:
+        # Convert single DocumentInfo to a list if necessary
+        if isinstance(documents_overview, DocumentInfo):
+            documents_overview = [documents_overview]
+
         for document_info in documents_overview:
             query = f"""
             INSERT INTO {self._get_table_name('document_info')}
-            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at)
-            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :created_at, :updated_at)
+            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, restructuring_status, created_at, updated_at)
+            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :ingestion_status, :restructuring_status, :created_at, :updated_at)
             ON CONFLICT (document_id) DO UPDATE SET
                 group_ids = EXCLUDED.group_ids,
                 user_id = EXCLUDED.user_id,
@@ -45,7 +54,8 @@ class DocumentMixin(DatabaseMixin):
                 title = EXCLUDED.title,
                 version = EXCLUDED.version,
                 size_in_bytes = EXCLUDED.size_in_bytes,
-                status = EXCLUDED.status,
+                ingestion_status = EXCLUDED.ingestion_status,
+                restructuring_status = EXCLUDED.restructuring_status,
                 updated_at = EXCLUDED.updated_at;
             """
             self.execute_query(query, document_info.convert_to_db_entry())
@@ -74,7 +84,9 @@ class DocumentMixin(DatabaseMixin):
         limit: int = 100,
     ):
         conditions = []
-        params = {"offset": offset, "limit": limit}
+        params = {"offset": offset}
+        if limit != -1:
+            params["limit"] = limit
 
         if filter_document_ids:
             conditions.append("document_id = ANY(:document_ids)")
@@ -89,16 +101,17 @@ class DocumentMixin(DatabaseMixin):
             params["group_ids"] = filter_group_ids
 
         query = f"""
-            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at
+            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
             FROM {self._get_table_name('document_info')}
         """
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        query += """
+        limit_clause = "" if limit == -1 else f"LIMIT {limit}"
+        query += f"""
             ORDER BY created_at DESC
             OFFSET :offset
-            LIMIT :limit
+            {limit_clause}
         """
 
         results = self.execute_query(query, params).fetchall()
@@ -112,9 +125,10 @@ class DocumentMixin(DatabaseMixin):
                 title=row[5],
                 version=row[6],
                 size_in_bytes=row[7],
-                status=DocumentStatus(row[8]),
+                ingestion_status=IngestionStatus(row[8]),
                 created_at=row[9],
                 updated_at=row[10],
+                restructuring_status=RestructureStatus(row[11]),
             )
             for row in results
         ]

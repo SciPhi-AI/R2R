@@ -1,0 +1,91 @@
+---
+title: 'Overview'
+description: 'Configure your R2R knowledge graph provider.'
+---
+## Knowledge Graph Provider
+
+R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R uses [Neo4j](https://neo4j.com/) as the knowledge graph provider. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [Knowledge Graphs Guide](/cookbooks/graphrag).
+
+
+To configure the knowledge graph settings:
+
+1. Edit the `kg` section in your `r2r.toml` file:
+
+```toml r2r.toml
+[kg]
+provider = "neo4j"
+batch_size = 256
+kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+
+  [kg.kg_creation_settings]
+    generation_config = { model = "gpt-4o-mini" }
+    max_knowledge_triples = 100 # max number of triples to extract for each document chunk
+
+  [kg.kg_enrichment_settings]
+    generation_config = { model = "gpt-4o-mini" } # and other generation params below
+    leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+
+  [kg.kg_search_config]
+    model = "gpt-4o-mini"
+```
+
+
+Let's break down the knowledge graph configuration options:
+
+- `provider`: Specifies the knowledge graph provider. Currently, "neo4j" is supported.
+- `batch_size`: Determines the number of entities or relationships to process in a single batch during import operations.
+- `kg_extraction_prompt`: Specifies the prompt template to use for extracting knowledge graph information from text.
+- `kg_creation_settings`: Configuration for the model used in knowledge graph creation.
+  - `max_knowledge_triples`: The maximum number of knowledge triples to extract for each document chunk.
+  - `generation_config`: Configuration for the model used in knowledge graph creation.
+- `kg_enrichment_settings`: Similar configuration for the model used in knowledge graph enrichment.
+  - `generation_config`: Configuration for the model used in knowledge graph enrichment.
+  - `leiden_params`: Parameters for the Leiden algorithm.
+- `kg_search_config`: Similar configuration for the model used in knowledge graph search operations.
+
+### Neo4j Configuration
+
+When using Neo4j as the knowledge graph provider, you need to set up the following environment variables or provide them in the `r2r.toml` file:
+
+```bash
+export NEO4J_USER=your_neo4j_username
+export NEO4J_PASSWORD=your_neo4j_password
+export NEO4J_URL=bolt://your_neo4j_host:7687
+export NEO4J_DATABASE=neo4j
+```
+
+```toml r2r.toml
+[kg]
+provider = "neo4j"
+user = "your_neo4j_username"
+password = "your_neo4j_password"
+url = "bolt://your_neo4j_host:7687"
+database = "neo4j"
+```
+
+
+### Knowledge Graph Operations
+
+The Neo4jKGProvider supports various operations:
+
+1. **Entity Management**: Add, update, and retrieve entities in the knowledge graph.
+2. **Relationship Management**: Create and query relationships between entities.
+3. **Batch Import**: Efficiently import large amounts of data using batched operations.
+4. **Vector Search**: Perform similarity searches on entity embeddings.
+5. **Community Detection**: Identify and manage communities within the graph.
+
+### Customization
+
+You can customize the knowledge graph extraction and search processes by modifying the `kg_extraction_prompt` and adjusting the model configurations in `kg_extraction_config` and `kg_search_config`. Moreover, you can customize the LLM models used in various parts of the knowledge graph creation process. All of these options can be selected at runtime, with the only exception being the specified database provider. For more details, refer to the knowledge graph settings in the [search API](/api-reference/endpoint/search).
+
+By leveraging the knowledge graph capabilities, you can enhance R2R's understanding of document relationships and improve the quality of search and retrieval operations.
+
+
+
+## Next Steps
+
+For more detailed information on configuring specific components of the ingestion pipeline, please refer to the following pages:
+
+- [Ingestion Configuration](/documentation/configuration/ingestion/overview)
+- [Enrichment Configuration](/documentation/configuration/knowledge-graph/enrichment)
+- [Retrieval Configuration](/documentation/configuration/retrieval/overview)

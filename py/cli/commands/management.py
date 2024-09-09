@@ -129,15 +129,28 @@ def documents_overview(client, document_ids, offset, limit):
 @click.pass_obj
 def document_chunks(client, document_id, offset, limit):
     """Get chunks of a specific document."""
+    if not document_id:
+        click.echo("Error: Document ID is required.")
+        return
+
     with timer():
-        chunks = client.document_chunks(document_id, offset, limit)
+        chunks_data = client.document_chunks(document_id, offset, limit)
+
+    chunks = chunks_data["results"]
+    if not chunks:
+        click.echo("No chunks found for the given document ID.")
+        return
 
     click.echo(f"\nNumber of chunks: {len(chunks)}")
+
     for index, chunk in enumerate(chunks, 1):
         click.echo(f"\nChunk {index}:")
-        click.echo(f"Fragment ID: {chunk['fragment_id']}")
-        click.echo(f"Text: {chunk['text'][:100]}...")
-        click.echo(f"Metadata: {chunk['metadata']}")
+        if isinstance(chunk, dict):
+            click.echo(f"Fragment ID: {chunk.get('fragment_id', 'N/A')}")
+            click.echo(f"Text: {chunk.get('text', '')[:100]}...")
+            click.echo(f"Metadata: {chunk.get('metadata', {})}")
+        else:
+            click.echo(f"Unexpected chunk format: {chunk}")
 
 
 @cli.command()
@@ -157,4 +170,4 @@ def inspect_knowledge_graph(client, offset, limit):
     with timer():
         response = client.inspect_knowledge_graph(offset, limit)
 
-    click.echo(response)
+    click.echo(response["results"])
