@@ -19,8 +19,10 @@ from ..hatchet import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
     KgExtractAndStoreWorkflow,
+    KGCommunitySummaryWorkflow
 )
 from ..services.restructure_service import RestructureService
+from core.base.abstractions.document import RestructureStatus
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -60,6 +62,9 @@ class RestructureRouter(BaseRouter):
         self.orchestration_provider.register_workflow(
             CreateGraphWorkflow(self.service)
         )
+        self.orchestration_provider.register_workflow(
+            KGCommunitySummaryWorkflow(self.service)
+        )
 
     def _setup_routes(self):
         @self.router.post(
@@ -95,7 +100,7 @@ class RestructureRouter(BaseRouter):
                 kg_creation_settings = (
                     self.service.providers.kg.config.kg_creation_settings
                 )
-
+                    
             workflow_input = {
                 "document_ids": document_ids,
                 "kg_creation_settings": kg_creation_settings.json(),
@@ -107,7 +112,7 @@ class RestructureRouter(BaseRouter):
             )
 
             return {
-                "message": "Graph creation task queued successfully.",
+                "message": "Graph creation task queued successfully. Please check http://localhost:7274/workflow-runs for completion status.",
                 "task_id": str(task_id),
             }
 
@@ -116,9 +121,13 @@ class RestructureRouter(BaseRouter):
         )
         @self.base_endpoint
         async def enrich_graph(
-            perform_clustering: bool = Body(
-                default=True,
-                description="Whether to perform leiden clustering on the graph or not.",
+            skip_clustering: bool = Body(
+                default=False,
+                description="Whether to skip leiden clustering on the graph or not.",
+            ),
+            force_enrichment: bool = Body(
+                default=False,
+                description="Force Enrichment step even if graph creation is still in progress for some documents.",
             ),
             kg_enrichment_settings: Optional[
                 Json[KGEnrichmentSettings]
@@ -144,7 +153,8 @@ class RestructureRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "perform_clustering": perform_clustering,
+                "skip_clustering": skip_clustering,
+                "force_enrichment": force_enrichment,
                 "generation_config": kg_enrichment_settings.generation_config.to_dict(),
                 "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
@@ -155,6 +165,7 @@ class RestructureRouter(BaseRouter):
             )
 
             return {
-                "message": "Graph enrichment task queued successfully.",
+                "message": "Graph enrichment task queued successfully. Please check http://localhost:7274/workflow-runs for completion status.",
                 "task_id": str(task_id),
             }
+        

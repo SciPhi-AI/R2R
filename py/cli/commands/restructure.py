@@ -29,12 +29,24 @@ def create_graph(client, document_ids):
 
 
 @cli.command()
+@click.option(
+    "--force-enrichment",
+    required=False,
+    default=False,
+    help="Force enrichment of the graph even if graph creation is still in progress for some documents.",
+)
+@click.option(
+    "--skip-clustering",
+    required=False,
+    default=False,
+    help="Perform leiden clustering on the graph to create communities.",
+)
 @click.pass_obj
-def enrich_graph(client):
+def enrich_graph(client, force_enrichment, skip_clustering):
     """
     Perform graph enrichment over the entire graph.
     """
     with timer():
-        response = client.enrich_graph()
+        response = client.enrich_graph(force_enrichment, skip_clustering)
 
-    click.echo(response)
+    click.echo(json.dumps(response, indent=2))
