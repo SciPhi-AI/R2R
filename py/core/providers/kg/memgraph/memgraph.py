@@ -1,11 +1,17 @@
 import json
+import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import KGConfig, KGProvider
+from core.base import (
+    KGConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGProvider,
+)
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -14,6 +20,8 @@ from core.base.abstractions.graph import (
     RelationshipType,
     Triple,
 )
+
+logger = logging.getLogger(__name__)
 
 from .graph_queries import (
     GET_CHUNKS_QUERY,
@@ -53,15 +61,11 @@ class MemgraphKGProvider(KGProvider):
                 "Please install a client that can connect to Memgraph client via: pip install neo4j"
             )
 
-        username = config.extra_fields.get("user", None) or os.getenv(
-            "MEMGRAPH_USER"
-        )
-        password = config.extra_fields.get("password", None) or os.getenv(
-            "MEMGRAPH_PASSWORD"
-        )
-        url = config.extra_fields.get("url", None) or os.getenv("MEMGRAPH_URL")
+        username = config.user or os.getenv("MEMGRAPH_USER")
+        password = config.password or os.getenv("MEMGRAPH_PASSWORD")
+        url = config.url or os.getenv("MEMGRAPH_URL")
 
-        database = config.extra_fields.get("database", None) or os.getenv(
+        database = config.database or os.getenv(
             "MEMGRAPH_DATABASE", "memgraph"
         )
 
@@ -140,10 +144,9 @@ class MemgraphKGProvider(KGProvider):
                 entity_map[triple.object]["triples"].append(triple)
         return entity_map
 
-    # TODO(@DavIvek) -> depends on convert_model_list_to_neo4j_compatible function
     def batched_import(self, statement, df, batch_size=1000):
         """
-        Import a dataframe into Neo4j using a batched approach.
+        Import a dataframe into Memgraph using a batched approach.
         Parameters: statement is the Cypher query to execute, df is the dataframe to import, and batch_size is the number of rows to import in each batch.
         """
         total = len(df)
@@ -322,82 +325,24 @@ class MemgraphKGProvider(KGProvider):
     ) -> List[Triple]:
         pass
 
-    def create_vector_index(
-        self, node_type: str, node_property: str, dimension: int
-    ) -> None:
-
-        # query = f"""
-        # CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS
-
-        # FOR (n:{node_type}) ON n.{node_property}
-        # OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{dimension}}}}}"""
-
-        # self.structured_query(query)
-        raise NotImplementedError("Functionality not yet implemented.")
-
     def get_schema(self, refresh: bool = False) -> str:
         return super().get_schema(refresh)
 
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
         return False
 
-    def vector_query(self, query, **kwargs: Any) -> Dict[str, Any]:
+    def create_vector_index(
+        self, node_type: str, node_property: str, dimension: int
+    ) -> None:
+        raise NotImplementedError("Functionality not yet implemented.")
 
-        # query_embedding = kwargs.get("query_embedding", None)
-        # search_type = kwargs.get("search_type", "__Entity__")
-        # embedding_type = kwargs.get("embedding_type", "description_embedding")
-        # property_names = kwargs.get(
-        #     "property_names", ["name", "description", "summary"]
-        # )
-        # limit = kwargs.get("limit", 10)
+    def vector_query(self, query, **kwargs: Any) -> dict[str, Any]:
+        raise NotImplementedError("Functionality not yet implemented.")
 
-        # if search_type == "__Relationship__":
+    def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
+        raise NotImplementedError("Functionality not yet implemented.")
 
-        #     query = f"""
-        #         MATCH () - [e] -> ()
-        #         WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
-        #         WITH e, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
-        #         ORDER BY score DESC LIMIT toInteger($limit)
-        #         RETURN e, score
-        #     """
-
-        #     query_params = {
-        #         "embedding": query_embedding,
-        #         "dimension": len(query_embedding),
-        #         "limit": limit,
-        #     }
-
-        # else:
-        #     query = f"""
-        #         MATCH (e:{search_type})
-        #         WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
-        #         WITH e, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
-        #         ORDER BY score DESC LIMIT toInteger($limit)
-        #         RETURN e, score
-        #     """
-        #     query_params = {
-        #         "embedding": query_embedding,
-        #         "dimension": len(query_embedding),
-        #         "limit": limit,
-        #         "search_type": search_type,
-        #     }
-
-        # neo4j_results = self.structured_query(query, query_params)
-
-        # # get the descriptions from the neo4j results
-        # # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
-        # # return descriptions, scores
-
-        # ret = {}
-        # for record in neo4j_results.records:
-        #     ret[record["e"]._properties["name"]] = {}
-
-        #     for property_name in property_names:
-        #         if property_name in record["e"]._properties:
-        #             ret[record["e"]._properties["name"]][property_name] = (
-        #                 record["e"]._properties[property_name]
-        #             )
-
-        # return ret
-
+    def get_community_entities_and_triples(
+        self, level: int, community_id: int, include_embeddings: bool = False
+    ) -> Tuple[List[Entity], List[Triple]]:
         raise NotImplementedError("Functionality not yet implemented.")
