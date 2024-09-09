@@ -155,7 +155,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         community_id = input.message["community_id"]
         level = input.message["level"]
-        generation_config = GenerationConfig(**input.message["generation_config"])
+        generation_config = input.message["generation_config"]
 
         community_summary = await self.process_community(
             level=level,

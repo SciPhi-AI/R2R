@@ -143,20 +143,22 @@ class EnrichGraphWorkflow:
 
 
         for document_overview in documents_overview:
-            if document_overview.restructuring_status == RestructureStatus.SUCCESS:
+            if document_overview.restructuring_status == RestructureStatus.SUCCESS or document_overview.restructuring_status == RestructureStatus.ENRICHMENT_FAILURE:
                 document_overview.restructuring_status = RestructureStatus.ENRICHING
 
         self.restructure_service.providers.database.relational.upsert_documents_overview(documents_overview)
 
         try:
             if not skip_clustering:
-                result = await self.restructure_service.kg_clustering(
+                results = await self.restructure_service.kg_clustering(
                     leiden_params, generation_config
                 )
 
-                result = result[0]
+                logger.info(f"Clustering results in this particular place: {results}")
 
-                logger.info(f"Clustering results: {result}")
+                result = results[0]
+
+                logger.info(f"Clustering results inside kg_clusteirng ajs;ldkfja s;d: {result}")
 
                 workflows = []
                 for level in range(result["num_hierarchies"]):
@@ -166,7 +168,7 @@ class EnrichGraphWorkflow:
                             "kg-community-summary",
                             {
                                 "request": {
-                                    "community_id": community_id,
+                                    "community_id": str(community_id),
                                     "level": level,
                                     "generation_config": generation_config.to_dict(),
                                 }
@@ -184,11 +186,11 @@ class EnrichGraphWorkflow:
                 return {"result": None}
             
         except Exception as e:
-            
+            logger.error(f"Error in kg_clustering: {str(e)}", exc_info=True)
             documents_overview = self.restructure_service.providers.database.relational.get_documents_overview()
             for document_overview in documents_overview:
                 if document_overview.restructuring_status == RestructureStatus.ENRICHING:
-                    document_overview.restructuring_status = RestructureStatus.FAILURE
+                    document_overview.restructuring_status = RestructureStatus.ENRICHMENT_FAILURE
                     self.restructure_service.providers.database.relational.upsert_documents_overview(document_overview)
                     logger.error(f"Error in kg_clustering for document {document_overview.id}: {str(e)}")
 
@@ -209,7 +211,11 @@ class KGCommunitySummaryWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
 
-    @r2r_hatchet.step(retries=3, timeout="60m")
+    @r2r_hatchet.step(retries=1, timeout="60m")
     async def kg_community_summary(self, context: Context) -> None:
-        await self.restructure_service.kg_community_summary()
+        input_data = context.workflow_input()["request"]
+        community_id = input_data["community_id"]
+        level = input_data["level"]
+        generation_config = GenerationConfig(**input_data["generation_config"])
+        await self.restructure_service.kg_community_summary(community_id=community_id, level=level, generation_config=generation_config)
         return {"result": None}

@@ -101,4 +101,4 @@ class KGClusteringPipe(AsyncPipe):
         # ):
         #     yield community
 
-        return await self.cluster_kg(leiden_params, generation_config)
+        yield await self.cluster_kg(leiden_params, generation_config)
