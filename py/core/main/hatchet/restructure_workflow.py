@@ -9,6 +9,7 @@ from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from ..services import RestructureService
 from .base import r2r_hatchet
 
+
 @r2r_hatchet.workflow(name="kg-extract-and-store", timeout="60m")
 class KgExtractAndStoreWorkflow:
     def __init__(self, restructure_service: RestructureService):

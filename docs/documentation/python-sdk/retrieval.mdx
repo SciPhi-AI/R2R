@@ -203,8 +203,8 @@ kg_search_response = client.search(
     "What is airbnb",
     vector_search_settings={"use_vector_search": False}
     kg_search_settings={
-      "use_kg_search": True, 
-      "kg_search_type": "local", 
+      "use_kg_search": True,
+      "kg_search_type": "local",
       "kg_search_level": 0,
       "kg_search_generation_config": {
           "model": "gpt-4o-mini",
@@ -227,7 +227,7 @@ kg_search_response = client.search(
       The knowledge graph search results from the R2R system.
       ```bash
       {
-        "kg_search_results": 
+        "kg_search_results":
         [
           {
             "global_result": None,
