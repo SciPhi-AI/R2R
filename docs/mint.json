@@ -274,6 +274,10 @@
       "group": "Admin",
       "pages": [
         "api-reference/endpoint/update_prompt",
+        "api-reference/endpoint/add_prompt",
+        "api-reference/endpoint/get_prompt",
+        "api-reference/endpoint/get_all_prompts",
+        "api-reference/endpoint/delete_prompt",
         "api-reference/endpoint/logs",
         "api-reference/endpoint/users_overview",
         "api-reference/endpoint/app_settings"
