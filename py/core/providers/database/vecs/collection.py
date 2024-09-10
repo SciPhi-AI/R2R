@@ -635,10 +635,12 @@ class Collection:
         self, query_text: str, search_settings: VectorSearchSettings
     ) -> List[VectorSearchResult]:
         # Create a tsquery from the input query
-        ts_query = func.websearch_to_tsquery('english', query_text)
+        ts_query = func.websearch_to_tsquery("english", query_text)
 
         # Use ts_rank for ranking
-        rank_function = func.ts_rank(self.table.c.fts, ts_query, 32).label('rank')
+        rank_function = func.ts_rank(self.table.c.fts, ts_query, 32).label(
+            "rank"
+        )
 
         # Build the main query
         stmt = (
@@ -650,9 +652,9 @@ class Collection:
                 self.table.c.group_ids,
                 self.table.c.text,
                 self.table.c.metadata,
-                rank_function
+                rank_function,
             )
-            .where(self.table.c.fts.op('@@')(ts_query))
+            .where(self.table.c.fts.op("@@")(ts_query))
             .where(self.build_filters(search_settings.filters))
             .order_by(rank_function.desc())
             .limit(search_settings.hybrid_search_settings.full_text_limit)
@@ -1109,7 +1111,7 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
     # )
     # Create a GIN index for the tsvector column
     Index(f"idx_{name}_fts", table.c.fts, postgresql_using="gin")
-    
+
     # Create a GiST index for trigram similarity on the text column
     # Index(f"idx_{name}_text_trgm", table.c.text, postgresql_using="gist", postgresql_ops={"text": "gist_trgm_ops"})
 

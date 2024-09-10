@@ -1,7 +1,7 @@
 import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
 from sqlalchemy import text
@@ -208,8 +208,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         # Use ThreadPoolExecutor to run searches in parallel
         with ThreadPoolExecutor(max_workers=2) as executor:
-            semantic_future = executor.submit(self.semantic_search, query_vector, search_settings)
-            full_text_future = executor.submit(self.full_text_search, query_text, search_settings)
+            semantic_future = executor.submit(
+                self.semantic_search, query_vector, search_settings
+            )
+            full_text_future = executor.submit(
+                self.full_text_search, query_text, search_settings
+            )
 
             # Wait for both searches to complete
             concurrent.futures.wait([semantic_future, full_text_future])
@@ -218,9 +222,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
         full_text_results = full_text_future.result()
 
         semantic_limit = search_settings.search_limit
-        full_text_limit = search_settings.hybrid_search_settings.full_text_limit
-        semantic_weight = search_settings.hybrid_search_settings.semantic_weight
-        full_text_weight = search_settings.hybrid_search_settings.full_text_weight
+        full_text_limit = (
+            search_settings.hybrid_search_settings.full_text_limit
+        )
+        semantic_weight = (
+            search_settings.hybrid_search_settings.semantic_weight
+        )
+        full_text_weight = (
+            search_settings.hybrid_search_settings.full_text_weight
+        )
         rrf_k = search_settings.hybrid_search_settings.rrf_k
 
         # The rest of the method remains the same
