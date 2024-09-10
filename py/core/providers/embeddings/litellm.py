@@ -1,8 +1,8 @@
 import logging
 from typing import Any, List
 
-from litellm import aembedding, embedding
 import litellm
+from litellm import aembedding, embedding
 
 from core.base import (
     EmbeddingConfig,

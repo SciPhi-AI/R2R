@@ -7,6 +7,7 @@ from fastapi import Body, Depends
 from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
+from core.base.abstractions.document import RestructureStatus
 from core.base.api.models.restructure.responses import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
@@ -17,11 +18,10 @@ from ...main.hatchet import r2r_hatchet
 from ..hatchet import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
-    KgExtractAndStoreWorkflow,
     KGCommunitySummaryWorkflow,
+    KgExtractAndStoreWorkflow,
 )
 from ..services.restructure_service import RestructureService
-from core.base.abstractions.document import RestructureStatus
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)

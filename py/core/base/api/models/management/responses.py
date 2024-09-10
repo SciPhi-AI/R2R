@@ -114,7 +114,7 @@ class AddUserResponse(BaseModel):
 
 # Create wrapped versions of each response
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
-WrappedGenericPromptResponse = ResultsWrapper[PromptResponse]
+WrappedGetPromptsResponse = ResultsWrapper[List[PromptResponse]]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[List[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]

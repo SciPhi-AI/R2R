@@ -128,7 +128,8 @@
             "documentation/configuration/introduction",
             "documentation/configuration/postgres",
             "documentation/configuration/llm",
-            "documentation/configuration/rag"
+            "documentation/configuration/rag",
+            "documentation/configuration/prompts"
           ]
         },
         {

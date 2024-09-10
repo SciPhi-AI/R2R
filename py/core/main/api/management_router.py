@@ -15,15 +15,15 @@ from core.base.api.models.management.responses import (
     WrappedAppSettingsResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
-    WrappedGenericPromptResponse,
+    WrappedGetPromptsResponse,
     WrappedGroupListResponse,
     WrappedGroupOverviewResponse,
     WrappedGroupResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
+    WrappedPromptMessageResponse,
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
-    WrappedPromptMessageResponse,
     WrappedUserOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
@@ -135,7 +135,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_all_prompts_app(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGenericPromptResponse:
+        ) -> WrappedGetPromptsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_all_prompts` endpoint.",

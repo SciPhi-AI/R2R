@@ -16,10 +16,10 @@ from core.base.abstractions import VectorSearchSettings
 from .vecs import (
     Client,
     Collection,
-    create_client,
-    IndexMethod,
-    IndexMeasure,
     IndexArgsHNSW,
+    IndexMeasure,
+    IndexMethod,
+    create_client,
 )
 
 logger = logging.getLogger(__name__)

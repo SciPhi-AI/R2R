@@ -3,8 +3,8 @@ from .ingestion_workflow import IngestFilesWorkflow, UpdateFilesWorkflow
 from .restructure_workflow import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
-    KgExtractAndStoreWorkflow,
     KGCommunitySummaryWorkflow,
+    KgExtractAndStoreWorkflow,
 )
 
 __all__ = [

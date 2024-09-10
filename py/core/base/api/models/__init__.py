@@ -27,9 +27,9 @@ from .management.responses import (
     WrappedGroupResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
+    WrappedPromptMessageResponse,
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
-    WrappedPromptMessageResponse,
     WrappedUserOverviewResponse,
 )
 from .restructure.responses import (

@@ -1,17 +1,16 @@
 import asyncio
 import json
+import logging
 import uuid
 
 from hatchet_sdk import Context
 
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
-from core.base.abstractions.document import RestructureStatus
 from core.base import R2RDocumentProcessingError
+from core.base.abstractions.document import RestructureStatus
 
 from ..services import RestructureService
 from .base import r2r_hatchet
-
-import logging
 
 logger = logging.getLogger(__name__)
 
