@@ -1,3 +1,5 @@
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 from typing import Any, Optional
@@ -203,11 +205,35 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "The `full_text_limit` must be greater than or equal to the `search_limit`."
             )
-        semantic_results = self.semantic_search(query_vector, search_settings)
-        full_text_results = self.full_text_search(
-            query_text,
-            search_settings,
-        )
+
+        # Use ThreadPoolExecutor to run searches in parallel
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            semantic_future = executor.submit(self.semantic_search, query_vector, search_settings)
+            full_text_future = executor.submit(self.full_text_search, query_text, search_settings)
+
+            # Wait for both searches to complete
+            concurrent.futures.wait([semantic_future, full_text_future])
+
+        semantic_results = semantic_future.result()
+        full_text_results = full_text_future.result()
+
+        semantic_limit = search_settings.search_limit
+        full_text_limit = search_settings.hybrid_search_settings.full_text_limit
+        semantic_weight = search_settings.hybrid_search_settings.semantic_weight
+        full_text_weight = search_settings.hybrid_search_settings.full_text_weight
+        rrf_k = search_settings.hybrid_search_settings.rrf_k
+
+        # The rest of the method remains the same
+        # Combine results using RRF
+        combined_results = {
+            result.fragment_id: {
+                "semantic_rank": rank,
+                "full_text_rank": full_text_limit,
+                "data": result,
+            }
+            for rank, result in enumerate(semantic_results, 1)
+        }
+
         semantic_limit = search_settings.search_limit
         full_text_limit = (
             search_settings.hybrid_search_settings.full_text_limit
