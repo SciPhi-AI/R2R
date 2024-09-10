@@ -279,10 +279,6 @@ class Neo4jKGProvider(KGProvider):
                 r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
         """
 
-        logger.info(
-            f"Running query to get entities and triples for community with inputs: {level}, {community_id}"
-        )
-
         neo4j_records = self.structured_query(
             query,
             {
