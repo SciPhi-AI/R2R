@@ -58,6 +58,7 @@ class IngestionStatus(str, Enum):
 
     PENDING = "pending"
     PARSING = "parsing"
+    EXTRACTING = "extracting"
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
     STORING = "storing"
@@ -90,6 +91,7 @@ class DocumentInfo(R2RSerializable):
     restructuring_status: RestructureStatus = RestructureStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    version_number: Optional[int] = None
 
     def convert_to_db_entry(self):
         """Prepare the document info for database entry, extracting certain fields from metadata."""
@@ -108,6 +110,7 @@ class DocumentInfo(R2RSerializable):
             "restructuring_status": self.restructuring_status,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
+            "version_number": self.version_number or 0,
         }
 
 

@@ -1,6 +1,9 @@
 import asyncio
 import json
+from datetime import datetime
+from enum import Enum
 from typing import Any, Type, TypeVar, Union
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -15,14 +18,34 @@ class R2RSerializable(BaseModel):
         return cls(**data)
 
     def to_dict(self) -> dict[str, Any]:
-        return self.dict(exclude_unset=True)
+        data = self.model_dump(exclude_unset=True)
+        return self._serialize_values(data)
 
     def to_json(self) -> str:
-        return self.json(exclude_unset=True)
+        data = self.to_dict()
+        return json.dumps(data)
 
     @classmethod
     def from_json(cls: Type[T], json_str: str) -> T:
-        return cls.parse_raw(json_str)
+        return cls.model_validate_json(json_str)
+
+    @staticmethod
+    def _serialize_values(data: Any) -> Any:
+        if isinstance(data, dict):
+            return {
+                k: R2RSerializable._serialize_values(v)
+                for k, v in data.items()
+            }
+        elif isinstance(data, list):
+            return [R2RSerializable._serialize_values(v) for v in data]
+        elif isinstance(data, UUID):
+            return str(data)
+        elif isinstance(data, Enum):
+            return data.value
+        elif isinstance(data, datetime):
+            return data.isoformat()
+        else:
+            return data
 
     class Config:
         arbitrary_types_allowed = True

@@ -1,8 +1,8 @@
-import functools
+import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from core.base import (
@@ -12,13 +12,11 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    R2RDocumentProcessingError,
     R2RException,
     RunLoggingSingleton,
     RunManager,
     VectorEntry,
     decrement_version,
-    generate_user_document_id,
 )
 from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -33,36 +31,6 @@ MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100
 OVERVIEW_FETCH_PAGE_SIZE = 1_000
-
-
-def ingestion_step(step_name: str) -> Callable[..., Any]:
-    def decorator(func: Callable[..., Coroutine[Any, Any, Any]]) -> Any:
-        @functools.wraps(func)
-        async def wrapper(self, document_info: DocumentInfo, *args, **kwargs):
-            document_info.ingestion_status = getattr(
-                IngestionStatus, step_name.upper()
-            )
-            self.providers.database.relational.upsert_documents_overview(
-                document_info
-            )
-
-            try:
-                result_gen = await func(self, document_info, *args, **kwargs)
-                return await self._collect_results(result_gen)
-            except R2RDocumentProcessingError as e:
-                await self.mark_document_as_failed(document_info, e)
-                raise
-            except Exception as e:
-                error = R2RDocumentProcessingError(
-                    document_id=document_info.id,
-                    error_message=f"Error in {step_name} step: {str(e)}",
-                )
-                await self.mark_document_as_failed(document_info, error)
-                raise error
-
-        return wrapper
-
-    return decorator
 
 
 class IngestionService(Service):
@@ -121,7 +89,7 @@ class IngestionService(Service):
             size_in_bytes,
         )
 
-        if existing_document_info := self.providers.database.relational.get_documents_overview(
+        if existing_document_info := await self.providers.database.relational.get_documents_overview(
             filter_user_ids=[user.id],
             filter_document_ids=[document_id],
         ):
@@ -141,7 +109,7 @@ class IngestionService(Service):
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
 
-        self.providers.database.relational.upsert_documents_overview(
+        await self.providers.database.relational.upsert_documents_overview(
             document_info
         )
 
@@ -182,7 +150,6 @@ class IngestionService(Service):
             updated_at=datetime.now(),
         )
 
-    @ingestion_step("parsing")
     async def parse_file(
         self,
         document_info: DocumentInfo,
@@ -208,10 +175,8 @@ class IngestionService(Service):
                 run_manager=self.run_manager,
             )
 
-    @ingestion_step("chunking")
     async def chunk_document(
         self,
-        document_info: DocumentInfo,
         parsed_documents: list[dict],
         chunking_config: Optional[ChunkingConfig] = None,
     ) -> list[DocumentFragment]:
@@ -227,10 +192,8 @@ class IngestionService(Service):
             chunking_config=chunking_config,
         )
 
-    @ingestion_step("embedding")
     async def embed_document(
         self,
-        document_info: DocumentInfo,
         chunked_documents: list[dict],
     ) -> list[str]:
         return await self.pipes.embedding_pipe.run(
@@ -243,23 +206,24 @@ class IngestionService(Service):
             run_manager=self.run_manager,
         )
 
-    @ingestion_step("storing")
     async def store_embeddings(
         self,
-        document_info: DocumentInfo,
-        embeddings: list[dict],
+        embeddings: list[Union[dict, VectorEntry]],
     ) -> list[str]:
+        vector_entries = [
+            (
+                embedding
+                if isinstance(embedding, VectorEntry)
+                else VectorEntry.from_dict(embedding)
+            )
+            for embedding in embeddings
+        ]
+
         return await self.pipes.vector_storage_pipe.run(
-            input=self.pipes.vector_storage_pipe.Input(
-                message=[
-                    VectorEntry.from_dict(embedding)
-                    for embedding in embeddings
-                ]
-            ),
+            input=self.pipes.vector_storage_pipe.Input(message=vector_entries),
             run_manager=self.run_manager,
         )
 
-    @ingestion_step("success")
     async def finalize_ingestion(
         self,
         document_info: DocumentInfo,
@@ -284,74 +248,31 @@ class IngestionService(Service):
 
         return empty_generator()
 
-    async def _process_ingestion_results(
-        self,
-        ingestion_results: dict,
-        document_infos: list[DocumentInfo],
-        skipped_documents: list[dict[str, str]],
-    ) -> dict:
-        skipped_ids = [ele["id"] for ele in skipped_documents]
-        failed_ids = []
-        successful_ids = []
-
-        results = {}
-        if ingestion_results["embedding_pipeline_output"]:
-            results = dict(ingestion_results["embedding_pipeline_output"])
-            for doc_id, error in results.items():
-                if isinstance(error, R2RDocumentProcessingError):
-                    logger.error(
-                        f"Error processing document with ID {error.document_id}: {error.message}"
-                    )
-                    failed_ids.append(error.document_id)
-                elif isinstance(error, Exception):
-                    logger.error(f"Error processing document: {error}")
-                    failed_ids.append(doc_id)
-                else:
-                    successful_ids.append(doc_id)
-
-        documents_to_upsert = []
-        for document_info in document_infos:
-            if document_info.id not in skipped_ids:
-                if document_info.id in failed_ids:
-                    document_info.ingestion_status = "failure"
-                elif document_info.id in successful_ids:
-                    document_info.ingestion_status = "success"
-                documents_to_upsert.append(document_info)
-
-        if documents_to_upsert:
-            self.providers.database.relational.upsert_documents_overview(
-                documents_to_upsert
-            )
-
-        # TODO - modify ingestion service so that at end we write out number
-        # of vectors produced or the error message to document info
-        # THEN, return updated document infos here
-        return {
-            "processed_documents": [
-                document
-                for document in document_infos
-                if document.id in successful_ids
-            ],
-            "failed_documents": [
-                {
-                    "document_id": document_id,
-                    "result": str(results[document_id]),
-                }
-                for document_id in failed_ids
-            ],
-            "skipped_documents": skipped_ids,
-        }
-
-    async def mark_document_as_failed(
+    async def update_document_status(
         self,
         document_info: DocumentInfo,
-        error: R2RDocumentProcessingError,
+        status: IngestionStatus,
+        error: Optional[R2RException] = None,
     ) -> None:
-        document_info.ingestion_status = "failure"
-        document_info.metadata["error"] = error.message
-        self.providers.database.relational.upsert_documents_overview(
-            document_info
-        )
+        document_info.ingestion_status = status
+        if error:
+            document_info.metadata["error"] = error.message
+
+        print(f"Queueing document status update: {document_info} {status}")
+
+        # Schedule the database update as a background task
+        asyncio.create_task(self._update_document_status_in_db(document_info))
+
+    async def _update_document_status_in_db(self, document_info: DocumentInfo):
+        try:
+            await self.providers.database.relational.upsert_documents_overview(
+                document_info
+            )
+            print(f"Document status updated successfully: {document_info.id}")
+        except Exception as e:
+            print(
+                f"Failed to update document status: {document_info.id}. Error: {str(e)}"
+            )
 
     async def _collect_results(self, result_gen: Any) -> list[dict]:
         results = []

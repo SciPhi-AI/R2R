@@ -14,7 +14,7 @@ from .base import DatabaseMixin, QueryBuilder
 
 
 class GroupMixin(DatabaseMixin):
-    def create_table(self) -> None:
+    async def create_table(self) -> None:
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('groups')} (
             group_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -24,18 +24,22 @@ class GroupMixin(DatabaseMixin):
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        self.execute_query(query)
+        await self.execute_query(query)
 
-    def group_exists(self, group_id: UUID) -> bool:
+    async def group_exists(self, group_id: UUID) -> bool:
         """Check if a group exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name('groups')}
             WHERE group_id = :group_id
         """
-        result = self.execute_query(query, {"group_id": group_id}).fetchone()
+        result = await self.execute_query(
+            query, {"group_id": group_id}
+        ).fetchone()
         return bool(result)
 
-    def create_group(self, name: str, description: str = "") -> GroupResponse:
+    async def create_group(
+        self, name: str, description: str = ""
+    ) -> GroupResponse:
         current_time = datetime.utcnow()
         query = f"""
             INSERT INTO {self._get_table_name('groups')} (name, description, created_at, updated_at)
@@ -48,7 +52,7 @@ class GroupMixin(DatabaseMixin):
             "created_at": current_time,
             "updated_at": current_time,
         }
-        result = self.execute_query(query, params).fetchone()
+        result = await self.execute_query(query, params).fetchone()
         if not result:
             raise R2RException(
                 status_code=500, message="Failed to create group"
@@ -62,9 +66,9 @@ class GroupMixin(DatabaseMixin):
             updated_at=result[4],
         )
 
-    def get_group(self, group_id: UUID) -> GroupResponse:
+    async def get_group(self, group_id: UUID) -> GroupResponse:
         """Get a group by its ID."""
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
@@ -72,7 +76,9 @@ class GroupMixin(DatabaseMixin):
             FROM {self._get_table_name('groups')}
             WHERE group_id = :group_id
         """
-        result = self.execute_query(query, {"group_id": group_id}).fetchone()
+        result = await self.execute_query(
+            query, {"group_id": group_id}
+        ).fetchone()
         return GroupResponse(
             group_id=result[0],
             name=result[1],
@@ -81,11 +87,11 @@ class GroupMixin(DatabaseMixin):
             updated_at=result[4],
         )
 
-    def update_group(
+    async def update_group(
         self, group_id: UUID, name: str, description: str
     ) -> GroupResponse:
         """Update an existing group."""
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
@@ -94,7 +100,7 @@ class GroupMixin(DatabaseMixin):
             WHERE group_id = :group_id
             RETURNING group_id, name, description, created_at, updated_at
         """
-        result = self.execute_query(
+        result = await self.execute_query(
             query,
             {"group_id": group_id, "name": name, "description": description},
         ).fetchone()
@@ -106,14 +112,14 @@ class GroupMixin(DatabaseMixin):
             updated_at=result[4],
         )
 
-    def delete_group(self, group_id: UUID) -> None:
+    async def delete_group(self, group_id: UUID) -> None:
         # Remove group_id from users
         user_update_query = f"""
             UPDATE {self._get_table_name('users')}
             SET group_ids = array_remove(group_ids, :group_id)
             WHERE :group_id = ANY(group_ids)
         """
-        self.execute_query(user_update_query, {"group_id": group_id})
+        await self.execute_query(user_update_query, {"group_id": group_id})
 
         # Remove group_id from documents in the relational database
         doc_update_query = f"""
@@ -121,7 +127,7 @@ class GroupMixin(DatabaseMixin):
             SET group_ids = array_remove(group_ids, :group_id)
             WHERE :group_id = ANY(group_ids)
         """
-        self.execute_query(doc_update_query, {"group_id": group_id})
+        await self.execute_query(doc_update_query, {"group_id": group_id})
 
         # Delete the group
         delete_query = f"""
@@ -129,14 +135,14 @@ class GroupMixin(DatabaseMixin):
             WHERE group_id = :group_id
             RETURNING group_id
         """
-        result = self.execute_query(
+        result = await self.execute_query(
             delete_query, {"group_id": group_id}
         ).fetchone()
 
         if not result:
             raise R2RException(status_code=404, message="Group not found")
 
-    def list_groups(
+    async def list_groups(
         self, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
         """List groups with pagination."""
@@ -147,7 +153,7 @@ class GroupMixin(DatabaseMixin):
             OFFSET :offset
             LIMIT :limit
         """
-        results = self.execute_query(
+        results = await self.execute_query(
             query, {"offset": offset, "limit": limit}
         ).fetchall()
         if not results:
@@ -163,7 +169,9 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def get_groups_by_ids(self, group_ids: list[UUID]) -> list[GroupResponse]:
+    async def get_groups_by_ids(
+        self, group_ids: list[UUID]
+    ) -> list[GroupResponse]:
         query, params = (
             QueryBuilder(self._get_table_name("groups"))
             .select(
@@ -172,7 +180,7 @@ class GroupMixin(DatabaseMixin):
             .where("group_id = ANY(:group_ids)", group_ids=group_ids)
             .build()
         )
-        results = self.execute_query(query, params).fetchall()
+        results = await self.execute_query(query, params).fetchall()
         if len(results) != len(group_ids):
             raise R2RException(
                 status_code=404,
@@ -189,9 +197,9 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
+    async def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
         """Add a user to a group."""
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
@@ -200,14 +208,16 @@ class GroupMixin(DatabaseMixin):
             WHERE user_id = :user_id AND NOT (:group_id = ANY(group_ids))
             RETURNING user_id
         """
-        result = self.execute_query(
+        result = await self.execute_query(
             query, {"user_id": user_id, "group_id": group_id}
         ).fetchone()
         return bool(result)
 
-    def remove_user_from_group(self, user_id: UUID, group_id: UUID) -> None:
+    async def remove_user_from_group(
+        self, user_id: UUID, group_id: UUID
+    ) -> None:
         """Remove a user from a group."""
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
@@ -216,7 +226,7 @@ class GroupMixin(DatabaseMixin):
             WHERE user_id = :user_id AND :group_id = ANY(group_ids)
             RETURNING user_id
         """
-        result = self.execute_query(
+        result = await self.execute_query(
             query, {"user_id": user_id, "group_id": group_id}
         ).fetchone()
         if not result:
@@ -225,7 +235,7 @@ class GroupMixin(DatabaseMixin):
                 message="User is not a member of the specified group",
             )
 
-    def get_users_in_group(
+    async def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[UserResponse]:
         """
@@ -242,7 +252,7 @@ class GroupMixin(DatabaseMixin):
         Raises:
             R2RException: If the group doesn't exist.
         """
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
@@ -254,7 +264,7 @@ class GroupMixin(DatabaseMixin):
             OFFSET :offset
             LIMIT :limit
         """
-        results = self.execute_query(
+        results = await self.execute_query(
             query, {"group_id": group_id, "offset": offset, "limit": limit}
         ).fetchall()
 
@@ -277,7 +287,7 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def documents_in_group(
+    async def documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
         """
@@ -291,7 +301,7 @@ class GroupMixin(DatabaseMixin):
         Raises:
             R2RException: If the group doesn't exist.
         """
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at
@@ -301,7 +311,7 @@ class GroupMixin(DatabaseMixin):
             OFFSET :offset
             LIMIT :limit
         """
-        results = self.execute_query(
+        results = await self.execute_query(
             query, {"group_id": group_id, "offset": offset, "limit": limit}
         ).fetchall()
         return [
@@ -321,7 +331,7 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def get_groups_overview(
+    async def get_groups_overview(
         self,
         group_ids: Optional[list[UUID]] = None,
         offset: int = 0,
@@ -350,7 +360,7 @@ class GroupMixin(DatabaseMixin):
             LIMIT :limit
         """
 
-        results = self.execute_query(query, params).fetchall()
+        results = await self.execute_query(query, params).fetchall()
         if not results:
             return []
         return [
@@ -366,7 +376,7 @@ class GroupMixin(DatabaseMixin):
             for result in results
         ]
 
-    def get_groups_for_user(
+    async def get_groups_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
         query = f"""
@@ -378,7 +388,7 @@ class GroupMixin(DatabaseMixin):
             OFFSET :offset
             LIMIT :limit
         """
-        results = self.execute_query(
+        results = await self.execute_query(
             query, {"user_id": user_id, "offset": offset, "limit": limit}
         ).fetchall()
 
@@ -396,7 +406,7 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def assign_document_to_group(
+    async def assign_document_to_group(
         self, document_id: UUID, group_id: UUID
     ) -> None:
         """
@@ -411,7 +421,7 @@ class GroupMixin(DatabaseMixin):
                         or if there's a database error.
         """
         try:
-            if not self.group_exists(group_id):
+            if not await self.group_exists(group_id):
                 raise R2RException(status_code=404, message="Group not found")
 
             # First, check if the document exists
@@ -419,7 +429,7 @@ class GroupMixin(DatabaseMixin):
                 SELECT 1 FROM {self._get_table_name('document_info')}
                 WHERE document_id = :document_id
             """
-            document_exists = self.execute_query(
+            document_exists = await self.execute_query(
                 document_check_query, {"document_id": document_id}
             ).fetchone()
 
@@ -435,7 +445,7 @@ class GroupMixin(DatabaseMixin):
                 WHERE document_id = :document_id AND NOT (:group_id = ANY(group_ids))
                 RETURNING document_id
             """
-            result = self.execute_query(
+            result = await self.execute_query(
                 assign_query,
                 {"document_id": document_id, "group_id": group_id},
             ).fetchone()
@@ -456,7 +466,7 @@ class GroupMixin(DatabaseMixin):
                 message=f"An error '{e}' occurred while assigning the document to the group",
             )
 
-    def document_groups(
+    async def document_groups(
         self, document_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
         query = f"""
@@ -469,7 +479,7 @@ class GroupMixin(DatabaseMixin):
             LIMIT :limit
         """
         params = {"document_id": document_id, "offset": offset, "limit": limit}
-        results = self.execute_query(query, params).fetchall()
+        results = await self.execute_query(query, params).fetchall()
 
         return [
             GroupResponse(
@@ -482,7 +492,7 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def remove_document_from_group(
+    async def remove_document_from_group(
         self, document_id: UUID, group_id: UUID
     ) -> None:
         """
@@ -495,7 +505,7 @@ class GroupMixin(DatabaseMixin):
         Raises:
             R2RException: If the group doesn't exist or if the document is not in the group.
         """
-        if not self.group_exists(group_id):
+        if not await self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
@@ -504,7 +514,7 @@ class GroupMixin(DatabaseMixin):
             WHERE document_id = :document_id AND :group_id = ANY(group_ids)
             RETURNING document_id
         """
-        result = self.execute_query(
+        result = await self.execute_query(
             query, {"document_id": document_id, "group_id": group_id}
         ).fetchone()
 

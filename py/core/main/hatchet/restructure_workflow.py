@@ -9,6 +9,7 @@ from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from ..services import RestructureService
 from .base import r2r_hatchet
 
+
 @r2r_hatchet.workflow(name="kg-extract-and-store", timeout="60m")
 class KgExtractAndStoreWorkflow:
     def __init__(self, restructure_service: RestructureService):
@@ -41,7 +42,7 @@ class CreateGraphWorkflow:
         if not document_ids:
             document_ids = [
                 doc.id
-                for doc in self.restructure_service.providers.database.relational.get_documents_overview()
+                for doc in await self.restructure_service.providers.database.relational.get_documents_overview()
                 if doc.restructuring_status != IngestionStatus.SUCCESS
             ]
 

@@ -1,9 +1,7 @@
 import logging
-import os
 from typing import Any, Optional
 
 from sqlalchemy import text
-from sqlalchemy.engine.url import make_url
 
 from core.base import (
     DatabaseConfig,
@@ -22,10 +20,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
         self.collection: Optional[Collection] = None
-        self.vx: Client = kwargs.get("vx", None)
+        connection_string = kwargs.get("connection_string", None)
+        if not connection_string:
+            raise ValueError(
+                "Please provide a valid `connection_string` to the `PostgresVectorDBProvider`."
+            )
+        self.vx: Client = create_client(connection_string=connection_string)
         if not self.vx:
             raise ValueError(
-                "Please provide a valid `vx` client to the `PostgresVectorDBProvider`."
+                "Error occurred while attempting to connect to the pgvector provider."
             )
         self.collection_name = kwargs.get("collection_name", None)
         if not self.collection_name:
@@ -36,48 +39,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         if not dimension:
             raise ValueError(
                 "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
-            )
-
-        # Fall back to existing logic for individual connection parameters
-        user = self.config.user or os.getenv("POSTGRES_USER")
-        password = self.config.password or os.getenv("POSTGRES_PASSWORD")
-        host = self.config.extra_fields.get("host", None) or os.getenv(
-            "POSTGRES_HOST"
-        )
-        port = self.config.port or os.getenv("POSTGRES_PORT")
-        db_name = self.config.db_name or os.getenv("POSTGRES_DBNAME")
-
-        if not all([user, password, host, db_name]):
-            raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_DBNAME environment variables or provide them in the config."
-            )
-
-        # Check if it's a Unix socket connection
-        if host.startswith("/") and not port:
-            DB_CONNECTION = (
-                f"postgresql://{user}:{password}@/{db_name}?host={host}"
-            )
-            logger.info("Using Unix socket connection")
-        else:
-            DB_CONNECTION = (
-                f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
-            )
-            logger.info("Using TCP connection")
-
-        # The rest of the initialization remains the same
-        try:
-            self.vx: Client = create_client(DB_CONNECTION)
-        except Exception as e:
-            raise ValueError(
-                f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
-            ) from e
-
-        self.collection_name = self.config.vecs_collection or os.getenv(
-            "POSTGRES_VECS_COLLECTION"
-        )
-        if not self.collection_name:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
             )
 
         self.collection: Optional[Collection] = None

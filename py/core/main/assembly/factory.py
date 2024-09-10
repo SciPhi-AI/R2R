@@ -39,7 +39,7 @@ class R2RProviderFactory:
         self.config = config
 
     @staticmethod
-    def create_auth_provider(
+    async def create_auth_provider(
         auth_config: AuthConfig,
         db_provider: DatabaseProvider,
         crypto_provider: Optional[CryptoProvider] = None,
@@ -53,6 +53,7 @@ class R2RProviderFactory:
             auth_provider = R2RAuthProvider(
                 auth_config, crypto_provider, db_provider
             )
+            await auth_provider.initialize()
         elif auth_config.provider is None:
             auth_provider = None
         else:
@@ -134,7 +135,7 @@ class R2RProviderFactory:
         orchestration_provider.get_worker("r2r-worker")
         return orchestration_provider
 
-    def create_database_provider(
+    async def create_database_provider(
         self,
         db_config: DatabaseConfig,
         crypto_provider: Optional[CryptoProvider] = None,
@@ -154,6 +155,7 @@ class R2RProviderFactory:
             database_provider = PostgresDBProvider(
                 db_config, vector_db_dimension, crypto_provider=crypto_provider
             )
+            await database_provider.initialize()
         elif db_config.provider is None:
             database_provider = None
         else:
@@ -270,7 +272,7 @@ class R2RProviderFactory:
                 f"KG provider {kg_config.provider} not supported."
             )
 
-    def create_providers(
+    async def create_providers(
         self,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
@@ -310,16 +312,19 @@ class R2RProviderFactory:
         )
         database_provider = (
             database_provider_override
-            or self.create_database_provider(
+            or await self.create_database_provider(
                 self.config.database, crypto_provider, *args, **kwargs
             )
         )
-        auth_provider = auth_provider_override or self.create_auth_provider(
-            self.config.auth,
-            database_provider,
-            crypto_provider,
-            *args,
-            **kwargs,
+        auth_provider = (
+            auth_provider_override
+            or await self.create_auth_provider(
+                self.config.auth,
+                database_provider,
+                crypto_provider,
+                *args,
+                **kwargs,
+            )
         )
         parsing_provider = (
             parsing_provider_override
