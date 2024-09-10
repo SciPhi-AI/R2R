@@ -2,6 +2,7 @@ import logging
 from typing import Any, List
 
 from litellm import aembedding, embedding
+import litellm
 
 from core.base import (
     EmbeddingConfig,
@@ -41,6 +42,9 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             )
 
         self.base_model = config.base_model
+        if "amazon" in self.base_model:
+            logger.warn("Amazon embedding model detected, dropping params")
+            litellm.drop_params = True
         self.base_dimension = config.base_dimension
 
     def _get_embedding_kwargs(self, **kwargs):

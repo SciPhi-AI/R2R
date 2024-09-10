@@ -4,7 +4,7 @@ description: 'Learn how to configure LLMs in your R2R deployment'
 icon: 'language'
 ---
 
-R2R uses language models to generate responses based on retrieved context. Configure the generation settings in `r2r.toml`:
+R2R uses language models to generate responses based on retrieved context. You can configure R2R's server-side LLM generation settings with the [`r2r.toml`](https://github.com/SciPhi-AI/R2R/blob/main/py/r2r.toml):
 
 ```toml r2r.toml
 [completion]
@@ -44,11 +44,15 @@ Key generation configuration options:
         # Set '"model": "openai/gpt-4o-mini"' in `r2r.toml`
         # then call `r2r serve --config-path=r2r.toml`
         r2r serve
+        # Set '"model": "openai/gpt-4o-mini"' in `r2r.toml`
+        # then call `r2r serve --config-path=r2r.toml`
+        r2r serve
         ```
         Supported models include:
         - openai/gpt-4o
         - openai/gpt-4-turbo
         - openai/gpt-4
+        - openai/gpt-4o-mini
         - openai/gpt-4o-mini
         - openai/gpt-4o-mini
 
@@ -69,6 +73,7 @@ Key generation configuration options:
         - azure/gpt-4o
         - azure/gpt-4-turbo
         - azure/gpt-4
+        - azure/gpt-4o-mini
         - azure/gpt-4o-mini
         For a complete list of supported Azure models and detailed usage instructions, please refer to the [LiteLLM Azure documentation](https://docs.litellm.ai/docs/providers/azure).
 
@@ -250,24 +255,28 @@ Key generation configuration options:
 </Tabs>
 
 
-### Combining Search and Generation
-
-To perform a RAG query, you can combine vector search, knowledge graph search, and generation settings:
-
-```python
-response = client.rag(
-    "What are the latest advancements in quantum computing?",
-    vector_search_settings=vector_search_settings,
-    kg_search_settings=kg_search_settings,
-    rag_generation_config=rag_generation_config
-)
-```
 
 ### Runtime Configuration of LLM Provider
 
 R2R supports runtime configuration of the LLM provider, allowing you to dynamically change the model or provider for each request. This flexibility enables you to use different models or providers based on specific requirements or use cases.
 
-For more detailed information on configuring LLMs and other RAG settings, please refer to the [RAG Configuration documentation](/documentation/configuration/rag).
+### Combining Search and Generation
+
+When performing a RAG query, you can dynamically set the LLM generation settings:
+
+```python
+response = client.rag(
+    "What are the latest advancements in quantum computing?",
+    rag_generation_config={
+        "stream": False,
+        "model": "openai/gpt-4o-mini",
+        "temperature": 0.7,
+        "max_tokens": 150
+    }
+)
+```
+
+For more detailed information on configuring other search and RAG settings, please refer to the [RAG Configuration documentation](/documentation/configuration/rag).
 
 
 ## Next Steps
