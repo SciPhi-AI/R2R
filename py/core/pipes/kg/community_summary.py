@@ -53,7 +53,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
         self.embedding_provider = embedding_provider
 
     def community_summary_prompt(
-        self, prompt: str, entities: list[Entity], triples: list[Triple], character_limit: int
+        self,
+        prompt: str,
+        entities: list[Entity],
+        triples: list[Triple],
+        character_limit: int,
     ):
         """
         Preparing the list of entities and triples to be summarized and created into a community summary.
@@ -70,11 +74,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
         )
 
         prompt = prompt.format(entities=entities_info, triples=triples_info)
-        
+
         if len(prompt) > character_limit:
-            logger.info(f"Community summary prompt was created of length {len(prompt)}, trimming to {character_limit} characters.")
-            
-        prompt = prompt[:character_limit]
+            logger.info(
+                f"Community summary prompt was created of length {len(prompt)}, trimming to {character_limit} characters."
+            )
+            prompt = prompt[:character_limit]
 
         return prompt
 
@@ -107,8 +112,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         """
 
-
-        logger.info(f"Processing community {community_id} at level {level} with max summary input length {max_summary_input_length}.")
+        logger.info(
+            f"Processing community {community_id} at level {level} with max summary input length {max_summary_input_length}."
+        )
 
         entities, triples = (
             self.kg_provider.get_community_entities_and_triples(
@@ -126,7 +132,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         task_prompt_name="graphrag_community_reports",
                         task_inputs={
                             "input_text": self.community_summary_prompt(
-                                input_text, entities, triples, max_summary_input_length 
+                                input_text,
+                                entities,
+                                triples,
+                                max_summary_input_length,
                             ),
                         },
                     ),

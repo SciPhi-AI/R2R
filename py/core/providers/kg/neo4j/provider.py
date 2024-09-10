@@ -279,7 +279,9 @@ class Neo4jKGProvider(KGProvider):
                 r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
         """
 
-        logger.info(f"Running query to get entities and triples for community with inputs: {level}, {community_id}")
+        logger.info(
+            f"Running query to get entities and triples for community with inputs: {level}, {community_id}"
+        )
 
         neo4j_records = self.structured_query(
             query,
@@ -309,7 +311,9 @@ class Neo4jKGProvider(KGProvider):
             for record in neo4j_records.records
         ]
 
-        logger.info(f"{len(entities)} entities and {len(triples)} triples were retrieved for community {community_id} at level {level}")
+        logger.info(
+            f"{len(entities)} entities and {len(triples)} triples were retrieved for community {community_id} at level {level}"
+        )
 
         return entities, triples
 
@@ -554,12 +558,12 @@ class Neo4jKGProvider(KGProvider):
         COMMUNITY_QUERY = f"""
             MATCH (n)
             WHERE n.communityIds IS NOT NULL
-            RETURN DISTINCT 
-            CASE 
-                WHEN n.communityIds IS NOT NULL 
-                THEN toIntegerList(n.communityIds) 
-                ELSE [] 
-            END AS communityIds        
+            RETURN DISTINCT
+            CASE
+                WHEN n.communityIds IS NOT NULL
+                THEN toIntegerList(n.communityIds)
+                ELSE []
+            END AS communityIds
         """
 
         result = self.structured_query(COMMUNITY_QUERY)
@@ -574,6 +578,12 @@ class Neo4jKGProvider(KGProvider):
                 intermediate_communities_set.add((level, community_id))
         intermediate_communities_set = list(intermediate_communities_set)
 
-        logger.info(f"Intermediate communities: {intermediate_communities_set}")
+        logger.info(
+            f"Intermediate communities: {intermediate_communities_set}"
+        )
 
-        return (community_count, len(modularities), intermediate_communities_set)
+        return (
+            community_count,
+            len(modularities),
+            intermediate_communities_set,
+        )

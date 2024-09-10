@@ -421,7 +421,7 @@ class KGCreationSettings(BaseModel):
 
 class KGEnrichmentSettings(BaseModel):
 
-    max_summary_input_length: int = Field( 
+    max_summary_input_length: int = Field(
         default=4096 * 4,
         description="The maximum input size that goes inside a .",
     )
