@@ -15,7 +15,7 @@ from .retrieval.query_transform_pipe import QueryTransformPipe
 from .retrieval.search_rag_pipe import SearchRAGPipe
 from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
 from .retrieval.vector_search_pipe import VectorSearchPipe
-
+from .retrieval.routing_search_pipe import RoutingSearchPipe
 __all__ = [
     "SearchPipe",
     "EmbeddingPipe",
@@ -35,4 +35,5 @@ __all__ = [
     "KGClusteringPipe",
     "MultiSearchPipe",
     "KGCommunitySummaryPipe",
+    "RoutingSearchPipe"
 ]
