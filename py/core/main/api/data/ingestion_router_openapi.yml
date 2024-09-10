@@ -9,7 +9,7 @@ ingest_files:
           # when using auth, do client.login(...)
 
           result = client.ingest_files(
-              files=["pg_essay_1.html", "got.txt"],
+              file_paths=["pg_essay_1.html", "got.txt"],
               metadatas=[{"metadata_1":"some random metadata"}, {"metadata_2": "some other random metadata"}],
               document_ids=None,
               versions=None
@@ -43,7 +43,7 @@ update_files:
           # when using auth, do client.login(...)
 
           result = client.update_files(
-              files=["pg_essay_1_v2.txt"],
+              file_paths=["pg_essay_1_v2.txt"],
               document_ids=["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"]
           )
       - lang: Shell

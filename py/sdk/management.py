@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 
@@ -29,6 +29,108 @@ class ManagementMethods:
             data["input_types"] = input_types
 
         return await client._make_request("POST", "update_prompt", json=data)
+
+    @staticmethod
+    async def add_prompt(
+        client,
+        name: str,
+        template: str,
+        input_types: dict[str, str],
+    ) -> dict:
+        """
+        Add a new prompt to the system.
+
+        Args:
+            name (str): The name of the prompt.
+            template (str): The template for the prompt.
+            input_types (dict[str, str]): The input types for the prompt.
+
+        Returns:
+            dict: The response from the server.
+        """
+        data = {
+            "name": name,
+            "template": template,
+            "input_types": input_types,
+        }
+        return await client._make_request("POST", "add_prompt", json=data)
+
+    @staticmethod
+    async def get_prompt(
+        client,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> dict:
+        """
+        Get a prompt from the system.
+
+        Args:
+            prompt_name (str): The name of the prompt to retrieve.
+            inputs (Optional[dict[str, Any]]): Optional inputs for the prompt.
+            prompt_override (Optional[str]): Optional override for the prompt template.
+
+        Returns:
+            dict: The response from the server.
+        """
+        params = {}
+        if inputs:
+            params["inputs"] = json.dumps(inputs)
+        if prompt_override:
+            params["prompt_override"] = prompt_override
+        return await client._make_request(
+            "GET", f"get_prompt/{prompt_name}", params=params
+        )
+
+    @staticmethod
+    async def update_prompt(
+        client,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ) -> dict:
+        """
+        Update an existing prompt in the system.
+
+        Args:
+            name (str): The name of the prompt to update.
+            template (Optional[str]): The new template for the prompt.
+            input_types (Optional[dict[str, str]]): The new input types for the prompt.
+
+        Returns:
+            dict: The response from the server.
+        """
+        data = {"name": name}
+        if template is not None:
+            data["template"] = template
+        if input_types is not None:
+            data["input_types"] = input_types
+        return await client._make_request("POST", "update_prompt", json=data)
+
+    @staticmethod
+    async def get_all_prompts(client) -> dict:
+        """
+        Get all prompts from the system.
+
+        Returns:
+            dict: The response from the server containing all prompts.
+        """
+        return await client._make_request("GET", "get_all_prompts")
+
+    @staticmethod
+    async def delete_prompt(client, prompt_name: str) -> dict:
+        """
+        Delete a prompt from the system.
+
+        Args:
+            prompt_name (str): The name of the prompt to delete.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request(
+            "DELETE", f"delete_prompt/{prompt_name}"
+        )
 
     @staticmethod
     async def analytics(

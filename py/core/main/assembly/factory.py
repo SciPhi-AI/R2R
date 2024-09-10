@@ -244,13 +244,18 @@ class R2RProviderFactory:
 
     @staticmethod
     def create_prompt_provider(
-        prompt_config: PromptConfig, *args, **kwargs
+        prompt_config: PromptConfig,
+        database_provider: DatabaseProvider,
+        *args,
+        **kwargs,
     ) -> PromptProvider:
         prompt_provider = None
         if prompt_config.provider == "r2r":
             from core.providers import R2RPromptProvider
 
-            prompt_provider = R2RPromptProvider(prompt_config)
+            prompt_provider = R2RPromptProvider(
+                prompt_config, database_provider
+            )
         else:
             raise ValueError(
                 f"Prompt provider {prompt_config.provider} not supported"
@@ -287,10 +292,6 @@ class R2RProviderFactory:
         **kwargs,
     ) -> R2RProviders:
 
-        prompt_provider = (
-            prompt_provider_override
-            or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
-        )
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -314,6 +315,13 @@ class R2RProviderFactory:
                 self.config.database, crypto_provider, *args, **kwargs
             )
         )
+        prompt_provider = (
+            prompt_provider_override
+            or self.create_prompt_provider(
+                self.config.prompt, database_provider, *args, **kwargs
+            )
+        )
+
         auth_provider = auth_provider_override or self.create_auth_provider(
             self.config.auth,
             database_provider,
