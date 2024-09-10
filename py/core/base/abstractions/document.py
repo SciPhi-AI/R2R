@@ -77,6 +77,7 @@ class RestructureStatus(str, Enum):
     ENRICHED = "enriched"
     ENRICHMENT_FAILURE = "enrichment_failure"
 
+
 class DocumentInfo(R2RSerializable):
     """Base class for document information handling."""
 

@@ -18,7 +18,7 @@ from ..hatchet import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
     KgExtractAndStoreWorkflow,
-    KGCommunitySummaryWorkflow
+    KGCommunitySummaryWorkflow,
 )
 from ..services.restructure_service import RestructureService
 from core.base.abstractions.document import RestructureStatus
@@ -99,7 +99,7 @@ class RestructureRouter(BaseRouter):
                 kg_creation_settings = (
                     self.service.providers.kg.config.kg_creation_settings
                 )
-                    
+
             workflow_input = {
                 "document_ids": document_ids,
                 "kg_creation_settings": kg_creation_settings.json(),
@@ -167,4 +167,3 @@ class RestructureRouter(BaseRouter):
                 "message": "Graph enrichment task queued successfully. Please check http://localhost:7274/workflow-runs for completion status.",
                 "task_id": str(task_id),
             }
-        

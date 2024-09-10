@@ -174,7 +174,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(f"Failed after retries with for fragment {fragment.id} of document {fragment.document_id}: {e}")
+                    logger.error(
+                        f"Failed after retries with for fragment {fragment.id} of document {fragment.document_id}: {e}"
+                    )
                     raise e
 
         # add metadata to entities and triples

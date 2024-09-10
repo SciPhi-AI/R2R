@@ -558,6 +558,7 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
         )
 
+
 class R2RPipelineFactory:
     def __init__(self, config: R2RConfig, pipes: R2RPipes):
         self.config = config

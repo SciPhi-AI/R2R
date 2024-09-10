@@ -72,7 +72,10 @@ class KGClusteringPipe(AsyncPipe):
             f"Clustering completed. Generated {num_communities} communities with {num_hierarchies} hierarchies."
         )
 
-        return {"num_communities": num_communities, "num_hierarchies": num_hierarchies}
+        return {
+            "num_communities": num_communities,
+            "num_hierarchies": num_hierarchies,
+        }
 
     async def _run_logic(
         self,

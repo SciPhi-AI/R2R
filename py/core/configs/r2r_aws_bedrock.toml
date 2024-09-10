@@ -22,7 +22,7 @@ concurrent_request_limit = 16
 
   [completion.generation_config]
   model = "bedrock/anthropic.claude-v2"
-  
+
 
 [crypto]
 provider = "bcrypt"

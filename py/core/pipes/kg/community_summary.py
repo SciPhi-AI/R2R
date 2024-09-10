@@ -49,7 +49,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
-            config=config or AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
+            config=config
+            or AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
         )
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
@@ -148,7 +149,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         return {"id": community.id, "title": summary["title"]}
 
-    async def _run_logic(self, input: AsyncPipe.Input, state: AsyncState, run_id: UUID, *args: Any, **kwargs: Any) -> AsyncGenerator[dict, None]:
+    async def _run_logic(
+        self,
+        input: AsyncPipe.Input,
+        state: AsyncState,
+        run_id: UUID,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncGenerator[dict, None]:
         """
         Executes the KG community summary pipe: summarizing communities.
         """
@@ -160,7 +168,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community_summary = await self.process_community(
             level=level,
             community_id=community_id,
-            generation_config=generation_config
+            generation_config=generation_config,
         )
 
         yield community_summary
