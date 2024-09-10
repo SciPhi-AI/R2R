@@ -284,64 +284,6 @@ class IngestionService(Service):
 
         return empty_generator()
 
-    async def _process_ingestion_results(
-        self,
-        ingestion_results: dict,
-        document_infos: list[DocumentInfo],
-        skipped_documents: list[dict[str, str]],
-    ) -> dict:
-        skipped_ids = [ele["id"] for ele in skipped_documents]
-        failed_ids = []
-        successful_ids = []
-
-        results = {}
-        if ingestion_results["embedding_pipeline_output"]:
-            results = dict(ingestion_results["embedding_pipeline_output"])
-            for doc_id, error in results.items():
-                if isinstance(error, R2RDocumentProcessingError):
-                    logger.error(
-                        f"Error processing document with ID {error.document_id}: {error.message}"
-                    )
-                    failed_ids.append(error.document_id)
-                elif isinstance(error, Exception):
-                    logger.error(f"Error processing document: {error}")
-                    failed_ids.append(doc_id)
-                else:
-                    successful_ids.append(doc_id)
-
-        documents_to_upsert = []
-        for document_info in document_infos:
-            if document_info.id not in skipped_ids:
-                if document_info.id in failed_ids:
-                    document_info.ingestion_status = "failure"
-                elif document_info.id in successful_ids:
-                    document_info.ingestion_status = "success"
-                documents_to_upsert.append(document_info)
-
-        if documents_to_upsert:
-            self.providers.database.relational.upsert_documents_overview(
-                documents_to_upsert
-            )
-
-        # TODO - modify ingestion service so that at end we write out number
-        # of vectors produced or the error message to document info
-        # THEN, return updated document infos here
-        return {
-            "processed_documents": [
-                document
-                for document in document_infos
-                if document.id in successful_ids
-            ],
-            "failed_documents": [
-                {
-                    "document_id": document_id,
-                    "result": str(results[document_id]),
-                }
-                for document_id in failed_ids
-            ],
-            "skipped_documents": skipped_ids,
-        }
-
     async def mark_document_as_failed(
         self,
         document_info: DocumentInfo,
