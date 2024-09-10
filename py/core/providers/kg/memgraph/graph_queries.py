@@ -39,7 +39,7 @@ RETURN e
 """
 
 PUT_ENTITIES_QUERY = """
-WITH value, {label: (toUpper(substring(value.category, 0, 1)) + substring(value.category, 1)) AS upperCamelCategory
+WITH value, {label: toString(toUpper(substring(value.category, 0, 1)) + substring(value.category, 1))} AS upperCamelCategory
 MERGE (e:__Entity__ {name: value.name})
 ON CREATE SET e:__Entity__
 ON MATCH SET e:__Entity__
