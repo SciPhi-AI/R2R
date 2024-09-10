@@ -1,6 +1,3 @@
-# Copyright (c) 2024 Microsoft Corporation.
-# Licensed under the MIT License
-
 """A module for clustering entities and triples into communities using hierarchical Leiden algorithm."""
 
 import json
