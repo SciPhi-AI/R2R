@@ -233,7 +233,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         rrf_k = search_settings.hybrid_search_settings.rrf_k
 
-        # The rest of the method remains the same
         # Combine results using RRF
         combined_results = {
             result.fragment_id: {
