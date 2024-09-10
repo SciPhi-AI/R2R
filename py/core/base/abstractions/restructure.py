@@ -23,6 +23,11 @@ class KGCreationSettings(R2RSerializable):
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
+    max_summary_input_length: int = Field(
+        default=65536,
+        description="The maximum length of the summary for a community.",
+    )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph enrichment.",

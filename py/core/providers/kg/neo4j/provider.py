@@ -282,8 +282,8 @@ class Neo4jKGProvider(KGProvider):
         neo4j_records = self.structured_query(
             query,
             {
-                "community_id": community_id,
-                "level": level,
+                "community_id": int(community_id),
+                "level": int(level),
             },
         )
 
@@ -306,6 +306,10 @@ class Neo4jKGProvider(KGProvider):
             )
             for record in neo4j_records.records
         ]
+
+        logger.info(
+            f"{len(entities)} entities and {len(triples)} triples were retrieved for community {community_id} at level {level}"
+        )
 
         return entities, triples
 
@@ -547,4 +551,35 @@ class Neo4jKGProvider(KGProvider):
             f"Performed graph clustering with {community_count} communities and modularities {modularities}"
         )
 
-        return (community_count, len(modularities))
+        COMMUNITY_QUERY = f"""
+            MATCH (n)
+            WHERE n.communityIds IS NOT NULL
+            RETURN DISTINCT
+            CASE
+                WHEN n.communityIds IS NOT NULL
+                THEN toIntegerList(n.communityIds)
+                ELSE []
+            END AS communityIds
+        """
+
+        result = self.structured_query(COMMUNITY_QUERY)
+
+        intermediate_communities = [
+            record["communityIds"] for record in result.records
+        ]
+
+        intermediate_communities_set = set()
+        for community_list in intermediate_communities:
+            for level, community_id in enumerate(community_list):
+                intermediate_communities_set.add((level, community_id))
+        intermediate_communities_set = list(intermediate_communities_set)
+
+        logger.info(
+            f"Intermediate communities: {intermediate_communities_set}"
+        )
+
+        return (
+            community_count,
+            len(modularities),
+            intermediate_communities_set,
+        )

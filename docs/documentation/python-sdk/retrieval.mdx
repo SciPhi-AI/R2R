@@ -141,7 +141,7 @@ search_response = client.search("What was Uber's profit in 2020?")
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 
@@ -215,7 +215,7 @@ kg_search_response = client.search(
           "__Relationship__": 20,
           "__Community__": 20,
       },
-      "max_community_description_length": 4096 * 4,
+      "max_community_description_length": 65536,
       "max_llm_queries_for_global_search": 250
     }
 )
@@ -405,7 +405,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 
@@ -680,7 +680,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 
