@@ -1,5 +1,3 @@
-"""A module for clustering entities and triples into communities using hierarchical Leiden algorithm."""
-
 import json
 import logging
 from typing import Any, AsyncGenerator, Optional

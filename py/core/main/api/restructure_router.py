@@ -111,7 +111,7 @@ class RestructureRouter(BaseRouter):
             )
 
             return {
-                "message": "Graph creation task queued successfully. Please check http://localhost:7274/workflow-runs for completion status.",
+                "message": f"Graph creation task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
                 "task_id": str(task_id),
             }
 
@@ -164,6 +164,6 @@ class RestructureRouter(BaseRouter):
             )
 
             return {
-                "message": "Graph enrichment task queued successfully. Please check http://localhost:7274/workflow-runs for completion status.",
+                "message": "Graph enrichment task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
                 "task_id": str(task_id),
             }
