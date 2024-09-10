@@ -31,7 +31,7 @@ class FallbackElement(R2RSerializable):
 
 class UnstructuredParsingProvider(ParsingProvider):
 
-    AVAILABLE_PARSERS = {
+    R2R_FALLBACK_PARSERS = {
         # Commented filetypes go to unstructured, uncommented fallback to R2R parsers (LLM based)
         # DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
         # DocumentType.DOCX: [parsers.DOCXParser],
@@ -103,7 +103,7 @@ class UnstructuredParsingProvider(ParsingProvider):
         self._initialize_parsers()
 
     def _initialize_parsers(self):
-        for doc_type, parser_infos in self.AVAILABLE_PARSERS.items():
+        for doc_type, parser_infos in self.R2R_FALLBACK_PARSERS.items():
             for parser_info in parser_infos:
                 if (
                     doc_type not in self.config.excluded_parsers
@@ -138,7 +138,7 @@ class UnstructuredParsingProvider(ParsingProvider):
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
         t0 = time.time()
-        if document.type in self.AVAILABLE_PARSERS.keys():
+        if document.type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(
                 f"Parsing {document.type}: {document.id} with fallback parser"
             )
@@ -170,7 +170,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
                         files=files,
-                        **self.config.extra_fields,
+                        **self.config.chunking_config.extra_fields,
                     )
                 )
                 elements = self.client.general.partition(req)
@@ -182,7 +182,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 )
                 elements = self.partition(
                     file=file_content,
-                    **self.config.extra_fields,
+                    **self.config.chunking_config.extra_fields,
                 )
 
         for iteration, element in enumerate(elements):
