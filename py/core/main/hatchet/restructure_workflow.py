@@ -157,6 +157,7 @@ class EnrichGraphWorkflow:
         skip_clustering = input_data["skip_clustering"]
         force_enrichment = input_data["force_enrichment"]
         leiden_params = input_data["leiden_params"]
+        max_summary_input_length = input_data["max_summary_input_length"]
         generation_config = GenerationConfig(**input_data["generation_config"])
 
         # todo: check if documets are already being clustered
@@ -211,26 +212,24 @@ class EnrichGraphWorkflow:
                 result = results[0]
 
                 workflows = []
-                for level in range(result["num_hierarchies"]):
-                    for community_id in range(
-                        1, result["num_communities"] + 1
-                    ):
-                        logger.info(
-                            f"Running KG Community Summary Workflow for community ID: {community_id} at level {level}"
+                for level, community_id in result["intermediate_communities"]:
+                    logger.info(
+                        f"Running KG Community Summary Workflow for community ID: {community_id} at level {level}"
+                    )
+                    workflows.append(
+                        context.aio.spawn_workflow(
+                            "kg-community-summary",
+                            {
+                                "request": {
+                                    "community_id": str(community_id),
+                                    "level": level,
+                                    "generation_config": generation_config.to_dict(),
+                                    "max_summary_input_length": max_summary_input_length,
+                                }
+                            },
+                            key=f"kg-community-summary_{community_id}_{level}",
                         )
-                        workflows.append(
-                            context.aio.spawn_workflow(
-                                "kg-community-summary",
-                                {
-                                    "request": {
-                                        "community_id": str(community_id),
-                                        "level": level,
-                                        "generation_config": generation_config.to_dict(),
-                                    }
-                                },
-                                key=f"kg-community-summary_{community_id}_{level}",
-                            )
-                        )
+                    )
 
                 results = await asyncio.gather(*workflows)
                 logger.info(
@@ -296,9 +295,11 @@ class KGCommunitySummaryWorkflow:
         community_id = input_data["community_id"]
         level = input_data["level"]
         generation_config = GenerationConfig(**input_data["generation_config"])
+        max_summary_input_length = input_data["max_summary_input_length"]
         await self.restructure_service.kg_community_summary(
             community_id=community_id,
             level=level,
+            max_summary_input_length=max_summary_input_length,
             generation_config=generation_config,
         )
         return {"result": None}

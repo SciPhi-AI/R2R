@@ -53,7 +53,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         self.embedding_provider = embedding_provider
 
     def community_summary_prompt(
-        self, prompt: str, entities: list[Entity], triples: list[Triple]
+        self, prompt: str, entities: list[Entity], triples: list[Triple], character_limit: int
     ):
         """
         Preparing the list of entities and triples to be summarized and created into a community summary.
@@ -69,12 +69,20 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ]
         )
 
-        return prompt.format(entities=entities_info, triples=triples_info)
+        prompt = prompt.format(entities=entities_info, triples=triples_info)
+        
+        if len(prompt) > character_limit:
+            logger.info(f"Community summary prompt was created of length {len(prompt)}, trimming to {character_limit} characters.")
+            
+        prompt = prompt[:character_limit]
+
+        return prompt
 
     async def process_community(
         self,
         level: int,
         community_id: str,
+        max_summary_input_length: int,
         generation_config: GenerationConfig,
     ) -> dict:
         """
@@ -99,6 +107,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         """
 
+
+        logger.info(f"Processing community {community_id} at level {level} with max summary input length {max_summary_input_length}.")
+
         entities, triples = (
             self.kg_provider.get_community_entities_and_triples(
                 level=level, community_id=community_id
@@ -115,7 +126,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         task_prompt_name="graphrag_community_reports",
                         task_inputs={
                             "input_text": self.community_summary_prompt(
-                                input_text, entities, triples
+                                input_text, entities, triples, max_summary_input_length 
                             ),
                         },
                     ),
@@ -159,10 +170,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community_id = input.message["community_id"]
         level = input.message["level"]
         generation_config = input.message["generation_config"]
+        max_summary_input_length = input.message["max_summary_input_length"]
 
         community_summary = await self.process_community(
             level=level,
             community_id=community_id,
+            max_summary_input_length=max_summary_input_length,
             generation_config=generation_config,
         )
 

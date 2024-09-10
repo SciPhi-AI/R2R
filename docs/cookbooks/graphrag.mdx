@@ -48,6 +48,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
+    max_summary_input_length = 16384 # increase if you want more comprehensive summaries
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
@@ -107,6 +108,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
+    max_summary_input_length = 16384
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 

@@ -421,6 +421,11 @@ class KGCreationSettings(BaseModel):
 
 class KGEnrichmentSettings(BaseModel):
 
+    max_summary_input_length: int = Field( 
+        default=4096 * 4,
+        description="The maximum input size that goes inside a .",
+    )
+
     leiden_params: dict = Field(
         default_factory=dict,
         description="The parameters for the Leiden algorithm.",
