@@ -16,7 +16,7 @@ from requests.exceptions import RequestException
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
 
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']} -f{compose_files['memgraph']}"
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f{compose_files['memgraph']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']} "
 
     docker_command += f" --project-name {project_name}"
 
@@ -258,6 +258,8 @@ def check_set_docker_env_vars(
         memgraph_vars = [
             "MEMGRAPH_USER",
             "MEMGRAPH_PASSWORD",
+            "MEMGRAPH_URL",
+            "MEMGRAPH_DATABASE",
         ]
         env_vars.extend(memgraph_vars)
 

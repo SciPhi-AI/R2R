@@ -19,6 +19,14 @@
 #     -v neo4j_plugins:/plugins \
 #     -d neo4j:5.23.0
 
+
+if [ -f .env ]; then
+    export $(cat .env | xargs)
+else
+    echo ".env file not found!"
+    exit 1
+fi
+
 # Start Memgraph 
 docker run -d \
   --rm \
@@ -28,7 +36,7 @@ docker run -d \
   -e MEMGRAPH_PASSWORD=memgraph \
   -v memgraph_data:/var/lib/memgraph \
   -v memgraph_logs:/var/log/memgraph \
-  memgraph/memgraph-mage:latest
+  memgraph/memgraph-mage:latest --log-level=TRACE --also-log-to-stderr
 
 
 # Start PostgreSQL
@@ -42,11 +50,13 @@ docker run -d \
   -v postgres_data:/var/lib/postgresql/data \
   pgvector/pgvector:pg16
 
-export OPENAI_API_KEY=
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=ineedastrongerpassword
-export NEO4J_URL=bolt://localhost:7687
-export NEO4J_DATABASE=neo4j
+
+# export NEO4J_USER=neo4j
+# export NEO4J_PASSWORD=ineedastrongerpassword
+# export NEO4J_URL=bolt://localhost:7687
+# export NEO4J_DATABASE=neo4j
+
+export MEMGRAPH_DATABASE=memgraph
 
 export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=postgres
@@ -54,6 +64,3 @@ export POSTGRES_HOST=localhost
 export POSTGRES_PORT=5432
 export POSTGRES_DBNAME=postgres
 export POSTGRES_VECS_COLLECTION=vecs
-
-
-export CONFIG_PATH=/Users/antejavor/repos/R2R/py/r2r_memgraph.toml

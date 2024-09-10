@@ -10,7 +10,6 @@ from .embeddings import (
 
 from .kg import Neo4jKGProvider, MemgraphKGProvider
 from .file import PostgresFileProvider
-from .kg import Neo4jKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .orchestration import HatchetOrchestrationProvider
 from .parsing import R2RParsingProvider, UnstructuredParsingProvider

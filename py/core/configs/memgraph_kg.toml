@@ -9,6 +9,10 @@ overlap = 20
 
 [kg]
 provider = "memgraph"
+user="memgraph"
+password="memgraph"
+url="bolt://localhost:7687"
+host="localhost"
 batch_size = 256
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 

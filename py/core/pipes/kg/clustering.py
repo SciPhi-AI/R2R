@@ -82,7 +82,7 @@ class KGClusteringPipe(AsyncPipe):
         generation_config: GenerationConfig,
     ) -> dict:
         """
-        Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
+        Process a community by summarizing it and creating a summary embedding and storing it to a graph (neo4j or Memgraph) database.
 
         Input:
         - level: The level of the hierarchy.

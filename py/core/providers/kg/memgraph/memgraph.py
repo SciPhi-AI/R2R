@@ -219,18 +219,18 @@ class MemgraphKGProvider(KGProvider):
 
     def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
-    ) -> None:
+    ) -> Tuple[int, int]:
 
         all_entities = []
         all_relationships = []
         for extraction in kg_extractions:
-            all_entities.extend(extraction.entities)
+            all_entities.extend((list(extraction.entities.values())))
             all_relationships.extend(extraction.triples)
 
         nodes_upserted = self.upsert_entities(all_entities)
         relationships_upserted = self.upsert_triples(all_relationships)
 
-        return nodes_upserted, relationships_upserted
+        return (len(nodes_upserted), len(relationships_upserted))
 
     def get(self, entity_name: str = None) -> Entity:
         """

@@ -15,7 +15,7 @@ provider = "None"
 provider = "None"
 
 [kg]
-provider = "neo4j"
+provider = "memgraph"
 batch_size = 1
 
   [kg.kg_extraction_config]

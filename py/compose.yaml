@@ -136,6 +136,8 @@ services:
       # Memgraph
       - MEMGRAPH_USER=${MEMGRAPH_USER:-memgraph}
       - MEMGRAPH_PASSWORD=${MEMGRAPH_PASSWORD:-memgraph}
+      - MEMGRAPH_URL=${MEMGRAPH_URL:-bolt://memgraph:7687}
+      - MEMGRAPH_DATABASE=${MEMGRAPH_DATABASE:-memgraph}
 
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
