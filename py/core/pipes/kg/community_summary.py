@@ -57,7 +57,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         prompt: str,
         entities: list[Entity],
         triples: list[Triple],
-        character_limit: int,
+        max_summary_input_length: int,
     ):
         """
         Preparing the list of entities and triples to be summarized and created into a community summary.
@@ -75,11 +75,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         prompt = prompt.format(entities=entities_info, triples=triples_info)
 
-        if len(prompt) > character_limit:
+        if len(prompt) > max_summary_input_length:
             logger.info(
-                f"Community summary prompt was created of length {len(prompt)}, trimming to {character_limit} characters."
+                f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
             )
-            prompt = prompt[:character_limit]
+            prompt = prompt[:max_summary_input_length]
 
         return prompt
 
