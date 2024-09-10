@@ -13,7 +13,7 @@ from core.base import (
 )
 from core.base.abstractions import VectorSearchSettings
 
-from .vecs import Client, Collection, create_client
+from .vecs import Client, Collection, create_client, IndexMethod, IndexMeasure, IndexArgsHNSW
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +96,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
+        self.create_index()
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
@@ -274,8 +275,20 @@ class PostgresVectorDBProvider(VectorDBProvider):
             for result in sorted_results
         ]
 
-    def create_index(self, index_type, column_name, index_options):
-        self.collection.create_index()
+    def create_index(self, index_type=IndexMethod.hnsw, measure=IndexMeasure.cosine_distance, index_options=None):
+        if self.collection is None:
+            raise ValueError("Collection is not initialized.")
+        
+        if index_options is None:
+            index_options = IndexArgsHNSW(m=16, ef_construction=64)  # Default HNSW parameters
+        
+        self.collection.create_index(
+            method=index_type,
+            measure=measure,
+            index_arguments=index_options,
+            replace=True
+        )
+
 
     def delete(
         self,

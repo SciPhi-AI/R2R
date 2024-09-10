@@ -1,11 +1,10 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import yaml
 from fastapi import Body, Depends
 from pydantic import Json
-from typing import Union
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
 from core.base.api.models.restructure.responses import (

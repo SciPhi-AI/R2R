@@ -16,6 +16,7 @@ from core.base import (
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
+from core.base import Prompt
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
@@ -634,3 +635,37 @@ class ManagementService(Service):
         return self.providers.database.relational.document_groups(
             document_id, offset, limit
         )
+    @telemetry_event("AddPrompt")
+    async def add_prompt(self, name: str, template: str, input_types: dict[str, str]) -> dict:
+        try:
+            self.providers.prompt.add_prompt(name, template, input_types)
+            return {"message": f"Prompt '{name}' added successfully."}
+        except ValueError as e:
+            raise R2RException(status_code=400, message=str(e))
+
+    @telemetry_event("GetPrompt")
+    async def get_prompt(self, prompt_name: str, inputs: Optional[dict[str, Any]] = None, prompt_override: Optional[str] = None) -> str:
+        try:
+            return {"message": self.providers.prompt.get_prompt(prompt_name, inputs, prompt_override)}
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))
+
+    @telemetry_event("GetAllPrompts")
+    async def get_all_prompts(self) -> dict[str, Prompt]:
+        return self.providers.prompt.get_all_prompts()
+
+    @telemetry_event("UpdatePrompt")
+    async def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict[str, str]] = None) -> dict:
+        try:
+            self.providers.prompt.update_prompt(name, template, input_types)
+            return {"message": f"Prompt '{name}' updated successfully."}
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))
+
+    @telemetry_event("DeletePrompt")
+    async def delete_prompt(self, name: str) -> dict:
+        try:
+            self.providers.prompt.delete_prompt(name)
+            return {"message": f"Prompt '{name}' deleted successfully."}
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))    

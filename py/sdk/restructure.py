@@ -7,6 +7,7 @@ from .models import (
     KGEnrichmentSettings,
 )
 
+
 class RestructureMethods:
 
     @staticmethod
