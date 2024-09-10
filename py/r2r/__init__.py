@@ -4,7 +4,7 @@ __all__ = [
     # R2R SDK
     "R2RAsyncClient",
     "R2RClient",
-    "generate_id_from_label"
+    "generate_id_from_label",
 ]
 
 # try:

@@ -379,6 +379,7 @@ class R2RPipeFactory:
         kg_node_extraction_pipe: Optional[AsyncPipe] = None,
         kg_node_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
+        kg_community_summary_pipe: Optional[AsyncPipe] = None,
         chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -413,6 +414,8 @@ class R2RPipeFactory:
             or self.create_kg_node_description_pipe(*args, **kwargs),
             kg_clustering_pipe=kg_clustering_pipe
             or self.create_kg_clustering_pipe(*args, **kwargs),
+            kg_community_summary_pipe=kg_community_summary_pipe
+            or self.create_kg_community_summary_pipe(*args, **kwargs),
             chunking_pipe=chunking_pipe_override
             or self.create_chunking_pipe(*args, **kwargs),
         )
@@ -539,6 +542,16 @@ class R2RPipeFactory:
         from core.pipes import KGClusteringPipe
 
         return KGClusteringPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
+        )
+
+    def create_kg_community_summary_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGCommunitySummaryPipe
+
+        return KGCommunitySummaryPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,

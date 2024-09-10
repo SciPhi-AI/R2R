@@ -635,8 +635,11 @@ class ManagementService(Service):
         return self.providers.database.relational.document_groups(
             document_id, offset, limit
         )
+
     @telemetry_event("AddPrompt")
-    async def add_prompt(self, name: str, template: str, input_types: dict[str, str]) -> dict:
+    async def add_prompt(
+        self, name: str, template: str, input_types: dict[str, str]
+    ) -> dict:
         try:
             self.providers.prompt.add_prompt(name, template, input_types)
             return {"message": f"Prompt '{name}' added successfully."}
@@ -644,9 +647,18 @@ class ManagementService(Service):
             raise R2RException(status_code=400, message=str(e))
 
     @telemetry_event("GetPrompt")
-    async def get_prompt(self, prompt_name: str, inputs: Optional[dict[str, Any]] = None, prompt_override: Optional[str] = None) -> str:
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
         try:
-            return {"message": self.providers.prompt.get_prompt(prompt_name, inputs, prompt_override)}
+            return {
+                "message": self.providers.prompt.get_prompt(
+                    prompt_name, inputs, prompt_override
+                )
+            }
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
@@ -655,7 +667,12 @@ class ManagementService(Service):
         return self.providers.prompt.get_all_prompts()
 
     @telemetry_event("UpdatePrompt")
-    async def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict[str, str]] = None) -> dict:
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ) -> dict:
         try:
             self.providers.prompt.update_prompt(name, template, input_types)
             return {"message": f"Prompt '{name}' updated successfully."}
@@ -668,4 +685,4 @@ class ManagementService(Service):
             self.providers.prompt.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))    
+            raise R2RException(status_code=404, message=str(e))

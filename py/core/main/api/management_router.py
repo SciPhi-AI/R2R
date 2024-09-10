@@ -113,8 +113,12 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_prompt_app(
             prompt_name: str = Path(..., description="Prompt name"),
-            inputs: Optional[Json[dict]] = Query(None, description="JSON-encoded prompt inputs"),
-            prompt_override: Optional[str] = Query(None, description="Prompt override"),
+            inputs: Optional[Json[dict]] = Query(
+                None, description="JSON-encoded prompt inputs"
+            ),
+            prompt_override: Optional[str] = Query(
+                None, description="Prompt override"
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedPromptMessageResponse:
             if not auth_user.is_superuser:

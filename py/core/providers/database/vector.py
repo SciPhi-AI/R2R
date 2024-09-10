@@ -13,7 +13,14 @@ from core.base import (
 )
 from core.base.abstractions import VectorSearchSettings
 
-from .vecs import Client, Collection, create_client, IndexMethod, IndexMeasure, IndexArgsHNSW
+from .vecs import (
+    Client,
+    Collection,
+    create_client,
+    IndexMethod,
+    IndexMeasure,
+    IndexArgsHNSW,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -275,20 +282,26 @@ class PostgresVectorDBProvider(VectorDBProvider):
             for result in sorted_results
         ]
 
-    def create_index(self, index_type=IndexMethod.hnsw, measure=IndexMeasure.cosine_distance, index_options=None):
+    def create_index(
+        self,
+        index_type=IndexMethod.hnsw,
+        measure=IndexMeasure.cosine_distance,
+        index_options=None,
+    ):
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
-        
+
         if index_options is None:
-            index_options = IndexArgsHNSW(m=16, ef_construction=64)  # Default HNSW parameters
-        
+            index_options = IndexArgsHNSW(
+                m=16, ef_construction=64
+            )  # Default HNSW parameters
+
         self.collection.create_index(
             method=index_type,
             measure=measure,
             index_arguments=index_options,
-            replace=True
+            replace=True,
         )
-
 
     def delete(
         self,

@@ -4,6 +4,7 @@ from .restructure_workflow import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
     KgExtractAndStoreWorkflow,
+    KGCommunitySummaryWorkflow,
 )
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "EnrichGraphWorkflow",
     "CreateGraphWorkflow",
     "KgExtractAndStoreWorkflow",
+    "KGCommunitySummaryWorkflow",
 ]
