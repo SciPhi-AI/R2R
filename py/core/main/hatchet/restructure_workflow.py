@@ -209,15 +209,7 @@ class EnrichGraphWorkflow:
                     leiden_params, generation_config
                 )
 
-                logger.info(
-                    f"Clustering results in this particular place: {results}"
-                )
-
                 result = results[0]
-
-                logger.info(
-                    f"Clustering results inside kg_clusteirng ajs;ldkfja s;d: {result}"
-                )
 
                 workflows = []
                 for level in range(result["num_hierarchies"]):
