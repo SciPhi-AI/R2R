@@ -94,9 +94,4 @@ class KGClusteringPipe(AsyncPipe):
         vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
         vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        # async for community in self.cluster_kg(
-        #     leiden_params, generation_config
-        # ):
-        #     yield community
-
         yield await self.cluster_kg(leiden_params, generation_config)
