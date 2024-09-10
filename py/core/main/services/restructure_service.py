@@ -54,6 +54,7 @@ class RestructureService(Service):
             ),
             run_manager=self.run_manager,
         )
+
         result_gen = await self.pipes.kg_storage_pipe.run(
             input=self.pipes.kg_storage_pipe.Input(message=triples),
             run_manager=self.run_manager,
@@ -76,17 +77,34 @@ class RestructureService(Service):
         return await _collect_results(result_gen)
 
     @telemetry_event("kg_clustering")
-    async def kg_clustering(
-        self, leiden_params, generation_config, perform_clustering
-    ):
-        result_gen = await self.pipes.kg_clustering_pipe.run(
+    async def kg_clustering(self, leiden_params, generation_config):
+        clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "leiden_params": leiden_params,
                     "generation_config": generation_config,
-                    "perform_clustering": perform_clustering,
                 }
             ),
             run_manager=self.run_manager,
         )
-        return await _collect_results(result_gen)
+
+        return await _collect_results(clustering_result)
+
+    @telemetry_event("kg_community_summary")
+    async def kg_community_summary(
+        self,
+        community_id: str,
+        level: int,
+        generation_config: GenerationConfig,
+    ):
+        summary_results = await self.pipes.kg_community_summary_pipe.run(
+            input=self.pipes.kg_community_summary_pipe.Input(
+                message={
+                    "community_id": community_id,
+                    "level": level,
+                    "generation_config": generation_config,
+                }
+            ),
+            run_manager=self.run_manager,
+        )
+        return await _collect_results(summary_results)

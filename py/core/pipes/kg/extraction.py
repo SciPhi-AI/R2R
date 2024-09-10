@@ -171,11 +171,13 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 KeyError,
                 IndexError,
             ) as e:
-                logger.error(f"Error in extract_kg: {e}")
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(f"Failed after retries with {e}")
+                    logger.error(
+                        f"Failed after retries with for fragment {fragment.id} of document {fragment.document_id}: {e}"
+                    )
+                    raise e
 
         # add metadata to entities and triples
 
@@ -220,24 +222,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
             for extraction in extractions
         ]
 
-        try:
-            self.database_provider.relational.execute_query(
-                f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'processing' WHERE document_id = '{document_id}'"
-            )
-        except Exception as e:
-            logger.error(
-                f"Error updating document {document_id} to PROCESSING: {e}"
-            )
-
         for completed_task in asyncio.as_completed(tasks):
-            yield await completed_task
-
-        try:
-            self.database_provider.relational.execute_query(
-                f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'success' WHERE document_id = '{document_id}'"
-            )
-            logger.info(f"Updated document {document_id} to SUCCESS")
-        except Exception as e:
-            logger.error(
-                f"Error updating document {document_id} to SUCCESS: {e}"
-            )
+            try:
+                yield await completed_task
+            except Exception as e:
+                logger.error(f"Error in Extracting KG Triples: {e}")
+                raise R2RDocumentProcessingError(
+                    document_id=document_id,
+                    error=str(e),
+                ) from e

@@ -7,8 +7,18 @@ from pydantic import BaseModel
 from core.base.api.models.base import ResultsWrapper
 
 
-class PromptResponse(BaseModel):
+class UpdatePromptResponse(BaseModel):
     message: str
+
+
+class PromptResponse(BaseModel):
+    name: str
+    template: str
+    input_types: Dict[str, str]
+
+
+class PromptListResponse(BaseModel):
+    prompts: Dict[str, PromptResponse]
 
 
 class LogEntry(BaseModel):
@@ -103,7 +113,8 @@ class AddUserResponse(BaseModel):
 
 
 # Create wrapped versions of each response
-WrappedPromptResponse = ResultsWrapper[PromptResponse]
+WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
+WrappedGetPromptsResponse = ResultsWrapper[List[PromptResponse]]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[List[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]

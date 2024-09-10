@@ -244,13 +244,18 @@ class R2RProviderFactory:
 
     @staticmethod
     def create_prompt_provider(
-        prompt_config: PromptConfig, *args, **kwargs
+        prompt_config: PromptConfig,
+        database_provider: DatabaseProvider,
+        *args,
+        **kwargs,
     ) -> PromptProvider:
         prompt_provider = None
         if prompt_config.provider == "r2r":
             from core.providers import R2RPromptProvider
 
-            prompt_provider = R2RPromptProvider(prompt_config)
+            prompt_provider = R2RPromptProvider(
+                prompt_config, database_provider
+            )
         else:
             raise ValueError(
                 f"Prompt provider {prompt_config.provider} not supported"
@@ -287,10 +292,6 @@ class R2RProviderFactory:
         **kwargs,
     ) -> R2RProviders:
 
-        prompt_provider = (
-            prompt_provider_override
-            or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
-        )
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -314,6 +315,13 @@ class R2RProviderFactory:
                 self.config.database, crypto_provider, *args, **kwargs
             )
         )
+        prompt_provider = (
+            prompt_provider_override
+            or self.create_prompt_provider(
+                self.config.prompt, database_provider, *args, **kwargs
+            )
+        )
+
         auth_provider = auth_provider_override or self.create_auth_provider(
             self.config.auth,
             database_provider,
@@ -371,6 +379,7 @@ class R2RPipeFactory:
         kg_node_extraction_pipe: Optional[AsyncPipe] = None,
         kg_node_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
+        kg_community_summary_pipe: Optional[AsyncPipe] = None,
         chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -405,6 +414,8 @@ class R2RPipeFactory:
             or self.create_kg_node_description_pipe(*args, **kwargs),
             kg_clustering_pipe=kg_clustering_pipe
             or self.create_kg_clustering_pipe(*args, **kwargs),
+            kg_community_summary_pipe=kg_community_summary_pipe
+            or self.create_kg_community_summary_pipe(*args, **kwargs),
             chunking_pipe=chunking_pipe_override
             or self.create_chunking_pipe(*args, **kwargs),
         )
@@ -531,6 +542,16 @@ class R2RPipeFactory:
         from core.pipes import KGClusteringPipe
 
         return KGClusteringPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
+        )
+
+    def create_kg_community_summary_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGCommunitySummaryPipe
+
+        return KGCommunitySummaryPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
