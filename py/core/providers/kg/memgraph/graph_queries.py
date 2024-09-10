@@ -39,12 +39,12 @@ RETURN e
 """
 
 PUT_ENTITIES_QUERY = """
-WITH value, [toUpper(substring(value.category, 0, 1)) + substring(value.category, 1)] AS upperCamelCategory
-CALL{
-    WITH value, upperCamelCategory
-    CALL merge.node(upperCamelCategory, {name: value.name}, {}, {}) YIELD node RETURN node
-}
-WITH value, node
+WITH value, {label: (toUpper(substring(value.category, 0, 1)) + substring(value.category, 1)) AS upperCamelCategory
+MERGE (e:__Entity__ {name: value.name})
+ON CREATE SET e:__Entity__
+ON MATCH SET e:__Entity__
+WITH e, upperCamelCategory, value
+SET e:upperCamelCategory.label
 SET node.description = CASE
     WHEN node.description IS NULL THEN value.description
     ELSE node.description + '\n\n' + value.description
