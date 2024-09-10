@@ -6,7 +6,6 @@ from .factory import (
     R2RPipelineFactory,
     R2RProviderFactory,
 )
-from .factory_extensions import R2RPipeFactoryWithMultiSearch
 
 __all__ = [
     # Builder
@@ -18,6 +17,4 @@ __all__ = [
     "R2RPipeFactory",
     "R2RPipelineFactory",
     "R2RAgentFactory",
-    # Factory Extensions
-    "R2RPipeFactoryWithMultiSearch",
 ]
