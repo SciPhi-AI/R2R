@@ -68,6 +68,9 @@ class PostgresRelationalDBProvider(
     async def _initialize_relational_db(self):
         async with self.pool.acquire() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+            await conn.execute(
+                'CREATE EXTENSION IF NOT EXISTS "lo";'
+            )  # Move this to file provider
 
             # Call create_table for each mixin
             for base_class in self.__class__.__bases__:

@@ -1,19 +1,9 @@
-"""
-TODO: Adapt to work in a truly async manner.
-    Large objects aren't supported in asyncpg as a dedicated API. https://github.com/MagicStack/asyncpg/issues/826
-    To work around this, we are forced to use psychopg2, with some workarounds to make it non-blocking.
-"""
-
 import io
 import logging
 from typing import BinaryIO, Optional
 from uuid import UUID
 
-import psycopg2
-import psycopg2.extras
-from fastapi.concurrency import run_in_threadpool
-from psycopg2 import Error as PostgresError
-
+import asyncpg
 from core.base import FileConfig, R2RException
 from core.base.providers import FileProvider
 from core.providers.database.postgres import PostgresDBProvider
@@ -26,39 +16,33 @@ class PostgresFileProvider(FileProvider):
         super().__init__()
         self.config = config
         self.db_provider = db_provider
-        self.conn = None
+        self.pool = None
 
     async def __aenter__(self):
         await self.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        await run_in_threadpool(self._close_connection)
+        await self._close_connection()
 
-    def _close_connection(self):
-        if self.conn:
-            self.conn.close()
-            self.conn = None
+    async def _close_connection(self):
+        if self.pool:
+            await self.pool.close()
+            self.pool = None
 
     async def initialize(self):
-        await run_in_threadpool(self._initialize)
-
-    def _initialize(self):
-        self.conn = psycopg2.connect(self.db_provider.connection_string)
-        if not self.conn:
-            raise R2RException(
-                status_code=500,
-                message="Failed to initialize file provider database connection.",
-            )
+        self.pool = await asyncpg.create_pool(
+            self.db_provider.connection_string
+        )
         logger.info(
             "File provider successfully connected to Postgres database."
         )
-        self.create_table()
+        await self.create_table()
 
     def _get_table_name(self, base_name: str) -> str:
         return f"{base_name}"
 
-    def create_table(self):
+    async def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('file_storage')} (
             document_id UUID PRIMARY KEY,
@@ -70,13 +54,8 @@ class PostgresFileProvider(FileProvider):
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(query)
-                self.conn.commit()
-        except PostgresError as e:
-            logger.error(f"Failed to create table: {e}")
-            raise
+        async with self.pool.acquire() as conn:
+            await conn.execute(query)
 
     async def upsert_file(
         self,
@@ -89,7 +68,7 @@ class PostgresFileProvider(FileProvider):
         query = f"""
         INSERT INTO {self._get_table_name('file_storage')}
         (document_id, file_name, file_oid, file_size, file_type)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (document_id) DO UPDATE SET
             file_name = EXCLUDED.file_name,
             file_oid = EXCLUDED.file_oid,
@@ -97,50 +76,50 @@ class PostgresFileProvider(FileProvider):
             file_type = EXCLUDED.file_type,
             updated_at = NOW();
         """
-        params = (document_id, file_name, file_oid, file_size, file_type)
-        await run_in_threadpool(self._execute_query, query, params)
-
-    def _execute_query(self, query, params=None):
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(query, params)
-                self.conn.commit()
-        except PostgresError as e:
-            logger.error(f"Query execution failed: {e}")
-            raise R2RException(
-                status_code=500, message="Database query failed."
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                query, document_id, file_name, file_oid, file_size, file_type
             )
 
     async def store_file(
-        self, document_id, file_name, file_content, file_type=None
+        self, document_id, file_name, file_content: io.BytesIO, file_type=None
     ):
         file_size = file_content.getbuffer().nbytes
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                oid = await conn.fetchval("SELECT lo_create(0)")
+                await self._write_lobject(conn, oid, file_content)
+                await self.upsert_file(
+                    document_id, file_name, oid, file_size, file_type
+                )
+
+    async def _write_lobject(self, conn, oid, file_content):
+        # Open the large object
+        lobject = await conn.fetchval(
+            "SELECT lo_open($1, $2)", oid, 0x20000
+        )  # 0x20000 is INV_WRITE flag
 
         try:
-            oid = await run_in_threadpool(self._create_lobject)
-            await run_in_threadpool(self._write_lobject, oid, file_content)
+            # Write the content in chunks (optional, for large files)
+            chunk_size = 8192  # 8 KB chunks
+            while True:
+                chunk = file_content.read(chunk_size)
+                if not chunk:
+                    break
+                await conn.execute("SELECT lo_put($1, $2)", lobject, chunk)
 
-            await self.upsert_file(
-                document_id, file_name, oid, file_size, file_type
-            )
+            # Optionally commit the changes to the large object
+            await conn.execute("SELECT lo_close($1)", lobject)
+
         except Exception as e:
+            # Handle exceptions, rollback the transaction if necessary
+            await conn.execute(
+                "SELECT lo_unlink($1)", oid
+            )  # Rollback by deleting the large object
             raise R2RException(
                 status_code=500,
-                message=f"Failed to store file for document {document_id}: {e}",
-            ) from e
-
-    def _create_lobject(self):
-        with self.conn.cursor() as cursor:
-            cursor.execute("SELECT lo_create(0)")
-            oid = cursor.fetchone()[0]
-            self.conn.commit()
-            return oid
-
-    def _write_lobject(self, oid, file_content):
-        lobj = self.conn.lobject(oid, "wb")
-        lobj.write(file_content.getvalue())
-        lobj.close()
-        self.conn.commit()
+                message=f"Failed to write to large object: {e}",
+            )
 
     async def retrieve_file(
         self, document_id: UUID
@@ -148,62 +127,59 @@ class PostgresFileProvider(FileProvider):
         query = f"""
         SELECT file_name, file_oid, file_size
         FROM {self._get_table_name('file_storage')}
-        WHERE document_id = %s
+        WHERE document_id = $1
         """
-        result = await run_in_threadpool(
-            self._execute_fetchrow, query, (document_id,)
-        )
-        if not result:
-            raise R2RException(
-                status_code=404,
-                message=f"File for document {document_id} not found",
+        async with self.pool.acquire() as conn:
+            result = await conn.fetchrow(query, document_id)
+            if not result:
+                raise R2RException(
+                    status_code=404,
+                    message=f"File for document {document_id} not found",
+                )
+            file_name, oid, file_size = result
+            file_content = await self._read_lobject(conn, oid)
+            return file_name, io.BytesIO(file_content), file_size
+
+    async def _read_lobject(self, conn, oid: int) -> bytes:
+        await conn.execute(
+            "SELECT lo_open($1, 262144)", oid
+        )  # 262144 = INV_READ
+        file_data = io.BytesIO()
+        chunk_size = 8192
+        while True:
+            chunk = await conn.fetchval(
+                "SELECT lo_read($1, $2)", oid, chunk_size
             )
-
-        file_name, oid, file_size = result
-        file_content = await run_in_threadpool(self._read_lob, oid)
-        return file_name, io.BytesIO(file_content), file_size
-
-    def _execute_fetchrow(self, query, params):
-        with self.conn.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.fetchone()
-
-    def _read_lob(self, oid: int) -> bytes:
-        lobj = self.conn.lobject(oid, "rb")
-        file_data = lobj.read()
-        lobj.close()
-        return file_data
+            if not chunk:
+                break
+            file_data.write(chunk)
+        await conn.execute("SELECT lo_close($1)", oid)
+        return file_data.getvalue()
 
     async def delete_file(self, document_id: UUID) -> bool:
         query = f"""
         SELECT file_oid FROM {self._get_table_name('file_storage')}
-        WHERE document_id = %s
+        WHERE document_id = $1
         """
-        result = await run_in_threadpool(
-            self._execute_fetchrow, query, (document_id,)
-        )
-        if not result:
-            raise R2RException(
-                status_code=404,
-                message=f"File for document {document_id} not found",
-            )
+        async with self.pool.acquire() as conn:
+            result = await conn.fetchval(query, document_id)
+            if not result:
+                raise R2RException(
+                    status_code=404,
+                    message=f"File for document {document_id} not found",
+                )
+            oid = result
+            await self._delete_lobject(conn, oid)
 
-        oid = result[0]
-        await run_in_threadpool(self._delete_lob, oid)
-
-        delete_query = f"""
-        DELETE FROM {self._get_table_name('file_storage')}
-        WHERE document_id = %s
-        """
-        await run_in_threadpool(
-            self._execute_query, delete_query, (document_id,)
-        )
+            delete_query = f"""
+            DELETE FROM {self._get_table_name('file_storage')}
+            WHERE document_id = $1
+            """
+            await conn.execute(delete_query, document_id)
         return True
 
-    def _delete_lob(self, oid: int) -> None:
-        lobj = self.conn.lobject(oid, "wb")
-        lobj.unlink()
-        lobj.close()
+    async def _delete_lobject(self, conn, oid: int) -> None:
+        await conn.execute("SELECT lo_unlink($1)", oid)
 
     # Implementation of get_files_overview
     async def get_files_overview(
@@ -217,11 +193,11 @@ class PostgresFileProvider(FileProvider):
         params = []
 
         if filter_document_ids:
-            conditions.append("document_id = ANY(%s)")
+            conditions.append("document_id = ANY($1)")
             params.append(filter_document_ids)
 
         if filter_file_names:
-            conditions.append("file_name = ANY(%s)")
+            conditions.append("file_name = ANY($2)")
             params.append(filter_file_names)
 
         query = f"""
@@ -232,10 +208,11 @@ class PostgresFileProvider(FileProvider):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        query += " ORDER BY created_at DESC OFFSET %s LIMIT %s"
+        query += " ORDER BY created_at DESC OFFSET $3 LIMIT $4"
         params.extend([offset, limit])
 
-        results = await run_in_threadpool(self._execute_fetch, query, params)
+        async with self.pool.acquire() as conn:
+            results = await conn.fetch(query, *params)
 
         if not results:
             raise R2RException(
@@ -245,18 +222,13 @@ class PostgresFileProvider(FileProvider):
 
         return [
             {
-                "document_id": row[0],
-                "file_name": row[1],
-                "file_oid": row[2],
-                "file_size": row[3],
-                "file_type": row[4],
-                "created_at": row[5],
-                "updated_at": row[6],
+                "document_id": row["document_id"],
+                "file_name": row["file_name"],
+                "file_oid": row["file_oid"],
+                "file_size": row["file_size"],
+                "file_type": row["file_type"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
             }
             for row in results
         ]
-
-    def _execute_fetch(self, query, params):
-        with self.conn.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.fetchall()
