@@ -72,6 +72,25 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     <ParamField path="selected_group_ids" type="Array<string | null>">
     Group IDs to search for.
     </ParamField>
+    <ParamField path="index_measure" type="string" default="cosine_distance">
+    The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
+    </ParamField>
+
+    <ParamField path="include_values" type="boolean" default="true">
+    Whether to include search score values in the search results.
+    </ParamField>
+
+    <ParamField path="include_metadatas" type="boolean" default="true">
+    Whether to include element metadata in the search results.
+    </ParamField>
+
+    <ParamField path="probes" type="number" default="10">
+    Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.
+    </ParamField>
+
+    <ParamField path="ef_search" type="number" default="40">
+    Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.
+    </ParamField>
   </Expandable>
 </ParamField>
 <ParamField path="kg_search_settings" type="Optional[Union[KGSearchSettings, dict]]" default="None">
@@ -369,6 +388,18 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     The `api_base` used in final LLM completion.
     </ParamField>
 
+    <ParamField path="functions" type="Record<string, any>" default="None">
+    The `functions` used in final LLM completion.
+    </ParamField>
+
+    <ParamField path="tools" type="Record<string, any>" default="None">
+    The `tools` used in final LLM completion.
+    </ParamField>
+
+    <ParamField path="api_base" type="string" default="None">
+    The `api_base` used in final LLM completion.
+    </ParamField>
+
   </Expandable>
 
 
@@ -424,6 +455,40 @@ if (streamResponse instanceof ReadableStream) {
   }
 }
 ```
+### Advanced RAG Techniques
+
+R2R supports advanced Retrieval-Augmented Generation (RAG) techniques that can be easily configured at runtime. These techniques include Hypothetical Document Embeddings (HyDE) and RAG-Fusion, which can significantly enhance the quality and relevance of retrieved information.
+
+To use an advanced RAG technique, you can specify the `search_strategy` parameter in your vector search settings:
+
+```javascript
+const client = new R2RClient();
+
+// Using HyDE
+const hydeResponse = await client.rag(
+    "What are the main themes in Shakespeare's plays?",
+    {
+        vector_search_settings: {
+            search_strategy: "hyde",
+            search_limit: 10
+        }
+    }
+);
+
+// Using RAG-Fusion
+const ragFusionResponse = await client.rag(
+    "Explain the theory of relativity",
+    {
+        vector_search_settings: {
+            search_strategy: "rag_fusion",
+            search_limit: 20
+        }
+    }
+);
+```
+
+For a comprehensive guide on implementing and optimizing advanced RAG techniques in R2R, including HyDE and RAG-Fusion, please refer to our [Advanced RAG Cookbook](/cookbooks/advanced-rag).
+
 
 ### Customizing RAG
 

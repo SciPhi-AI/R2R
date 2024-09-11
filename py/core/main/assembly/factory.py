@@ -27,8 +27,8 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
+from core.pipes import MultiSearchPipe, SearchPipe
 
-from core.pipes import SearchPipe, MultiSearchPipe
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
@@ -464,24 +464,28 @@ class R2RPipeFactory:
             database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
         )
-    
-    def create_multi_search_pipe(self, inner_search_pipe: SearchPipe, *args, **kwargs) -> MultiSearchPipe:
-        multi_search_config = MultiSearchPipe.PipeConfig()
-        task_prompt_name = kwargs.get("task_prompt_name") or f"{multi_search_config.name}_task_prompt"
 
-        if kwargs.get("query_generation_template_override"):
-            template = kwargs.get("query_generation_template_override")
-            self.providers.prompt.add_prompt(**template)
-            task_prompt_name = template["name"]
-
+    def create_multi_search_pipe(
+        self,
+        inner_search_pipe: SearchPipe,
+        use_rrf: bool = False,
+        expansion_technique: str = "hyde",
+        expansion_factor: int = 3,
+        *args,
+        **kwargs,
+    ) -> MultiSearchPipe:
         from core.pipes import QueryTransformPipe
 
-        query_transform_pipe = kwargs.get("multi_query_transform_pipe_override") or QueryTransformPipe(
+        multi_search_config = MultiSearchPipe.PipeConfig(
+            use_rrf=use_rrf, expansion_factor=expansion_factor
+        )
+
+        query_transform_pipe = QueryTransformPipe(
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             config=QueryTransformPipe.QueryTransformConfig(
-                name=multi_search_config.name,
-                task_prompt=task_prompt_name,
+                name="multi_query_transform",
+                task_prompt=expansion_technique,
             ),
         )
 
@@ -495,20 +499,34 @@ class R2RPipeFactory:
         if self.config.embedding.provider is None:
             return None
 
-        vector_search_pipe = self.create_default_vector_search_pipe(*args, **kwargs)
-        multi_search_pipe = self.create_multi_search_pipe(vector_search_pipe, *args, **kwargs)
+        vanilla_vector_search_pipe = self.create_default_vector_search_pipe(
+            *args, **kwargs
+        )
+        hyde_search_pipe = self.create_multi_search_pipe(
+            vanilla_vector_search_pipe,
+            use_rrf=False,
+            expansion_technique="hyde",
+            *args,
+            **kwargs,
+        )
+        rag_fusion_pipe = self.create_multi_search_pipe(
+            vanilla_vector_search_pipe,
+            use_rrf=True,
+            expansion_technique="rag_fusion",
+            *args,
+            **kwargs,
+        )
 
         from core.pipes import RoutingSearchPipe
 
         return RoutingSearchPipe(
             search_pipes={
-                "vector": vector_search_pipe,
-                "multi": multi_search_pipe,
+                "vanilla": vanilla_vector_search_pipe,
+                "hyde": hyde_search_pipe,
+                "rag_fusion": rag_fusion_pipe,
             },
-            default_pipe="vector",
+            default_strategy="hyde",
         )
-
-
 
     def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
         if self.config.kg.provider is None:

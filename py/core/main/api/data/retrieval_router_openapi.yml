@@ -151,6 +151,9 @@ rag:
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
     task_prompt_override: "Task prompt override"
+    strategy: "The RAG strategy to use (default | HyDE | RAG Fusion)"
+    include_title_if_available: "Includes document title in chunk response, if available."
+    search_strategy: "The RAG strategy to use (default | hyde | rag_fusion)"
 
 agent:
   openapi_extra:
@@ -215,4 +218,5 @@ agent:
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
     task_prompt_override: "Task prompt override"
-    include_title_if_available: "Include title if available"
+    include_title_if_available: "Includes document title in chunk response, if available."
+    rag_strategy: "The RAG strategy to use (default | hyde | rag_fusion)"

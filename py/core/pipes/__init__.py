@@ -12,10 +12,11 @@ from .other.web_search_pipe import WebSearchPipe
 from .retrieval.kg_search_pipe import KGSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe
+from .retrieval.routing_search_pipe import RoutingSearchPipe
 from .retrieval.search_rag_pipe import SearchRAGPipe
 from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
 from .retrieval.vector_search_pipe import VectorSearchPipe
-from .retrieval.routing_search_pipe import RoutingSearchPipe
+
 __all__ = [
     "SearchPipe",
     "EmbeddingPipe",
@@ -35,5 +36,5 @@ __all__ = [
     "KGClusteringPipe",
     "MultiSearchPipe",
     "KGCommunitySummaryPipe",
-    "RoutingSearchPipe"
+    "RoutingSearchPipe",
 ]
