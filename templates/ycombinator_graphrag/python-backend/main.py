@@ -46,7 +46,7 @@ def ingest_data():
     for text in get_dataset(args.dataset_name, args.save_folder, args.split, args.column_name):
         client.ingest_files(file_paths=[text])
 
-    # wait till all get ingested 
+    # wait till all get ingested
     wait_till_ready("ingestion_status", "success")
 
 
@@ -63,7 +63,7 @@ def ingest():
     ingest_data()
     create_graph()
     enrich_graph()
-    
+
 def ask():
     result = client.rag(query=args.query, use_kg_search=True, kg_search_type=args.kg_search_type)
     print(result)

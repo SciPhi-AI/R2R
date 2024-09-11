@@ -45,7 +45,9 @@ class KgExtractAndStoreWorkflow:
 
             await self.restructure_service.kg_extract_and_store(
                 document_id=document_id,
-                generation_config=GenerationConfig(**input_data["generation_config"]),
+                generation_config=GenerationConfig(
+                    **input_data["generation_config"]
+                ),
                 fragment_merge_count=fragment_merge_count,
                 max_knowledge_triples=max_knowledge_triples,
             )

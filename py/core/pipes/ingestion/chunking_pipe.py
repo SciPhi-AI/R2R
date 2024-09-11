@@ -57,7 +57,7 @@ class ChunkingPipe(AsyncPipe):
             or self.default_chunking_provider
         )
 
-        unstr_iteration = 0 # unstructured already chunks
+        unstr_iteration = 0  # unstructured already chunks
         for item in input.message:
             iteration = 0
             async for chunk in chunking_provider.chunk(item):

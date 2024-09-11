@@ -93,7 +93,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         task_inputs = {"input": combined_fragment}
         task_inputs["max_knowledge_triples"] = max_knowledge_triples
-        
+
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
             task_inputs=task_inputs,
@@ -129,7 +129,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
                             description=entity_description,
                             name=entity_value,
                             document_ids=[str(fragments[0].document_id)],
-                            text_unit_ids=[str(fragment.id) for fragment in fragments],
+                            text_unit_ids=[
+                                str(fragment.id) for fragment in fragments
+                            ],
                             attributes={"fragment_text": combined_fragment},
                         )
 
@@ -151,8 +153,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
                                 description=description,
                                 weight=weight,
                                 document_ids=[str(fragments[0].document_id)],
-                                text_unit_ids=[str(fragment.id) for fragment in fragments],
-                                attributes={"fragment_text": combined_fragment},
+                                text_unit_ids=[
+                                    str(fragment.id) for fragment in fragments
+                                ],
+                                attributes={
+                                    "fragment_text": combined_fragment
+                                },
                             )
                         )
 
@@ -229,7 +235,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
             for i in range(0, len(fragments), fragment_merge_count)
         ]
 
-        logger.info(f"Extracting KG Triples from {len(fragments_groups)} fragment groups from originally {len(fragments)} fragments for document {document_id}")
+        logger.info(
+            f"Extracting KG Triples from {len(fragments_groups)} fragment groups from originally {len(fragments)} fragments for document {document_id}"
+        )
 
         tasks = [
             asyncio.create_task(
