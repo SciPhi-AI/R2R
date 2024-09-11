@@ -123,9 +123,6 @@ class RetrievalRouter(BaseRouter):
                 default_factory=GenerationConfig,
                 description=rag_descriptions.get("rag_generation_config"),
             ),
-            rag_strategy: str = Body(
-                "default", description=rag_descriptions.get("rag_strategy")
-            ),
             task_prompt_override: Optional[str] = Body(
                 None, description=rag_descriptions.get("task_prompt_override")
             ),
@@ -162,7 +159,6 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=kg_search_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
-                rag_strategy=rag_strategy,
                 include_title_if_available=include_title_if_available,
             )
 
