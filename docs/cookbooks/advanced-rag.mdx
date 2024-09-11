@@ -247,6 +247,22 @@ While R2R allows for runtime configuration of these advanced techniques, it's wo
 
 Prompts play a crucial role in shaping the behavior of these advanced RAG techniques. By modifying the HyDE and RAG-Fusion prompts, you can fine-tune the query expansion and retrieval processes to better suit your specific use case or domain.
 
+<Note>
+Currently, these advanced techniques use a hard-coded multi-search configuration in the `MultiSearchPipe`:
+
+```python
+class MultiSearchPipe(AsyncPipe):
+    class PipeConfig(AsyncPipe.PipeConfig):
+        name: str = "multi_search_pipe"
+        use_rrf: bool = False
+        rrf_k: int = 60  # RRF constant
+        num_queries: int = 3
+        expansion_factor: int = 3  # Factor to expand results before RRF
+```
+
+This configuration will be made user-configurable in the near future, allowing for even greater flexibility in customizing these advanced RAG techniques.
+</Note>
+
 ## Conclusion
 
 By leveraging these advanced RAG techniques and customizing their underlying prompts, you can significantly enhance the quality and relevance of your retrieval and generation processes. Experiment with different strategies, settings, and prompt variations to find the optimal configuration for your specific use case. The flexibility of R2R allows you to iteratively improve your system's performance and adapt to changing requirements.

@@ -68,7 +68,7 @@ class AsyncPipe:
     class PipeConfig(BaseModel):
         """Configuration for a pipe."""
 
-        name: str = "default_strategy"
+        name: str = "default_pipe"
         max_log_queue_size: int = 100
 
         class Config:
