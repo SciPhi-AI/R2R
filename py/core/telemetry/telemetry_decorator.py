@@ -1,23 +1,67 @@
 import asyncio
 import logging
 from functools import wraps
+import uuid
+import platform
+from importlib.metadata import version
+import os
+from pathlib import Path
 
 from core.telemetry.events import ErrorEvent, FeatureUsageEvent
 from core.telemetry.posthog import telemetry_client
 
 logger = logging.getLogger(__name__)
 
+class ProductTelemetryClient:
+    USER_ID_PATH = str(Path.home() / ".cache" / "r2r" / "telemetry_user_id")
+    UNKNOWN_USER_ID = "UNKNOWN"
+    _curr_user_id = None
+
+    @property
+    def user_id(self) -> str:
+        if self._curr_user_id:
+            return self._curr_user_id
+
+        try:
+            if not os.path.exists(self.USER_ID_PATH):
+                os.makedirs(os.path.dirname(self.USER_ID_PATH), exist_ok=True)
+                with open(self.USER_ID_PATH, "w") as f:
+                    new_user_id = str(uuid.uuid4())
+                    f.write(new_user_id)
+                self._curr_user_id = new_user_id
+            else:
+                with open(self.USER_ID_PATH, "r") as f:
+                    self._curr_user_id = f.read().strip()
+        except Exception:
+            self._curr_user_id = self.UNKNOWN_USER_ID
+        return self._curr_user_id
+
+product_telemetry_client = ProductTelemetryClient()
+
+def get_project_metadata():
+    return {
+        "os": platform.system(),
+        "python_version": platform.python_version(),
+        "r2r_version": version("r2r"),
+        "project_id": str(uuid.uuid4())  # Generate a unique project ID
+    }
 
 def telemetry_event(event_name):
     def decorator(func):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            user_id = kwargs.get("user_id", "unknown_user")
+            metadata = get_project_metadata()
+            distinct_id = product_telemetry_client.user_id
+            
             try:
                 result = await func(*args, **kwargs)
                 try:
                     telemetry_client.capture(
-                        FeatureUsageEvent(user_id=user_id, feature=event_name)
+                        FeatureUsageEvent(
+                            distinct_id=distinct_id,
+                            feature=event_name,
+                            **metadata
+                        )
                     )
                 except Exception as e:
                     logger.error(f"Error in telemetry event logging: {str(e)}")
@@ -26,14 +70,14 @@ def telemetry_event(event_name):
                 try:
                     telemetry_client.capture(
                         ErrorEvent(
-                            user_id=user_id,
+                            distinct_id=distinct_id,
                             endpoint=event_name,
                             error_message=str(e),
+                            **metadata
                         )
                     )
                 except Exception as e:
                     logger.error(f"Error in telemetry event logging: {str(e)}")
-
                 raise
 
         @wraps(func)
@@ -47,10 +91,6 @@ def telemetry_event(event_name):
             else:
                 return loop.run_until_complete(async_wrapper(*args, **kwargs))
 
-        return (
-            async_wrapper
-            if asyncio.iscoroutinefunction(func)
-            else sync_wrapper
-        )
+        return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
     return decorator
