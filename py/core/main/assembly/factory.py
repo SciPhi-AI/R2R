@@ -27,6 +27,7 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
+from core.pipes import MultiSearchPipe, SearchPipe
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -244,13 +245,18 @@ class R2RProviderFactory:
 
     @staticmethod
     def create_prompt_provider(
-        prompt_config: PromptConfig, *args, **kwargs
+        prompt_config: PromptConfig,
+        database_provider: DatabaseProvider,
+        *args,
+        **kwargs,
     ) -> PromptProvider:
         prompt_provider = None
         if prompt_config.provider == "r2r":
             from core.providers import R2RPromptProvider
 
-            prompt_provider = R2RPromptProvider(prompt_config)
+            prompt_provider = R2RPromptProvider(
+                prompt_config, database_provider
+            )
         else:
             raise ValueError(
                 f"Prompt provider {prompt_config.provider} not supported"
@@ -291,10 +297,6 @@ class R2RProviderFactory:
         **kwargs,
     ) -> R2RProviders:
 
-        prompt_provider = (
-            prompt_provider_override
-            or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
-        )
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -318,6 +320,13 @@ class R2RProviderFactory:
                 self.config.database, crypto_provider, *args, **kwargs
             )
         )
+        prompt_provider = (
+            prompt_provider_override
+            or self.create_prompt_provider(
+                self.config.prompt, database_provider, *args, **kwargs
+            )
+        )
+
         auth_provider = auth_provider_override or self.create_auth_provider(
             self.config.auth,
             database_provider,
@@ -375,6 +384,7 @@ class R2RPipeFactory:
         kg_node_extraction_pipe: Optional[AsyncPipe] = None,
         kg_node_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
+        kg_community_summary_pipe: Optional[AsyncPipe] = None,
         chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -409,6 +419,8 @@ class R2RPipeFactory:
             or self.create_kg_node_description_pipe(*args, **kwargs),
             kg_clustering_pipe=kg_clustering_pipe
             or self.create_kg_clustering_pipe(*args, **kwargs),
+            kg_community_summary_pipe=kg_community_summary_pipe
+            or self.create_kg_community_summary_pipe(*args, **kwargs),
             chunking_pipe=chunking_pipe_override
             or self.create_chunking_pipe(*args, **kwargs),
         )
@@ -446,7 +458,7 @@ class R2RPipeFactory:
 
         return VectorStoragePipe(database_provider=self.providers.database)
 
-    def create_vector_search_pipe(self, *args, **kwargs) -> Any:
+    def create_default_vector_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
             return None
 
@@ -455,6 +467,69 @@ class R2RPipeFactory:
         return VectorSearchPipe(
             database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
+        )
+
+    def create_multi_search_pipe(
+        self,
+        inner_search_pipe: SearchPipe,
+        use_rrf: bool = False,
+        expansion_technique: str = "hyde",
+        expansion_factor: int = 3,
+        *args,
+        **kwargs,
+    ) -> MultiSearchPipe:
+        from core.pipes import QueryTransformPipe
+
+        multi_search_config = MultiSearchPipe.PipeConfig(
+            use_rrf=use_rrf, expansion_factor=expansion_factor
+        )
+
+        query_transform_pipe = QueryTransformPipe(
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            config=QueryTransformPipe.QueryTransformConfig(
+                name="multi_query_transform",
+                task_prompt=expansion_technique,
+            ),
+        )
+
+        return MultiSearchPipe(
+            query_transform_pipe=query_transform_pipe,
+            inner_search_pipe=inner_search_pipe,
+            config=multi_search_config,
+        )
+
+    def create_vector_search_pipe(self, *args, **kwargs) -> Any:
+        if self.config.embedding.provider is None:
+            return None
+
+        vanilla_vector_search_pipe = self.create_default_vector_search_pipe(
+            *args, **kwargs
+        )
+        hyde_search_pipe = self.create_multi_search_pipe(
+            vanilla_vector_search_pipe,
+            use_rrf=False,
+            expansion_technique="hyde",
+            *args,
+            **kwargs,
+        )
+        rag_fusion_pipe = self.create_multi_search_pipe(
+            vanilla_vector_search_pipe,
+            use_rrf=True,
+            expansion_technique="rag_fusion",
+            *args,
+            **kwargs,
+        )
+
+        from core.pipes import RoutingSearchPipe
+
+        return RoutingSearchPipe(
+            search_pipes={
+                "vanilla": vanilla_vector_search_pipe,
+                "hyde": hyde_search_pipe,
+                "rag_fusion": rag_fusion_pipe,
+            },
+            default_strategy="hyde",
         )
 
     def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
@@ -535,6 +610,16 @@ class R2RPipeFactory:
         from core.pipes import KGClusteringPipe
 
         return KGClusteringPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
+        )
+
+    def create_kg_community_summary_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGCommunitySummaryPipe
+
+        return KGCommunitySummaryPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,

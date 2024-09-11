@@ -1,4 +1,4 @@
-rag_fusion_prompt:
+rag_fusion:
   template: >
     ### Instruction:
 

@@ -1,7 +1,7 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 import psutil
@@ -15,12 +15,13 @@ from core.base.api.models.management.responses import (
     WrappedAppSettingsResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
+    WrappedGetPromptsResponse,
     WrappedGroupListResponse,
     WrappedGroupOverviewResponse,
     WrappedGroupResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
-    WrappedPromptResponse,
+    WrappedPromptMessageResponse,
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
@@ -80,7 +81,7 @@ class ManagementRouter(BaseRouter):
                 {}, description="Input types"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptResponse:
+        ) -> WrappedPromptMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `update_prompt` endpoint.",
@@ -91,6 +92,71 @@ class ManagementRouter(BaseRouter):
                 name, template, input_types
             )
             return result
+
+        @self.router.post("/add_prompt")
+        @self.base_endpoint
+        async def add_prompt_app(
+            name: str = Body(..., description="Prompt name"),
+            template: str = Body(..., description="Prompt template"),
+            input_types: dict[str, str] = Body({}, description="Input types"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedPromptMessageResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `add_prompt` endpoint.",
+                    403,
+                )
+            result = await self.service.add_prompt(name, template, input_types)
+            return result
+
+        @self.router.get("/get_prompt/{prompt_name}")
+        @self.base_endpoint
+        async def get_prompt_app(
+            prompt_name: str = Path(..., description="Prompt name"),
+            inputs: Optional[Json[dict]] = Query(
+                None, description="JSON-encoded prompt inputs"
+            ),
+            prompt_override: Optional[str] = Query(
+                None, description="Prompt override"
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedPromptMessageResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `get_prompt` endpoint.",
+                    403,
+                )
+            result = await self.service.get_prompt(
+                prompt_name, inputs, prompt_override
+            )
+            return result
+
+        @self.router.get("/get_all_prompts")
+        @self.base_endpoint
+        async def get_all_prompts_app(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedGetPromptsResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `get_all_prompts` endpoint.",
+                    403,
+                )
+            result = await self.service.get_all_prompts()
+            return result
+
+        @self.router.delete("/delete_prompt/{prompt_name}")
+        @self.base_endpoint
+        async def delete_prompt_app(
+            prompt_name: str = Path(..., description="Prompt name"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> None:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `delete_prompt` endpoint.",
+                    403,
+                )
+            await self.service.delete_prompt(prompt_name)
+            return None
 
         @self.router.get("/analytics")
         @self.base_endpoint

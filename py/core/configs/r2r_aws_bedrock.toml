@@ -1,0 +1,62 @@
+[auth]
+provider = "r2r"
+access_token_lifetime_in_minutes = 60
+refresh_token_lifetime_in_days = 7
+require_authentication = false
+require_email_verification = false
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
+
+[chunking]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title"
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
+
+[completion]
+provider = "litellm"
+concurrent_request_limit = 16
+
+  [completion.generation_config]
+  model = "bedrock/anthropic.claude-v2"
+
+
+[crypto]
+provider = "bcrypt"
+
+[database]
+provider = "postgres"
+
+[embedding]
+provider = "litellm"
+base_model = "amazon.titan-embed-text-v1"
+base_dimension = 512
+batch_size = 128
+add_title_as_prefix = false
+[kg]
+provider = "None"
+
+[logging]
+provider = "local"
+log_table = "logs"
+log_info_table = "log_info"
+
+[parsing]
+provider = "unstructured_local"
+excluded_parsers = ["mp4"]
+
+[prompt]
+provider = "r2r"
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+[file]
+provider = "postgres"
+
+[orchestration]
+provider = "hatchet"

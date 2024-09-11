@@ -50,7 +50,7 @@ class VectorSearchResult(BaseModel):
             "text": "Example text from the document",
             "metadata": {
                 "title": "example_document.pdf",
-                "associatedQuery": "What is the capital of France?",
+                "associated_query": "What is the capital of France?",
             },
         }
 
@@ -289,6 +289,10 @@ class VectorSearchSettings(BaseModel):
         default=HybridSearchSettings(),
         description="Settings for hybrid search",
     )
+    search_strategy: Optional[str] = Field(
+        default="vanilla",
+        description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
+    )
 
     class Config:
         json_encoders = {UUID: str}
@@ -331,7 +335,7 @@ class KGSearchSettings(BaseModel):
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []
-    max_community_description_length: int = 4096 * 4
+    max_community_description_length: int = 65536
     max_llm_queries_for_global_search: int = 250
     local_search_limits: dict[str, int] = {
         "__Entity__": 20,
@@ -346,9 +350,7 @@ class KGSearchSettings(BaseModel):
             "kg_search_type": "global",
             "kg_search_level": 0,
             "kg_search_generation_config": GenerationConfig.Config.json_schema_extra,
-            # "entity_types": ["Person", "Organization"],
-            # "relationships": ["founder", "CEO"],
-            "max_community_description_length": 4096 * 4,
+            "max_community_description_length": 65536,
             "max_llm_queries_for_global_search": 250,
             "local_search_limits": {
                 "__Entity__": 20,

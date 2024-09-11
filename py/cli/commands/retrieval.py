@@ -55,6 +55,11 @@ from cli.utils.timer import timer
 @click.option(
     "--max-llm-queries-for-global-search", type=JSON, help="Max community size"
 )
+@click.option(
+    "--search-strategy",
+    type=str,
+    help="Vanilla search or complex search method like query fusion or HyDE.",
+)
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
 @click.pass_obj
 def search(client, query, **kwargs):
@@ -69,6 +74,7 @@ def search(client, query, **kwargs):
             "search_limit",
             "use_hybrid_search",
             "selected_group_ids",
+            "search_strategy",
         ]
         and v is not None
     }
@@ -156,6 +162,12 @@ def search(client, query, **kwargs):
 @click.option(
     "--max-llm-queries-for-global-search", type=int, help="Max community size"
 )
+@click.option(
+    "--search-strategy",
+    type=str,
+    default="vanilla",
+    help="Vanilla RAG or complex method like query fusion or HyDE.",
+)
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
 @click.pass_obj
 def rag(client, query, **kwargs):
@@ -176,6 +188,7 @@ def rag(client, query, **kwargs):
             "search_limit",
             "use_hybrid_search",
             "selected_group_ids",
+            "search_strategy",
         ]
         and v is not None
     }

@@ -202,8 +202,6 @@ __all__ = [
     "R2RPipeFactory",
     "R2RPipelineFactory",
     "R2RAgentFactory",
-    # Factory Extensions
-    "R2RPipeFactoryWithMultiSearch",
     # R2R Routers
     "AuthRouter",
     "IngestionRouter",

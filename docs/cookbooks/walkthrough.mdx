@@ -630,7 +630,7 @@ client.search("Who founded Airbnb?", kg_search_settings={
     "use_kg_search": True,
     "kg_search_type": "global",
     "kg_search_level": 0, # level of community to search
-    "max_community_description_length": 16384,
+    "max_community_description_length": 65536,
     "max_llm_queries_for_global_search": 250,
     "local_search_limits": {
         "__Entity__": 20,
@@ -647,7 +647,7 @@ await client.search("Who founded Airbnb?", true, {}, 10, false, {}, {
     useKgSearch: true,
     kgSearchType: "global",
     kgSearchLevel: "0",
-    maxCommunityDescriptionLength: 16384,
+    maxCommunityDescriptionLength: 65536,
     maxLlmQueriesForGlobalSearch: 250,
     localSearchLimits: {
         __Entity__: 20,
@@ -668,7 +668,7 @@ curl -X POST http://localhost:7272/v2/search \
       "use_kg_search": true,
       "kg_search_type": "global",
       "kg_search_level": "0",
-      "max_community_description_length": 16384,
+      "max_community_description_length": 65536,
       "max_llm_queries_for_global_search": 250,
       "local_search_limits": {
         "__Entity__": 20,

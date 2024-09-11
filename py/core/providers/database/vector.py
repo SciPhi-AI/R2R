@@ -1,5 +1,7 @@
+import concurrent.futures
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
 from sqlalchemy import text
@@ -13,7 +15,14 @@ from core.base import (
 )
 from core.base.abstractions import VectorSearchSettings
 
-from .vecs import Client, Collection, create_client
+from .vecs import (
+    Client,
+    Collection,
+    IndexArgsHNSW,
+    IndexMeasure,
+    IndexMethod,
+    create_client,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +105,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
+        self.create_index()
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
@@ -195,11 +205,44 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "The `full_text_limit` must be greater than or equal to the `search_limit`."
             )
-        semantic_results = self.semantic_search(query_vector, search_settings)
-        full_text_results = self.full_text_search(
-            query_text,
-            search_settings,
+
+        # Use ThreadPoolExecutor to run searches in parallel
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            semantic_future = executor.submit(
+                self.semantic_search, query_vector, search_settings
+            )
+            full_text_future = executor.submit(
+                self.full_text_search, query_text, search_settings
+            )
+
+            # Wait for both searches to complete
+            concurrent.futures.wait([semantic_future, full_text_future])
+
+        semantic_results = semantic_future.result()
+        full_text_results = full_text_future.result()
+
+        semantic_limit = search_settings.search_limit
+        full_text_limit = (
+            search_settings.hybrid_search_settings.full_text_limit
         )
+        semantic_weight = (
+            search_settings.hybrid_search_settings.semantic_weight
+        )
+        full_text_weight = (
+            search_settings.hybrid_search_settings.full_text_weight
+        )
+        rrf_k = search_settings.hybrid_search_settings.rrf_k
+
+        # Combine results using RRF
+        combined_results = {
+            result.fragment_id: {
+                "semantic_rank": rank,
+                "full_text_rank": full_text_limit,
+                "data": result,
+            }
+            for rank, result in enumerate(semantic_results, 1)
+        }
+
         semantic_limit = search_settings.search_limit
         full_text_limit = (
             search_settings.hybrid_search_settings.full_text_limit
@@ -274,8 +317,26 @@ class PostgresVectorDBProvider(VectorDBProvider):
             for result in sorted_results
         ]
 
-    def create_index(self, index_type, column_name, index_options):
-        self.collection.create_index()
+    def create_index(
+        self,
+        index_type=IndexMethod.hnsw,
+        measure=IndexMeasure.cosine_distance,
+        index_options=None,
+    ):
+        if self.collection is None:
+            raise ValueError("Collection is not initialized.")
+
+        if index_options is None:
+            index_options = IndexArgsHNSW(
+                m=16, ef_construction=64
+            )  # Default HNSW parameters
+
+        self.collection.create_index(
+            method=index_type,
+            measure=measure,
+            index_arguments=index_options,
+            replace=True,
+        )
 
     def delete(
         self,

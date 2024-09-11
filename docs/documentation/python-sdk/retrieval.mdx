@@ -141,7 +141,7 @@ search_response = client.search("What was Uber's profit in 2020?")
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 
@@ -203,8 +203,8 @@ kg_search_response = client.search(
     "What is airbnb",
     vector_search_settings={"use_vector_search": False}
     kg_search_settings={
-      "use_kg_search": True, 
-      "kg_search_type": "local", 
+      "use_kg_search": True,
+      "kg_search_type": "local",
       "kg_search_level": 0,
       "kg_search_generation_config": {
           "model": "gpt-4o-mini",
@@ -215,7 +215,7 @@ kg_search_response = client.search(
           "__Relationship__": 20,
           "__Community__": 20,
       },
-      "max_community_description_length": 4096 * 4,
+      "max_community_description_length": 65536,
       "max_llm_queries_for_global_search": 250
     }
 )
@@ -227,7 +227,7 @@ kg_search_response = client.search(
       The knowledge graph search results from the R2R system.
       ```bash
       {
-        "kg_search_results": 
+        "kg_search_results":
         [
           {
             "global_result": None,
@@ -405,7 +405,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 
@@ -508,6 +508,41 @@ for chunk in stream_response:
     </ResponseField>
   </Accordion>
 </AccordionGroup>
+
+
+### Advanced RAG Techniques
+
+R2R supports advanced Retrieval-Augmented Generation (RAG) techniques that can be easily configured at runtime. These techniques include Hypothetical Document Embeddings (HyDE) and RAG-Fusion, which can significantly enhance the quality and relevance of retrieved information.
+
+To use an advanced RAG technique, you can specify the `search_strategy` parameter in your vector search settings:
+
+```python
+from r2r import R2RClient
+
+client = R2RClient()
+
+# Using HyDE
+hyde_response = client.rag(
+    "What are the main themes in Shakespeare's plays?",
+    vector_search_settings={
+        "search_strategy": "hyde",
+        "search_limit": 10
+    }
+)
+
+# Using RAG-Fusion
+rag_fusion_response = client.rag(
+    "Explain the theory of relativity",
+    vector_search_settings={
+        "search_strategy": "rag_fusion",
+        "search_limit": 20
+    }
+)
+```
+
+
+For a comprehensive guide on implementing and optimizing advanced RAG techniques in R2R, including HyDE and RAG-Fusion, please refer to our [Advanced RAG Cookbook](/cookbooks/advanced-rag).
+
 
 ### Customizing RAG
 
@@ -680,7 +715,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 

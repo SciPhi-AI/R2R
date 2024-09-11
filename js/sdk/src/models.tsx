@@ -46,6 +46,7 @@ export interface VectorSearchSettings {
   include_metadatas?: boolean;
   probes?: number;
   ef_search?: number;
+  search_strategy?: string;
   hybrid_search_settings?: HybridSearchSettings;
 }
 

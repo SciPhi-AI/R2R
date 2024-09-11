@@ -10,7 +10,7 @@ R2R's hybrid search combines traditional keyword-based searching with modern sem
 
 ## How R2R Hybrid Search Works
 
-1. **Full-Text Search**: Utilizes PostgreSQL's full-text search with `ts_rank` and `websearch_to_tsquery`.
+1. **Full-Text Search**: Utilizes PostgreSQL's full-text search with `ts_rank_cd` and `websearch_to_tsquery`.
 2. **Semantic Search**: Performs vector similarity search using the query's embedded representation.
 3. **Reciprocal Rank Fusion (RRF)**: Merges results from full-text and semantic searches using the formula:
    ```
@@ -21,23 +21,20 @@ R2R's hybrid search combines traditional keyword-based searching with modern sem
 
 ## Key Features
 
-### Query Expansion
-
-R2R implements sophisticated query expansion to enhance full-text search:
-
-1. Tokenization
-2. Stemming using Snowball Stemmer
-3. Synonym expansion using WordNet
-4. Combination of original words, stems, and synonyms
-
-### Advanced Full-Text Search
+### Full-Text Search
 
 The full-text search component incorporates:
 
-- Expanded query using `to_tsquery`
-- Phrase matching with `phraseto_tsquery`
-- Partial matching using `:*` wildcard
-- Text similarity scoring
+- PostgreSQL's `tsvector` for efficient text searching
+- `websearch_to_tsquery` for parsing user queries
+- `ts_rank_cd` for ranking full-text search results
+
+### Semantic Search
+
+The semantic search component uses:
+
+- Vector embeddings for storing and querying semantic representations
+- Cosine similarity for measuring the relevance of documents to the query
 
 ## Configuration
 
@@ -76,7 +73,8 @@ client = R2RClient()
 vector_settings = {
     "use_hybrid_search": True,
     "search_limit": 20,
-    "filters":{"category": {"$eq": "technology"}},
+    # Can add logical filters, as shown:
+    # "filters":{"category": {"$eq": "technology"}},
     "hybrid_search_settings" : {
         "full_text_weight": 1.0,
         "semantic_weight": 5.0,
@@ -139,11 +137,10 @@ print(results)
 ## Best Practices
 
 1. Optimize PostgreSQL indexing for both full-text and vector searches
-2. Implement query preprocessing techniques
-3. Regularly update search indices
-4. Monitor performance and adjust weights as needed
-5. Customize synonym expansion and stemming for your domain
+2. Regularly update search indices
+3. Monitor performance and adjust weights as needed
+4. Use appropriate vector dimensions and embedding models for your use case
 
 ## Conclusion
 
-R2R's hybrid search offers a powerful solution for complex information retrieval needs, combining the strengths of keyword matching and semantic understanding. Its flexible configuration and advanced techniques like query expansion and RRF make it adaptable to a wide range of use cases, from technical documentation to broad, context-dependent queries.
+R2R's hybrid search offers a powerful solution for complex information retrieval needs, combining the strengths of keyword matching and semantic understanding. Its flexible configuration and use of Reciprocal Rank Fusion make it adaptable to a wide range of use cases, from technical documentation to broad, context-dependent queries.

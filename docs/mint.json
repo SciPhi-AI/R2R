@@ -119,12 +119,19 @@
       ]
     },
     {
-      "group": "Configuration",
+      "group": "Setup",
       "pages": [
-        "documentation/configuration/introduction",
-        "documentation/configuration/postgres",
-        "documentation/configuration/llm",
-        "documentation/configuration/rag",
+        {
+          "group": "Core Services",
+          "icon": "circle-exclamation",
+          "pages": [
+            "documentation/configuration/introduction",
+            "documentation/configuration/postgres",
+            "documentation/configuration/llm",
+            "documentation/configuration/rag",
+            "documentation/configuration/prompts"
+          ]
+        },
         {
             "group": "Ingestion",
             "icon": "upload",
@@ -154,6 +161,15 @@
           },
           "documentation/local-rag"
         ]
+    },
+    {
+      "group": "Deployment",
+      "pages": [
+        "documentation/deployment/introduction",
+        "documentation/deployment/azure",
+        "documentation/deployment/gcp",
+        "documentation/deployment/aws"
+      ]
     },
     {
       "group": "Deep Dives",
@@ -258,6 +274,10 @@
       "group": "Admin",
       "pages": [
         "api-reference/endpoint/update_prompt",
+        "api-reference/endpoint/add_prompt",
+        "api-reference/endpoint/get_prompt",
+        "api-reference/endpoint/get_all_prompts",
+        "api-reference/endpoint/delete_prompt",
         "api-reference/endpoint/logs",
         "api-reference/endpoint/users_overview",
         "api-reference/endpoint/app_settings"
@@ -305,6 +325,12 @@
         "cookbooks/groups",
         "cookbooks/observability",
         "cookbooks/application"
+      ]
+    },
+    {
+      "group": "Deployment",
+      "pages": [
+        "cookbooks/remote-cloud"
       ]
     }
   ],

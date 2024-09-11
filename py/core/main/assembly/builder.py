@@ -66,6 +66,7 @@ class PipeOverrides:
     kg_node_extraction: Optional[AsyncPipe] = None
     kg_node_description: Optional[AsyncPipe] = None
     kg_clustering: Optional[AsyncPipe] = None
+    kg_community_summary: Optional[AsyncPipe] = None
     kg_search: Optional[AsyncPipe] = None
 
 
