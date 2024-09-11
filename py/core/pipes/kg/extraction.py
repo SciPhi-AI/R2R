@@ -205,7 +205,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         fragment_merge_count = input.message["fragment_merge_count"]
         max_knowledge_triples = input.message["max_knowledge_triples"]
 
-        extractions = [
+        fragments = [
             DocumentFragment(
                 id=extraction["fragment_id"],
                 extraction_id=extraction["extraction_id"],
@@ -221,21 +221,23 @@ class KGTriplesExtractionPipe(AsyncPipe):
         ]
 
         # group these extractions into groups of fragment_merge_count
-        extractions_groups = [
-            extractions[i : i + fragment_merge_count]
-            for i in range(0, len(extractions), fragment_merge_count)
+        fragments_groups = [
+            fragments[i : i + fragment_merge_count]
+            for i in range(0, len(fragments), fragment_merge_count)
         ]
+
+        logger.info(f"Extracting KG Triples from {len(fragments_groups)} fragment groups from originally {len(fragments)} fragments for document {document_id}")
 
         tasks = [
             asyncio.create_task(
                 self.extract_kg(
-                    fragments=extraction_group,
+                    fragments=fragments_group,
                     generation_config=generation_config,
                     max_knowledge_triples=max_knowledge_triples,
                     fragment_merge_count=fragment_merge_count,
                 )
             )
-            for extraction_group in extractions_groups
+            for fragments_group in fragments_groups
         ]
 
         for completed_task in asyncio.as_completed(tasks):
