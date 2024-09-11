@@ -1,21 +1,40 @@
 import asyncio
 import logging
-from functools import wraps
-import uuid
-import platform
-from importlib.metadata import version
 import os
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
 from pathlib import Path
+
+import toml
 
 from core.telemetry.events import ErrorEvent, FeatureUsageEvent
 from core.telemetry.posthog import telemetry_client
 
 logger = logging.getLogger(__name__)
 
+
 class ProductTelemetryClient:
     USER_ID_PATH = str(Path.home() / ".cache" / "r2r" / "telemetry_user_id")
     UNKNOWN_USER_ID = "UNKNOWN"
     _curr_user_id = None
+    _version = None
+
+    @property
+    def version(self) -> str:
+        if self._version is None:
+            try:
+                pyproject_path = (
+                    Path(__file__).parent.parent.parent / "pyproject.toml"
+                )
+                pyproject_data = toml.load(pyproject_path)
+                self._version = pyproject_data["tool"]["poetry"]["version"]
+            except Exception as e:
+                logger.error(
+                    f"Error reading version from pyproject.toml: {str(e)}"
+                )
+                self._version = "UNKNOWN"
+        return self._version
 
     @property
     def user_id(self) -> str:
@@ -36,48 +55,63 @@ class ProductTelemetryClient:
             self._curr_user_id = self.UNKNOWN_USER_ID
         return self._curr_user_id
 
+
 product_telemetry_client = ProductTelemetryClient()
 
+
 def get_project_metadata():
+    import platform
+
     return {
         "os": platform.system(),
         "python_version": platform.python_version(),
-        "r2r_version": version("r2r"),
-        "project_id": str(uuid.uuid4())  # Generate a unique project ID
+        "version": product_telemetry_client.version,
     }
+
+
+# Create a thread pool with a fixed number of workers
+telemetry_thread_pool = ThreadPoolExecutor(max_workers=2)
+
 
 def telemetry_event(event_name):
     def decorator(func):
+        def log_telemetry(event_type, user_id, metadata, error_message=None):
+            try:
+                if event_type == "feature":
+                    telemetry_client.capture(
+                        FeatureUsageEvent(
+                            user_id=user_id,
+                            properties=metadata,
+                            feature=event_name,
+                        )
+                    )
+                elif event_type == "error":
+                    telemetry_client.capture(
+                        ErrorEvent(
+                            user_id=user_id,
+                            properties=metadata,
+                            endpoint=event_name,
+                            error_message=error_message,
+                        )
+                    )
+            except Exception as e:
+                logger.error(f"Error in telemetry event logging: {str(e)}")
+
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
             metadata = get_project_metadata()
-            distinct_id = product_telemetry_client.user_id
-            
+            user_id = product_telemetry_client.user_id
+
             try:
                 result = await func(*args, **kwargs)
-                try:
-                    telemetry_client.capture(
-                        FeatureUsageEvent(
-                            distinct_id=distinct_id,
-                            feature=event_name,
-                            **metadata
-                        )
-                    )
-                except Exception as e:
-                    logger.error(f"Error in telemetry event logging: {str(e)}")
+                telemetry_thread_pool.submit(
+                    log_telemetry, "feature", user_id, metadata
+                )
                 return result
             except Exception as e:
-                try:
-                    telemetry_client.capture(
-                        ErrorEvent(
-                            distinct_id=distinct_id,
-                            endpoint=event_name,
-                            error_message=str(e),
-                            **metadata
-                        )
-                    )
-                except Exception as e:
-                    logger.error(f"Error in telemetry event logging: {str(e)}")
+                telemetry_thread_pool.submit(
+                    log_telemetry, "error", user_id, metadata, str(e)
+                )
                 raise
 
         @wraps(func)
@@ -91,6 +125,10 @@ def telemetry_event(event_name):
             else:
                 return loop.run_until_complete(async_wrapper(*args, **kwargs))
 
-        return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+        return (
+            async_wrapper
+            if asyncio.iscoroutinefunction(func)
+            else sync_wrapper
+        )
 
     return decorator
