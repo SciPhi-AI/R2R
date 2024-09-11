@@ -33,8 +33,12 @@ async def lifespan(app: FastAPI):
     # Start the scheduler
     scheduler.start()
 
-    # Start the Hatchet worker in a separate thread
-    r2r_app.orchestration_provider.start_worker()
+    # Start the Hatchet worker
+    await r2r_app.orchestration_provider.start_worker()
+
+    # Set the event loop
+    # event_loop = asyncio.get_running_loop()
+    # asyncio.set_event_loop(event_loop)
 
     yield
 

@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 import asyncpg
 
@@ -43,34 +44,39 @@ class PostgresRelationalDBProvider(
     def _get_table_name(self, base_name: str) -> str:
         return f"{base_name}_{self.collection_name}"
 
-    async def execute_query(self, query, params=None):
+    @asynccontextmanager
+    async def get_connection(self):
         async with self.pool.acquire() as conn:
-            if params:
-                return await conn.execute(query, *params)
-            else:
-                return await conn.execute(query)
+            yield conn
+
+    async def execute_query(self, query, params=None):
+        async with self.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    return await conn.execute(query, *params)
+                else:
+                    return await conn.execute(query)
 
     async def fetch_query(self, query, params=None):
-        async with self.pool.acquire() as conn:
-            return (
-                await conn.fetch(query, *params)
-                if params
-                else await conn.fetch(query)
-            )
+        async with self.get_connection() as conn:
+            async with conn.transaction():
+                return (
+                    await conn.fetch(query, *params)
+                    if params
+                    else await conn.fetch(query)
+                )
 
     async def fetchrow_query(self, query, params=None):
-        async with self.pool.acquire() as conn:
-            if params:
-                return await conn.fetchrow(query, *params)
-            else:
-                return await conn.fetchrow(query)
+        async with self.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    return await conn.fetchrow(query, *params)
+                else:
+                    return await conn.fetchrow(query)
 
     async def _initialize_relational_db(self):
-        async with self.pool.acquire() as conn:
+        async with self.get_connection() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
-            await conn.execute(
-                'CREATE EXTENSION IF NOT EXISTS "lo";'
-            )  # Move this to file provider
 
             # Call create_table for each mixin
             for base_class in self.__class__.__bases__:

@@ -220,7 +220,7 @@ def serve(
     config_name,
     config_path,
     build,
-):
+) -> None:
     """Start the R2R server."""
     load_dotenv()
 
@@ -268,6 +268,7 @@ def serve(
                 click.secho(
                     "r2r container failed to become healthy.", fg="red"
                 )
+                return
 
             traefik_port = os.environ.get("R2R_DASHBOARD_PORT", "80")
             url = f"http://localhost:{traefik_port}"

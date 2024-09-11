@@ -4,6 +4,7 @@ from typing import BinaryIO, Optional
 from uuid import UUID
 
 import asyncpg
+
 from core.base import FileConfig, R2RException
 from core.base.providers import FileProvider
 from core.providers.database.postgres import PostgresDBProvider
@@ -37,6 +38,10 @@ class PostgresFileProvider(FileProvider):
         logger.info(
             "File provider successfully connected to Postgres database."
         )
+
+        async with self.pool.acquire() as conn:
+            await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
+
         await self.create_table()
 
     def _get_table_name(self, base_name: str) -> str:
@@ -55,7 +60,8 @@ class PostgresFileProvider(FileProvider):
         );
         """
         async with self.pool.acquire() as conn:
-            await conn.execute(query)
+            async with conn.transaction():
+                await conn.execute(query)
 
     async def upsert_file(
         self,
@@ -77,9 +83,15 @@ class PostgresFileProvider(FileProvider):
             updated_at = NOW();
         """
         async with self.pool.acquire() as conn:
-            await conn.execute(
-                query, document_id, file_name, file_oid, file_size, file_type
-            )
+            async with conn.transaction():
+                await conn.execute(
+                    query,
+                    document_id,
+                    file_name,
+                    file_oid,
+                    file_size,
+                    file_type,
+                )
 
     async def store_file(
         self, document_id, file_name, file_content: io.BytesIO, file_type=None
@@ -100,22 +112,22 @@ class PostgresFileProvider(FileProvider):
         )  # 0x20000 is INV_WRITE flag
 
         try:
-            # Write the content in chunks (optional, for large files)
+            # Write the content in chunks
             chunk_size = 8192  # 8 KB chunks
             while True:
                 chunk = file_content.read(chunk_size)
                 if not chunk:
                     break
-                await conn.execute("SELECT lo_put($1, $2)", lobject, chunk)
+                await conn.execute("SELECT lowrite($1, $2)", lobject, chunk)
 
-            # Optionally commit the changes to the large object
+            # Close the large object
             await conn.execute("SELECT lo_close($1)", lobject)
 
         except Exception as e:
             # Handle exceptions, rollback the transaction if necessary
             await conn.execute(
                 "SELECT lo_unlink($1)", oid
-            )  # Rollback by deleting the large object
+            )  # Delete the large object
             raise R2RException(
                 status_code=500,
                 message=f"Failed to write to large object: {e}",
@@ -130,15 +142,16 @@ class PostgresFileProvider(FileProvider):
         WHERE document_id = $1
         """
         async with self.pool.acquire() as conn:
-            result = await conn.fetchrow(query, document_id)
-            if not result:
-                raise R2RException(
-                    status_code=404,
-                    message=f"File for document {document_id} not found",
-                )
-            file_name, oid, file_size = result
-            file_content = await self._read_lobject(conn, oid)
-            return file_name, io.BytesIO(file_content), file_size
+            async with conn.transaction():
+                result = await conn.fetchrow(query, document_id)
+                if not result:
+                    raise R2RException(
+                        status_code=404,
+                        message=f"File for document {document_id} not found",
+                    )
+                file_name, oid, file_size = result
+                file_content = await self._read_lobject(conn, oid)
+                return file_name, io.BytesIO(file_content), file_size
 
     async def _read_lobject(self, conn, oid: int) -> bytes:
         await conn.execute(
@@ -162,20 +175,21 @@ class PostgresFileProvider(FileProvider):
         WHERE document_id = $1
         """
         async with self.pool.acquire() as conn:
-            result = await conn.fetchval(query, document_id)
-            if not result:
-                raise R2RException(
-                    status_code=404,
-                    message=f"File for document {document_id} not found",
-                )
-            oid = result
-            await self._delete_lobject(conn, oid)
+            async with conn.transaction():
+                result = await conn.fetchval(query, document_id)
+                if not result:
+                    raise R2RException(
+                        status_code=404,
+                        message=f"File for document {document_id} not found",
+                    )
+                oid = result
+                await self._delete_lobject(conn, oid)
 
-            delete_query = f"""
-            DELETE FROM {self._get_table_name('file_storage')}
-            WHERE document_id = $1
-            """
-            await conn.execute(delete_query, document_id)
+                delete_query = f"""
+                DELETE FROM {self._get_table_name('file_storage')}
+                WHERE document_id = $1
+                """
+                await conn.execute(delete_query, document_id)
         return True
 
     async def _delete_lobject(self, conn, oid: int) -> None:
@@ -212,7 +226,8 @@ class PostgresFileProvider(FileProvider):
         params.extend([offset, limit])
 
         async with self.pool.acquire() as conn:
-            results = await conn.fetch(query, *params)
+            async with conn.transaction():
+                results = await conn.fetch(query, *params)
 
         if not results:
             raise R2RException(

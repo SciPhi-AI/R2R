@@ -144,6 +144,8 @@ class IngestFilesWorkflow:
 
     @r2r_hatchet.on_failure_step()
     async def on_failure(self, context: Context) -> None:
+        if self.document_info is None:
+            return None
         await self.ingestion_service.update_document_status(
             self.document_info,
             status="failure",
