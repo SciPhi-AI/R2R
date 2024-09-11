@@ -142,7 +142,7 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             result = await self.service.get_all_prompts()
-            return result
+            return {"prompts": result}
 
         @self.router.delete("/delete_prompt/{prompt_name}")
         @self.base_endpoint

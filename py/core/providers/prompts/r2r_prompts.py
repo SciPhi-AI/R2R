@@ -151,7 +151,7 @@ class R2RPromptProvider(PromptProvider):
         self._save_prompt_to_database(prompt)
 
     def get_all_prompts(self) -> list[dict]:
-        return [v.dict() for v in self.prompts.values()]
+        return self.prompts
 
     def delete_prompt(self, name: str) -> None:
         if name not in self.prompts:
