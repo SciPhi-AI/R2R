@@ -68,7 +68,6 @@ deepdiff = { version = "^7.0.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
 unstructured-client = "^0.25.5"
 numpy = ">=1.22.4,<1.29.0"
-docker = "^7.1.0"
 
 [tool.poetry.extras]
 core = [

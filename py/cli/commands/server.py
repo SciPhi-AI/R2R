@@ -1,4 +1,4 @@
-import docker
+import docker as docker_engine
 from importlib.metadata import version as get_version
 import json
 import os
@@ -233,44 +233,34 @@ def serve(
     """Start the R2R server."""
     load_dotenv()
 
-    if image:
+    if not image:
         r2r_version = get_version("r2r")
         image_suffix = "-unstructured" if unstructured else ""
         image = f"ragtoriches/prod:{r2r_version}{image_suffix}"
 
-        version_specific_image = (
-            f"ragtoriches/prod:{r2r_version}{image_suffix}"
-        )
-        latest_image = f"ragtoriches/prod:latest{image_suffix}"
-
-        client = docker.from_env()
+        version_specific_image = f"ragtoriches/prod:{r2r_version}{image_suffix}"
+        latest_image = "ragtoriches/prod:main-unstructured"
 
         try:
             click.echo(f"Attempting to pull image: {version_specific_image}")
-            client.images.pull(version_specific_image)
+            subprocess.run(["docker", "pull", version_specific_image], check=True, capture_output=True)
             image = version_specific_image
             click.echo(f"Successfully pulled image: {version_specific_image}")
-        except docker.errors.ImageNotFound:
-            click.echo(
-                f"Image {version_specific_image} not found. Falling back to latest."
-            )
+        except subprocess.CalledProcessError:
+            click.echo(f"Image {version_specific_image} not found. Falling back to latest.")
             try:
                 click.echo(f"Attempting to pull image: {latest_image}")
-                client.images.pull(latest_image)
+                subprocess.run(["docker", "pull", latest_image], check=True, capture_output=True)
                 image = latest_image
                 click.echo(f"Successfully pulled image: {latest_image}")
-            except docker.errors.ImageNotFound:
-                click.echo(
-                    f"Failed to pull {latest_image}. Please check your internet connection and Docker Hub access."
-                )
+            except subprocess.CalledProcessError:
+                click.echo(f"Failed to pull {latest_image}. Please check your internet connection and Docker Hub access.")
                 return
-        except docker.errors.APIError as e:
-            click.echo(f"Error pulling Docker image: {e}")
-            return
-
         os.environ["R2R_IMAGE"] = image
-        if build:
-            os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
+
+    if build:
+        subprocess.run(["docker", "build", "-t", image, "-f", "Dockerfile.unstructured", "."], check=True)
+
 
     if config_path:
         config_path = os.path.abspath(config_path)
