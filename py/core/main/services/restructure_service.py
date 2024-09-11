@@ -43,13 +43,19 @@ class RestructureService(Service):
 
     @telemetry_event("kg_extract_and_store")
     async def kg_extract_and_store(
-        self, document_id: UUID, generation_config: GenerationConfig
+        self,
+        document_id: UUID,
+        generation_config: GenerationConfig,
+        fragment_merge_count: int,
+        max_knowledge_triples: int,
     ):
         triples = await self.pipes.kg_extraction_pipe.run(
             input=self.pipes.kg_extraction_pipe.Input(
                 message={
                     "document_id": document_id,
                     "generation_config": generation_config,
+                    "fragment_merge_count": fragment_merge_count,
+                    "max_knowledge_triples": max_knowledge_triples,
                 }
             ),
             run_manager=self.run_manager,
