@@ -166,9 +166,79 @@
       "group": "Deployment",
       "pages": [
         "documentation/deployment/introduction",
-        "documentation/deployment/azure",
-        "documentation/deployment/gcp",
-        "documentation/deployment/aws"
+        {
+          "group": "Cloud Providers",
+          "icon": "cloud",
+          "pages": [
+            "documentation/deployment/azure",
+            "documentation/deployment/aws",
+            "documentation/deployment/gcp"
+          ]
+        },
+        {
+          "group": "Troubleshooting",
+          "icon": "wrench",
+          "pages": [
+            "documentation/deployment/troubleshooting/index",
+            {
+              "group": "Common Installation Issues",
+              "pages": [
+                "documentation/deployment/troubleshooting/docker",
+                "documentation/deployment/troubleshooting/environment",
+                "documentation/deployment/troubleshooting/resources",
+                "documentation/deployment/troubleshooting/dependencies",
+                "documentation/deployment/troubleshooting/services",
+                "documentation/deployment/troubleshooting/unstructured"
+              ]
+            },
+            {
+              "group": "Deployment Problems",
+              "pages": [
+                "documentation/deployment/troubleshooting/timeouts",
+                "documentation/deployment/troubleshooting/insufficient_resources",
+                "documentation/deployment/troubleshooting/firewall",
+                "documentation/deployment/troubleshooting/port_conflicts",
+                "documentation/deployment/troubleshooting/database",
+                "documentation/deployment/troubleshooting/local_llm"
+              ]
+            },
+            {
+              "group": "Runtime Errors",
+              "pages": [
+                "documentation/deployment/troubleshooting/api_connections",
+                "documentation/deployment/troubleshooting/api_responses",
+                "documentation/deployment/troubleshooting/slow_queries",
+                "documentation/deployment/troubleshooting/high_usage"
+              ]
+            },
+            {
+              "group": "Configuration Troubleshooting",
+              "pages": [
+                "documentation/deployment/troubleshooting/missing_keys",
+                "documentation/deployment/troubleshooting/incorrect_credentials",
+                "documentation/deployment/troubleshooting/toml_errors",
+                "documentation/deployment/troubleshooting/bad_configuration"
+              ]
+            },
+            {
+              "group": "Component-specific Issues",
+              "pages": [
+                "documentation/deployment/troubleshooting/vector_store_issues",
+                "documentation/deployment/troubleshooting/connection_strings",
+                "documentation/deployment/troubleshooting/graph_db",
+                "documentation/deployment/troubleshooting/neo4j",
+                "documentation/deployment/troubleshooting/workflows"
+              ]
+            },
+            {
+              "group": "R2R Problems",
+              "pages": [
+                "documentation/deployment/troubleshooting/r2r_logs",
+                "documentation/deployment/troubleshooting/r2r_health"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
