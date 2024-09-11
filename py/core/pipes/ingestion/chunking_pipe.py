@@ -57,10 +57,18 @@ class ChunkingPipe(AsyncPipe):
             or self.default_chunking_provider
         )
 
+        unstr_iteration = 0  # unstructured already chunks
         for item in input.message:
             iteration = 0
             async for chunk in chunking_provider.chunk(item):
-                item.metadata["chunk_order"] = iteration
+
+                if item.metadata.get("partitioned_by_unstructured", False):
+                    item.metadata["chunk_order"] = unstr_iteration
+                    unstr_iteration += 1
+                else:
+                    item.metadata["chunk_order"] = iteration
+                    iteration += 1
+
                 yield DocumentFragment(
                     id=generate_id_from_label(f"{item.id}-{iteration}"),
                     extraction_id=item.id,
@@ -70,4 +78,3 @@ class ChunkingPipe(AsyncPipe):
                     data=chunk,
                     metadata=item.metadata,
                 )
-                iteration += 1

@@ -402,6 +402,11 @@ class VectorSearchSettings(BaseModel):
 
 class KGCreationSettings(BaseModel):
 
+    fragment_merge_count: int = Field(
+        default=4,
+        description="The number of fragments to merge into a single extraction.",
+    )
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
