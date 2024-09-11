@@ -220,6 +220,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
             )
         ]
 
+        # sort the fragments accroding to chunk_order field in metadata in ascending order
+        fragments = sorted(fragments, key=lambda x: x.metadata["chunk_order"])
+
         # group these extractions into groups of fragment_merge_count
         fragments_groups = [
             fragments[i : i + fragment_merge_count]
@@ -234,7 +237,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     fragments=fragments_group,
                     generation_config=generation_config,
                     max_knowledge_triples=max_knowledge_triples,
-                    fragment_merge_count=fragment_merge_count,
                 )
             )
             for fragments_group in fragments_groups
