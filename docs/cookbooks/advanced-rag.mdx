@@ -96,6 +96,11 @@ graph TD
 
 #### Using HyDE in R2R
 
+
+<Tabs>
+
+<Tab title="Python">
+
 ```python
 from r2r import R2RClient
 
@@ -109,9 +114,17 @@ hyde_response = client.rag(
     }
 )
 
-
 print('hyde_response = ', hyde_response)
 ```
+</Tab>
+
+<Tab title="CLI">
+
+```bash
+r2r rag --query="who was aristotle" --use-hybrid-search --stream --search-strategy=hyde
+```
+</Tab>
+</Tabs>
 
 ```bash Sample Output
 'results': {
@@ -182,6 +195,10 @@ graph TD
 
 #### Using RAG-Fusion in R2R
 
+
+<Tabs>
+
+<Tab title="Python">
 ```python
 from r2r import R2RClient
 
@@ -197,6 +214,16 @@ rag_fusion_response = client.rag(
 
 print('rag_fusion_response = ', rag_fusion_response)
 ```
+</Tab>
+
+<Tab title="CLI">
+```bash
+r2r rag --query="Explain the theory of relativity" --use-hybrid-search --stream --search-strategy=rag_fusion
+```
+</Tab>
+
+</Tabs>
+
 
 ```bash Sample Output
 'results': {
@@ -219,6 +246,7 @@ print('rag_fusion_response = ', rag_fusion_response)
 ```
 
 
+
 ### Combining with Other Settings
 
 You can readily combine these advanced techniques with other search and RAG settings:
@@ -237,6 +265,7 @@ custom_rag_response = client.rag(
     }
 )
 ```
+
 
 ## Customization and Server-Side Defaults
 
