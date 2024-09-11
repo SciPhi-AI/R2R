@@ -51,12 +51,16 @@ docker run -d \
   pgvector/pgvector:pg16
 
 
+
 # export NEO4J_USER=neo4j
 # export NEO4J_PASSWORD=ineedastrongerpassword
 # export NEO4J_URL=bolt://localhost:7687
 # export NEO4J_DATABASE=neo4j
 
 export MEMGRAPH_DATABASE=memgraph
+export MEMGRAPH_USER=memgraph
+export MEMGRAPH_PASSWORD=memgraph
+export MEMGRAPH_URL=bolt://localhost:7687
 
 export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=postgres
@@ -64,3 +68,5 @@ export POSTGRES_HOST=localhost
 export POSTGRES_PORT=5432
 export POSTGRES_DBNAME=postgres
 export POSTGRES_VECS_COLLECTION=vecs
+
+ollama start

@@ -162,6 +162,40 @@ class MemgraphKGProvider(KGProvider):
             results.append(result)
         return results
 
+    def import_tripplets(self, statement, df, batch_size=1000):
+        """
+        Import a dataframe into Memgraph using a batched approach for tripplets.
+        Parameters: statement is the Cypher query to execute, df is the dataframe to import, and batch_size is the number of rows to import in each batch.
+        """
+        total = len(df)
+        results = []
+        for start in range(0, total, batch_size):
+            batch = df[start : min(start + batch_size, total)]
+            batch = self.convert_model_list_to_neo4j_compatible(batch)
+            for item in batch:
+                params = {
+                    "subject": item["subject"],
+                    "object": item["object"],
+                    "weight": item["weight"],
+                    "description": item["description"],
+                    "attributes": item["attributes"],
+                    "text_unit_ids": item["text_unit_ids"],
+                    "document_ids": item["document_ids"],
+                }
+                label = (
+                    item["predicate"]
+                    .upper()
+                    .replace(" ", "_")
+                    .replace("-", "_")
+                )
+                result = self._driver.execute_query(
+                    statement.format(label=label),
+                    parameters_=params,
+                    database_=self._database,
+                )
+                results.append(result)
+        return results
+
     def get_chunks(
         self, chunk_ids: List[str] = None
     ) -> List[DocumentFragment]:
@@ -193,7 +227,7 @@ class MemgraphKGProvider(KGProvider):
         """
         Upsert relations into the graph.
         """
-        return self.batched_import(PUT_TRIPLES_QUERY, triples)
+        return self.import_tripplets(PUT_TRIPLES_QUERY, triples)
 
     def upsert_communities(self, communities: List[Community]):
         """

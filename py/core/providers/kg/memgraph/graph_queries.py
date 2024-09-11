@@ -45,6 +45,7 @@ ON CREATE SET e:__Entity__
 ON MATCH SET e:__Entity__
 WITH e, upperCamelCategory, value
 SET e:upperCamelCategory.label
+WITH value, e AS node
 SET node.description = CASE
     WHEN node.description IS NULL THEN value.description
     ELSE node.description + '\n\n' + value.description
@@ -95,81 +96,30 @@ UNWIND $triples AS triple
     RETURN e1, rel, e2
 """
 
+
 PUT_TRIPLES_QUERY = """
-WITH value, toUpper(value.predicate) AS upperCamelPredicate
-MATCH (source:__Entity__ {name: value.subject})
-MATCH (target:__Entity__ {name: value.object})
-WITH source, target, value, upperCamelPredicate
-CALL {
-    WITH source, target, upperCamelPredicate
-    CALL merge.relationship(source, upperCamelPredicate, {}, {}, target) YIELD rel RETURN rel
-}
-WITH rel, value
-SET rel.weight = CASE
-    WHEN rel.weight IS NULL THEN value.weight
-    ELSE CASE WHEN value.weight > rel.weight THEN value.weight ELSE rel.weight END
-END,
-rel.description = CASE
-    WHEN rel.description IS NULL THEN value.description
-    ELSE rel.description + '\n\n' + value.description
-END,
-rel.attributes = CASE
-    WHEN rel.attributes IS NULL THEN value.attributes
-    ELSE rel.attributes + '\n\n' + value.attributes
-END,
-rel.text_unit_ids = CASE
-    WHEN rel.text_unit_ids IS NULL THEN value.text_unit_ids
-    ELSE rel.text_unit_ids + value.text_unit_ids
-END,
-rel.document_ids = CASE
-    WHEN rel.document_ids IS NULL THEN value.document_ids
-    ELSE rel.document_ids + value.document_ids
-END
-WITH rel, value
-RETURN count(*) as createdRels
+MATCH (source:__Entity__ {{name: $subject}})
+MATCH (target:__Entity__ {{name: $object}})
+WITH source, target 
+MERGE (source)-[rel:{label}]->(target)
+ON CREATE SET
+    rel.weight = $weight,
+    rel.description = $description,
+    rel.attributes = $attributes,
+    rel.text_unit_ids = $text_unit_ids,
+    rel.document_ids = $document_ids
+ON MATCH SET
+    rel.weight = CASE
+        WHEN $weight > rel.weight THEN $weight
+        ELSE rel.weight
+    END,
+    rel.description = rel.description + '\n\n' + $description,
+    rel.attributes = rel.attributes + '\n\n' + $attributes,
+    rel.text_unit_ids = rel.text_unit_ids + $text_unit_ids,
+    rel.document_ids = rel.document_ids + $document_ids
+
+RETURN count(*) AS createdRels
 """
-
-# PUT_TRIPLES_QUERY = """
-# WITH value, toUpper(value.predicate) AS upperCamelPredicate
-# MATCH (source:__Entity__ {name: value.subject})
-# MATCH (target:__Entity__ {name: value.object})
-# WITH source, target, value, upperCamelPredicate
-# MERGE (source)-[rel:upperCamelPredicate]->(target)
-# ON CREATE SET
-#     rel.weight = value.weight,
-#     rel.description = value.description,
-#     rel.attributes = value.attributes,
-#     rel.text_unit_ids = value.text_unit_ids,
-#     rel.document_ids = value.document_ids
-# ON MATCH SET
-#     rel.weight = CASE
-#         WHEN value.weight > rel.weight THEN value.weight
-#         ELSE rel.weight
-#     END,
-#     rel.description = rel.description + '\n\n' + value.description,
-#     rel.attributes = rel.attributes + '\n\n' + value.attributes,
-#     rel.text_unit_ids = rel.text_unit_ids + value.text_unit_ids,
-#     rel.document_ids = rel.document_ids + value.document_ids
-# RETURN count(*) AS createdRels
-# """
-
-# MERGE (source)-[rel:upperCamelPredicate]->(target)
-# ON CREATE SET
-#     rel.weight = value.weight,
-#     rel.description = value.description,
-#     rel.attributes = value.attributes,
-#     rel.text_unit_ids = value.text_unit_ids,
-#     rel.document_ids = value.document_ids
-# ON MATCH SET
-#     rel.weight = CASE
-#         WHEN value.weight > rel.weight THEN value.weight
-#         ELSE rel.weight
-#     END,
-#     rel.description = rel.description + '\n\n' + value.description,
-#     rel.attributes = rel.attributes + '\n\n' + value.attributes,
-#     rel.text_unit_ids = rel.text_unit_ids + value.text_unit_ids,
-#     rel.document_ids = rel.document_ids + value.document_ids
-# RETURN count(*) AS createdRels
 
 GET_COMMUNITIES_QUERY = """
 MATCH (c:__Community__)
