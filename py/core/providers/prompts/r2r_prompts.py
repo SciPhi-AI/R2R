@@ -150,7 +150,7 @@ class R2RPromptProvider(PromptProvider):
             prompt.input_types = input_types
         self._save_prompt_to_database(prompt)
 
-    def get_all_prompts(self) -> dict[str, Prompt]:
+    def get_all_prompts(self) -> list[dict]:
         return [v.dict() for v in self.prompts.values()]
 
     def delete_prompt(self, name: str) -> None:
