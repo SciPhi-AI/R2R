@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from .base import DatabaseMixin, QueryBuilder
+from .base import DatabaseMixin
 
 
 class BlacklistedTokensMixin(DatabaseMixin):
@@ -23,23 +23,20 @@ class BlacklistedTokensMixin(DatabaseMixin):
         if current_time is None:
             current_time = datetime.utcnow()
 
-        query, params = (
-            QueryBuilder(self._get_table_name("blacklisted_tokens"))
-            .insert({"token": token, "blacklisted_at": current_time})
-            .build()
-        )
-        await self.execute_query(query, params)
+        query = f"""
+        INSERT INTO {self._get_table_name("blacklisted_tokens")} (token, blacklisted_at)
+        VALUES ($1, $2)
+        """
+        await self.execute_query(query, [token, current_time])
 
     async def is_token_blacklisted(self, token: str) -> bool:
-        query, params = (
-            QueryBuilder(self._get_table_name("blacklisted_tokens"))
-            .select(["1"])
-            .where("token = :token", token=token)
-            .limit(1)
-            .build()
-        )
-        result = await self.execute_query(query, params)
-        return bool(result.fetchone())
+        query = f"""
+        SELECT 1 FROM {self._get_table_name("blacklisted_tokens")}
+        WHERE token = $1
+        LIMIT 1
+        """
+        result = await self.fetchrow_query(query, [token])
+        return bool(result)
 
     async def clean_expired_blacklisted_tokens(
         self,
@@ -50,10 +47,8 @@ class BlacklistedTokensMixin(DatabaseMixin):
             current_time = datetime.utcnow()
         expiry_time = current_time - timedelta(hours=max_age_hours)
 
-        query, params = (
-            QueryBuilder(self._get_table_name("blacklisted_tokens"))
-            .delete()
-            .where("blacklisted_at < :expiry_time", expiry_time=expiry_time)
-            .build()
-        )
-        await self.execute_query(query, params)
+        query = f"""
+        DELETE FROM {self._get_table_name("blacklisted_tokens")}
+        WHERE blacklisted_at < $1
+        """
+        await self.execute_query(query, [expiry_time])

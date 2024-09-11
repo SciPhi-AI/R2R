@@ -1,8 +1,10 @@
 import asyncio
 import json
+import logging
 from typing import Optional, Union
 from uuid import UUID
 
+import asyncpg
 from sqlalchemy import (
     ARRAY,
     JSON,
@@ -12,22 +14,20 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
-    insert,
-    select,
-    update,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import StaleDataError
 
 from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
+    R2RException,
     RestructureStatus,
 )
 
 from .base import DatabaseMixin
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentMixin(DatabaseMixin):
@@ -85,98 +85,111 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.AsyncSession() as session:
-                        async with session.begin():
-                            print(
-                                f"Upserting document {document_info.id} with version {document_info.version}"
-                            )
+                    logger.info(
+                        f"Upserting document {document_info.id} with version {document_info.version}"
+                    )
 
-                            # Check if the document exists
-                            stmt = (
-                                select(self.document_info_table)
-                                .where(
-                                    self.document_info_table.c.document_id
-                                    == document_info.id
-                                )
-                                .with_for_update(nowait=True)
-                            )
-                            result = await session.execute(stmt)
-                            existing_doc = result.first()
+                    # Check if the document exists
+                    check_query = f"""
+                    SELECT version_number FROM {self._get_table_name('document_info')}
+                    WHERE document_id = $1 FOR UPDATE NOWAIT
+                    """
+                    existing_doc = await self.fetchrow_query(
+                        check_query, [document_info.id]
+                    )
 
-                            db_entry = document_info.convert_to_db_entry()
+                    db_entry = document_info.convert_to_db_entry()
 
-                            if existing_doc:
-                                # Update existing document
-                                print(
-                                    f"Document {document_info.id} already exists. Updating."
-                                )
-                                if (
-                                    existing_doc.version_number
-                                    != db_entry["version_number"]
-                                ):
-                                    raise StaleDataError(
-                                        "Document version mismatch"
-                                    )
+                    if existing_doc:
+                        # Update existing document
+                        logger.info(
+                            f"Document {document_info.id} already exists. Updating."
+                        )
+                        if (
+                            existing_doc["version_number"]
+                            != db_entry["version_number"]
+                        ):
+                            raise ValueError("Document version mismatch")
 
-                                new_version_number = (
-                                    db_entry["version_number"] + 1
-                                )
-                                db_entry["version_number"] = new_version_number
-                                stmt = (
-                                    update(self.document_info_table)
-                                    .where(
-                                        self.document_info_table.c.document_id
-                                        == document_info.id,
-                                        self.document_info_table.c.version_number
-                                        == db_entry["version_number"] - 1,
-                                    )
-                                    .values(**db_entry)
-                                )
-                            else:
-                                # Insert new document
-                                print(
-                                    f"Document {document_info.id} does not exist. Inserting."
-                                )
-                                stmt = insert(self.document_info_table).values(
-                                    **db_entry
-                                )
+                        new_version_number = db_entry["version_number"] + 1
+                        db_entry["version_number"] = new_version_number
+                        update_query = f"""
+                        UPDATE {self._get_table_name('document_info')}
+                        SET group_ids = $1, user_id = $2, type = $3, metadata = $4,
+                            title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
+                            restructuring_status = $9, updated_at = $10, version_number = $11
+                        WHERE document_id = $12 AND version_number = $13
+                        """
+                        result = await self.execute_query(
+                            update_query,
+                            [
+                                db_entry["group_ids"],
+                                db_entry["user_id"],
+                                db_entry["type"],
+                                json.dumps(db_entry["metadata"]),
+                                db_entry["title"],
+                                db_entry["version"],
+                                db_entry["size_in_bytes"],
+                                db_entry["ingestion_status"],
+                                db_entry["restructuring_status"],
+                                db_entry["updated_at"],
+                                new_version_number,
+                                document_info.id,
+                                db_entry["version_number"] - 1,
+                            ],
+                        )
+                    else:
+                        # Insert new document
+                        logger.info(
+                            f"Document {document_info.id} does not exist. Inserting."
+                        )
+                        insert_query = f"""
+                        INSERT INTO {self._get_table_name('document_info')}
+                        (document_id, group_ids, user_id, type, metadata, title, version,
+                        size_in_bytes, ingestion_status, restructuring_status, created_at,
+                        updated_at, version_number)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                        """
+                        result = await self.execute_query(
+                            insert_query,
+                            [
+                                db_entry["document_id"],
+                                db_entry["group_ids"],
+                                db_entry["user_id"],
+                                db_entry["type"],
+                                json.dumps(db_entry["metadata"]),
+                                db_entry["title"],
+                                db_entry["version"],
+                                db_entry["size_in_bytes"],
+                                db_entry["ingestion_status"],
+                                db_entry["restructuring_status"],
+                                db_entry["created_at"],
+                                db_entry["updated_at"],
+                                db_entry["version_number"],
+                            ],
+                        )
 
-                            result = await session.execute(stmt)
-                            if result.rowcount == 0:
-                                raise StaleDataError(
-                                    "No rows updated, possible version conflict"
-                                )
+                    if result in ["UPDATE 0", "INSERT 0"]:
+                        raise ValueError(
+                            "No rows updated, possible version conflict"
+                        )
 
-                            await session.commit()
-                            break  # Success, exit the retry loop
-                except (IntegrityError, StaleDataError) as e:
-                    await session.rollback()
+                    break  # Success, exit the retry loop
+                except (
+                    asyncpg.exceptions.UniqueViolationError,
+                    ValueError,
+                ) as e:
                     retries += 1
                     if retries == max_retries:
-                        print(
+                        logger.error(
                             f"Failed to update document {document_info.id} after {max_retries} attempts. Error: {str(e)}"
                         )
                     else:
                         wait_time = 1.1**retries  # Exponential backoff
-                        print(
+                        logger.info(
                             f"Retry {retries}/{max_retries} for document {document_info.id}. Waiting {wait_time} seconds."
                         )
                         await asyncio.sleep(wait_time)
-
-    async def delete_from_documents_overview(
-        self, document_id: str, version: Optional[str] = None
-    ) -> None:
-        query = f"""
-            DELETE FROM {self._get_table_name('document_info')}
-            WHERE document_id = :document_id
-        """
-        params = {"document_id": document_id}
-
-        if version is not None:
-            query += " AND version = :version"
-            params["version"] = version
-
-        await self.execute_query(query, params)
 
     async def get_documents_overview(
         self,
@@ -185,63 +198,71 @@ class DocumentMixin(DatabaseMixin):
         filter_group_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
-    ):
+    ) -> list[DocumentInfo]:
         conditions = []
-        params = {"offset": offset}
-        if limit != -1:
-            params["limit"] = limit
+        params = []
+        param_index = 1
 
         if filter_document_ids:
-            conditions.append("document_id = ANY(:document_ids)")
-            params["document_ids"] = filter_document_ids
+            conditions.append(f"document_id = ANY(${param_index})")
+            params.append(filter_document_ids)
+            param_index += 1
 
         if filter_user_ids:
-            conditions.append("user_id = ANY(:user_ids)")
-            params["user_ids"] = filter_user_ids
+            conditions.append(f"user_id = ANY(${param_index})")
+            params.append(filter_user_ids)
+            param_index += 1
 
         if filter_group_ids:
-            conditions.append("group_ids && :group_ids")
-            params["group_ids"] = filter_group_ids
+            conditions.append(f"group_ids && ${param_index}")
+            params.append(filter_group_ids)
+            param_index += 1
+
+        base_query = f"""
+            FROM {self._get_table_name('document_info')}
+        """
+
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
 
         query = f"""
-            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
-            FROM {self._get_table_name('document_info')}
-        """
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        limit_clause = "" if limit == -1 else f"LIMIT {limit}"
-        query += f"""
+            SELECT document_id, group_ids, user_id, type, metadata, title, version,
+                size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
+            {base_query}
             ORDER BY created_at DESC
-            OFFSET :offset
-            {limit_clause}
+            OFFSET ${param_index}
         """
+        params.append(offset)
+        param_index += 1
 
-        results = await (await self.execute_query(query, params)).fetchall()
-        documents = [
-            DocumentInfo(
-                id=row[0],
-                group_ids=row[1],
-                user_id=row[2],
-                type=DocumentType(row[3]),
-                metadata=json.loads(row[4]) if row[4] else {},
-                title=row[5],
-                version=row[6],
-                size_in_bytes=row[7],
-                ingestion_status=IngestionStatus(row[8]),
-                created_at=row[9],
-                updated_at=row[10],
-                restructuring_status=RestructureStatus(row[11]),
+        if limit != -1:
+            query += f" LIMIT ${param_index}"
+            params.append(limit)
+
+        try:
+            results = await self.fetch_query(query, params)
+
+            return [
+                DocumentInfo(
+                    id=row["document_id"],
+                    group_ids=row["group_ids"],
+                    user_id=row["user_id"],
+                    type=DocumentType(row["type"]),
+                    metadata=row["metadata"],
+                    title=row["title"],
+                    version=row["version"],
+                    size_in_bytes=row["size_in_bytes"],
+                    ingestion_status=IngestionStatus(row["ingestion_status"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    restructuring_status=RestructureStatus(
+                        row["restructuring_status"]
+                    ),
+                )
+                for row in results
+            ]
+        except Exception as e:
+            logger.error(f"Error in get_documents_overview: {str(e)}")
+            raise R2RException(
+                status_code=500, message="Database query failed"
             )
-            for row in results
-        ]
-
-        # Get total count for pagination metadata
-        count_query = f"""
-            SELECT COUNT(*)
-            FROM {self._get_table_name('document_info')}
-        """
-        if conditions:
-            count_query += " WHERE " + " ANDs ".join(conditions)
-
-        return documents

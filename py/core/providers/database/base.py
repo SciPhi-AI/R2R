@@ -5,6 +5,7 @@ from sqlalchemy import text
 from .vecs import Client
 
 
+# TODO: This should be defined at the mixin, not here
 def execute_query(
     vx: Client,
     query: Union[str, text],
@@ -79,6 +80,16 @@ class DatabaseMixin:
         raise NotImplementedError("Subclasses must implement this method")
 
     def execute_query(
+        self, query: Union[str, text], params: Optional[dict[str, Any]] = None
+    ):
+        raise NotImplementedError("Subclasses must implement this method")
+
+    def fetch_query(
+        self, query: Union[str, text], params: Optional[dict[str, Any]] = None
+    ):
+        raise NotImplementedError("Subclasses must implement this method")
+
+    def fetchrow_query(
         self, query: Union[str, text], params: Optional[dict[str, Any]] = None
     ):
         raise NotImplementedError("Subclasses must implement this method")

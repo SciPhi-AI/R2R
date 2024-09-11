@@ -55,7 +55,7 @@ class UserMixin(DatabaseMixin):
             .where("user_id = $1")
             .build()
         )
-        result = await self.conn.fetchrow(query, user_id)
+        result = await self.fetchrow_query(query, [user_id])
 
         if not result:
             return None
@@ -97,7 +97,7 @@ class UserMixin(DatabaseMixin):
             .where("email = $1")
             .build()
         )
-        result = await self.conn.fetchrow(query, email)
+        result = await self.fetchrow_query(query, [email])
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
@@ -138,8 +138,8 @@ class UserMixin(DatabaseMixin):
             VALUES ($1, $2, $3, $4)
             RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
         """
-        result = await self.conn.fetchrow(
-            query, email, generate_id_from_label(email), hashed_password, []
+        result = await self.fetchrow_query(
+            query, [email, generate_id_from_label(email), hashed_password, []]
         )
 
         if not result:
@@ -167,17 +167,19 @@ class UserMixin(DatabaseMixin):
             WHERE user_id = $9
             RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, group_ids
         """
-        result = await self.conn.fetchrow(
+        result = await self.fetchrow_query(
             query,
-            user.email,
-            user.is_superuser,
-            user.is_active,
-            user.is_verified,
-            user.name,
-            user.profile_picture,
-            user.bio,
-            user.group_ids,
-            user.id,
+            [
+                user.email,
+                user.is_superuser,
+                user.is_active,
+                user.is_verified,
+                user.name,
+                user.profile_picture,
+                user.bio,
+                user.group_ids,
+                user.id,
+            ],
         )
 
         if not result:
@@ -205,7 +207,7 @@ class UserMixin(DatabaseMixin):
             SELECT group_ids FROM {self._get_table_name('users')}
             WHERE user_id = $1
         """
-        group_result = await self.conn.fetchrow(group_query, user_id)
+        group_result = await self.fetchrow_query(group_query, [user_id])
 
         if not group_result:
             raise R2RException(status_code=404, message="User not found")
@@ -224,7 +226,7 @@ class UserMixin(DatabaseMixin):
             WHERE user_id = $1
             RETURNING user_id
         """
-        result = await self.conn.fetchrow(delete_query, user_id)
+        result = await self.fetchrow_query(delete_query, [user_id])
 
         if not result:
             raise R2RException(status_code=404, message="User not found")
@@ -244,7 +246,7 @@ class UserMixin(DatabaseMixin):
             SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
             FROM {self._get_table_name('users')}
         """
-        results = await self.conn.fetch(query)
+        results = await self.fetch_query(query)
 
         return [
             UserResponse(
@@ -278,7 +280,7 @@ class UserMixin(DatabaseMixin):
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
             RETURNING user_id
         """
-        result = await self.conn.fetchrow(query, verification_code)
+        result = await self.fetchrow_query(query, [verification_code])
 
         if not result:
             raise R2RException(
@@ -318,7 +320,7 @@ class UserMixin(DatabaseMixin):
             SELECT user_id FROM {self._get_table_name('users')}
             WHERE reset_token = $1 AND reset_token_expiry > NOW()
         """
-        result = await self.conn.fetchrow(query, reset_token)
+        result = await self.fetchrow_query(query, [reset_token])
         return result["user_id"] if result else None
 
     async def remove_reset_token(self, user_id: UUID):
@@ -347,8 +349,8 @@ class UserMixin(DatabaseMixin):
             WHERE user_id = $2 AND NOT ($1 = ANY(group_ids))
             RETURNING user_id
         """
-        result = await self.conn.fetchrow(
-            query, group_id, user_id
+        result = await self.fetchrow_query(
+            query, [group_id, user_id]
         )  # fetchrow instead of execute_query
         if not result:
             raise R2RException(
@@ -368,7 +370,7 @@ class UserMixin(DatabaseMixin):
             WHERE user_id = $2 AND $1 = ANY(group_ids)
             RETURNING user_id
         """
-        result = await self.conn.fetchrow(query, group_id, user_id)
+        result = await self.fetchrow_query(query, [group_id, user_id])
         if not result:
             raise R2RException(
                 status_code=400,
@@ -394,7 +396,7 @@ class UserMixin(DatabaseMixin):
             ORDER BY email
             OFFSET $2 LIMIT $3
         """
-        results = await self.conn.fetch(query, group_id, offset, limit)
+        results = await self.fetch_query(query, [group_id, offset, limit])
 
         return [
             UserResponse(
@@ -420,7 +422,7 @@ class UserMixin(DatabaseMixin):
             SELECT user_id FROM {self._get_table_name('users')}
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
         """
-        result = await self.conn.fetchrow(query, verification_code)
+        result = await self.fetchrow_query(query, [verification_code])
 
         if not result:
             raise R2RException(
@@ -459,7 +461,7 @@ class UserMixin(DatabaseMixin):
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
                 FROM {self._get_table_name('users')} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
-                {'WHERE u.user_id = ANY($3::uuid[])' if user_ids else ""}
+                {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
                 GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.group_ids
             )
             SELECT *
@@ -473,7 +475,7 @@ class UserMixin(DatabaseMixin):
         if user_ids:
             params.append(user_ids)
 
-        results = await self.conn.fetch(query, *params)
+        results = await self.fetch_query(query, params)
 
         return [
             UserStats(

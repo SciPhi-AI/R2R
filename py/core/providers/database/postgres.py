@@ -4,8 +4,6 @@ import logging
 import os
 from typing import Optional
 
-import asyncpg
-
 from core.base import (
     CryptoProvider,
     DatabaseConfig,
@@ -25,7 +23,6 @@ class PostgresDBProvider(DatabaseProvider):
         self,
         config: DatabaseConfig,
         dimension: int,
-        conn: Optional[asyncpg.Connection] = None,
         crypto_provider: Optional[CryptoProvider] = None,
         user: Optional[str] = None,
         password: Optional[str] = None,
@@ -97,9 +94,6 @@ class PostgresDBProvider(DatabaseProvider):
             )
             logger.info("Connecting to Postgres via TCP/IP")
 
-        self.connection_string = (
-            f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
-        )
         self.vector_db_dimension = dimension
         self.collection_name = collection_name
         self.conn = None

@@ -201,7 +201,7 @@ class R2RProviderFactory:
         return embedding_provider
 
     @staticmethod
-    def create_file_provider(
+    async def create_file_provider(
         file_config: FileConfig,
         db_provider: Any,
         *args,
@@ -211,11 +211,10 @@ class R2RProviderFactory:
         if file_config.provider == "postgres":
             from core.providers import PostgresFileProvider
 
-            logger.info("Initializing PostgresFileProvider")
-
             file_provider = PostgresFileProvider(file_config, db_provider)
+            await file_provider.initialize()
         elif file_config.provider is None:
-            return None
+            file_provider = None
         else:
             raise ValueError(
                 f"File provider {file_config.provider} not supported."
@@ -335,8 +334,11 @@ class R2RProviderFactory:
         chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
-        file_provider = file_provider_override or self.create_file_provider(
-            self.config.file, database_provider, *args, **kwargs
+        file_provider = (
+            file_provider_override
+            or await self.create_file_provider(
+                self.config.file, database_provider, *args, **kwargs
+            )
         )
 
         orchestration_provider = (

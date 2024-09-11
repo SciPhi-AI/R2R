@@ -93,13 +93,10 @@ class IngestionRouter(BaseRouter):
             """
             self._validate_chunking_config(chunking_config)
             # Check if the user is a superuser
-            is_superuser = auth_user and auth_user.is_superuser
-
-            # Handle user management logic at the request level
-            if not auth_user:
+            if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and (
-                        not is_superuser
+                        not auth_user.is_superuser
                         and metadata["user_id"] != str(auth_user.id)
                     ):
                         raise R2RException(
@@ -141,7 +138,7 @@ class IngestionRouter(BaseRouter):
                 }
 
                 file_name = file_data["filename"]
-                self.service.providers.file.store_file(
+                await self.service.providers.file.store_file(
                     document_id,
                     file_name,
                     file_content,
@@ -186,9 +183,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only retry the ingestion of their own files. More expansive group permissioning is under development.
             """
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 documents_overview = await self.service.providers.database.relational.get_documents_overview(
                     filter_document_ids=document_ids,
                     filter_user_ids=[auth_user.id],
@@ -244,9 +239,7 @@ class IngestionRouter(BaseRouter):
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
             self._validate_chunking_config(chunking_config)
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and metadata["user_id"] != str(
                         auth_user.id
@@ -270,7 +263,7 @@ class IngestionRouter(BaseRouter):
                     )
                 )
 
-                self.service.providers.file.store_file(
+                await self.service.providers.file.store_file(
                     document_id,
                     file_data["filename"],
                     BytesIO(content),
