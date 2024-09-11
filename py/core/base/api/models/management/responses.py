@@ -17,7 +17,7 @@ class PromptResponse(BaseModel):
     input_types: Dict[str, str]
 
 
-class PromptListResponse(BaseModel):
+class AllPromptsResponse(BaseModel):
     prompts: Dict[str, PromptResponse]
 
 
@@ -114,7 +114,7 @@ class AddUserResponse(BaseModel):
 
 # Create wrapped versions of each response
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
-WrappedGetPromptsResponse = ResultsWrapper[List[PromptResponse]]
+WrappedGetPromptsResponse = ResultsWrapper[AllPromptsResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[List[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
