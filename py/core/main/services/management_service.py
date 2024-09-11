@@ -190,9 +190,7 @@ class ManagementService(Service):
         config_dict = toml.loads(config_toml)
         return {
             "config": config_dict,
-            "prompts": {
-                name: prompt.dict() for name, prompt in prompts.items()
-            },
+            "prompts": prompts,
         }
 
     @telemetry_event("ScoreCompletion")
