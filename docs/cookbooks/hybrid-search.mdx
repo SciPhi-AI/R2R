@@ -73,7 +73,8 @@ client = R2RClient()
 vector_settings = {
     "use_hybrid_search": True,
     "search_limit": 20,
-    "filters":{"category": {"$eq": "technology"}},
+    # Can add logical filters, as shown:
+    # "filters":{"category": {"$eq": "technology"}},
     "hybrid_search_settings" : {
         "full_text_weight": 1.0,
         "semantic_weight": 5.0,

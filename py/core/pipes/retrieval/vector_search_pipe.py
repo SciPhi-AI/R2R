@@ -88,7 +88,7 @@ class VectorSearchPipe(SearchPipe):
                     result.text = f"Document Title:{title}\n\nText:{text}"
 
         for result in reranked_results:
-            result.metadata["associatedQuery"] = message
+            result.metadata["associated_query"] = message
             results.append(result)
             yield result
 
