@@ -102,7 +102,7 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="number" default="16384">
+    <ParamField path="max_community_description_length" type="number" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 
@@ -324,7 +324,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     List of relationships to use for knowledge graph search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="16384">
+    <ParamField path="max_community_description_length" type="int" default="65536">
     Maximum length of community descriptions.
     </ParamField>
 

@@ -155,6 +155,7 @@ class RestructureRouter(BaseRouter):
                 "skip_clustering": skip_clustering,
                 "force_enrichment": force_enrichment,
                 "generation_config": kg_enrichment_settings.generation_config.to_dict(),
+                "max_summary_input_length": kg_enrichment_settings.max_summary_input_length,
                 "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
             }

@@ -101,6 +101,7 @@ class RestructureService(Service):
         self,
         community_id: str,
         level: int,
+        max_summary_input_length: int,
         generation_config: GenerationConfig,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
@@ -109,6 +110,7 @@ class RestructureService(Service):
                     "community_id": community_id,
                     "level": level,
                     "generation_config": generation_config,
+                    "max_summary_input_length": max_summary_input_length,
                 }
             ),
             run_manager=self.run_manager,
