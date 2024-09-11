@@ -18,13 +18,25 @@ jobs:
       release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install toml package
+        run: pip install toml
+
       - name: Determine version to use
         id: version
         run: |
           if [ -n "${{ github.event.inputs.version }}" ]; then
             echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
+            VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['tool']['poetry']['version'])")
+            echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Set matrix
