@@ -526,7 +526,7 @@ class VectorSearchResult(BaseModel):
             "text": "Example text from the document",
             "metadata": {
                 "title": "example_document.pdf",
-                "associatedQuery": "What is the capital of France?",
+                "associated_query": "What is the capital of France?",
             },
         }
 
@@ -594,7 +594,7 @@ class RAGResponse(BaseModel):
                             "metadata": {
                                 "text": "Paris is the capital and most populous city of France.",
                                 "title": "france_info.pdf",
-                                "associatedQuery": "What is the capital of France?",
+                                "associated_query": "What is the capital of France?",
                             },
                         }
                     ],

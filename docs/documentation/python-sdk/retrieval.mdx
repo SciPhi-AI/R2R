@@ -509,6 +509,41 @@ for chunk in stream_response:
   </Accordion>
 </AccordionGroup>
 
+
+### Advanced RAG Techniques
+
+R2R supports advanced Retrieval-Augmented Generation (RAG) techniques that can be easily configured at runtime. These techniques include Hypothetical Document Embeddings (HyDE) and RAG-Fusion, which can significantly enhance the quality and relevance of retrieved information.
+
+To use an advanced RAG technique, you can specify the `search_strategy` parameter in your vector search settings:
+
+```python
+from r2r import R2RClient
+
+client = R2RClient()
+
+# Using HyDE
+hyde_response = client.rag(
+    "What are the main themes in Shakespeare's plays?",
+    vector_search_settings={
+        "search_strategy": "hyde",
+        "search_limit": 10
+    }
+)
+
+# Using RAG-Fusion
+rag_fusion_response = client.rag(
+    "Explain the theory of relativity",
+    vector_search_settings={
+        "search_strategy": "rag_fusion",
+        "search_limit": 20
+    }
+)
+```
+
+
+For a comprehensive guide on implementing and optimizing advanced RAG techniques in R2R, including HyDE and RAG-Fusion, please refer to our [Advanced RAG Cookbook](/cookbooks/advanced-rag).
+
+
 ### Customizing RAG
 
 Putting everything together for highly customized RAG functionality at runtime:

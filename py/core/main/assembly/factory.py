@@ -27,6 +27,7 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
+from core.pipes import MultiSearchPipe, SearchPipe
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -453,7 +454,7 @@ class R2RPipeFactory:
 
         return VectorStoragePipe(database_provider=self.providers.database)
 
-    def create_vector_search_pipe(self, *args, **kwargs) -> Any:
+    def create_default_vector_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
             return None
 
@@ -462,6 +463,69 @@ class R2RPipeFactory:
         return VectorSearchPipe(
             database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
+        )
+
+    def create_multi_search_pipe(
+        self,
+        inner_search_pipe: SearchPipe,
+        use_rrf: bool = False,
+        expansion_technique: str = "hyde",
+        expansion_factor: int = 3,
+        *args,
+        **kwargs,
+    ) -> MultiSearchPipe:
+        from core.pipes import QueryTransformPipe
+
+        multi_search_config = MultiSearchPipe.PipeConfig(
+            use_rrf=use_rrf, expansion_factor=expansion_factor
+        )
+
+        query_transform_pipe = QueryTransformPipe(
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            config=QueryTransformPipe.QueryTransformConfig(
+                name="multi_query_transform",
+                task_prompt=expansion_technique,
+            ),
+        )
+
+        return MultiSearchPipe(
+            query_transform_pipe=query_transform_pipe,
+            inner_search_pipe=inner_search_pipe,
+            config=multi_search_config,
+        )
+
+    def create_vector_search_pipe(self, *args, **kwargs) -> Any:
+        if self.config.embedding.provider is None:
+            return None
+
+        vanilla_vector_search_pipe = self.create_default_vector_search_pipe(
+            *args, **kwargs
+        )
+        hyde_search_pipe = self.create_multi_search_pipe(
+            vanilla_vector_search_pipe,
+            use_rrf=False,
+            expansion_technique="hyde",
+            *args,
+            **kwargs,
+        )
+        rag_fusion_pipe = self.create_multi_search_pipe(
+            vanilla_vector_search_pipe,
+            use_rrf=True,
+            expansion_technique="rag_fusion",
+            *args,
+            **kwargs,
+        )
+
+        from core.pipes import RoutingSearchPipe
+
+        return RoutingSearchPipe(
+            search_pipes={
+                "vanilla": vanilla_vector_search_pipe,
+                "hyde": hyde_search_pipe,
+                "rag_fusion": rag_fusion_pipe,
+            },
+            default_strategy="hyde",
         )
 
     def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
