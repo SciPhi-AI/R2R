@@ -79,7 +79,7 @@ Enable verbose logging in your API requests to get more detailed information:
 ```python
 import requests
 
-response = requests.get('http://your-r2r-api-url/v2/endpoint', 
+response = requests.get('http://your-r2r-api-url/v2/endpoint',
                         params={'verbose': True})
 print(response.json())
 ```
@@ -106,7 +106,7 @@ curl -X GET "http://your-r2r-api-url/v2/health" -H "accept: application/json"
 
 **Issue:** Search results vary unexpectedly between requests.
 
-**Solution:** 
+**Solution:**
 - Check if your data is being updated concurrently.
 - Verify the consistency of your vector database (Postgres+pgvector).
 - Ensure your search parameters are consistent.

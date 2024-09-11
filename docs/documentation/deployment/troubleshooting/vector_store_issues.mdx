@@ -56,7 +56,7 @@ Vector storage is a crucial component in R2R (RAG to Riches) for efficient simil
 1. **Check Vector Dimensions:**
    Verify the dimension of vectors you're trying to insert matches your schema:
    ```sql
-   SELECT * FROM information_schema.columns 
+   SELECT * FROM information_schema.columns
    WHERE table_name = 'your_vector_table' AND data_type = 'vector';
    ```
 
@@ -89,7 +89,7 @@ Vector storage is a crucial component in R2R (RAG to Riches) for efficient simil
 3. **Monitor Query Performance:**
    Use `EXPLAIN ANALYZE` to check query execution plans:
    ```sql
-   EXPLAIN ANALYZE SELECT * FROM your_vector_table 
+   EXPLAIN ANALYZE SELECT * FROM your_vector_table
    ORDER BY embedding <=> '[your_vector]' LIMIT 10;
    ```
 
