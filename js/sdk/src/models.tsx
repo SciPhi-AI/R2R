@@ -79,8 +79,6 @@ export interface KGSearchResult {
   global_result?: KGGlobalSearchResult;
 }
 
-
-
 export interface Message {
   role: string;
   content: string;

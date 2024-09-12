@@ -66,6 +66,21 @@ export class r2rClient {
       headers: {
         "Content-Type": "application/json",
       },
+      paramsSerializer: (params) => {
+        const parts: string[] = [];
+        Object.entries(params).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((v) =>
+              parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`),
+            );
+          } else {
+            parts.push(
+              `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+            );
+          }
+        });
+        return parts.join("&");
+      },
       transformRequest: [
         (data) => {
           if (typeof data === "string") {
@@ -99,10 +114,16 @@ export class r2rClient {
     if (options.params) {
       config.paramsSerializer = (params) => {
         return Object.entries(params)
-          .map(
-            ([key, value]) =>
-              `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-          )
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return value
+                .map(
+                  (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`,
+                )
+                .join("&");
+            }
+            return `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+          })
           .join("&");
       };
     }
@@ -759,14 +780,12 @@ export class r2rClient {
   async documentsOverview(document_ids?: string[]): Promise<any> {
     this._ensureAuthenticated();
 
-    let params: Record<string, string> = {};
-    if (document_ids) {
-      params = {
-        document_ids: JSON.stringify(document_ids),
-      };
+    let params: Record<string, string[]> = {};
+    if (document_ids && document_ids.length > 0) {
+      params.document_ids = document_ids;
     }
 
-    return this._makeRequest("GET", "documents_overview", params);
+    return this._makeRequest("GET", "documents_overview", { params });
   }
 
   /**
