@@ -240,7 +240,7 @@ def serve(
         version_specific_image = (
             f"ragtoriches/prod:{r2r_version}{image_suffix}"
         )
-        latest_image = "ragtoriches/prod:main-unstructured"
+        latest_image = "ragtoriches/prod:latest-unstructured"
 
         # try:
         #     click.echo(f"Attempting to pull image: {version_specific_image}")
