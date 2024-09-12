@@ -14,10 +14,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from uuid import UUID, uuid4
 
-import sqlalchemy as sa
 from flupy import flu
-from nltk.corpus import wordnet
-from nltk.stem import SnowballStemmer
 from sqlalchemy import (
     Column,
     Index,
@@ -1096,23 +1093,10 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
             server_default=text("'{}'::jsonb"),
             nullable=False,
         ),
+        # Create a GIN index for the tsvector column
+        Index(f"idx_{name}_fts", "fts", postgresql_using="gin"),
         extend_existing=True,
     )
 
-    # # Add GIN index for full-text search and trigram similarity
-    # Index(
-    #     f"idx_{name}_fts_trgm",
-    #     table.c.fts,
-    #     table.c.text,
-    #     postgresql_using="gin",
-    #     postgresql_ops={
-    #         "text": "gin_trgm_ops"
-    #     },  # alternative,  gin_tsvector_ops
-    # )
-    # Create a GIN index for the tsvector column
-    Index(f"idx_{name}_fts", table.c.fts, postgresql_using="gin")
-
-    # Create a GiST index for trigram similarity on the text column
-    # Index(f"idx_{name}_text_trgm", table.c.text, postgresql_using="gist", postgresql_ops={"text": "gist_trgm_ops"})
 
     return table

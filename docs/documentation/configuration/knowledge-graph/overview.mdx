@@ -4,10 +4,10 @@ description: 'Configure your R2R knowledge graph provider.'
 ---
 ## Knowledge Graph Provider
 
-R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R uses [Neo4j](https://neo4j.com/) as the knowledge graph provider. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [Knowledge Graphs Guide](/cookbooks/graphrag).
+R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R uses [Neo4j](https://neo4j.com/) as the knowledge graph provider. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [GraphRAG Cookbook](/cookbooks/graphrag).
 
 
-To configure the knowledge graph settings:
+To configure the knowledge graph settings for your project:
 
 1. Edit the `kg` section in your `r2r.toml` file:
 
@@ -18,8 +18,11 @@ batch_size = 256
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_creation_settings]
+    entity_types = [] # if empty, all entities are extracted
+    relation_types = [] # if empty, all relations are extracted
     generation_config = { model = "gpt-4o-mini" }
     max_knowledge_triples = 100 # max number of triples to extract for each document chunk
+    fragment_merge_count = 4 # number of fragments to merge into a single extraction
 
   [kg.kg_enrichment_settings]
     max_summary_input_length = 65536
@@ -38,6 +41,7 @@ Let's break down the knowledge graph configuration options:
 - `kg_extraction_prompt`: Specifies the prompt template to use for extracting knowledge graph information from text.
 - `kg_creation_settings`: Configuration for the model used in knowledge graph creation.
   - `max_knowledge_triples`: The maximum number of knowledge triples to extract for each document chunk.
+  - `fragment_merge_count`: The number of fragments to merge into a single extraction.
   - `generation_config`: Configuration for the model used in knowledge graph creation.
 - `kg_enrichment_settings`: Similar configuration for the model used in knowledge graph enrichment.
   - `generation_config`: Configuration for the model used in knowledge graph enrichment.
@@ -46,7 +50,7 @@ Let's break down the knowledge graph configuration options:
 
 ### Neo4j Configuration
 
-When using Neo4j as the knowledge graph provider, you need to set up the following environment variables or provide them in the `r2r.toml` file:
+When using Neo4j as the knowledge graph provider, you need to set up the following environment variables or provide them in the `r2r.toml` file. To set them as environment variables:
 
 ```bash
 export NEO4J_USER=your_neo4j_username
@@ -54,6 +58,8 @@ export NEO4J_PASSWORD=your_neo4j_password
 export NEO4J_URL=bolt://your_neo4j_host:7687
 export NEO4J_DATABASE=neo4j
 ```
+
+And to set them directly in your config:
 
 ```toml r2r.toml
 [kg]
@@ -63,6 +69,10 @@ password = "your_neo4j_password"
 url = "bolt://your_neo4j_host:7687"
 database = "neo4j"
 ```
+
+<Note>
+Setting configuration values in the `r2r.toml` will override environment variables by default.
+</Note>
 
 
 ### Knowledge Graph Operations

@@ -128,7 +128,7 @@ def main(
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-    prompt = "graphrag_triplet_extraction_few_shot"
+    prompt = "graphrag_triplet_extraction_zero_shot"
 
     r2r_prompts.update_prompt(
         prompt,

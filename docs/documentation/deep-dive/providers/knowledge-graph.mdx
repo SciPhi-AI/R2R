@@ -7,7 +7,7 @@ description: 'Learn how to configure and use the knowledge graph provider in R2R
 
 R2R's `KGProvider` handles the creation, management, and querying of knowledge graphs in your applications. This guide offers an in-depth look at the system's architecture, configuration options, and best practices for implementation.
 
-For a practical, step-by-step guide on implementing knowledge graphs in R2R, including code examples and common use cases, see our [Knowledge Graph Cookbook](/cookbooks/graphrag).
+For a practical, step-by-step guide on implementing knowledge graphs in R2R, including code examples and common use cases, see our [GraphRAG Cookbook](/cookbooks/graphrag).
 
 ## Providers
 
@@ -23,36 +23,32 @@ Key features:
 
 ### Knowledge Graph Configuration
 
-Update the `kg` section in your `r2r.toml` as follows:
+These are located in the `r2r.toml` file, under the `[kg]` section.
 
 ```toml
 [kg]
 provider = "neo4j"
-batch_size = 1
+batch_size = 256
+kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 user = "your_neo4j_user"
 password = "your_neo4j_password"
 url = "your_neo4j_url"
 database = "your_neo4j_database"
 
-[kg.text_splitter]
-type = "recursive_character"
-chunk_size = 1024
-chunk_overlap = 0
+  [kg.kg_creation_settings]
+    entity_types = ["Person", "Organization", "Location"] # if empty, all entities are extracted
+    relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted
+    max_knowledge_triples = 100
+    fragment_merge_count = 4 # number of fragments to merge into a single extraction
+    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
 
-[kg.kg_extraction_config]
-model = "ollama/sciphi/triplex"
-temperature = 1.0
-top_p = 1.0
-top_k = 100
-max_tokens_to_sample = 1024
-stream = false
+  [kg.kg_enrichment_settings]
+    max_summary_input_length = 65536 # increase if you want more comprehensive summaries
+    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 ```
 
-
-
 Alternatively, instead of setting `user`, `password`, `url`, and `database` in your `r2r.toml`, you can set these values using environment variables:
-
-
 
 ```bash
 export NEO4J_USER=your_username
@@ -61,9 +57,7 @@ export NEO4J_URL=your_neo4j_url
 export NEO4J_DATABASE=neo4j
 ```
 
-
 Environment variables take precedence over the config settings in case of conflicts. The R2R Docker includes configuration options that facilitate integration with a combined Postgres+pgvector database setup.
-
 
 
 ## Implementation Guide
@@ -76,17 +70,29 @@ from r2r import R2RClient
 client = R2RClient("http://localhost:7272")
 
 result = client.ingest_files(["path/to/your/file.txt"])
-print(f"Ingestion Result: {result}")
+
+# following will create a graph on all ingested files
+document_ids = [] # add document ids that you want to create a graph on
+creation_result = client.create_graph(document_ids)
+print(f"Creation Result: {creation_result}")
+# wait for the creation to complete
+
+enrichment_result = client.enrich_graph() # enrichment will run on all nodes in the graph
+print(f"Enrichment Result: {enrichment_result}")
+# wait for the enrichment to complete
 ```
 
-<Note> Ingestion automatically populates the Neo4J knowledge graph when the `neo4j` provider is specified for `kg` in the `r2r.toml`. </Note>
-
 ### Graph-based Search
+
+There are two types of graph-based search: `local` and `global`.
+
+- `local` search is faster and more accurate, but it is not as comprehensive as `global` search.
+- `global` search is slower and more comprehensive, but it will give you the most relevant results. Note that global search may perform a large number of LLM calls.
 
 ```python
 search_result = client.search(
     query="Find founders who worked at Google",
-    kg_search_settings={"use_kg_search":True}
+    kg_search_settings={"use_kg_search":True, "kg_search_type": "local"}
 )
 print(f"Search Result: {search_result}")
 ```
@@ -96,33 +102,9 @@ print(f"Search Result: {search_result}")
 ```python
 rag_result = client.rag(
     query="Summarize the achievements of founders who worked at Google",
-    kg_search_settings={"use_kg_search":True}
+    kg_search_settings={"use_kg_search":True, "kg_search_type": "local"}
 )
 print(f"RAG Result: {rag_result}")
-```
-
-### Customizing Entity Types and Relations
-
-```python
-from r2r import EntityType, Relation
-
-entity_types = [
-    EntityType("ORGANIZATION"),
-    EntityType("PERSON"),
-    EntityType("PRODUCT")
-]
-
-relations = [
-    Relation("FOUNDED"),
-    Relation("WORKED_AT"),
-    Relation("PRODUCT_OF")
-]
-
-client.update_kg_prompt(
-    prompt_name="zero_shot_ner_kg_extraction",
-    entity_types=entity_types,
-    relations=relations
-)
 ```
 
 ## Best Practices
@@ -190,4 +172,4 @@ Common issues and solutions:
 
 R2R's Knowledge Graph system provides a powerful foundation for building applications that require structured data representation and complex querying capabilities. By understanding its components, following best practices, and leveraging its flexibility, you can create sophisticated information retrieval and analysis systems tailored to your specific needs.
 
-For further customization and advanced use cases, refer to the [R2R API Documentation](/api-reference) and [Knowledge Graph provider documentation](/documentation/deep-dive/providers/knowledge-graph).
+For further customization and advanced use cases, refer to the [R2R API Documentation](/api-reference) and the [GraphRAG Cookbook](/cookbooks/graphrag).

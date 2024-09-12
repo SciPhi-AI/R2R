@@ -24,6 +24,10 @@ class KgExtractAndStoreWorkflow:
     async def kg_extract_and_store(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
         document_id = uuid.UUID(input_data["document_id"])
+        fragment_merge_count = input_data["fragment_merge_count"]
+        max_knowledge_triples = input_data["max_knowledge_triples"]
+        entity_types = input_data["entity_types"]
+        relation_types = input_data["relation_types"]
 
         document_overview = self.restructure_service.providers.database.relational.get_documents_overview(
             filter_document_ids=[document_id]
@@ -42,8 +46,14 @@ class KgExtractAndStoreWorkflow:
             )
 
             await self.restructure_service.kg_extract_and_store(
-                document_id,
-                GenerationConfig(**input_data["generation_config"]),
+                document_id=document_id,
+                generation_config=GenerationConfig(
+                    **input_data["generation_config"]
+                ),
+                fragment_merge_count=fragment_merge_count,
+                max_knowledge_triples=max_knowledge_triples,
+                entity_types=entity_types,
+                relation_types=relation_types,
             )
 
             # Set restructure status to 'success' if completed successfully
@@ -123,7 +133,11 @@ class CreateGraphWorkflow:
                         {
                             "request": {
                                 "document_id": str(document_id),
+                                "fragment_merge_count": kg_creation_settings.fragment_merge_count,
+                                "max_knowledge_triples": kg_creation_settings.max_knowledge_triples,
                                 "generation_config": kg_creation_settings.generation_config.to_dict(),
+                                "entity_types": kg_creation_settings.entity_types,
+                                "relation_types": kg_creation_settings.relation_types,
                             }
                         },
                         key=f"kg-extract-and-store_{document_id}",

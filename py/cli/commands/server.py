@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import sys
+from importlib.metadata import version as get_version
 
 import click
 from dotenv import load_dotenv
@@ -207,6 +208,12 @@ def generate_report():
     default=False,
     help="Run in debug mode. Only for development.",
 )
+@click.option(
+    "--unstructured",
+    is_flag=True,
+    default=False,
+    help="Use the unstructured Docker image",
+)
 def serve(
     host,
     port,
@@ -220,14 +227,63 @@ def serve(
     config_name,
     config_path,
     build,
+    unstructured,
 ):
     """Start the R2R server."""
     load_dotenv()
 
-    if image:
+    if not image:
+        r2r_version = get_version("r2r")
+        image_suffix = "-unstructured" if unstructured else ""
+        image = f"ragtoriches/prod:{r2r_version}{image_suffix}"
+
+        version_specific_image = (
+            f"ragtoriches/prod:{r2r_version}{image_suffix}"
+        )
+        latest_image = "ragtoriches/prod:main-unstructured"
+
+        try:
+            click.echo(f"Attempting to pull image: {version_specific_image}")
+            subprocess.run(
+                ["docker", "pull", version_specific_image],
+                check=True,
+                capture_output=True,
+            )
+            image = version_specific_image
+            click.echo(f"Successfully pulled image: {version_specific_image}")
+        except subprocess.CalledProcessError:
+            click.echo(
+                f"Image {version_specific_image} not found. Falling back to latest."
+            )
+            try:
+                click.echo(f"Attempting to pull image: {latest_image}")
+                subprocess.run(
+                    ["docker", "pull", latest_image],
+                    check=True,
+                    capture_output=True,
+                )
+                image = latest_image
+                click.echo(f"Successfully pulled image: {latest_image}")
+            except subprocess.CalledProcessError:
+                click.echo(
+                    f"Failed to pull {latest_image}. Please check your internet connection and Docker Hub access."
+                )
+                return
         os.environ["R2R_IMAGE"] = image
-        if build:
-            os.system(f"docker build -t {image} -f Dockerfile.unstructured .")
+
+    if build:
+        subprocess.run(
+            [
+                "docker",
+                "build",
+                "-t",
+                image,
+                "-f",
+                "Dockerfile.unstructured",
+                ".",
+            ],
+            check=True,
+        )
 
     if config_path:
         config_path = os.path.abspath(config_path)

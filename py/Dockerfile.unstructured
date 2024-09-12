@@ -17,9 +17,7 @@ COPY pyproject.toml /app/py/pyproject.toml
 # Install the dependencies, including gunicorn, uvicorn, and unstructured
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir "unstructured[all-docs]" \
-    && pip install --no-cache-dir gunicorn uvicorn \
-    && poetry run python -c "import ssl; import nltk; ssl._create_default_https_context = ssl._create_unverified_context; nltk.download('wordnet', quiet=True)"
+    && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
 FROM python:3.10-slim
@@ -35,11 +33,8 @@ WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /root/nltk_data /root/nltk_data
 
-# Download NLTK packages and initialize models
-RUN python3 -m nltk.downloader punkt averaged_perceptron_tagger && \
-    python3 -c "from unstructured.partition.model_init import initialize; initialize()"
+RUN python -c "from unstructured.partition.model_init import initialize; initialize()"
 
 
 # Expose the port and set environment variables

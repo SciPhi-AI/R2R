@@ -9,6 +9,21 @@ from .llm import GenerationConfig
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
+    entity_types: list[str] = Field(
+        default=[],
+        description="The types of entities to extract.",
+    )
+
+    relation_types: list[str] = Field(
+        default=[],
+        description="The types of relations to extract.",
+    )
+
+    fragment_merge_count: int = Field(
+        default=4,
+        description="The number of fragments to merge into a single KG extraction.",
+    )
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
