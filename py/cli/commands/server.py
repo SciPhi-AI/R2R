@@ -208,6 +208,17 @@ def generate_report():
     default=False,
     help="Run in debug mode. Only for development.",
 )
+@click.option(
+    "--dev",
+    is_flag=True,
+    default=False,
+    help="Run in development mode",
+)
+@click.option(
+    "--image-suffix",
+    default="latest",
+    help="Which suffix to append to the container?",
+)
 def serve(
     host,
     port,
@@ -221,17 +232,23 @@ def serve(
     config_name,
     config_path,
     build,
+    dev,
+    image_suffix
 ):
     """Start the R2R server."""
     load_dotenv()
+    if image and image_suffix:
+        click.echo(
+            "WARNING: Both image and image_suffix were provided. Using image."
+        )
 
     if not image:
         r2r_version = get_version("r2r")
 
         version_specific_image = (
-            f"ragtoriches/prod:{r2r_version}"
+            f"ragtoriches/{image_suffix}:{r2r_version}"
         )
-        latest_image = "ragtoriches/prod:latest"
+        latest_image = f"ragtoriches/{image_suffix}:latest"
 
         def image_exists(img):
             try:
@@ -265,7 +282,7 @@ def serve(
                 "-t",
                 image,
                 "-f",
-                "Dockerfile",
+                f"Dockerfile{'.dev' if dev else ''}",
                 ".",
             ],
             check=True,
@@ -293,6 +310,7 @@ def serve(
             image,
             config_name,
             config_path,
+            
         )
         if (
             "pytest" in sys.modules
