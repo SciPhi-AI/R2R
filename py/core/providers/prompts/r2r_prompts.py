@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
-from uuid import uuid4
+from uuid import uuid5, NAMESPACE_DNS
 
 import yaml
 from sqlalchemy import text
@@ -196,7 +196,7 @@ class R2RPromptProvider(PromptProvider):
         result = self.execute_query(
             query,
             {
-                "prompt_id": uuid4(),
+                "prompt_id": uuid5(NAMESPACE_DNS, prompt.name),
                 "name": prompt.name,
                 "template": prompt.template,
                 "input_types": json.dumps(prompt.input_types),
