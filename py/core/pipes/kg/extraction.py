@@ -82,6 +82,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
         fragments: list[DocumentFragment],
         generation_config: GenerationConfig,
         max_knowledge_triples: int,
+        entity_types: list[str],
+        relation_types: list[str],
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
@@ -91,12 +93,14 @@ class KGTriplesExtractionPipe(AsyncPipe):
         # combine all fragments into a single string
         combined_fragment = " ".join([fragment.data for fragment in fragments])
 
-        task_inputs = {"input": combined_fragment}
-        task_inputs["max_knowledge_triples"] = max_knowledge_triples
-
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
-            task_inputs=task_inputs,
+            task_inputs={
+                "input": combined_fragment,
+                "max_knowledge_triples": max_knowledge_triples,
+                "entity_types": entity_types,
+                "relation_types": relation_types,
+            },
         )
 
         for attempt in range(retries):
@@ -210,6 +214,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
         generation_config = input.message["generation_config"]
         fragment_merge_count = input.message["fragment_merge_count"]
         max_knowledge_triples = input.message["max_knowledge_triples"]
+        entity_types = input.message["entity_types"]
+        relation_types = input.message["relation_types"]
 
         fragments = [
             DocumentFragment(
@@ -245,6 +251,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     fragments=fragments_group,
                     generation_config=generation_config,
                     max_knowledge_triples=max_knowledge_triples,
+                    entity_types=entity_types,
+                    relation_types=relation_types,
                 )
             )
             for fragments_group in fragments_groups
