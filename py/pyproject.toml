@@ -28,8 +28,10 @@ requests = "^2.31.0"
 types-requests = "^2.31.0"
 click = "^8.0.0"
 python-dotenv = "^1.0.1"
-nltk = "^3.9.1"
 hatchet-sdk = "^0.36.13"
+toml = "^0.10.2"
+unstructured-client = "^0.25.5"
+numpy = ">=1.22.4,<1.29.0"
 
 # Core dependencies (optional)
 future = { version = "^1.0.0", optional = true }
@@ -60,15 +62,12 @@ neo4j = { version = "^5.21.0", optional = true }
 passlib = { version = "^1.7.4", optional = true }
 bcrypt = { version = "^4.1.3", optional = true }
 pyjwt = { version = "^2.8.0", optional = true }
-toml = { version = "^0.10.2", optional = true }
 pyyaml = { version = "^6.0.1", optional = true }
 poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
 unstructured = {version = "^0.15.10", optional = true, extras = ["all-docs"]}
-unstructured-client = "^0.25.5"
-numpy = ">=1.22.4,<1.29.0"
 
 [tool.poetry.extras]
 core = [
@@ -126,7 +125,6 @@ ignore_missing_imports = true
 
 [tool.poetry.scripts]
 r2r = "cli.cli:main"
-download-nltk-data = "scripts.download_nltk_data:download_nltk_data"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

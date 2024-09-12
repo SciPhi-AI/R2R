@@ -17,8 +17,7 @@ COPY scripts /app/py/scripts
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn \
-    && poetry run python scripts/download_nltk_data.py
+    && pip install --no-cache-dir gunicorn uvicorn
 
 # Final stage to keep the image small
 FROM python:3.10-slim
@@ -33,7 +32,6 @@ WORKDIR /app
 # Copy the installed packages from the builder
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /root/nltk_data /root/nltk_data
 
 ARG PORT=8000 HOST=0.0.0.0
 ENV PORT=$PORT HOST=$HOST
