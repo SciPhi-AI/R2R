@@ -1,3 +1,6 @@
 from hatchet_sdk import Hatchet
 
-r2r_hatchet = Hatchet(debug=True)
+try:
+    r2r_hatchet = Hatchet()
+except ImportError:
+    r2r_hatchet = None

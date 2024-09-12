@@ -95,8 +95,8 @@ services:
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
       DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
-      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
+      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_PORT: 7077
       SERVER_GRPC_INSECURE: "t"
       SERVER_GRPC_MAX_MSG_SIZE: 104857600

@@ -19,7 +19,7 @@ search:
               kg_search_settings={
                   "use_kg_search": True, # graph needs to be constructed first
                   "kg_search_type": "local",
-                  "kg_search_level": 0,
+                  "kg_search_level": "0",
                   "kg_search_generation_config": {
                       "model": "gpt-4o-mini",
                       "temperature": 0.7,
@@ -29,7 +29,7 @@ search:
                       "__Relationship__": 20,
                       "__Community__": 20,
                   },
-                  "max_community_description_length": 4096 * 4,
+                  "max_community_description_length": 65536,
                   "max_llm_queries_for_global_search": 250
               }
           )
@@ -49,7 +49,7 @@ search:
               "kg_search_settings": {
                 "use_kg_search": true, # graph needs to be constructed first
                 "kg_search_type": "local",
-                "kg_search_level": 0,
+                "kg_search_level": "0",
                 "kg_search_generation_config": {
                     "model": "gpt-4o-mini",
                     "temperature": 0.7
@@ -59,7 +59,7 @@ search:
                     "__Relationship__": 20,
                     "__Community__": 20,
                 },
-                "max_community_description_length": 4096 * 4,
+                "max_community_description_length": 65536,
                 "max_llm_queries_for_global_search": 250
               }
             }'
@@ -90,7 +90,7 @@ rag:
               kg_search_settings={
                   "use_kg_search": True,
                   "kg_search_type": "local",
-                  "kg_search_level": 0,
+                  "kg_search_level": "0",
                   "kg_search_generation_config": {
                       "model": "gpt-4o-mini",
                       "temperature": 0.7,
@@ -100,7 +100,7 @@ rag:
                       "__Relationship__": 20,
                       "__Community__": 20,
                   },
-                  "max_community_description_length": 4096 * 4,
+                  "max_community_description_length": 65536,
                   "max_llm_queries_for_global_search": 250
               },
               rag_generation_config={
@@ -125,7 +125,7 @@ rag:
               "kg_search_settings": {
                 "use_kg_search": true, # graph needs to be constructed first
                 "kg_search_type": "local",
-                "kg_search_level": 0,
+                "kg_search_level": "0",
                 "kg_search_generation_config": {
                     "model": "gpt-4o-mini",
                     "temperature": 0.7
@@ -135,7 +135,7 @@ rag:
                     "__Relationship__": 20,
                     "__Community__": 20,
                 },
-                "max_community_description_length": 4096 * 4,
+                "max_community_description_length": 65536,
                 "max_llm_queries_for_global_search": 250
               },
               "rag_generation_config": {
@@ -151,6 +151,9 @@ rag:
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
     task_prompt_override: "Task prompt override"
+    strategy: "The RAG strategy to use (default | HyDE | RAG Fusion)"
+    include_title_if_available: "Includes document title in chunk response, if available."
+    search_strategy: "The RAG strategy to use (default | hyde | rag_fusion)"
 
 agent:
   openapi_extra:
@@ -215,4 +218,5 @@ agent:
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
     task_prompt_override: "Task prompt override"
-    include_title_if_available: "Include title if available"
+    include_title_if_available: "Includes document title in chunk response, if available."
+    rag_strategy: "The RAG strategy to use (default | hyde | rag_fusion)"

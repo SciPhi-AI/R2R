@@ -79,7 +79,7 @@ class KGSearchSettings(BaseModel):
     )
     entity_types: list = []
     relationships: list = []
-    max_community_description_length: int = 4096 * 4
+    max_community_description_length: int = 65536
     max_llm_queries_for_global_search: int = 250
     local_search_limits: dict[str, int] = {
         "__Entity__": 20,
@@ -402,6 +402,21 @@ class VectorSearchSettings(BaseModel):
 
 class KGCreationSettings(BaseModel):
 
+    entity_types: list[str] = Field(
+        default_factory=list,
+        description="The types of entities to extract.",
+    )
+
+    relation_types: list[str] = Field(
+        default_factory=list,
+        description="The types of relations to extract.",
+    )
+
+    fragment_merge_count: int = Field(
+        default=4,
+        description="The number of fragments to merge into a single extraction.",
+    )
+
     max_knowledge_triples: int = Field(
         default=100,
         description="The maximum number of knowledge triples to extract from each chunk.",
@@ -420,6 +435,11 @@ class KGCreationSettings(BaseModel):
 
 
 class KGEnrichmentSettings(BaseModel):
+
+    max_summary_input_length: int = Field(
+        default=65536,
+        description="The maximum input size that goes inside a .",
+    )
 
     leiden_params: dict = Field(
         default_factory=dict,
@@ -521,7 +541,7 @@ class VectorSearchResult(BaseModel):
             "text": "Example text from the document",
             "metadata": {
                 "title": "example_document.pdf",
-                "associatedQuery": "What is the capital of France?",
+                "associated_query": "What is the capital of France?",
             },
         }
 
@@ -589,7 +609,7 @@ class RAGResponse(BaseModel):
                             "metadata": {
                                 "text": "Paris is the capital and most populous city of France.",
                                 "title": "france_info.pdf",
-                                "associatedQuery": "What is the capital of France?",
+                                "associated_query": "What is the capital of France?",
                             },
                         }
                     ],

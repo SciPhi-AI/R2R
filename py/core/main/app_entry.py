@@ -73,11 +73,13 @@ if not config_path and not config_name:
     config_name = "default"
 host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", "7272"))
-pipeline_type = os.getenv("PIPELINE_TYPE", "qna")
 
-logger.info(f"Environment CONFIG_NAME: {config_name}")
-logger.info(f"Environment CONFIG_PATH: {config_path}")
-logger.info(f"Environment PIPELINE_TYPE: {pipeline_type}")
+logger.info(
+    f"Environment CONFIG_NAME: {'None' if config_name==None else config_name}"
+)
+logger.info(
+    f"Environment CONFIG_PATH: {'None' if config_path==None else config_path}"
+)
 
 # Create the FastAPI app
 app = FastAPI(lifespan=lifespan)

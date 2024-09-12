@@ -4,6 +4,7 @@
 *.gguf
 logs/
 workspace/
+py/workspace/
 uploads/
 env/
 **/__pycache__
@@ -19,6 +20,7 @@ coverage.xml
 
 node_modules/
 dist/
+**/.data/*
 
 *.exe
 *.exe~

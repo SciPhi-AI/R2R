@@ -46,6 +46,7 @@ r2r ingest-files --file-paths /path/to/your_file_1 /path/to/your_dir_1 ...
 
 ```bash
 r2r ingest-sample-file
+# or r2r ingest-sample-files for multi-ingestion
 ```
 
 Example output:
@@ -55,6 +56,31 @@ Example output:
 
 <Info>When no document ID(s) are provided to the ingest_files endpoint, a unique document ID is automatically generated for each ingested document from the input filepath and user id.</Info>
 
+We can monitor the ingestion status by querying the documents overview endpoint:
+```bash
+watch -n 1 r2r documents-overview
+```
+
+Example output:
+```plaintext
+{
+    'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+    'title': 'aristotle.txt',
+    'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+    ...
+    'ingestion_status': 'parsing',
+    ...
+}
+... within 10s ...
+{
+    'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+    ...
+    'ingestion_status': 'success',
+    ...
+}
+```
+
+Ingestion is complete when all documents are in a `success` or `failed` state.
 ## Executing a search
 
 Perform a search query:

@@ -1,12 +1,13 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import yaml
 from fastapi import Body, Depends
 from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
+from core.base.abstractions.document import RestructureStatus
 from core.base.api.models.restructure.responses import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
@@ -17,6 +18,7 @@ from ...main.hatchet import r2r_hatchet
 from ..hatchet import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
+    KGCommunitySummaryWorkflow,
     KgExtractAndStoreWorkflow,
 )
 from ..services.restructure_service import RestructureService
@@ -58,6 +60,9 @@ class RestructureRouter(BaseRouter):
         )
         self.orchestration_provider.register_workflow(
             CreateGraphWorkflow(self.service)
+        )
+        self.orchestration_provider.register_workflow(
+            KGCommunitySummaryWorkflow(self.service)
         )
 
     def _setup_routes(self):
@@ -104,7 +109,7 @@ class RestructureRouter(BaseRouter):
             )
 
             return {
-                "message": "Graph creation task queued successfully.",
+                "message": f"Graph creation task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
                 "task_id": str(task_id),
             }
 
@@ -113,9 +118,13 @@ class RestructureRouter(BaseRouter):
         )
         @self.base_endpoint
         async def enrich_graph(
-            perform_clustering: bool = Body(
-                default=True,
-                description="Whether to perform leiden clustering on the graph or not.",
+            skip_clustering: bool = Body(
+                default=False,
+                description="Whether to skip leiden clustering on the graph or not.",
+            ),
+            force_enrichment: bool = Body(
+                default=False,
+                description="Force Enrichment step even if graph creation is still in progress for some documents.",
             ),
             kg_enrichment_settings: Optional[
                 Json[KGEnrichmentSettings]
@@ -139,8 +148,10 @@ class RestructureRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "perform_clustering": perform_clustering,
+                "skip_clustering": skip_clustering,
+                "force_enrichment": force_enrichment,
                 "generation_config": kg_enrichment_settings.generation_config.to_dict(),
+                "max_summary_input_length": kg_enrichment_settings.max_summary_input_length,
                 "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
             }
@@ -150,6 +161,6 @@ class RestructureRouter(BaseRouter):
             )
 
             return {
-                "message": "Graph enrichment task queued successfully.",
+                "message": "Graph enrichment task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
                 "task_id": str(task_id),
             }

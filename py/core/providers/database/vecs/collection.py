@@ -14,10 +14,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from uuid import UUID, uuid4
 
-import sqlalchemy as sa
 from flupy import flu
-from nltk.corpus import wordnet
-from nltk.stem import SnowballStemmer
 from sqlalchemy import (
     Column,
     Index,
@@ -634,52 +631,17 @@ class Collection:
     def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
     ) -> List[VectorSearchResult]:
+        # Create a tsquery from the input query
+        ts_query = func.websearch_to_tsquery("english", query_text)
 
-        stemmer = SnowballStemmer("english")
-
-        def expand_query(query: str) -> str:
-            words = query.split()
-            expanded_words = set()
-            for word in words:
-                stemmed = stemmer.stem(word)
-                expanded_words.update([word, stemmed])
-                for syn in wordnet.synsets(word):
-                    for lemma in syn.lemmas():
-                        expanded_words.add(lemma.name())
-            return " | ".join(expanded_words)
-
-        expanded_query = expand_query(query_text)
-        ts_query = sa.func.to_tsquery("english", expanded_query)
-
-        phrase_rank = (
-            sa.func.ts_rank_cd(
-                sa.func.to_tsvector("english", self.table.c.text),
-                sa.func.phraseto_tsquery("english", query_text),
-                32,
-            )
-            * 2
-        )  # Give higher weight to exact phrases
-
-        partial_match_rank = sa.func.ts_rank_cd(
-            sa.func.to_tsvector("english", self.table.c.text),
-            sa.func.to_tsquery(
-                "english",
-                " & ".join(f"{word}:*" for word in query_text.split()),
-            ),
-            32,
+        # Use ts_rank for ranking
+        rank_function = func.ts_rank(self.table.c.fts, ts_query, 32).label(
+            "rank"
         )
 
-        combined_rank = (
-            phrase_rank
-            + partial_match_rank
-            + sa.func.ts_rank_cd(
-                sa.func.to_tsvector("english", self.table.c.text), ts_query, 32
-            )
-            * (sa.func.similarity(self.table.c.text, query_text) + 0.1)
-        ).label("rank")
-
+        # Build the main query
         stmt = (
-            sa.select(
+            select(
                 self.table.c.fragment_id,
                 self.table.c.extraction_id,
                 self.table.c.document_id,
@@ -687,36 +649,19 @@ class Collection:
                 self.table.c.group_ids,
                 self.table.c.text,
                 self.table.c.metadata,
-                combined_rank,
+                rank_function,
             )
-            .where(
-                sa.and_(
-                    sa.or_(
-                        self.table.c.fts.op("@@")(ts_query),
-                        sa.func.similarity(self.table.c.text, query_text)
-                        > 0.1,
-                        self.table.c.fts.op("@@")(
-                            sa.func.phraseto_tsquery("english", query_text)
-                        ),
-                        self.table.c.fts.op("@@")(
-                            sa.func.to_tsquery(
-                                "english",
-                                " & ".join(
-                                    f"{word}:*" for word in query_text.split()
-                                ),
-                            )
-                        ),
-                    ),
-                    self.build_filters(search_settings.filters),
-                )
-            )
-            .order_by(sa.desc("rank"))
+            .where(self.table.c.fts.op("@@")(ts_query))
+            .where(self.build_filters(search_settings.filters))
+            .order_by(rank_function.desc())
             .limit(search_settings.hybrid_search_settings.full_text_limit)
         )
 
+        # Execute the query
         with self.client.Session() as sess:
             results = sess.execute(stmt).fetchall()
 
+        # Convert the results to VectorSearchResult objects
         return [
             VectorSearchResult(
                 fragment_id=str(r.fragment_id),
@@ -1148,17 +1093,9 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
             server_default=text("'{}'::jsonb"),
             nullable=False,
         ),
+        # Create a GIN index for the tsvector column
+        Index(f"idx_{name}_fts", "fts", postgresql_using="gin"),
         extend_existing=True,
     )
 
-    # # Add GIN index for full-text search and trigram similarity
-    Index(
-        f"idx_{name}_fts_trgm",
-        table.c.fts,
-        table.c.text,
-        postgresql_using="gin",
-        postgresql_ops={
-            "text": "gin_trgm_ops"
-        },  # alternative,  gin_tsvector_ops
-    )
     return table

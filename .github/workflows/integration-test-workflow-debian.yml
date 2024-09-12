@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: [ self-hosted, Linux ]
+    runs-on: arm3
     permissions:
       packages: write
       contents: read
@@ -116,7 +116,7 @@ jobs:
 
   cleanup:
     needs: build-and-test
-    runs-on: [ self-hosted, Linux ]
+    runs-on: arm3
     if: always()
     steps:
     - name: Clean up Virtual Environment

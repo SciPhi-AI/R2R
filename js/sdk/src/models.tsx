@@ -46,6 +46,7 @@ export interface VectorSearchSettings {
   include_metadatas?: boolean;
   probes?: number;
   ef_search?: number;
+  search_strategy?: string;
   hybrid_search_settings?: HybridSearchSettings;
 }
 
@@ -77,8 +78,6 @@ export interface KGSearchResult {
   local_result?: KGLocalSearchResult;
   global_result?: KGGlobalSearchResult;
 }
-
-
 
 export interface Message {
   role: string;

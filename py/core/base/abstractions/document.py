@@ -72,8 +72,11 @@ class RestructureStatus(str, Enum):
 
     PENDING = "pending"
     PROCESSING = "processing"
+    ENRICHING = "enriching"
     FAILURE = "failure"
     SUCCESS = "success"
+    ENRICHED = "enriched"
+    ENRICHMENT_FAILURE = "enrichment_failure"
 
 
 class DocumentInfo(R2RSerializable):

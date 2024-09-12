@@ -127,6 +127,10 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override: Optional[str] = Body(
                 None, description=rag_descriptions.get("task_prompt_override")
             ),
+            include_title_if_available: bool = Body(
+                True,
+                description=rag_descriptions.get("include_title_if_available"),
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGResponse:
             """
@@ -157,6 +161,7 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=kg_search_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
+                include_title_if_available=include_title_if_available,
             )
 
             if rag_generation_config.stream:

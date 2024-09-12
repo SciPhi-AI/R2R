@@ -136,6 +136,7 @@ class EmbeddingPipe(AsyncPipe):
                 [fragment.data],
                 EmbeddingProvider.PipeStage.BASE,
             )
+
             return VectorEntry(
                 fragment_id=fragment.id,
                 extraction_id=fragment.extraction_id,

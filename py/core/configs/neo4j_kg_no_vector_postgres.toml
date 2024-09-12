@@ -1,13 +1,3 @@
-[chunking]
-provider = "unstructured_local"
-method = "by_title"
-strategy = "auto"
-chunking_strategy = "basic"
-new_after_n_chars = 2_048
-max_characters = 4_096 # use larger max_characters for KG construction
-combine_under_n_chars = 512
-overlap = 20
-
 [auth]
 provider = "None"
 
@@ -16,12 +6,19 @@ provider = "None"
 
 [kg]
 provider = "neo4j"
-batch_size = 1
+batch_size = 256
+kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
-  [kg.kg_extraction_config]
-  model = "gpt-4o"
-  temperature = 0.1
-  top_p = 1
-  max_tokens_to_sample = 1_024
-  stream = false
-  add_generation_kwargs = { }
+  [kg.kg_creation_settings]
+    entity_types = [] # if empty, all entities are extracted
+    relation_types = [] # if empty, all relations are extracted
+    fragment_merge_count = 4 # number of fragments to merge into a single extraction
+    max_knowledge_triples = 100
+    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
+
+  [kg.kg_enrichment_settings]
+    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+
+  [kg.kg_search_config]
+    model = "gpt-4o-mini"

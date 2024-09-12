@@ -136,7 +136,7 @@ def mock_search(*args, **kwargs):
                 "text": "Alternate Base Rate means, for any day, a rate per annum  equal to the greatest of (i) the Prime Rate in effect on such day, (ii) the Federal Funds Effective Rate in effect on such day \nplus  \u00bd of 1% and (iii) the sum of (a) the Adjusted LIBO Rate that would be payable onsuch day for a Eurodollar Borrowing with a one-month interest period",
                 "metadata": {
                     "title": "uber_2021.pdf",
-                    "associatedQuery": "What is the capital of France?",
+                    "associated_query": "What is the capital of France?",
                 },
             }
         ),
