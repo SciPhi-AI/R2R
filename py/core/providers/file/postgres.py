@@ -154,19 +154,52 @@ class PostgresFileProvider(FileProvider):
                 return file_name, io.BytesIO(file_content), file_size
 
     async def _read_lobject(self, conn, oid: int) -> bytes:
-        await conn.execute(
-            "SELECT lo_open($1, 262144)", oid
-        )  # 262144 = INV_READ
         file_data = io.BytesIO()
         chunk_size = 8192
-        while True:
-            chunk = await conn.fetchval(
-                "SELECT lo_read($1, $2)", oid, chunk_size
-            )
-            if not chunk:
-                break
-            file_data.write(chunk)
-        await conn.execute("SELECT lo_close($1)", oid)
+
+        async with conn.transaction():
+            try:
+                # Check if the large object exists before opening
+                lo_exists = await conn.fetchval(
+                    "SELECT EXISTS(SELECT 1 FROM pg_largeobject WHERE loid = $1)",
+                    oid,
+                )
+                if not lo_exists:
+                    raise R2RException(
+                        status_code=404,
+                        message=f"Large object {oid} not found.",
+                    )
+
+                # Open the large object and fetch its descriptor
+                lobject = await conn.fetchval(
+                    "SELECT lo_open($1, 262144)", oid
+                )  # INV_READ
+
+                # Ensure the descriptor is valid before reading
+                if lobject is None:
+                    raise R2RException(
+                        status_code=404,
+                        message=f"Failed to open large object {oid}.",
+                    )
+
+                # Read the large object in chunks
+                while True:
+                    chunk = await conn.fetchval(
+                        "SELECT loread($1, $2)", lobject, chunk_size
+                    )
+                    if not chunk:
+                        break
+                    file_data.write(chunk)
+            except asyncpg.exceptions.UndefinedObjectError as e:
+                # Handle large object not found
+                raise R2RException(
+                    status_code=404,
+                    message=f"Failed to read large object {oid}: {e}",
+                )
+            finally:
+                # Always close the large object
+                await conn.execute("SELECT lo_close($1)", lobject)
+
         return file_data.getvalue()
 
     async def delete_file(self, document_id: UUID) -> bool:

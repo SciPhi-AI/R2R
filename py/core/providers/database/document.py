@@ -85,14 +85,10 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    logger.info(
-                        f"Upserting document {document_info.id} with version {document_info.version}"
-                    )
-
                     # Check if the document exists
                     check_query = f"""
                     SELECT version_number FROM {self._get_table_name('document_info')}
-                    WHERE document_id = $1 FOR UPDATE NOWAIT
+                    WHERE document_id = $1 FOR UPDATE SKIP LOCKED
                     """
                     existing_doc = await self.fetchrow_query(
                         check_query, [document_info.id]
@@ -102,23 +98,19 @@ class DocumentMixin(DatabaseMixin):
 
                     if existing_doc:
                         # Update existing document
-                        logger.info(
-                            f"Document {document_info.id} already exists. Updating."
-                        )
-                        if (
-                            existing_doc["version_number"]
-                            != db_entry["version_number"]
-                        ):
-                            raise ValueError("Document version mismatch")
+                        db_version = existing_doc["version_number"]
+                        new_version = db_entry["version_number"]
 
-                        new_version_number = db_entry["version_number"] + 1
+                        # Use the higher version number
+                        new_version_number = max(db_version, new_version) + 1
                         db_entry["version_number"] = new_version_number
+
                         update_query = f"""
                         UPDATE {self._get_table_name('document_info')}
                         SET group_ids = $1, user_id = $2, type = $3, metadata = $4,
                             title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                             restructuring_status = $9, updated_at = $10, version_number = $11
-                        WHERE document_id = $12 AND version_number = $13
+                        WHERE document_id = $12
                         """
                         result = await self.execute_query(
                             update_query,
@@ -135,14 +127,10 @@ class DocumentMixin(DatabaseMixin):
                                 db_entry["updated_at"],
                                 new_version_number,
                                 document_info.id,
-                                db_entry["version_number"] - 1,
                             ],
                         )
                     else:
-                        # Insert new document
-                        logger.info(
-                            f"Document {document_info.id} does not exist. Inserting."
-                        )
+                        # Insert new document (no changes needed here)
                         insert_query = f"""
                         INSERT INTO {self._get_table_name('document_info')}
                         (document_id, group_ids, user_id, type, metadata, title, version,
@@ -171,24 +159,18 @@ class DocumentMixin(DatabaseMixin):
 
                     if result in ["UPDATE 0", "INSERT 0"]:
                         raise ValueError(
-                            "No rows updated, possible version conflict"
+                            "No rows updated, possible concurrent modification"
                         )
 
                     break  # Success, exit the retry loop
-                except (
-                    asyncpg.exceptions.UniqueViolationError,
-                    ValueError,
-                ) as e:
+                except asyncpg.exceptions.UniqueViolationError as e:
                     retries += 1
                     if retries == max_retries:
                         logger.error(
                             f"Failed to update document {document_info.id} after {max_retries} attempts. Error: {str(e)}"
                         )
                     else:
-                        wait_time = 1.1**retries  # Exponential backoff
-                        logger.info(
-                            f"Retry {retries}/{max_retries} for document {document_info.id}. Waiting {wait_time} seconds."
-                        )
+                        wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)
 
     async def get_documents_overview(
@@ -248,7 +230,7 @@ class DocumentMixin(DatabaseMixin):
                     group_ids=row["group_ids"],
                     user_id=row["user_id"],
                     type=DocumentType(row["type"]),
-                    metadata=row["metadata"],
+                    metadata=json.loads(row["metadata"]),
                     title=row["title"],
                     version=row["version"],
                     size_in_bytes=row["size_in_bytes"],

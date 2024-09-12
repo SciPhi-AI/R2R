@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, Optional
 
 from core.base import OrchestrationProvider
@@ -29,4 +30,6 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             raise ValueError(
                 "Worker not initialized. Call get_worker() first."
             )
-        await self.worker.async_start()
+
+        # loop = asyncio.get_event_loop()
+        task = asyncio.create_task(self.worker.async_start())

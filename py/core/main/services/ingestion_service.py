@@ -155,7 +155,7 @@ class IngestionService(Service):
         document_info: DocumentInfo,
     ) -> list[DocumentFragment]:
         file_name, file_wrapper, size_in_bytes = (
-            self.providers.file.retrieve_file(document_info.id)
+            await self.providers.file.retrieve_file(document_info.id)
         )
 
         with file_wrapper as file_content_stream:
@@ -258,8 +258,6 @@ class IngestionService(Service):
         if error:
             document_info.metadata["error"] = error.message
 
-        print(f"Queueing document status update: {document_info} {status}")
-
         # Schedule the database update as a background task
         asyncio.create_task(self._update_document_status_in_db(document_info))
 
@@ -268,9 +266,8 @@ class IngestionService(Service):
             await self.providers.database.relational.upsert_documents_overview(
                 document_info
             )
-            print(f"Document status updated successfully: {document_info.id}")
         except Exception as e:
-            print(
+            logger.error(
                 f"Failed to update document status: {document_info.id}. Error: {str(e)}"
             )
 

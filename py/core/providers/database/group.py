@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -291,7 +292,7 @@ class GroupMixin(DatabaseMixin):
                 id=row["document_id"],
                 user_id=row["user_id"],
                 type=DocumentType(row["type"]),
-                metadata=row["metadata"],
+                metadata=json.loads(row["metadata"]),
                 title=row["title"],
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
