@@ -103,8 +103,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
             },
         )
 
-        logger.info(f"Messages: {messages}")
-
         for attempt in range(retries):
 
             try:
