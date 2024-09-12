@@ -86,7 +86,8 @@ jobs:
           tags: ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
           provenance: false
           sbom: false
-  
+          max_attempts: 3
+
   create-manifest:
     needs: [prepare, build]
     runs-on: ubuntu-latest
