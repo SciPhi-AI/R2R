@@ -37,7 +37,7 @@ database = "your_neo4j_database"
 
   [kg.kg_creation_settings]
     entity_types = ["Person", "Organization", "Location"] # if empty, all entities are extracted
-    relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted 
+    relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted
     max_knowledge_triples = 100
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction

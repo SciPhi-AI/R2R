@@ -406,7 +406,7 @@ class KGCreationSettings(BaseModel):
         default_factory=list,
         description="The types of entities to extract.",
     )
-    
+
     relation_types: list[str] = Field(
         default_factory=list,
         description="The types of relations to extract.",
