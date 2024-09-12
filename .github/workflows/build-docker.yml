@@ -76,17 +76,17 @@ jobs:
           username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Build and push unstructured image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: ./py
-          file: ./py/Dockerfile.unstructured
+          file: ./py/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           tags: ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
           provenance: false
           sbom: false
-
+  
   create-manifest:
     needs: [prepare, build]
     runs-on: ubuntu-latest
@@ -97,7 +97,7 @@ jobs:
           username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Create and push unstructured manifest
+      - name: Create and push manifest
         run: |
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
             ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
