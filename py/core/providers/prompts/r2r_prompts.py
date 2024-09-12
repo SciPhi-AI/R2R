@@ -87,12 +87,11 @@ class R2RPromptProvider(PromptProvider):
                 with open(yaml_file, "r") as file:
                     data = yaml.safe_load(file)
                     for name, prompt_data in data.items():
-                        if name not in self.prompts:
-                            self.add_prompt(
-                                name,
-                                prompt_data["template"],
-                                prompt_data.get("input_types", {}),
-                            )
+                        self.add_prompt(
+                            name,
+                            prompt_data["template"],
+                            prompt_data.get("input_types", {}),
+                        )
             except yaml.YAMLError as e:
                 error_msg = (
                     f"Error loading prompts from YAML file {yaml_file}: {e}"

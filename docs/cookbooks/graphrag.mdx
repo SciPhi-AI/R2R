@@ -24,26 +24,19 @@ Note that graph construction may take long for local LLMs, we recommend using cl
 <Tabs>
 <Tab title="Cloud LLMs">
 ```bash
-r2r serve --config-name=neo4j_kg
+r2r serve
 ```
 
-<Accordion icon="gear" title="Configuration: neo4j_kg">
+<Accordion icon="gear" title="Configuration: r2r.toml">
 ``` toml
-[chunking]
-provider = "unstructured_local"
-strategy = "auto"
-chunking_strategy = "basic"
-new_after_n_chars = 2_048
-max_characters = 4_096 # use larger max_characters for KG construction
-combine_under_n_chars = 512
-overlap = 20
-
 [kg]
 provider = "neo4j"
 batch_size = 256
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_creation_settings]
+    entity_types = [] # if empty, all entities are extracted
+    relation_types = [] # if empty, all relations are extracted 
     max_knowledge_triples = 100
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
@@ -105,6 +98,8 @@ provider = "neo4j"
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_creation_settings]
+    entity_types = [] # if empty, all entities are extracted
+    relation_types = [] # if empty, all relations are extracted 
     max_knowledge_triples = 100
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction

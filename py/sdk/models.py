@@ -402,6 +402,16 @@ class VectorSearchSettings(BaseModel):
 
 class KGCreationSettings(BaseModel):
 
+    entity_types: list[str] = Field(
+        default_factory=list,
+        description="The types of entities to extract.",
+    )
+    
+    relation_types: list[str] = Field(
+        default_factory=list,
+        description="The types of relations to extract.",
+    )
+
     fragment_merge_count: int = Field(
         default=4,
         description="The number of fragments to merge into a single extraction.",
