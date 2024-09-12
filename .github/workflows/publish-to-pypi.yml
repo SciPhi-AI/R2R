@@ -28,7 +28,7 @@ jobs:
         working-directory: ./py
         run: |
           version=$(poetry version -s)
-          new_version="${version}+$(date +'%Y%m%d%H%M')-$(git rev-parse --short HEAD)"
+          new_version="${version}a$(date +'%Y%m%d%H%M')"
           poetry version $new_version
 
       - name: Build and publish to TestPyPI
