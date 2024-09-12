@@ -348,7 +348,7 @@ class KGSearchSettings(BaseModel):
         json_schema_extra = {
             "use_kg_search": True,
             "kg_search_type": "global",
-            "kg_search_level": 0,
+            "kg_search_level": "0",
             "kg_search_generation_config": GenerationConfig.Config.json_schema_extra,
             "max_community_description_length": 65536,
             "max_llm_queries_for_global_search": 250,

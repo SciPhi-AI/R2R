@@ -98,8 +98,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
             task_inputs={
                 "input": combined_fragment,
                 "max_knowledge_triples": max_knowledge_triples,
-                "entity_types": entity_types,
-                "relation_types": relation_types,
+                "entity_types": "\n".join(entity_types),
+                "relation_types": "\n".join(relation_types),
             },
         )
 
@@ -265,5 +265,5 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 logger.error(f"Error in Extracting KG Triples: {e}")
                 raise R2RDocumentProcessingError(
                     document_id=document_id,
-                    error=str(e),
+                    error_message=str(e),
                 ) from e
