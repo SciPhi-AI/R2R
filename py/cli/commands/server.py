@@ -280,7 +280,7 @@ def serve(
                 "-t",
                 image,
                 "-f",
-                "Dockerfile.unstructured",
+                "Dockerfile",
                 ".",
             ],
             check=True,
