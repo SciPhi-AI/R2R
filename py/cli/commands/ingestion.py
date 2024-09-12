@@ -143,3 +143,29 @@ def ingest_sample_files(client):
     click.echo(
         f"Sample files ingestion completed. Ingest files response:\n\n{response}"
     )
+
+
+@cli.command()
+@click.pass_obj
+def ingest_sample_files_from_unstructured(client):
+    """Ingest multiple sample files from URLs into R2R."""
+
+    # Get the absolute path of the current script
+    current_script_path = os.path.abspath(__file__)
+    
+    # Navigate to the root directory of the project
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
+    
+    # Construct the absolute path to the data_unstructured folder
+    folder = os.path.join(root_dir, "core", "examples", "data_unstructured")
+
+    file_paths = [os.path.join(folder, file) for file in os.listdir(folder)]
+
+    print(file_paths)
+
+    with timer():
+        response = client.ingest_files(file_paths)
+
+    click.echo(
+        f"Sample files ingestion completed. Ingest files response:\n\n{response}"
+    )
