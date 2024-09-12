@@ -14,7 +14,7 @@ The ultimate open source RAG answer engine - JavaScript Client
 
 # About
 
-The official JavaScript client for R2R (Retrieval-Augmented Generation to Riches). R2R is designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). This JavaScript client provides a seamless interface to interact with the R2R RESTful API.
+The official JavaScript client for R2R (Retrieval-Augmented Generation to Riches). R2R is designed to bridge the gap between local LLM experimentation and scalable, state of the art Retrieval-Augmented Generation (RAG). This JavaScript client provides a seamless interface to interact with the R2R RESTful API.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
