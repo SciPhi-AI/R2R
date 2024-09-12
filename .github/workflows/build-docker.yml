@@ -7,6 +7,10 @@ on:
         description: 'Version to publish (leave empty to use default versioning)'
         required: false
         type: string
+  push:
+    branches:
+      - dev
+      - dev-minor
 
 env:
   REGISTRY_IMAGE: ragtoriches/prod
@@ -33,11 +37,20 @@ jobs:
         id: version
         run: |
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            RELEASE_VERSION=${{ github.event.inputs.version }}
           else
             VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['tool']['poetry']['version'])")
-            echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+            RELEASE_VERSION=$VERSION
           fi
+
+          # Check the branch name and append the appropriate suffix
+          if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            RELEASE_VERSION="${RELEASE_VERSION}-dev"
+          elif [[ "${{ github.ref }}" == "refs/heads/dev-minor" ]]; then
+            RELEASE_VERSION="${RELEASE_VERSION}-dev-minor"
+          fi
+
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
       - name: Set matrix
         id: set-matrix
@@ -63,7 +76,7 @@ jobs:
           username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Build and push default image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: ./py
@@ -73,17 +86,7 @@ jobs:
           tags: ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
           provenance: false
           sbom: false
-
-      - name: Build and push unstructured image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./py
-          file: ./py/Dockerfile.unstructured
-          platforms: ${{ matrix.platform }}
-          push: true
-          tags: ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-${{ matrix.platform }}
-          provenance: false
-          sbom: false
+          max_attempts: 3
 
   create-manifest:
     needs: [prepare, build]
@@ -95,7 +98,7 @@ jobs:
           username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Create and push default manifest
+      - name: Create and push manifest
         run: |
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
             ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
@@ -105,19 +108,7 @@ jobs:
             ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
             ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
 
-      - name: Create and push unstructured manifest
-        run: |
-          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-arm64
-
-          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest-unstructured \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured-arm64
-
       - name: Verify manifests
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-unstructured
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest-unstructured
