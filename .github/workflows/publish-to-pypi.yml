@@ -22,7 +22,15 @@ jobs:
         working-directory: ./py
         run: pip install poetry
 
-      - name: Build and publish
+      - name: Build and publish to TestPyPI
+        if: github.ref != 'refs/heads/main'  # Publish to TestPyPI for non-main branches
+        working-directory: ./py
+        run: |
+          poetry build
+          poetry publish -r testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+      - name: Build and publish to PyPI
+        if: github.ref == 'refs/heads/main'  # Publish to real PyPI for main branch
         working-directory: ./py
         run: |
           poetry build
