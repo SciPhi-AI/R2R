@@ -12,8 +12,6 @@ RUN mkdir -p /app/py
 WORKDIR /app/py
 COPY pyproject.toml /app/py
 
-COPY scripts /app/py/scripts
-
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
