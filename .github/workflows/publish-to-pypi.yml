@@ -36,7 +36,8 @@ jobs:
         working-directory: ./py
         run: |
           poetry build
-          poetry publish -r https://test.pypi.org/legacy/ --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }}
+          poetry config repositories.testpypi https://test.pypi.org/legacy
+          poetry publish -r testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }}
 
       - name: Build and publish to PyPI
         if: github.event_name == 'workflow_dispatch'  # Publish to real PyPI only on manual trigger
