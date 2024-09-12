@@ -208,12 +208,6 @@ def generate_report():
     default=False,
     help="Run in debug mode. Only for development.",
 )
-@click.option(
-    "--unstructured",
-    is_flag=True,
-    default=False,
-    help="Use the unstructured Docker image",
-)
 def serve(
     host,
     port,
@@ -227,50 +221,41 @@ def serve(
     config_name,
     config_path,
     build,
-    unstructured,
 ):
     """Start the R2R server."""
     load_dotenv()
 
     if not image:
         r2r_version = get_version("r2r")
-        image_suffix = "-unstructured" if unstructured else ""
-        image = f"ragtoriches/prod:{r2r_version}{image_suffix}"
 
         version_specific_image = (
-            f"ragtoriches/prod:{r2r_version}{image_suffix}"
+            f"ragtoriches/prod:{r2r_version}"
         )
-        latest_image = "ragtoriches/prod:latest-unstructured"
+        latest_image = "ragtoriches/prod:latest"
 
-        # try:
-        #     click.echo(f"Attempting to pull image: {version_specific_image}")
-        #     subprocess.run(
-        #         ["docker", "pull", version_specific_image],
-        #         check=True,
-        #         capture_output=True,
-        #     )
-        #     image = version_specific_image
-        #     click.echo(f"Successfully pulled image: {version_specific_image}")
-        # except subprocess.CalledProcessError:
-        #     click.echo(
-        #         f"Image {version_specific_image} not found. Falling back to latest."
-        #     )
-        #     try:
-        #         click.echo(f"Attempting to pull image: {latest_image}")
-        #         subprocess.run(
-        #             ["docker", "pull", latest_image],
-        #             check=True,
-        #             capture_output=True,
-        #         )
-        #         image = latest_image
-        #         click.echo(f"Successfully pulled image: {latest_image}")
-        #     except subprocess.CalledProcessError:
-        #         click.echo(
-        #             f"Failed to pull {latest_image}. Please check your internet connection and Docker Hub access."
-        #         )
-        #         return
-        image = latest_image
-        os.environ["R2R_IMAGE"] = image
+        def image_exists(img):
+            try:
+                subprocess.run(
+                    ["docker", "image", "inspect", img],
+                    check=True,
+                    capture_output=True,
+                )
+                return True
+            except subprocess.CalledProcessError:
+                return False
+
+        if image_exists(version_specific_image):
+            click.echo(f"Using image: {version_specific_image}")
+            image = version_specific_image
+        elif image_exists(latest_image):
+            click.echo(f"Version-specific image not found. Using latest: {latest_image}")
+            image = latest_image
+        else:
+            click.echo(f"Neither {version_specific_image} nor {latest_image} found locally.")
+            click.echo("Please pull the required image or build it using the --build flag.")
+            raise click.Abort()
+
+    os.environ["R2R_IMAGE"] = image
 
     if build:
         subprocess.run(

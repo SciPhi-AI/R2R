@@ -93,6 +93,33 @@ jobs:
           file: ./py/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
+          tags: |
+            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
+            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest-${{ matrix.platform }}
           provenance: false
           sbom: false
+
+      create-manifest:
+        needs: [prepare, build]
+        runs-on: ubuntu-latest
+        steps:
+          - name: Docker Auth
+            uses: docker/login-action@v3
+            with:
+              username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+              password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+    
+          - name: Create and push multi-arch manifest
+            run: |
+              docker buildx imagetools create -t ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
+                ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+                ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+    
+              docker buildx imagetools create -t ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest \
+                ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+                ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+    
+          - name: Verify manifests
+            run: |
+              docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
+              docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest          
