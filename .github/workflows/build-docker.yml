@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
+      registry_image: ${{ steps.version.outputs.REGISTRY_IMAGE }}
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Repository
@@ -95,4 +96,3 @@ jobs:
           tags: ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
           provenance: false
           sbom: false
-          max_attempts: 3
