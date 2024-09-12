@@ -136,6 +136,3 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
-
-[tool.poetry.repositories.testpypi]
-url = "https://test.pypi.org/legacy/"
