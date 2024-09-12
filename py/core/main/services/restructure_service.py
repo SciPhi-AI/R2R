@@ -48,6 +48,8 @@ class RestructureService(Service):
         generation_config: GenerationConfig,
         fragment_merge_count: int,
         max_knowledge_triples: int,
+        entity_types: list[str],
+        relation_types: list[str],
     ):
         triples = await self.pipes.kg_extraction_pipe.run(
             input=self.pipes.kg_extraction_pipe.Input(
@@ -56,6 +58,8 @@ class RestructureService(Service):
                     "generation_config": generation_config,
                     "fragment_merge_count": fragment_merge_count,
                     "max_knowledge_triples": max_knowledge_triples,
+                    "entity_types": entity_types,
+                    "relation_types": relation_types,
                 }
             ),
             run_manager=self.run_manager,
