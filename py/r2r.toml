@@ -9,7 +9,7 @@ default_admin_password = "change_me_immediately"
 
 [chunking]
 provider = "unstructured_local"
-strategy = "fast"
+strategy = "auto"
 chunking_strategy = "by_title"
 new_after_n_chars = 512
 max_characters = 1_024
