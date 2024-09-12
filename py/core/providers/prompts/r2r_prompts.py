@@ -55,15 +55,19 @@ class R2RPromptProvider(PromptProvider):
     def _load_prompts_from_database(self):
         query = text(
             f"""
-            SELECT prompt_id, name, template, input_types
+            SELECT prompt_id, name, template, input_types, created_at, updated_at
             FROM {self._get_table_name('prompts')}
             """
         )
         results = self.execute_query(query).fetchall()
         for row in results:
-            prompt_id, name, template, input_types = row
+            prompt_id, name, template, input_types, created_at, updated_at = row
             self.prompts[name] = Prompt(
-                name=name, template=template, input_types=input_types
+                name=name,
+                template=template,
+                input_types=input_types,
+                created_at=created_at,
+                updated_at=updated_at,
             )
 
     def _load_prompts_from_yaml_directory(
@@ -87,12 +91,20 @@ class R2RPromptProvider(PromptProvider):
                 with open(yaml_file, "r") as file:
                     data = yaml.safe_load(file)
                     for name, prompt_data in data.items():
+                        
                         if name not in self.prompts:
+                            modify_prompt = True
+                        else:
+                            modify_prompt = prompt_data['created_at'] == prompt_data['updated_at']
+
+                        if modify_prompt:
                             self.add_prompt(
                                 name,
                                 prompt_data["template"],
                                 prompt_data.get("input_types", {}),
+                                modify_created_at = True,
                             )
+
             except yaml.YAMLError as e:
                 error_msg = (
                     f"Error loading prompts from YAML file {yaml_file}: {e}"
@@ -105,13 +117,13 @@ class R2RPromptProvider(PromptProvider):
                 raise ValueError(error_msg)
 
     def add_prompt(
-        self, name: str, template: str, input_types: dict[str, str]
+        self, name: str, template: str, input_types: dict[str, str], modify_created_at: bool = False
     ) -> None:
         if name in self.prompts:
             raise ValueError(f"Prompt '{name}' already exists.")
         prompt = Prompt(name=name, template=template, input_types=input_types)
         self.prompts[name] = prompt
-        self._save_prompt_to_database(prompt)
+        self._save_prompt_to_database(prompt, modify_created_at=modify_created_at)
 
     def get_prompt(
         self,
@@ -165,7 +177,13 @@ class R2RPromptProvider(PromptProvider):
         )
         self.execute_query(query, {"name": name})
 
-    def _save_prompt_to_database(self, prompt: Prompt):
+    def _save_prompt_to_database(self, prompt: Prompt, modify_created_at: bool = False):
+
+        if modify_created_at:
+            modify_created_at_clause = "created_at = NOW(),"
+        else:
+            modify_created_at_clause = ""
+
         query = text(
             f"""
             INSERT INTO {self._get_table_name('prompts')}
@@ -174,6 +192,7 @@ class R2RPromptProvider(PromptProvider):
             ON CONFLICT (name) DO UPDATE SET
                 template = EXCLUDED.template,
                 input_types = EXCLUDED.input_types,
+                {modify_created_at_clause}
                 updated_at = NOW();
             """
         )
