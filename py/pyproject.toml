@@ -68,6 +68,7 @@ psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
 unstructured = {version = "^0.15.10", optional = true, extras = ["all-docs"]}
+boto3 = "^1.35.17"
 
 [tool.poetry.extras]
 core = [
@@ -136,6 +137,3 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
-
-[tool.poetry.repositories.testpypi]
-url = "https://test.pypi.org/legacy/"
