@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from hatchet_sdk import Context
 
@@ -8,6 +9,8 @@ from core.base.abstractions import DocumentInfo, R2RException
 from ..services import IngestionService, IngestionServiceAdapter
 from .base import r2r_hatchet
 
+logger = logging.getLogger(__name__)
+
 
 @r2r_hatchet.workflow(
     name="ingest-file",
@@ -16,12 +19,9 @@ from .base import r2r_hatchet
 class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
-        self.document_info = None
 
     @r2r_hatchet.step()
     async def parse(self, context: Context) -> dict:
-        self.document_info = None
-
         input_data = context.workflow_input()["request"]
         parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
             input_data
@@ -31,28 +31,30 @@ class IngestFilesWorkflow:
             **parsed_data
         )
 
-        document_info_dict = ingestion_result["info"].to_dict()
-        self.document_info = DocumentInfo(**document_info_dict)
+        document_info = ingestion_result["info"]
 
         await self.ingestion_service.update_document_status(
-            self.document_info,
+            document_info,
             status=IngestionStatus.PARSING,
         )
 
         return {
             "status": "Successfully parsed file",
-            "document_info": document_info_dict,
+            "document_info": document_info.to_dict(),
         }
 
     @r2r_hatchet.step(parents=["parse"])
     async def extract(self, context: Context) -> dict:
+        document_info_dict = context.step_output("parse")["document_info"]
+        document_info = DocumentInfo(**document_info_dict)
+
         await self.ingestion_service.update_document_status(
-            self.document_info,
+            document_info,
             status=IngestionStatus.EXTRACTING,
         )
 
         extractions_generator = await self.ingestion_service.parse_file(
-            self.document_info
+            document_info
         )
 
         extractions = []
@@ -66,12 +68,16 @@ class IngestFilesWorkflow:
         return {
             "status": "Successfully extracted data",
             "extractions": serializable_extractions,
+            "document_info": document_info.to_dict(),
         }
 
     @r2r_hatchet.step(parents=["extract"])
     async def chunk(self, context: Context) -> dict:
+        document_info_dict = context.step_output("extract")["document_info"]
+        document_info = DocumentInfo(**document_info_dict)
+
         await self.ingestion_service.update_document_status(
-            self.document_info,
+            document_info,
             status=IngestionStatus.CHUNKING,
         )
 
@@ -94,12 +100,16 @@ class IngestFilesWorkflow:
         return {
             "status": "Successfully chunked data",
             "chunks": serializable_chunks,
+            "document_info": document_info.to_dict(),
         }
 
     @r2r_hatchet.step(parents=["chunk"])
-    async def embed(self, context: Context) -> None:
+    async def embed(self, context: Context) -> dict:
+        document_info_dict = context.step_output("chunk")["document_info"]
+        document_info = DocumentInfo(**document_info_dict)
+
         await self.ingestion_service.update_document_status(
-            self.document_info,
+            document_info,
             status=IngestionStatus.EMBEDDING,
         )
 
@@ -114,7 +124,7 @@ class IngestFilesWorkflow:
             embeddings.append(embedding)
 
         await self.ingestion_service.update_document_status(
-            self.document_info,
+            document_info,
             status=IngestionStatus.STORING,
         )
 
@@ -125,36 +135,45 @@ class IngestFilesWorkflow:
         async for _ in storage_generator:
             pass
 
-        return None
+        return {
+            "document_info": document_info.to_dict(),
+        }
 
     @r2r_hatchet.step(parents=["embed"])
-    async def finalize(self, context: Context) -> None:
+    async def finalize(self, context: Context) -> dict:
+        document_info_dict = context.step_output("embed")["document_info"]
+        document_info = DocumentInfo(**document_info_dict)
+
         is_update = context.workflow_input()["request"].get("is_update")
 
         await self.ingestion_service.finalize_ingestion(
-            self.document_info, is_update=is_update
+            document_info, is_update=is_update
         )
 
         await self.ingestion_service.update_document_status(
-            self.document_info,
+            document_info,
             status=IngestionStatus.SUCCESS,
         )
 
-        return None
+        return {
+            "status": "Successfully finalized ingestion",
+            "document_info": document_info.to_dict(),
+        }
 
     @r2r_hatchet.on_failure_step()
     async def on_failure(self, context: Context) -> None:
-        if self.document_info is None:
-            return None
-        await self.ingestion_service.update_document_status(
-            self.document_info,
-            status="failure",
-            error=R2RException(
-                "Temporary error description, todo: get the actual error from Hatchet",
-                500,
-            ),
-        )
-
+        try:
+            # Attempt to retrieve document_info from the first step if available
+            document_info_dict = context.step_output("parse")["document_info"]
+            document_info = DocumentInfo(**document_info_dict)
+            await self.ingestion_service.update_document_status(
+                document_info,
+                status=IngestionStatus.FAILURE,
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to update document status on failure: {str(e)}"
+            )
         return None
 
 

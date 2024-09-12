@@ -33,6 +33,7 @@ hatchet-sdk = "^0.36.17"
 toml = "^0.10.2"
 unstructured-client = "^0.25.5"
 numpy = ">=1.22.4,<1.29.0"
+apscheduler = "^3.10.4"
 
 # Core dependencies (optional)
 future = { version = "^1.0.0", optional = true }
@@ -68,9 +69,6 @@ poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
-unstructured-client = {version = "^0.25.5", optional = true, extras = ["core"]}
-numpy = ">=1.22.4,<1.29.0"
-apscheduler = "^3.10.4"
 unstructured = {version = "^0.15.10", optional = true, extras = ["all-docs"]}
 
 [tool.poetry.extras]

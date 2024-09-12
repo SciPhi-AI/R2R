@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 from datetime import datetime
@@ -252,14 +251,9 @@ class IngestionService(Service):
         self,
         document_info: DocumentInfo,
         status: IngestionStatus,
-        error: Optional[R2RException] = None,
     ) -> None:
         document_info.ingestion_status = status
-        if error:
-            document_info.metadata["error"] = error.message
-
-        # Schedule the database update as a background task
-        asyncio.create_task(self._update_document_status_in_db(document_info))
+        await self._update_document_status_in_db(document_info)
 
     async def _update_document_status_in_db(self, document_info: DocumentInfo):
         try:

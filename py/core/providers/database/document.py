@@ -80,95 +80,99 @@ class DocumentMixin(DatabaseMixin):
         if isinstance(documents_overview, DocumentInfo):
             documents_overview = [documents_overview]
 
-        max_retries = 10
+        max_retries = 20
         for document_info in documents_overview:
             retries = 0
             while retries < max_retries:
                 try:
-                    # Check if the document exists
-                    check_query = f"""
-                    SELECT version_number FROM {self._get_table_name('document_info')}
-                    WHERE document_id = $1 FOR UPDATE SKIP LOCKED
-                    """
-                    existing_doc = await self.fetchrow_query(
-                        check_query, [document_info.id]
-                    )
+                    async with self.pool.acquire() as conn:
+                        async with conn.transaction():
+                            # Lock the row for update
+                            check_query = f"""
+                            SELECT version_number, ingestion_status FROM {self._get_table_name('document_info')}
+                            WHERE document_id = $1 FOR UPDATE
+                            """
+                            existing_doc = await conn.fetchrow(
+                                check_query, document_info.id
+                            )
 
-                    db_entry = document_info.convert_to_db_entry()
+                            db_entry = document_info.convert_to_db_entry()
 
-                    if existing_doc:
-                        # Update existing document
-                        db_version = existing_doc["version_number"]
-                        new_version = db_entry["version_number"]
+                            if existing_doc:
+                                db_version = existing_doc["version_number"]
+                                db_status = existing_doc["ingestion_status"]
+                                new_version = db_entry["version_number"]
 
-                        # Use the higher version number
-                        new_version_number = max(db_version, new_version) + 1
-                        db_entry["version_number"] = new_version_number
+                                # Only increment version if status is changing to 'success' or if it's a new version
+                                if (
+                                    db_status != "success"
+                                    and db_entry["ingestion_status"]
+                                    == "success"
+                                ) or (new_version > db_version):
+                                    new_version_number = db_version + 1
+                                else:
+                                    new_version_number = db_version
 
-                        update_query = f"""
-                        UPDATE {self._get_table_name('document_info')}
-                        SET group_ids = $1, user_id = $2, type = $3, metadata = $4,
-                            title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                            restructuring_status = $9, updated_at = $10, version_number = $11
-                        WHERE document_id = $12
-                        """
-                        result = await self.execute_query(
-                            update_query,
-                            [
-                                db_entry["group_ids"],
-                                db_entry["user_id"],
-                                db_entry["type"],
-                                json.dumps(db_entry["metadata"]),
-                                db_entry["title"],
-                                db_entry["version"],
-                                db_entry["size_in_bytes"],
-                                db_entry["ingestion_status"],
-                                db_entry["restructuring_status"],
-                                db_entry["updated_at"],
-                                new_version_number,
-                                document_info.id,
-                            ],
-                        )
-                    else:
-                        # Insert new document (no changes needed here)
-                        insert_query = f"""
-                        INSERT INTO {self._get_table_name('document_info')}
-                        (document_id, group_ids, user_id, type, metadata, title, version,
-                        size_in_bytes, ingestion_status, restructuring_status, created_at,
-                        updated_at, version_number)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                        """
-                        result = await self.execute_query(
-                            insert_query,
-                            [
-                                db_entry["document_id"],
-                                db_entry["group_ids"],
-                                db_entry["user_id"],
-                                db_entry["type"],
-                                json.dumps(db_entry["metadata"]),
-                                db_entry["title"],
-                                db_entry["version"],
-                                db_entry["size_in_bytes"],
-                                db_entry["ingestion_status"],
-                                db_entry["restructuring_status"],
-                                db_entry["created_at"],
-                                db_entry["updated_at"],
-                                db_entry["version_number"],
-                            ],
-                        )
+                                db_entry["version_number"] = new_version_number
 
-                    if result in ["UPDATE 0", "INSERT 0"]:
-                        raise ValueError(
-                            "No rows updated, possible concurrent modification"
-                        )
+                                update_query = f"""
+                                UPDATE {self._get_table_name('document_info')}
+                                SET group_ids = $1, user_id = $2, type = $3, metadata = $4,
+                                    title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
+                                    restructuring_status = $9, updated_at = $10, version_number = $11
+                                WHERE document_id = $12
+                                """
+                                await conn.execute(
+                                    update_query,
+                                    db_entry["group_ids"],
+                                    db_entry["user_id"],
+                                    db_entry["type"],
+                                    db_entry["metadata"],
+                                    db_entry["title"],
+                                    db_entry["version"],
+                                    db_entry["size_in_bytes"],
+                                    db_entry["ingestion_status"],
+                                    db_entry["restructuring_status"],
+                                    db_entry["updated_at"],
+                                    new_version_number,
+                                    document_info.id,
+                                )
+                            else:
+                                insert_query = f"""
+                                INSERT INTO {self._get_table_name('document_info')}
+                                (document_id, group_ids, user_id, type, metadata, title, version,
+                                size_in_bytes, ingestion_status, restructuring_status, created_at,
+                                updated_at, version_number)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                                """
+                                await conn.execute(
+                                    insert_query,
+                                    db_entry["document_id"],
+                                    db_entry["group_ids"],
+                                    db_entry["user_id"],
+                                    db_entry["type"],
+                                    db_entry["metadata"],
+                                    db_entry["title"],
+                                    db_entry["version"],
+                                    db_entry["size_in_bytes"],
+                                    db_entry["ingestion_status"],
+                                    db_entry["restructuring_status"],
+                                    db_entry["created_at"],
+                                    db_entry["updated_at"],
+                                    db_entry["version_number"],
+                                )
 
                     break  # Success, exit the retry loop
-                except asyncpg.exceptions.UniqueViolationError as e:
+                except (
+                    asyncpg.exceptions.UniqueViolationError,
+                    asyncpg.exceptions.DeadlockDetectedError,
+                ) as e:
                     retries += 1
                     if retries == max_retries:
                         logger.error(
                             f"Failed to update document {document_info.id} after {max_retries} attempts. Error: {str(e)}"
                         )
+                        raise
                     else:
                         wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)

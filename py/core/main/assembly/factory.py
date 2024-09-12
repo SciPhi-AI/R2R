@@ -327,7 +327,8 @@ class R2RProviderFactory:
                 *args,
                 **kwargs,
             )
-          
+        )
+
         prompt_provider = (
             prompt_provider_override
             or self.create_prompt_provider(

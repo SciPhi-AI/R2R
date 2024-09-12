@@ -36,10 +36,6 @@ async def lifespan(app: FastAPI):
     # Start the Hatchet worker
     await r2r_app.orchestration_provider.start_worker()
 
-    # Set the event loop
-    # event_loop = asyncio.get_running_loop()
-    # asyncio.set_event_loop(event_loop)
-
     yield
 
     # Shutdown
@@ -75,10 +71,10 @@ host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", "7272"))
 
 logger.info(
-    f"Environment CONFIG_NAME: {'None' if config_name==None else config_name}"
+    f"Environment CONFIG_NAME: {'None' if config_name is None else config_name}"
 )
 logger.info(
-    f"Environment CONFIG_PATH: {'None' if config_path==None else config_path}"
+    f"Environment CONFIG_PATH: {'None' if config_path is None else config_path}"
 )
 
 # Create the FastAPI app
