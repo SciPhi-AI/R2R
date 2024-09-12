@@ -214,6 +214,12 @@ def generate_report():
     default=False,
     help="Use the unstructured Docker image",
 )
+@click.option(
+    "--dev",
+    is_flag=True,
+    default=False,
+    help="Run in development mode",
+)
 def serve(
     host,
     port,
@@ -228,6 +234,7 @@ def serve(
     config_path,
     build,
     unstructured,
+    dev,
 ):
     """Start the R2R server."""
     load_dotenv()
@@ -280,7 +287,7 @@ def serve(
                 "-t",
                 image,
                 "-f",
-                "Dockerfile",
+                f"Dockerfile{'.dev' if dev else ''}",
                 ".",
             ],
             check=True,
@@ -308,6 +315,7 @@ def serve(
             image,
             config_name,
             config_path,
+            
         )
         if (
             "pytest" in sys.modules

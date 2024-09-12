@@ -91,11 +91,10 @@ class R2RPromptProvider(PromptProvider):
                 with open(yaml_file, "r") as file:
                     data = yaml.safe_load(file)
                     for name, prompt_data in data.items():
-                        
                         if name not in self.prompts:
                             modify_prompt = True
                         else:
-                            modify_prompt = prompt_data['created_at'] == prompt_data['updated_at']
+                            modify_prompt = self.prompts[name].created_at == self.prompts[name].updated_at
 
                         if modify_prompt:
                             self.add_prompt(
@@ -119,8 +118,6 @@ class R2RPromptProvider(PromptProvider):
     def add_prompt(
         self, name: str, template: str, input_types: dict[str, str], modify_created_at: bool = False
     ) -> None:
-        if name in self.prompts:
-            raise ValueError(f"Prompt '{name}' already exists.")
         prompt = Prompt(name=name, template=template, input_types=input_types)
         self.prompts[name] = prompt
         self._save_prompt_to_database(prompt, modify_created_at=modify_created_at)

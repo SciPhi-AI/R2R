@@ -10,8 +10,8 @@ class Prompt(BaseModel):
 
     name: str
     template: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
     input_types: dict[str, str]
 
     def format_prompt(self, inputs: dict[str, Any]) -> str:
