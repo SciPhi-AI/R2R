@@ -215,9 +215,9 @@ def generate_report():
     help="Run in development mode",
 )
 @click.option(
-    "--image-suffix",
-    default="latest",
-    help="Which suffix to append to the container?",
+    "--image-env",
+    default="prod",
+    help="Which dev environment to pull the image from?",
 )
 def serve(
     host,
@@ -233,29 +233,30 @@ def serve(
     config_path,
     build,
     dev,
-    image_suffix
+    image_env
 ):
     """Start the R2R server."""
     load_dotenv()
-    if image and image_suffix:
+    if image and image_env:
         click.echo(
-            "WARNING: Both image and image_suffix were provided. Using image."
+            "WARNING: Both `image` and `image_env` were provided. Using `image`."
         )
 
     if not image:
         r2r_version = get_version("r2r")
 
         version_specific_image = (
-            f"ragtoriches/{image_suffix}:{r2r_version}"
+            f"ragtoriches/{image_env}:{r2r_version}"
         )
-        latest_image = f"ragtoriches/{image_suffix}:latest"
+        latest_image = f"ragtoriches/{image_env}:latest"
 
         def image_exists(img):
             try:
-                subprocess.run(
-                    ["docker", "image", "inspect", img],
+                result = subprocess.run(
+                    ["docker", "manifest", "inspect", img],
                     check=True,
                     capture_output=True,
+                    text=True,
                 )
                 return True
             except subprocess.CalledProcessError:
