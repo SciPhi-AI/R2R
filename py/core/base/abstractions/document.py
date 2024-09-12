@@ -20,24 +20,76 @@ DataType = Union[str, bytes]
 class DocumentType(str, Enum):
     """Types of documents that can be stored."""
 
+    # Audio
+    MP3 = "mp3"
+
+    # CSV
     CSV = "csv"
-    DOCX = "docx"
+
+    # Email
+    EML = "eml"
+    MSG = "msg"
+    P7S = "p7s"
+
+    # EPUB
+    EPUB = "epub"
+
+    # Excel
+    XLS = "xls"
+    XLSX = "xlsx"
+
+    # HTML
     HTML = "html"
     HTM = "htm"
-    JSON = "json"
-    MD = "md"
-    PDF = "pdf"
-    PPTX = "pptx"
-    TXT = "txt"
-    XLSX = "xlsx"
-    GIF = "gif"
-    PNG = "png"
-    JPG = "jpg"
-    JPEG = "jpeg"
-    SVG = "svg"
-    MP3 = "mp3"
-    MP4 = "mp4"
 
+    # Image
+    BMP = "bmp"
+    HEIC = "heic"
+    JPEG = "jpeg"
+    PNG = "png"
+    TIFF = "tiff"
+    JPG = "jpg"
+    SVG = "svg"
+    
+    # Markdown
+    MD = "md"
+
+    # Org Mode
+    ORG = "org"
+
+    # Open Office
+    ODT = "odt"
+
+    # PDF
+    PDF = "pdf"
+
+    # Plain text
+    TXT = "txt"
+    JSON = "json"
+
+    # PowerPoint
+    PPT = "ppt"
+    PPTX = "pptx"
+
+    # reStructured Text
+    RST = "rst"
+
+    # Rich Text
+    RTF = "rtf"
+
+    # TSV
+    TSV = "tsv"
+
+    # Video/GIF
+    MP4 = "mp4"
+    GIF = "gif"
+
+    # Word
+    DOC = "doc"
+    DOCX = "docx"
+
+    # XML
+    XML = "xml"
 
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)

@@ -27,7 +27,7 @@ FROM python:3.10-slim
 # Install runtime dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    curl tesseract-ocr poppler-utils libmagic1 \
+    curl tesseract-ocr poppler-utils libmagic1 pandoc libreoffice \
     libgl1-mesa-glx libglib2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

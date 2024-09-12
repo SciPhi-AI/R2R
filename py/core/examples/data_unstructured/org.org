@@ -1,0 +1,153 @@
+#+title: Modern Org Example
+#+author: Daniel Mendler
+#+filetags: :example:org:
+
+This example Org file demonstrates the Org elements,
+which are styled by =org-modern=.
+
+-----
+
+* Headlines
+** Second level
+*** Third level
+**** Fourth level
+***** Fifth level
+
+* Task Lists [1/3]
+  - [X] Write =org-modern=
+  - [-] Publish =org-modern=
+  - [ ] Fix all the bugs
+
+* List Bullets
+  - Dash
+  + Plus
+  * Asterisk
+
+* Timestamps
+DEADLINE:  <2022-03-01 Tue>
+SCHEDULED: <2022-02-25 10:00>
+DRANGE:    [2022-03-01]--[2022-04-01]
+DRANGE:    <2022-03-01>--<2022-04-01>
+TRANGE:    [2022-03-01 Tue 10:42-11:00]
+TIMESTAMP: [2022-02-21 Mon 13:00]
+DREPEATED: <2022-02-26 Sat .+1d/2d +3d>
+TREPEATED: <2022-02-26 Sat 10:00 .+1d/2d>
+
+* Blocks
+
+#+begin_src emacs-lisp
+  ;; Taken from the well-structured Emacs config by @oantolin.
+  ;; Take a look at https://github.com/oantolin/emacs-config!
+  (defun command-of-the-day ()
+    "Show the documentation for a random command."
+    (interactive)
+    (let ((commands))
+      (mapatoms (lambda (s)
+                  (when (commandp s) (push s commands))))
+      (describe-function
+       (nth (random (length commands)) commands))))
+#+end_src
+
+#+begin_src calc
+  taylor(sin(x),x=0,3)
+#+end_src
+
+#+results:
+: pi x / 180 - 2.85779606768e-8 pi^3 x^3
+
+#+BEGIN_SRC C
+  printf("a|b\nc|d\n");
+#+END_SRC
+
+#+results:
+| a | b |
+| c | d |
+
+
+
+
+
+
+
+* Todo Labels and Tags
+** DONE Write =org-modern= :emacs:foss:coding:
+** TODO Publish =org-modern=
+** WAIT Fix all the bugs
+
+* Priorities
+** DONE [#A] Most important
+** TODO [#B] Less important
+** CANCEL [#C] Not that important
+** DONE [100%] [#A] Everything combined :tag:test:
+  * [X] First
+  * [X] Second
+  * [X] Third
+
+* Tables
+
+| N | N^2 | N^3 | N^4 | sqrt(n) | sqrt[4](N) |
+|---+----+----+----+---------+------------|
+| 2 |  4 |  8 | 16 |  1.4142 |     1.1892 |
+| 3 |  9 | 27 | 81 |  1.7321 |     1.3161 |
+
+|---+----+----+----+---------+------------|
+| N | N^2 | N^3 | N^4 | sqrt(n) | sqrt[4](N) |
+|---+----+----+----+---------+------------|
+| 2 |  4 |  8 | 16 |  1.4142 |     1.1892 |
+| 3 |  9 | 27 | 81 |  1.7321 |     1.3161 |
+|---+----+----+----+---------+------------|
+
+#+begin_example
+| a | b | c |
+| a | b | c |
+| a | b | c |
+#+end_example
+
+* Special Links
+
+Test numeric footnotes[fn:1] and named footnotes[fn:foo].
+
+<<This is an internal link>>
+
+<<<radio link>>>
+
+[[This is an internal link]]
+
+radio link
+
+[fn:1] This is footnote 1
+[fn:foo] This is the foonote
+
+* Progress bars
+
+- quotient [1/13]
+- quotient [2/13]
+- quotient [3/13]
+- quotient [4/13]
+- quotient [5/13]
+- quotient [6/13]
+- quotient [7/13]
+- quotient [8/13]
+- quotient [9/13]
+- quotient [10/13]
+- quotient [11/13]
+- quotient [12/13]
+- quotient [13/13]
+
+- percent [0%]
+- percent [1%]
+- percent [2%]
+- percent [5%]
+- percent [10%]
+- percent [20%]
+- percent [30%]
+- percent [40%]
+- percent [50%]
+- percent [60%]
+- percent [70%]
+- percent [80%]
+- percent [90%]
+- percent [100%]
+
+- overflow [110%]
+- overflow [20/10]
