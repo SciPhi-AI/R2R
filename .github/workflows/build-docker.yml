@@ -72,11 +72,6 @@ jobs:
       matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
     runs-on: ${{ matrix.runner }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.branch || github.ref }}  # Ensures the correct branch is checked out
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
