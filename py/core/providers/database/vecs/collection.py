@@ -1098,5 +1098,4 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         extend_existing=True,
     )
 
-
     return table
