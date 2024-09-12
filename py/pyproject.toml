@@ -66,12 +66,13 @@ poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 tokenizers = { version = "0.19", optional = true }
+unstructured = {version = "^0.15.10", optional = true, extras = ["all-docs"]}
 unstructured-client = "^0.25.5"
 numpy = ">=1.22.4,<1.29.0"
 
 [tool.poetry.extras]
 core = [
-    "future", "pydantic", "python-multipart", "fire", "gunicorn", "unstructured-client",
+    "future", "pydantic", "python-multipart", "fire", "gunicorn", "unstructured", "unstructured-client",
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
     "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
