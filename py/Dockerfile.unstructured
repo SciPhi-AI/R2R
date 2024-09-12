@@ -8,16 +8,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx libglib2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /app
+
 RUN pip install --no-cache-dir poetry
 
-RUN mkdir -p /app/py
+# Copy the entire project into the container
+COPY . /app
 WORKDIR /app/py
-COPY pyproject.toml /app/py/pyproject.toml
 
-# Install the dependencies, including gunicorn, uvicorn, and unstructured
+# Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir "unstructured[all-docs]" \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
@@ -32,23 +33,21 @@ RUN apt-get update \
 
 WORKDIR /app
 
+# Copy the installed packages from the builder
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-RUN python3 -c "from unstructured.partition.model_init import initialize; initialize()"
-
-
-# Expose the port and set environment variables
-ARG PORT=8000 HOST=0.0.0.0
-ENV PORT=$PORT HOST=$HOST TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
-EXPOSE $PORT
-
-COPY . /app
 # Copy the application and config
 COPY core /app/core
 COPY r2r /app/r2r
 COPY r2r.toml /app/r2r.toml
 COPY pyproject.toml /app/pyproject.toml
+
+# Expose the port
+ARG PORT=8000
+ARG HOST=0.0.0.0
+ENV PORT=$PORT HOST=$HOST
+EXPOSE $PORT
 
 # Run the application
 CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $PORT"]
