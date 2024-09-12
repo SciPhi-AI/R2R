@@ -40,7 +40,7 @@ RUN python3 -c "from unstructured.partition.model_init import initialize; initia
 
 # Expose the port and set environment variables
 ARG PORT=8000 HOST=0.0.0.0
-ENV PORT=$PORT HOST=$HOST TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
+ENV PORT=$PORT HOST=$HOST TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
 EXPOSE $PORT
 
 COPY . /app
