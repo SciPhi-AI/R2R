@@ -98,6 +98,8 @@ class R2RPromptProvider(PromptProvider):
                     else await conn.fetch(query)
                 )
 
+    # FIXME: We really should be taking advantage of Pydantic models here
+    # so that we don't have to json.dumps/loads all the time
     async def _load_prompts_from_database(self):
         query = """
         SELECT prompt_id, name, template, input_types, created_at, updated_at
@@ -117,7 +119,7 @@ class R2RPromptProvider(PromptProvider):
                     row["prompt_id"],
                     row["name"],
                     row["template"],
-                    row["input_types"],
+                    json.loads(row["input_types"]),
                     row["created_at"],
                     row["updated_at"],
                 )
@@ -201,7 +203,12 @@ class R2RPromptProvider(PromptProvider):
         input_types: dict[str, str],
         modify_created_at: bool = False,
     ) -> None:
-        prompt = Prompt(name=name, template=template, input_types=input_types)
+        prompt = Prompt(
+            prompt_id=generate_id_from_label(name),
+            name=name,
+            template=template,
+            input_types=input_types,
+        )
         self.prompts[name] = prompt
         try:
             await self._save_prompt_to_database(
@@ -278,6 +285,10 @@ class R2RPromptProvider(PromptProvider):
         try:
             created_at_clause = (
                 "created_at = NOW()," if modify_created_at else ""
+            )
+
+            logger.info(
+                f"Saving prompt '{prompt.name}' with input_types: {prompt.input_types} (type: {type(prompt.input_types)})"
             )
 
             query = f"""
