@@ -198,7 +198,7 @@ services:
       - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-7272}"
       - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
       - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/r2r-api"
-      - "traefik.http.middlewares.r2r-add-v2.naddprefix.prefix=/v2"
+      - "traefik.http.middlewares.r2r-add-v2.addprefix.prefix=/v2"
       - "traefik.http.routers.r2r.middlewares=r2r-strip-prefix,r2r-add-v2,r2r-headers"
       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Origin=*"
       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Methods=GET,POST,OPTIONS"
