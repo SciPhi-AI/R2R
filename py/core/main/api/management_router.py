@@ -1,11 +1,12 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 import psutil
 from fastapi import Body, Depends, Path, Query
+from fastapi.responses import StreamingResponse
 from pydantic import Json
 
 from core.base import R2RException
@@ -261,6 +262,43 @@ class ManagementRouter(BaseRouter):
         ) -> None:
             filters_dict = json.loads(filters) if filters else None
             return await self.service.delete(filters=filters_dict)
+
+        @self.router.get(
+            "/download_file/{document_id}", response_class=StreamingResponse
+        )
+        @self.base_endpoint
+        async def download_file_app(
+            document_id: str = Path(..., description="Document ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Download a file by its document ID as a stream.
+            """
+            # TODO: Add a check to see if the user has access to the file
+
+            document_uuid = UUID(document_id)
+            file_tuple = await self.service.download_file(document_uuid)
+            if not file_tuple:
+                raise R2RException(status_code=404, message="File not found.")
+
+            file_name, file_content, file_size = file_tuple
+
+            async def file_stream():
+                chunk_size = 1024 * 1024  # 1MB
+                while True:
+                    data = file_content.read(chunk_size)
+                    if not data:
+                        break
+                    yield data
+
+            return StreamingResponse(
+                file_stream(),
+                media_type="application/octet-stream",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{file_name}"',
+                    "Content-Length": str(file_size),
+                },
+            )
 
         @self.router.get("/documents_overview")
         @self.base_endpoint

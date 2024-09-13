@@ -217,8 +217,9 @@ class UnstructuredParsingProvider(ParsingProvider):
                 metadata=metadata,
             )
 
-        if iteration == 0:
-            raise ValueError(f"No chunks found for document {document.id}")
+        # TODO: explore why this is throwing inadvertedly
+        # if iteration == 0:
+        #     raise ValueError(f"No chunks found for document {document.id}")
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

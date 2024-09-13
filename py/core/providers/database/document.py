@@ -49,7 +49,7 @@ class DocumentMixin(DatabaseMixin):
             Column("restructuring_status", String),
             Column("created_at", DateTime),
             Column("updated_at", DateTime),
-            Column("version_number", Integer),
+            Column("attempt_number", Integer),
         )
 
     async def create_table(self):
@@ -67,7 +67,7 @@ class DocumentMixin(DatabaseMixin):
             restructuring_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
-            version_number INT DEFAULT 0
+            attempt_number INT DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_group_ids_{self.collection_name}
         ON {self._get_table_name('document_info')} USING GIN (group_ids);
@@ -80,6 +80,7 @@ class DocumentMixin(DatabaseMixin):
         if isinstance(documents_overview, DocumentInfo):
             documents_overview = [documents_overview]
 
+        # TODO: make this an arg
         max_retries = 20
         for document_info in documents_overview:
             retries = 0
@@ -89,7 +90,7 @@ class DocumentMixin(DatabaseMixin):
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
-                            SELECT version_number, ingestion_status FROM {self._get_table_name('document_info')}
+                            SELECT attempt_number, ingestion_status FROM {self._get_table_name('document_info')}
                             WHERE document_id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
@@ -99,9 +100,9 @@ class DocumentMixin(DatabaseMixin):
                             db_entry = document_info.convert_to_db_entry()
 
                             if existing_doc:
-                                db_version = existing_doc["version_number"]
+                                db_version = existing_doc["attempt_number"]
                                 db_status = existing_doc["ingestion_status"]
-                                new_version = db_entry["version_number"]
+                                new_version = db_entry["attempt_number"]
 
                                 # Only increment version if status is changing to 'success' or if it's a new version
                                 if (
@@ -109,17 +110,17 @@ class DocumentMixin(DatabaseMixin):
                                     and db_entry["ingestion_status"]
                                     == "success"
                                 ) or (new_version > db_version):
-                                    new_version_number = db_version + 1
+                                    new_attempt_number = db_version + 1
                                 else:
-                                    new_version_number = db_version
+                                    new_attempt_number = db_version
 
-                                db_entry["version_number"] = new_version_number
+                                db_entry["attempt_number"] = new_attempt_number
 
                                 update_query = f"""
                                 UPDATE {self._get_table_name('document_info')}
                                 SET group_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                                    restructuring_status = $9, updated_at = $10, version_number = $11
+                                    restructuring_status = $9, updated_at = $10, attempt_number = $11
                                 WHERE document_id = $12
                                 """
                                 await conn.execute(
@@ -134,7 +135,7 @@ class DocumentMixin(DatabaseMixin):
                                     db_entry["ingestion_status"],
                                     db_entry["restructuring_status"],
                                     db_entry["updated_at"],
-                                    new_version_number,
+                                    new_attempt_number,
                                     document_info.id,
                                 )
                             else:
@@ -142,7 +143,7 @@ class DocumentMixin(DatabaseMixin):
                                 INSERT INTO {self._get_table_name('document_info')}
                                 (document_id, group_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, restructuring_status, created_at,
-                                updated_at, version_number)
+                                updated_at, attempt_number)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                                 """
                                 await conn.execute(
@@ -159,7 +160,7 @@ class DocumentMixin(DatabaseMixin):
                                     db_entry["restructuring_status"],
                                     db_entry["created_at"],
                                     db_entry["updated_at"],
-                                    db_entry["version_number"],
+                                    db_entry["attempt_number"],
                                 )
 
                     break  # Success, exit the retry loop
