@@ -277,7 +277,7 @@ class R2RPromptProvider(PromptProvider):
     ):
         try:
             created_at_clause = (
-                ", created_at = NOW()" if modify_created_at else ""
+                "created_at = NOW()," if modify_created_at else ""
             )
 
             query = f"""
@@ -287,8 +287,8 @@ class R2RPromptProvider(PromptProvider):
             ON CONFLICT (name) DO UPDATE SET
                 template = EXCLUDED.template,
                 input_types = EXCLUDED.input_types,
-                updated_at = NOW()
-                {created_at_clause};
+                {created_at_clause}
+                updated_at = NOW();
             """
             await self.execute_query(
                 query,
