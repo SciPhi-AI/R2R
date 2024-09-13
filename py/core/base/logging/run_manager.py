@@ -1,4 +1,3 @@
-import asyncio
 import contextvars
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -37,9 +36,6 @@ class RunManager:
         run_type: RunType,
         user: UserResponse,
     ):
-        if asyncio.iscoroutine(user):
-            user = await user
-
         if run_id := run_id_var.get():
             await self.logger.info_log(
                 run_id=run_id,

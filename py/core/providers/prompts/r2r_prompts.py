@@ -1,4 +1,3 @@
-import asyncpg
 import json
 import logging
 import os
@@ -7,6 +6,7 @@ from typing import Any, Optional
 from uuid import uuid4
 
 import yaml
+from sqlalchemy import text
 
 from core.base import Prompt, PromptConfig, PromptProvider, R2RException
 from core.providers.database.postgres import PostgresDBProvider
@@ -20,81 +20,48 @@ class R2RPromptProvider(PromptProvider):
         self.prompts: dict[str, Prompt] = {}
         self.config = config
         self.db_provider = db_provider
-
-    async def __aenter__(self):
-        await self.initialize()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self._close_connection()
-
-    async def _close_connection(self):
-        if self.pool:
-            await self.pool.close()
-            self.pool = None
-
-    async def initialize(self):
-        self.pool = await asyncpg.create_pool(
-            self.db_provider.connection_string
-        )
-        logger.info(
-            "File provider successfully connected to Postgres database."
-        )
-
-        async with self.pool.acquire() as conn:
-            await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
-
-        await self.create_table()
-        await self._load_prompts_from_database()
-        await self._load_prompts_from_yaml_directory()
+        self.create_table()
+        self._load_prompts_from_database()
+        self._load_prompts_from_yaml_directory()
 
     def _get_table_name(self, base_name: str) -> str:
-        return base_name
+        return f"{base_name}"
 
-    async def create_table(self):
-        query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name('prompts')} (
-            prompt_id UUID PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            template TEXT NOT NULL,
-            input_types JSONB NOT NULL,
-            created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
-        );
-        """
-        await self.execute_query(query)
-
-    async def execute_query(
-        self, query: str, params: Optional[list[Any]] = None
+    def execute_query(
+        self, query: str, params: Optional[dict[str, Any]] = None
     ) -> Any:
-        async with self.pool.acquire() as conn:
-            async with conn.transaction():
-                if params:
-                    return await conn.execute(query, *params)
-                return await conn.execute(query)
+        return self.db_provider.relational.execute_query(query, params)
 
-    async def fetch_query(
-        self, query: str, params: Optional[list[Any]] = None
-    ) -> Any:
-        async with self.pool.acquire() as conn:
-            async with conn.transaction():
-                if params:
-                    return await conn.fetch(query, *params)
-                return await conn.fetch(query)
+    def create_table(self):
+        query = text(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name('prompts')} (
+                prompt_id UUID PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                template TEXT NOT NULL,
+                input_types JSONB NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            """
+        )
+        try:
+            self.execute_query(query)
+            logger.info(f"Created table {self._get_table_name('prompts')}")
+        except Exception as e:
+            logger.error(f"Failed to create table: {e}")
+            raise
 
-    async def _load_prompts_from_database(self):
-        query = """
-        SELECT prompt_id, name, template, input_types
-        FROM prompts
-        """
-        results = await self.fetch_query(query)
+    def _load_prompts_from_database(self):
+        query = text(
+            f"""
+            SELECT prompt_id, name, template, input_types
+            FROM {self._get_table_name('prompts')}
+            """
+        )
+        results = self.execute_query(query).fetchall()
         for row in results:
-            prompt_id, name, template, input_types = (
-                row["prompt_id"],
-                row["name"],
-                row["template"],
-                row["input_types"],
-            )
+            prompt_id, name, template, input_types = row
             self.prompts[name] = Prompt(
                 name=name, template=template, input_types=input_types
             )
@@ -183,35 +150,44 @@ class R2RPromptProvider(PromptProvider):
             prompt.input_types = input_types
         self._save_prompt_to_database(prompt)
 
-    def get_all_prompts(self) -> dict[str, Prompt]:
+    def get_all_prompts(self) -> list[dict]:
         return self.prompts
 
-    async def delete_prompt(self, name: str) -> None:
+    def delete_prompt(self, name: str) -> None:
         if name not in self.prompts:
             raise ValueError(f"Prompt '{name}' not found.")
         del self.prompts[name]
-        query = f"""
-        DELETE FROM {self._get_table_name('prompts')}
-        WHERE name = $1
-        """
-        await self.execute_query(query, [name])
-
-    async def _save_prompt_to_database(self, prompt: Prompt):
-        query = f"""
-        INSERT INTO {self._get_table_name('prompts')}
-        (prompt_id, name, template, input_types)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (name) DO UPDATE SET
-            template = EXCLUDED.template,
-            input_types = EXCLUDED.input_types,
-            updated_at = NOW();
-        """
-        await self.execute_query(
-            query,
-            [
-                uuid4(),
-                prompt.name,
-                prompt.template,
-                json.dumps(prompt.input_types),
-            ],
+        query = text(
+            f"""
+            DELETE FROM {self._get_table_name('prompts')}
+            WHERE name = :name
+            """
         )
+        self.execute_query(query, {"name": name})
+
+    def _save_prompt_to_database(self, prompt: Prompt):
+        query = text(
+            f"""
+            INSERT INTO {self._get_table_name('prompts')}
+            (prompt_id, name, template, input_types)
+            VALUES (:prompt_id, :name, :template, :input_types)
+            ON CONFLICT (name) DO UPDATE SET
+                template = EXCLUDED.template,
+                input_types = EXCLUDED.input_types,
+                updated_at = NOW();
+            """
+        )
+        result = self.execute_query(
+            query,
+            {
+                "prompt_id": uuid4(),
+                "name": prompt.name,
+                "template": prompt.template,
+                "input_types": json.dumps(prompt.input_types),
+            },
+        )
+        if not result:
+            raise R2RException(
+                status_code=500,
+                message=f"Failed to upsert prompt {prompt.name}",
+            )

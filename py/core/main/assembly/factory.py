@@ -40,7 +40,7 @@ class R2RProviderFactory:
         self.config = config
 
     @staticmethod
-    async def create_auth_provider(
+    def create_auth_provider(
         auth_config: AuthConfig,
         db_provider: DatabaseProvider,
         crypto_provider: Optional[CryptoProvider] = None,
@@ -54,7 +54,6 @@ class R2RProviderFactory:
             auth_provider = R2RAuthProvider(
                 auth_config, crypto_provider, db_provider
             )
-            await auth_provider.initialize()
         elif auth_config.provider is None:
             auth_provider = None
         else:
@@ -136,7 +135,7 @@ class R2RProviderFactory:
         orchestration_provider.get_worker("r2r-worker")
         return orchestration_provider
 
-    async def create_database_provider(
+    def create_database_provider(
         self,
         db_config: DatabaseConfig,
         crypto_provider: Optional[CryptoProvider] = None,
@@ -156,7 +155,6 @@ class R2RProviderFactory:
             database_provider = PostgresDBProvider(
                 db_config, vector_db_dimension, crypto_provider=crypto_provider
             )
-            await database_provider.initialize()
         elif db_config.provider is None:
             database_provider = None
         else:
@@ -202,7 +200,7 @@ class R2RProviderFactory:
         return embedding_provider
 
     @staticmethod
-    async def create_file_provider(
+    def create_file_provider(
         file_config: FileConfig,
         db_provider: Any,
         *args,
@@ -212,10 +210,11 @@ class R2RProviderFactory:
         if file_config.provider == "postgres":
             from core.providers import PostgresFileProvider
 
+            logger.info("Initializing PostgresFileProvider")
+
             file_provider = PostgresFileProvider(file_config, db_provider)
-            await file_provider.initialize()
         elif file_config.provider is None:
-            file_provider = None
+            return None
         else:
             raise ValueError(
                 f"File provider {file_config.provider} not supported."
@@ -277,7 +276,7 @@ class R2RProviderFactory:
                 f"KG provider {kg_config.provider} not supported."
             )
 
-    async def create_providers(
+    def create_providers(
         self,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
@@ -313,22 +312,10 @@ class R2RProviderFactory:
         )
         database_provider = (
             database_provider_override
-            or await self.create_database_provider(
+            or self.create_database_provider(
                 self.config.database, crypto_provider, *args, **kwargs
             )
         )
-
-        auth_provider = (
-            auth_provider_override
-            or await self.create_auth_provider(
-                self.config.auth,
-                database_provider,
-                crypto_provider,
-                *args,
-                **kwargs,
-            )
-        )
-
         prompt_provider = (
             prompt_provider_override
             or self.create_prompt_provider(
@@ -336,6 +323,13 @@ class R2RProviderFactory:
             )
         )
 
+        auth_provider = auth_provider_override or self.create_auth_provider(
+            self.config.auth,
+            database_provider,
+            crypto_provider,
+            *args,
+            **kwargs,
+        )
         parsing_provider = (
             parsing_provider_override
             or self.create_parsing_provider(
@@ -345,11 +339,8 @@ class R2RProviderFactory:
         chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
-        file_provider = (
-            file_provider_override
-            or await self.create_file_provider(
-                self.config.file, database_provider, *args, **kwargs
-            )
+        file_provider = file_provider_override or self.create_file_provider(
+            self.config.file, database_provider, *args, **kwargs
         )
 
         orchestration_provider = (

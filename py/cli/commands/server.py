@@ -232,45 +232,45 @@ def serve(
     """Start the R2R server."""
     load_dotenv()
 
-    # if not image:
-    # r2r_version = get_version("r2r")
-    # image_suffix = "-unstructured" if unstructured else ""
-    # image = f"ragtoriches/prod:{r2r_version}{image_suffix}"
+    if not image:
+        r2r_version = get_version("r2r")
+        image_suffix = "-unstructured" if unstructured else ""
+        image = f"ragtoriches/prod:{r2r_version}{image_suffix}"
 
-    # version_specific_image = (
-    #     f"ragtoriches/prod:{r2r_version}{image_suffix}"
-    # )
-    # latest_image = "ragtoriches/prod:latest-unstructured"
+        version_specific_image = (
+            f"ragtoriches/prod:{r2r_version}{image_suffix}"
+        )
+        latest_image = "ragtoriches/prod:latest-unstructured"
 
-    # try:
-    #     click.echo(f"Attempting to pull image: {version_specific_image}")
-    #     subprocess.run(
-    #         ["docker", "pull", version_specific_image],
-    #         check=True,
-    #         capture_output=True,
-    #     )
-    #     image = version_specific_image
-    #     click.echo(f"Successfully pulled image: {version_specific_image}")
-    # except subprocess.CalledProcessError:
-    #     click.echo(
-    #         f"Image {version_specific_image} not found. Falling back to latest."
-    #     )
-    #     try:
-    #         click.echo(f"Attempting to pull image: {latest_image}")
-    #         subprocess.run(
-    #             ["docker", "pull", latest_image],
-    #             check=True,
-    #             capture_output=True,
-    #         )
-    #         image = latest_image
-    #         click.echo(f"Successfully pulled image: {latest_image}")
-    #     except subprocess.CalledProcessError:
-    #         click.echo(
-    #             f"Failed to pull {latest_image}. Please check your internet connection and Docker Hub access."
-    #         )
-    #         return
-    # image = latest_image
-    # os.environ["R2R_IMAGE"] = image
+        # try:
+        #     click.echo(f"Attempting to pull image: {version_specific_image}")
+        #     subprocess.run(
+        #         ["docker", "pull", version_specific_image],
+        #         check=True,
+        #         capture_output=True,
+        #     )
+        #     image = version_specific_image
+        #     click.echo(f"Successfully pulled image: {version_specific_image}")
+        # except subprocess.CalledProcessError:
+        #     click.echo(
+        #         f"Image {version_specific_image} not found. Falling back to latest."
+        #     )
+        #     try:
+        #         click.echo(f"Attempting to pull image: {latest_image}")
+        #         subprocess.run(
+        #             ["docker", "pull", latest_image],
+        #             check=True,
+        #             capture_output=True,
+        #         )
+        #         image = latest_image
+        #         click.echo(f"Successfully pulled image: {latest_image}")
+        #     except subprocess.CalledProcessError:
+        #         click.echo(
+        #             f"Failed to pull {latest_image}. Please check your internet connection and Docker Hub access."
+        #         )
+        #         return
+        image = latest_image
+        os.environ["R2R_IMAGE"] = image
 
     if build:
         subprocess.run(
@@ -325,7 +325,6 @@ def serve(
                 click.secho(
                     "r2r container failed to become healthy.", fg="red"
                 )
-                return
 
             traefik_port = os.environ.get("R2R_DASHBOARD_PORT", "80")
             url = f"http://localhost:{traefik_port}"

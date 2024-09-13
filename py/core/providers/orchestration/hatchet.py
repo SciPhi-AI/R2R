@@ -1,4 +1,4 @@
-import asyncio
+import threading
 from typing import Any, Callable, Optional
 
 from core.base import OrchestrationProvider
@@ -25,11 +25,10 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     def step(self, *args, **kwargs) -> Callable:
         return self.orchestrator.step(*args, **kwargs)
 
-    async def start_worker(self):
+    def start_worker(self):
         if not self.worker:
             raise ValueError(
                 "Worker not initialized. Call get_worker() first."
             )
-
-        # loop = asyncio.get_event_loop()
-        task = asyncio.create_task(self.worker.async_start())
+        worker_thread = threading.Thread(target=self.worker.start, daemon=True)
+        worker_thread.start()

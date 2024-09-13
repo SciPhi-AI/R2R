@@ -108,9 +108,10 @@ class AuthProvider(Provider, ABC):
             )
 
         try:
-            return await self.user(auth.credentials)
+            user = self.user(auth.credentials)
+            return user
         except Exception as e:
             raise R2RException(
-                message=f"Error '{e}' occurred during authentication.",
+                message=f"Error '{e}' occured during authentication.",
                 status_code=401,
             )

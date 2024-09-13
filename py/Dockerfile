@@ -3,7 +3,7 @@ FROM python:3.10-slim AS builder
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* 
 
 
 WORKDIR /app
@@ -17,7 +17,7 @@ WORKDIR /app/py
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn
+    && pip install --no-cache-dir gunicorn uvicorn 
 
 # Create the final image
 FROM python:3.10-slim
