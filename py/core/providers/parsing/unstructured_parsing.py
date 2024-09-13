@@ -7,6 +7,7 @@ from io import BytesIO
 from typing import Any, AsyncGenerator
 import httpx
 import base64
+import json
 
 from pydantic import BaseModel
 from unstructured_client import UnstructuredClient
@@ -182,11 +183,12 @@ class UnstructuredParsingProvider(ParsingProvider):
                 logger.info(
                     f"Using local unstructured fastapi server to parse document {document.id}"
                 )
-                try:
-                    # Base64 encode the file content
-                    encoded_content = base64.b64encode(file_content.read()).decode('utf-8')
+                # Base64 encode the file content
+                encoded_content = base64.b64encode(file_content.read()).decode('utf-8')
 
-                    response = await self.client.post(
+                logger.info(f"Sending a request to {self.local_unstructured_url}/partition")
+
+                elements = await self.client.post(
                     f"{self.local_unstructured_url}/partition",
                     json={
                             "file_content": encoded_content,  # Use encoded string
@@ -194,15 +196,13 @@ class UnstructuredParsingProvider(ParsingProvider):
                         },
                         timeout=300,  # Adjust timeout as needed
                     )
-                    response.raise_for_status()
-                    elements = response.json()
-
-                except Exception as e:
-                    logger.error(f"Error communicating with FastAPI server: {e}")
-                    raise
+            
+                elements = elements.json()
+                elements = elements['elements']
 
         iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
+            logger.info(f"Processing element: {element}")
             if not isinstance(element, dict):
                 element = element.to_dict()
 

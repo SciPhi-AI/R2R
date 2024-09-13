@@ -56,4 +56,4 @@ ENV PORT=${PORT} HOST=${HOST}
 EXPOSE ${PORT}
 
 # Use the exec form of CMD for better signal handling
-CMD ["uvicorn", "core.main.app_entry:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "core.main.app_entry:app", "--host", "0.0.0.0", "--port", "7272"]
