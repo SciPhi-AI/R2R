@@ -1,4 +1,4 @@
-name: Build and Publish Docker Image
+name: Build and Publish R2R Docker Image
 
 on:
   workflow_dispatch:
