@@ -17,6 +17,7 @@ cli.add_command(ingestion.ingest_files)
 cli.add_command(ingestion.update_files)
 cli.add_command(ingestion.ingest_sample_file)
 cli.add_command(ingestion.ingest_sample_files)
+cli.add_command(ingestion.ingest_sample_files_from_unstructured)
 
 # Management
 cli.add_command(management.analytics)

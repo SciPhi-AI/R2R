@@ -1,0 +1,17 @@
+<root>
+  <person>
+    <name>John Doe</name>
+    <age>30</age>
+    <email>john.doe@example.com</email>
+  </person>
+  <person>
+    <name>Jane Smith</name>
+    <age>25</age>
+    <email>jane.smith@example.com</email>
+  </person>
+  <book>
+    <title>The Adventure Begins</title>
+    <author>Robert Johnson</author>
+    <year>2022</year>
+  </book>
+</root>

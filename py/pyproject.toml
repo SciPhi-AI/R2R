@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.1.27"
+version = "3.1.28"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -21,18 +21,19 @@ packages = [
 # Python Versions
 python = ">=3.10,<3.13"
 
+
+boto3 = "^1.35.17" # for AWS bedrock support
+click = "^8.0.0"
+fastapi = "^0.109.2"
 httpx = "^0.27.0"
 nest-asyncio = "^1.6.0"
-fastapi = "^0.109.2"
-requests = "^2.31.0"
-types-requests = "^2.31.0"
-click = "^8.0.0"
-python-dotenv = "^1.0.1"
-nltk = "^3.9.1"
-hatchet-sdk = "^0.36.17"
-toml = "^0.10.2"
-unstructured-client = "^0.25.5"
 numpy = ">=1.22.4,<1.29.0"
+python-dotenv = "^1.0.1"
+hatchet-sdk = "^0.36.17"
+requests = "^2.31.0"
+toml = "^0.10.2"
+types-requests = "^2.31.0"
+unstructured-client = "^0.25.5"
 apscheduler = "^3.10.4"
 
 # Core dependencies (optional)
