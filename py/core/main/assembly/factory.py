@@ -54,6 +54,10 @@ class R2RProviderFactory:
             auth_provider = R2RAuthProvider(
                 auth_config, crypto_provider, db_provider
             )
+        elif auth_config.provider == "supabase":
+            from core.providers import SupabaseAuthProvider
+
+            auth_provider = SupabaseAuthProvider(auth_config)
         elif auth_config.provider is None:
             auth_provider = None
         else:

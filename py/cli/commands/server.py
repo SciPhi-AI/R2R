@@ -233,7 +233,7 @@ def serve(
     config_path,
     build,
     dev,
-    image_env
+    image_env,
 ):
     """Start the R2R server."""
     load_dotenv()
@@ -245,9 +245,7 @@ def serve(
     if not image and docker:
         r2r_version = get_version("r2r")
 
-        version_specific_image = (
-            f"ragtoriches/{image_env}:{r2r_version}"
-        )
+        version_specific_image = f"ragtoriches/{image_env}:{r2r_version}"
         latest_image = f"ragtoriches/{image_env}:latest"
 
         def image_exists(img):
@@ -266,11 +264,17 @@ def serve(
             click.echo(f"Using image: {version_specific_image}")
             image = version_specific_image
         elif image_exists(latest_image):
-            click.echo(f"Version-specific image not found. Using latest: {latest_image}")
+            click.echo(
+                f"Version-specific image not found. Using latest: {latest_image}"
+            )
             image = latest_image
         else:
-            click.echo(f"Neither {version_specific_image} nor {latest_image} found locally.")
-            click.echo("Please pull the required image or build it using the --build flag.")
+            click.echo(
+                f"Neither {version_specific_image} nor {latest_image} found locally."
+            )
+            click.echo(
+                "Please pull the required image or build it using the --build flag."
+            )
             raise click.Abort()
 
     if docker:
@@ -312,7 +316,6 @@ def serve(
             image,
             config_name,
             config_path,
-            
         )
         if (
             "pytest" in sys.modules

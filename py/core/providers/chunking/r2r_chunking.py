@@ -23,14 +23,14 @@ class R2RChunkingProvider(ChunkingProvider):
 
     def _initialize_text_splitter(self) -> TextSplitter:
         logger.info(
-            f"Initializing text splitter with method: {self.config.method}"
+            f"Initializing text splitter with method: {self.config.extra_fields['method']}"
         )  # Debug log
-        if self.config.method == Method.RECURSIVE:
+        if self.config.extra_fields["method"] == Method.RECURSIVE:
             return RecursiveCharacterTextSplitter(
-                chunk_size=self.config.chunk_size,
-                chunk_overlap=self.config.chunk_overlap,
+                chunk_size=self.config.extra_fields["chunk_size"],
+                chunk_overlap=self.config.extra_fields["chunk_overlap"],
             )
-        elif self.config.method == Method.CHARACTER:
+        elif self.config.extra_fields["method"] == Method.CHARACTER:
             from core.base.utils.splitter.text import CharacterTextSplitter
 
             separator = CharacterTextSplitter.DEFAULT_SEPARATOR
@@ -39,23 +39,26 @@ class R2RChunkingProvider(ChunkingProvider):
                     "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
                 )
             return CharacterTextSplitter(
-                chunk_size=self.config.chunk_size,
-                chunk_overlap=self.config.chunk_overlap,
+                chunk_size=self.config.extra_fields["chunk_size"],
+                chunk_overlap=self.config.extra_fields["chunk_overlap"],
                 separator=separator,
                 keep_separator=False,
                 strip_whitespace=True,
             )
-        elif self.config.method == Method.BASIC:
+        elif self.config.extra_fields["method"] == Method.BASIC:
             raise NotImplementedError(
                 "Basic chunking method not implemented. Please use Recursive."
             )
-        elif self.config.method == Method.BY_TITLE:
+        elif self.config.extra_fields["method"] == Method.BY_TITLE:
             raise NotImplementedError("By title method not implemented")
         else:
             raise ValueError(f"Unsupported method type: {self.config.method}")
 
     def validate(self) -> bool:
-        return self.config.chunk_size > 0 and self.config.chunk_overlap >= 0
+        return (
+            self.config.extra_fields["chunk_size"] > 0
+            and self.config.extra_fields["chunk_overlap"] >= 0
+        )
 
     def update_config(self, config_override: R2RChunkingConfig):
         if self.config != config_override:

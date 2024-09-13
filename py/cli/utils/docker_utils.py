@@ -291,7 +291,6 @@ def set_config_env_vars(obj):
     else:
         config_name = obj.get("config_name") or "default"
         os.environ["CONFIG_NAME"] = f'"{config_name}"'
-        
 
 
 def get_compose_files():
