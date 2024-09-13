@@ -4,7 +4,7 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, List, Tuple
 
 from pydantic import BaseModel
 from unstructured_client import UnstructuredClient
@@ -20,6 +20,9 @@ from core.base import (
     generate_id_from_label,
 )
 from core.base.abstractions.base import R2RSerializable
+
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +105,13 @@ class UnstructuredParsingProvider(ParsingProvider):
         self.parsers = {}
         self._initialize_parsers()
 
+        # Determine optimal number of workers
+        cpu_count = multiprocessing.cpu_count()
+        self.executor = ProcessPoolExecutor(max_workers=cpu_count)
+
+        # Initialize a semaphore to limit concurrent parse operations
+        self.semaphore = asyncio.Semaphore(cpu_count * 2)  # Adjust based on needs
+
     def _initialize_parsers(self):
         for doc_type, parser_infos in self.R2R_FALLBACK_PARSERS.items():
             for parser_info in parser_infos:
@@ -114,7 +124,7 @@ class UnstructuredParsingProvider(ParsingProvider):
 
         # Apply overrides if specified
         for parser_override in self.config.override_parsers:
-            if parser_name := getattr(parsers, parser_override.parser):
+            if parser_name := getattr(parsers, parser_override.parser, None):
                 self.parsers[parser_override.document_type] = parser_name()
 
     async def parse_fallback(
@@ -132,6 +142,14 @@ class UnstructuredParsingProvider(ParsingProvider):
                     text=text, metadata={"chunk_id": chunk_id}
                 )
                 chunk_id += 1
+
+    async def _run_partition(self, file_content: BytesIO, **kwargs) -> list:
+        """
+        Helper method to run the blocking partition function in a separate process.
+        """
+        async with self.semaphore:
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(self.executor, self.partition, file_content, **kwargs)
 
     async def parse(
         self, file_content: bytes, document: Document
@@ -180,10 +198,15 @@ class UnstructuredParsingProvider(ParsingProvider):
                 logger.info(
                     f"Using local unstructured to parse document {document.id}"
                 )
-                elements = self.partition(
-                    file=file_content,
-                    **self.config.chunking_config.extra_fields,
-                )
+                try:
+                    # Run the blocking partition function asynchronously with concurrency control
+                    elements = await self._run_partition(
+                        file_content,
+                        **self.config.chunking_config.extra_fields,
+                    )
+                except Exception as e:
+                    logger.error(f"Error during partitioning: {e}")
+                    elements = []
 
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
@@ -224,3 +247,10 @@ class UnstructuredParsingProvider(ParsingProvider):
 
     def get_parser_for_document_type(self, doc_type: DocumentType) -> str:
         return "unstructured_local"
+
+    async def shutdown(self):
+        """
+        Shutdown the executor gracefully.
+        """
+        logger.info("Shutting down the ProcessPoolExecutor.")
+        self.executor.shutdown(wait=True)
