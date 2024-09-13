@@ -116,7 +116,7 @@ __all__ = [
     "UnstructuredChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
-    "Method",
+    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",

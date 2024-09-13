@@ -12,7 +12,6 @@ from core.base.abstractions.document import RestructureStatus
 from ..services import RestructureService
 from .base import r2r_hatchet
 
-
 logger = logging.getLogger(__name__)
 
 

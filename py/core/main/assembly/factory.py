@@ -109,6 +109,7 @@ class R2RProviderFactory:
         chunking_config: ChunkingConfig, *args, **kwargs
     ) -> ChunkingProvider:
         chunking_config.validate()
+        print("chunking_config = ", chunking_config)
         if chunking_config.provider == "r2r":
             from core.providers import R2RChunkingProvider
 
@@ -245,23 +246,23 @@ class R2RProviderFactory:
         return llm_provider
 
     @staticmethod
-    def create_prompt_provider(
+    async def create_prompt_provider(
         prompt_config: PromptConfig,
-        database_provider: DatabaseProvider,
+        db_provider: DatabaseProvider,
         *args,
         **kwargs,
     ) -> PromptProvider:
         prompt_provider = None
-        if prompt_config.provider == "r2r":
-            from core.providers import R2RPromptProvider
 
-            prompt_provider = R2RPromptProvider(
-                prompt_config, database_provider
-            )
-        else:
+        if prompt_config.provider != "r2r":
             raise ValueError(
                 f"Prompt provider {prompt_config.provider} not supported"
             )
+        from core.providers import R2RPromptProvider
+
+        prompt_provider = R2RPromptProvider(prompt_config, db_provider)
+        await prompt_provider.initialize()
+
         return prompt_provider
 
     @staticmethod
@@ -331,7 +332,7 @@ class R2RProviderFactory:
 
         prompt_provider = (
             prompt_provider_override
-            or self.create_prompt_provider(
+            or await self.create_prompt_provider(
                 self.config.prompt, database_provider, *args, **kwargs
             )
         )

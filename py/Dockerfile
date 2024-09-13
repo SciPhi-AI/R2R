@@ -45,4 +45,5 @@ ARG HOST=0.0.0.0
 ENV PORT=$PORT HOST=$HOST
 EXPOSE $PORT
 
+# Run the application
 CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $PORT"]

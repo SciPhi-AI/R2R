@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import defaultdict
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, BinaryIO
 from uuid import UUID
 
 import toml
@@ -292,6 +292,14 @@ class ManagementService(Service):
             await self.providers.database.relational.delete_from_documents_overview(
                 document_id
             )
+        return None
+
+    @telemetry_event("DownloadFile")
+    async def download_file(
+        self, document_id: UUID
+    ) -> Optional[Tuple[str, BinaryIO, int]]:
+        if result := await self.providers.file.retrieve_file(document_id):
+            return result
         return None
 
     @telemetry_event("DocumentsOverview")
@@ -639,7 +647,7 @@ class ManagementService(Service):
         self, name: str, template: str, input_types: dict[str, str]
     ) -> dict:
         try:
-            self.providers.prompt.add_prompt(name, template, input_types)
+            await self.providers.prompt.add_prompt(name, template, input_types)
             return {"message": f"Prompt '{name}' added successfully."}
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
@@ -653,7 +661,7 @@ class ManagementService(Service):
     ) -> str:
         try:
             return {
-                "message": self.providers.prompt.get_prompt(
+                "message": await self.providers.prompt.get_prompt(
                     prompt_name, inputs, prompt_override
                 )
             }
@@ -662,7 +670,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
-        return self.providers.prompt.get_all_prompts()
+        return await self.providers.prompt.get_all_prompts()
 
     @telemetry_event("UpdatePrompt")
     async def update_prompt(
@@ -672,7 +680,9 @@ class ManagementService(Service):
         input_types: Optional[dict[str, str]] = None,
     ) -> dict:
         try:
-            self.providers.prompt.update_prompt(name, template, input_types)
+            await self.providers.prompt.update_prompt(
+                name, template, input_types
+            )
             return {"message": f"Prompt '{name}' updated successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
@@ -680,7 +690,7 @@ class ManagementService(Service):
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
         try:
-            self.providers.prompt.delete_prompt(name)
+            await self.providers.prompt.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))

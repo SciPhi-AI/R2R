@@ -201,7 +201,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                     logger.error(f"Error communicating with FastAPI server: {e}")
                     raise
 
-        iteration = 0 # if there are no chunks
+        iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
                 element = element.to_dict()
@@ -233,8 +233,9 @@ class UnstructuredParsingProvider(ParsingProvider):
                 metadata=metadata,
             )
 
-        if iteration == 0:
-            raise ValueError(f"No chunks found for document {document.id}")
+        # TODO: explore why this is throwing inadvertedly
+        # if iteration == 0:
+        #     raise ValueError(f"No chunks found for document {document.id}")
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

@@ -38,7 +38,7 @@ The UTF-8 quote character in this table used to cause python to go boom. Now doc
 .. code:: python
 
 	python.code('hooray')
-	
+
 .. code:: javascript
 
 	export function ƒ(ɑ, β) {}
