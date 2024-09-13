@@ -4,11 +4,11 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
-from uuid import uuid5, NAMESPACE_DNS
 
 import yaml
 
 from core.base import Prompt, PromptConfig, PromptProvider, R2RException
+from core.base.utils import generate_id_from_label
 from core.providers.database.postgres import PostgresDBProvider
 
 logger = logging.getLogger(__name__)
@@ -218,7 +218,7 @@ class R2RPromptProvider(PromptProvider):
         await self.execute_query(
             query,
             [
-                uuid4(),
+                generate_id_from_label(prompt.name),
                 prompt.name,
                 prompt.template,
                 json.dumps(prompt.input_types),
