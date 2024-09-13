@@ -2,9 +2,9 @@
 const inkeepSettings = {
     isOpen: true,
     baseSettings: {
-        apiKey: process.env.INKEEP_API_KEY,
-        integrationId: process.env.INKEEP_INTEGRATION_ID,
-        organizationId: process.env.INKEEP_ORGANIZATION_ID,
+        apiKey: '3adc15f45617826bb73c0a4cb9fb3a06547b6ab7f90c819e',
+        integrationId: 'clv1yuc8f0002vzhxbzwy26yx',
+        organizationId: 'clu6yudh9000sajgn7nwxfve8',
         primaryBrandColor: '#26D6FF', // your brand color, widget color scheme is derived from this
         organizationDisplayName: 'R2R',
         theme: {
