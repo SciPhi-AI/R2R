@@ -28,10 +28,12 @@ requests = "^2.31.0"
 types-requests = "^2.31.0"
 click = "^8.0.0"
 python-dotenv = "^1.0.1"
-hatchet-sdk = "^0.36.13"
+nltk = "^3.9.1"
+hatchet-sdk = "^0.36.17"
 toml = "^0.10.2"
 unstructured-client = "^0.25.5"
 numpy = ">=1.22.4,<1.29.0"
+apscheduler = "^3.10.4"
 
 # Core dependencies (optional)
 future = { version = "^1.0.0", optional = true }

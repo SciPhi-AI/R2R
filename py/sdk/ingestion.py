@@ -89,6 +89,26 @@ class IngestionMethods:
             )
 
     @staticmethod
+    async def retry_ingest_files(
+        client,
+        document_ids: list[Union[str, UUID]],
+    ) -> dict:
+        """
+        Retry ingestion for failed documents.
+
+        Args:
+            document_ids (List[Union[str, UUID]]): List of document IDs to retry.
+
+        Returns:
+            dict: Retry results containing processed, failed, and skipped documents.
+        """
+        return await client._make_request(
+            "POST",
+            "retry_ingest_files",
+            data={"document_ids": [str(doc_id) for doc_id in document_ids]},
+        )
+
+    @staticmethod
     async def update_files(
         client,
         file_paths: list[str],

@@ -75,7 +75,8 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
-            user_groups = set(auth_user.group_ids)
+            user = await auth_user
+            user_groups = set(user.group_ids)
             selected_groups = set(vector_search_settings.selected_group_ids)
             allowed_groups = user_groups.intersection(selected_groups)
             if selected_groups - allowed_groups != set():
@@ -86,7 +87,7 @@ class RetrievalRouter(BaseRouter):
 
             filters = {
                 "$or": [
-                    {"user_id": {"$eq": str(auth_user.id)}},
+                    {"user_id": {"$eq": str(user.id)}},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
@@ -141,10 +142,11 @@ class RetrievalRouter(BaseRouter):
 
             The generation process can be customized using the rag_generation_config parameter.
             """
-            allowed_groups = set(auth_user.group_ids)
+            user = await auth_user
+            allowed_groups = set(user.group_ids)
             filters = {
                 "$or": [
-                    {"user_id": str(auth_user.id)},
+                    {"user_id": str(user.id)},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
@@ -221,10 +223,11 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override parameters.
             """
             # TODO - Don't just copy paste the same code, refactor this
-            allowed_groups = set(auth_user.group_ids)
+            user = await auth_user
+            allowed_groups = set(user.group_ids)
             filters = {
                 "$or": [
-                    {"user_id": str(auth_user.id)},
+                    {"user_id": str(user.id)},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
