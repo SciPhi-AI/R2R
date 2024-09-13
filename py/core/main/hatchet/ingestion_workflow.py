@@ -71,7 +71,7 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["extract"], timeout="60s")
+    @r2r_hatchet.step(parents=["extract"], timeout="60m")
     async def chunk(self, context: Context) -> dict:
         document_info_dict = context.step_output("extract")["document_info"]
         document_info = DocumentInfo(**document_info_dict)
@@ -139,7 +139,7 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["embed"], timeout="60s")
+    @r2r_hatchet.step(parents=["embed"], timeout="60m")
     async def finalize(self, context: Context) -> dict:
         document_info_dict = context.step_output("embed")["document_info"]
         document_info = DocumentInfo(**document_info_dict)

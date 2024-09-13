@@ -24,9 +24,7 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['tool']['poetry']['version'])")
-          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "REGISTRY_IMAGE=${{ env.REGISTRY_BASE }}/unst" >> $GITHUB_OUTPUT
+          echo "REGISTRY_IMAGE=${{ env.REGISTRY_BASE }}/unst-prod" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
