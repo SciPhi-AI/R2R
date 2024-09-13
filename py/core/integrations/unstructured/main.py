@@ -7,6 +7,9 @@ import concurrent.futures
 import os
 import base64
 from unstructured.partition.auto import partition
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -32,6 +35,7 @@ async def health_endpoint():
 @app.post("/partition", response_model=PartitionResponseModel)
 async def partition_endpoint(request: PartitionRequestModel):
     try:
+        logger.info(f"Partitioning request received")
         loop = asyncio.get_event_loop()
         elements = await loop.run_in_executor(
             executor,
@@ -39,7 +43,8 @@ async def partition_endpoint(request: PartitionRequestModel):
             request.file_content,
             request.chunking_config,
         )
-
+        logger.info(f"Partitioning completed")
         return PartitionResponseModel(elements=elements)
     except Exception as e:
+        logger.error(f"Error partitioning file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

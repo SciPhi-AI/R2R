@@ -1,6 +1,3 @@
-# =======================
-# Builder Stage
-# =======================
 FROM python:3.10-slim AS builder
 
 # Install system dependencies (including those needed for Unstructured and OpenCV)
