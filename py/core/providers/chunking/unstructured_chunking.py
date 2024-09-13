@@ -1,7 +1,7 @@
 import logging
 from typing import AsyncGenerator, Union
 
-from core.base import ChunkingProvider, Method, UnstructuredChunkingConfig
+from core.base import ChunkingProvider, Strategy, UnstructuredChunkingConfig
 from core.base.abstractions.document import DocumentExtraction
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class UnstructuredChunkingProvider(ChunkingProvider):
         else:
 
             try:
-                if self.config.method == Method.BY_TITLE:
+                if self.config.strategy == Strategy.BY_TITLE:
                     chunks = self.chunk_by_title(
                         [self.Text(text=parsed_document.data)],
                         max_characters=self.config.chunk_size,

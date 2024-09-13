@@ -396,7 +396,7 @@ This flexible deletion mechanism ensures precise control over document managemen
     ```bash
     curl -X POST http://localhost:7272/v2/update_files \
     -H "Content-Type: multipart/form-data" \
-    -F "files=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
+    -F "file_paths=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
     -F 'document_ids=["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]'
     ```
     </Tab>

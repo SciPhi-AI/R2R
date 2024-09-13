@@ -108,6 +108,7 @@ class R2RProviderFactory:
         chunking_config: ChunkingConfig, *args, **kwargs
     ) -> ChunkingProvider:
         chunking_config.validate()
+        print("chunking_config = ", chunking_config)
         if chunking_config.provider == "r2r":
             from core.providers import R2RChunkingProvider
 

@@ -9,7 +9,7 @@ from .base import Provider, ProviderConfig
 logger = logging.getLogger(__name__)
 
 
-class Method(str, Enum):
+class Strategy(str, Enum):
     # Unstructured methods
     BY_TITLE = "by_title"
     BASIC = "basic"
@@ -19,7 +19,7 @@ class Method(str, Enum):
 
 
 class ChunkingConfig(ProviderConfig):
-    provider: str = "r2r"
+    provider: str = "unstructured_local"
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -34,12 +34,9 @@ class ChunkingConfig(ProviderConfig):
             "type": "object",
             "properties": {
                 "provider": {"type": "string"},
-                "method": {"type": "string"},
             },
-            "required": ["provider", "method"],
             "example": {
                 "provider": "unstructured_local",
-                "method": "by_title",
                 "strategy": "auto",
                 "chunking_strategy": "by_title",
                 "new_after_n_chars": 512,
@@ -52,7 +49,7 @@ class ChunkingConfig(ProviderConfig):
 
 class R2RChunkingConfig(ProviderConfig):
     provider: str = "r2r"
-    method: Method = Method.RECURSIVE
+    method: Strategy = Strategy.RECURSIVE
     chunk_size: int = 512
     chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None
@@ -118,7 +115,7 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     split_pdf_page: bool = True
     starting_page_number: Optional[int] = None
     strategy: str = "auto"
-    chunking_strategy: Method = Method.BY_TITLE
+    chunking_strategy: Strategy = Strategy.BY_TITLE
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 

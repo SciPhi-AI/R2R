@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
-from uuid import uuid5, NAMESPACE_DNS
+from uuid import NAMESPACE_DNS, uuid5
 
 import yaml
 from sqlalchemy import text
@@ -61,7 +61,9 @@ class R2RPromptProvider(PromptProvider):
         )
         results = self.execute_query(query).fetchall()
         for row in results:
-            prompt_id, name, template, input_types, created_at, updated_at = row
+            prompt_id, name, template, input_types, created_at, updated_at = (
+                row
+            )
             self.prompts[name] = Prompt(
                 name=name,
                 template=template,
@@ -94,14 +96,17 @@ class R2RPromptProvider(PromptProvider):
                         if name not in self.prompts:
                             modify_prompt = True
                         else:
-                            modify_prompt = self.prompts[name].created_at == self.prompts[name].updated_at
+                            modify_prompt = (
+                                self.prompts[name].created_at
+                                == self.prompts[name].updated_at
+                            )
 
                         if modify_prompt:
                             self.add_prompt(
                                 name,
                                 prompt_data["template"],
                                 prompt_data.get("input_types", {}),
-                                modify_created_at = True,
+                                modify_created_at=True,
                             )
 
             except yaml.YAMLError as e:
@@ -116,11 +121,17 @@ class R2RPromptProvider(PromptProvider):
                 raise ValueError(error_msg)
 
     def add_prompt(
-        self, name: str, template: str, input_types: dict[str, str], modify_created_at: bool = False
+        self,
+        name: str,
+        template: str,
+        input_types: dict[str, str],
+        modify_created_at: bool = False,
     ) -> None:
         prompt = Prompt(name=name, template=template, input_types=input_types)
         self.prompts[name] = prompt
-        self._save_prompt_to_database(prompt, modify_created_at=modify_created_at)
+        self._save_prompt_to_database(
+            prompt, modify_created_at=modify_created_at
+        )
 
     def get_prompt(
         self,
@@ -174,7 +185,9 @@ class R2RPromptProvider(PromptProvider):
         )
         self.execute_query(query, {"name": name})
 
-    def _save_prompt_to_database(self, prompt: Prompt, modify_created_at: bool = False):
+    def _save_prompt_to_database(
+        self, prompt: Prompt, modify_created_at: bool = False
+    ):
 
         if modify_created_at:
             modify_created_at_clause = "created_at = NOW(),"

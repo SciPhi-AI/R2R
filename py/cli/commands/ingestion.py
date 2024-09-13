@@ -152,10 +152,12 @@ def ingest_sample_files_from_unstructured(client):
 
     # Get the absolute path of the current script
     current_script_path = os.path.abspath(__file__)
-    
+
     # Navigate to the root directory of the project
-    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
-    
+    root_dir = os.path.dirname(
+        os.path.dirname(os.path.dirname(current_script_path))
+    )
+
     # Construct the absolute path to the data_unstructured folder
     folder = os.path.join(root_dir, "core", "examples", "data_unstructured")
 
