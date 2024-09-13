@@ -20,7 +20,7 @@ class PartitionRequestModel(BaseModel):
 class PartitionResponseModel(BaseModel):
     elements: List[Dict]
 
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=os.environ.get("MAX_INGESTION_WORKERS", 10))
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=int(os.environ.get("MAX_INGESTION_WORKERS", 10)))
 
 def run_partition(file_content: str, chunking_config: Dict) -> List[Dict]:
     file_content_bytes = base64.b64decode(file_content)
