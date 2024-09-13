@@ -34,6 +34,16 @@ def ingest_files(client, file_paths, document_ids, metadatas):
 
 
 @cli.command()
+@click.argument("document_ids", nargs=-1, required=True, type=click.UUID)
+@click.pass_obj
+def retry_ingest_files(client, document_ids):
+    """Retry ingestion for failed documents."""
+    with timer():
+        response = client.retry_ingest_files(document_ids)
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
 @click.argument(
     "file-paths", nargs=-1, required=True, type=click.Path(exists=True)
 )

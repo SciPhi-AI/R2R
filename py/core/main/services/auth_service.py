@@ -44,7 +44,7 @@ class AuthService(Service):
                 status_code=400, message="Email verification is not required"
             )
 
-        user_id = self.providers.database.relational.get_user_id_by_verification_code(
+        user_id = await self.providers.database.relational.get_user_id_by_verification_code(
             verification_code
         )
         if not user_id:
@@ -52,26 +52,26 @@ class AuthService(Service):
                 status_code=400, message="Invalid or expired verification code"
             )
 
-        user = self.providers.database.relational.get_user_by_id(user_id)
+        user = await self.providers.database.relational.get_user_by_id(user_id)
         if not user or user.email != email:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
-        self.providers.database.relational.mark_user_as_verified(user_id)
-        self.providers.database.relational.remove_verification_code(
+        await self.providers.database.relational.mark_user_as_verified(user_id)
+        await self.providers.database.relational.remove_verification_code(
             verification_code
         )
         return {"message": f"User account {user_id} verified successfully."}
 
     @telemetry_event("Login")
     async def login(self, email: str, password: str) -> dict[str, Token]:
-        return self.providers.auth.login(email, password)
+        return await self.providers.auth.login(email, password)
 
     @telemetry_event("GetCurrentUser")
     async def user(self, token: str) -> UserResponse:
         token_data = self.providers.auth.decode_token(token)
-        user = self.providers.database.relational.get_user_by_email(
+        user = await self.providers.database.relational.get_user_by_email(
             token_data.email
         )
         if user is None:
@@ -121,7 +121,7 @@ class AuthService(Service):
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
     ) -> UserResponse:
-        user = self.providers.database.relational.get_user_by_id(user_id)
+        user = await self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if email:
@@ -132,7 +132,7 @@ class AuthService(Service):
             setattr(user, "bio", bio)
         if profile_picture:
             setattr(user, "profile_picture", profile_picture)
-        return self.providers.database.relational.update_user(user)
+        return await self.providers.database.relational.update_user(user)
 
     @telemetry_event("DeleteUserAccount")
     async def delete_user(
@@ -142,7 +142,7 @@ class AuthService(Service):
         delete_vector_data: bool = False,
         is_superuser: bool = False,
     ) -> dict[str, str]:
-        user = self.providers.database.relational.get_user_by_id(user_id)
+        user = await self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if not (
@@ -152,7 +152,7 @@ class AuthService(Service):
             )
         ):
             raise R2RException(status_code=400, message="Incorrect password")
-        self.providers.database.relational.delete_user(user_id)
+        await self.providers.database.relational.delete_user(user_id)
         if delete_vector_data:
             self.providers.database.vector.delete_user(user_id)
 
@@ -162,6 +162,6 @@ class AuthService(Service):
     async def clean_expired_blacklisted_tokens(
         self, max_age_hours: int = 7 * 24, current_time: datetime = None
     ):
-        self.providers.database.relational.clean_expired_blacklisted_tokens(
+        await self.providers.database.relational.clean_expired_blacklisted_tokens(
             max_age_hours, current_time
         )

@@ -134,7 +134,7 @@ class R2RBuilder:
         setattr(self.service_overrides, service_type, service)
         return self
 
-    def _create_providers(
+    async def _create_providers(
         self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
     ) -> Any:
         overrides = {
@@ -142,9 +142,8 @@ class R2RBuilder:
             for k, v in vars(self.provider_overrides).items()
             if v is not None
         }
-        return provider_factory(self.config).create_providers(
-            *args, **kwargs, **overrides
-        )
+        factory = provider_factory(self.config)
+        return await factory.create_providers(*args, **kwargs, **overrides)
 
     def _create_pipes(
         self, pipe_factory: R2RPipeFactory, providers: Any, *args, **kwargs
@@ -192,13 +191,13 @@ class R2RBuilder:
             )
         return services
 
-    def build(self, *args, **kwargs) -> R2RApp:
+    async def build(self, *args, **kwargs) -> R2RApp:
         provider_factory = self.provider_factory_override or R2RProviderFactory
         pipe_factory = self.pipe_factory_override or R2RPipeFactory
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
 
         try:
-            providers = self._create_providers(
+            providers = await self._create_providers(
                 provider_factory, *args, **kwargs
             )
             pipes = self._create_pipes(

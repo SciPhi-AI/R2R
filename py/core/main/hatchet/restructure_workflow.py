@@ -87,7 +87,12 @@ class CreateGraphWorkflow:
             **json.loads(input_data["kg_creation_settings"])
         )
 
-        document_ids = input_data.get("document_ids", [])
+        if not document_ids:
+            document_ids = [
+                doc.id
+                for doc in await self.restructure_service.providers.database.relational.get_documents_overview()
+                if doc.restructuring_status != IngestionStatus.SUCCESS
+            ]
 
         # check if graph was created for each document id
         document_ids = [uuid.UUID(doc_id) for doc_id in document_ids]

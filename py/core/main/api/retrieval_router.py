@@ -221,10 +221,11 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override parameters.
             """
             # TODO - Don't just copy paste the same code, refactor this
-            allowed_groups = set(auth_user.group_ids)
+            user = auth_user
+            allowed_groups = set(user.group_ids)
             filters = {
                 "$or": [
-                    {"user_id": str(auth_user.id)},
+                    {"user_id": str(user.id)},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
