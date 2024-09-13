@@ -185,7 +185,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                     **self.config.chunking_config.extra_fields,
                 )
 
-        iteration = 0 # if there are no chunks
+        iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
                 element = element.to_dict()

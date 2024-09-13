@@ -177,6 +177,22 @@ class DocumentMixin(DatabaseMixin):
                         wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)
 
+    async def delete_from_documents_overview(
+        self, document_id: str, version: Optional[str] = None
+    ) -> None:
+        query = f"""
+        DELETE FROM {self._get_table_name('document_info')}
+        WHERE document_id = $1
+        """
+
+        params = [document_id]
+
+        if version:
+            query += " AND version = $2"
+            params = [document_id, version]
+
+        await self.execute_query(query, params)
+
     async def get_documents_overview(
         self,
         filter_user_ids: Optional[list[UUID]] = None,

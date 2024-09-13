@@ -1,6 +1,6 @@
+import asyncio
 import os
 import uuid
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 import aiofiles

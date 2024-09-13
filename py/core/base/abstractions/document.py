@@ -50,7 +50,7 @@ class DocumentType(str, Enum):
     TIFF = "tiff"
     JPG = "jpg"
     SVG = "svg"
-    
+
     # Markdown
     MD = "md"
 
@@ -90,6 +90,7 @@ class DocumentType(str, Enum):
 
     # XML
     XML = "xml"
+
 
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
