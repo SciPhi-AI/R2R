@@ -20,7 +20,7 @@ class IngestFilesWorkflow:
     def __init__(self, ingestion_service: IngestionService):
         self.ingestion_service = ingestion_service
 
-    @r2r_hatchet.step()
+    @r2r_hatchet.step(timeout="60m")
     async def parse(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
@@ -43,7 +43,7 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["parse"])
+    @r2r_hatchet.step(parents=["parse"], timeout="60m")
     async def extract(self, context: Context) -> dict:
         document_info_dict = context.step_output("parse")["document_info"]
         document_info = DocumentInfo(**document_info_dict)
@@ -71,7 +71,7 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["extract"])
+    @r2r_hatchet.step(parents=["extract"], timeout="60m")
     async def chunk(self, context: Context) -> dict:
         document_info_dict = context.step_output("extract")["document_info"]
         document_info = DocumentInfo(**document_info_dict)
@@ -103,7 +103,7 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["chunk"])
+    @r2r_hatchet.step(parents=["chunk"], timeout="60m")
     async def embed(self, context: Context) -> dict:
         document_info_dict = context.step_output("chunk")["document_info"]
         document_info = DocumentInfo(**document_info_dict)
@@ -139,7 +139,7 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["embed"])
+    @r2r_hatchet.step(parents=["embed"], timeout="60m")
     async def finalize(self, context: Context) -> dict:
         document_info_dict = context.step_output("embed")["document_info"]
         document_info = DocumentInfo(**document_info_dict)

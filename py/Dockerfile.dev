@@ -1,74 +1,59 @@
-# =======================
-# Builder Stage
-# =======================
+# Stage 1: Builder
 FROM python:3.10-slim AS builder
 
-# Install system dependencies (including those needed for Unstructured and OpenCV)
+# Install system dependencies in a single RUN command to reduce layers
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
-    tesseract-ocr libtesseract-dev libleptonica-dev pkg-config \
-    poppler-utils libmagic1 \
-    libgl1-mesa-glx libglib2.0-0 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN pip install --no-cache-dir poetry
-
-# Create application directory
-RUN mkdir -p /app/py
-WORKDIR /app/py
-
-# Copy Poetry configuration
-COPY pyproject.toml /app/py/pyproject.toml
-
-# Install dependencies, including gunicorn, uvicorn, and unstructured
-RUN poetry config virtualenvs.create false \
-    && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn
-
-# =======================
-# Final Stage
-# =======================
-FROM python:3.10-slim
-
-# Install runtime dependencies including Pandoc
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        curl \
-        tesseract-ocr \
-        poppler-utils \
-        libmagic1 \
-        libgl1-mesa-glx \
-        libglib2.0-0 \
-        pandoc \
-        libreoffice \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy Python packages and binaries from builder
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Install Poetry
+RUN pip install --no-cache-dir poetry
 
-# Initialize Unstructured models
-RUN python -c "from unstructured.partition.model_init import initialize; initialize()"
+# Copy only dependency files first to leverage caching
+COPY pyproject.toml poetry.lock /app/
 
-# Expose the port and set environment variables
-ARG PORT=8000
-ARG HOST=0.0.0.0
-ENV PORT=$PORT \
-    HOST=$HOST \
-    TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
+# Set working directory to /app/py for dependency installation
+WORKDIR /app
 
-EXPOSE $PORT
+# Install Python dependencies without creating a virtual environment
+RUN poetry config virtualenvs.create false \
+    && poetry install --extras "core" --no-dev --no-root \
+    && pip install --no-cache-dir gunicorn uvicorn
 
-# Copy application code
-COPY . /app
+# Copy only the necessary application files
 COPY core /app/core
 COPY r2r /app/r2r
 COPY r2r.toml /app/r2r.toml
-COPY pyproject.toml /app/pyproject.toml
 
-# Set the default command to run the application
-CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $PORT"]
+# Stage 2: Final Image
+FROM python:3.10-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy installed Python packages and binaries from the builder stage
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy only the necessary application files from the builder
+COPY --from=builder /app/core /app/core
+COPY --from=builder /app/r2r /app/r2r
+COPY --from=builder /app/r2r.toml /app/r2r.toml
+
+# Set environment variables for port and host
+ARG PORT=7272
+ARG HOST=0.0.0.0
+ENV PORT=${PORT} HOST=${HOST}
+
+# Expose the specified port
+EXPOSE ${PORT}
+
+# Use the exec form of CMD for better signal handling
+CMD ["uvicorn", "core.main.app_entry:app", "--host", "0.0.0.0", "--port", "7272"]
