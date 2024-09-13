@@ -287,9 +287,11 @@ def check_set_docker_env_vars(
 
 def set_config_env_vars(obj):
     if config_path := obj.get("config_path"):
-        os.environ["CONFIG_PATH"] = config_path
+        os.environ["CONFIG_PATH"] = f'"{config_path}"'
     else:
-        os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
+        config_name = obj.get("config_name") or "default"
+        os.environ["CONFIG_NAME"] = f'"{config_name}"'
+        
 
 
 def get_compose_files():

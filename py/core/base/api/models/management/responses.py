@@ -14,6 +14,8 @@ class UpdatePromptResponse(BaseModel):
 class PromptResponse(BaseModel):
     name: str
     template: str
+    created_at: datetime
+    updated_at: datetime
     input_types: Dict[str, str]
 
 
