@@ -242,7 +242,7 @@ def serve(
             "WARNING: Both `image` and `image_env` were provided. Using `image`."
         )
 
-    if not image:
+    if not image and docker:
         r2r_version = get_version("r2r")
 
         version_specific_image = (
@@ -273,7 +273,8 @@ def serve(
             click.echo("Please pull the required image or build it using the --build flag.")
             raise click.Abort()
 
-    os.environ["R2R_IMAGE"] = image
+    if docker:
+        os.environ["R2R_IMAGE"] = image
 
     if build:
         subprocess.run(
