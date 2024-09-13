@@ -3,8 +3,8 @@ from .base import Provider, ProviderConfig
 from .chunking import (
     ChunkingConfig,
     ChunkingProvider,
-    Method,
     R2RChunkingConfig,
+    Strategy,
     UnstructuredChunkingConfig,
 )
 from .crypto import CryptoConfig, CryptoProvider
@@ -34,7 +34,7 @@ __all__ = [
     "ChunkingConfig",
     "R2RChunkingConfig",
     "ChunkingProvider",
-    "Method",
+    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
