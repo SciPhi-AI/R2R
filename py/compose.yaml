@@ -20,8 +20,6 @@ networks:
     labels:
       - "com.docker.compose.recreate=always"
 
-
-
 services:
 
   setup-token:
@@ -170,6 +168,8 @@ services:
       # Unstructured
       - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
       - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
+      - UNSTRUCTURED_LOCAL_URL=${UNSTRUCTURED_LOCAL_URL:-http://localhost:7275}
+      - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
 
       # Hatchet
       - HATCHET_CLIENT_TLS_STRATEGY=none
@@ -214,6 +214,8 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
+      unstructured:
+        condition: service_healthy
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
@@ -244,6 +246,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
+
+  unstructured:
+    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unstructured-prod}
+    ports:
+      - "7275:7275"
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   hatchet_certs:
   hatchet_config:
