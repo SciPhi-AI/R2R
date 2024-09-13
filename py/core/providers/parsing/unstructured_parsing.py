@@ -202,7 +202,6 @@ class UnstructuredParsingProvider(ParsingProvider):
 
         iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
-            logger.info(f"Processing element: {element}")
             if not isinstance(element, dict):
                 element = element.to_dict()
 
