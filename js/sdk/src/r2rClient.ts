@@ -772,6 +772,18 @@ export class r2rClient {
   }
 
   /**
+   * Download the raw file associated with a document.
+   * @param documentId The ID of the document to retrieve.
+   * @returns A promise that resolves to a Blob representing the PDF.
+   */
+  @feature("downloadFile")
+  async downloadFile(documentId: string): Promise<Blob> {
+    return await this._makeRequest<Blob>("GET", `download_file/${documentId}`, {
+      responseType: "blob",
+    });
+  }
+
+  /**
    * Get an overview of documents in the R2R deployment.
    * @param document_ids List of document IDs to get an overview for.
    * @returns A promise that resolves to the response from the server.
