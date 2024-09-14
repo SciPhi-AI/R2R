@@ -16,6 +16,15 @@ __all__ = [
     "__version__",
 ]
 
+try:
+    import core
+    from core import *
+
+    __all__ += core.__all__
+except ImportError:
+    # Core dependencies not installed
+    pass
+
 
 # Add a function to get the version
 def get_version():
