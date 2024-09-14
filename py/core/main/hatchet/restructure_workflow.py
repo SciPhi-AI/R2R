@@ -29,11 +29,11 @@ class KgExtractAndStoreWorkflow:
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
 
-        document_overview = self.restructure_service.providers.database.relational.get_documents_overview(
-            filter_document_ids=[document_id]
-        )[
-            0
-        ]
+        document_overview = (
+            await self.restructure_service.providers.database.relational.get_documents_overview(
+                filter_document_ids=[document_id]
+            )
+        )[0]
 
         try:
 
@@ -41,7 +41,8 @@ class KgExtractAndStoreWorkflow:
             document_overview.restructuring_status = (
                 RestructureStatus.PROCESSING
             )
-            self.restructure_service.providers.database.relational.upsert_documents_overview(
+
+            await self.restructure_service.providers.database.relational.upsert_documents_overview(
                 document_overview
             )
 
@@ -58,14 +59,14 @@ class KgExtractAndStoreWorkflow:
 
             # Set restructure status to 'success' if completed successfully
             document_overview.restructuring_status = RestructureStatus.SUCCESS
-            self.restructure_service.providers.database.relational.upsert_documents_overview(
+            await self.restructure_service.providers.database.relational.upsert_documents_overview(
                 document_overview
             )
 
         except Exception as e:
             # Set restructure status to 'failure' if an error occurred
             document_overview.restructuring_status = RestructureStatus.FAILURE
-            self.restructure_service.providers.database.relational.upsert_documents_overview(
+            await self.restructure_service.providers.database.relational.upsert_documents_overview(
                 document_overview
             )
             logger.error(
@@ -87,16 +88,15 @@ class CreateGraphWorkflow:
             **json.loads(input_data["kg_creation_settings"])
         )
 
-        if not document_ids:
-            document_ids = [
-                doc.id
-                for doc in await self.restructure_service.providers.database.relational.get_documents_overview()
-                if doc.restructuring_status != IngestionStatus.SUCCESS
-            ]
+        document_ids = [
+            doc.id
+            for doc in await self.restructure_service.providers.database.relational.get_documents_overview()
+            if doc.restructuring_status != IngestionStatus.SUCCESS
+        ]
 
-        # check if graph was created for each document id
-        document_ids = [uuid.UUID(doc_id) for doc_id in document_ids]
-        documents_overviews = self.restructure_service.providers.database.relational.get_documents_overview(
+        document_ids = [str(doc_id) for doc_id in document_ids]
+
+        documents_overviews = await self.restructure_service.providers.database.relational.get_documents_overview(
             filter_document_ids=document_ids
         )
 
@@ -104,10 +104,10 @@ class CreateGraphWorkflow:
         filtered_document_ids = []
         for document_overview in documents_overviews:
             restructuring_status = document_overview.restructuring_status
-            if (
-                restructuring_status == RestructureStatus.PENDING
-                or restructuring_status == RestructureStatus.FAILURE
-            ):
+            if restructuring_status in [
+                RestructureStatus.PENDING,
+                RestructureStatus.FAILURE,
+            ]:
                 filtered_document_ids.append(document_overview.id)
             elif restructuring_status == RestructureStatus.SUCCESS:
                 logger.warning(
@@ -184,7 +184,7 @@ class EnrichGraphWorkflow:
         # check if any documents are still being restructured, need to explicitly set the force_clustering flag to true to run clustering if documents are still being restructured
 
         documents_overview = (
-            self.restructure_service.providers.database.relational.get_documents_overview()
+            await self.restructure_service.providers.database.relational.get_documents_overview()
         )
 
         if not force_enrichment:
@@ -209,17 +209,15 @@ class EnrichGraphWorkflow:
                 return {"result": None}
 
         for document_overview in documents_overview:
-            if (
-                document_overview.restructuring_status
-                == RestructureStatus.SUCCESS
-                or document_overview.restructuring_status
-                == RestructureStatus.ENRICHMENT_FAILURE
-            ):
+            if document_overview.restructuring_status in [
+                RestructureStatus.SUCCESS,
+                RestructureStatus.ENRICHMENT_FAILURE,
+            ]:
                 document_overview.restructuring_status = (
                     RestructureStatus.ENRICHING
                 )
 
-        self.restructure_service.providers.database.relational.upsert_documents_overview(
+        await self.restructure_service.providers.database.relational.upsert_documents_overview(
             documents_overview
         )
 
@@ -265,7 +263,7 @@ class EnrichGraphWorkflow:
         except Exception as e:
             logger.error(f"Error in kg_clustering: {str(e)}", exc_info=True)
             documents_overview = (
-                self.restructure_service.providers.database.relational.get_documents_overview()
+                await self.restructure_service.providers.database.relational.get_documents_overview()
             )
             for document_overview in documents_overview:
                 if (
@@ -275,7 +273,7 @@ class EnrichGraphWorkflow:
                     document_overview.restructuring_status = (
                         RestructureStatus.ENRICHMENT_FAILURE
                     )
-                    self.restructure_service.providers.database.relational.upsert_documents_overview(
+                    await self.restructure_service.providers.database.relational.upsert_documents_overview(
                         document_overview
                     )
                     logger.error(
@@ -287,7 +285,7 @@ class EnrichGraphWorkflow:
         finally:
 
             documents_overview = (
-                self.restructure_service.providers.database.relational.get_documents_overview()
+                await self.restructure_service.providers.database.relational.get_documents_overview()
             )
             for document_overview in documents_overview:
                 if (
@@ -298,7 +296,7 @@ class EnrichGraphWorkflow:
                         RestructureStatus.ENRICHED
                     )
 
-            self.restructure_service.providers.database.relational.upsert_documents_overview(
+            await self.restructure_service.providers.database.relational.upsert_documents_overview(
                 documents_overview
             )
             return {"result": None}

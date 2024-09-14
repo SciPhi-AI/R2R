@@ -162,19 +162,38 @@ class IngestFilesWorkflow:
 
     @r2r_hatchet.on_failure_step()
     async def on_failure(self, context: Context) -> None:
+        request = context.workflow_input().get("request", {})
+        document_id = request.get("document_id")
+
+        if not document_id:
+            logger.error(
+                "No document id was found in workflow input to mark a failure."
+            )
+            return
+
         try:
-            # Attempt to retrieve document_info from the first step if available
-            document_info_dict = context.step_output("parse")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            documents_overview = await self.ingestion_service.providers.database.relational.get_documents_overview(
+                filter_document_ids=[document_id]
+            )
+
+            if not documents_overview:
+                logger.error(
+                    f"Document with id {document_id} not found in database to mark failure."
+                )
+                return
+
+            document_info = documents_overview[0]
+
+            # Update the document status to FAILURE
             await self.ingestion_service.update_document_status(
                 document_info,
                 status=IngestionStatus.FAILURE,
             )
+
         except Exception as e:
             logger.error(
-                f"Failed to update document status on failure: {str(e)}"
+                f"Failed to update document status for {document_id}: {e}"
             )
-        return None
 
 
 # TODO: Implement a check to see if the file is actually changed before updating
