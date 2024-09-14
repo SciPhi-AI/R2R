@@ -287,10 +287,6 @@ class R2RPromptProvider(PromptProvider):
                 "created_at = NOW()," if modify_created_at else ""
             )
 
-            logger.info(
-                f"Saving prompt '{prompt.name}' with input_types: {prompt.input_types} (type: {type(prompt.input_types)})"
-            )
-
             query = f"""
             INSERT INTO {self._get_table_name('prompts')}
             (prompt_id, name, template, input_types)

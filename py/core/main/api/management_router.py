@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
+import mimetypes
 
 import psutil
 from fastapi import Body, Depends, Path, Query
@@ -276,12 +277,22 @@ class ManagementRouter(BaseRouter):
             """
             # TODO: Add a check to see if the user has access to the file
 
-            document_uuid = UUID(document_id)
+            try:
+                document_uuid = UUID(document_id)
+            except ValueError:
+                raise R2RException(
+                    status_code=400, detail="Invalid document ID format."
+                )
+
             file_tuple = await self.service.download_file(document_uuid)
             if not file_tuple:
                 raise R2RException(status_code=404, message="File not found.")
 
             file_name, file_content, file_size = file_tuple
+
+            mime_type, _ = mimetypes.guess_type(file_name)
+            if not mime_type:
+                mime_type = "application/octet-stream"
 
             async def file_stream():
                 chunk_size = 1024 * 1024  # 1MB
@@ -293,9 +304,9 @@ class ManagementRouter(BaseRouter):
 
             return StreamingResponse(
                 file_stream(),
-                media_type="application/octet-stream",
+                media_type=mime_type,
                 headers={
-                    "Content-Disposition": f'attachment; filename="{file_name}"',
+                    "Content-Disposition": f'inline; filename="{file_name}"',
                     "Content-Length": str(file_size),
                 },
             )
