@@ -248,7 +248,7 @@ services:
       - r2r-network
 
   unstructured:
-    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unstructured-prod}
+    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
     ports:
       - "7275:7275"
     networks:
