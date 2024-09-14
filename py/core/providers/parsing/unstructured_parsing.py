@@ -1,14 +1,14 @@
 import asyncio
+import base64
+import json
 import logging
 import os
 import time
 from copy import copy
 from io import BytesIO
 from typing import Any, AsyncGenerator
-import httpx
-import base64
-import json
 
+import httpx
 from pydantic import BaseModel
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
@@ -93,7 +93,9 @@ class UnstructuredParsingProvider(ParsingProvider):
         else:
 
             try:
-                self.local_unstructured_url = os.environ["UNSTRUCTURED_LOCAL_URL"]
+                self.local_unstructured_url = os.environ[
+                    "UNSTRUCTURED_LOCAL_URL"
+                ]
             except KeyError as e:
                 raise ValueError(
                     "UNSTRUCTURED_LOCAL_URL environment variable is not set"
@@ -184,21 +186,25 @@ class UnstructuredParsingProvider(ParsingProvider):
                     f"Using local unstructured fastapi server to parse document {document.id}"
                 )
                 # Base64 encode the file content
-                encoded_content = base64.b64encode(file_content.read()).decode('utf-8')
+                encoded_content = base64.b64encode(file_content.read()).decode(
+                    "utf-8"
+                )
 
-                logger.info(f"Sending a request to {self.local_unstructured_url}/partition")
+                logger.info(
+                    f"Sending a request to {self.local_unstructured_url}/partition"
+                )
 
                 elements = await self.client.post(
                     f"{self.local_unstructured_url}/partition",
                     json={
-                            "file_content": encoded_content,  # Use encoded string
-                            "chunking_config": self.config.chunking_config.extra_fields,
-                        },
-                        timeout=300,  # Adjust timeout as needed
-                    )
-            
+                        "file_content": encoded_content,  # Use encoded string
+                        "chunking_config": self.config.chunking_config.extra_fields,
+                    },
+                    timeout=300,  # Adjust timeout as needed
+                )
+
                 elements = elements.json()
-                elements = elements['elements']
+                elements = elements["elements"]
 
         iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):

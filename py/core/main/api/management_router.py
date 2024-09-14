@@ -1,9 +1,9 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
+import mimetypes
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
-import mimetypes
 
 import psutil
 from fastapi import Body, Depends, Path, Query

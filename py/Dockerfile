@@ -18,7 +18,7 @@ WORKDIR /app/py
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn 
+    && pip install --no-cache-dir gunicorn uvicorn
 
 # Final stage to keep the image small
 FROM python:3.10-slim

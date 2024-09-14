@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import defaultdict
-from typing import Any, Dict, Optional, Tuple, BinaryIO
+from typing import Any, BinaryIO, Dict, Optional, Tuple
 from uuid import UUID
 
 import toml
