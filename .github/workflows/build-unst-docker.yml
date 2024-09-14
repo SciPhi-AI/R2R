@@ -42,8 +42,7 @@ jobs:
           file: ./py/Dockerfile.unstructured
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ steps.version.outputs.REGISTRY_IMAGE }}:latest
+          tags: ${{ steps.version.outputs.REGISTRY_IMAGE }}:latest
           provenance: false
           sbom: false
 
