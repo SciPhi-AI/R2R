@@ -15,6 +15,9 @@ COPY . /app
 # Ensure that the working directory is set to /app/py
 WORKDIR /app/py
 
+# Add this line to increase the timeout
+RUN pip config set global.timeout 1000
+
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \

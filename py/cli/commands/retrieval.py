@@ -1,4 +1,5 @@
-import click
+import asyncclick as click
+from asyncclick import pass_context
 
 from cli.command_group import cli
 from cli.utils.param_types import JSON
@@ -61,9 +62,10 @@ from cli.utils.timer import timer
     help="Vanilla search or complex search method like query fusion or HyDE.",
 )
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
-@click.pass_obj
-def search(client, query, **kwargs):
+@pass_context
+def search(ctx, query, **kwargs):
     """Perform a search query."""
+    client = ctx.obj
     vector_search_settings = {
         k: v
         for k, v in kwargs.items()
@@ -169,9 +171,10 @@ def search(client, query, **kwargs):
     help="Vanilla RAG or complex method like query fusion or HyDE.",
 )
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
-@click.pass_obj
-def rag(client, query, **kwargs):
+@pass_context
+def rag(ctx, query, **kwargs):
     """Perform a RAG query."""
+    client = ctx.obj
     rag_generation_config = {
         "stream": kwargs.get("stream", False),
     }

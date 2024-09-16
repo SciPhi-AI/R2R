@@ -5,7 +5,8 @@ import subprocess
 import sys
 from importlib.metadata import version as get_version
 
-import click
+import asyncclick as click
+from asyncclick import pass_context
 from dotenv import load_dotenv
 
 from cli.command_group import cli
@@ -20,7 +21,7 @@ from cli.utils.timer import timer
 
 
 @cli.command()
-@click.pass_obj
+@pass_context
 def health(client):
     """Check the health of the server."""
     with timer():
@@ -30,7 +31,7 @@ def health(client):
 
 
 @cli.command()
-@click.pass_obj
+@pass_context
 def server_stats(client):
     """Check the server stats."""
     with timer():
@@ -47,9 +48,10 @@ def server_stats(client):
     "--limit", default=None, help="Pagination limit. Defaults to 100."
 )
 @click.option("--run-type-filter", help="Filter for log types")
-@click.pass_obj
-def logs(client, run_type_filter, offset, limit):
+@pass_context
+def logs(ctx, run_type_filter, offset, limit):
     """Retrieve logs with optional type filter."""
+    client = ctx.obj
     with timer():
         response = client.logs(
             offset=offset, limit=limit, run_type_filter=run_type_filter
@@ -219,7 +221,7 @@ def generate_report():
     default="prod",
     help="Which dev environment to pull the image from?",
 )
-def serve(
+async def serve(
     host,
     port,
     docker,
@@ -250,7 +252,7 @@ def serve(
 
         def image_exists(img):
             try:
-                result = subprocess.run(
+                subprocess.run(
                     ["docker", "manifest", "inspect", img],
                     check=True,
                     capture_output=True,
@@ -317,7 +319,6 @@ def serve(
             ).replace(":", "")
 
     if docker:
-
         run_docker_serve(
             host,
             port,
@@ -354,7 +355,7 @@ def serve(
             click.secho(f"Navigating to R2R application at {url}.", fg="blue")
             webbrowser.open(url)
     else:
-        run_local_serve(host, port, config_name, config_path)
+        await run_local_serve(host, port, config_name, config_path)
 
 
 @cli.command()

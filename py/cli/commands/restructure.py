@@ -1,6 +1,7 @@
 import json
 
-import click
+import asyncclick as click
+from asyncclick import pass_context
 
 from cli.command_group import cli
 from cli.utils.timer import timer
@@ -13,11 +14,12 @@ from cli.utils.timer import timer
     default="",
     help="Document IDs to create graph for (comma-separated)",
 )
-@click.pass_obj
-def create_graph(client, document_ids):
+@pass_context
+def create_graph(ctx, document_ids):
     """
     Create a new graph.
     """
+    client = ctx.obj
     with timer():
         if document_ids == "":
             document_ids = []
@@ -41,11 +43,12 @@ def create_graph(client, document_ids):
     default=False,
     help="Perform leiden clustering on the graph to create communities.",
 )
-@click.pass_obj
-def enrich_graph(client, force_enrichment, skip_clustering):
+@pass_context
+def enrich_graph(ctx, force_enrichment, skip_clustering):
     """
     Perform graph enrichment over the entire graph.
     """
+    client = ctx.obj
     with timer():
         response = client.enrich_graph(force_enrichment, skip_clustering)
 

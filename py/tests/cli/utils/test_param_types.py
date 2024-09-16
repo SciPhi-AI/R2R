@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-import click
+import asyncclick as click
 import pytest
 
 from cli.utils.param_types import JSON, JsonParamType
