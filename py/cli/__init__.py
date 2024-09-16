@@ -1,6 +1,5 @@
 from .cli import cli, main
 from .command_group import cli as command_group_cli
-
 from .commands import auth, ingestion, management, retrieval, server
 
 __all__ = [

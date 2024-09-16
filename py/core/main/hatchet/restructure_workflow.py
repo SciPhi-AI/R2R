@@ -169,7 +169,9 @@ class EnrichGraphWorkflow:
     @r2r_hatchet.step(retries=3, timeout="60m")
     async def kg_node_creation(self, context: Context) -> None:
         input_data = context.workflow_input()["request"]
-        max_description_input_length = input_data["max_description_input_length"]
+        max_description_input_length = input_data[
+            "max_description_input_length"
+        ]
         await self.restructure_service.kg_node_creation(
             max_description_input_length=max_description_input_length
         )
