@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Optional
 
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -78,21 +78,21 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def register(self, email: str, password: str) -> Dict[str, str]:
+    def register(self, email: str, password: str) -> dict[str, str]:
         pass
 
     @abstractmethod
     def verify_email(
         self, email: str, verification_code: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         pass
 
     @abstractmethod
-    def login(self, email: str, password: str) -> Dict[str, Token]:
+    def login(self, email: str, password: str) -> dict[str, Token]:
         pass
 
     @abstractmethod
-    def refresh_access_token(self, refresh_token: str) -> Dict[str, str]:
+    def refresh_access_token(self, refresh_token: str) -> dict[str, str]:
         pass
 
     async def auth_wrapper(
@@ -108,10 +108,9 @@ class AuthProvider(Provider, ABC):
             )
 
         try:
-            user = self.user(auth.credentials)
-            return user
+            return await self.user(auth.credentials)
         except Exception as e:
             raise R2RException(
-                message=f"Error '{e}' occured during authentication.",
+                message=f"Error '{e}' occurred during authentication.",
                 status_code=401,
             )

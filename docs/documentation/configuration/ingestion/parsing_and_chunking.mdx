@@ -189,7 +189,7 @@ Chunking is a crucial part of the document processing pipeline in R2R. It works 
 
 ```python
 response = client.ingest_files(
-    files=["document.pdf"],
+    file_paths=["document.pdf"],
     chunking_config={
         "provider": "unstructured_local",
         "chunking_strategy": "by_title",

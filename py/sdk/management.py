@@ -241,6 +241,24 @@ class ManagementMethods:
         ) or {"results": {}}
 
     @staticmethod
+    async def download_file(
+        client,
+        document_id: Union[str, UUID],
+    ):
+        """
+        Download a file from the R2R deployment.
+
+        Args:
+            document_id (str): The ID of the document to download.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request(
+            "GET", f"download_file/{str(document_id)}"
+        )
+
+    @staticmethod
     async def documents_overview(
         client,
         document_ids: Optional[list[Union[UUID, str]]] = None,

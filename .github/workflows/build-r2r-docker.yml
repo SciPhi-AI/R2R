@@ -1,4 +1,4 @@
-name: Build and Publish Docker Image
+name: Build and Publish R2R Docker Image
 
 on:
   workflow_dispatch:
@@ -40,7 +40,7 @@ jobs:
         run: |
           VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['tool']['poetry']['version'])")
           RELEASE_VERSION=$VERSION
-          
+
           # Use input branch if this is a workflow dispatch
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             BRANCH="${{ github.event.inputs.branch }}"
@@ -117,4 +117,4 @@ jobs:
       - name: Verify manifests
         run: |
           docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
-          docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest          
+          docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest

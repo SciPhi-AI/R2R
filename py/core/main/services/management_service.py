@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import defaultdict
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, BinaryIO, Dict, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -251,7 +251,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.relational.get_users_overview(
+        return await self.providers.database.relational.get_users_overview(
             [str(ele) for ele in user_ids] if user_ids else None,
             offset=offset,
             limit=limit,
@@ -289,9 +289,17 @@ class ManagementService(Service):
             if doc_id
         }
         for document_id in document_ids_to_purge:
-            self.providers.database.relational.delete_from_documents_overview(
+            await self.providers.database.relational.delete_from_documents_overview(
                 document_id
             )
+        return None
+
+    @telemetry_event("DownloadFile")
+    async def download_file(
+        self, document_id: UUID
+    ) -> Optional[Tuple[str, BinaryIO, int]]:
+        if result := await self.providers.file.retrieve_file(document_id):
+            return result
         return None
 
     @telemetry_event("DocumentsOverview")
@@ -305,7 +313,7 @@ class ManagementService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        return self.providers.database.relational.get_documents_overview(
+        return await self.providers.database.relational.get_documents_overview(
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_group_ids=group_ids,
@@ -427,10 +435,10 @@ class ManagementService(Service):
     @telemetry_event("AssignDocumentToGroup")
     async def assign_document_to_group(self, document_id: str, group_id: UUID):
 
-        self.providers.database.relational.assign_document_to_group(
+        await self.providers.database.relational.assign_document_to_group(
             document_id, group_id
         )
-        self.providers.database.vector.assign_document_to_group(
+        await self.providers.database.vector.assign_document_to_group(
             document_id, group_id
         )
         return {"message": "Document assigned to group successfully"}
@@ -439,10 +447,10 @@ class ManagementService(Service):
     async def remove_document_from_group(
         self, document_id: str, group_id: UUID
     ):
-        self.providers.database.relational.remove_document_from_group(
+        await self.providers.database.relational.remove_document_from_group(
             document_id, group_id
         )
-        self.providers.database.vector.remove_document_from_group(
+        await self.providers.database.vector.remove_document_from_group(
             document_id, group_id
         )
         return {"message": "Document removed from group successfully"}
@@ -451,7 +459,7 @@ class ManagementService(Service):
     async def document_groups(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
-        group_ids = self.providers.database.relational.document_groups(
+        group_ids = await self.providers.database.relational.document_groups(
             document_id, offset=offset, limit=limit
         )
         return {"group_ids": [str(group_id) for group_id in group_ids]}
@@ -543,39 +551,39 @@ class ManagementService(Service):
 
     @telemetry_event("CreateGroup")
     async def create_group(self, name: str, description: str = "") -> UUID:
-        return self.providers.database.relational.create_group(
+        return await self.providers.database.relational.create_group(
             name, description
         )
 
     @telemetry_event("GetGroup")
     async def get_group(self, group_id: UUID) -> Optional[dict]:
-        return self.providers.database.relational.get_group(group_id)
+        return await self.providers.database.relational.get_group(group_id)
 
     @telemetry_event("UpdateGroup")
     async def update_group(
         self, group_id: UUID, name: str = None, description: str = None
     ) -> bool:
-        return self.providers.database.relational.update_group(
+        return await self.providers.database.relational.update_group(
             group_id, name, description
         )
 
     @telemetry_event("DeleteGroup")
     async def delete_group(self, group_id: UUID) -> bool:
-        self.providers.database.relational.delete_group(group_id)
-        self.providers.database.vector.delete_group(group_id)
+        await self.providers.database.relational.delete_group(group_id)
+        await self.providers.database.vector.delete_group(group_id)
         return True
 
     @telemetry_event("ListGroups")
     async def list_groups(
         self, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return self.providers.database.relational.list_groups(
+        return await self.providers.database.relational.list_groups(
             offset=offset, limit=limit
         )
 
     @telemetry_event("AddUserToGroup")
     async def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
-        return self.providers.database.relational.add_user_to_group(
+        return await self.providers.database.relational.add_user_to_group(
             user_id, group_id
         )
 
@@ -583,7 +591,7 @@ class ManagementService(Service):
     async def remove_user_from_group(
         self, user_id: UUID, group_id: UUID
     ) -> bool:
-        return self.providers.database.relational.remove_user_from_group(
+        return await self.providers.database.relational.remove_user_from_group(
             user_id, group_id
         )
 
@@ -591,7 +599,7 @@ class ManagementService(Service):
     async def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return self.providers.database.relational.get_users_in_group(
+        return await self.providers.database.relational.get_users_in_group(
             group_id, offset=offset, limit=limit
         )
 
@@ -599,7 +607,7 @@ class ManagementService(Service):
     async def get_groups_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return self.providers.database.relational.get_groups_for_user(
+        return await self.providers.database.relational.get_groups_for_user(
             user_id, offset, limit
         )
 
@@ -612,7 +620,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.relational.get_groups_overview(
+        return await self.providers.database.relational.get_groups_overview(
             [str(ele) for ele in group_ids] if group_ids else None,
             offset=offset,
             limit=limit,
@@ -622,7 +630,7 @@ class ManagementService(Service):
     async def documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return self.providers.database.relational.documents_in_group(
+        return await self.providers.database.relational.documents_in_group(
             group_id, offset=offset, limit=limit
         )
 
@@ -630,7 +638,7 @@ class ManagementService(Service):
     async def document_groups(
         self, document_id: str, offset: int = 0, limit: int = 100
     ) -> list[str]:
-        return self.providers.database.relational.document_groups(
+        return await self.providers.database.relational.document_groups(
             document_id, offset, limit
         )
 
@@ -639,7 +647,7 @@ class ManagementService(Service):
         self, name: str, template: str, input_types: dict[str, str]
     ) -> dict:
         try:
-            self.providers.prompt.add_prompt(name, template, input_types)
+            await self.providers.prompt.add_prompt(name, template, input_types)
             return {"message": f"Prompt '{name}' added successfully."}
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
@@ -653,7 +661,7 @@ class ManagementService(Service):
     ) -> str:
         try:
             return {
-                "message": self.providers.prompt.get_prompt(
+                "message": await self.providers.prompt.get_prompt(
                     prompt_name, inputs, prompt_override
                 )
             }
@@ -662,7 +670,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
-        return self.providers.prompt.get_all_prompts()
+        return await self.providers.prompt.get_all_prompts()
 
     @telemetry_event("UpdatePrompt")
     async def update_prompt(
@@ -672,7 +680,9 @@ class ManagementService(Service):
         input_types: Optional[dict[str, str]] = None,
     ) -> dict:
         try:
-            self.providers.prompt.update_prompt(name, template, input_types)
+            await self.providers.prompt.update_prompt(
+                name, template, input_types
+            )
             return {"message": f"Prompt '{name}' updated successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
@@ -680,7 +690,7 @@ class ManagementService(Service):
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
         try:
-            self.providers.prompt.delete_prompt(name)
+            await self.providers.prompt.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))

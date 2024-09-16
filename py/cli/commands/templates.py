@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 
-import click
+import asyncclick as click
 
 from cli.command_group import cli
 

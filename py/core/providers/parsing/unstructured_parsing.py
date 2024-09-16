@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import json
 import logging
 import os
 import time
@@ -6,6 +8,7 @@ from copy import copy
 from io import BytesIO
 from typing import Any, AsyncGenerator
 
+import httpx
 from pydantic import BaseModel
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
@@ -88,15 +91,17 @@ class UnstructuredParsingProvider(ParsingProvider):
             self.operations = operations
 
         else:
+
             try:
-                from unstructured.partition.auto import partition
-
-                self.partition = partition
-
-            except ImportError as e:
-                raise ImportError(
-                    "Please install the unstructured package to use the unstructured parsing provider."
+                self.local_unstructured_url = os.environ[
+                    "UNSTRUCTURED_LOCAL_URL"
+                ]
+            except KeyError as e:
+                raise ValueError(
+                    "UNSTRUCTURED_LOCAL_URL environment variable is not set"
                 ) from e
+
+            self.client = httpx.AsyncClient()
 
         super().__init__(config)
         self.parsers = {}
@@ -178,14 +183,30 @@ class UnstructuredParsingProvider(ParsingProvider):
 
             else:
                 logger.info(
-                    f"Using local unstructured to parse document {document.id}"
+                    f"Using local unstructured fastapi server to parse document {document.id}"
                 )
-                elements = self.partition(
-                    file=file_content,
-                    **self.config.chunking_config.extra_fields,
+                # Base64 encode the file content
+                encoded_content = base64.b64encode(file_content.read()).decode(
+                    "utf-8"
                 )
 
-        iteration = 0 # if there are no chunks
+                logger.info(
+                    f"Sending a request to {self.local_unstructured_url}/partition"
+                )
+
+                elements = await self.client.post(
+                    f"{self.local_unstructured_url}/partition",
+                    json={
+                        "file_content": encoded_content,  # Use encoded string
+                        "chunking_config": self.config.chunking_config.extra_fields,
+                    },
+                    timeout=300,  # Adjust timeout as needed
+                )
+
+                elements = elements.json()
+                elements = elements["elements"]
+
+        iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
             if not isinstance(element, dict):
                 element = element.to_dict()
@@ -216,6 +237,10 @@ class UnstructuredParsingProvider(ParsingProvider):
                 data=text,
                 metadata=metadata,
             )
+
+        # TODO: explore why this is throwing inadvertedly
+        # if iteration == 0:
+        #     raise ValueError(f"No chunks found for document {document.id}")
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

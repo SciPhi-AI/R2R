@@ -1,18 +1,21 @@
 """Abstraction for a prompt that can be formatted with inputs."""
 
-from typing import Any
 from datetime import datetime
-from pydantic import BaseModel
+from typing import Any
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field
 
 
 class Prompt(BaseModel):
     """A prompt that can be formatted with inputs."""
 
+    prompt_id: UUID = Field(default_factory=uuid4)
     name: str
     template: str
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
     input_types: dict[str, str]
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     def format_prompt(self, inputs: dict[str, Any]) -> str:
         self._validate_inputs(inputs)
