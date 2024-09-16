@@ -1,3 +1,5 @@
+import sys
+
 from cli.command_group import cli
 from cli.commands import (
     auth,
@@ -19,7 +21,7 @@ cli.add_command(ingestion.ingest_sample_file)
 cli.add_command(ingestion.ingest_sample_files)
 cli.add_command(ingestion.ingest_sample_files_from_unstructured)
 
-# Management
+# # Management
 cli.add_command(management.analytics)
 cli.add_command(management.app_settings)
 cli.add_command(management.users_overview)
@@ -50,7 +52,15 @@ cli.add_command(templates.clone)
 
 
 def main():
-    cli()
+    try:
+        cli(_anyio_backend="asyncio")
+    except SystemExit:
+        # Silently exit without printing the traceback
+        pass
+    except Exception as e:
+        # Handle other exceptions if needed
+        print(f"An error occurred: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

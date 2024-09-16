@@ -26,4 +26,4 @@ COPY core/integrations/unstructured/main.py .
 
 EXPOSE 7275
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7275"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7275", "--workers", "8"]
