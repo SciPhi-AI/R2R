@@ -243,7 +243,6 @@ async def serve(
         click.echo(
             "WARNING: Both `image` and `image_env` were provided. Using `image`."
         )
-
     if not image and docker:
         r2r_version = get_version("r2r")
 

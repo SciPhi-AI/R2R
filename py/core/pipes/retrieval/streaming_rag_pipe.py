@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class StreamingSearchRAGPipe(SearchRAGPipe):
-    SEARCH_STREAM_MARKER = "search"
+    VECTOR_SEARCH_STREAM_MARKER = "vector_search"
+    KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
+    KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
     COMPLETION_STREAM_MARKER = "completion"
 
     def __init__(
@@ -58,17 +60,36 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         iteration = 0
         context = ""
         async for query, search_results in input.message:
-            yield f"<{self.SEARCH_STREAM_MARKER}>"
+            # Vector Search Results
+            yield f"<{self.VECTOR_SEARCH_STREAM_MARKER}>"
             if search_results.vector_search_results:
                 context += "Vector Search Results:\n"
+                vector_results_list = []
                 for result in search_results.vector_search_results:
-                    if iteration >= 1:
-                        yield ","
-                    yield json.dumps(result.json())
+                    vector_results_list.append(result.json())
                     context += f"{iteration + 1}:\n{result.text}\n\n"
                     iteration += 1
+                yield json.dumps(vector_results_list)
+            yield f"</{self.VECTOR_SEARCH_STREAM_MARKER}>"
 
-            yield f"</{self.SEARCH_STREAM_MARKER}>"
+            if search_results.kg_search_results:
+                if search_results.kg_search_results[0].local_result:
+                    context += "KG Local Search Results:\n"
+                    yield f"<{self.KG_LOCAL_SEARCH_STREAM_MARKER}>"
+                    yield json.dumps(search_results.kg_search_results[0].local_result.json())
+                    context += str(search_results.kg_search_results[0].local_result)
+                    yield f"</{self.KG_LOCAL_SEARCH_STREAM_MARKER}>"
+
+                if search_results.kg_search_results and search_results.kg_search_results[0].global_result:
+                    context += "KG Global Search Results:\n"
+                    yield f"<{self.KG_GLOBAL_SEARCH_STREAM_MARKER}>"
+                    for result in search_results.kg_search_results:
+                        if iteration >= 1:
+                            yield ","
+                        yield json.dumps(result.global_result.json())
+                        context += f"{iteration + 1}:\n{result}\n\n"
+                        iteration += 1
+                    yield f"</{self.KG_GLOBAL_SEARCH_STREAM_MARKER}>"
 
             messages = self.prompt_provider._get_message_payload(
                 system_prompt_name=self.config.system_prompt,

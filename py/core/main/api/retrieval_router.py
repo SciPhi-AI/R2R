@@ -127,7 +127,7 @@ class RetrievalRouter(BaseRouter):
                 None, description=rag_descriptions.get("task_prompt_override")
             ),
             include_title_if_available: bool = Body(
-                True,
+                False,
                 description=rag_descriptions.get("include_title_if_available"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
