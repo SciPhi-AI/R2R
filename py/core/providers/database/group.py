@@ -46,19 +46,28 @@ class GroupMixin(DatabaseMixin):
             RETURNING group_id, name, description, created_at, updated_at
         """
         params = [name, description, current_time, current_time]
-        result = await self.execute_query(query, params).fetchone()
-        if not result:
-            raise R2RException(
-                status_code=500, message="Failed to create group"
-            )
 
-        return GroupResponse(
-            group_id=result[0],
-            name=result[1],
-            description=result[2],
-            created_at=result[3],
-            updated_at=result[4],
-        )
+        try:
+            async with self.pool.acquire() as conn:
+                row = await conn.fetchrow(query, *params)
+
+            if not row:
+                raise R2RException(
+                    status_code=500, message="Failed to create group"
+                )
+
+            return GroupResponse(
+                group_id=row["group_id"],
+                name=row["name"],
+                description=row["description"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+            )
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"An error occurred while creating the group: {str(e)}",
+            )
 
     async def get_group(self, group_id: UUID) -> GroupResponse:
         """Get a group by its ID."""
