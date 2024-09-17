@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class StreamingSearchRAGPipe(SearchRAGPipe):
-    VECTOR_SEARCH_STREAM_MARKER = "vector_search"
+    VECTOR_SEARCH_STREAM_MARKER = "search" # TODO - change this to vector_search in next major release
     KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
     KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
     COMPLETION_STREAM_MARKER = "completion"
