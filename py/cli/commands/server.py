@@ -271,7 +271,7 @@ async def serve(
             image = latest_image
         else:
             click.echo(
-                f"Neither {version_specific_image} nor {latest_image} found locally."
+                f"Neither {version_specific_image} nor {latest_image} found in remote registry."
             )
             click.echo(
                 "Please pull the required image or build it using the --build flag."
