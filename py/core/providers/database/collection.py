@@ -30,7 +30,7 @@ class CollectionMixin(DatabaseMixin):
     async def group_exists(self, collection_id: UUID) -> bool:
         """Check if a group exists."""
         query = f"""
-            SELECT 1 FROM {self._get_table_name('groups')}
+            SELECT 1 FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
         """
         result = await self.execute_query(query, [collection_id])
@@ -41,7 +41,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> GroupResponse:
         current_time = datetime.utcnow()
         query = f"""
-            INSERT INTO {self._get_table_name('groups')} (name, description, created_at, updated_at)
+            INSERT INTO {self._get_table_name('collections')} (name, description, created_at, updated_at)
             VALUES ($1, $2, $3, $4)
             RETURNING collection_id, name, description, created_at, updated_at
         """
@@ -76,7 +76,7 @@ class CollectionMixin(DatabaseMixin):
 
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
-            FROM {self._get_table_name('groups')}
+            FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
         """
         result = await self.fetchrow_query(query, [collection_id])
@@ -99,7 +99,7 @@ class CollectionMixin(DatabaseMixin):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
-            UPDATE {self._get_table_name('groups')}
+            UPDATE {self._get_table_name('collections')}
             SET name = $1, description = $2, updated_at = NOW()
             WHERE collection_id = $3
             RETURNING collection_id, name, description, created_at, updated_at
@@ -129,7 +129,7 @@ class CollectionMixin(DatabaseMixin):
 
         # Delete the group
         delete_query = f"""
-            DELETE FROM {self._get_table_name('groups')}
+            DELETE FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
         """
         result = await self.execute_query(delete_query, [collection_id])
@@ -143,7 +143,7 @@ class CollectionMixin(DatabaseMixin):
         """List groups with pagination."""
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
-            FROM {self._get_table_name('groups')}
+            FROM {self._get_table_name('collections')}
             ORDER BY name
             OFFSET $1
             LIMIT $2
@@ -167,7 +167,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> list[GroupResponse]:
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
-            FROM {self._get_table_name("groups")}
+            FROM {self._get_table_name("collections")}
             WHERE collection_id = ANY($1)
         """
         results = await self.fetch_query(query, [collection_ids])
@@ -327,7 +327,7 @@ class CollectionMixin(DatabaseMixin):
                 SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
                     COUNT(DISTINCT u.user_id) AS user_count,
                     COUNT(DISTINCT d.document_id) AS document_count
-                FROM {self._get_table_name('groups')} g
+                FROM {self._get_table_name('collections')} g
                 LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
                 LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
         """
@@ -367,7 +367,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> list[GroupResponse]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
-            FROM {self._get_table_name('groups')} g
+            FROM {self._get_table_name('collections')} g
             JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
             WHERE u.user_id = $1
             ORDER BY g.name
@@ -451,7 +451,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> list[GroupResponse]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
-            FROM {self._get_table_name('groups')} g
+            FROM {self._get_table_name('collections')} g
             JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
             WHERE d.document_id = $1
             ORDER BY g.name

@@ -237,6 +237,8 @@ class Collection:
                 if x is not None
             ]
         )
+        self._migrate_group_ids_to_collection_ids() # TODO - Remove
+
         if len(reported_dimensions) == 0:
             raise ArgError(
                 "One of dimension or adapter must provide a dimension"
@@ -245,6 +247,31 @@ class Collection:
             raise MismatchedDimension(
                 "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
             )
+
+    def _migrate_group_ids_to_collection_ids(self):
+        with self.client.Session() as sess:
+            with sess.begin():
+                # Check if the group_ids column exists
+                result = sess.execute(
+                    text(
+                        f"""
+                        SELECT COUNT(*) 
+                        FROM information_schema.columns
+                        WHERE table_name = '{self.table.name}' AND column_name = 'group_ids'
+                        """
+                    )
+                ).scalar()
+
+                if result > 0:
+                    # Rename the group_ids column to collection_ids
+                    sess.execute(
+                        text(
+                            f"""
+                            ALTER TABLE "{self.table.name}" 
+                            RENAME COLUMN group_ids TO collection_ids
+                            """
+                        )
+                    )
 
     def __repr__(self):
         """
