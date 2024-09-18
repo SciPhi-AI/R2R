@@ -5,11 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-<<<<<<< HEAD
 version = "3.1.32"
-=======
-version = "3.1.31"
->>>>>>> d84109868a1ddb80ffcc30be679e2cc6952b47f1
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
