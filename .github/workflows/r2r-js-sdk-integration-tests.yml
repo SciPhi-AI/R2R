@@ -38,7 +38,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
-          POSTGRES_VECS_COLLECTION: ${{ secrets.POSTGRES_VECS_COLLECTION }}
+          POSTGRES_PROJECT_NAME: ${{ secrets.POSTGRES_PROJECT_NAME }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           r2r serve --port=7272 > r2r_server.log 2>&1 &

@@ -46,7 +46,7 @@ class KgExtractAndStoreWorkflow:
                 document_overview
             )
 
-            await self.restructure_service.kg_extract_and_store(
+            errors = await self.restructure_service.kg_extract_and_store(
                 document_id=document_id,
                 generation_config=GenerationConfig(
                     **input_data["generation_config"]
@@ -56,12 +56,23 @@ class KgExtractAndStoreWorkflow:
                 entity_types=entity_types,
                 relation_types=relation_types,
             )
-
+            print("errors = ", errors)
             # Set restructure status to 'success' if completed successfully
-            document_overview.restructuring_status = RestructureStatus.SUCCESS
-            await self.restructure_service.providers.database.relational.upsert_documents_overview(
-                document_overview
-            )
+            if len(errors) == 0:
+                document_overview.restructuring_status = (
+                    RestructureStatus.SUCCESS
+                )
+            else:
+                document_overview.restructuring_status = (
+                    RestructureStatus.FAILURE
+                )
+                await self.restructure_service.providers.database.relational.upsert_documents_overview(
+                    document_overview
+                )
+                raise R2RDocumentProcessingError(
+                    error_message=f"Error in kg_extract_and_store, list of errors: {errors}",
+                    document_id=document_id,
+                )
 
         except Exception as e:
             # Set restructure status to 'failure' if an error occurred
