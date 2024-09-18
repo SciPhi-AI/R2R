@@ -235,8 +235,6 @@ def ingest_sample_files_from_unstructured(ctx):
 
     file_paths = [os.path.join(folder, file) for file in os.listdir(folder)]
 
-    print(file_paths)
-
     with timer():
         response = client.ingest_files(file_paths)
 

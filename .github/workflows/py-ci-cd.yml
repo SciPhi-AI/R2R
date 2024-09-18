@@ -51,7 +51,7 @@ jobs:
       POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_VECS_COLLECTION: ${{ secrets.POSTGRES_VECS_COLLECTION }}
+      POSTGRES_PROJECT_NAME: ${{ secrets.POSTGRES_PROJECT_NAME }}
 
     steps:
       - name: Checkout code

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import asyncpg
 
 from core.providers.database.base import DatabaseMixin
+from core.providers.database.collection import CollectionMixin
 from core.providers.database.document import DocumentMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
 from core.providers.database.user import UserMixin

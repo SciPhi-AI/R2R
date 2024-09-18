@@ -34,7 +34,6 @@ class AuthService(Service):
 
     @telemetry_event("RegisterUser")
     async def register(self, email: str, password: str) -> UserResponse:
-        print("calling register....")
         return await self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")

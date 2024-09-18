@@ -68,18 +68,20 @@ class PostgresDBProvider(DatabaseProvider):
             )
         self.db_name = db_name
 
-        collection_name = config.vecs_collection or os.getenv(
-            "POSTGRES_VECS_COLLECTION"
+        collection_name = (
+            config.vecs_collection
+            or os.getenv("POSTGRES_PROJECT_NAME")
+            or os.getenv("POSTGRES_VECS_COLLECTION")
         )
         if not collection_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
+                "Error, please set a valid POSTGRES_PROJECT_NAME environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
             )
         self.collection_name = collection_name
 
         if not all([user, password, host, port, db_name, collection_name]):
             raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_PROJECT_NAME environment variables to use pgvector database."
             )
 
         # Check if it's a Unix socket connection

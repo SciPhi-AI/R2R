@@ -38,9 +38,7 @@ class AuthRouter(BaseRouter):
             """
             Register a new user with the given email and password.
             """
-            print("calling register....")
             result = await self.service.register(email, password)
-            print("result = ", result)
             return result
 
         @self.router.post(

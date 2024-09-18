@@ -61,8 +61,6 @@ class BaseRouter:
                         },
                     )
                 except Exception as e:
-                    print("cc")
-
                     await self.service.logging_connection.log(
                         run_id=run_id,
                         key="error",
