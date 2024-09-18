@@ -22,8 +22,9 @@ from cli.utils.timer import timer
 
 @cli.command()
 @pass_context
-def health(client):
+def health(ctx):
     """Check the health of the server."""
+    client = ctx.obj
     with timer():
         response = client.health()
 
@@ -32,7 +33,8 @@ def health(client):
 
 @cli.command()
 @pass_context
-def server_stats(client):
+def server_stats(ctx):
+    client = ctx.obj
     """Check the server stats."""
     with timer():
         response = client.server_stats()
