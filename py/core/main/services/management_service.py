@@ -306,7 +306,7 @@ class ManagementService(Service):
     async def documents_overview(
         self,
         user_ids: Optional[list[UUID]] = None,
-        group_ids: Optional[list[UUID]] = None,
+        collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -316,7 +316,7 @@ class ManagementService(Service):
         return await self.providers.database.relational.get_documents_overview(
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
-            filter_group_ids=group_ids,
+            filter_collection_ids=collection_ids,
             offset=offset,
             limit=limit,
         )
@@ -433,36 +433,36 @@ class ManagementService(Service):
             )
 
     @telemetry_event("AssignDocumentToGroup")
-    async def assign_document_to_group(self, document_id: str, group_id: UUID):
+    async def assign_document_to_collection(self, document_id: str, collection_id: UUID):
 
-        await self.providers.database.relational.assign_document_to_group(
-            document_id, group_id
+        await self.providers.database.relational.assign_document_to_collection(
+            document_id, collection_id
         )
-        await self.providers.database.vector.assign_document_to_group(
-            document_id, group_id
+        self.providers.database.vector.assign_document_to_collection(
+            document_id, collection_id
         )
-        return {"message": "Document assigned to group successfully"}
+        return {"message": "Document assigned to collection successfully"}
 
     @telemetry_event("RemoveDocumentFromGroup")
-    async def remove_document_from_group(
-        self, document_id: str, group_id: UUID
+    async def remove_document_from_collection(
+        self, document_id: str, collection_id: UUID
     ):
-        await self.providers.database.relational.remove_document_from_group(
-            document_id, group_id
+        await self.providers.database.relational.remove_document_from_collection(
+            document_id, collection_id
         )
-        await self.providers.database.vector.remove_document_from_group(
-            document_id, group_id
+        self.providers.database.vector.remove_document_from_collection(
+            document_id, collection_id
         )
-        return {"message": "Document removed from group successfully"}
+        return {"message": "Document removed from collection successfully"}
 
     @telemetry_event("DocumentGroups")
-    async def document_groups(
+    async def document_collections(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
-        group_ids = await self.providers.database.relational.document_groups(
+        collection_ids = await self.providers.database.relational.document_collections(
             document_id, offset=offset, limit=limit
         )
-        return {"group_ids": [str(group_id) for group_id in group_ids]}
+        return {"collection_ids": [str(collection_id) for collection_id in collection_ids]}
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
@@ -550,95 +550,95 @@ class ManagementService(Service):
         return sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:5]
 
     @telemetry_event("CreateGroup")
-    async def create_group(self, name: str, description: str = "") -> UUID:
-        return await self.providers.database.relational.create_group(
+    async def create_collection(self, name: str, description: str = "") -> UUID:
+        return await self.providers.database.relational.create_collection(
             name, description
         )
 
     @telemetry_event("GetGroup")
-    async def get_group(self, group_id: UUID) -> Optional[dict]:
-        return await self.providers.database.relational.get_group(group_id)
+    async def get_collection(self, collection_id: UUID) -> Optional[dict]:
+        return await self.providers.database.relational.get_collection(collection_id)
 
     @telemetry_event("UpdateGroup")
-    async def update_group(
-        self, group_id: UUID, name: str = None, description: str = None
+    async def update_collection(
+        self, collection_id: UUID, name: str = None, description: str = None
     ) -> bool:
-        return await self.providers.database.relational.update_group(
-            group_id, name, description
+        return await self.providers.database.relational.update_collection(
+            collection_id, name, description
         )
 
     @telemetry_event("DeleteGroup")
-    async def delete_group(self, group_id: UUID) -> bool:
-        await self.providers.database.relational.delete_group(group_id)
-        await self.providers.database.vector.delete_group(group_id)
+    async def delete_collection(self, collection_id: UUID) -> bool:
+        await self.providers.database.relational.delete_collection(collection_id)
+        await self.providers.database.vector.delete_collection(collection_id)
         return True
 
     @telemetry_event("ListGroups")
-    async def list_groups(
+    async def list_collections(
         self, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.relational.list_groups(
+        return await self.providers.database.relational.list_collections(
             offset=offset, limit=limit
         )
 
     @telemetry_event("AddUserToGroup")
-    async def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
-        return await self.providers.database.relational.add_user_to_group(
-            user_id, group_id
+    async def add_user_to_collection(self, user_id: UUID, collection_id: UUID) -> bool:
+        return await self.providers.database.relational.add_user_to_collection(
+            user_id, collection_id
         )
 
     @telemetry_event("RemoveUserFromGroup")
-    async def remove_user_from_group(
-        self, user_id: UUID, group_id: UUID
+    async def remove_user_from_collection(
+        self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return await self.providers.database.relational.remove_user_from_group(
-            user_id, group_id
+        return await self.providers.database.relational.remove_user_from_collection(
+            user_id, collection_id
         )
 
     @telemetry_event("GetUsersInGroup")
-    async def get_users_in_group(
-        self, group_id: UUID, offset: int = 0, limit: int = 100
+    async def get_users_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.relational.get_users_in_group(
-            group_id, offset=offset, limit=limit
+        return await self.providers.database.relational.get_users_in_collection(
+            collection_id, offset=offset, limit=limit
         )
 
     @telemetry_event("GetGroupsForUser")
-    async def get_groups_for_user(
+    async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.relational.get_groups_for_user(
+        return await self.providers.database.relational.get_collections_for_user(
             user_id, offset, limit
         )
 
     @telemetry_event("GroupsOverview")
-    async def groups_overview(
+    async def collections_overview(
         self,
-        group_ids: Optional[list[UUID]] = None,
+        collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
         *args,
         **kwargs,
     ):
-        return await self.providers.database.relational.get_groups_overview(
-            [str(ele) for ele in group_ids] if group_ids else None,
+        return await self.providers.database.relational.get_collections_overview(
+            [str(ele) for ele in collection_ids] if collection_ids else None,
             offset=offset,
             limit=limit,
         )
 
     @telemetry_event("GetDocumentsInGroup")
-    async def documents_in_group(
-        self, group_id: UUID, offset: int = 0, limit: int = 100
+    async def documents_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.relational.documents_in_group(
-            group_id, offset=offset, limit=limit
+        return await self.providers.database.relational.documents_in_collection(
+            collection_id, offset=offset, limit=limit
         )
 
     @telemetry_event("DocumentGroups")
-    async def document_groups(
+    async def document_collections(
         self, document_id: str, offset: int = 0, limit: int = 100
     ) -> list[str]:
-        return await self.providers.database.relational.document_groups(
+        return await self.providers.database.relational.document_collections(
             document_id, offset, limit
         )
 

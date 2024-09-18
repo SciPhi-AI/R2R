@@ -421,7 +421,7 @@ func (m *Management) GroupsOverview(groupIDs []string, limit, offset *int) (map[
 
 	if len(groupIDs) > 0 {
 		for _, id := range groupIDs {
-			params.Add("group_ids", id)
+			params.Add("collection_ids", id)
 		}
 	}
 	if limit != nil {
@@ -431,7 +431,7 @@ func (m *Management) GroupsOverview(groupIDs []string, limit, offset *int) (map[
 		params.Set("offset", strconv.Itoa(*offset))
 	}
 
-	endpoint := "groups_overview"
+	endpoint := "collections_overview"
 	if len(params) > 0 {
 		endpoint += "?" + params.Encode()
 	}
@@ -473,7 +473,7 @@ func (m *Management) CreateGroup(name string, description *string) (map[string]i
 		return nil, fmt.Errorf("error marshaling request data: %w", err)
 	}
 
-	result, err := m.client.makeRequest("POST", "create_group", bytes.NewBuffer(jsonData), "application/json")
+	result, err := m.client.makeRequest("POST", "create_collection", bytes.NewBuffer(jsonData), "application/json")
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +497,7 @@ func (m *Management) CreateGroup(name string, description *string) (map[string]i
 //	A map containing the response from the server.
 //	An error if the request fails, nil otherwise.
 func (m *Management) GetGroup(groupID string) (map[string]interface{}, error) {
-	endpoint := fmt.Sprintf("get_group/%s", url.PathEscape(groupID))
+	endpoint := fmt.Sprintf("get_collection/%s", url.PathEscape(groupID))
 
 	result, err := m.client.makeRequest("GET", endpoint, nil, "application/json")
 	if err != nil {
@@ -526,7 +526,7 @@ func (m *Management) GetGroup(groupID string) (map[string]interface{}, error) {
 //	An error if the request fails, nil otherwise.
 func (m *Management) UpdateGroup(groupID string, name, description *string) (map[string]interface{}, error) {
 	data := map[string]interface{}{
-		"group_id": groupID,
+		"collection_id": groupID,
 	}
 	if name != nil {
 		data["name"] = *name
@@ -540,7 +540,7 @@ func (m *Management) UpdateGroup(groupID string, name, description *string) (map
 		return nil, fmt.Errorf("error marshaling request data: %w", err)
 	}
 
-	result, err := m.client.makeRequest("PUT", "update_group", bytes.NewBuffer(jsonData), "application/json")
+	result, err := m.client.makeRequest("PUT", "update_collection", bytes.NewBuffer(jsonData), "application/json")
 	if err != nil {
 		return nil, err
 	}
@@ -564,7 +564,7 @@ func (m *Management) UpdateGroup(groupID string, name, description *string) (map
 //	A map containing the response from the server.
 //	An error if the request fails, nil otherwise.
 func (m *Management) DeleteGroup(groupID string) (map[string]interface{}, error) {
-	endpoint := fmt.Sprintf("delete_group/%s", url.PathEscape(groupID))
+	endpoint := fmt.Sprintf("delete_collection/%s", url.PathEscape(groupID))
 
 	result, err := m.client.makeRequest("DELETE", endpoint, nil, "application/json")
 	if err != nil {
@@ -599,7 +599,7 @@ func (m *Management) ListGroups(offset, limit *int) (map[string]interface{}, err
 		params.Set("limit", strconv.Itoa(*limit))
 	}
 
-	endpoint := "list_groups"
+	endpoint := "list_collections"
 	if len(params) > 0 {
 		endpoint += "?" + params.Encode()
 	}
@@ -631,7 +631,7 @@ func (m *Management) ListGroups(offset, limit *int) (map[string]interface{}, err
 func (m *Management) AddUserToGroup(userID, groupID string) (map[string]interface{}, error) {
 	data := map[string]string{
 		"user_id":  userID,
-		"group_id": groupID,
+		"collection_id": groupID,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -639,7 +639,7 @@ func (m *Management) AddUserToGroup(userID, groupID string) (map[string]interfac
 		return nil, fmt.Errorf("error marshaling request data: %w", err)
 	}
 
-	result, err := m.client.makeRequest("POST", "add_user_to_group", bytes.NewBuffer(jsonData), "application/json")
+	result, err := m.client.makeRequest("POST", "add_user_to_collection", bytes.NewBuffer(jsonData), "application/json")
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +666,7 @@ func (m *Management) AddUserToGroup(userID, groupID string) (map[string]interfac
 func (m *Management) RemoveUserFromGroup(userID, groupID string) (map[string]interface{}, error) {
 	data := map[string]string{
 		"user_id":  userID,
-		"group_id": groupID,
+		"collection_id": groupID,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -674,7 +674,7 @@ func (m *Management) RemoveUserFromGroup(userID, groupID string) (map[string]int
 		return nil, fmt.Errorf("error marshaling request data: %w", err)
 	}
 
-	result, err := m.client.makeRequest("POST", "remove_user_from_group", bytes.NewBuffer(jsonData), "application/json")
+	result, err := m.client.makeRequest("POST", "remove_user_from_collection", bytes.NewBuffer(jsonData), "application/json")
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +709,7 @@ func (m *Management) GetUsersInGroup(groupID string, offset, limit *int) (map[st
 		params.Set("limit", strconv.Itoa(*limit))
 	}
 
-	endpoint := fmt.Sprintf("get_users_in_group/%s", url.PathEscape(groupID))
+	endpoint := fmt.Sprintf("get_users_in_collection/%s", url.PathEscape(groupID))
 	if len(params) > 0 {
 		endpoint += "?" + params.Encode()
 	}
@@ -738,7 +738,7 @@ func (m *Management) GetUsersInGroup(groupID string, offset, limit *int) (map[st
 //	A map containing the response from the server.
 //	An error if the request fails, nil otherwise.
 func (m *Management) GetGroupsForUser(userID string) (map[string]interface{}, error) {
-	endpoint := fmt.Sprintf("get_groups_for_user/%s", url.PathEscape(userID))
+	endpoint := fmt.Sprintf("get_collections_for_user/%s", url.PathEscape(userID))
 
 	result, err := m.client.makeRequest("GET", endpoint, nil, "application/json")
 	if err != nil {
@@ -767,7 +767,7 @@ func (m *Management) GetGroupsForUser(userID string) (map[string]interface{}, er
 func (m *Management) AssignDocumentToGroup(documentID string, groupId string) (map[string]interface{}, error) {
 	data := map[string]string{
 		"document_id": documentID,
-		"group_id":    groupId,
+		"collection_id":    groupId,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -775,7 +775,7 @@ func (m *Management) AssignDocumentToGroup(documentID string, groupId string) (m
 		return nil, err
 	}
 
-	result, err := m.client.makeRequest("POST", "assign_document_to_group", bytes.NewBuffer(jsonData), "application/json")
+	result, err := m.client.makeRequest("POST", "assign_document_to_collection", bytes.NewBuffer(jsonData), "application/json")
 	if err != nil {
 		return nil, err
 	}
@@ -802,7 +802,7 @@ func (m *Management) AssignDocumentToGroup(documentID string, groupId string) (m
 func (m *Management) RemoveDocumentFromGroup(documentID string, groupId string) (map[string]interface{}, error) {
 	data := map[string]string{
 		"document_id": documentID,
-		"group_id":    groupId,
+		"collection_id":    groupId,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -810,7 +810,7 @@ func (m *Management) RemoveDocumentFromGroup(documentID string, groupId string) 
 		return nil, err
 	}
 
-	result, err := m.client.makeRequest("POST", "remove_document_from_group", bytes.NewBuffer(jsonData), "application/json")
+	result, err := m.client.makeRequest("POST", "remove_document_from_collection", bytes.NewBuffer(jsonData), "application/json")
 	if err != nil {
 		return nil, err
 	}
@@ -834,7 +834,7 @@ func (m *Management) RemoveDocumentFromGroup(documentID string, groupId string) 
 //	A map containing the response from the server.
 //	An error if the request fails, nil otherwise.
 func (m *Management) GetDocumentGroups(documentID string) (map[string]interface{}, error) {
-	endpoint := fmt.Sprintf("get_document_groups/%s", url.PathEscape(documentID))
+	endpoint := fmt.Sprintf("get_document_collections/%s", url.PathEscape(documentID))
 
 	result, err := m.client.makeRequest("GET", endpoint, nil, "application/json")
 	if err != nil {

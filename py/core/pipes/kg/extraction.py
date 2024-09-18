@@ -223,7 +223,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 extraction_id=extraction["extraction_id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
-                group_ids=extraction["group_ids"],
+                collection_ids=extraction["collection_ids"],
                 data=extraction["text"],
                 metadata=extraction["metadata"],
             )

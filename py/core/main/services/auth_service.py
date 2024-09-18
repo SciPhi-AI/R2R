@@ -34,7 +34,8 @@ class AuthService(Service):
 
     @telemetry_event("RegisterUser")
     async def register(self, email: str, password: str) -> UserResponse:
-        return self.providers.auth.register(email, password)
+        print("calling register....")
+        return await self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
     async def verify_email(self, email: str, verification_code: str) -> bool:
@@ -84,7 +85,7 @@ class AuthService(Service):
     async def refresh_access_token(
         self, refresh_token: str
     ) -> dict[str, Token]:
-        return self.providers.auth.refresh_access_token(refresh_token)
+        return await self.providers.auth.refresh_access_token(refresh_token)
 
     @telemetry_event("ChangePassword")
     async def change_password(
@@ -92,19 +93,19 @@ class AuthService(Service):
     ) -> dict[str, str]:
         if not user:
             raise R2RException(status_code=404, message="User not found")
-        return self.providers.auth.change_password(
+        return await self.providers.auth.change_password(
             user, current_password, new_password
         )
 
     @telemetry_event("RequestPasswordReset")
     async def request_password_reset(self, email: str) -> dict[str, str]:
-        return self.providers.auth.request_password_reset(email)
+        return await self.providers.auth.request_password_reset(email)
 
     @telemetry_event("ConfirmPasswordReset")
     async def confirm_password_reset(
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
-        return self.providers.auth.confirm_password_reset(
+        return await self.providers.auth.confirm_password_reset(
             reset_token, new_password
         )
 

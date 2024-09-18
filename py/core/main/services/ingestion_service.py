@@ -138,7 +138,7 @@ class IngestionService(Service):
         return DocumentInfo(
             id=document_id,
             user_id=user.id,
-            group_ids=metadata.get("group_ids", []),
+            collection_ids=metadata.get("collection_ids", []),
             type=DocumentType[file_extension.upper()],
             title=metadata.get("title", file_name.split("/")[-1]),
             metadata=metadata,
@@ -162,7 +162,7 @@ class IngestionService(Service):
                 input=self.pipes.parsing_pipe.Input(
                     message=Document(
                         id=document_info.id,
-                        group_ids=document_info.group_ids,
+                        collection_ids=document_info.collection_ids,
                         user_id=document_info.user_id,
                         type=document_info.type,
                         metadata={

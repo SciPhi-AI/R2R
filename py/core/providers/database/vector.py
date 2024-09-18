@@ -82,7 +82,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     entry.extraction_id,
                     entry.document_id,
                     entry.user_id,
-                    entry.group_ids,
+                    entry.collection_ids,
                     entry.vector.data,
                     entry.text,
                     entry.metadata,
@@ -103,7 +103,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     entry.extraction_id,
                     entry.document_id,
                     entry.user_id,
-                    entry.group_ids,
+                    entry.collection_ids,
                     entry.vector.data,
                     entry.text,
                     entry.metadata,
@@ -128,7 +128,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 extraction_id=result[1],
                 document_id=result[2],
                 user_id=result[3],
-                group_ids=result[4],
+                collection_ids=result[4],
                 text=result[5],
                 score=1 - float(result[6]),
                 metadata=result[7],
@@ -267,7 +267,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 extraction_id=result["data"].extraction_id,
                 document_id=result["data"].document_id,
                 user_id=result["data"].user_id,
-                group_ids=result["data"].group_ids,
+                collection_ids=result["data"].collection_ids,
                 text=result["data"].text,
                 score=result["rrf_score"],
                 metadata={
@@ -311,85 +311,85 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         return self.collection.delete(filters=filters)
 
-    def assign_document_to_group(
-        self, document_id: str, group_id: str
+    def assign_document_to_collection(
+        self, document_id: str, collection_id: str
     ) -> None:
         """
-        Assign a document to a group in the vector database.
+        Assign a document to a collection in the vector database.
 
         Args:
             document_id (str): The ID of the document to assign.
-            group_id (str): The ID of the group to assign the document to.
+            collection_id (str): The ID of the collection to assign the document to.
 
         Raises:
             ValueError: If the collection is not initialized.
         """
         if self.collection is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `assign_document_to_group`."
+                "Please call `initialize_collection` before attempting to run `assign_document_to_collection`."
             )
 
         table_name = self.collection.table.name
         query = text(
             f"""
             UPDATE vecs."{table_name}"
-            SET group_ids = array_append(group_ids, :group_id)
-            WHERE document_id = :document_id AND NOT (:group_id = ANY(group_ids))
+            SET collection_ids = array_append(collection_ids, :collection_id)
+            WHERE document_id = :document_id AND NOT (:collection_id = ANY(collection_ids))
             RETURNING document_id
             """
         )
 
         with self.vx.Session() as sess:
             result = sess.execute(
-                query, {"document_id": document_id, "group_id": group_id}
+                query, {"document_id": document_id, "collection_id": collection_id}
             )
             sess.commit()
 
         if result.rowcount == 0:
             logger.warning(
-                f"Document {document_id} not found or already assigned to group {group_id}"
+                f"Document {document_id} not found or already assigned to collection {collection_id}"
             )
 
-    def remove_document_from_group(
-        self, document_id: str, group_id: str
+    def remove_document_from_collection(
+        self, document_id: str, collection_id: str
     ) -> None:
         """
-        Remove a document from a group in the vector database.
+        Remove a document from a collection in the vector database.
 
         Args:
             document_id (str): The ID of the document to remove.
-            group_id (str): The ID of the group to remove the document from.
+            collection_id (str): The ID of the collection to remove the document from.
 
         Raises:
             ValueError: If the collection is not initialized.
         """
         if self.collection is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `remove_document_from_group`."
+                "Please call `initialize_collection` before attempting to run `remove_document_from_collection`."
             )
 
         table_name = self.collection.table.name
         query = text(
             f"""
             UPDATE vecs."{table_name}"
-            SET group_ids = array_remove(group_ids, :group_id)
-            WHERE document_id = :document_id AND :group_id = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, :collection_id)
+            WHERE document_id = :document_id AND :collection_id = ANY(collection_ids)
             RETURNING document_id
             """
         )
 
         with self.vx.Session() as sess:
             result = sess.execute(
-                query, {"document_id": document_id, "group_id": group_id}
+                query, {"document_id": document_id, "collection_id": collection_id}
             )
             sess.commit()
 
         if result.rowcount == 0:
             logger.warning(
-                f"Document {document_id} not found in group {group_id} or already removed"
+                f"Document {document_id} not found in collection {collection_id} or already removed"
             )
 
-    def remove_group_from_documents(self, group_id: str) -> None:
+    def remove_collection_from_documents(self, collection_id: str) -> None:
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
@@ -397,13 +397,13 @@ class PostgresVectorDBProvider(VectorDBProvider):
         query = text(
             f"""
             UPDATE vecs."{table_name}"
-            SET group_ids = array_remove(group_ids, :group_id)
-            WHERE :group_id = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, :collection_id)
+            WHERE :collection_id = ANY(collection_ids)
             """
         )
 
         with self.vx.Session() as sess:
-            sess.execute(query, {"group_id": group_id})
+            sess.execute(query, {"collection_id": collection_id})
             sess.commit()
 
     def delete_user(self, user_id: str) -> None:
@@ -423,12 +423,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
-    def delete_group(self, group_id: str) -> None:
+    def delete_collection(self, collection_id: str) -> None:
         """
-        Remove the specified group ID from all documents in the vector database.
+        Remove the specified collection ID from all documents in the vector database.
 
         Args:
-            group_id (str): The ID of the group to remove from all documents.
+            collection_id (str): The ID of the collection to remove from all documents.
 
         Raises:
             ValueError: If the collection is not initialized.
@@ -440,18 +440,18 @@ class PostgresVectorDBProvider(VectorDBProvider):
         query = text(
             f"""
             UPDATE vecs."{table_name}"
-            SET group_ids = array_remove(group_ids, :group_id)
-            WHERE :group_id = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, :collection_id)
+            WHERE :collection_id = ANY(collection_ids)
             """
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"group_id": group_id})
+            result = sess.execute(query, {"collection_id": collection_id})
             sess.commit()
 
         affected_rows = result.rowcount
         logger.info(
-            f"Removed group {group_id} from {affected_rows} documents."
+            f"Removed collection {collection_id} from {affected_rows} documents."
         )
 
     def get_document_chunks(
@@ -464,7 +464,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            SELECT fragment_id, extraction_id, document_id, user_id, group_ids, text, metadata
+            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata
             FROM vecs."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
@@ -485,7 +485,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "extraction_id": result[1],
                 "document_id": result[2],
                 "user_id": result[3],
-                "group_ids": result[4],
+                "collection_ids": result[4],
                 "text": result[5],
                 "metadata": result[6],
             }

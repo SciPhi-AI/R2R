@@ -40,7 +40,7 @@ export interface VectorSearchSettings {
   use_hybrid_search?: boolean;
   filters?: Record<string, any>;
   search_limit?: number;
-  selected_group_ids?: string[];
+  selected_collection_ids?: string[];
   index_measure: IndexMeasure;
   include_values?: boolean;
   include_metadatas?: boolean;

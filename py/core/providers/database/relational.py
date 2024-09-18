@@ -5,7 +5,7 @@ import asyncpg
 
 from core.providers.database.base import DatabaseMixin
 from core.providers.database.document import DocumentMixin
-from core.providers.database.group import GroupMixin
+from py.core.providers.database.collection import CollectionMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
 from core.providers.database.user import UserMixin
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class PostgresRelationalDBProvider(
     DocumentMixin,
-    GroupMixin,
+    CollectionMixin,
     BlacklistedTokensMixin,
     UserMixin,
 ):

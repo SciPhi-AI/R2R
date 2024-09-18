@@ -125,7 +125,6 @@ class R2RAuthProvider(AuthProvider):
         new_user = await self.db_provider.relational.create_user(
             email, password
         )
-
         if self.config.require_email_verification:
             # Generate verification code and send email
             verification_code = (
@@ -217,7 +216,7 @@ class R2RAuthProvider(AuthProvider):
     async def refresh_access_token(
         self, refresh_token: str
     ) -> Dict[str, Token]:
-        token_data = self.decode_token(refresh_token)
+        token_data = await self.decode_token(refresh_token)
         if token_data.token_type != "refresh":
             raise R2RException(
                 status_code=401, message="Invalid refresh token"

@@ -89,7 +89,7 @@ class IngestionRouter(BaseRouter):
 
             This endpoint supports multipart/form-data requests, enabling you to ingest files and their associated metadatas into R2R.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive group permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
             self._validate_chunking_config(chunking_config)
             # Check if the user is a superuser
@@ -103,9 +103,8 @@ class IngestionRouter(BaseRouter):
                             status_code=403,
                             message="Non-superusers cannot set user_id in metadata.",
                         )
-
-                # If user is not a superuser, set user_id in metadata
-                metadata["user_id"] = str(auth_user.id)
+                    # If user is not a superuser, set user_id in metadata
+                    metadata["user_id"] = str(auth_user.id)
 
             file_datas = await self._process_files(files)
 
@@ -181,7 +180,7 @@ class IngestionRouter(BaseRouter):
 
             This endpoint allows you to retry the ingestion of files that have previously failed to ingest into R2R.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only retry the ingestion of their own files. More expansive group permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only retry the ingestion of their own files. More expansive collection permissioning is under development.
             """
             if not auth_user.is_superuser:
                 documents_overview = await self.service.providers.database.relational.get_documents_overview(
@@ -236,7 +235,7 @@ class IngestionRouter(BaseRouter):
 
             This endpoint supports multipart/form-data requests, enabling you to update files and their associated metadatas into R2R.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive collection permissioning is under development.
             """
             self._validate_chunking_config(chunking_config)
             if not auth_user.is_superuser:

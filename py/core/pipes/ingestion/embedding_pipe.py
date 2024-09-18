@@ -60,7 +60,7 @@ class EmbeddingPipe(AsyncPipe):
                 extraction_id=fragment.extraction_id,
                 document_id=fragment.document_id,
                 user_id=fragment.user_id,
-                group_ids=fragment.group_ids,
+                collection_ids=fragment.collection_ids,
                 vector=Vector(data=raw_vector),
                 text=fragment.data,
                 metadata={
@@ -142,7 +142,7 @@ class EmbeddingPipe(AsyncPipe):
                 extraction_id=fragment.extraction_id,
                 document_id=fragment.document_id,
                 user_id=fragment.user_id,
-                group_ids=fragment.group_ids,
+                collection_ids=fragment.collection_ids,
                 vector=Vector(data=vectors[0]),
                 text=fragment.data,
                 metadata={**fragment.metadata},

@@ -17,7 +17,7 @@ type VectorSearchResult struct {
 	ExtractionID string                 `json:"extraction_id"`
 	DocumentID   string                 `json:"document_id"`
 	UserID       string                 `json:"user_id"`
-	GroupIDs     []string               `json:"group_ids"`
+	GroupIDs     []string               `json:"collection_ids"`
 	Score        float64                `json:"score"`
 	Text         string                 `json:"text"`
 	Metadata     map[string]interface{} `json:"metadata"`
@@ -40,7 +40,7 @@ type VectorSearchSettings struct {
 	Filters          map[string]interface{} `json:"filters"`
 	SearchLimit      int                    `json:"search_limit"`
 	DoHybridSearch   bool                   `json:"use_hybrid_search"`
-	SelectedGroupIDs []string               `json:"selected_group_ids"`
+	SelectedGroupIDs []string               `json:"selected_collection_ids"`
 }
 
 type KGSearchSettings struct {
