@@ -17,7 +17,7 @@ from .base import DatabaseMixin
 class CollectionMixin(DatabaseMixin):
     async def create_table(self) -> None:
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name('groups')} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name('collections')} (
             collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
