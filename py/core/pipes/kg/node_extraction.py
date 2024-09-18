@@ -74,7 +74,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
     """
 
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[tuple[Entity, list[Triple]], None]
+        message: dict[str, Any]
 
     def __init__(
         self,
@@ -200,11 +200,11 @@ class KGNodeDescriptionPipe(AsyncPipe):
         max_description_input_length = input.message[
             "max_description_input_length"
         ]
-        node_extrations = input.message["node_extrations"]
+        node_extractions = input.message["node_extractions"]
 
         tasks = []
         count = 0
-        async for entity, triples in node_extrations:
+        async for entity, triples in node_extractions:
             tasks.append(
                 asyncio.create_task(
                     process_entity(

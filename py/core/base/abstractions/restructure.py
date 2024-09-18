@@ -39,7 +39,7 @@ class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
     max_description_input_length: int = Field(
-        default=8192,
+        default=65536,
         description="The maximum length of the description for a node in the graph.",
     )
 
