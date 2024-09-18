@@ -506,8 +506,6 @@ class Neo4jKGProvider(KGProvider):
                 }
             )"""
 
-        # print(GRAPH_PROJECTION_QUERY)
-
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
         # step 2: run the hierarchical leiden algorithm on the graph.

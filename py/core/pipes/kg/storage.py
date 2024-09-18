@@ -108,4 +108,6 @@ class KGStoragePipe(AsyncPipe):
 
         # Wait for all storage tasks to complete
         await asyncio.gather(*batch_tasks)
-        yield errors
+
+        for error in errors:
+            yield error

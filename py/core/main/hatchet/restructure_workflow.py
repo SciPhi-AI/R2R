@@ -56,7 +56,7 @@ class KgExtractAndStoreWorkflow:
                 entity_types=entity_types,
                 relation_types=relation_types,
             )
-            print("errors = ", errors)
+
             # Set restructure status to 'success' if completed successfully
             if len(errors) == 0:
                 document_overview.restructuring_status = (

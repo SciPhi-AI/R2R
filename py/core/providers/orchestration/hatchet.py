@@ -38,6 +38,4 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
                 "Worker not initialized. Call get_worker() first."
             )
 
-        # loop = asyncio.get_event_loop()
-        print("Starting worker....")
-        task = asyncio.create_task(self.worker.async_start())
+        asyncio.create_task(self.worker.async_start())
