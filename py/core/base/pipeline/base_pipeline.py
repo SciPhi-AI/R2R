@@ -107,7 +107,7 @@ class AsyncPipeline:
         )
         input_dict = {"message": input}
 
-        # Group upstream outputs by prev_pipe_name
+        # Collection upstream outputs by prev_pipe_name
         grouped_upstream_outputs = {}
         for upstream_input in add_upstream_outputs:
             upstream_pipe_name = upstream_input["prev_pipe_name"]

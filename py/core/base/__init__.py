@@ -149,6 +149,8 @@ __all__ = [
     "TextSplitter",
     "run_pipeline",
     "to_async_generator",
+    "format_search_results_for_llm",
+    "format_search_results_for_stream",
     "generate_run_id",
     "generate_id_from_label",
     "increment_version",

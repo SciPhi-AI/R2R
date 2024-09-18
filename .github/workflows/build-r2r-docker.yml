@@ -76,12 +76,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare.outputs.BRANCH }}
-        
-      - name: Echo Commit Hash  
+
+      - name: Echo Commit Hash
         run: |
           COMMIT_HASH=$(git rev-parse HEAD)
           echo "Building commit hash: $COMMIT_HASH"
-  
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

@@ -177,6 +177,8 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
+        print("args:", args)
+        print("kwargs:", kwargs)
         (
             self.conversation.append(
                 Message(
@@ -209,9 +211,9 @@ class Agent(ABC):
         if tool := next(
             (t for t in self.tools if t.name == function_name), None
         ):
-            raw_result = await tool.results_function(
-                *args, **kwargs, **json.loads(function_arguments)
-            )
+            merged_kwargs = {**kwargs, **json.loads(function_arguments)}
+
+            raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
 
             tool_result = ToolResult(

@@ -342,7 +342,7 @@ class VectorSearchSettings(BaseModel):
     )
     selected_collection_ids: list[UUID] = Field(
         default_factory=list,
-        description="Group IDs to search for",
+        description="Collection IDs to search for",
     )
     index_measure: IndexMeasure = Field(
         default=IndexMeasure.cosine_distance,
