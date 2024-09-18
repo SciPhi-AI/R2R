@@ -1,15 +1,15 @@
-import json
-
+from typing import AsyncGenerator
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base.abstractions import (
     KGSearchSettings,
-    VectorSearchResult,
     VectorSearchSettings,
+    AggregateSearchResult
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import CompletionProvider, PromptProvider
 from core.base.utils import to_async_generator
 from core.pipelines import SearchPipeline
+from core.base import format_search_results_for_stream, format_search_results_for_llm
 
 
 class RAGAgentMixin:
@@ -52,32 +52,26 @@ class RAGAgentMixin:
         kg_search_settings: KGSearchSettings,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[AggregateSearchResult]:
         response = await self.search_pipeline.run(
             to_async_generator([query]),
             vector_search_settings=vector_search_settings,
             kg_search_settings=kg_search_settings,
         )
-        return response.vector_search_results
-
-    @staticmethod
-    def format_search_results_for_llm(
-        results: list[VectorSearchResult],
-    ) -> str:
-        formatted_results = ""
-        for i, result in enumerate(results):
-            text = result.text
-            formatted_results += f"{i+1}. {text}\n"
-        return formatted_results
+        return response
 
     @staticmethod
     def format_search_results_for_stream(
-        results: list[VectorSearchResult],
+        results: AggregateSearchResult,
     ) -> str:
-        formatted_result = ",".join(
-            [json.dumps(result.json()) for result in results]
-        )
-        return formatted_result
+        return format_search_results_for_stream(results)
+
+    @staticmethod
+    def format_search_results_for_llm(
+        results: AggregateSearchResult,
+    ) -> str:
+        return format_search_results_for_llm(results)
+
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
@@ -111,3 +105,4 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             prompt_provider=prompt_provider,
             config=config,
         )
+

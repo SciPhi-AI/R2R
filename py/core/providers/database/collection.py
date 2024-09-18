@@ -27,8 +27,8 @@ class CollectionMixin(DatabaseMixin):
         """
         await self.execute_query(query)
 
-    async def group_exists(self, collection_id: UUID) -> bool:
-        """Check if a group exists."""
+    async def collection_exists(self, collection_id: UUID) -> bool:
+        """Check if a collection exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
@@ -53,7 +53,7 @@ class CollectionMixin(DatabaseMixin):
 
             if not row:
                 raise R2RException(
-                    status_code=500, message="Failed to create group"
+                    status_code=500, message="Failed to create collection"
                 )
 
             return GroupResponse(
@@ -66,13 +66,13 @@ class CollectionMixin(DatabaseMixin):
         except Exception as e:
             raise R2RException(
                 status_code=500,
-                message=f"An error occurred while creating the group: {str(e)}",
+                message=f"An error occurred while creating the collection: {str(e)}",
             )
 
     async def get_collection(self, collection_id: UUID) -> GroupResponse:
-        """Get a group by its ID."""
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        """Get a collection by its ID."""
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
@@ -81,7 +81,7 @@ class CollectionMixin(DatabaseMixin):
         """
         result = await self.fetchrow_query(query, [collection_id])
         if not result:
-            raise R2RException(status_code=404, message="Group not found")
+            raise R2RException(status_code=404, message="Collection not found")
 
         return GroupResponse(
             collection_id=result["collection_id"],
@@ -94,9 +94,9 @@ class CollectionMixin(DatabaseMixin):
     async def update_collection(
         self, collection_id: UUID, name: str, description: str
     ) -> GroupResponse:
-        """Update an existing group."""
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        """Update an existing collection."""
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name('collections')}
@@ -108,7 +108,7 @@ class CollectionMixin(DatabaseMixin):
             query, [name, description, collection_id]
         )
         if not result:
-            raise R2RException(status_code=404, message="Group not found")
+            raise R2RException(status_code=404, message="Collection not found")
 
         return GroupResponse(
             collection_id=result["collection_id"],
@@ -127,7 +127,7 @@ class CollectionMixin(DatabaseMixin):
         """
         await self.execute_query(user_update_query, [collection_id])
 
-        # Delete the group
+        # Delete the collection
         delete_query = f"""
             DELETE FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
@@ -135,12 +135,12 @@ class CollectionMixin(DatabaseMixin):
         result = await self.execute_query(delete_query, [collection_id])
 
         if result == "DELETE 0":
-            raise R2RException(status_code=404, message="Group not found")
+            raise R2RException(status_code=404, message="Collection not found")
 
     async def list_collections(
         self, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
-        """List groups with pagination."""
+        """List collections with pagination."""
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
             FROM {self._get_table_name('collections')}
@@ -174,7 +174,7 @@ class CollectionMixin(DatabaseMixin):
         if len(results) != len(collection_ids):
             raise R2RException(
                 status_code=404,
-                message=f"These groups were not found: {set(collection_ids) - {row['collection_id'] for row in results}}",
+                message=f"These collections were not found: {set(collection_ids) - {row['collection_id'] for row in results}}",
             )
         return [
             GroupResponse(
@@ -190,9 +190,9 @@ class CollectionMixin(DatabaseMixin):
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        """Add a user to a group."""
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        """Add a user to a collection."""
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
@@ -206,9 +206,9 @@ class CollectionMixin(DatabaseMixin):
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> None:
-        """Remove a user from a group."""
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        """Remove a user from a collection."""
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
@@ -227,21 +227,21 @@ class CollectionMixin(DatabaseMixin):
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[UserResponse]:
         """
-        Get all users in a specific group with pagination.
+        Get all users in a specific collection with pagination.
 
         Args:
-            collection_id (UUID): The ID of the group to get users from.
+            collection_id (UUID): The ID of the collection to get users from.
             offset (int): The number of users to skip.
             limit (int): The maximum number of users to return.
 
         Returns:
-            List[UserResponse]: A list of UserResponse objects representing the users in the group.
+            List[UserResponse]: A list of UserResponse objects representing the users in the collection.
 
         Raises:
-            R2RException: If the group doesn't exist.
+            R2RException: If the collection doesn't exist.
         """
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
@@ -277,18 +277,18 @@ class CollectionMixin(DatabaseMixin):
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
         """
-        Get all documents in a specific group with pagination.
+        Get all documents in a specific collection with pagination.
         Args:
-            collection_id (UUID): The ID of the group to get documents from.
+            collection_id (UUID): The ID of the collection to get documents from.
             offset (int): The number of documents to skip.
             limit (int): The maximum number of documents to return.
         Returns:
-            List[DocumentInfo]: A list of DocumentInfo objects representing the documents in the group.
+            List[DocumentInfo]: A list of DocumentInfo objects representing the documents in the collection.
         Raises:
-            R2RException: If the group doesn't exist.
+            R2RException: If the collection doesn't exist.
         """
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at
             FROM {self._get_table_name('document_info')} d
@@ -321,9 +321,9 @@ class CollectionMixin(DatabaseMixin):
         offset: int = 0,
         limit: int = 100,
     ) -> list[GroupOverviewResponse]:
-        """Get an overview of groups, optionally filtered by group IDs, with pagination."""
+        """Get an overview of collections, optionally filtered by collection IDs, with pagination."""
         query = f"""
-            WITH group_overview AS (
+            WITH collection_overview AS (
                 SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
                     COUNT(DISTINCT u.user_id) AS user_count,
                     COUNT(DISTINCT d.document_id) AS document_count
@@ -339,7 +339,7 @@ class CollectionMixin(DatabaseMixin):
         query += """
                 GROUP BY g.collection_id, g.name, g.description, g.created_at, g.updated_at
             )
-            SELECT * FROM group_overview
+            SELECT * FROM collection_overview
             ORDER BY name
             OFFSET ${} LIMIT ${}
         """.format(
@@ -391,19 +391,19 @@ class CollectionMixin(DatabaseMixin):
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         """
-        Assign a document to a group.
+        Assign a document to a collection.
 
         Args:
             document_id (UUID): The ID of the document to assign.
-            collection_id (UUID): The ID of the group to assign the document to.
+            collection_id (UUID): The ID of the collection to assign the document to.
 
         Raises:
-            R2RException: If the group doesn't exist, if the document is not found,
+            R2RException: If the collection doesn't exist, if the document is not found,
                         or if there's a database error.
         """
         try:
-            if not await self.group_exists(collection_id):
-                raise R2RException(status_code=404, message="Group not found")
+            if not await self.collection_exists(collection_id):
+                raise R2RException(status_code=404, message="Collection not found")
 
             # First, check if the document exists
             document_check_query = f"""
@@ -431,10 +431,10 @@ class CollectionMixin(DatabaseMixin):
             )
 
             if not result:
-                # Document exists but was already assigned to the group
+                # Document exists but was already assigned to the collection
                 raise R2RException(
                     status_code=409,
-                    message="Document is already assigned to the group",
+                    message="Document is already assigned to the collection",
                 )
 
         except R2RException:
@@ -443,7 +443,7 @@ class CollectionMixin(DatabaseMixin):
         except Exception as e:
             raise R2RException(
                 status_code=500,
-                message=f"An error '{e}' occurred while assigning the document to the group",
+                message=f"An error '{e}' occurred while assigning the document to the collection",
             )
 
     async def document_collections(
@@ -475,17 +475,17 @@ class CollectionMixin(DatabaseMixin):
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         """
-        Remove a document from a group.
+        Remove a document from a collection.
 
         Args:
             document_id (UUID): The ID of the document to remove.
-            collection_id (UUID): The ID of the group to remove the document from.
+            collection_id (UUID): The ID of the collection to remove the document from.
 
         Raises:
-            R2RException: If the group doesn't exist or if the document is not in the group.
+            R2RException: If the collection doesn't exist or if the document is not in the collection.
         """
-        if not await self.group_exists(collection_id):
-            raise R2RException(status_code=404, message="Group not found")
+        if not await self.collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name('document_info')}
@@ -498,5 +498,5 @@ class CollectionMixin(DatabaseMixin):
         if not result:
             raise R2RException(
                 status_code=404,
-                message="Document not found in the specified group",
+                message="Document not found in the specified collection",
             )
