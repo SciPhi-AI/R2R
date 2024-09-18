@@ -110,7 +110,7 @@ class AuthService(Service):
 
     @telemetry_event("Logout")
     async def logout(self, token: str) -> dict[str, str]:
-        return self.providers.auth.logout(token)
+        return await self.providers.auth.logout(token)
 
     @telemetry_event("UpdateUserProfile")
     async def update_user(
