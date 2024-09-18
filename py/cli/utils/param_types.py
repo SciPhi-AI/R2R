@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict
 
-import click
+import asyncclick as click
 
 
 class JsonParamType(click.ParamType):

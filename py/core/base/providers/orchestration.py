@@ -1,8 +1,6 @@
 from abc import abstractmethod
 from typing import Any, Callable
 
-from hatchet_sdk import Hatchet
-
 from .base import Provider, ProviderConfig
 
 
@@ -23,7 +21,6 @@ class OrchestrationProvider(Provider):
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         self.config = config
-        self.orchestrator = Hatchet()
         self.worker = None
 
     @abstractmethod

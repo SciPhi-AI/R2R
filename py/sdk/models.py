@@ -297,9 +297,9 @@ class VectorSearchSettings(BaseModel):
         ge=1,
         le=1_000,
     )
-    selected_group_ids: list[UUID] = Field(
+    selected_collection_ids: list[UUID] = Field(
         default_factory=list,
-        description="Group IDs to search for",
+        description="Collection IDs to search for",
     )
     index_measure: IndexMeasure = Field(
         default=IndexMeasure.cosine_distance,
@@ -333,7 +333,7 @@ class VectorSearchSettings(BaseModel):
             "use_hybrid_search": True,
             "filters": {"category": "technology"},
             "search_limit": 20,
-            "selected_group_ids": [
+            "selected_collection_ids": [
                 "2acb499e-8428-543b-bd85-0d9098718220",
                 "3e157b3a-8469-51db-90d9-52e7d896b49b",
             ],
@@ -351,8 +351,8 @@ class VectorSearchSettings(BaseModel):
 
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
-        dump["selected_group_ids"] = [
-            str(uuid) for uuid in dump["selected_group_ids"]
+        dump["selected_collection_ids"] = [
+            str(uuid) for uuid in dump["selected_collection_ids"]
         ]
         return dump
 
@@ -447,7 +447,7 @@ class UserResponse(BaseModel):
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     is_verified: bool = False
-    group_ids: list[UUID] = []
+    collection_ids: list[UUID] = []
 
     # Optional fields (to update or set at creation)
     hashed_password: Optional[str] = None
@@ -464,7 +464,7 @@ class VectorSearchResult(BaseModel):
     extraction_id: UUID
     document_id: UUID
     user_id: UUID
-    group_ids: list[UUID]
+    collection_ids: list[UUID]
     score: float
     text: str
     metadata: dict[str, Any]
@@ -481,7 +481,7 @@ class VectorSearchResult(BaseModel):
             "extraction_id": self.extraction_id,
             "document_id": self.document_id,
             "user_id": self.user_id,
-            "group_ids": self.group_ids,
+            "collection_ids": self.collection_ids,
             "score": self.score,
             "text": self.text,
             "metadata": self.metadata,
@@ -493,7 +493,7 @@ class VectorSearchResult(BaseModel):
             "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
+            "collection_ids": [],
             "score": 0.23943702876567796,
             "text": "Example text from the document",
             "metadata": {
@@ -560,7 +560,7 @@ class RAGResponse(BaseModel):
                             "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
                             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
                             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                            "group_ids": [],
+                            "collection_ids": [],
                             "score": 0.23943702876567796,
                             "text": "Paris is the capital and most populous city of France.",
                             "metadata": {

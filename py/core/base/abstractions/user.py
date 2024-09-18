@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from ..utils import generate_id_from_label
 
 
-class Group(BaseModel):
+class Collection(BaseModel):
     id: UUID = Field(default=None)
     name: str
     description: Optional[str] = None
@@ -42,7 +42,7 @@ class UserStats(BaseModel):
     is_verified: bool
     created_at: datetime
     updated_at: datetime
-    group_ids: list[UUID]
+    collection_ids: list[UUID]
     num_files: int
     total_size_in_bytes: int
     document_ids: list[UUID]

@@ -44,7 +44,7 @@ class VectorEntry(R2RSerializable):
     extraction_id: UUID
     document_id: UUID
     user_id: UUID
-    group_ids: list[UUID]
+    collection_ids: list[UUID]
     vector: Vector
     text: str
     metadata: dict[str, Any]
@@ -56,7 +56,7 @@ class VectorEntry(R2RSerializable):
             f"extraction_id={self.extraction_id}, "
             f"document_id={self.document_id}, "
             f"user_id={self.user_id}, "
-            f"group_ids={self.group_ids}, "
+            f"collection_ids={self.collection_ids}, "
             f"vector={self.vector}, "
             f"text={self.text}, "
             f"metadata={self.metadata})"

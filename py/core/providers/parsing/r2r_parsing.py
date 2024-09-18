@@ -85,7 +85,7 @@ class R2RParsingProvider(ParsingProvider):
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,
                 user_id=document.user_id,
-                group_ids=document.group_ids,
+                collection_ids=document.collection_ids,
                 data=text,
                 metadata=document.metadata,
             )

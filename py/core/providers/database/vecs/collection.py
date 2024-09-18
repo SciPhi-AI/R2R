@@ -197,7 +197,7 @@ class Collection:
         "extraction_id",
         "document_id",
         "user_id",
-        "group_ids",
+        "collection_ids",
     ]
 
     def __init__(
@@ -237,14 +237,41 @@ class Collection:
                 if x is not None
             ]
         )
+        self._migrate_group_ids_to_collection_ids()  # TODO - Remove
+
         if len(reported_dimensions) == 0:
             raise ArgError(
                 "One of dimension or adapter must provide a dimension"
             )
         elif len(reported_dimensions) > 1:
             raise MismatchedDimension(
-                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_VECS_COLLECTION` environment variable."
+                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
             )
+
+    def _migrate_group_ids_to_collection_ids(self):
+        with self.client.Session() as sess:
+            with sess.begin():
+                # Check if the group_ids column exists
+                result = sess.execute(
+                    text(
+                        f"""
+                        SELECT COUNT(*)
+                        FROM information_schema.columns
+                        WHERE table_name = '{self.table.name}' AND column_name = 'group_ids'
+                        """
+                    )
+                ).scalar()
+
+                if result > 0:
+                    # Rename the group_ids column to collection_ids
+                    sess.execute(
+                        text(
+                            f"""
+                            ALTER TABLE "{self.table.name}"
+                            RENAME COLUMN group_ids TO collection_ids
+                            """
+                        )
+                    )
 
     def __repr__(self):
         """
@@ -312,7 +339,7 @@ class Collection:
         )
         if len(reported_dimensions) > 1:
             raise MismatchedDimension(
-                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_VECS_COLLECTION` environment variable."
+                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
             )
 
         if not collection_dimension:
@@ -400,7 +427,7 @@ class Collection:
                                 "extraction_id": record[1],
                                 "document_id": record[2],
                                 "user_id": record[3],
-                                "group_ids": record[4],
+                                "collection_ids": record[4],
                                 "vec": record[5],
                                 "text": record[6],
                                 "metadata": record[7],
@@ -415,7 +442,7 @@ class Collection:
                             extraction_id=stmt.excluded.extraction_id,
                             document_id=stmt.excluded.document_id,
                             user_id=stmt.excluded.user_id,
-                            group_ids=stmt.excluded.group_ids,
+                            collection_ids=stmt.excluded.collection_ids,
                             vec=stmt.excluded.vec,
                             text=stmt.excluded.text,
                             metadata=stmt.excluded.metadata,
@@ -593,7 +620,7 @@ class Collection:
             self.table.c.extraction_id,
             self.table.c.document_id,
             self.table.c.user_id,
-            self.table.c.group_ids,
+            self.table.c.collection_ids,
             self.table.c.text,
         ]
         if search_settings.include_values:
@@ -646,7 +673,7 @@ class Collection:
                 self.table.c.extraction_id,
                 self.table.c.document_id,
                 self.table.c.user_id,
-                self.table.c.group_ids,
+                self.table.c.collection_ids,
                 self.table.c.text,
                 self.table.c.metadata,
                 rank_function,
@@ -668,7 +695,7 @@ class Collection:
                 extraction_id=str(r.extraction_id),
                 document_id=str(r.document_id),
                 user_id=str(r.user_id),
-                group_ids=r.group_ids,
+                collection_ids=r.collection_ids,
                 text=r.text,
                 score=float(r.rank),
                 metadata=r.metadata,
@@ -715,7 +742,7 @@ class Collection:
                     elif op == "$contains":
                         return column.contains(clause)
                     elif op == "$any":
-                        if key == "group_ids":
+                        if key == "collection_ids":
                             # Use ANY for UUID array comparison
                             return func.array_to_string(column, ",").like(
                                 f"%{clause}%"
@@ -1077,7 +1104,9 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         Column("document_id", postgresql.UUID, nullable=False),
         Column("user_id", postgresql.UUID, nullable=False),
         Column(
-            "group_ids", postgresql.ARRAY(postgresql.UUID), server_default="{}"
+            "collection_ids",
+            postgresql.ARRAY(postgresql.UUID),
+            server_default="{}",
         ),
         Column("vec", Vector(dimension), nullable=False),
         Column("text", postgresql.TEXT, nullable=True),

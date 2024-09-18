@@ -51,7 +51,7 @@ class ParsingPipe(AsyncPipe):
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
             file_name, file_wrapper, file_size = (
-                self.file_provider.retrieve_file(document.id)
+                await self.file_provider.retrieve_file(document.id)
             )
 
             with file_wrapper as file_content_stream:

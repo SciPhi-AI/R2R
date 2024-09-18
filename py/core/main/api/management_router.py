@@ -1,11 +1,13 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
+import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 import psutil
 from fastapi import Body, Depends, Path, Query
+from fastapi.responses import StreamingResponse
 from pydantic import Json
 
 from core.base import R2RException
@@ -13,12 +15,12 @@ from core.base.api.models.management.responses import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
+    WrappedCollectionListResponse,
+    WrappedCollectionOverviewResponse,
+    WrappedCollectionResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedGetPromptsResponse,
-    WrappedGroupListResponse,
-    WrappedGroupOverviewResponse,
-    WrappedGroupResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
@@ -262,6 +264,53 @@ class ManagementRouter(BaseRouter):
             filters_dict = json.loads(filters) if filters else None
             return await self.service.delete(filters=filters_dict)
 
+        @self.router.get(
+            "/download_file/{document_id}", response_class=StreamingResponse
+        )
+        @self.base_endpoint
+        async def download_file_app(
+            document_id: str = Path(..., description="Document ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Download a file by its document ID as a stream.
+            """
+            # TODO: Add a check to see if the user has access to the file
+
+            try:
+                document_uuid = UUID(document_id)
+            except ValueError:
+                raise R2RException(
+                    status_code=400, detail="Invalid document ID format."
+                )
+
+            file_tuple = await self.service.download_file(document_uuid)
+            if not file_tuple:
+                raise R2RException(status_code=404, message="File not found.")
+
+            file_name, file_content, file_size = file_tuple
+
+            mime_type, _ = mimetypes.guess_type(file_name)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+
+            async def file_stream():
+                chunk_size = 1024 * 1024  # 1MB
+                while True:
+                    data = file_content.read(chunk_size)
+                    if not data:
+                        break
+                    yield data
+
+            return StreamingResponse(
+                file_stream(),
+                media_type=mime_type,
+                headers={
+                    "Content-Disposition": f'inline; filename="{file_name}"',
+                    "Content-Length": str(file_size),
+                },
+            )
+
         @self.router.get("/documents_overview")
         @self.base_endpoint
         async def documents_overview_app(
@@ -278,7 +327,7 @@ class ManagementRouter(BaseRouter):
             ]
             result = await self.service.documents_overview(
                 user_ids=request_user_ids,
-                group_ids=auth_user.group_ids,
+                collection_ids=auth_user.collection_ids,
                 document_ids=document_uuids,
                 offset=offset,
                 limit=limit,
@@ -333,135 +382,148 @@ class ManagementRouter(BaseRouter):
                 print_descriptions=print_descriptions,
             )
 
-        @self.router.get("/groups_overview")
+        @self.router.get("/collections_overview")
         @self.base_endpoint
-        async def groups_overview_app(
-            group_ids: Optional[list[str]] = Query(None),
+        async def collections_overview_app(
+            collection_ids: Optional[list[str]] = Query(None),
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGroupOverviewResponse:
+        ) -> WrappedCollectionOverviewResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can call the `groups_overview` endpoint.",
+                    "Only a superuser can call the `collections_overview` endpoint.",
                     403,
                 )
 
-            group_uuids = (
-                [UUID(group_id) for group_id in group_ids]
-                if group_ids
+            collection_uuids = (
+                [UUID(collection_id) for collection_id in collection_ids]
+                if collection_ids
                 else None
             )
-            return await self.service.groups_overview(
-                group_ids=group_uuids, offset=offset, limit=limit
+            return await self.service.collections_overview(
+                collection_ids=collection_uuids, offset=offset, limit=limit
             )
 
-        @self.router.post("/create_group")
+        @self.router.post("/create_collection")
         @self.base_endpoint
-        async def create_group_app(
-            name: str = Body(..., description="Group name"),
+        async def create_collection_app(
+            name: str = Body(..., description="Collection name"),
             description: Optional[str] = Body(
-                "", description="Group description"
+                "", description="Collection description"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
-            if not auth_user.is_superuser:
-                raise R2RException("Only a superuser can create groups.", 403)
-            return await self.service.create_group(name, description)
-
-        @self.router.get("/get_group/{group_id}")
-        @self.base_endpoint
-        async def get_group_app(
-            group_id: str = Path(..., description="Group ID"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
+        ) -> WrappedCollectionResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get group details.", 403
+                    "Only a superuser can create collections.", 403
                 )
-            group_uuid = UUID(group_id)
-            result = await self.service.get_group(group_uuid)
+            return await self.service.create_collection(name, description)
+
+        @self.router.get("/get_collection/{collection_id}")
+        @self.base_endpoint
+        async def get_collection_app(
+            collection_id: str = Path(..., description="Collection ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedCollectionResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can get Collection details.", 403
+                )
+            collection_uuid = UUID(collection_id)
+            result = await self.service.get_collection(collection_uuid)
             return result
 
-        @self.router.put("/update_group")
+        @self.router.put("/update_collection")
         @self.base_endpoint
-        async def update_group_app(
-            group_id: str = Body(..., description="Group ID"),
-            name: Optional[str] = Body(None, description="Updated group name"),
+        async def update_collection_app(
+            collection_id: str = Body(..., description="Collection ID"),
+            name: Optional[str] = Body(
+                None, description="Updated collection name"
+            ),
             description: Optional[str] = Body(
-                None, description="Updated group description"
+                None, description="Updated collection description"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
+        ) -> WrappedCollectionResponse:
             if not auth_user.is_superuser:
-                raise R2RException("Only a superuser can update groups.", 403)
-            group_uuid = UUID(group_id)
-            return await self.service.update_group(
-                group_uuid, name, description
+                raise R2RException(
+                    "Only a superuser can update collections.", 403
+                )
+            collection_uuid = UUID(collection_id)
+            return await self.service.update_collection(
+                collection_uuid, name, description
             )
 
-        @self.router.delete("/delete_group/{group_id}")
+        @self.router.delete("/delete_collection/{collection_id}")
         @self.base_endpoint
-        async def delete_group_app(
-            group_id: str = Path(..., description="Group ID"),
+        async def delete_collection_app(
+            collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only a superuser can delete groups.", 403)
-            group_uuid = UUID(group_id)
-            return await self.service.delete_group(group_uuid)
+                raise R2RException(
+                    "Only a superuser can delete collections.", 403
+                )
+            collection_uuid = UUID(collection_id)
+            return await self.service.delete_collection(collection_uuid)
 
-        @self.router.get("/list_groups")
+        @self.router.get("/list_collections")
         @self.base_endpoint
-        async def list_groups_app(
+        async def list_collections_app(
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGroupListResponse:
+        ) -> WrappedCollectionListResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can list all groups.", 403
+                    "Only a superuser can list all collections.", 403
                 )
-            return await self.service.list_groups(
+            return await self.service.list_collections(
                 offset=offset, limit=min(max(limit, 1), 1000)
             )
 
-        @self.router.post("/add_user_to_group")
+        @self.router.post("/add_user_to_collection")
         @self.base_endpoint
-        async def add_user_to_group_app(
+        async def add_user_to_collection_app(
             user_id: str = Body(..., description="User ID"),
-            group_id: str = Body(..., description="Group ID"),
+            collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedAddUserResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can add users to groups.", 403
+                    "Only a superuser can add users to collections.", 403
                 )
             user_uuid = UUID(user_id)
-            group_uuid = UUID(group_id)
-            return await self.service.add_user_to_group(user_uuid, group_uuid)
+            collection_uuid = UUID(collection_id)
+            result = await self.service.add_user_to_collection(
+                user_uuid, collection_uuid
+            )
+            return {"result": result}
 
-        @self.router.post("/remove_user_from_group")
+        @self.router.post("/remove_user_from_collection")
         @self.base_endpoint
-        async def remove_user_from_group_app(
+        async def remove_user_from_collection_app(
             user_id: str = Body(..., description="User ID"),
-            group_id: str = Body(..., description="Group ID"),
+            collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can remove users from groups.", 403
+                    "Only a superuser can remove users from collections.", 403
                 )
             user_uuid = UUID(user_id)
-            group_uuid = UUID(group_id)
-            await self.service.remove_user_from_group(user_uuid, group_uuid)
+            collection_uuid = UUID(collection_id)
+            await self.service.remove_user_from_collection(
+                user_uuid, collection_uuid
+            )
             return None
 
         # TODO - Proivde response model
-        @self.router.get("/get_users_in_group/{group_id}")
+        @self.router.get("/get_users_in_collection/{collection_id}")
         @self.base_endpoint
-        async def get_users_in_group_app(
-            group_id: str = Path(..., description="Group ID"),
+        async def get_users_in_collection_app(
+            collection_id: str = Path(..., description="Collection ID"),
             offset: int = Query(0, ge=0, description="Pagination offset"),
             limit: int = Query(
                 100, ge=1, le=1000, description="Pagination limit"
@@ -470,18 +532,18 @@ class ManagementRouter(BaseRouter):
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get users in a group.", 403
+                    "Only a superuser can get users in a collection.", 403
                 )
-            group_uuid = UUID(group_id)
-            return await self.service.get_users_in_group(
-                group_id=group_uuid,
+            collection_uuid = UUID(collection_id)
+            return await self.service.get_users_in_collection(
+                collection_id=collection_uuid,
                 offset=offset,
                 limit=min(max(limit, 1), 1000),
             )
 
-        @self.router.get("/user_groups/{user_id}")
+        @self.router.get("/user_collections/{user_id}")
         @self.base_endpoint
-        async def get_groups_for_user_app(
+        async def get_collections_for_user_app(
             user_id: str = Path(..., description="User ID"),
             offset: int = Query(0, ge=0, description="Pagination offset"),
             limit: int = Query(
@@ -491,78 +553,80 @@ class ManagementRouter(BaseRouter):
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get groups for a user.", 403
+                    "Only a superuser can get collections for a user.", 403
                 )
             user_uuid = UUID(user_id)
-            return await self.service.get_groups_for_user(
+            return await self.service.get_collections_for_user(
                 user_uuid, offset, limit
             )
 
-        @self.router.post("/assign_document_to_group")
+        @self.router.post("/assign_document_to_collection")
         @self.base_endpoint
-        async def assign_document_to_group_app(
+        async def assign_document_to_collection_app(
             document_id: str = Body(..., description="Document ID"),
-            group_id: str = Body(..., description="Group ID"),
+            collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can assign documents to groups.", 403
+                    "Only a superuser can assign documents to collections.",
+                    403,
                 )
             document_uuid = UUID(document_id)
-            group_uuid = UUID(group_id)
-            return await self.service.assign_document_to_group(
-                document_uuid, group_uuid
+            collection_uuid = UUID(collection_id)
+            return await self.service.assign_document_to_collection(
+                document_uuid, collection_uuid
             )
 
-        @self.router.post("/remove_document_from_group")
+        @self.router.post("/remove_document_from_collection")
         @self.base_endpoint
-        async def remove_document_from_group_app(
+        async def remove_document_from_collection_app(
             document_id: str = Body(..., description="Document ID"),
-            group_id: str = Body(..., description="Group ID"),
+            collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> None:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can remove documents from groups.", 403
+                    "Only a superuser can remove documents from collections.",
+                    403,
                 )
             document_uuid = UUID(document_id)
-            group_uuid = UUID(group_id)
-            await self.service.remove_document_from_group(
-                document_uuid, group_uuid
+            collection_uuid = UUID(collection_id)
+            await self.service.remove_document_from_collection(
+                document_uuid, collection_uuid
             )
             return None
 
-        @self.router.get("/document_groups/{document_id}")
+        @self.router.get("/document_collections/{document_id}")
         @self.base_endpoint
-        async def document_groups_app(
+        async def document_collections_app(
             document_id: str = Path(..., description="Document ID"),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGroupListResponse:
+        ) -> WrappedCollectionListResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get the groups belonging to a document.",
+                    "Only a superuser can get the collections belonging to a document.",
                     403,
                 )
-            return await self.service.document_groups(
+            return await self.service.document_collections(
                 document_id, offset, limit
             )
 
-        @self.router.get("/group/{group_id}/documents")
+        @self.router.get("/collection/{collection_id}/documents")
         @self.base_endpoint
-        async def documents_in_group_app(
-            group_id: str = Path(..., description="Group ID"),
+        async def documents_in_collection_app(
+            collection_id: str = Path(..., description="Collection ID"),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedDocumentOverviewResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get documents in a group.", 403
+                    "Only a superuser can get documents in a collection.", 403
                 )
-            group_uuid = UUID(group_id)
-            return await self.service.documents_in_group(
-                group_uuid, offset, limit
+            collection_uuid = UUID(collection_id)
+            return await self.service.documents_in_collection(
+                collection_uuid, offset, limit
             )

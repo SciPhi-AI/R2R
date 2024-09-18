@@ -68,10 +68,10 @@ R2R requires connections to various services. Set up the following environment v
       export POSTGRES_HOST=$YOUR_POSTGRES_HOST
       export POSTGRES_PORT=$YOUR_POSTGRES_PORT
       export POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME
-      export POSTGRES_VECS_COLLECTION=$YOUR_VECS_COLLECTION # see note below
+      export POSTGRES_PROJECT_NAME=$YOUR_VECS_COLLECTION # see note below
     ```
     <Note>
-    The `POSTGRES_VECS_COLLECTION` environment variable defines the collection within your Postgres database where R2R related tables reside. If the specified collection does not exist then it will be created by R2R during initialization.
+    The `POSTGRES_PROJECT_NAME` environment variable defines the collection within your Postgres database where R2R related tables reside. If the specified collection does not exist then it will be created by R2R during initialization.
     </Note>
   </Accordion>
   <Accordion title="Neo4j" icon="chart-simple">

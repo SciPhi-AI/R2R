@@ -224,7 +224,7 @@ reset_confirm_result = client.confirm_password_reset("reset_token_here", "new_pa
 Update the user's profile information:
 
 ```python
-update_result = client.update_user(**{"name": "John Doe", "bio": "R2R enthusiast"})
+update_result = client.update_user(name="John Doe", bio="R2R enthusiast")
 ```
 
 <AccordionGroup>

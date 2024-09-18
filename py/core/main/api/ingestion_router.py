@@ -89,26 +89,22 @@ class IngestionRouter(BaseRouter):
 
             This endpoint supports multipart/form-data requests, enabling you to ingest files and their associated metadatas into R2R.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive group permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
             self._validate_chunking_config(chunking_config)
             # Check if the user is a superuser
-            is_superuser = auth_user and auth_user.is_superuser
-
-            # Handle user management logic at the request level
-            if not auth_user:
+            if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and (
-                        not is_superuser
+                        not auth_user.is_superuser
                         and metadata["user_id"] != str(auth_user.id)
                     ):
                         raise R2RException(
                             status_code=403,
                             message="Non-superusers cannot set user_id in metadata.",
                         )
-
-                # If user is not a superuser, set user_id in metadata
-                metadata["user_id"] = str(auth_user.id)
+                    # If user is not a superuser, set user_id in metadata
+                    metadata["user_id"] = str(auth_user.id)
 
             file_datas = await self._process_files(files)
 
@@ -141,15 +137,21 @@ class IngestionRouter(BaseRouter):
                 }
 
                 file_name = file_data["filename"]
-                self.service.providers.file.store_file(
+                await self.service.providers.file.store_file(
                     document_id,
                     file_name,
                     file_content,
                     file_data["content_type"],
                 )
 
-                task_id = r2r_hatchet.client.admin.run_workflow(
-                    "ingest-file", {"request": workflow_input}
+                task_id = r2r_hatchet.admin.run_workflow(
+                    "ingest-file",
+                    {"request": workflow_input},
+                    options={
+                        "additional_metadata": {
+                            "document_id": str(document_id),
+                        }
+                    },
                 )
 
                 messages.append(
@@ -160,6 +162,47 @@ class IngestionRouter(BaseRouter):
                     }
                 )
             return messages
+
+        @self.router.post(
+            "/retry_ingest_files",
+            openapi_extra=ingest_files_extras.get("openapi_extra"),
+        )
+        @self.base_endpoint
+        async def retry_ingest_files(
+            document_ids: list[UUID] = Form(
+                ...,
+                description=ingest_files_descriptions.get("document_ids"),
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedIngestionResponse:
+            """
+            Retry the ingestion of files into the system.
+
+            This endpoint allows you to retry the ingestion of files that have previously failed to ingest into R2R.
+
+            A valid user authentication token is required to access this endpoint, as regular users can only retry the ingestion of their own files. More expansive collection permissioning is under development.
+            """
+            if not auth_user.is_superuser:
+                documents_overview = await self.service.providers.database.relational.get_documents_overview(
+                    filter_document_ids=document_ids,
+                    filter_user_ids=[auth_user.id],
+                )
+                if len(documents_overview) != len(document_ids):
+                    raise R2RException(
+                        status_code=404,
+                        message="One or more documents not found.",
+                    )
+
+            # FIXME:  This is throwing an aiohttp.client_exceptions.ClientConnectionError: Cannot connect to host localhost:8080 ssl:default… can we whitelist the host?
+            workflow_list = await r2r_hatchet.rest.workflow_run_list()
+
+            # TODO: we want to extract the hatchet run ids for the document ids, and then retry them
+
+            return {
+                "message": "Retry tasks queued successfully.",
+                "task_ids": [str(task_id) for task_id in workflow_list],
+                "document_ids": [str(doc_id) for doc_id in document_ids],
+            }
 
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
@@ -192,12 +235,10 @@ class IngestionRouter(BaseRouter):
 
             This endpoint supports multipart/form-data requests, enabling you to update files and their associated metadatas into R2R.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive collection permissioning is under development.
             """
             self._validate_chunking_config(chunking_config)
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and metadata["user_id"] != str(
                         auth_user.id
@@ -221,7 +262,7 @@ class IngestionRouter(BaseRouter):
                     )
                 )
 
-                self.service.providers.file.store_file(
+                await self.service.providers.file.store_file(
                     document_id,
                     file_data["filename"],
                     BytesIO(content),
@@ -254,7 +295,7 @@ class IngestionRouter(BaseRouter):
                 "is_update": True,
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = r2r_hatchet.admin.run_workflow(
                 "update-files", {"request": workflow_input}
             )
 

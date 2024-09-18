@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import random
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
@@ -73,7 +74,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
     """
 
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[tuple[Entity, list[Triple]], None]
+        message: dict[str, Any]
 
     def __init__(
         self,
@@ -125,7 +126,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
             Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
         """
 
-        async def process_entity(entity, triples):
+        async def process_entity(
+            entity, triples, max_description_input_length
+        ):
 
             # if embedding is present in the entity, just return it
             # in the future disable this to override and recompute the descriptions for all entities
@@ -133,12 +136,22 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 return entity
 
             entity_info = f"{entity.name}, {entity.description}"
-            triples_txt = "\n".join(
-                [
-                    f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}"
-                    for i, triple in enumerate(triples)
-                ]
-            )
+            triples_txt = [
+                f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}"
+                for i, triple in enumerate(triples)
+            ]
+
+            # truncate the descriptions to the max_description_input_length
+            # randomly shuffle the triples
+            # randomly select elements from the triples_txt until the length is less than max_description_input_length
+            random.shuffle(triples_txt)
+            truncated_triples_txt = ""
+            current_length = 0
+            for triple in triples_txt:
+                if current_length + len(triple) > max_description_input_length:
+                    break
+                truncated_triples_txt += triple + "\n"
+                current_length += len(triple)
 
             messages = [
                 {
@@ -184,10 +197,21 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
             return out_entity
 
+        max_description_input_length = input.message[
+            "max_description_input_length"
+        ]
+        node_extractions = input.message["node_extractions"]
+
         tasks = []
         count = 0
-        async for entity, triples in input.message:
-            tasks.append(asyncio.create_task(process_entity(entity, triples)))
+        async for entity, triples in node_extractions:
+            tasks.append(
+                asyncio.create_task(
+                    process_entity(
+                        entity, triples, max_description_input_length
+                    )
+                )
+            )
             count += 1
 
         logger.info(f"KG Node Description pipe: Created {count} tasks")

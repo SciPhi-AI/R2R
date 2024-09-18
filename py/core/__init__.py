@@ -140,7 +140,7 @@ __all__ = [
     "R2RChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
-    "Method",
+    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",

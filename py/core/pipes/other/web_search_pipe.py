@@ -65,7 +65,7 @@ class WebSearchPipe(SearchPipe):
                     uuid.NAMESPACE_DNS, str(uuid.uuid4())
                 ),  # Generate a new UUID for document_id
                 user_id=None,  # Web search results don't have a user_id
-                group_ids=[],  # Web search results don't belong to any group
+                collection_ids=[],  # Web search results don't belong to any collection
                 score=result.get(
                     "score", 0
                 ),  # TODO - Consider dynamically generating scores based on similarity

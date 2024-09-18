@@ -25,6 +25,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
 
   [kg.kg_enrichment_settings]
+    max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "gpt-4o-mini" } # and other generation params below
     leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/

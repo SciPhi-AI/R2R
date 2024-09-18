@@ -2,8 +2,6 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import text
-
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models.auth.responses import UserResponse
 from core.base.utils import generate_id_from_label
@@ -12,7 +10,7 @@ from .base import DatabaseMixin, QueryBuilder
 
 
 class UserMixin(DatabaseMixin):
-    def create_table(self):
+    async def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('users')} (
             user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -28,14 +26,56 @@ class UserMixin(DatabaseMixin):
             profile_picture TEXT,
             reset_token TEXT,
             reset_token_expiry TIMESTAMPTZ,
-            group_ids UUID[] NULL,
+            collection_ids UUID[] NULL,
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        self.execute_query(query)
+        await self.execute_query(query)
 
-    def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
+    async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
+        query, _ = (
+            QueryBuilder(self._get_table_name("users"))
+            .select(
+                [
+                    "user_id",
+                    "email",
+                    "hashed_password",
+                    "is_superuser",
+                    "is_active",
+                    "is_verified",
+                    "created_at",
+                    "updated_at",
+                    "name",
+                    "profile_picture",
+                    "bio",
+                    "collection_ids",
+                ]
+            )
+            .where("user_id = $1")
+            .build()
+        )
+        result = await self.fetchrow_query(query, [user_id])
+
+        if not result:
+            return None
+
+        return UserResponse(
+            id=result["user_id"],
+            email=result["email"],
+            hashed_password=result["hashed_password"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            name=result["name"],
+            profile_picture=result["profile_picture"],
+            bio=result["bio"],
+            collection_ids=result["collection_ids"],
+        )
+
+    async def get_user_by_email(self, email: str) -> UserResponse:
         query, params = (
             QueryBuilder(self._get_table_name("users"))
             .select(
@@ -51,76 +91,38 @@ class UserMixin(DatabaseMixin):
                     "name",
                     "profile_picture",
                     "bio",
-                    "group_ids",
+                    "collection_ids",
                 ]
             )
-            .where("user_id = :user_id", user_id=user_id)
+            .where("email = $1")
             .build()
         )
-        result = self.execute_query(query, params).fetchone()
+        result = await self.fetchrow_query(query, [email])
+        if not result:
+            raise R2RException(status_code=404, message="User not found")
+
         return (
             UserResponse(
-                id=result[0],
-                email=result[1],
-                hashed_password=result[2],
-                is_superuser=result[3],
-                is_active=result[4],
-                is_verified=result[5],
-                created_at=result[6],
-                updated_at=result[7],
-                name=result[8],
-                profile_picture=result[9],
-                bio=result[10],
-                group_ids=result[11],
+                id=result["user_id"],
+                email=result["email"],
+                hashed_password=result["hashed_password"],
+                is_superuser=result["is_superuser"],
+                is_active=result["is_active"],
+                is_verified=result["is_verified"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                name=result["name"],
+                profile_picture=result["profile_picture"],
+                bio=result["bio"],
+                collection_ids=result["collection_ids"],
             )
             if result
             else None
         )
 
-    def get_user_by_email(self, email: str) -> UserResponse:
-        query, params = (
-            QueryBuilder(self._get_table_name("users"))
-            .select(
-                [
-                    "user_id",
-                    "email",
-                    "hashed_password",
-                    "is_superuser",
-                    "is_active",
-                    "is_verified",
-                    "created_at",
-                    "updated_at",
-                    "name",
-                    "profile_picture",
-                    "bio",
-                    "group_ids",
-                ]
-            )
-            .where("email = :email", email=email)
-            .build()
-        )
-        result = self.execute_query(query, params).fetchone()
-        if not result:
-            raise R2RException(status_code=404, message="User not found")
-
-        return UserResponse(
-            id=result[0],
-            email=result[1],
-            hashed_password=result[2],
-            is_superuser=result[3],
-            is_active=result[4],
-            is_verified=result[5],
-            created_at=result[6],
-            updated_at=result[7],
-            name=result[8],
-            profile_picture=result[9],
-            bio=result[10],
-            group_ids=result[11],
-        )
-
-    def create_user(self, email: str, password: str) -> UserResponse:
+    async def create_user(self, email: str, password: str) -> UserResponse:
         try:
-            if self.get_user_by_email(email):
+            if await self.get_user_by_email(email):
                 raise R2RException(
                     status_code=400,
                     message="User with this email already exists",
@@ -132,336 +134,316 @@ class UserMixin(DatabaseMixin):
         hashed_password = self.crypto_provider.get_password_hash(password)
         query = f"""
             INSERT INTO {self._get_table_name('users')}
-            (email, user_id, hashed_password, group_ids)
-            VALUES (:email, :user_id, :hashed_password, :group_ids)
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            (email, user_id, hashed_password, collection_ids)
+            VALUES ($1, $2, $3, $4)
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
         """
-        params = {
-            "email": email,
-            "user_id": generate_id_from_label(email),
-            "hashed_password": hashed_password,
-            "group_ids": [],
-        }
-        result = self.execute_query(query, params).fetchone()
+        result = await self.fetchrow_query(
+            query, [email, generate_id_from_label(email), hashed_password, []]
+        )
+
         if not result:
             raise R2RException(
                 status_code=500, message="Failed to create user"
             )
 
         return UserResponse(
-            id=result[0],
-            email=result[1],
-            is_superuser=result[2],
-            is_active=result[3],
-            is_verified=result[4],
-            created_at=result[5],
-            updated_at=result[6],
-            group_ids=result[7],
+            id=result["user_id"],
+            email=result["email"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            collection_ids=result["collection_ids"],
             hashed_password=hashed_password,
         )
 
-    def update_user(self, user: UserResponse) -> UserResponse:
-        if not self.get_user_by_id(user.id):
-            raise R2RException(status_code=404, message="User not found")
-
+    async def update_user(self, user: UserResponse) -> UserResponse:
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET email = :email, is_superuser = :is_superuser, is_active = :is_active,
-                is_verified = :is_verified, updated_at = NOW(), name = :name,
-                profile_picture = :profile_picture, bio = :bio, group_ids = :group_ids
-            WHERE user_id = :id
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at,
-                      updated_at, name, profile_picture, bio, group_ids
+            SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
+                name = $5, profile_picture = $6, bio = $7, collection_ids = $8
+            WHERE user_id = $9
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
         """
-        result = self.execute_query(
-            query, user.dict(exclude={"hashed_password"})
-        ).fetchone()
+        result = await self.fetchrow_query(
+            query,
+            [
+                user.email,
+                user.is_superuser,
+                user.is_active,
+                user.is_verified,
+                user.name,
+                user.profile_picture,
+                user.bio,
+                user.collection_ids,
+                user.id,
+            ],
+        )
+
         if not result:
             raise R2RException(
                 status_code=500, message="Failed to update user"
             )
+
         return UserResponse(
-            id=result[0],
-            email=result[1],
-            is_superuser=result[2],
-            is_active=result[3],
-            is_verified=result[4],
-            created_at=result[5],
-            updated_at=result[6],
-            name=result[7],
-            profile_picture=result[8],
-            bio=result[9],
-            group_ids=result[10],
+            id=result["user_id"],
+            email=result["email"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            name=result["name"],
+            profile_picture=result["profile_picture"],
+            bio=result["bio"],
+            collection_ids=result["collection_ids"],
         )
 
-    def delete_user(self, user_id: UUID) -> None:
-        # Get the groups the user belongs to
-        group_query = f"""
-            SELECT group_ids FROM {self._get_table_name('users')}
-            WHERE user_id = :user_id
+    async def delete_user(self, user_id: UUID) -> None:
+        # Get the collections the user belongs to
+        collection_query = f"""
+            SELECT collection_ids FROM {self._get_table_name('users')}
+            WHERE user_id = $1
         """
-        group_result = self.execute_query(
-            group_query, {"user_id": user_id}
-        ).fetchone()
+        collection_result = await self.fetchrow_query(
+            collection_query, [user_id]
+        )
 
-        if not group_result:
+        if not collection_result:
             raise R2RException(status_code=404, message="User not found")
 
         # Remove user from documents
         doc_update_query = f"""
             UPDATE {self._get_table_name('document_info')}
             SET user_id = NULL
-            WHERE user_id = :user_id
+            WHERE user_id = $1
         """
-        self.execute_query(doc_update_query, {"user_id": user_id})
+        await self.execute_query(doc_update_query, [user_id])
 
         # Delete the user
         delete_query = f"""
             DELETE FROM {self._get_table_name('users')}
-            WHERE user_id = :user_id
+            WHERE user_id = $1
             RETURNING user_id
         """
-
-        result = self.execute_query(
-            delete_query, {"user_id": user_id}
-        ).fetchone()
+        result = await self.fetchrow_query(delete_query, [user_id])
 
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-    def update_user_password(self, user_id: UUID, new_hashed_password: str):
+    async def update_user_password(
+        self, user_id: UUID, new_hashed_password: str
+    ):
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET hashed_password = :new_hashed_password, updated_at = NOW()
-            WHERE user_id = :user_id
+            SET hashed_password = $1, updated_at = NOW()
+            WHERE user_id = $2
         """
-        self.execute_query(
-            query,
-            {"user_id": user_id, "new_hashed_password": new_hashed_password},
-        )
+        await self.execute_query(query, [new_hashed_password, user_id])
 
-    def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[UserResponse]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
             FROM {self._get_table_name('users')}
         """
-        results = self.execute_query(query).fetchall()
+        results = await self.fetch_query(query)
+
         return [
             UserResponse(
-                id=row[0],
-                email=row[1],
+                id=result["user_id"],
+                email=result["email"],
                 hashed_password="null",
-                is_superuser=row[2],
-                is_active=row[3],
-                is_verified=row[4],
-                created_at=row[5],
-                updated_at=row[6],
-                group_ids=row[7],
+                is_superuser=result["is_superuser"],
+                is_active=result["is_active"],
+                is_verified=result["is_verified"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                collection_ids=result["collection_ids"],
             )
-            for row in results
+            for result in results
         ]
 
-    def store_verification_code(
+    async def store_verification_code(
         self, user_id: UUID, verification_code: str, expiry: datetime
     ):
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET verification_code = :code, verification_code_expiry = :expiry
-            WHERE user_id = :user_id
+            SET verification_code = $1, verification_code_expiry = $2
+            WHERE user_id = $3
         """
-        self.execute_query(
-            query,
-            {"code": verification_code, "expiry": expiry, "user_id": user_id},
-        )
+        await self.execute_query(query, [verification_code, expiry, user_id])
 
-    def verify_user(self, verification_code: str) -> None:
+    async def verify_user(self, verification_code: str) -> None:
         query = f"""
             UPDATE {self._get_table_name('users')}
             SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-            WHERE verification_code = :code AND verification_code_expiry > NOW()
+            WHERE verification_code = $1 AND verification_code_expiry > NOW()
             RETURNING user_id
         """
-        result = self.execute_query(
-            query, {"code": verification_code}
-        ).fetchone()
+        result = await self.fetchrow_query(query, [verification_code])
+
         if not result:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
-        return None
 
-    def remove_verification_code(self, verification_code: str):
+    async def remove_verification_code(self, verification_code: str):
         query = f"""
             UPDATE {self._get_table_name('users')}
             SET verification_code = NULL, verification_code_expiry = NULL
-            WHERE verification_code = :code
+            WHERE verification_code = $1
         """
-        self.execute_query(query, {"code": verification_code})
+        await self.execute_query(query, [verification_code])
 
-    def expire_verification_code(self, user_id: UUID):
+    async def expire_verification_code(self, user_id: UUID):
         query = f"""
             UPDATE {self._get_table_name('users')}
             SET verification_code_expiry = NOW() - INTERVAL '1 day'
-            WHERE user_id = :user_id
+            WHERE user_id = $1
         """
-        self.execute_query(query, {"user_id": user_id})
+        await self.execute_query(query, [user_id])
 
-    def store_reset_token(
+    async def store_reset_token(
         self, user_id: UUID, reset_token: str, expiry: datetime
     ):
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET reset_token = :token, reset_token_expiry = :expiry
-            WHERE user_id = :user_id
+            SET reset_token = $1, reset_token_expiry = $2
+            WHERE user_id = $3
         """
-        self.execute_query(
-            query, {"token": reset_token, "expiry": expiry, "user_id": user_id}
-        )
+        await self.execute_query(query, [reset_token, expiry, user_id])
 
-    def get_user_id_by_reset_token(self, reset_token: str) -> Optional[UUID]:
+    async def get_user_id_by_reset_token(
+        self, reset_token: str
+    ) -> Optional[UUID]:
         query = f"""
             SELECT user_id FROM {self._get_table_name('users')}
-            WHERE reset_token = :token AND reset_token_expiry > NOW()
+            WHERE reset_token = $1 AND reset_token_expiry > NOW()
         """
-        result = self.execute_query(query, {"token": reset_token}).fetchone()
-        return result[0] if result else None
+        result = await self.fetchrow_query(query, [reset_token])
+        return result["user_id"] if result else None
 
-    def remove_reset_token(self, user_id: UUID):
+    async def remove_reset_token(self, user_id: UUID):
         query = f"""
             UPDATE {self._get_table_name('users')}
             SET reset_token = NULL, reset_token_expiry = NULL
-            WHERE user_id = :user_id
+            WHERE user_id = $1
         """
-        self.execute_query(query, {"user_id": user_id})
+        await self.execute_query(query, [user_id])
 
-    def remove_user_from_all_groups(self, user_id: UUID):
+    async def remove_user_from_all_collections(self, user_id: UUID):
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = ARRAY[]::UUID[]
-            WHERE user_id = :user_id
+            SET collection_ids = ARRAY[]::UUID[]
+            WHERE user_id = $1
         """
-        self.execute_query(query, {"user_id": user_id})
+        await self.execute_query(query, [user_id])
 
-    def add_user_to_group(self, user_id: UUID, group_id: UUID) -> None:
-        if not self.get_user_by_id(user_id):
+    async def add_user_to_collection(
+        self, user_id: UUID, collection_id: UUID
+    ) -> None:
+        if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = array_append(group_ids, :group_id)
-            WHERE user_id = :user_id AND NOT (:group_id = ANY(group_ids))
+            SET collection_ids = array_append(collection_ids, $1)
+            WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
             RETURNING user_id
         """
-        result = self.execute_query(
-            query, {"user_id": user_id, "group_id": group_id}
-        ).fetchone()
+        result = await self.fetchrow_query(
+            query, [collection_id, user_id]
+        )  # fetchrow instead of execute_query
         if not result:
             raise R2RException(
-                status_code=400, message="User already in group"
+                status_code=400, message="User already in collection"
             )
         return None
 
-    def remove_user_from_group(self, user_id: UUID, group_id: UUID) -> None:
-        if not self.get_user_by_id(user_id):
+    async def remove_user_from_collection(
+        self, user_id: UUID, collection_id: UUID
+    ) -> None:
+        if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = array_remove(group_ids, :group_id)
-            WHERE user_id = :user_id AND :group_id = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, $1)
+            WHERE user_id = $2 AND $1 = ANY(collection_ids)
             RETURNING user_id
         """
-        result = self.execute_query(
-            query, {"user_id": user_id, "group_id": group_id}
-        ).fetchone()
+        result = await self.fetchrow_query(query, [collection_id, user_id])
         if not result:
             raise R2RException(
                 status_code=400,
-                message="User is not a member of the specified group",
+                message="User is not a member of the specified collection",
             )
         return None
 
-    def mark_user_as_superuser(self, user_id: UUID):
-        query = text(
-            f"""
-        UPDATE users_{self.collection_name}
-        SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-        WHERE user_id = :user_id
+    async def mark_user_as_superuser(self, user_id: UUID):
+        query = f"""
+            UPDATE {self._get_table_name('users')}
+            SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
+            WHERE user_id = $1
         """
-        )
+        await self.execute_query(query, [user_id])
 
-        with self.vx.Session() as sess:
-            sess.execute(query, {"user_id": user_id})
-            sess.commit()
-
-    def get_users_in_group(
-        self, group_id: UUID, offset: int = 0, limit: int = 100
+    async def get_users_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[UserResponse]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, group_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
             FROM {self._get_table_name('users')}
-            WHERE :group_id = ANY(group_ids)
+            WHERE $1 = ANY(collection_ids)
             ORDER BY email
-            OFFSET :offset
-            LIMIT :limit
+            OFFSET $2 LIMIT $3
         """
-        results = self.execute_query(
-            query, {"group_id": group_id, "offset": offset, "limit": limit}
-        ).fetchall()
+        results = await self.fetch_query(query, [collection_id, offset, limit])
+
         return [
             UserResponse(
-                id=row[0],
-                email=row[1],
-                is_superuser=row[2],
-                is_active=row[3],
-                is_verified=row[4],
-                created_at=row[5],
-                updated_at=row[6],
-                name=row[7],
-                profile_picture=row[8],
-                bio=row[9],
-                group_ids=row[10],
+                id=row["user_id"],
+                email=row["email"],
+                is_superuser=row["is_superuser"],
+                is_active=row["is_active"],
+                is_verified=row["is_verified"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                name=row["name"],
+                profile_picture=row["profile_picture"],
+                bio=row["bio"],
+                collection_ids=row["collection_ids"],
             )
             for row in results
         ]
 
-    def get_user_id_by_verification_code(
+    async def get_user_id_by_verification_code(
         self, verification_code: str
     ) -> Optional[UUID]:
-        query = text(
-            f"""
-        SELECT user_id FROM users_{self.collection_name}
-        WHERE verification_code = :code AND verification_code_expiry > NOW()
+        query = f"""
+            SELECT user_id FROM {self._get_table_name('users')}
+            WHERE verification_code = $1 AND verification_code_expiry > NOW()
         """
-        )
+        result = await self.fetchrow_query(query, [verification_code])
 
-        with self.vx.Session() as sess:
-            result = sess.execute(query, {"code": verification_code})
-            user_data = result.fetchone()
-
-        if not user_data:
+        if not result:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
-        return user_data[0]
 
-    def mark_user_as_verified(self, user_id: UUID):
-        query = text(
-            f"""
-        UPDATE users_{self.collection_name}
-        SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-        WHERE user_id = :user_id
+        return result["user_id"]
+
+    async def mark_user_as_verified(self, user_id: UUID):
+        query = f"""
+            UPDATE {self._get_table_name('users')}
+            SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
+            WHERE user_id = $1
         """
-        )
+        await self.execute_query(query, [user_id])
 
-        with self.vx.Session() as sess:
-            result = sess.execute(query, {"user_id": user_id})
-            sess.commit()
-
-        if not result.rowcount:
-            raise R2RException(status_code=404, message="User not found")
-
-    def get_users_overview(
+    async def get_users_overview(
         self,
         user_ids: Optional[list[UUID]] = None,
         offset: int = 0,
@@ -477,27 +459,27 @@ class UserMixin(DatabaseMixin):
                     u.is_verified,
                     u.created_at,
                     u.updated_at,
-                    u.group_ids,
+                    u.collection_ids,
                     COUNT(d.document_id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
                 FROM {self._get_table_name('users')} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
-                {f"WHERE u.user_id = ANY(CAST(:user_ids AS UUID[]))" if user_ids else ""}
-                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.group_ids
+                {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
+                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids
             )
             SELECT *
             FROM user_docs
             ORDER BY email
-            OFFSET :offset
-            LIMIT :limit
+            OFFSET $1
+            LIMIT $2
         """
 
-        params = {"offset": offset, "limit": limit}
+        params = [offset, limit]
         if user_ids:
-            params["user_ids"] = [str(ele) for ele in user_ids]
+            params.append(user_ids)
 
-        results = self.execute_query(query, params).fetchall()
+        results = await self.fetch_query(query, params)
 
         return [
             UserStats(
@@ -508,7 +490,7 @@ class UserMixin(DatabaseMixin):
                 is_verified=row[4],
                 created_at=row[5],
                 updated_at=row[6],
-                group_ids=row[7] or [],
+                collection_ids=row[7] or [],
                 num_files=row[8],
                 total_size_in_bytes=row[9],
                 document_ids=row[10] or [],
