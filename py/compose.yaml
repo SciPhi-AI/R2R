@@ -85,7 +85,7 @@ services:
       POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
-      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
       DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
