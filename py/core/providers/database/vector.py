@@ -341,7 +341,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as sess:
             result = sess.execute(
-                query, {"document_id": document_id, "collection_id": collection_id}
+                query,
+                {"document_id": document_id, "collection_id": collection_id},
             )
             sess.commit()
 
@@ -380,7 +381,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as sess:
             result = sess.execute(
-                query, {"document_id": document_id, "collection_id": collection_id}
+                query,
+                {"document_id": document_id, "collection_id": collection_id},
             )
             sess.commit()
 

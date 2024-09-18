@@ -391,7 +391,9 @@ class ManagementMethods:
         if description is not None:
             data["description"] = description
 
-        return await client._make_request("POST", "create_collection", json=data)
+        return await client._make_request(
+            "POST", "create_collection", json=data
+        )
 
     @staticmethod
     async def get_collection(
@@ -407,7 +409,9 @@ class ManagementMethods:
         Returns:
             dict: The collection data.
         """
-        return await client._make_request("GET", f"get_collection/{str(collection_id)}")
+        return await client._make_request(
+            "GET", f"get_collection/{str(collection_id)}"
+        )
 
     @staticmethod
     async def update_collection(
@@ -433,7 +437,9 @@ class ManagementMethods:
         if description is not None:
             data["description"] = description
 
-        return await client._make_request("PUT", "update_collection", json=data)
+        return await client._make_request(
+            "PUT", "update_collection", json=data
+        )
 
     @staticmethod
     async def delete_collection(
@@ -502,7 +508,9 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request("GET", "list_collections", params=params)
+        return await client._make_request(
+            "GET", "list_collections", params=params
+        )
 
     @staticmethod
     async def add_user_to_collection(
@@ -576,7 +584,9 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         return await client._make_request(
-            "GET", f"get_users_in_collection/{str(collection_id)}", params=params
+            "GET",
+            f"get_users_in_collection/{str(collection_id)}",
+            params=params,
         )
 
     @staticmethod
@@ -681,7 +691,9 @@ class ManagementMethods:
             params["limit"] = limit
         if not params:
             return await client._make_request(
-                "GET", f"document_collections/{str(document_id)}", params=params
+                "GET",
+                f"document_collections/{str(document_id)}",
+                params=params,
             )
         else:
             return await client._make_request(

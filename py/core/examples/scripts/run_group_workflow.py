@@ -18,7 +18,9 @@ if __name__ == "__main__":
     collection1_result = client.create_collection(
         "TestGroup1", "A test collection for document access"
     )
-    collection2_result = client.create_collection("TestGroup2", "Another test collection")
+    collection2_result = client.create_collection(
+        "TestGroup2", "Another test collection"
+    )
     print("Group1 creation result:", collection1_result)
     print("Group2 creation result:", collection2_result)
     collection1_id = collection1_result["results"]["collection_id"]
@@ -42,7 +44,9 @@ if __name__ == "__main__":
     # Update a collection
     print("\nUpdating Group1...")
     update_result = client.update_collection(
-        collection1_id, name="UpdatedTestGroup1", description="Updated description"
+        collection1_id,
+        name="UpdatedTestGroup1",
+        description="Updated description",
     )
     print("Group update result:", update_result)
 
@@ -64,8 +68,12 @@ if __name__ == "__main__":
 
     # Assign documents to collections
     print("\nAssigning documents to collections...")
-    assign_result1 = client.assign_document_to_collection(document1_id, collection1_id)
-    assign_result2 = client.assign_document_to_collection(document2_id, collection2_id)
+    assign_result1 = client.assign_document_to_collection(
+        document1_id, collection1_id
+    )
+    assign_result2 = client.assign_document_to_collection(
+        document2_id, collection2_id
+    )
     print("Document1 assignment result:", assign_result1)
     print("Document2 assignment result:", assign_result2)
 
@@ -159,7 +167,8 @@ if __name__ == "__main__":
     print("\nUser3 searching for documents...")
     try:
         search_result_user3 = client.search(
-            "philosophy", {"selected_collection_ids": [collection1_id, collection2_id]}
+            "philosophy",
+            {"selected_collection_ids": [collection1_id, collection2_id]},
         )
     except Exception as e:
         print("User3 search result error:", e)

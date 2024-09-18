@@ -76,8 +76,12 @@ class RetrievalRouter(BaseRouter):
 
             """
             user_collections = set(auth_user.collection_ids)
-            selected_collections = set(vector_search_settings.selected_collection_ids)
-            allowed_collections = user_collections.intersection(selected_collections)
+            selected_collections = set(
+                vector_search_settings.selected_collection_ids
+            )
+            allowed_collections = user_collections.intersection(
+                selected_collections
+            )
             if selected_collections - allowed_collections != set():
                 raise ValueError(
                     "User does not have access to the specified collection(s): "
@@ -87,7 +91,11 @@ class RetrievalRouter(BaseRouter):
             filters = {
                 "$or": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    {"collection_ids": {"$overlap": list(allowed_collections)}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
                 ]
             }
             if vector_search_settings.filters != {}:
@@ -145,7 +153,11 @@ class RetrievalRouter(BaseRouter):
             filters = {
                 "$or": [
                     {"user_id": str(auth_user.id)},
-                    {"collection_ids": {"$overlap": list(allowed_collections)}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
                 ]
             }
             if vector_search_settings.filters != {}:
@@ -226,7 +238,11 @@ class RetrievalRouter(BaseRouter):
             filters = {
                 "$or": [
                     {"user_id": str(user.id)},
-                    {"collection_ids": {"$overlap": list(allowed_collections)}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
                 ]
             }
             if vector_search_settings.filters != {}:

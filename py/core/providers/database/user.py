@@ -207,7 +207,9 @@ class UserMixin(DatabaseMixin):
             SELECT collection_ids FROM {self._get_table_name('users')}
             WHERE user_id = $1
         """
-        collection_result = await self.fetchrow_query(collection_query, [user_id])
+        collection_result = await self.fetchrow_query(
+            collection_query, [user_id]
+        )
 
         if not collection_result:
             raise R2RException(status_code=404, message="User not found")
@@ -339,7 +341,9 @@ class UserMixin(DatabaseMixin):
         """
         await self.execute_query(query, [user_id])
 
-    async def add_user_to_collection(self, user_id: UUID, collection_id: UUID) -> None:
+    async def add_user_to_collection(
+        self, user_id: UUID, collection_id: UUID
+    ) -> None:
         if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 

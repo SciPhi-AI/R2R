@@ -15,12 +15,12 @@ from core.base.api.models.management.responses import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
-    WrappedDocumentChunkResponse,
-    WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedDocumentChunkResponse,
+    WrappedDocumentOverviewResponse,
+    WrappedGetPromptsResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
@@ -415,7 +415,9 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
             if not auth_user.is_superuser:
-                raise R2RException("Only a superuser can create collections.", 403)
+                raise R2RException(
+                    "Only a superuser can create collections.", 403
+                )
             return await self.service.create_collection(name, description)
 
         @self.router.get("/get_collection/{collection_id}")
@@ -436,14 +438,18 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def update_collection_app(
             collection_id: str = Body(..., description="Collection ID"),
-            name: Optional[str] = Body(None, description="Updated collection name"),
+            name: Optional[str] = Body(
+                None, description="Updated collection name"
+            ),
             description: Optional[str] = Body(
                 None, description="Updated collection description"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
             if not auth_user.is_superuser:
-                raise R2RException("Only a superuser can update collections.", 403)
+                raise R2RException(
+                    "Only a superuser can update collections.", 403
+                )
             collection_uuid = UUID(collection_id)
             return await self.service.update_collection(
                 collection_uuid, name, description
@@ -456,7 +462,9 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only a superuser can delete collections.", 403)
+                raise R2RException(
+                    "Only a superuser can delete collections.", 403
+                )
             collection_uuid = UUID(collection_id)
             return await self.service.delete_collection(collection_uuid)
 
@@ -488,7 +496,9 @@ class ManagementRouter(BaseRouter):
                 )
             user_uuid = UUID(user_id)
             collection_uuid = UUID(collection_id)
-            result = await self.service.add_user_to_collection(user_uuid, collection_uuid)
+            result = await self.service.add_user_to_collection(
+                user_uuid, collection_uuid
+            )
             return {"result": result}
 
         @self.router.post("/remove_user_from_collection")
@@ -504,7 +514,9 @@ class ManagementRouter(BaseRouter):
                 )
             user_uuid = UUID(user_id)
             collection_uuid = UUID(collection_id)
-            await self.service.remove_user_from_collection(user_uuid, collection_uuid)
+            await self.service.remove_user_from_collection(
+                user_uuid, collection_uuid
+            )
             return None
 
         # TODO - Proivde response model
@@ -557,7 +569,8 @@ class ManagementRouter(BaseRouter):
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can assign documents to collections.", 403
+                    "Only a superuser can assign documents to collections.",
+                    403,
                 )
             document_uuid = UUID(document_id)
             collection_uuid = UUID(collection_id)
@@ -574,7 +587,8 @@ class ManagementRouter(BaseRouter):
         ) -> None:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can remove documents from collections.", 403
+                    "Only a superuser can remove documents from collections.",
+                    403,
                 )
             document_uuid = UUID(document_id)
             collection_uuid = UUID(collection_id)

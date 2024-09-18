@@ -1077,7 +1077,9 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         Column("document_id", postgresql.UUID, nullable=False),
         Column("user_id", postgresql.UUID, nullable=False),
         Column(
-            "collection_ids", postgresql.ARRAY(postgresql.UUID), server_default="{}"
+            "collection_ids",
+            postgresql.ARRAY(postgresql.UUID),
+            server_default="{}",
         ),
         Column("vec", Vector(dimension), nullable=False),
         Column("text", postgresql.TEXT, nullable=True),

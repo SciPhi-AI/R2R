@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class StreamingSearchRAGPipe(SearchRAGPipe):
-    VECTOR_SEARCH_STREAM_MARKER = "search" # TODO - change this to vector_search in next major release
+    VECTOR_SEARCH_STREAM_MARKER = (
+        "search"  # TODO - change this to vector_search in next major release
+    )
     KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
     KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
     COMPLETION_STREAM_MARKER = "completion"
@@ -76,11 +78,18 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
                 if search_results.kg_search_results[0].local_result:
                     context += "KG Local Search Results:\n"
                     yield f"<{self.KG_LOCAL_SEARCH_STREAM_MARKER}>"
-                    yield json.dumps(search_results.kg_search_results[0].local_result.json())
-                    context += str(search_results.kg_search_results[0].local_result)
+                    yield json.dumps(
+                        search_results.kg_search_results[0].local_result.json()
+                    )
+                    context += str(
+                        search_results.kg_search_results[0].local_result
+                    )
                     yield f"</{self.KG_LOCAL_SEARCH_STREAM_MARKER}>"
 
-                if search_results.kg_search_results and search_results.kg_search_results[0].global_result:
+                if (
+                    search_results.kg_search_results
+                    and search_results.kg_search_results[0].global_result
+                ):
                     context += "KG Global Search Results:\n"
                     yield f"<{self.KG_GLOBAL_SEARCH_STREAM_MARKER}>"
                     for result in search_results.kg_search_results:
