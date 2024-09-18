@@ -38,7 +38,7 @@ class DocumentMixin(DatabaseMixin):
             self._get_table_name("document_info"),
             self.metadata,
             Column("document_id", UUID, primary_key=True),
-            Column("group_ids", ARRAY(UUID)),
+            Column("collection_ids", ARRAY(UUID)),
             Column("user_id", UUID),
             Column("type", String),
             Column("metadata", JSON),
@@ -56,7 +56,7 @@ class DocumentMixin(DatabaseMixin):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('document_info')} (
             document_id UUID PRIMARY KEY,
-            group_ids UUID[],
+            collection_ids UUID[],
             user_id UUID,
             type TEXT,
             metadata JSONB,
@@ -69,8 +69,8 @@ class DocumentMixin(DatabaseMixin):
             updated_at TIMESTAMPTZ DEFAULT NOW(),
             ingestion_attempt_number INT DEFAULT 0
         );
-        CREATE INDEX IF NOT EXISTS idx_group_ids_{self.collection_name}
-        ON {self._get_table_name('document_info')} USING GIN (group_ids);
+        CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.collection_name}
+        ON {self._get_table_name('document_info')} USING GIN (collection_ids);
         """
         await self.execute_query(query)
 
@@ -142,14 +142,14 @@ class DocumentMixin(DatabaseMixin):
 
                                 update_query = f"""
                                 UPDATE {self._get_table_name('document_info')}
-                                SET group_ids = $1, user_id = $2, type = $3, metadata = $4,
+                                SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     restructuring_status = $9, updated_at = $10, ingestion_attempt_number = $11
                                 WHERE document_id = $12
                                 """
                                 await conn.execute(
                                     update_query,
-                                    db_entry["group_ids"],
+                                    db_entry["collection_ids"],
                                     db_entry["user_id"],
                                     db_entry["type"],
                                     db_entry["metadata"],
@@ -165,7 +165,7 @@ class DocumentMixin(DatabaseMixin):
                             else:
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name('document_info')}
-                                (document_id, group_ids, user_id, type, metadata, title, version,
+                                (document_id, collection_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, restructuring_status, created_at,
                                 updated_at, ingestion_attempt_number)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -173,7 +173,7 @@ class DocumentMixin(DatabaseMixin):
                                 await conn.execute(
                                     insert_query,
                                     db_entry["document_id"],
-                                    db_entry["group_ids"],
+                                    db_entry["collection_ids"],
                                     db_entry["user_id"],
                                     db_entry["type"],
                                     db_entry["metadata"],
@@ -222,7 +222,7 @@ class DocumentMixin(DatabaseMixin):
         self,
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
-        filter_group_ids: Optional[list[UUID]] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> list[DocumentInfo]:
@@ -240,9 +240,9 @@ class DocumentMixin(DatabaseMixin):
             params.append(filter_user_ids)
             param_index += 1
 
-        if filter_group_ids:
-            conditions.append(f"group_ids && ${param_index}")
-            params.append(filter_group_ids)
+        if filter_collection_ids:
+            conditions.append(f"collection_ids && ${param_index}")
+            params.append(filter_collection_ids)
             param_index += 1
 
         base_query = f"""
@@ -253,7 +253,7 @@ class DocumentMixin(DatabaseMixin):
             base_query += " WHERE " + " AND ".join(conditions)
 
         query = f"""
-            SELECT document_id, group_ids, user_id, type, metadata, title, version,
+            SELECT document_id, collection_ids, user_id, type, metadata, title, version,
                 size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
             {base_query}
             ORDER BY created_at DESC
@@ -272,7 +272,7 @@ class DocumentMixin(DatabaseMixin):
             return [
                 DocumentInfo(
                     id=row["document_id"],
-                    group_ids=row["group_ids"],
+                    collection_ids=row["collection_ids"],
                     user_id=row["user_id"],
                     type=DocumentType(row["type"]),
                     metadata=json.loads(row["metadata"]),

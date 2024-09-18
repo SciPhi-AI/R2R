@@ -75,7 +75,7 @@ class DocumentOverviewResponse(BaseModel):
     ingestion_status: str
     restructuring_status: str
     version: str
-    group_ids: list[UUID]
+    collection_ids: list[UUID]
     metadata: Dict[str, Any]
 
 
@@ -84,7 +84,7 @@ class DocumentChunkResponse(BaseModel):
     extraction_id: UUID
     document_id: UUID
     user_id: UUID
-    group_ids: list[UUID]
+    collection_ids: list[UUID]
     text: str
     metadata: Dict[str, Any]
 
@@ -93,7 +93,7 @@ KnowledgeGraphResponse = str
 
 
 class GroupResponse(BaseModel):
-    group_id: UUID
+    collection_id: UUID
     name: str
     description: Optional[str]
     created_at: datetime
@@ -101,7 +101,7 @@ class GroupResponse(BaseModel):
 
 
 class GroupOverviewResponse(BaseModel):
-    group_id: UUID
+    collection_id: UUID
     name: str
     description: Optional[str]
     created_at: datetime
@@ -128,7 +128,7 @@ WrappedDocumentOverviewResponse = ResultsWrapper[
 ]
 WrappedDocumentChunkResponse = ResultsWrapper[List[DocumentChunkResponse]]
 WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
-WrappedGroupResponse = ResultsWrapper[GroupResponse]
-WrappedGroupListResponse = ResultsWrapper[List[GroupResponse]]
-WrappedGroupOverviewResponse = ResultsWrapper[List[GroupOverviewResponse]]
+WrappedCollectionResponse = ResultsWrapper[GroupResponse]
+WrappedCollectionListResponse = ResultsWrapper[List[GroupResponse]]
+WrappedCollectionOverviewResponse = ResultsWrapper[List[GroupOverviewResponse]]
 WrappedAddUserResponse = ResultsWrapper[AddUserResponse]

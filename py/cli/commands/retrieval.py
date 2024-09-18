@@ -75,7 +75,7 @@ def search(ctx, query, **kwargs):
             "filters",
             "search_limit",
             "use_hybrid_search",
-            "selected_group_ids",
+            "selected_collection_ids",
             "search_strategy",
         ]
         and v is not None
@@ -190,7 +190,7 @@ def rag(ctx, query, **kwargs):
             "filters",
             "search_limit",
             "use_hybrid_search",
-            "selected_group_ids",
+            "selected_collection_ids",
             "search_strategy",
         ]
         and v is not None

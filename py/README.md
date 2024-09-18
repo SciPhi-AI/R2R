@@ -87,7 +87,7 @@ r2r --config-name=default serve
 - Auth & Admin Features
   - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
   - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Authenticating users
-  - [Group Permissions](https://r2r-docs.sciphi.ai/cookbooks/groups): Group permissions
+  - [Collections](https://r2r-docs.sciphi.ai/cookbooks/collections): Document collections
   - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): End-to-end logging and analytics
   - [Web Application](https://r2r-docs.sciphi.ai/cookbooks/application): Connecting with the R2R Application
 

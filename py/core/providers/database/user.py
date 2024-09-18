@@ -26,7 +26,7 @@ class UserMixin(DatabaseMixin):
             profile_picture TEXT,
             reset_token TEXT,
             reset_token_expiry TIMESTAMPTZ,
-            group_ids UUID[] NULL,
+            collection_ids UUID[] NULL,
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -34,7 +34,7 @@ class UserMixin(DatabaseMixin):
         await self.execute_query(query)
 
     async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
-        query = (
+        query, _ = (
             QueryBuilder(self._get_table_name("users"))
             .select(
                 [
@@ -49,7 +49,7 @@ class UserMixin(DatabaseMixin):
                     "name",
                     "profile_picture",
                     "bio",
-                    "group_ids",
+                    "collection_ids",
                 ]
             )
             .where("user_id = $1")
@@ -72,7 +72,7 @@ class UserMixin(DatabaseMixin):
             name=result["name"],
             profile_picture=result["profile_picture"],
             bio=result["bio"],
-            group_ids=result["group_ids"],
+            collection_ids=result["collection_ids"],
         )
 
     async def get_user_by_email(self, email: str) -> UserResponse:
@@ -91,7 +91,7 @@ class UserMixin(DatabaseMixin):
                     "name",
                     "profile_picture",
                     "bio",
-                    "group_ids",
+                    "collection_ids",
                 ]
             )
             .where("email = $1")
@@ -114,7 +114,7 @@ class UserMixin(DatabaseMixin):
                 name=result["name"],
                 profile_picture=result["profile_picture"],
                 bio=result["bio"],
-                group_ids=result["group_ids"],
+                collection_ids=result["collection_ids"],
             )
             if result
             else None
@@ -134,9 +134,9 @@ class UserMixin(DatabaseMixin):
         hashed_password = self.crypto_provider.get_password_hash(password)
         query = f"""
             INSERT INTO {self._get_table_name('users')}
-            (email, user_id, hashed_password, group_ids)
+            (email, user_id, hashed_password, collection_ids)
             VALUES ($1, $2, $3, $4)
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
         """
         result = await self.fetchrow_query(
             query, [email, generate_id_from_label(email), hashed_password, []]
@@ -155,7 +155,7 @@ class UserMixin(DatabaseMixin):
             is_verified=result["is_verified"],
             created_at=result["created_at"],
             updated_at=result["updated_at"],
-            group_ids=result["group_ids"],
+            collection_ids=result["collection_ids"],
             hashed_password=hashed_password,
         )
 
@@ -163,9 +163,9 @@ class UserMixin(DatabaseMixin):
         query = f"""
             UPDATE {self._get_table_name('users')}
             SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
-                name = $5, profile_picture = $6, bio = $7, group_ids = $8
+                name = $5, profile_picture = $6, bio = $7, collection_ids = $8
             WHERE user_id = $9
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, group_ids
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
         """
         result = await self.fetchrow_query(
             query,
@@ -177,7 +177,7 @@ class UserMixin(DatabaseMixin):
                 user.name,
                 user.profile_picture,
                 user.bio,
-                user.group_ids,
+                user.collection_ids,
                 user.id,
             ],
         )
@@ -198,18 +198,20 @@ class UserMixin(DatabaseMixin):
             name=result["name"],
             profile_picture=result["profile_picture"],
             bio=result["bio"],
-            group_ids=result["group_ids"],
+            collection_ids=result["collection_ids"],
         )
 
     async def delete_user(self, user_id: UUID) -> None:
-        # Get the groups the user belongs to
-        group_query = f"""
-            SELECT group_ids FROM {self._get_table_name('users')}
+        # Get the collections the user belongs to
+        collection_query = f"""
+            SELECT collection_ids FROM {self._get_table_name('users')}
             WHERE user_id = $1
         """
-        group_result = await self.fetchrow_query(group_query, [user_id])
+        collection_result = await self.fetchrow_query(
+            collection_query, [user_id]
+        )
 
-        if not group_result:
+        if not collection_result:
             raise R2RException(status_code=404, message="User not found")
 
         # Remove user from documents
@@ -243,7 +245,7 @@ class UserMixin(DatabaseMixin):
 
     async def get_all_users(self) -> list[UserResponse]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
             FROM {self._get_table_name('users')}
         """
         results = await self.fetch_query(query)
@@ -258,7 +260,7 @@ class UserMixin(DatabaseMixin):
                 is_verified=result["is_verified"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
-                group_ids=result["group_ids"],
+                collection_ids=result["collection_ids"],
             )
             for result in results
         ]
@@ -331,50 +333,52 @@ class UserMixin(DatabaseMixin):
         """
         await self.execute_query(query, [user_id])
 
-    async def remove_user_from_all_groups(self, user_id: UUID):
+    async def remove_user_from_all_collections(self, user_id: UUID):
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = ARRAY[]::UUID[]
+            SET collection_ids = ARRAY[]::UUID[]
             WHERE user_id = $1
         """
         await self.execute_query(query, [user_id])
 
-    async def add_user_to_group(self, user_id: UUID, group_id: UUID) -> None:
-        if not await self.get_user_by_id(user_id):
-            raise R2RException(status_code=404, message="User not found")
-
-        query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET group_ids = array_append(group_ids, $1)
-            WHERE user_id = $2 AND NOT ($1 = ANY(group_ids))
-            RETURNING user_id
-        """
-        result = await self.fetchrow_query(
-            query, [group_id, user_id]
-        )  # fetchrow instead of execute_query
-        if not result:
-            raise R2RException(
-                status_code=400, message="User already in group"
-            )
-        return None
-
-    async def remove_user_from_group(
-        self, user_id: UUID, group_id: UUID
+    async def add_user_to_collection(
+        self, user_id: UUID, collection_id: UUID
     ) -> None:
         if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = array_remove(group_ids, $1)
-            WHERE user_id = $2 AND $1 = ANY(group_ids)
+            SET collection_ids = array_append(collection_ids, $1)
+            WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
             RETURNING user_id
         """
-        result = await self.fetchrow_query(query, [group_id, user_id])
+        result = await self.fetchrow_query(
+            query, [collection_id, user_id]
+        )  # fetchrow instead of execute_query
+        if not result:
+            raise R2RException(
+                status_code=400, message="User already in collection"
+            )
+        return None
+
+    async def remove_user_from_collection(
+        self, user_id: UUID, collection_id: UUID
+    ) -> None:
+        if not await self.get_user_by_id(user_id):
+            raise R2RException(status_code=404, message="User not found")
+
+        query = f"""
+            UPDATE {self._get_table_name('users')}
+            SET collection_ids = array_remove(collection_ids, $1)
+            WHERE user_id = $2 AND $1 = ANY(collection_ids)
+            RETURNING user_id
+        """
+        result = await self.fetchrow_query(query, [collection_id, user_id])
         if not result:
             raise R2RException(
                 status_code=400,
-                message="User is not a member of the specified group",
+                message="User is not a member of the specified collection",
             )
         return None
 
@@ -386,17 +390,17 @@ class UserMixin(DatabaseMixin):
         """
         await self.execute_query(query, [user_id])
 
-    async def get_users_in_group(
-        self, group_id: UUID, offset: int = 0, limit: int = 100
+    async def get_users_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[UserResponse]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, group_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
             FROM {self._get_table_name('users')}
-            WHERE $1 = ANY(group_ids)
+            WHERE $1 = ANY(collection_ids)
             ORDER BY email
             OFFSET $2 LIMIT $3
         """
-        results = await self.fetch_query(query, [group_id, offset, limit])
+        results = await self.fetch_query(query, [collection_id, offset, limit])
 
         return [
             UserResponse(
@@ -410,7 +414,7 @@ class UserMixin(DatabaseMixin):
                 name=row["name"],
                 profile_picture=row["profile_picture"],
                 bio=row["bio"],
-                group_ids=row["group_ids"],
+                collection_ids=row["collection_ids"],
             )
             for row in results
         ]
@@ -455,14 +459,14 @@ class UserMixin(DatabaseMixin):
                     u.is_verified,
                     u.created_at,
                     u.updated_at,
-                    u.group_ids,
+                    u.collection_ids,
                     COUNT(d.document_id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
                 FROM {self._get_table_name('users')} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
                 {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
-                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.group_ids
+                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids
             )
             SELECT *
             FROM user_docs
@@ -486,7 +490,7 @@ class UserMixin(DatabaseMixin):
                 is_verified=row[4],
                 created_at=row[5],
                 updated_at=row[6],
-                group_ids=row[7] or [],
+                collection_ids=row[7] or [],
                 num_files=row[8],
                 total_size_in_bytes=row[9],
                 document_ids=row[10] or [],

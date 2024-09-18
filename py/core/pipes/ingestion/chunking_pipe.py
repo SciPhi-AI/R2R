@@ -74,7 +74,7 @@ class ChunkingPipe(AsyncPipe):
                     extraction_id=item.id,
                     document_id=item.document_id,
                     user_id=item.user_id,
-                    group_ids=item.group_ids,
+                    collection_ids=item.collection_ids,
                     data=chunk,
                     metadata=item.metadata,
                 )

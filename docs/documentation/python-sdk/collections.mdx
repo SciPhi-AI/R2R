@@ -1,24 +1,26 @@
 ---
-title: 'Group Management'
-description: 'Manage group permissions in R2R'
+title: 'Collection Management'
+description: 'Manage collections in R2R'
 ---
 
-R2R provides a comprehensive set of group management features, allowing you to implement efficient access control and organization of users and documents in your applications.
+A collection in R2R is a logical grouping of users and documents that allows for efficient access control and organization. Collections enable you to manage permissions and access to documents at a collection level, rather than individually.
+
+R2R provides a comprehensive set of collection features, allowing you to implement efficient access control and organization of users and documents in your applications.
 
 
 <Note>
-Group permissioning in R2R is still under development and as a result the API will likely evolve.
+Collection permissioning in R2R is still under development and as a result the API will likely evolve.
 </Note>
 
 
-## Group Creation and Management
+## Collection creation and Management
 
-### Create a Group
+### Create a Collection
 
-Create a new group with a name and optional description:
+Create a new collection with a name and optional description:
 
 ```python
-create_group_response = client.create_group("Marketing Team", "Group for marketing department")
+create_collection_response = client.create_collection("Marketing Team", "Collection for marketing department")
 ```
 
 <AccordionGroup>
@@ -27,9 +29,9 @@ create_group_response = client.create_group("Marketing Team", "Group for marketi
       ```python
       {
         'results': {
-          'group_id': '123e4567-e89b-12d3-a456-426614174000',
+          'collection_id': '123e4567-e89b-12d3-a456-426614174000',
           'name': 'Marketing Team',
-          'description': 'Group for marketing department',
+          'description': 'Collection for marketing department',
           'created_at': '2024-07-16T22:53:47.524794Z',
           'updated_at': '2024-07-16T22:53:47.524794Z'
         }
@@ -39,12 +41,12 @@ create_group_response = client.create_group("Marketing Team", "Group for marketi
   </Accordion>
 </AccordionGroup>
 
-### Get Group Details
+### Get Collection details
 
-Retrieve details about a specific group:
+Retrieve details about a specific collection:
 
 ```python
-group_details = client.get_group('123e4567-e89b-12d3-a456-426614174000')
+collection_details = client.get_collection('123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -53,9 +55,9 @@ group_details = client.get_group('123e4567-e89b-12d3-a456-426614174000')
       ```python
       {
         'results': {
-          'group_id': '123e4567-e89b-12d3-a456-426614174000',
+          'collection_id': '123e4567-e89b-12d3-a456-426614174000',
           'name': 'Marketing Team',
-          'description': 'Group for marketing department',
+          'description': 'Collection for marketing department',
           'created_at': '2024-07-16T22:53:47.524794Z',
           'updated_at': '2024-07-16T22:53:47.524794Z'
         }
@@ -65,12 +67,12 @@ group_details = client.get_group('123e4567-e89b-12d3-a456-426614174000')
   </Accordion>
 </AccordionGroup>
 
-### Update a Group
+### Update a Collection
 
-Update a group's name or description:
+Update a collection's name or description:
 
 ```python
-update_result = client.update_group('123e4567-e89b-12d3-a456-426614174000',
+update_result = client.update_collection('123e4567-e89b-12d3-a456-426614174000',
                                     name="Updated Marketing Team",
                                     description="New description for marketing team")
 ```
@@ -81,7 +83,7 @@ update_result = client.update_group('123e4567-e89b-12d3-a456-426614174000',
       ```python
       {
         'results': {
-          'group_id': '123e4567-e89b-12d3-a456-426614174000',
+          'collection_id': '123e4567-e89b-12d3-a456-426614174000',
           'name': 'Updated Marketing Team',
           'description': 'New description for marketing team',
           'created_at': '2024-07-16T22:53:47.524794Z',
@@ -93,12 +95,12 @@ update_result = client.update_group('123e4567-e89b-12d3-a456-426614174000',
   </Accordion>
 </AccordionGroup>
 
-### List Groups
+### List Collections
 
-Get a list of all groups:
+Get a list of all collections:
 
 ```python
-groups_list = client.list_groups()
+collections_list = client.list_collections()
 ```
 
 <AccordionGroup>
@@ -108,13 +110,13 @@ groups_list = client.list_groups()
       {
         'results': [
           {
-            'group_id': '123e4567-e89b-12d3-a456-426614174000',
+            'collection_id': '123e4567-e89b-12d3-a456-426614174000',
             'name': 'Updated Marketing Team',
             'description': 'New description for marketing team',
             'created_at': '2024-07-16T22:53:47.524794Z',
             'updated_at': '2024-07-16T23:15:30.123456Z'
           },
-          # ... other groups ...
+          # ... other collections ...
         ]
       }
       ```
@@ -122,14 +124,14 @@ groups_list = client.list_groups()
   </Accordion>
 </AccordionGroup>
 
-## User Management in Groups
+## User Management in Collections
 
-### Add User to Group
+### Add User to Collection
 
-Add a user to a group:
+Add a user to a collection:
 
 ```python
-add_user_result = client.add_user_to_group('456e789f-g01h-34i5-j678-901234567890', '123e4567-e89b-12d3-a456-426614174000')
+add_user_result = client.add_user_to_collection('456e789f-g01h-34i5-j678-901234567890', '123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -138,7 +140,7 @@ add_user_result = client.add_user_to_group('456e789f-g01h-34i5-j678-901234567890
       ```python
       {
         'results': {
-          'message': 'User successfully added to the group'
+          'message': 'User successfully added to the collection'
         }
       }
       ```
@@ -146,12 +148,12 @@ add_user_result = client.add_user_to_group('456e789f-g01h-34i5-j678-901234567890
   </Accordion>
 </AccordionGroup>
 
-### Remove User from Group
+### Remove User from Collection
 
-Remove a user from a group:
+Remove a user from a collection:
 
 ```python
-remove_user_result = client.remove_user_from_group('456e789f-g01h-34i5-j678-901234567890', '123e4567-e89b-12d3-a456-426614174000')
+remove_user_result = client.remove_user_from_collection('456e789f-g01h-34i5-j678-901234567890', '123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -160,7 +162,7 @@ remove_user_result = client.remove_user_from_group('456e789f-g01h-34i5-j678-9012
       ```python
       {
         'results': {
-          'message': 'User successfully removed from the group'
+          'message': 'User successfully removed from the collection'
         }
       }
       ```
@@ -168,12 +170,12 @@ remove_user_result = client.remove_user_from_group('456e789f-g01h-34i5-j678-9012
   </Accordion>
 </AccordionGroup>
 
-### List Users in Group
+### List Users in Collection
 
-Get a list of all users in a specific group:
+Get a list of all users in a specific collection:
 
 ```python
-users_in_group = client.get_users_in_group('123e4567-e89b-12d3-a456-426614174000')
+users_in_collection = client.get_users_in_collection('123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -196,12 +198,12 @@ users_in_group = client.get_users_in_group('123e4567-e89b-12d3-a456-426614174000
   </Accordion>
 </AccordionGroup>
 
-### Get User's Groups
+### Get User's Collections
 
-Get all groups that a user is a member of:
+Get all collections that a user is a member of:
 
 ```python
-user_groups = client.user_groups('456e789f-g01h-34i5-j678-901234567890')
+user_collections = client.user_collections('456e789f-g01h-34i5-j678-901234567890')
 ```
 
 <AccordionGroup>
@@ -211,11 +213,11 @@ user_groups = client.user_groups('456e789f-g01h-34i5-j678-901234567890')
       {
         'results': [
           {
-            'group_id': '123e4567-e89b-12d3-a456-426614174000',
+            'collection_id': '123e4567-e89b-12d3-a456-426614174000',
             'name': 'Updated Marketing Team',
-            # ... other group details ...
+            # ... other Collection details ...
           },
-          # ... other groups ...
+          # ... other collections ...
         ]
       }
       ```
@@ -223,14 +225,14 @@ user_groups = client.user_groups('456e789f-g01h-34i5-j678-901234567890')
   </Accordion>
 </AccordionGroup>
 
-## Document Management in Groups
+## Document Management in Collections
 
-### Assign Document to Group
+### Assign Document to Collection
 
-Assign a document to a group:
+Assign a document to a collection:
 
 ```python
-assign_doc_result = client.assign_document_to_group('789g012j-k34l-56m7-n890-123456789012', '123e4567-e89b-12d3-a456-426614174000')
+assign_doc_result = client.assign_document_to_collection('789g012j-k34l-56m7-n890-123456789012', '123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -239,7 +241,7 @@ assign_doc_result = client.assign_document_to_group('789g012j-k34l-56m7-n890-123
       ```python
       {
         'results': {
-          'message': 'Document successfully assigned to the group'
+          'message': 'Document successfully assigned to the collection'
         }
       }
       ```
@@ -247,12 +249,12 @@ assign_doc_result = client.assign_document_to_group('789g012j-k34l-56m7-n890-123
   </Accordion>
 </AccordionGroup>
 
-### Remove Document from Group
+### Remove Document from Collection
 
-Remove a document from a group:
+Remove a document from a collection:
 
 ```python
-remove_doc_result = client.remove_document_from_group('789g012j-k34l-56m7-n890-123456789012', '123e4567-e89b-12d3-a456-426614174000')
+remove_doc_result = client.remove_document_from_collection('789g012j-k34l-56m7-n890-123456789012', '123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -261,7 +263,7 @@ remove_doc_result = client.remove_document_from_group('789g012j-k34l-56m7-n890-1
       ```python
       {
         'results': {
-          'message': 'Document successfully removed from the group'
+          'message': 'Document successfully removed from the collection'
         }
       }
       ```
@@ -269,12 +271,12 @@ remove_doc_result = client.remove_document_from_group('789g012j-k34l-56m7-n890-1
   </Accordion>
 </AccordionGroup>
 
-### List Documents in Group
+### List Documents in Collection
 
-Get a list of all documents in a specific group:
+Get a list of all documents in a specific collection:
 
 ```python
-docs_in_group = client.documents_in_group('123e4567-e89b-12d3-a456-426614174000')
+docs_in_collection = client.documents_in_collection('123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -296,12 +298,12 @@ docs_in_group = client.documents_in_group('123e4567-e89b-12d3-a456-426614174000'
   </Accordion>
 </AccordionGroup>
 
-### Get Document's Groups
+### Get Document's Collections
 
-Get all groups that a document is assigned to:
+Get all collections that a document is assigned to:
 
 ```python
-document_groups = client.document_groups('789g012j-k34l-56m7-n890-123456789012')
+document_collections = client.document_collections('789g012j-k34l-56m7-n890-123456789012')
 ```
 
 <AccordionGroup>
@@ -311,11 +313,11 @@ document_groups = client.document_groups('789g012j-k34l-56m7-n890-123456789012')
       {
         'results': [
           {
-            'group_id': '123e4567-e89b-12d3-a456-426614174000',
+            'collection_id': '123e4567-e89b-12d3-a456-426614174000',
             'name': 'Updated Marketing Team',
-            # ... other group details ...
+            # ... other Collection details ...
           },
-          # ... other groups ...
+          # ... other collections ...
         ]
       }
       ```
@@ -323,14 +325,14 @@ document_groups = client.document_groups('789g012j-k34l-56m7-n890-123456789012')
   </Accordion>
 </AccordionGroup>
 
-## Advanced Group Management
+## Advanced Collection Management
 
-### Group Overview
+### Collection Overview
 
-Get an overview of groups, including user and document counts:
+Get an overview of collections, including user and document counts:
 
 ```python
-groups_overview = client.groups_overview()
+collections_overview = client.collections_overview()
 ```
 
 <AccordionGroup>
@@ -340,7 +342,7 @@ groups_overview = client.groups_overview()
       {
         'results': [
           {
-            'group_id': '123e4567-e89b-12d3-a456-426614174000',
+            'collection_id': '123e4567-e89b-12d3-a456-426614174000',
             'name': 'Updated Marketing Team',
             'description': 'New description for marketing team',
             'user_count': 5,
@@ -348,7 +350,7 @@ groups_overview = client.groups_overview()
             'created_at': '2024-07-16T22:53:47.524794Z',
             'updated_at': '2024-07-16T23:15:30.123456Z'
           },
-          # ... other groups ...
+          # ... other collections ...
         ]
       }
       ```
@@ -356,12 +358,12 @@ groups_overview = client.groups_overview()
   </Accordion>
 </AccordionGroup>
 
-### Delete a Group
+### Delete a Collection
 
-Delete a group:
+Delete a collection:
 
 ```python
-delete_result = client.delete_group('123e4567-e89b-12d3-a456-426614174000')
+delete_result = client.delete_collection('123e4567-e89b-12d3-a456-426614174000')
 ```
 
 <AccordionGroup>
@@ -380,31 +382,31 @@ delete_result = client.delete_group('123e4567-e89b-12d3-a456-426614174000')
 
 ## Pagination and Filtering
 
-Many group-related methods support pagination and filtering:
+Many collection-related methods support pagination and filtering:
 
 ```python
-# List groups with pagination
-paginated_groups = client.list_groups(offset=10, limit=20)
+# List collections with pagination
+paginated_collection = client.list_collections(offset=10, limit=20)
 
-# Get users in a group with pagination
-paginated_users = client.get_users_in_group('123e4567-e89b-12d3-a456-426614174000', offset=5, limit=10)
+# Get users in a collection with pagination
+paginated_users = client.get_users_in_collection('123e4567-e89b-12d3-a456-426614174000', offset=5, limit=10)
 
-# Get documents in a group with pagination
-paginated_docs = client.documents_in_group('123e4567-e89b-12d3-a456-426614174000', offset=0, limit=50)
+# Get documents in a collection with pagination
+paginated_docs = client.documents_in_collection('123e4567-e89b-12d3-a456-426614174000', offset=0, limit=50)
 
-# Get groups overview with specific group IDs
-specific_groups_overview = client.groups_overview(group_ids=['id1', 'id2', 'id3'])
+# Get collections overview with specific collection IDs
+specific_collections_overview = client.collections_overview(collection_ids=['id1', 'id2', 'id3'])
 ```
 
 ## Security Considerations
 
-When implementing group permissions, consider the following security best practices:
+When implementing collection permissions, consider the following security best practices:
 
 1. Always use HTTPS in production to encrypt data in transit.
-2. Implement the principle of least privilege by assigning the minimum necessary permissions to users and groups.
-3. Regularly audit group memberships and document assignments.
-4. Ensure that only authorized users (e.g., admins) can perform group management operations.
-5. Implement comprehensive logging for all group-related actions.
+2. Implement the principle of least privilege by assigning the minimum necessary permissions to users and collections.
+3. Regularly audit collection memberships and document assignments.
+4. Ensure that only authorized users (e.g., admins) can perform collection management operations.
+5. Implement comprehensive logging for all collection-related actions.
 6. Consider implementing additional access controls or custom roles within your application logic for more fine-grained permissions.
 
 For more advanced use cases or custom implementations, refer to the R2R documentation or reach out to the community for support.

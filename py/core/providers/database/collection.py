@@ -14,11 +14,11 @@ from core.base.api.models.management.responses import (
 from .base import DatabaseMixin
 
 
-class GroupMixin(DatabaseMixin):
+class CollectionMixin(DatabaseMixin):
     async def create_table(self) -> None:
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('groups')} (
-            group_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -27,23 +27,23 @@ class GroupMixin(DatabaseMixin):
         """
         await self.execute_query(query)
 
-    async def group_exists(self, group_id: UUID) -> bool:
+    async def group_exists(self, collection_id: UUID) -> bool:
         """Check if a group exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name('groups')}
-            WHERE group_id = $1
+            WHERE collection_id = $1
         """
-        result = await self.execute_query(query, [group_id])
+        result = await self.execute_query(query, [collection_id])
         return bool(result)
 
-    async def create_group(
+    async def create_collection(
         self, name: str, description: str = ""
     ) -> GroupResponse:
         current_time = datetime.utcnow()
         query = f"""
             INSERT INTO {self._get_table_name('groups')} (name, description, created_at, updated_at)
             VALUES ($1, $2, $3, $4)
-            RETURNING group_id, name, description, created_at, updated_at
+            RETURNING collection_id, name, description, created_at, updated_at
         """
         params = [name, description, current_time, current_time]
 
@@ -57,7 +57,7 @@ class GroupMixin(DatabaseMixin):
                 )
 
             return GroupResponse(
-                group_id=row["group_id"],
+                collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
@@ -69,80 +69,80 @@ class GroupMixin(DatabaseMixin):
                 message=f"An error occurred while creating the group: {str(e)}",
             )
 
-    async def get_group(self, group_id: UUID) -> GroupResponse:
+    async def get_collection(self, collection_id: UUID) -> GroupResponse:
         """Get a group by its ID."""
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
-            SELECT group_id, name, description, created_at, updated_at
+            SELECT collection_id, name, description, created_at, updated_at
             FROM {self._get_table_name('groups')}
-            WHERE group_id = $1
+            WHERE collection_id = $1
         """
-        result = await self.fetchrow_query(query, [group_id])
+        result = await self.fetchrow_query(query, [collection_id])
         if not result:
             raise R2RException(status_code=404, message="Group not found")
 
         return GroupResponse(
-            group_id=result["group_id"],
+            collection_id=result["collection_id"],
             name=result["name"],
             description=result["description"],
             created_at=result["created_at"],
             updated_at=result["updated_at"],
         )
 
-    async def update_group(
-        self, group_id: UUID, name: str, description: str
+    async def update_collection(
+        self, collection_id: UUID, name: str, description: str
     ) -> GroupResponse:
         """Update an existing group."""
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
             UPDATE {self._get_table_name('groups')}
             SET name = $1, description = $2, updated_at = NOW()
-            WHERE group_id = $3
-            RETURNING group_id, name, description, created_at, updated_at
+            WHERE collection_id = $3
+            RETURNING collection_id, name, description, created_at, updated_at
         """
         result = await self.fetchrow_query(
-            query, [name, description, group_id]
+            query, [name, description, collection_id]
         )
         if not result:
             raise R2RException(status_code=404, message="Group not found")
 
         return GroupResponse(
-            group_id=result["group_id"],
+            collection_id=result["collection_id"],
             name=result["name"],
             description=result["description"],
             created_at=result["created_at"],
             updated_at=result["updated_at"],
         )
 
-    async def delete_group(self, group_id: UUID) -> None:
-        # Remove group_id from users
+    async def delete_collection(self, collection_id: UUID) -> None:
+        # Remove collection_id from users
         user_update_query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = array_remove(group_ids, $1)
-            WHERE $1 = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, $1)
+            WHERE $1 = ANY(collection_ids)
         """
-        await self.execute_query(user_update_query, [group_id])
+        await self.execute_query(user_update_query, [collection_id])
 
         # Delete the group
         delete_query = f"""
             DELETE FROM {self._get_table_name('groups')}
-            WHERE group_id = $1
+            WHERE collection_id = $1
         """
-        result = await self.execute_query(delete_query, [group_id])
+        result = await self.execute_query(delete_query, [collection_id])
 
         if result == "DELETE 0":
             raise R2RException(status_code=404, message="Group not found")
 
-    async def list_groups(
+    async def list_collections(
         self, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
         """List groups with pagination."""
         query = f"""
-            SELECT group_id, name, description, created_at, updated_at
+            SELECT collection_id, name, description, created_at, updated_at
             FROM {self._get_table_name('groups')}
             ORDER BY name
             OFFSET $1
@@ -153,7 +153,7 @@ class GroupMixin(DatabaseMixin):
             return []
         return [
             GroupResponse(
-                group_id=row["group_id"],
+                collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
@@ -162,23 +162,23 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def get_groups_by_ids(
-        self, group_ids: list[UUID]
+    async def get_collections_by_ids(
+        self, collection_ids: list[UUID]
     ) -> list[GroupResponse]:
         query = f"""
-            SELECT group_id, name, description, created_at, updated_at
+            SELECT collection_id, name, description, created_at, updated_at
             FROM {self._get_table_name("groups")}
-            WHERE group_id = ANY($1)
+            WHERE collection_id = ANY($1)
         """
-        results = await self.fetch_query(query, [group_ids])
-        if len(results) != len(group_ids):
+        results = await self.fetch_query(query, [collection_ids])
+        if len(results) != len(collection_ids):
             raise R2RException(
                 status_code=404,
-                message=f"These groups were not found: {set(group_ids) - {row['group_id'] for row in results}}",
+                message=f"These groups were not found: {set(collection_ids) - {row['collection_id'] for row in results}}",
             )
         return [
             GroupResponse(
-                group_id=row["group_id"],
+                collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
@@ -187,48 +187,50 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
+    async def add_user_to_collection(
+        self, user_id: UUID, collection_id: UUID
+    ) -> bool:
         """Add a user to a group."""
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = array_append(group_ids, $1)
-            WHERE user_id = $2 AND NOT ($1 = ANY(group_ids))
+            SET collection_ids = array_append(collection_ids, $1)
+            WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
             RETURNING user_id
         """
-        result = await self.fetchrow_query(query, [group_id, user_id])
+        result = await self.fetchrow_query(query, [collection_id, user_id])
         return bool(result)
 
-    async def remove_user_from_group(
-        self, user_id: UUID, group_id: UUID
+    async def remove_user_from_collection(
+        self, user_id: UUID, collection_id: UUID
     ) -> None:
         """Remove a user from a group."""
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
             UPDATE {self._get_table_name('users')}
-            SET group_ids = array_remove(group_ids, $1)
-            WHERE user_id = $2 AND $1 = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, $1)
+            WHERE user_id = $2 AND $1 = ANY(collection_ids)
             RETURNING user_id
         """
-        result = await self.fetchrow_query(query, [group_id, user_id])
+        result = await self.fetchrow_query(query, [collection_id, user_id])
         if not result:
             raise R2RException(
                 status_code=404,
-                message="User is not a member of the specified group",
+                message="User is not a member of the specified collection",
             )
 
-    async def get_users_in_group(
-        self, group_id: UUID, offset: int = 0, limit: int = 100
+    async def get_users_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[UserResponse]:
         """
         Get all users in a specific group with pagination.
 
         Args:
-            group_id (UUID): The ID of the group to get users from.
+            collection_id (UUID): The ID of the group to get users from.
             offset (int): The number of users to skip.
             limit (int): The maximum number of users to return.
 
@@ -238,19 +240,19 @@ class GroupMixin(DatabaseMixin):
         Raises:
             R2RException: If the group doesn't exist.
         """
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
             SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.group_ids, u.name, u.bio, u.profile_picture
+                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture
             FROM {self._get_table_name('users')} u
-            WHERE $1 = ANY(u.group_ids)
+            WHERE $1 = ANY(u.collection_ids)
             ORDER BY u.name
             OFFSET $2
             LIMIT $3
         """
-        results = await self.fetch_query(query, [group_id, offset, limit])
+        results = await self.fetch_query(query, [collection_id, offset, limit])
 
         return [
             UserResponse(
@@ -261,7 +263,7 @@ class GroupMixin(DatabaseMixin):
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 is_verified=row["is_verified"],
-                group_ids=row["group_ids"],
+                collection_ids=row["collection_ids"],
                 name=row["name"],
                 bio=row["bio"],
                 profile_picture=row["profile_picture"],
@@ -271,13 +273,13 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def documents_in_group(
-        self, group_id: UUID, offset: int = 0, limit: int = 100
+    async def documents_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
         """
         Get all documents in a specific group with pagination.
         Args:
-            group_id (UUID): The ID of the group to get documents from.
+            collection_id (UUID): The ID of the group to get documents from.
             offset (int): The number of documents to skip.
             limit (int): The maximum number of documents to return.
         Returns:
@@ -285,17 +287,17 @@ class GroupMixin(DatabaseMixin):
         Raises:
             R2RException: If the group doesn't exist.
         """
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at
             FROM {self._get_table_name('document_info')} d
-            WHERE $1 = ANY(d.group_ids)
+            WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
             OFFSET $2
             LIMIT $3
         """
-        results = await self.fetch_query(query, [group_id, offset, limit])
+        results = await self.fetch_query(query, [collection_id, offset, limit])
         return [
             DocumentInfo(
                 id=row["document_id"],
@@ -308,34 +310,34 @@ class GroupMixin(DatabaseMixin):
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
-                group_ids=[group_id],
+                collection_ids=[collection_id],
             )
             for row in results
         ]
 
-    async def get_groups_overview(
+    async def get_collections_overview(
         self,
-        group_ids: Optional[list[UUID]] = None,
+        collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> list[GroupOverviewResponse]:
         """Get an overview of groups, optionally filtered by group IDs, with pagination."""
         query = f"""
             WITH group_overview AS (
-                SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at,
+                SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
                     COUNT(DISTINCT u.user_id) AS user_count,
                     COUNT(DISTINCT d.document_id) AS document_count
                 FROM {self._get_table_name('groups')} g
-                LEFT JOIN {self._get_table_name('users')} u ON g.group_id = ANY(u.group_ids)
-                LEFT JOIN {self._get_table_name('document_info')} d ON g.group_id = ANY(d.group_ids)
+                LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
+                LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
         """
         params = []
-        if group_ids:
-            query += " WHERE g.group_id = ANY($1)"
-            params.append(group_ids)
+        if collection_ids:
+            query += " WHERE g.collection_id = ANY($1)"
+            params.append(collection_ids)
 
         query += """
-                GROUP BY g.group_id, g.name, g.description, g.created_at, g.updated_at
+                GROUP BY g.collection_id, g.name, g.description, g.created_at, g.updated_at
             )
             SELECT * FROM group_overview
             ORDER BY name
@@ -349,7 +351,7 @@ class GroupMixin(DatabaseMixin):
         results = await self.fetch_query(query, params)
         return [
             GroupOverviewResponse(
-                group_id=row["group_id"],
+                collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
@@ -360,13 +362,13 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def get_groups_for_user(
+    async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
         query = f"""
-            SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
+            SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
             FROM {self._get_table_name('groups')} g
-            JOIN {self._get_table_name('users')} u ON g.group_id = ANY(u.group_ids)
+            JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
             WHERE u.user_id = $1
             ORDER BY g.name
             OFFSET $2
@@ -376,7 +378,7 @@ class GroupMixin(DatabaseMixin):
 
         return [
             GroupResponse(
-                group_id=row["group_id"],
+                collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
@@ -385,22 +387,22 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def assign_document_to_group(
-        self, document_id: UUID, group_id: UUID
+    async def assign_document_to_collection(
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         """
         Assign a document to a group.
 
         Args:
             document_id (UUID): The ID of the document to assign.
-            group_id (UUID): The ID of the group to assign the document to.
+            collection_id (UUID): The ID of the group to assign the document to.
 
         Raises:
             R2RException: If the group doesn't exist, if the document is not found,
                         or if there's a database error.
         """
         try:
-            if not await self.group_exists(group_id):
+            if not await self.group_exists(collection_id):
                 raise R2RException(status_code=404, message="Group not found")
 
             # First, check if the document exists
@@ -420,12 +422,12 @@ class GroupMixin(DatabaseMixin):
             # If document exists, proceed with the assignment
             assign_query = f"""
                 UPDATE {self._get_table_name('document_info')}
-                SET group_ids = array_append(group_ids, $1)
-                WHERE document_id = $2 AND NOT ($1 = ANY(group_ids))
+                SET collection_ids = array_append(collection_ids, $1)
+                WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING document_id
             """
             result = await self.fetchrow_query(
-                assign_query, [group_id, document_id]
+                assign_query, [collection_id, document_id]
             )
 
             if not result:
@@ -444,13 +446,13 @@ class GroupMixin(DatabaseMixin):
                 message=f"An error '{e}' occurred while assigning the document to the group",
             )
 
-    async def document_groups(
+    async def document_collections(
         self, document_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[GroupResponse]:
         query = f"""
-            SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
+            SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
             FROM {self._get_table_name('groups')} g
-            JOIN {self._get_table_name('document_info')} d ON g.group_id = ANY(d.group_ids)
+            JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
             WHERE d.document_id = $1
             ORDER BY g.name
             OFFSET $2
@@ -460,7 +462,7 @@ class GroupMixin(DatabaseMixin):
 
         return [
             GroupResponse(
-                group_id=row["group_id"],
+                collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
@@ -469,29 +471,29 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def remove_document_from_group(
-        self, document_id: UUID, group_id: UUID
+    async def remove_document_from_collection(
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         """
         Remove a document from a group.
 
         Args:
             document_id (UUID): The ID of the document to remove.
-            group_id (UUID): The ID of the group to remove the document from.
+            collection_id (UUID): The ID of the group to remove the document from.
 
         Raises:
             R2RException: If the group doesn't exist or if the document is not in the group.
         """
-        if not await self.group_exists(group_id):
+        if not await self.group_exists(collection_id):
             raise R2RException(status_code=404, message="Group not found")
 
         query = f"""
             UPDATE {self._get_table_name('document_info')}
-            SET group_ids = array_remove(group_ids, $1)
-            WHERE document_id = $2 AND $1 = ANY(group_ids)
+            SET collection_ids = array_remove(collection_ids, $1)
+            WHERE document_id = $2 AND $1 = ANY(collection_ids)
             RETURNING document_id
         """
-        result = await self.fetchrow_query(query, [group_id, document_id])
+        result = await self.fetchrow_query(query, [collection_id, document_id])
 
         if not result:
             raise R2RException(
