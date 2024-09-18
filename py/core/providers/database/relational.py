@@ -8,6 +8,7 @@ from core.providers.database.collection import CollectionMixin
 from core.providers.database.document import DocumentMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
 from core.providers.database.user import UserMixin
+from core.providers.database.collection import CollectionMixin
 
 logger = logging.getLogger(__name__)
 
