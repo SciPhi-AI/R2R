@@ -403,7 +403,9 @@ class CollectionMixin(DatabaseMixin):
         """
         try:
             if not await self.collection_exists(collection_id):
-                raise R2RException(status_code=404, message="Collection not found")
+                raise R2RException(
+                    status_code=404, message="Collection not found"
+                )
 
             # First, check if the document exists
             document_check_query = f"""

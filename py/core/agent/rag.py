@@ -1,15 +1,19 @@
 from typing import AsyncGenerator
+
 from core.agent import R2RAgent, R2RStreamingAgent
+from core.base import (
+    format_search_results_for_llm,
+    format_search_results_for_stream,
+)
 from core.base.abstractions import (
+    AggregateSearchResult,
     KGSearchSettings,
     VectorSearchSettings,
-    AggregateSearchResult
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import CompletionProvider, PromptProvider
 from core.base.utils import to_async_generator
 from core.pipelines import SearchPipeline
-from core.base import format_search_results_for_stream, format_search_results_for_llm
 
 
 class RAGAgentMixin:
@@ -73,7 +77,6 @@ class RAGAgentMixin:
         return format_search_results_for_llm(results)
 
 
-
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
@@ -105,4 +108,3 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             prompt_provider=prompt_provider,
             config=config,
         )
-

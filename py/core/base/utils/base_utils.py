@@ -1,10 +1,9 @@
-import json
 import asyncio
-from typing import TYPE_CHECKING, Any, AsyncGenerator,Generator, Iterable
+import json
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
-
 from ..abstractions.search import AggregateSearchResult
 
 
@@ -17,19 +16,20 @@ def format_search_results_for_llm(
         for i, result in enumerate(results.vector_search_results):
             text = result.text
             formatted_results += f"{i+1}. {text}\n"
-    
+
     if results.kg_search_results:
         if results.kg_search_results[0].local_result:
             formatted_results += "KG Local Search Results:\n"
             formatted_results += str(results.kg_search_results[0].local_result)
             formatted_results += "\n"
-        
+
         if results.kg_search_results[0].global_result:
             formatted_results += "KG Global Search Results:\n"
             for i, result in enumerate(results.kg_search_results):
                 formatted_results += f"{i+1}. {result}\n"
-    
+
     return formatted_results
+
 
 def format_search_results_for_stream(
     result: AggregateSearchResult,
@@ -39,26 +39,31 @@ def format_search_results_for_stream(
     )
     KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
     KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
-    
+
     context = ""
     if result.vector_search_results:
         context += f"<{VECTOR_SEARCH_STREAM_MARKER}>"
-        vector_results_list = [result.json() for result in result.vector_search_results]
+        vector_results_list = [
+            result.json() for result in result.vector_search_results
+        ]
         context += json.dumps(vector_results_list)
         context += f"</{VECTOR_SEARCH_STREAM_MARKER}>"
-    
+
     if result.kg_search_results:
         if result.kg_search_results[0].local_result:
             context += f"<{KG_LOCAL_SEARCH_STREAM_MARKER}>"
-            context += json.dumps(result.kg_search_results[0].local_result.json())
+            context += json.dumps(
+                result.kg_search_results[0].local_result.json()
+            )
             context += f"</{KG_LOCAL_SEARCH_STREAM_MARKER}>"
-        
+
         if result.kg_search_results[0].global_result:
             context += f"<{KG_GLOBAL_SEARCH_STREAM_MARKER}>"
             for result in result.kg_search_results:
                 context += json.dumps(result.global_result.json())
             context += f"</{KG_GLOBAL_SEARCH_STREAM_MARKER}>"
     return context
+
 
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline

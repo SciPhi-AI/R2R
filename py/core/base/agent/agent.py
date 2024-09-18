@@ -213,9 +213,7 @@ class Agent(ABC):
         ):
             merged_kwargs = {**kwargs, **json.loads(function_arguments)}
 
-            raw_result = await tool.results_function(
-                *args, **merged_kwargs
-            )
+            raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
 
             tool_result = ToolResult(

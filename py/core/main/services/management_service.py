@@ -302,7 +302,8 @@ class ManagementService(Service):
             relational_filters["filter_user_ids"] = [UUID(filters["user_id"])]
         if "collection_ids" in filters:
             relational_filters["filter_collection_ids"] = [
-                UUID(collection_id) for collection_id in filters["collection_ids"]
+                UUID(collection_id)
+                for collection_id in filters["collection_ids"]
             ]
 
         try:
