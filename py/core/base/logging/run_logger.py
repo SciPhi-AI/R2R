@@ -299,7 +299,6 @@ class PostgresLoggingConfig(LoggingConfig):
             "POSTGRES_PASSWORD",
             "POSTGRES_HOST",
             "POSTGRES_PORT",
-            "POSTGRES_VECS_COLLECTION",
         ]
         for var in required_env_vars:
             if not os.getenv(var):
