@@ -130,18 +130,26 @@ class KGSearchSearchPipe(GeneratorPipe):
                     search_type
                 ],
                 query_embedding=query_embedding,
-                property_names=["name", "description", "fragment_ids", "document_ids"],
+                property_names=[
+                    "name",
+                    "description",
+                    "fragment_ids",
+                    "document_ids",
+                ],
             ):
                 print(search_result)
                 yield KGSearchResult(
-                    content=KGEntityResult(name=search_result["name"], description=search_result["description"]),
+                    content=KGEntityResult(
+                        name=search_result["name"],
+                        description=search_result["description"],
+                    ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
                     fragment_ids=search_result["fragment_ids"],
                     document_ids=search_result["document_ids"],
-                    metadata={'associated_query': message},
+                    metadata={"associated_query": message},
                 )
-            
+
             # relationship search
             search_type = "__Relationship__"
             async for search_result in self.kg_provider.vector_query(
@@ -151,15 +159,23 @@ class KGSearchSearchPipe(GeneratorPipe):
                     search_type
                 ],
                 query_embedding=query_embedding,
-                property_names=["name", "description", "fragment_ids", "document_ids"],
+                property_names=[
+                    "name",
+                    "description",
+                    "fragment_ids",
+                    "document_ids",
+                ],
             ):
                 yield KGSearchResult(
-                    content=KGRelationshipResult(name=search_result["name"], description=search_result["description"]),
+                    content=KGRelationshipResult(
+                        name=search_result["name"],
+                        description=search_result["description"],
+                    ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.RELATIONSHIP,
                     fragment_ids=search_result["fragment_ids"],
                     document_ids=search_result["document_ids"],
-                    metadata={'associated_query': message},
+                    metadata={"associated_query": message},
                 )
 
             # community search
@@ -174,7 +190,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 query_embedding=query_embedding,
                 property_names=["title", "summary"],
             ):
-                
+
                 summary = search_result["summary"]
 
                 # try loading it as a json
@@ -183,17 +199,24 @@ class KGSearchSearchPipe(GeneratorPipe):
                     description = summary_json.get("summary", "")
                     name = summary_json.get("title", "")
 
-                    description += "\n\n" + "\n".join([finding["summary"] for finding in summary_json.get("findings", [])])
-   
+                    description += "\n\n" + "\n".join(
+                        [
+                            finding["summary"]
+                            for finding in summary_json.get("findings", [])
+                        ]
+                    )
+
                 except json.JSONDecodeError:
                     logger.warning(f"Summary is not valid JSON: {summary}")
                     continue
 
                 yield KGSearchResult(
-                    content=KGCommunityResult(name=name, description=description),
+                    content=KGCommunityResult(
+                        name=name, description=description
+                    ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
-                    metadata={'associated_query': message},
+                    metadata={"associated_query": message},
                 )
 
     async def global_search(
@@ -283,7 +306,9 @@ class KGSearchSearchPipe(GeneratorPipe):
             output = output.choices[0].message.content
 
             yield KGSearchResult(
-                content=KGGlobalResult(name="Global Result", description=output),
+                content=KGGlobalResult(
+                    name="Global Result", description=output
+                ),
                 method=KGSearchMethod.GLOBAL,
                 metadata={},
             )

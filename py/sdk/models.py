@@ -188,14 +188,17 @@ class ChunkingConfig(ProviderConfig):
             },
         }
 
+
 class KGSearchResultType(str, Enum):
     ENTITY = "entity"
     RELATIONSHIP = "relationship"
     COMMUNITY = "community"
 
+
 class KGSearchMethod(str, Enum):
     LOCAL = "local"
     GLOBAL = "global"
+
 
 class KGEntityResult(BaseModel):
     name: str
@@ -209,6 +212,7 @@ class KGEntityResult(BaseModel):
             "metadata": {},
         }
 
+
 class KGRelationshipResult(BaseModel):
     name: str
     description: str
@@ -220,6 +224,7 @@ class KGRelationshipResult(BaseModel):
             "description": "Relationship Description",
             "metadata": {},
         }
+
 
 class KGCommunityResult(BaseModel):
     name: str
@@ -245,10 +250,13 @@ class KGGlobalResult(BaseModel):
             "description": "Global Result Description",
             "metadata": {},
         }
-    
+
+
 class KGSearchResult(BaseModel):
     method: KGSearchMethod
-    content: Union[KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult]
+    content: Union[
+        KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
+    ]
     result_type: Optional[KGSearchResultType] = None
     fragment_ids: Optional[list[UUID]] = None
     document_ids: Optional[list[UUID]] = None
@@ -259,10 +267,11 @@ class KGSearchResult(BaseModel):
             "method": "local",
             "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
-            "fragment_ids": [ 'c68dc72e-fc23-5452-8f49-d7bd46088a96'],
-            "document_ids": [ '3e157b3a-8469-51db-90d9-52e7d896b49b'],
-            "metadata": { "associated_query": "What is the capital of France?" },
+            "fragment_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+            "document_ids": ["3e157b3a-8469-51db-90d9-52e7d896b49b"],
+            "metadata": {"associated_query": "What is the capital of France?"},
         }
+
 
 class R2RException(Exception):
     def __init__(

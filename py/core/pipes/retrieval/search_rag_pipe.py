@@ -101,7 +101,9 @@ class SearchRAGPipe(GeneratorPipe):
             context += f"Knowledge Graph ({iteration}):\n"
             it = total_results + 1
             for search_results in results.kg_search_results:  # [1]:
-                context += f"Query: {search_results.metadata['associated_query']}\n\n"
+                context += (
+                    f"Query: {search_results.metadata['associated_query']}\n\n"
+                )
                 context += f"Results:\n"
                 for search_result in search_results:
                     context += f"[{it}]: {search_result}\n\n"

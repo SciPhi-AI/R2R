@@ -88,7 +88,6 @@ class KgExtractAndStoreWorkflow:
                 document_id=document_id,
             )
 
-
         return {"result": None}
 
 
