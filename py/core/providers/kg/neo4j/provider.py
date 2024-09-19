@@ -383,7 +383,9 @@ class Neo4jKGProvider(KGProvider):
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
         return False
 
-    async def vector_query(self, query, **kwargs: Any) -> AsyncGenerator[dict[str, Any], None]:
+    async def vector_query(
+        self, query, **kwargs: Any
+    ) -> AsyncGenerator[dict[str, Any], None]:
 
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "__Entity__")
@@ -436,9 +438,14 @@ class Neo4jKGProvider(KGProvider):
         # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
         # return descriptions, scores
         if search_type == "__Entity__" and len(neo4j_results.records) == 0:
-            raise R2RException("No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph", 400)
+            raise R2RException(
+                "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
+                400,
+            )
 
-        logger.info(f"Neo4j results: Returning {len(neo4j_results.records)} records for query of type {search_type}")
+        logger.info(
+            f"Neo4j results: Returning {len(neo4j_results.records)} records for query of type {search_type}"
+        )
 
         for record in neo4j_results.records:
             yield {
