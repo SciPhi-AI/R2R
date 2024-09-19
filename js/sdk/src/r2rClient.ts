@@ -738,14 +738,30 @@ export class r2rClient {
 
   /**
    * An overview of the users in the R2R deployment.
-   * @param user_ids
+   * @param user_ids List of user IDs to get an overview for.
+   * * @param offset The offset to start listing users from.
+   * @param limit The maximum number of users to return.
    * @returns
    */
   @feature("usersOverview")
-  async usersOverview(user_ids?: string[]): Promise<Record<string, any>> {
+  async usersOverview(
+    user_ids?: string[],
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
-    const params: { user_ids?: string[] } = {};
+    let params: Record<string, any> = {};
+    if (user_ids && user_ids.length > 0) {
+      params.user_ids = user_ids;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+
     if (user_ids && user_ids.length > 0) {
       params.user_ids = user_ids;
     }
@@ -786,10 +802,16 @@ export class r2rClient {
   /**
    * Get an overview of documents in the R2R deployment.
    * @param document_ids List of document IDs to get an overview for.
+   * @param offset The offset to start listing documents from.
+   * @param limit The maximum number of documents to return.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("documentsOverview")
-  async documentsOverview(document_ids?: string[], offset?: number, limit?: number): Promise<any> {
+  async documentsOverview(
+    document_ids?: string[],
+    offset?: number,
+    limit?: number,
+  ): Promise<any> {
     this._ensureAuthenticated();
 
     let params: Record<string, any> = {};
@@ -841,10 +863,16 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("inspectKnowledgeGraph")
-  async inspectKnowledgeGraph(limit?: number): Promise<Record<string, any>> {
+  async inspectKnowledgeGraph(
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
-    const params: { limit?: number } = {};
+    const params: Record<string, number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
     if (limit !== undefined) {
       params.limit = limit;
     }
@@ -1053,11 +1081,25 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("getCollectionsForUser")
-  async getCollectionsForUser(userId: string): Promise<Record<string, any>> {
+  async getCollectionsForUser(
+    userId: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
+
+    const params: Record<string, string | number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+
     return this._makeRequest(
       "GET",
-      `get_collections_for_user/${encodeURIComponent(userId)}`,
+      `user_collections/${encodeURIComponent(userId)}`,
+      { params },
     );
   }
 
@@ -1105,12 +1147,23 @@ export class r2rClient {
   @feature("getDocumentCollections")
   async getDocumentCollections(
     documentId: string,
+    offset?: number,
+    limit?: number,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
+
+    const params: Record<string, string | number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
 
     return this._makeRequest(
       "GET",
       `get_document_collections/${encodeURIComponent(documentId)}`,
+      { params },
     );
   }
 
