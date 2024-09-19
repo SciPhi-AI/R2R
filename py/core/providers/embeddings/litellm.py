@@ -173,10 +173,3 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         limit: int = 10,
     ):
         return results[:limit]
-
-    def tokenize_string(
-        self, text: str, model: str, stage: EmbeddingProvider.PipeStage
-    ) -> list[int]:
-        raise NotImplementedError(
-            "Tokenization is not supported by LiteLLMEmbeddingProvider."
-        )

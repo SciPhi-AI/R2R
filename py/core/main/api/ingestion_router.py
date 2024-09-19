@@ -313,7 +313,7 @@ class IngestionRouter(BaseRouter):
         from ..assembly.factory import R2RProviderFactory
 
         if chunking_config:
-            chunking_config.validate()
+            chunking_config.validate_config()
             R2RProviderFactory.create_chunking_provider(chunking_config)
         else:
             logger.info("No chunking config override provided. Using default.")

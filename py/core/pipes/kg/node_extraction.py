@@ -49,7 +49,7 @@ class KGNodeExtractionPipe(AsyncPipe):
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: Input,
         state: AsyncState,
@@ -58,7 +58,7 @@ class KGNodeExtractionPipe(AsyncPipe):
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
 
-        nodes = self.kg_provider.get_entity_map() # type: ignore
+        nodes = self.kg_provider.get_entity_map()  # type: ignore
 
         for _, node_info in nodes.items():
             for entity in node_info["entities"]:
@@ -95,7 +95,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

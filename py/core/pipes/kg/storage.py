@@ -66,7 +66,7 @@ class KGStoragePipe(AsyncPipe):
             logger.error(error_message)
             raise ValueError(error_message)
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: Input,
         state: AsyncState,
@@ -87,7 +87,7 @@ class KGStoragePipe(AsyncPipe):
                 errors.append(kg_extraction)
                 continue
 
-            kg_batch.append(kg_extraction) # type: ignore
+            kg_batch.append(kg_extraction)  # type: ignore
             if len(kg_batch) >= self.storage_batch_size:
                 # Schedule the storage task
                 batch_tasks.append(

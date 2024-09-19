@@ -120,7 +120,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "__Entity__"
-            async for search_result in self.kg_provider.vector_query( # type: ignore
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -149,7 +149,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # relationship search
             search_type = "__Relationship__"
-            async for search_result in self.kg_provider.vector_query( # type: ignore
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -177,7 +177,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # community search
             search_type = "__Community__"
-            async for search_result in self.kg_provider.vector_query( # type: ignore
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -228,7 +228,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         # map reduce
         async for message in input.message:
             map_responses = []
-            communities = self.kg_provider.get_communities( # type: ignore
+            communities = self.kg_provider.get_communities(  # type: ignore
                 level=kg_search_settings.kg_search_level
             )
 
@@ -303,9 +303,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             output_text = output.choices[0].message.content
 
             if not output_text:
-                logger.warning(
-                    f"No output generated for query: {message}."
-                )
+                logger.warning(f"No output generated for query: {message}.")
                 raise R2RException(
                     "No output generated for query.",
                     400,
@@ -319,7 +317,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 metadata={},
             )
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,

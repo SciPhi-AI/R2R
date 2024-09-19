@@ -15,7 +15,7 @@ class ProviderConfig(BaseModel, ABC):
         ignore_extra = True
 
     @abstractmethod
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @classmethod
@@ -51,5 +51,5 @@ class Provider(ABC):
 
     def __init__(self, config: ProviderConfig, *args, **kwargs):
         if config:
-            config.validate()
+            config.validate_config()
         self.config = config

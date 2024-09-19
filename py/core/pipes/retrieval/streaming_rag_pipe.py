@@ -51,7 +51,7 @@ class StreamingSearchRAGPipe(GeneratorPipe):
     def config(self) -> GeneratorPipe.PipeConfig:
         return self._config
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,

@@ -49,7 +49,7 @@ class ParsingPipe(AsyncPipe):
         version: str,
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
-            if result:= await self.file_provider.retrieve_file(document.id):
+            if result := await self.file_provider.retrieve_file(document.id):
                 file_name, file_wrapper, file_size = result
 
             with file_wrapper as file_content_stream:
@@ -70,7 +70,7 @@ class ParsingPipe(AsyncPipe):
                 error_message=f"Error parsing document: {str(e)}",
             )
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

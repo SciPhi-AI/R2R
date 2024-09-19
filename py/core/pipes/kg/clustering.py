@@ -61,7 +61,7 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         num_communities, num_hierarchies, intermediate_communities = (
-            self.kg_provider.perform_graph_clustering(leiden_params) # type: ignore
+            self.kg_provider.perform_graph_clustering(leiden_params)  # type: ignore
         )
 
         logger.info(
@@ -74,7 +74,7 @@ class KGClusteringPipe(AsyncPipe):
             "intermediate_communities": intermediate_communities,
         }
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

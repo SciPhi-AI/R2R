@@ -1,5 +1,5 @@
-from .abstractions.search_pipe import SearchPipe
 from .abstractions.generator_pipe import GeneratorPipe
+from .abstractions.search_pipe import SearchPipe
 from .ingestion.chunking_pipe import ChunkingPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.parsing_pipe import ParsingPipe

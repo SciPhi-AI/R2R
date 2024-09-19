@@ -23,7 +23,7 @@ class ParsingConfig(ProviderConfig):
     def supported_providers(self) -> list[str]:
         return ["r2r", "unstructured_local", "unstructured_api", None]
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 

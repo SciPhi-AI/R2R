@@ -21,7 +21,7 @@ class Strategy(str, Enum):
 class ChunkingConfig(ProviderConfig):
     provider: str = "unstructured_local"
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 
@@ -54,7 +54,7 @@ class R2RChunkingConfig(ChunkingConfig):
     chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
         if self.chunk_size <= 0:
@@ -119,8 +119,8 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 
-    def validate(self) -> None:
-        super().validate()
+    def validate_config(self) -> None:
+        super().validate_config()
         if self.strategy not in ["auto", "fast", "hi_res"]:
             raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
 

@@ -30,7 +30,7 @@ class KGConfig(ProviderConfig):
     kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
     kg_creation_settings: KGCreationSettings = KGCreationSettings()
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
@@ -52,7 +52,7 @@ class KGProvider(ABC):
         self.validate_config()
 
     def validate_config(self) -> None:
-        self.config.validate()
+        self.config.validate_config()
 
     @property
     @abstractmethod

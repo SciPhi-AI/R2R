@@ -61,18 +61,16 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
             logger.error(error_message)
             raise ValueError(error_message)
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[
-        StorageResult, None
-    ]:
+    ) -> AsyncGenerator[StorageResult, None]:
         vector_batch = []
-        document_counts: dict[UUID,int] = {}
+        document_counts: dict[UUID, int] = {}
 
         for msg in input.message:
             vector_batch.append(msg)

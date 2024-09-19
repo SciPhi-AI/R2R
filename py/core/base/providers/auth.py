@@ -26,8 +26,8 @@ class AuthConfig(ProviderConfig):
     def supported_providers(self) -> list[str]:
         return ["r2r"]
 
-    def validate(self) -> None:
-        super().validate()
+    def validate_config(self) -> None:
+        super().model_validate()
 
 
 class AuthProvider(Provider, ABC):

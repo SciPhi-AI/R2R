@@ -24,7 +24,7 @@ class CompletionConfig(ProviderConfig):
     initial_backoff: float = 1.0
     max_backoff: float = 60.0
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if not self.provider:
             raise ValueError("Provider must be set.")
         if self.provider not in self.supported_providers:

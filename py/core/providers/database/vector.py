@@ -262,7 +262,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
             reverse=True,
         )[:limit]
 
-
         return [
             VectorSearchResult(
                 fragment_id=result["data"].fragment_id,
@@ -450,12 +449,16 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"collection_id": collection_id}).fetchone()
+            result = sess.execute(
+                query, {"collection_id": collection_id}
+            ).fetchone()
             sess.commit()
 
         if not result:
-            raise ValueError(f"Collection {collection_id} not found in any documents.")
-        
+            raise ValueError(
+                f"Collection {collection_id} not found in any documents."
+            )
+
         affected_rows = result.rowcount
         logger.info(
             f"Removed collection {collection_id} from {affected_rows} documents."

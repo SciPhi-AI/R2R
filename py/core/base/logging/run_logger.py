@@ -28,7 +28,7 @@ class LoggingConfig(ProviderConfig):
     log_info_table: str = "log_info"
     logging_path: Optional[str] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @property
@@ -292,7 +292,7 @@ class PostgresLoggingConfig(LoggingConfig):
     log_table: str = "logs"
     log_info_table: str = "log_info"
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         required_env_vars = [
             "POSTGRES_DBNAME",
             "POSTGRES_USER",
@@ -515,7 +515,7 @@ class RedisLoggingConfig(LoggingConfig):
     log_table: str = "logs"
     log_info_table: str = "log_info"
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         required_env_vars = ["REDIS_CLUSTER_IP", "REDIS_CLUSTER_PORT"]
         for var in required_env_vars:
             if not os.getenv(var):

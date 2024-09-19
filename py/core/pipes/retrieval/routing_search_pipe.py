@@ -9,7 +9,6 @@ from core.base import (
 )
 
 
-
 class RoutingSearchPipe(AsyncPipe):
     def __init__(
         self,
@@ -19,13 +18,11 @@ class RoutingSearchPipe(AsyncPipe):
         *args,
         **kwargs,
     ):
-        super().__init__(
-            config, *args, **kwargs
-        )
+        super().__init__(config, *args, **kwargs)
         self.search_pipes = search_pipes
         self.default_strategy = default_strategy
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

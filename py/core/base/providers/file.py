@@ -7,7 +7,7 @@ from .base import Provider, ProviderConfig
 
 
 class FileConfig(ProviderConfig):
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 

@@ -36,7 +36,9 @@ class ClientError(Exception):
     pass
 
 
-class KGTriplesExtractionPipe(AsyncPipe[Union[KGExtraction, R2RDocumentProcessingError]]):
+class KGTriplesExtractionPipe(
+    AsyncPipe[Union[KGExtraction, R2RDocumentProcessingError]]
+):
     """
     Extracts knowledge graph information from document extractions.
     """
@@ -90,7 +92,7 @@ class KGTriplesExtractionPipe(AsyncPipe[Union[KGExtraction, R2RDocumentProcessin
         Extracts NER triples from a fragment with retries.
         """
         # combine all fragments into a single string
-        combined_fragment: str = " ".join([fragment.data for fragment in fragments]) # type: ignore
+        combined_fragment: str = " ".join([fragment.data for fragment in fragments])  # type: ignore
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
@@ -215,7 +217,7 @@ class KGTriplesExtractionPipe(AsyncPipe[Union[KGExtraction, R2RDocumentProcessin
             triples=[],
         )
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: Input,
         state: AsyncState,

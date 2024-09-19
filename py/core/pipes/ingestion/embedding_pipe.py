@@ -45,7 +45,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
 
     async def embed(self, fragments: list[DocumentFragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
-            [fragment.data for fragment in fragments], # type: ignore
+            [fragment.data for fragment in fragments],  # type: ignore
             EmbeddingProvider.PipeStage.BASE,
         )
 
@@ -61,7 +61,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
                 user_id=fragment.user_id,
                 collection_ids=fragment.collection_ids,
                 vector=Vector(data=raw_vector),
-                text=fragment.data, # type: ignore
+                text=fragment.data,  # type: ignore
                 metadata={
                     **fragment.metadata,
                 },
@@ -69,7 +69,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             for raw_vector, fragment in zip(vectors, fragment_batch)
         ]
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

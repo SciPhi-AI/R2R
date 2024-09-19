@@ -117,7 +117,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         )
 
         entities, triples = (
-            self.kg_provider.get_community_entities_and_triples( # type: ignore
+            self.kg_provider.get_community_entities_and_triples(  # type: ignore
                 level=level, community_id=community_id
             )
         )
@@ -163,7 +163,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        self.kg_provider.upsert_communities([community]) # type: ignore
+        self.kg_provider.upsert_communities([community])  # type: ignore
 
         try:
             summary = json.loads(community.summary)
@@ -172,7 +172,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         return {"id": community.id, "title": summary["title"]}
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

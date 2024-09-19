@@ -27,7 +27,7 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
-from core.pipes import MultiSearchPipe, SearchPipe, GeneratorPipe
+from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -99,7 +99,7 @@ class R2RProviderFactory:
     def create_chunking_provider(
         chunking_config: ChunkingConfig, *args, **kwargs
     ) -> ChunkingProvider:
-        chunking_config.validate()
+        chunking_config.validate_config()
         if chunking_config.provider == "r2r":
             from core.base import R2RChunkingConfig
             from core.providers import R2RChunkingProvider
@@ -452,7 +452,10 @@ class R2RPipeFactory:
     def create_chunking_pipe(self, *args, **kwargs) -> Any:
         from core.pipes import ChunkingPipe
 
-        return ChunkingPipe(chunking_provider=self.providers.chunking, config=AsyncPipe.PipeConfig(name="chunking_pipe"))
+        return ChunkingPipe(
+            chunking_provider=self.providers.chunking,
+            config=AsyncPipe.PipeConfig(name="chunking_pipe"),
+        )
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -464,7 +467,7 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
             database_provider=self.providers.database,
             embedding_batch_size=self.config.embedding.batch_size,
-            config=AsyncPipe.PipeConfig(name="embedding_pipe")
+            config=AsyncPipe.PipeConfig(name="embedding_pipe"),
         )
 
     def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
@@ -473,7 +476,10 @@ class R2RPipeFactory:
 
         from core.pipes import VectorStoragePipe
 
-        return VectorStoragePipe(database_provider=self.providers.database, config=AsyncPipe.PipeConfig(name="vector_storage_pipe"))
+        return VectorStoragePipe(
+            database_provider=self.providers.database,
+            config=AsyncPipe.PipeConfig(name="vector_storage_pipe"),
+        )
 
     def create_default_vector_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -590,9 +596,9 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
-            config = GeneratorPipe.PipeConfig(
+            config=GeneratorPipe.PipeConfig(
                 name="kg_rag_pipe", task_prompt="kg_search"
-            )
+            ),
         )
 
     def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:
@@ -602,7 +608,9 @@ class R2RPipeFactory:
             return StreamingSearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
-                config=GeneratorPipe.PipeConfig(name="streaming_rag_pipe", task_prompt="default_rag"),
+                config=GeneratorPipe.PipeConfig(
+                    name="streaming_rag_pipe", task_prompt="default_rag"
+                ),
             )
         else:
             from core.pipes import SearchRAGPipe
@@ -610,7 +618,9 @@ class R2RPipeFactory:
             return SearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
-                config=GeneratorPipe.PipeConfig(name="search_rag_pipe", task_prompt="default_rag"),
+                config=GeneratorPipe.PipeConfig(
+                    name="search_rag_pipe", task_prompt="default_rag"
+                ),
             )
 
     def create_kg_node_extraction_pipe(self, *args, **kwargs) -> Any:

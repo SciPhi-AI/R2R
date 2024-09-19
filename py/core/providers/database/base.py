@@ -1,6 +1,6 @@
 from typing import Any, Optional, Sequence, Union
 
-from sqlalchemy import text, TextClause
+from sqlalchemy import TextClause, text
 
 from .vecs import Client
 

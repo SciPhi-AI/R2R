@@ -7,8 +7,8 @@ from core.base import CryptoConfig, CryptoProvider
 class BCryptConfig(CryptoConfig):
     salt_rounds: int = 12
 
-    def validate(self) -> None: # type: ignore
-        super().validate()
+    def validate_config(self) -> None:  # type: ignore
+        super().validate_config()
         if self.salt_rounds < 4 or self.salt_rounds > 31:
             raise ValueError("salt_rounds must be between 4 and 31")
 

@@ -5,10 +5,10 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
+    CompletionRecord,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
-    CompletionRecord
 )
 from core.base.abstractions.llm import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe

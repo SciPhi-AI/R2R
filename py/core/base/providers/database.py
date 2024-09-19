@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, Any
+from typing import Any, Optional
 
 from .base import Provider, ProviderConfig
 
@@ -19,12 +19,12 @@ class DatabaseConfig(ProviderConfig):
     vecs_collection: Optional[str] = None
 
     def __post_init__(self):
-        self.validate()
+        self.validate_config()
         # Capture additional fields
         for key, value in self.extra_fields.items():
             setattr(self, key, value)
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
@@ -44,6 +44,7 @@ class RelationalDBProvider(Provider, ABC):
     async def _initialize_relational_db(self) -> None:
         pass
 
+
 class DatabaseProvider(Provider):
     def __init__(self, config: DatabaseConfig):
         if not isinstance(config, DatabaseConfig):
@@ -52,23 +53,15 @@ class DatabaseProvider(Provider):
             )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
-        
+
         # remove later to re-introduce typing...
         self.vector: Any = None
         self.relational: Any = None
 
-    def _initialize_vector_db(self) -> VectorDBProvider:
-        self.vector = self._create_vector_db()
-        return self.vector
-
-    def _initialize_relational_db(self) -> RelationalDBProvider:
-        self.relational = self._create_relational_db()
-        return self.relational
-
     @abstractmethod
-    def _create_vector_db(self) -> VectorDBProvider:
+    async def _initialize_vector_db(self) -> VectorDBProvider:
         pass
 
     @abstractmethod
-    def _create_relational_db(self) -> RelationalDBProvider:
+    async def _initialize_relational_db(self) -> RelationalDBProvider:
         pass

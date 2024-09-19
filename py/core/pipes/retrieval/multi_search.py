@@ -33,21 +33,21 @@ class MultiSearchPipe(AsyncPipe):
         self.vector_search_pipe = inner_search_pipe
 
         config = config or MultiSearchPipe.PipeConfig(
-                name=query_transform_pipe.config.name
-            )
+            name=query_transform_pipe.config.name
+        )
         super().__init__(
             config,
             PipeType.SEARCH,
             *args,
             **kwargs,
         )
-        self._config: MultiSearchPipe.PipeConfig = config # for type hinting
-    
+        self._config: MultiSearchPipe.PipeConfig = config  # for type hinting
+
     @property
     def config(self) -> PipeConfig:
         return self._config
 
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: Any,
         state: Any,
@@ -113,8 +113,8 @@ class MultiSearchPipe(AsyncPipe):
         self, all_results: Dict[str, List[VectorSearchResult]]
     ) -> List[VectorSearchResult]:
         document_scores: dict[UUID, float] = {}
-        document_results: dict[UUID, VectorSearchResult]  = {}
-        document_queries:  dict[UUID, set[str]] = {}
+        document_results: dict[UUID, VectorSearchResult] = {}
+        document_queries: dict[UUID, set[str]] = {}
         for query, results in all_results.items():
             for rank, result in enumerate(results, 1):
                 doc_id = result.fragment_id
@@ -124,7 +124,7 @@ class MultiSearchPipe(AsyncPipe):
                     set_: set[str] = set()
                     document_queries[doc_id] = set_
                 document_scores[doc_id] += 1 / (rank + self.config.rrf_k)
-                document_queries[doc_id].add(query) # type: ignore
+                document_queries[doc_id].add(query)  # type: ignore
 
         # Sort documents by their RRF score
         sorted_docs = sorted(
@@ -138,7 +138,7 @@ class MultiSearchPipe(AsyncPipe):
             result.score = (
                 rrf_score  # Replace the original score with the RRF score
             )
-            result.metadata["associated_queries"] = list( 
+            result.metadata["associated_queries"] = list(
                 document_queries[doc_id]  # type: ignore
             )  # Add list of associated queries
             result.metadata["is_rrf_score"] = True

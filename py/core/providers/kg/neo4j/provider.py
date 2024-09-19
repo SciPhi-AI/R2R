@@ -1,3 +1,4 @@
+# type: ignore
 import json
 import logging
 import os
@@ -448,7 +449,9 @@ class Neo4jKGProvider(KGProvider):
                 for property_name in property_names
             }
 
-    def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
+    def perform_graph_clustering(
+        self, leiden_params: dict
+    ) -> Tuple[int, int, set[tuple[int, Any]]]:
         """
         Perform graph clustering on the graph.
 
@@ -549,7 +552,7 @@ class Neo4jKGProvider(KGProvider):
 
         result = self.structured_query(GRAPH_CLUSTERING_QUERY).records[0]
 
-        community_count = result["communityCount"]
+        community_count: int = result["communityCount"]
         modularities = result["modularities"]
 
         logger.info(

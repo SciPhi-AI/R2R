@@ -99,7 +99,7 @@ class ProviderConfig(BaseModel, ABC):
         ignore_extra = True
 
     @abstractmethod
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @classmethod
@@ -156,7 +156,7 @@ class ChunkingConfig(ProviderConfig):
     chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
         if self.chunk_size <= 0:

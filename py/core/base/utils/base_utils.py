@@ -6,6 +6,9 @@ from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 from ..abstractions.graph import EntityType, RelationshipType
 from ..abstractions.search import AggregateSearchResult
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def format_search_results_for_llm(
     results: AggregateSearchResult,
@@ -18,15 +21,13 @@ def format_search_results_for_llm(
             formatted_results += f"{i+1}. {text}\n"
 
     if results.kg_search_results:
-        if results.kg_search_results[0].local_result:
-            formatted_results += "KG Local Search Results:\n"
-            formatted_results += str(results.kg_search_results[0].local_result)
-            formatted_results += "\n"
-
-        if results.kg_search_results[0].global_result:
-            formatted_results += "KG Global Search Results:\n"
-            for i, result in enumerate(results.kg_search_results):
-                formatted_results += f"{i+1}. {result}\n"
+        for result in results.kg_search_results:
+            if result.method == "local":
+                formatted_results += "KG Local Search Results:\n"
+                formatted_results += str(result.content)
+            elif result.method == "global":
+                formatted_results += "KG Global Search Results:\n"
+                formatted_results += str(result.content)
 
     return formatted_results
 
@@ -37,8 +38,7 @@ def format_search_results_for_stream(
     VECTOR_SEARCH_STREAM_MARKER = (
         "search"  # TODO - change this to vector_search in next major release
     )
-    KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
-    KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
+    KG_SEARCH_STREAM_MARKER = "kg_search"
 
     context = ""
     if result.vector_search_results:
@@ -50,18 +50,13 @@ def format_search_results_for_stream(
         context += f"</{VECTOR_SEARCH_STREAM_MARKER}>"
 
     if result.kg_search_results:
-        if result.kg_search_results[0].local_result:
-            context += f"<{KG_LOCAL_SEARCH_STREAM_MARKER}>"
-            context += json.dumps(
-                result.kg_search_results[0].local_result.json()
-            )
-            context += f"</{KG_LOCAL_SEARCH_STREAM_MARKER}>"
+        context += f"<{KG_SEARCH_STREAM_MARKER}>"
+        kg_results_list = [
+            result.dict() for result in result.kg_search_results
+        ]
+        context += json.dumps(kg_results_list, default=str)
+        context += f"</{KG_SEARCH_STREAM_MARKER}>"
 
-        if result.kg_search_results[0].global_result:
-            context += f"<{KG_GLOBAL_SEARCH_STREAM_MARKER}>"
-            for result in result.kg_search_results:
-                context += json.dumps(result.global_result.json())
-            context += f"</{KG_GLOBAL_SEARCH_STREAM_MARKER}>"
     return context
 
 

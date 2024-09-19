@@ -44,7 +44,7 @@ class VectorSearchPipe(SearchPipe):
     def config(self) -> SearchPipe.SearchConfig:
         return self._config
 
-    async def search( # type: ignore
+    async def search(  # type: ignore
         self,
         message: str,
         search_settings: VectorSearchSettings,
@@ -94,8 +94,7 @@ class VectorSearchPipe(SearchPipe):
             results.append(result)
             yield result
 
-
-    async def _run_logic( # type: ignore
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,

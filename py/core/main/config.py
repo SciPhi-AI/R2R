@@ -31,11 +31,11 @@ class R2RConfig:
         current_file_path, "..", "..", "r2r.toml"
     )
 
-    CONFIG_OPTIONS = {}
-    for file in os.listdir(config_dir_root):
-        if file.endswith(".toml"):
-            CONFIG_OPTIONS[file.removesuffix(".toml")] = os.path.join(
-                config_dir_root, file
+    CONFIG_OPTIONS: dict[str, Optional[str]] = {}
+    for file_ in os.listdir(config_dir_root):
+        if file_.endswith(".toml"):
+            CONFIG_OPTIONS[file_.removesuffix(".toml")] = os.path.join(
+                config_dir_root, file_
             )
     CONFIG_OPTIONS["default"] = None
 
@@ -116,25 +116,26 @@ class R2RConfig:
                         base_path / default_config[section]["file_path"]
                     )
             setattr(self, section, default_config[section])
-        self.completion = CompletionConfig.create(**self.completion)
+
+        self.completion = CompletionConfig.create(**self.completion)  # type: ignore
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()
         )
 
-        self.auth = AuthConfig.create(**self.auth)
-        self.chunking = ChunkingConfig.create(**self.chunking)
-        self.crypto = CryptoConfig.create(**self.crypto)
-        self.database = DatabaseConfig.create(**self.database)
-        self.embedding = EmbeddingConfig.create(**self.embedding)
-        self.kg = KGConfig.create(**self.kg)
-        self.logging = LoggingConfig.create(**self.logging)
-        if "chunking_config" not in self.parsing:
-            self.parsing["chunking_config"] = self.chunking
-        self.parsing = ParsingConfig.create(**self.parsing)
-        self.prompt = PromptConfig.create(**self.prompt)
-        self.agent = AgentConfig.create(**self.agent)
-        self.file = FileConfig.create(**self.file)
+        self.auth = AuthConfig.create(**self.auth)  # type: ignore
+        self.chunking = ChunkingConfig.create(**self.chunking)  # type: ignore
+        self.crypto = CryptoConfig.create(**self.crypto)  # type: ignore
+        self.database = DatabaseConfig.create(**self.database)  # type: ignore
+        self.embedding = EmbeddingConfig.create(**self.embedding)  # type: ignore
+        self.kg = KGConfig.create(**self.kg)  # type: ignore
+        self.logging = LoggingConfig.create(**self.logging)  # type: ignore
+        if "chunking_config" not in self.parsing:  # type: ignore
+            self.parsing["chunking_config"] = self.chunking  # type: ignore
+        self.parsing = ParsingConfig.create(**self.parsing)  # type: ignore
+        self.prompt = PromptConfig.create(**self.prompt)  # type: ignore
+        self.agent = AgentConfig.create(**self.agent)  # type: ignore
+        self.file = FileConfig.create(**self.file)  # type: ignore
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -149,7 +150,7 @@ class R2RConfig:
             )
 
     @classmethod
-    def from_toml(cls, config_path: str = None) -> "R2RConfig":
+    def from_toml(cls, config_path: Optional[str] = None) -> "R2RConfig":
         if config_path is None:
             config_path = R2RConfig.default_config_path
 
@@ -192,7 +193,7 @@ class R2RConfig:
                 for k, v in config_section.items()
             }
         elif isinstance(config_section, (list, tuple)):
-            return [
+            return [  # type: ignore
                 R2RConfig._serialize_config(item) for item in config_section
             ]
         elif isinstance(config_section, Enum):

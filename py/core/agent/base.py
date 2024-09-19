@@ -74,7 +74,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
-    ) -> str:
+    ) -> None:
         if not self._completed:
             message = response.choices[0].message
             if message.function_call:
@@ -100,7 +100,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
 
 class R2RStreamingAgent(Agent):
-    async def arun(
+    async def arun(  # type: ignore
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
@@ -140,8 +140,11 @@ class R2RStreamingAgent(Agent):
             self.arun(system_instruction, messages, *args, **kwargs)
         )
 
-    async def process_llm_response(
-        self, stream: LLMChatCompletionChunk, *args, **kwargs
+    async def process_llm_response(  # type: ignore
+        self,
+        stream: Generator[LLMChatCompletionChunk, None, None],
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         function_name = None
         function_arguments = ""
@@ -151,17 +154,30 @@ class R2RStreamingAgent(Agent):
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
+                    if not tool_call.function:
+                        raise ValueError(
+                            "Tool function not found in tool call."
+                        )
+                    name = tool_call.function.name
+                    if not name:
+                        raise ValueError("Tool name not found in tool call.")
+                    arguments = tool_call.function.arguments
+                    if not arguments:
+                        raise ValueError(
+                            "Tool arguments not found in tool call."
+                        )
+
                     results = await self.handle_function_or_tool_call(
-                        tool_call.function.name,
-                        tool_call.function.arguments,
+                        name,
+                        arguments,
                         # FIXME: tool_call.id,
                         *args,
                         **kwargs,
                     )
 
                     yield "<tool_call>"
-                    yield f"<name>{tool_call.function.name}</name>"
-                    yield f"<arguments>{tool_call.function.arguments}</arguments>"
+                    yield f"<name>{name}</name>"
+                    yield f"<arguments>{arguments}</arguments>"
                     yield f"<results>{results}</results>"
                     yield "</tool_call>"
 
@@ -177,6 +193,11 @@ class R2RStreamingAgent(Agent):
                 yield delta.content
 
             if chunk.choices[0].finish_reason == "function_call":
+                if not function_name:
+                    raise ValueError(
+                        "Function name not found in function call."
+                    )
+
                 yield "<function_call>"
                 yield f"<name>{function_name}</name>"
                 yield f"<arguments>{function_arguments}</arguments>"

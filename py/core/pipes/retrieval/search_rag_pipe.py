@@ -40,8 +40,8 @@ class SearchRAGPipe(GeneratorPipe):
     @property
     def config(self) -> GeneratorPipe.PipeConfig:  # for type hiting
         return self._config
-    
-    async def _run_logic( # type: ignore
+
+    async def _run_logic(  # type: ignore
         self,
         input: Input,
         state: AsyncState,
@@ -106,10 +106,10 @@ class SearchRAGPipe(GeneratorPipe):
             context += f"Knowledge Graph ({iteration}):\n"
             it = total_results + 1
             for search_results in results.kg_search_results:  # [1]:
-                if associated_query := search_results.metadata.get('associated_query'):
-                    context += (
-                        f"Query: {associated_query}\n\n"
-                    )
+                if associated_query := search_results.metadata.get(
+                    "associated_query"
+                ):
+                    context += f"Query: {associated_query}\n\n"
                 context += f"Results:\n"
                 for search_result in search_results:
                     context += f"[{it}]: {search_result}\n\n"

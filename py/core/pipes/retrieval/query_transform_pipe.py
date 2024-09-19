@@ -46,7 +46,7 @@ class QueryTransformPipe(GeneratorPipe):
         self._config: QueryTransformPipe.QueryTransformConfig = config
 
     @property
-    def config(self) -> QueryTransformConfig: # type: ignore
+    def config(self) -> QueryTransformConfig:  # type: ignore
         return self._config
 
     async def _run_logic(  # type: ignore
@@ -81,12 +81,8 @@ class QueryTransformPipe(GeneratorPipe):
             )
             content = response.choices[0].message.content
             if not content:
-                logger.error(
-                    f"Failed to transform query: {query}. Skipping."
-                )
-                raise ValueError(
-                    f"Failed to transform query: {query}."
-                )
+                logger.error(f"Failed to transform query: {query}. Skipping.")
+                raise ValueError(f"Failed to transform query: {query}.")
             outputs = content.split("\n")
             outputs = [
                 output.strip() for output in outputs if output.strip() != ""

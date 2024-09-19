@@ -17,7 +17,7 @@ class PromptConfig(ProviderConfig):
     # TODO - Replace this with a database
     file_path: Optional[Path] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @property
@@ -27,7 +27,7 @@ class PromptConfig(ProviderConfig):
 
 
 class PromptProvider(Provider):
-    def __init__(self, config:  PromptConfig):
+    def __init__(self, config: PromptConfig):
         logger.info(f"Initializing PromptProvider with config {config}.")
         super().__init__(config)
 
