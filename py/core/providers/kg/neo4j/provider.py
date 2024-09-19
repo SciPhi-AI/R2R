@@ -425,9 +425,6 @@ class Neo4jKGProvider(KGProvider):
                 "search_type": search_type,
             }
 
-        logger.info(f"Query: {query}")
-        logger.info(f"Query params: {query_params}")
-
         neo4j_results = self.structured_query(query, query_params)
 
         # get the descriptions from the neo4j results
