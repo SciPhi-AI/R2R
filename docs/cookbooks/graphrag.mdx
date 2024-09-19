@@ -178,7 +178,17 @@ r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
 This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
 
 
-1. Using the `r2r inspect-knowledge-graph` command.
+1. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
+
+```
+MATCH (a)
+RETURN a
+```
+
+![Aristotle Graph](../images/aristotle.png)
+
+
+2. Using the `r2r inspect-knowledge-graph` command.
 
 ```bash
 r2r inspect-knowledge-graph
@@ -211,17 +221,6 @@ Number of connected components: 7
   Lesbos: 0.0189
   Nicomachus: 0.0189
 ```
-
-2. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
-
-```
-MATCH (a)
-RETURN a
-```
-
-![Aristotle Graph](../images/aristotle.png)
-
-
 
 ## Graph Enrichment
 
