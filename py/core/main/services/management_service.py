@@ -624,7 +624,7 @@ class ManagementService(Service):
         await self.providers.database.relational.delete_collection(
             collection_id
         )
-        await self.providers.database.vector.delete_collection(collection_id)
+        self.providers.database.vector.delete_collection(collection_id)
         return True
 
     @telemetry_event("ListGroups")

@@ -390,46 +390,6 @@ class UserMixin(DatabaseMixin):
         """
         await self.execute_query(query, [user_id])
 
-    async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
-    ) -> list[UserResponse]:
-        query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('users')}
-            WHERE $1 = ANY(collection_ids)
-            ORDER BY email
-            OFFSET $2
-        """
-
-        conditions = [collection_id, offset]
-
-        if limit != -1:
-            query += " LIMIT $3"
-            conditions.append(limit)
-
-        results = await self.fetch_query(query, [collection_id, offset, limit])
-
-        users = [
-            UserResponse(
-                id=row["user_id"],
-                email=row["email"],
-                is_superuser=row["is_superuser"],
-                is_active=row["is_active"],
-                is_verified=row["is_verified"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-                name=row["name"],
-                profile_picture=row["profile_picture"],
-                bio=row["bio"],
-                collection_ids=row["collection_ids"],
-            )
-            for row in results
-        ]
-
-        total_entries = results[0]["total_entries"]
-
-        return {"results": users, "total_entries": total_entries}
-
     async def get_user_id_by_verification_code(
         self, verification_code: str
     ) -> Optional[UUID]:

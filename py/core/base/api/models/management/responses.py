@@ -71,6 +71,24 @@ class UserOverviewResponse(BaseModel):
     document_ids: list[UUID]
 
 
+class UserResponse(BaseModel):
+    id: UUID
+    email: str
+    is_active: bool = True
+    is_superuser: bool = False
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
+    is_verified: bool = False
+    collection_ids: list[UUID] = []
+
+    # Optional fields (to update or set at creation)
+    hashed_password: Optional[str] = None
+    verification_code_expiry: Optional[datetime] = None
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None
+
+
 class DocumentOverviewResponse(BaseModel):
     id: UUID
     title: str
@@ -141,9 +159,7 @@ WrappedCollectionOverviewResponse = PaginatedResultsWrapper[
     list[GroupOverviewResponse]
 ]
 WrappedAddUserResponse = ResultsWrapper[AddUserResponse]
-WrappedUsersInCollectionResponse = PaginatedResultsWrapper[
-    list[UserOverviewResponse]
-]
+WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedUserCollectionResponse = PaginatedResultsWrapper[
     list[GroupOverviewResponse]
 ]

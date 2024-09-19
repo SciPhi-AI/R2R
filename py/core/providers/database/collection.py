@@ -258,7 +258,8 @@ class CollectionMixin(DatabaseMixin):
 
         query = f"""
             SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture, COUNT(*) OVER() AS total_entries
+                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture,
+                COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('users')} u
             WHERE $1 = ANY(u.collection_ids)
             ORDER BY u.name
@@ -271,6 +272,8 @@ class CollectionMixin(DatabaseMixin):
             conditions.append(limit)
 
         results = await self.fetch_query(query, conditions)
+
+        print(results)
 
         users = [
             UserResponse(
@@ -312,7 +315,7 @@ class CollectionMixin(DatabaseMixin):
         if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
         query = f"""
-            SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at
+            SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('document_info')} d
             WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
@@ -407,7 +410,7 @@ class CollectionMixin(DatabaseMixin):
         self, user_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[GroupResponse]:
         query = f"""
-            SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
+            SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('collections')} g
             JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
             WHERE u.user_id = $1
@@ -501,7 +504,7 @@ class CollectionMixin(DatabaseMixin):
         self, document_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[GroupResponse]:
         query = f"""
-            SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
+            SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('collections')} g
             JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
             WHERE d.document_id = $1

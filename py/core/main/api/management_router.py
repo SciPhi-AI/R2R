@@ -608,6 +608,9 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can assign documents to collections.",
                     403,
                 )
+            print(
+                f"document_id: {document_id}, collection_id: {collection_id}"
+            )
             document_uuid = UUID(document_id)
             collection_uuid = UUID(collection_id)
             return await self.service.assign_document_to_collection(
