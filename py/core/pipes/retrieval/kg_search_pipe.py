@@ -123,67 +123,58 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "__Entity__"
-            search_result = self.kg_provider.vector_query(
+            async for search_result in self.kg_provider.vector_query(
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
                     search_type
                 ],
                 query_embedding=query_embedding,
-                property_names=["name", "description"],
-            )
-
-            if len(search_result[0]) == 0:
-                raise R2RException(
-                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
-                    400,
-                )
-
-            for search_result in search_result:
+                property_names=["name", "description", "fragment_ids", "document_ids"],
+            ):
+                print(search_result)
                 yield KGSearchResult(
-                    content=KGEntityResult(name=search_result.name, description=search_result.description, metadata=search_result.metadata),
+                    content=KGEntityResult(name=search_result["name"], description=search_result["description"]),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    fragment_ids=search_result.fragment_ids,
-                    document_ids=search_result.document_ids,
+                    fragment_ids=search_result["fragment_ids"],
+                    document_ids=search_result["document_ids"],
                     metadata={'associated_query': message},
                 )
             
             # relationship search
             search_type = "__Relationship__"
-            search_result = self.kg_provider.vector_query(
+            async for search_result in self.kg_provider.vector_query(
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
                     search_type
                 ],
                 query_embedding=query_embedding,
-                property_names=["name", "description"],
-            )
-            async for search_result in search_result:
+                property_names=["name", "description", "fragment_ids", "document_ids"],
+            ):
                 yield KGSearchResult(
-                    content=KGRelationshipResult(name=search_result.name, description=search_result.description, metadata=search_result.metadata),
+                    content=KGRelationshipResult(name=search_result["name"], description=search_result["description"]),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.RELATIONSHIP,
-                    fragment_ids=search_result.fragment_ids,
-                    document_ids=search_result.document_ids,
+                    fragment_ids=search_result["fragment_ids"],
+                    document_ids=search_result["document_ids"],
                     metadata={'associated_query': message},
                 )
 
             # community search
             search_type = "__Community__"
-            search_result = self.kg_provider.vector_query(
+            async for search_result in self.kg_provider.vector_query(
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
                     search_type
                 ],
                 query_embedding=query_embedding,
-                property_names=["name", "description"],
-            )
-            async for search_result in search_result:
+                property_names=["title", "summary"],
+            ):
                 yield KGSearchResult(
-                    content=KGCommunityResult(name=search_result.name, description=search_result.description, metadata=search_result.metadata),
+                    content=KGCommunityResult(name=search_result["title"], description=search_result["summary"]),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
                     metadata={'associated_query': message},

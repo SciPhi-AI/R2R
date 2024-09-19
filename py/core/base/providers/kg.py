@@ -127,7 +127,7 @@ class KGProvider(ABC):
             param_map = {}
 
     @abstractmethod
-    def vector_query(
+    async def vector_query(
         self, query, **kwargs: Any
     ) -> Tuple[list[Entity], list[float]]:
         """Abstract method to query the graph store with a vector store query."""

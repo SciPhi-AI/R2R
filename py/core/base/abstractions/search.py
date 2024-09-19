@@ -67,29 +67,30 @@ class KGSearchMethod(str, Enum):
 class KGEntityResult(BaseModel):
     name: str
     description: str
-    metadata: dict[str, Any]
+    metadata: Optional[dict[str, Any]] = None
 
 class KGRelationshipResult(BaseModel):
     name: str
     description: str
-    metadata: dict[str, Any]
+    metadata: Optional[dict[str, Any]] = None
 
 class KGCommunityResult(BaseModel):
     name: str
     description: str
-    metadata: dict[str, Any]
+    metadata: Optional[dict[str, Any]] = None
 
 class KGGlobalResult(BaseModel):
     name: str
     description: str
-
+    metadata: Optional[dict[str, Any]] = None
+    
 class KGSearchResult(BaseModel):
     method: KGSearchMethod
     content: Union[KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult]
     result_type: Optional[KGSearchResultType] = None
     fragment_ids: Optional[list[UUID]] = None
     document_ids: Optional[list[UUID]] = None
-    metadata: dict[str, Any]
+    metadata: Optional[dict[str, Any]] = None
 
     class Config:
         json_schema_extra = {
