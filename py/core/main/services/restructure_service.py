@@ -74,14 +74,14 @@ class RestructureService(Service):
 
     @telemetry_event("kg_node_creation")
     async def kg_node_creation(self, max_description_input_length: int):
-        node_extrations = await self.pipes.kg_node_extraction_pipe.run(
+        node_extractions = await self.pipes.kg_node_extraction_pipe.run(
             input=self.pipes.kg_node_extraction_pipe.Input(message=None),
             run_manager=self.run_manager,
         )
         result_gen = await self.pipes.kg_node_description_pipe.run(
             input=self.pipes.kg_node_description_pipe.Input(
                 message={
-                    "node_extrations": node_extrations,
+                    "node_extractions": node_extractions,
                     "max_description_input_length": max_description_input_length,
                 }
             ),

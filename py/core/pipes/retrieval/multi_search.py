@@ -82,7 +82,7 @@ class MultiSearchPipe(AsyncPipe):
             ):
                 results.append(search_result)
 
-            # Group results by their associated queries
+            # Collection results by their associated queries
             grouped_results = {}
             for result in results:
                 query = result.metadata["associated_query"]

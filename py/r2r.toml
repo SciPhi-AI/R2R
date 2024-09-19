@@ -56,6 +56,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
+    max_description_input_length = 65536
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
