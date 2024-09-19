@@ -78,18 +78,35 @@ async def run_local_serve(
     config_path: Optional[str] = None,
     reload: bool = False,
 ) -> None:
-    if config_name:
-        os.environ["CONFIG_NAME"] = config_name
-    if config_path:
-        os.environ["CONFIG_PATH"] = config_path
-    
-    uvicorn.run(
-        "core.main.app_entry:app",
-        host=host,
-        port=port,
-        reload=reload
-    )
+    try:
+        from r2r import R2RBuilder, R2RConfig
+    except ImportError as e:
+        click.echo(
+            f"Error: {e}\n\nNote, you must install the `r2r core` package to run the R2R server locally."
+        )
+        sys.exit(1)
 
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config_path and config_name")
+    if not config_path and not config_name:
+        config_name = "default"
+
+    r2r_instance = await R2RBuilder(
+        config=R2RConfig.load(config_name, config_path)
+    ).build()
+
+    if config_name or config_path:
+        completion_config = r2r_instance.config.completion
+        llm_provider = completion_config.provider
+        llm_model = completion_config.generation_config.model
+        model_provider = llm_model.split("/")[0]
+        check_llm_reqs(llm_provider, model_provider, include_ollama=True)
+
+    click.echo("R2R now runs on port 7272 by default!")
+    available_port = find_available_port(port)
+
+    await r2r_instance.orchestration_provider.start_worker()
+    r2r_instance.serve(host, available_port)
 
 def run_docker_serve(
     host: str,
