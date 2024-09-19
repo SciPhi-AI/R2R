@@ -202,20 +202,49 @@ class KGEntityResult(BaseModel):
     description: str
     metadata: Optional[dict[str, Any]] = None
 
+    class Config:
+        json_schema_extra = {
+            "name": "Entity Name",
+            "description": "Entity Description",
+            "metadata": {},
+        }
+
 class KGRelationshipResult(BaseModel):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "name": "Relationship Name",
+            "description": "Relationship Description",
+            "metadata": {},
+        }
 
 class KGCommunityResult(BaseModel):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
 
+    class Config:
+        json_schema_extra = {
+            "name": "Community Name",
+            "description": "Community Description",
+            "metadata": {},
+        }
+
+
 class KGGlobalResult(BaseModel):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "name": "Global Result Name",
+            "description": "Global Result Description",
+            "metadata": {},
+        }
     
 class KGSearchResult(BaseModel):
     method: KGSearchMethod
@@ -228,11 +257,11 @@ class KGSearchResult(BaseModel):
     class Config:
         json_schema_extra = {
             "method": "local",
-            "content": "",
+            "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
-            "fragment_ids": [],
-            "document_ids": [],
-            "metadata": {},
+            "fragment_ids": [ 'c68dc72e-fc23-5452-8f49-d7bd46088a96'],
+            "document_ids": [ '3e157b3a-8469-51db-90d9-52e7d896b49b'],
+            "metadata": { "associated_query": "What is the capital of France?" },
         }
 
 class R2RException(Exception):
