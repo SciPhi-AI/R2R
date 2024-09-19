@@ -76,7 +76,6 @@ async def run_local_serve(
     port: int,
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
-    reload: bool = False,
 ) -> None:
     try:
         from r2r import R2RBuilder, R2RConfig
