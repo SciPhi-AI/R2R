@@ -29,7 +29,9 @@ from cli.utils.timer import timer
     "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
 )
 @click.option(
-    "--selected-group-ids", type=JSON, help="Group IDs to search for as a JSON"
+    "--selected-collection-ids",
+    type=JSON,
+    help="Collection IDs to search for as a JSON",
 )
 # KGSearchSettings
 @click.option(
@@ -137,7 +139,9 @@ def search(ctx, query, **kwargs):
     "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
 )
 @click.option(
-    "--selected-group-ids", type=JSON, help="Group IDs to search for as a JSON"
+    "--selected-collection-ids",
+    type=JSON,
+    help="Collection IDs to search for as a JSON",
 )
 # KG Search Settings
 @click.option(

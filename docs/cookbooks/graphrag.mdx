@@ -42,7 +42,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
-    max_description_input_length = 8192 # increase if you want more comprehensive descriptions
+    max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
@@ -106,7 +106,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
-    max_description_input_length = 8192 # increase if you want more comprehensive descriptions
+    max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
@@ -178,7 +178,17 @@ r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
 This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
 
 
-1. Using the `r2r inspect-knowledge-graph` command.
+1. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
+
+```
+MATCH (a)
+RETURN a
+```
+
+![Aristotle Graph](../images/aristotle.png)
+
+
+2. Using the `r2r inspect-knowledge-graph` command.
 
 ```bash
 r2r inspect-knowledge-graph
@@ -211,17 +221,6 @@ Number of connected components: 7
   Lesbos: 0.0189
   Nicomachus: 0.0189
 ```
-
-2. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
-
-```
-MATCH (a)
-RETURN a
-```
-
-![Aristotle Graph](../images/aristotle.png)
-
-
 
 ## Graph Enrichment
 
