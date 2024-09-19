@@ -207,7 +207,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     )
 
                 except json.JSONDecodeError:
-                    logger.warning(f"Summary is not valid JSON: {summary}")
+                    logger.warning(f"Summary is not valid JSON")
                     continue
 
                 yield KGSearchResult(
@@ -310,7 +310,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     name="Global Result", description=output
                 ),
                 method=KGSearchMethod.GLOBAL,
-                metadata={},
+                metadata={'associated_query': message},
             )
 
     async def _run_logic(
