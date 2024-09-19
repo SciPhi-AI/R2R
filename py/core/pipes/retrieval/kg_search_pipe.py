@@ -170,11 +170,27 @@ class KGSearchSearchPipe(GeneratorPipe):
                 search_type_limits=kg_search_settings.local_search_limits[
                     search_type
                 ],
+                embedding_type="summary_embedding",
                 query_embedding=query_embedding,
                 property_names=["title", "summary"],
             ):
+                
+                summary = search_result["summary"]
+
+                # try loading it as a json
+                try:
+                    summary_json = json.loads(summary)
+                    description = summary_json.get("summary", "")
+                    name = summary_json.get("title", "")
+
+                    description += "\n\n" + "\n".join([finding["summary"] for finding in summary_json.get("findings", [])])
+   
+                except json.JSONDecodeError:
+                    logger.warning(f"Summary is not valid JSON: {summary}")
+                    continue
+
                 yield KGSearchResult(
-                    content=KGCommunityResult(name=search_result["title"], description=search_result["summary"]),
+                    content=KGCommunityResult(name=name, description=description),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
                     metadata={'associated_query': message},

@@ -438,6 +438,8 @@ class Neo4jKGProvider(KGProvider):
         if search_type == "__Entity__" and len(neo4j_results.records) == 0:
             raise R2RException("No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph", 400)
 
+        logger.info(f"Neo4j results: Returning {len(neo4j_results.records)} records for query of type {search_type}")
+
         for record in neo4j_results.records:
             yield {
                 property_name: record[property_name]
