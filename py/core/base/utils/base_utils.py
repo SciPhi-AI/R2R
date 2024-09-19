@@ -43,10 +43,8 @@ def format_search_results_for_stream(
     context = ""
     if result.vector_search_results:
         context += f"<{VECTOR_SEARCH_STREAM_MARKER}>"
-        vector_results_list = [
-            result.json() for result in result.vector_search_results
-        ]
-        context += json.dumps(vector_results_list)
+        vector_results_list = [result.dict() for result in result.vector_search_results]
+        context += json.dumps(vector_results_list, default=str)
         context += f"</{VECTOR_SEARCH_STREAM_MARKER}>"
 
     if result.kg_search_results:
