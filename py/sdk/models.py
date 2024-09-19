@@ -233,6 +233,7 @@ class KGCommunityResult(BaseModel):
             "metadata": {},
         }
 
+
 class KGGlobalResult(BaseModel):
     name: str
     description: str
