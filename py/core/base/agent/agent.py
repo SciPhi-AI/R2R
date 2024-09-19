@@ -177,6 +177,8 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
+        print("args:", args)
+        print("kwargs:", kwargs)
         (
             self.conversation.append(
                 Message(
