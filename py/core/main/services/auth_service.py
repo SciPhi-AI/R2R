@@ -33,11 +33,13 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(self, email: str, password: str) -> dict[str, str]:
         return await self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
-    async def verify_email(self, email: str, verification_code: str) -> bool:
+    async def verify_email(
+        self, email: str, verification_code: str
+    ) -> dict[str, str]:
 
         if not self.config.auth.require_email_verification:
             raise R2RException(
@@ -147,7 +149,7 @@ class AuthService(Service):
             raise R2RException(status_code=404, message="User not found")
         if not (
             is_superuser
-            or self.providers.auth.crypto_provider.verify_password(
+            or self.providers.auth.crypto_provider.verify_password(  # type: ignore
                 password, user.hashed_password
             )
         ):
@@ -160,7 +162,9 @@ class AuthService(Service):
 
     @telemetry_event("CleanExpiredBlacklistedTokens")
     async def clean_expired_blacklisted_tokens(
-        self, max_age_hours: int = 7 * 24, current_time: datetime = None
+        self,
+        max_age_hours: int = 7 * 24,
+        current_time: Optional[datetime] = None,
     ):
         await self.providers.database.relational.clean_expired_blacklisted_tokens(
             max_age_hours, current_time

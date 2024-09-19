@@ -1,14 +1,14 @@
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, Sequence
 from uuid import UUID
 
 from core.base import R2RException
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models.auth.responses import UserResponse
 from core.base.api.models.management.responses import (
-    GroupOverviewResponse,
-    GroupResponse,
+    CollectionOverviewResponse,
+    CollectionResponse,
 )
 
 from .base import DatabaseMixin
@@ -38,7 +38,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def create_collection(
         self, name: str, description: str = ""
-    ) -> GroupResponse:
+    ) -> CollectionResponse:
         current_time = datetime.utcnow()
         query = f"""
             INSERT INTO {self._get_table_name('collections')} (name, description, created_at, updated_at)
@@ -48,7 +48,7 @@ class CollectionMixin(DatabaseMixin):
         params = [name, description, current_time, current_time]
 
         try:
-            async with self.pool.acquire() as conn:
+            async with self.pool.acquire() as conn:  # type: ignore
                 row = await conn.fetchrow(query, *params)
 
             if not row:
@@ -56,7 +56,7 @@ class CollectionMixin(DatabaseMixin):
                     status_code=500, message="Failed to create collection"
                 )
 
-            return GroupResponse(
+            return CollectionResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
@@ -69,7 +69,7 @@ class CollectionMixin(DatabaseMixin):
                 message=f"An error occurred while creating the collection: {str(e)}",
             )
 
-    async def get_collection(self, collection_id: UUID) -> GroupResponse:
+    async def get_collection(self, collection_id: UUID) -> CollectionResponse:
         """Get a collection by its ID."""
         if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
@@ -83,7 +83,7 @@ class CollectionMixin(DatabaseMixin):
         if not result:
             raise R2RException(status_code=404, message="Collection not found")
 
-        return GroupResponse(
+        return CollectionResponse(
             collection_id=result["collection_id"],
             name=result["name"],
             description=result["description"],
@@ -92,25 +92,44 @@ class CollectionMixin(DatabaseMixin):
         )
 
     async def update_collection(
-        self, collection_id: UUID, name: str, description: str
-    ) -> GroupResponse:
+        self,
+        collection_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> CollectionResponse:
         """Update an existing collection."""
         if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
+        update_fields = []
+        params = []
+
+        if name is not None:
+            update_fields.append("name = $1")
+            params.append(name)
+
+        if description is not None:
+            update_fields.append("description = ${}".format(len(params) + 1))
+            params.append(description)
+
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
+
+        update_fields.append("updated_at = NOW()")
+        params.append(collection_id)
+
         query = f"""
             UPDATE {self._get_table_name('collections')}
-            SET name = $1, description = $2, updated_at = NOW()
-            WHERE collection_id = $3
+            SET {', '.join(update_fields)}
+            WHERE collection_id = ${len(params)}
             RETURNING collection_id, name, description, created_at, updated_at
         """
-        result = await self.fetchrow_query(
-            query, [name, description, collection_id]
-        )
+
+        result = await self.fetchrow_query(query, params)
         if not result:
             raise R2RException(status_code=404, message="Collection not found")
 
-        return GroupResponse(
+        return CollectionResponse(
             collection_id=result["collection_id"],
             name=result["name"],
             description=result["description"],
@@ -139,7 +158,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def list_collections(
         self, offset: int = 0, limit: int = 100
-    ) -> list[GroupResponse]:
+    ) -> list[CollectionResponse]:
         """List collections with pagination."""
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
@@ -152,7 +171,7 @@ class CollectionMixin(DatabaseMixin):
         if not results:
             return []
         return [
-            GroupResponse(
+            CollectionResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
@@ -164,7 +183,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def get_collections_by_ids(
         self, collection_ids: list[UUID]
-    ) -> list[GroupResponse]:
+    ) -> list[CollectionResponse]:
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
             FROM {self._get_table_name("collections")}
@@ -177,98 +196,12 @@ class CollectionMixin(DatabaseMixin):
                 message=f"These collections were not found: {set(collection_ids) - {row['collection_id'] for row in results}}",
             )
         return [
-            GroupResponse(
+            CollectionResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
-            )
-            for row in results
-        ]
-
-    async def add_user_to_collection(
-        self, user_id: UUID, collection_id: UUID
-    ) -> bool:
-        """Add a user to a collection."""
-        if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
-
-        query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET collection_ids = array_append(collection_ids, $1)
-            WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
-            RETURNING user_id
-        """
-        result = await self.fetchrow_query(query, [collection_id, user_id])
-        return bool(result)
-
-    async def remove_user_from_collection(
-        self, user_id: UUID, collection_id: UUID
-    ) -> None:
-        """Remove a user from a collection."""
-        if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
-
-        query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET collection_ids = array_remove(collection_ids, $1)
-            WHERE user_id = $2 AND $1 = ANY(collection_ids)
-            RETURNING user_id
-        """
-        result = await self.fetchrow_query(query, [collection_id, user_id])
-        if not result:
-            raise R2RException(
-                status_code=404,
-                message="User is not a member of the specified collection",
-            )
-
-    async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[UserResponse]:
-        """
-        Get all users in a specific collection with pagination.
-
-        Args:
-            collection_id (UUID): The ID of the collection to get users from.
-            offset (int): The number of users to skip.
-            limit (int): The maximum number of users to return.
-
-        Returns:
-            List[UserResponse]: A list of UserResponse objects representing the users in the collection.
-
-        Raises:
-            R2RException: If the collection doesn't exist.
-        """
-        if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
-
-        query = f"""
-            SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture
-            FROM {self._get_table_name('users')} u
-            WHERE $1 = ANY(u.collection_ids)
-            ORDER BY u.name
-            OFFSET $2
-            LIMIT $3
-        """
-        results = await self.fetch_query(query, [collection_id, offset, limit])
-
-        return [
-            UserResponse(
-                id=row["user_id"],
-                email=row["email"],
-                is_active=row["is_active"],
-                is_superuser=row["is_superuser"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-                is_verified=row["is_verified"],
-                collection_ids=row["collection_ids"],
-                name=row["name"],
-                bio=row["bio"],
-                profile_picture=row["profile_picture"],
-                hashed_password=None,
-                verification_code_expiry=None,
             )
             for row in results
         ]
@@ -320,7 +253,7 @@ class CollectionMixin(DatabaseMixin):
         collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
-    ) -> list[GroupOverviewResponse]:
+    ) -> list[CollectionOverviewResponse]:
         """Get an overview of collections, optionally filtered by collection IDs, with pagination."""
         query = f"""
             WITH collection_overview AS (
@@ -331,7 +264,7 @@ class CollectionMixin(DatabaseMixin):
                 LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
                 LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
         """
-        params = []
+        params: list[Any] = []
         if collection_ids:
             query += " WHERE g.collection_id = ANY($1)"
             params.append(collection_ids)
@@ -350,7 +283,7 @@ class CollectionMixin(DatabaseMixin):
 
         results = await self.fetch_query(query, params)
         return [
-            GroupOverviewResponse(
+            CollectionOverviewResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
@@ -364,7 +297,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[GroupResponse]:
+    ) -> list[CollectionResponse]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
             FROM {self._get_table_name('collections')} g
@@ -377,7 +310,7 @@ class CollectionMixin(DatabaseMixin):
         results = await self.fetch_query(query, [user_id, offset, limit])
 
         return [
-            GroupResponse(
+            CollectionResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],
@@ -450,7 +383,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def document_collections(
         self, document_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[GroupResponse]:
+    ) -> list[CollectionResponse]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
             FROM {self._get_table_name('collections')} g
@@ -463,7 +396,7 @@ class CollectionMixin(DatabaseMixin):
         results = await self.fetch_query(query, [document_id, offset, limit])
 
         return [
-            GroupResponse(
+            CollectionResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
                 description=row["description"],

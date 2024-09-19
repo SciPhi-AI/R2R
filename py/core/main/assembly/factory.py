@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base import (
@@ -27,7 +27,7 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
-from core.pipes import MultiSearchPipe, SearchPipe
+from core.pipes import MultiSearchPipe, SearchPipe, GeneratorPipe
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -43,11 +43,10 @@ class R2RProviderFactory:
     async def create_auth_provider(
         auth_config: AuthConfig,
         db_provider: DatabaseProvider,
-        crypto_provider: Optional[CryptoProvider] = None,
+        crypto_provider: CryptoProvider,
         *args,
         **kwargs,
     ) -> AuthProvider:
-        auth_provider: Optional[AuthProvider] = None
         if auth_config.provider == "r2r":
             from core.providers import R2RAuthProvider
 
@@ -55,32 +54,24 @@ class R2RProviderFactory:
                 auth_config, crypto_provider, db_provider
             )
             await auth_provider.initialize()
-        elif auth_config.provider is None:
-            auth_provider = None
+            return auth_provider
         else:
             raise ValueError(
                 f"Auth provider {auth_config.provider} not supported."
             )
-        return auth_provider
 
     @staticmethod
     def create_crypto_provider(
         crypto_config: CryptoConfig, *args, **kwargs
     ) -> CryptoProvider:
-        crypto_provider: Optional[CryptoProvider] = None
         if crypto_config.provider == "bcrypt":
             from core.providers.crypto import BCryptConfig, BCryptProvider
 
-            crypto_provider = BCryptProvider(
-                BCryptConfig(**crypto_config.dict())
-            )
-        elif crypto_config.provider is None:
-            crypto_provider = None
+            return BCryptProvider(BCryptConfig(**crypto_config.dict()))
         else:
             raise ValueError(
                 f"Crypto provider {crypto_config.provider} not supported."
             )
-        return crypto_provider
 
     @staticmethod
     def create_parsing_provider(
@@ -110,16 +101,25 @@ class R2RProviderFactory:
     ) -> ChunkingProvider:
         chunking_config.validate()
         if chunking_config.provider == "r2r":
+            from core.base import R2RChunkingConfig
             from core.providers import R2RChunkingProvider
 
-            return R2RChunkingProvider(chunking_config)
+            chunking_config_r2r = R2RChunkingConfig(
+                **chunking_config.extra_fields
+            )
+            return R2RChunkingProvider(chunking_config_r2r)
         elif chunking_config.provider in [
             "unstructured_local",
             "unstructured_api",
         ]:
+            from core.base import UnstructuredChunkingConfig
             from core.providers import UnstructuredChunkingProvider
 
-            return UnstructuredChunkingProvider(chunking_config)
+            print("chunking_config = ", chunking_config)
+            chunking_config_unst = UnstructuredChunkingConfig(
+                **chunking_config.extra_fields
+            )
+            return UnstructuredChunkingProvider(chunking_config_unst)
         else:
             raise ValueError(
                 f"Chunking provider {chunking_config.provider} not supported"
@@ -157,14 +157,11 @@ class R2RProviderFactory:
                 db_config, vector_db_dimension, crypto_provider=crypto_provider
             )
             await database_provider.initialize()
-        elif db_config.provider is None:
-            database_provider = None
+            return database_provider
         else:
             raise ValueError(
                 f"Database provider {db_config.provider} not supported"
             )
-
-        return database_provider
 
     @staticmethod
     def create_embedding_provider(
@@ -214,8 +211,6 @@ class R2RProviderFactory:
 
             file_provider = PostgresFileProvider(file_config, db_provider)
             await file_provider.initialize()
-        elif file_config.provider is None:
-            file_provider = None
         else:
             raise ValueError(
                 f"File provider {file_config.provider} not supported."
@@ -294,6 +289,7 @@ class R2RProviderFactory:
         **kwargs,
     ) -> R2RProviders:
 
+        print("A")
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -301,16 +297,23 @@ class R2RProviderFactory:
             )
         )
 
+        print("B")
         llm_provider = llm_provider_override or self.create_llm_provider(
             self.config.completion, *args, **kwargs
         )
+
+        print("C")
         kg_provider = kg_provider_override or self.create_kg_provider(
             self.config.kg, *args, **kwargs
         )
+
+        print("D")
         crypto_provider = (
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
+
+        print("E")
         database_provider = (
             database_provider_override
             or await self.create_database_provider(
@@ -318,6 +321,7 @@ class R2RProviderFactory:
             )
         )
 
+        print("F")
         auth_provider = (
             auth_provider_override
             or await self.create_auth_provider(
@@ -329,6 +333,7 @@ class R2RProviderFactory:
             )
         )
 
+        print("G")
         prompt_provider = (
             prompt_provider_override
             or await self.create_prompt_provider(
@@ -336,26 +341,31 @@ class R2RProviderFactory:
             )
         )
 
+        print("H")
         parsing_provider = (
             parsing_provider_override
             or self.create_parsing_provider(
                 self.config.parsing, *args, **kwargs
             )
         )
+
+        print("I")
         chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
-        file_provider = (
-            file_provider_override
-            or await self.create_file_provider(
-                self.config.file, database_provider, *args, **kwargs
-            )
+
+        print("J")
+        file_provider = file_provider_override or await self.create_file_provider(
+            self.config.file, database_provider, *args, **kwargs  # type: ignore
         )
 
+        print("K")
         orchestration_provider = (
             orchestration_provider_override
             or self.create_orchestration_provider()
         )
+
+        print("L")
         return R2RProviders(
             auth=auth_provider,
             chunking=chunking_provider,
@@ -417,7 +427,7 @@ class R2RPipeFactory:
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
-            or self.create_rag_pipe(stream=True, *args, **kwargs),
+            or self.create_rag_pipe(True, *args, **kwargs),
             kg_node_extraction_pipe=kg_node_extraction_pipe
             or self.create_kg_node_extraction_pipe(*args, **kwargs),
             kg_node_description_pipe=kg_node_description_pipe
@@ -436,12 +446,13 @@ class R2RPipeFactory:
         return ParsingPipe(
             parsing_provider=self.providers.parsing,
             file_provider=self.providers.file,
+            config=AsyncPipe.PipeConfig(name="parsing_pipe"),
         )
 
     def create_chunking_pipe(self, *args, **kwargs) -> Any:
         from core.pipes import ChunkingPipe
 
-        return ChunkingPipe(chunking_provider=self.providers.chunking)
+        return ChunkingPipe(chunking_provider=self.providers.chunking, config=AsyncPipe.PipeConfig(name="chunking_pipe"))
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -453,6 +464,7 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
             database_provider=self.providers.database,
             embedding_batch_size=self.config.embedding.batch_size,
+            config=AsyncPipe.PipeConfig(name="embedding_pipe")
         )
 
     def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
@@ -461,7 +473,7 @@ class R2RPipeFactory:
 
         from core.pipes import VectorStoragePipe
 
-        return VectorStoragePipe(database_provider=self.providers.database)
+        return VectorStoragePipe(database_provider=self.providers.database, config=AsyncPipe.PipeConfig(name="vector_storage_pipe"))
 
     def create_default_vector_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -472,6 +484,7 @@ class R2RPipeFactory:
         return VectorSearchPipe(
             database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
+            config=SearchPipe.SearchConfig(name="vector_search_pipe"),
         )
 
     def create_multi_search_pipe(
@@ -513,15 +526,15 @@ class R2RPipeFactory:
         )
         hyde_search_pipe = self.create_multi_search_pipe(
             vanilla_vector_search_pipe,
-            use_rrf=False,
-            expansion_technique="hyde",
+            False,
+            "hyde",
             *args,
             **kwargs,
         )
         rag_fusion_pipe = self.create_multi_search_pipe(
             vanilla_vector_search_pipe,
-            use_rrf=True,
-            expansion_technique="rag_fusion",
+            True,
+            "rag_fusion",
             *args,
             **kwargs,
         )
@@ -535,6 +548,7 @@ class R2RPipeFactory:
                 "rag_fusion": rag_fusion_pipe,
             },
             default_strategy="hyde",
+            config=AsyncPipe.PipeConfig(name="routing_search_pipe"),
         )
 
     def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
@@ -550,6 +564,7 @@ class R2RPipeFactory:
             prompt_provider=self.providers.prompt,
             chunking_provider=self.providers.chunking,
             kg_batch_size=self.config.kg.batch_size,
+            config=AsyncPipe.PipeConfig(name="kg_extraction_pipe"),
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
@@ -561,6 +576,7 @@ class R2RPipeFactory:
         return KGStoragePipe(
             kg_provider=self.providers.kg,
             embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(name="kg_storage_pipe"),
         )
 
     def create_kg_search_pipe(self, *args, **kwargs) -> Any:
@@ -574,6 +590,9 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
+            config = GeneratorPipe.PipeConfig(
+                name="kg_rag_pipe", task_prompt="kg_search"
+            )
         )
 
     def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:
@@ -583,6 +602,7 @@ class R2RPipeFactory:
             return StreamingSearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
+                config=GeneratorPipe.PipeConfig(name="streaming_rag_pipe", task_prompt="default_rag"),
             )
         else:
             from core.pipes import SearchRAGPipe
@@ -590,6 +610,7 @@ class R2RPipeFactory:
             return SearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
+                config=GeneratorPipe.PipeConfig(name="search_rag_pipe", task_prompt="default_rag"),
             )
 
     def create_kg_node_extraction_pipe(self, *args, **kwargs) -> Any:
@@ -599,6 +620,7 @@ class R2RPipeFactory:
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
+            config=AsyncPipe.PipeConfig(name="kg_node_extraction_pipe"),
         )
 
     def create_kg_node_description_pipe(self, *args, **kwargs) -> Any:
@@ -609,6 +631,7 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(name="kg_node_description_pipe"),
         )
 
     def create_kg_clustering_pipe(self, *args, **kwargs) -> Any:
@@ -619,6 +642,7 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(name="kg_clustering_pipe"),
         )
 
     def create_kg_community_summary_pipe(self, *args, **kwargs) -> Any:
@@ -629,6 +653,7 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
         )
 
 
@@ -693,15 +718,15 @@ class R2RPipelineFactory:
             search_pipeline=search_pipeline,
             rag_pipeline=rag_pipeline
             or self.create_rag_pipeline(
-                search_pipeline=search_pipeline,
-                stream=False,
+                search_pipeline,
+                False,
                 *args,
                 **kwargs,
             ),
             streaming_rag_pipeline=streaming_rag_pipeline
             or self.create_rag_pipeline(
-                search_pipeline=search_pipeline,
-                stream=True,
+                search_pipeline,
+                True,
                 *args,
                 **kwargs,
             ),
@@ -733,30 +758,32 @@ class R2RAgentFactory:
             rag_agent=rag_agent_override
             or self.create_rag_agent(*args, **kwargs),
             streaming_rag_agent=stream_rag_agent_override
-            or self.create_rag_agent(*args, **kwargs, stream=True),
+            or self.create_streaming_rag_agent(*args, **kwargs),
         )
 
-    def create_rag_agent(
-        self, stream: bool = False, *args, **kwargs
-    ) -> R2RRAGAgent:
+    def create_streaming_rag_agent(
+        self, *args, **kwargs
+    ) -> R2RStreamingRAGAgent:
         if not self.providers.llm or not self.providers.prompt:
             raise ValueError(
                 "LLM and Prompt providers are required for RAG Agent"
             )
 
-        if stream:
-            rag_agent = R2RStreamingRAGAgent(
-                llm_provider=self.providers.llm,
-                prompt_provider=self.providers.prompt,
-                config=self.config.agent,
-                search_pipeline=self.pipelines.search_pipeline,
-            )
-        else:
-            rag_agent = R2RRAGAgent(
-                llm_provider=self.providers.llm,
-                prompt_provider=self.providers.prompt,
-                config=self.config.agent,
-                search_pipeline=self.pipelines.search_pipeline,
-            )
+        return R2RStreamingRAGAgent(
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            config=self.config.agent,
+            search_pipeline=self.pipelines.search_pipeline,
+        )
 
-        return rag_agent
+    def create_rag_agent(self, *args, **kwargs) -> R2RRAGAgent:
+        if not self.providers.llm or not self.providers.prompt:
+            raise ValueError(
+                "LLM and Prompt providers are required for RAG Agent"
+            )
+        return R2RRAGAgent(
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            config=self.config.agent,
+            search_pipeline=self.pipelines.search_pipeline,
+        )

@@ -1,3 +1,4 @@
+# type: ignore
 import concurrent.futures
 import logging
 import os
@@ -180,8 +181,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
             # Wait for both searches to complete
             concurrent.futures.wait([semantic_future, full_text_future])
 
-        semantic_results = semantic_future.result()
-        full_text_results = full_text_future.result()
+        semantic_results: list[VectorSearchResult] = semantic_future.result()
+        full_text_results: list[VectorSearchResult] = full_text_future.result()
 
         semantic_limit = search_settings.search_limit
         full_text_limit = (
@@ -261,6 +262,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             reverse=True,
         )[:limit]
 
+
         return [
             VectorSearchResult(
                 fragment_id=result["data"].fragment_id,
@@ -303,7 +305,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def delete(
         self,
         filters: dict[str, Any],
-    ) -> list[str]:
+    ) -> dict[str, dict[str, str]]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete`."
@@ -343,10 +345,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
             result = sess.execute(
                 query,
                 {"document_id": document_id, "collection_id": collection_id},
-            )
+            ).fetchone()
             sess.commit()
 
-        if result.rowcount == 0:
+        if not result:
             logger.warning(
                 f"Document {document_id} not found or already assigned to collection {collection_id}"
             )
@@ -383,10 +385,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
             result = sess.execute(
                 query,
                 {"document_id": document_id, "collection_id": collection_id},
-            )
+            ).fetchone()
             sess.commit()
 
-        if result.rowcount == 0:
+        if not result:
             logger.warning(
                 f"Document {document_id} not found in collection {collection_id} or already removed"
             )
@@ -448,9 +450,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"collection_id": collection_id})
+            result = sess.execute(query, {"collection_id": collection_id}).fetchone()
             sess.commit()
 
+        if not result:
+            raise ValueError(f"Collection {collection_id} not found in any documents.")
+        
         affected_rows = result.rowcount
         logger.info(
             f"Removed collection {collection_id} from {affected_rows} documents."
@@ -458,7 +463,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
     def get_document_chunks(
         self, document_id: str, offset: int = 0, limit: int = -1
-    ) -> dict:
+    ) -> list[dict]:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 

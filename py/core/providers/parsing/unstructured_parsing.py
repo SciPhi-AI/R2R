@@ -64,6 +64,8 @@ class UnstructuredParsingProvider(ParsingProvider):
     }
 
     def __init__(self, use_api: bool, config: ParsingConfig):
+        super().__init__(config)
+        self.config: ParsingConfig = config
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
@@ -160,7 +162,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             logger.info(
                 f"Parsing {document.type}: {document.id} with unstructured"
             )
-
             if isinstance(file_content, bytes):
                 file_content = BytesIO(file_content)
 
@@ -194,7 +195,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                     f"Sending a request to {self.local_unstructured_url}/partition"
                 )
 
-                elements = await self.client.post(
+                response = await self.client.post(
                     f"{self.local_unstructured_url}/partition",
                     json={
                         "file_content": encoded_content,  # Use encoded string
@@ -203,26 +204,31 @@ class UnstructuredParsingProvider(ParsingProvider):
                     timeout=300,  # Adjust timeout as needed
                 )
 
-                elements = elements.json()
-                elements = elements["elements"]
+                elements = response.json().get("elements", [])
 
         iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
-            if not isinstance(element, dict):
-                element = element.to_dict()
+            if isinstance(element, FallbackElement):
+                text = element.text
+                metadata = copy(document.metadata)
+                metadata.update(element.metadata)
+            else:
+                element_dict = (
+                    element.to_dict()
+                    if not isinstance(element, dict)
+                    else element
+                )
+                text = element_dict.get("text", "")
+                if text == "":
+                    continue
 
-            if element.get("text", "") == "":
-                continue
-
-            metadata = copy(document.metadata)
-            for key, value in element.items():
-                if key == "text":
-                    text = value
-                elif key == "metadata":
-                    for k, v in value.items():
-                        if k not in metadata:
-                            if k != "orig_elements":
-                                metadata[f"unstructured_{k}"] = v
+                metadata = copy(document.metadata)
+                for key, value in element_dict.items():
+                    if key == "metadata":
+                        for k, v in value.items():
+                            if k not in metadata:
+                                if k != "orig_elements":
+                                    metadata[f"unstructured_{k}"] = v
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline

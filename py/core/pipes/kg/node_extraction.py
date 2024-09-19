@@ -34,23 +34,22 @@ class KGNodeExtractionPipe(AsyncPipe):
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
-            config=config
-            or AsyncPipe.PipeConfig(name="kg_node_extraction_pipe"),
+            config=config,
         )
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
 
-    async def _run_logic(
+    async def _run_logic( # type: ignore
         self,
         input: Input,
         state: AsyncState,
@@ -59,7 +58,7 @@ class KGNodeExtractionPipe(AsyncPipe):
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
 
-        nodes = self.kg_provider.get_entity_map()
+        nodes = self.kg_provider.get_entity_map() # type: ignore
 
         for _, node_info in nodes.items():
             for entity in node_info["entities"]:
@@ -81,25 +80,24 @@ class KGNodeDescriptionPipe(AsyncPipe):
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
+        config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
-            config=config
-            or AsyncPipe.PipeConfig(name="kg_node_description_pipe"),
+            config=config,
         )
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
 
-    async def _run_logic(
+    async def _run_logic( # type: ignore
         self,
-        input: Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
         *args: Any,

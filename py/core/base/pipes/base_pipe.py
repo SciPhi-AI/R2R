@@ -2,7 +2,7 @@ import asyncio
 import logging
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Generic, Optional, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -62,7 +62,10 @@ class AsyncState:
                 del self.data[outer_key][inner_key]
 
 
-class AsyncPipe:
+T = TypeVar("T")
+
+
+class AsyncPipe(Generic[T]):
     """An asynchronous pipe for processing data with logging capabilities."""
 
     class PipeConfig(BaseModel):
@@ -86,8 +89,8 @@ class AsyncPipe:
 
     def __init__(
         self,
+        config: PipeConfig,
         type: PipeType = PipeType.OTHER,
-        config: Optional[PipeConfig] = None,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
@@ -124,11 +127,11 @@ class AsyncPipe:
     async def run(
         self,
         input: Input,
-        state: Optional[AsyncState] = None,
+        state: Optional[AsyncState],
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[T, None]:
         """Run the pipe with logging capabilities."""
 
         run_manager = run_manager or self._run_manager
@@ -138,9 +141,10 @@ class AsyncPipe:
                 self.log_worker_task = asyncio.create_task(
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
+                state = state or AsyncState()
                 try:
                     async for result in self._run_logic(
-                        input, state=state, run_id=run_id, *args, **kwargs
+                        input, state, run_id, *args, **kwargs
                     ):
                         yield result
                 finally:
@@ -166,8 +170,9 @@ class AsyncPipe:
     async def _run_logic(
         self,
         input: Input,
+        state: AsyncState,
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[T, None]:
         pass

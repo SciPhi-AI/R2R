@@ -3,15 +3,10 @@ import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import (
-    KGConfig,
-    KGProvider,
-    R2RException,
-)
-
+from core.base import KGConfig, KGProvider, R2RException
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,

@@ -6,10 +6,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from .base import R2RSerializable
 from .llm import GenerationConfig
 
 
-class VectorSearchResult(BaseModel):
+class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
     fragment_id: UUID
@@ -66,7 +67,7 @@ class KGSearchMethod(str, Enum):
     GLOBAL = "global"
 
 
-class KGEntityResult(BaseModel):
+class KGEntityResult(R2RSerializable):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -79,7 +80,7 @@ class KGEntityResult(BaseModel):
         }
 
 
-class KGRelationshipResult(BaseModel):
+class KGRelationshipResult(R2RSerializable):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -92,7 +93,7 @@ class KGRelationshipResult(BaseModel):
         }
 
 
-class KGCommunityResult(BaseModel):
+class KGCommunityResult(R2RSerializable):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -105,7 +106,7 @@ class KGCommunityResult(BaseModel):
         }
 
 
-class KGGlobalResult(BaseModel):
+class KGGlobalResult(R2RSerializable):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -118,7 +119,7 @@ class KGGlobalResult(BaseModel):
         }
 
 
-class KGSearchResult(BaseModel):
+class KGSearchResult(R2RSerializable):
     method: KGSearchMethod
     content: Union[
         KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
@@ -126,7 +127,7 @@ class KGSearchResult(BaseModel):
     result_type: Optional[KGSearchResultType] = None
     fragment_ids: Optional[list[UUID]] = None
     document_ids: Optional[list[UUID]] = None
-    metadata: Optional[dict[str, Any]] = None
+    metadata: dict[str, Any] = {}
 
     class Config:
         json_schema_extra = {
@@ -139,7 +140,7 @@ class KGSearchResult(BaseModel):
         }
 
 
-class AggregateSearchResult(BaseModel):
+class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     vector_search_results: Optional[list[VectorSearchResult]]
@@ -178,7 +179,7 @@ class IndexMeasure(str, Enum):
     max_inner_product = "max_inner_product"
 
 
-class HybridSearchSettings(BaseModel):
+class HybridSearchSettings(R2RSerializable):
     full_text_weight: float = Field(
         default=1.0, description="Weight to apply to full text search"
     )
@@ -194,7 +195,7 @@ class HybridSearchSettings(BaseModel):
     )
 
 
-class VectorSearchSettings(BaseModel):
+class VectorSearchSettings(R2RSerializable):
     use_vector_search: bool = Field(
         default=True, description="Whether to use vector search"
     )
@@ -240,7 +241,7 @@ class VectorSearchSettings(BaseModel):
         default=HybridSearchSettings(),
         description="Settings for hybrid search",
     )
-    search_strategy: Optional[str] = Field(
+    search_strategy: str = Field(
         default="vanilla",
         description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
     )
@@ -276,13 +277,11 @@ class VectorSearchSettings(BaseModel):
         return dump
 
 
-class KGSearchSettings(BaseModel):
+class KGSearchSettings(R2RSerializable):
     use_kg_search: bool = False
     kg_search_type: str = "global"  # 'global' or 'local'
     kg_search_level: Optional[str] = None
-    kg_search_generation_config: Optional[GenerationConfig] = Field(
-        default_factory=GenerationConfig
-    )
+    kg_search_generation_config: GenerationConfig = GenerationConfig()
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []

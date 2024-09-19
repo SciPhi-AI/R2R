@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Any
 
 from .base import Provider, ProviderConfig
 
@@ -41,12 +41,10 @@ class VectorDBProvider(Provider, ABC):
 
 class RelationalDBProvider(Provider, ABC):
     @abstractmethod
-    def _initialize_relational_db(self) -> None:
+    async def _initialize_relational_db(self) -> None:
         pass
 
-
 class DatabaseProvider(Provider):
-
     def __init__(self, config: DatabaseConfig):
         if not isinstance(config, DatabaseConfig):
             raise ValueError(
@@ -54,15 +52,23 @@ class DatabaseProvider(Provider):
             )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
-        self.vector: VectorDBProvider = self._initialize_vector_db()
-        self.relational: RelationalDBProvider = (
-            self._initialize_relational_db()
-        )
+        
+        # remove later to re-introduce typing...
+        self.vector: Any = None
+        self.relational: Any = None
+
+    def _initialize_vector_db(self) -> VectorDBProvider:
+        self.vector = self._create_vector_db()
+        return self.vector
+
+    def _initialize_relational_db(self) -> RelationalDBProvider:
+        self.relational = self._create_relational_db()
+        return self.relational
 
     @abstractmethod
-    def _initialize_vector_db(self) -> VectorDBProvider:
+    def _create_vector_db(self) -> VectorDBProvider:
         pass
 
     @abstractmethod
-    def _initialize_relational_db(self) -> RelationalDBProvider:
+    def _create_relational_db(self) -> RelationalDBProvider:
         pass

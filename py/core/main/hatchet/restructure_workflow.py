@@ -21,7 +21,7 @@ class KgExtractAndStoreWorkflow:
         self.restructure_service = restructure_service
 
     @r2r_hatchet.step(retries=3, timeout="60m")
-    async def kg_extract_and_store(self, context: Context) -> None:
+    async def kg_extract_and_store(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         document_id = uuid.UUID(input_data["document_id"])
         fragment_merge_count = input_data["fragment_merge_count"]
@@ -88,7 +88,6 @@ class KgExtractAndStoreWorkflow:
                 document_id=document_id,
             )
 
-
         return {"result": None}
 
 
@@ -98,7 +97,7 @@ class CreateGraphWorkflow:
         self.restructure_service = restructure_service
 
     @r2r_hatchet.step(retries=1)
-    async def kg_extraction_ingress(self, context: Context) -> None:
+    async def kg_extraction_ingress(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         kg_creation_settings = KGCreationSettings(
             **json.loads(input_data["kg_creation_settings"])
@@ -183,7 +182,7 @@ class EnrichGraphWorkflow:
         self.restructure_service = restructure_service
 
     @r2r_hatchet.step(retries=3, timeout="60m")
-    async def kg_node_creation(self, context: Context) -> None:
+    async def kg_node_creation(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         max_description_input_length = input_data[
             "max_description_input_length"
@@ -194,7 +193,7 @@ class EnrichGraphWorkflow:
         return {"result": None}
 
     @r2r_hatchet.step(retries=3, parents=["kg_node_creation"], timeout="60m")
-    async def kg_clustering(self, context: Context) -> None:
+    async def kg_clustering(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         skip_clustering = input_data["skip_clustering"]
         force_enrichment = input_data["force_enrichment"]
@@ -330,7 +329,7 @@ class KGCommunitySummaryWorkflow:
         self.restructure_service = restructure_service
 
     @r2r_hatchet.step(retries=1, timeout="60m")
-    async def kg_community_summary(self, context: Context) -> None:
+    async def kg_community_summary(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         community_id = input_data["community_id"]
         level = input_data["level"]

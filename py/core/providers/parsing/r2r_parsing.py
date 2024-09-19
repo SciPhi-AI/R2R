@@ -1,9 +1,10 @@
 import logging
 import time
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Union
 
 from core import parsers
 from core.base import (
+    AsyncParser,
     Document,
     DocumentExtraction,
     DocumentType,
@@ -47,7 +48,7 @@ class R2RParsingProvider(ParsingProvider):
 
     def __init__(self, config: ParsingConfig):
         super().__init__(config)
-        self.parsers = {}
+        self.parsers: dict[DocumentType, AsyncParser] = {}
         self._initialize_parsers()
 
     def _initialize_parsers(self):
@@ -65,37 +66,38 @@ class R2RParsingProvider(ParsingProvider):
             if parser_name := getattr(parsers, parser_override.parser):
                 self.parsers[parser_override.document_type] = parser_name()
 
-    async def parse(
+    async def parse(  # type: ignore
         self, file_content: bytes, document: Document
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[
+        Union[DocumentExtraction, R2RDocumentProcessingError], None
+    ]:
         if document.type not in self.parsers:
             yield R2RDocumentProcessingError(
                 document_id=document.id,
                 error_message=f"Parser for {document.type} not found in `R2RParsingProvider`.",
             )
-            return
+        else:
+            parser = self.parsers[document.type]
+            texts = await parser.ingest(file_content)
+            t0 = time.time()
 
-        parser = self.parsers[document.type]
-        texts = parser.ingest(file_content)
-        t0 = time.time()
+            iteration = 0
+            async for text in texts:
+                yield DocumentExtraction(
+                    id=generate_id_from_label(f"{document.id}-{iteration}"),
+                    document_id=document.id,
+                    user_id=document.user_id,
+                    collection_ids=document.collection_ids,
+                    data=text,
+                    metadata=document.metadata,
+                )
+                iteration += 1
 
-        iteration = 0
-        async for text in texts:
-            yield DocumentExtraction(
-                id=generate_id_from_label(f"{document.id}-{iteration}"),
-                document_id=document.id,
-                user_id=document.user_id,
-                collection_ids=document.collection_ids,
-                data=text,
-                metadata=document.metadata,
+            logger.debug(
+                f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
+                f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
+                f"into {iteration} extractions in t={time.time() - t0:.2f} seconds."
             )
-            iteration += 1
-
-        logger.debug(
-            f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
-            f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
-            f"into {iteration} extractions in t={time.time() - t0:.2f} seconds."
-        )
 
     def get_parser_for_document_type(self, doc_type: DocumentType) -> Any:
         return self.parsers.get(doc_type)

@@ -1,7 +1,7 @@
 import functools
 import logging
 from abc import abstractmethod
-from typing import Optional
+from typing import Callable, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -34,7 +34,7 @@ class BaseRouter:
     def get_router(self):
         return self.router
 
-    def base_endpoint(self, func: callable):
+    def base_endpoint(self, func: Callable):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(

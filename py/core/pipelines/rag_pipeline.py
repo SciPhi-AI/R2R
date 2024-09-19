@@ -29,7 +29,7 @@ class RAGPipeline(AsyncPipeline):
     async def run(
         self,
         input: Any,
-        state: Optional[AsyncState] = None,
+        state: Optional[AsyncState],
         run_manager: Optional[RunManager] = None,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),

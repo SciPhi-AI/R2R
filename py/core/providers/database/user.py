@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from core.base.abstractions import R2RException, UserStats
@@ -101,23 +101,19 @@ class UserMixin(DatabaseMixin):
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-        return (
-            UserResponse(
-                id=result["user_id"],
-                email=result["email"],
-                hashed_password=result["hashed_password"],
-                is_superuser=result["is_superuser"],
-                is_active=result["is_active"],
-                is_verified=result["is_verified"],
-                created_at=result["created_at"],
-                updated_at=result["updated_at"],
-                name=result["name"],
-                profile_picture=result["profile_picture"],
-                bio=result["bio"],
-                collection_ids=result["collection_ids"],
-            )
-            if result
-            else None
+        return UserResponse(
+            id=result["user_id"],
+            email=result["email"],
+            hashed_password=result["hashed_password"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            name=result["name"],
+            profile_picture=result["profile_picture"],
+            bio=result["bio"],
+            collection_ids=result["collection_ids"],
         )
 
     async def create_user(self, email: str, password: str) -> UserResponse:
@@ -131,7 +127,7 @@ class UserMixin(DatabaseMixin):
             if e.status_code != 404:
                 raise e
 
-        hashed_password = self.crypto_provider.get_password_hash(password)
+        hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query = f"""
             INSERT INTO {self._get_table_name('users')}
             (email, user_id, hashed_password, collection_ids)
@@ -475,7 +471,7 @@ class UserMixin(DatabaseMixin):
             LIMIT $2
         """
 
-        params = [offset, limit]
+        params: list[Any] = [offset, limit]
         if user_ids:
             params.append(user_ids)
 

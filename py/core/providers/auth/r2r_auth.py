@@ -17,6 +17,8 @@ from core.base import (
     TokenData,
 )
 from core.base.api.models.auth.responses import UserResponse
+DEFAULT_ACCESS_LIFETIME_IN_MINUTES = 3600
+DEFAULT_REFRESH_LIFETIME_IN_DAYS = 7
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -46,6 +48,7 @@ class R2RAuthProvider(AuthProvider):
             config.refresh_token_lifetime_in_days
             or os.getenv("R2R_REFRESH_LIFE_IN_MINUTES")
         )
+        self.config: AuthConfig = config
 
     async def initialize(self):
         try:
@@ -59,7 +62,7 @@ class R2RAuthProvider(AuthProvider):
     def create_access_token(self, data: dict) -> str:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(
-            minutes=self.access_token_lifetime_in_minutes
+            minutes=float(self.access_token_lifetime_in_minutes or DEFAULT_ACCESS_LIFETIME_IN_MINUTES)
         )
         to_encode |= {"exp": expire.timestamp(), "token_type": "access"}
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
@@ -67,7 +70,7 @@ class R2RAuthProvider(AuthProvider):
     def create_refresh_token(self, data: dict) -> str:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(
-            days=self.refresh_token_lifetime_in_days
+            days=float(self.refresh_token_lifetime_in_days or DEFAULT_REFRESH_LIFETIME_IN_DAYS)
         )
         to_encode |= {"exp": expire, "token_type": "refresh"}
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
@@ -149,7 +152,7 @@ class R2RAuthProvider(AuthProvider):
 
         return new_user
 
-    async def verify_email(self, verification_code: str) -> Dict[str, str]:
+    async def verify_email(self, email: str, verification_code: str) -> dict[str, str]:
         user_id = (
             await self.db_provider.relational.get_user_id_by_verification_code(
                 verification_code
@@ -241,6 +244,14 @@ class R2RAuthProvider(AuthProvider):
     async def change_password(
         self, user: UserResponse, current_password: str, new_password: str
     ) -> Dict[str, str]:
+        if not isinstance(user.hashed_password, str):
+            logger.error(
+                f"Invalid hashed_password type: {type(user.hashed_password)}"
+            )
+            raise R2RException(
+                status_code=500, message="Invalid password hash in database"
+            )
+        
         if not self.crypto_provider.verify_password(
             current_password, user.hashed_password
         ):

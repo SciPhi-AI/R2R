@@ -246,7 +246,6 @@ __all__ = [
     "StreamingSearchRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "WebSearchPipe",
     "KGStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS

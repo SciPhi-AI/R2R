@@ -7,15 +7,14 @@ from typing import Any, Optional
 import asyncpg
 import yaml
 
-from core.base import Prompt, PromptConfig, PromptProvider
+from core.base import DatabaseProvider, Prompt, PromptConfig, PromptProvider
 from core.base.utils import generate_id_from_label
-from core.providers.database.postgres import PostgresDBProvider
 
 logger = logging.getLogger(__name__)
 
 
 class R2RPromptProvider(PromptProvider):
-    def __init__(self, config: PromptConfig, db_provider: PostgresDBProvider):
+    def __init__(self, config: PromptConfig, db_provider: DatabaseProvider):
         super().__init__(config)
         self.prompts: dict[str, Prompt] = {}
         self.config = config

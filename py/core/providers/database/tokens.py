@@ -19,7 +19,9 @@ class BlacklistedTokensMixin(DatabaseMixin):
         """
         await self.execute_query(query)
 
-    async def blacklist_token(self, token: str, current_time: datetime = None):
+    async def blacklist_token(
+        self, token: str, current_time: Optional[datetime] = None
+    ):
         if current_time is None:
             current_time = datetime.utcnow()
 

@@ -128,7 +128,7 @@ class IngestFilesWorkflow:
             status=IngestionStatus.STORING,
         )
 
-        storage_generator = await self.ingestion_service.store_embeddings(
+        storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
             embeddings
         )
 

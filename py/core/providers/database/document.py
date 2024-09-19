@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import asyncpg
@@ -15,7 +15,7 @@ from sqlalchemy import (
     String,
     Table,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as SqlUUID
 
 from core.base import (
     DocumentInfo,
@@ -37,9 +37,9 @@ class DocumentMixin(DatabaseMixin):
         self.document_info_table = Table(
             self._get_table_name("document_info"),
             self.metadata,
-            Column("document_id", UUID, primary_key=True),
-            Column("collection_ids", ARRAY(UUID)),
-            Column("user_id", UUID),
+            Column("document_id", SqlUUID, primary_key=True),
+            Column("collection_ids", ARRAY(SqlUUID)),
+            Column("user_id", SqlUUID),
             Column("type", String),
             Column("metadata", JSON),
             Column("title", String),
@@ -104,7 +104,7 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.pool.acquire() as conn:
+                    async with self.pool.acquire() as conn:  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
@@ -227,7 +227,7 @@ class DocumentMixin(DatabaseMixin):
         limit: int = 100,
     ) -> list[DocumentInfo]:
         conditions = []
-        params = []
+        params: list[Any] = []
         param_index = 1
 
         if filter_document_ids:

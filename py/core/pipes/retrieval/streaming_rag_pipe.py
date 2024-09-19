@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import datetime
 from typing import Any, AsyncGenerator, Generator, Optional
@@ -21,7 +20,7 @@ from .search_rag_pipe import SearchRAGPipe
 logger = logging.getLogger(__name__)
 
 
-class StreamingSearchRAGPipe(SearchRAGPipe):
+class StreamingSearchRAGPipe(GeneratorPipe):
     VECTOR_SEARCH_STREAM_MARKER = (
         "search"  # TODO - change this to vector_search in next major release
     )
@@ -33,33 +32,35 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         self,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        config: GeneratorPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
-        config: Optional[GeneratorPipe] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
-            type=type,
-            config=config
-            or GeneratorPipe.Config(
-                name="default_streaming_rag_pipe", task_prompt="default_rag"
-            ),
+            llm_provider,
+            prompt_provider,
+            config,
+            type,
             *args,
             **kwargs,
         )
+        self._config: GeneratorPipe.PipeConfig
 
-    async def _run_logic(
+    @property
+    def config(self) -> GeneratorPipe.PipeConfig:
+        return self._config
+
+    async def _run_logic( # type: ignore
         self,
-        input: SearchRAGPipe.Input,
+        input: GeneratorPipe.Input,
         state: AsyncState,
+        run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: Optional[CompletionRecord] = None,
+        completion_record: CompletionRecord,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
-        run_id = kwargs.get("run_id")
         context = ""
         async for query, search_results in input.message:
             result = format_search_results_for_stream(search_results)
@@ -77,9 +78,9 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         for chunk in self.llm_provider.get_completion_stream(
             messages=messages, generation_config=rag_generation_config
         ):
-            chunk = StreamingSearchRAGPipe._process_chunk(chunk)
-            response += chunk
-            yield chunk
+            chunk_txt = StreamingSearchRAGPipe._process_chunk(chunk)
+            response += chunk_txt
+            yield chunk_txt
 
         yield f"</{self.COMPLETION_STREAM_MARKER}>"
 
@@ -93,7 +94,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         start_marker: str,
         chunks: Generator[str, None, None],
         end_marker: str,
-    ) -> str:
+    ) -> AsyncGenerator[str, None]:
         yield start_marker
         for chunk in chunks:
             yield chunk

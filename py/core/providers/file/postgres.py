@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 class PostgresFileProvider(FileProvider):
     def __init__(self, config: FileConfig, db_provider: PostgresDBProvider):
-        super().__init__()
-        self.config = config
+        super().__init__(config)
+        self.config: FileConfig = config
         self.db_provider = db_provider
         self.pool = None
 
@@ -71,6 +71,12 @@ class PostgresFileProvider(FileProvider):
         file_size: int,
         file_type: Optional[str] = None,
     ) -> None:
+        if not self.pool:
+            raise R2RException(
+                status_code=500,
+                message="Connection to the database is not initialized",
+            )
+
         query = f"""
         INSERT INTO {self._get_table_name('file_storage')}
         (document_id, file_name, file_oid, file_size, file_type)
@@ -96,6 +102,12 @@ class PostgresFileProvider(FileProvider):
     async def store_file(
         self, document_id, file_name, file_content: io.BytesIO, file_type=None
     ):
+        if not self.pool:
+            raise R2RException(
+                status_code=500,
+                message="Connection to the database is not initialized",
+            )
+
         file_size = file_content.getbuffer().nbytes
         async with self.pool.acquire() as conn:
             async with conn.transaction():
@@ -136,6 +148,12 @@ class PostgresFileProvider(FileProvider):
     async def retrieve_file(
         self, document_id: UUID
     ) -> Optional[tuple[str, BinaryIO, int]]:
+        if not self.pool:
+            raise R2RException(
+                status_code=500,
+                message="Connection to the database is not initialized",
+            )
+
         query = f"""
         SELECT file_name, file_oid, file_size
         FROM {self._get_table_name('file_storage')}
@@ -203,6 +221,12 @@ class PostgresFileProvider(FileProvider):
         return file_data.getvalue()
 
     async def delete_file(self, document_id: UUID) -> bool:
+        if not self.pool:
+            raise R2RException(
+                status_code=500,
+                message="Connection to the database is not initialized",
+            )
+
         query = f"""
         SELECT file_oid FROM {self._get_table_name('file_storage')}
         WHERE document_id = $1
@@ -236,6 +260,12 @@ class PostgresFileProvider(FileProvider):
         offset: int = 0,
         limit: int = 100,
     ) -> list[dict]:
+        if not self.pool:
+            raise R2RException(
+                status_code=500,
+                message="Connection to the database is not initialized",
+            )
+
         conditions = []
         params = []
 

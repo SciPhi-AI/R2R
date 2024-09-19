@@ -18,7 +18,7 @@ class FileConfig(ProviderConfig):
 
 class FileProvider(Provider, ABC):
     @abstractmethod
-    def store_file(
+    async def store_file(
         self,
         document_id: UUID,
         file_name: str,
@@ -28,17 +28,17 @@ class FileProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def retrieve_file(
+    async def retrieve_file(
         self, document_id: UUID
     ) -> Optional[tuple[str, BinaryIO, int]]:
         pass
 
     @abstractmethod
-    def delete_file(self, document_id: UUID) -> bool:
+    async def delete_file(self, document_id: UUID) -> bool:
         pass
 
     @abstractmethod
-    def get_files_overview(
+    async def get_files_overview(
         self,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_file_names: Optional[list[str]] = None,

@@ -47,7 +47,7 @@ class ChunkingConfig(ProviderConfig):
         }
 
 
-class R2RChunkingConfig(ProviderConfig):
+class R2RChunkingConfig(ChunkingConfig):
     provider: str = "r2r"
     method: Strategy = Strategy.RECURSIVE
     chunk_size: int = 512

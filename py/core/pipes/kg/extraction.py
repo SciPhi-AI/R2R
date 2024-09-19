@@ -36,7 +36,7 @@ class ClientError(Exception):
     pass
 
 
-class KGTriplesExtractionPipe(AsyncPipe):
+class KGTriplesExtractionPipe(AsyncPipe[Union[KGExtraction, R2RDocumentProcessingError]]):
     """
     Extracts knowledge graph information from document extractions.
     """
@@ -51,12 +51,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
+        config: AsyncPipe.PipeConfig,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -76,11 +76,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
         self.pipe_run_info = None
         self.graph_rag = graph_rag
 
-    def map_to_str(self, fragments: list[DocumentFragment]) -> str:
-        # convert fragment to dict object
-        fragment = json.loads(json.dumps(fragment))
-        return fragment
-
     async def extract_kg(
         self,
         fragments: list[DocumentFragment],
@@ -95,7 +90,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         Extracts NER triples from a fragment with retries.
         """
         # combine all fragments into a single string
-        combined_fragment = " ".join([fragment.data for fragment in fragments])
+        combined_fragment: str = " ".join([fragment.data for fragment in fragments]) # type: ignore
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
@@ -115,6 +110,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 )
 
                 kg_extraction = response.choices[0].message.content
+
+                if not kg_extraction:
+                    raise R2RException(
+                        "No knowledge graph extraction found in the response string, the selected LLM likely failed to format it's response correctly.",
+                        400,
+                    )
 
                 entity_pattern = (
                     r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
@@ -214,7 +215,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
             triples=[],
         )
 
-    async def _run_logic(
+    async def _run_logic( # type: ignore
         self,
         input: Input,
         state: AsyncState,

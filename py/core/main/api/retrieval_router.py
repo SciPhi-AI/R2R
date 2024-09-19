@@ -42,6 +42,9 @@ class RetrievalRouter(BaseRouter):
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
 
+    def _register_workflows(self):
+        pass
+
     def _setup_routes(self):
         search_extras = self.openapi_extras.get("search", {})
         search_descriptions = search_extras.get("input_descriptions", {})
@@ -64,7 +67,8 @@ class RetrievalRouter(BaseRouter):
                 description=search_descriptions.get("kg_search_settings"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedSearchResponse:
+            response_model=WrappedSearchResponse,
+        ):
             """
             Perform a search query on the vector database and knowledge graph.
 
@@ -139,7 +143,8 @@ class RetrievalRouter(BaseRouter):
                 description=rag_descriptions.get("include_title_if_available"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedRAGResponse:
+            response_model=WrappedRAGResponse,
+        ):
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
 
@@ -221,7 +226,8 @@ class RetrievalRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedRAGAgentResponse:
+            response_model=WrappedRAGAgentResponse,
+        ):
             """
             Implement an agent-based interaction for complex query processing.
 

@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingConfig(ProviderConfig):
-    provider: Optional[str] = None
-    base_model: Optional[str] = None
-    base_dimension: Optional[int] = None
+    provider: str
+    base_model: str
+    base_dimension: int
     rerank_model: Optional[str] = None
     rerank_dimension: Optional[int] = None
     rerank_transformer_type: Optional[str] = None

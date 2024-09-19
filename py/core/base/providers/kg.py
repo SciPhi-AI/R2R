@@ -22,15 +22,13 @@ class KGConfig(ProviderConfig):
     url: Optional[str] = None
     database: Optional[str] = None
 
-    batch_size: Optional[int] = 1
-    kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
-    kg_search_prompt: Optional[str] = "kg_search"
-    kg_search_config: Optional[GenerationConfig] = None
+    batch_size: int = 1
+    kg_extraction_prompt: str = "few_shot_ner_kg_extraction"
+    kg_search_prompt: str = "kg_search"
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
-        KGEnrichmentSettings()
-    )
-    kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
+    kg_search_config: GenerationConfig = GenerationConfig()
+    kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
+    kg_creation_settings: KGCreationSettings = KGCreationSettings()
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

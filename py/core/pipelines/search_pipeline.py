@@ -32,7 +32,7 @@ class SearchPipeline(AsyncPipeline):
     async def run(
         self,
         input: Any,
-        state: Optional[AsyncState] = None,
+        state: Optional[AsyncState],
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),

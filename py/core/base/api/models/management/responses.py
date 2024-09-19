@@ -92,7 +92,7 @@ class DocumentChunkResponse(BaseModel):
 KnowledgeGraphResponse = str
 
 
-class GroupResponse(BaseModel):
+class CollectionResponse(BaseModel):
     collection_id: UUID
     name: str
     description: Optional[str]
@@ -100,7 +100,7 @@ class GroupResponse(BaseModel):
     updated_at: datetime
 
 
-class GroupOverviewResponse(BaseModel):
+class CollectionOverviewResponse(BaseModel):
     collection_id: UUID
     name: str
     description: Optional[str]
@@ -128,7 +128,9 @@ WrappedDocumentOverviewResponse = ResultsWrapper[
 ]
 WrappedDocumentChunkResponse = ResultsWrapper[List[DocumentChunkResponse]]
 WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
-WrappedCollectionResponse = ResultsWrapper[GroupResponse]
-WrappedCollectionListResponse = ResultsWrapper[List[GroupResponse]]
-WrappedCollectionOverviewResponse = ResultsWrapper[List[GroupOverviewResponse]]
+WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
+WrappedCollectionListResponse = ResultsWrapper[List[CollectionResponse]]
+WrappedCollectionOverviewResponse = ResultsWrapper[
+    List[CollectionOverviewResponse]
+]
 WrappedAddUserResponse = ResultsWrapper[AddUserResponse]

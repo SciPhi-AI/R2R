@@ -24,11 +24,11 @@ class KGStoragePipe(AsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
+        config: AsyncPipe.PipeConfig,
         embedding_provider: Optional[EmbeddingProvider] = None,
         storage_batch_size: int = 1,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -40,9 +40,9 @@ class KGStoragePipe(AsyncPipe):
         )
 
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
+            config,
+            type,
+            pipe_logger,
             *args,
             **kwargs,
         )
@@ -53,7 +53,7 @@ class KGStoragePipe(AsyncPipe):
     async def store(
         self,
         kg_extractions: list[KGExtraction],
-    ) -> Tuple[int, int]:
+    ) -> None:
         """
         Stores a batch of knowledge graph extractions in the graph database.
         """
@@ -66,7 +66,7 @@ class KGStoragePipe(AsyncPipe):
             logger.error(error_message)
             raise ValueError(error_message)
 
-    async def _run_logic(
+    async def _run_logic( # type: ignore
         self,
         input: Input,
         state: AsyncState,
@@ -79,7 +79,7 @@ class KGStoragePipe(AsyncPipe):
         """
 
         batch_tasks = []
-        kg_batch = []
+        kg_batch: list[KGExtraction] = []
         errors = []
 
         async for kg_extraction in input.message:
@@ -87,7 +87,7 @@ class KGStoragePipe(AsyncPipe):
                 errors.append(kg_extraction)
                 continue
 
-            kg_batch.append(kg_extraction)
+            kg_batch.append(kg_extraction) # type: ignore
             if len(kg_batch) >= self.storage_batch_size:
                 # Schedule the storage task
                 batch_tasks.append(

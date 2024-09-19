@@ -29,22 +29,27 @@ class QueryTransformPipe(GeneratorPipe):
         self,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        config: QueryTransformConfig,
         type: PipeType = PipeType.TRANSFORM,
-        config: Optional[QueryTransformConfig] = None,
         *args,
         **kwargs,
     ):
         logger.info(f"Initalizing an `QueryTransformPipe` pipe.")
         super().__init__(
-            llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
-            type=type,
-            config=config or QueryTransformPipe.QueryTransformConfig(),
+            llm_provider,
+            prompt_provider,
+            config,
+            type,
             *args,
             **kwargs,
         )
+        self._config: QueryTransformPipe.QueryTransformConfig = config
 
-    async def _run_logic(
+    @property
+    def config(self) -> QueryTransformConfig: # type: ignore
+        return self._config
+
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
@@ -75,6 +80,13 @@ class QueryTransformPipe(GeneratorPipe):
                 generation_config=query_transform_generation_config,
             )
             content = response.choices[0].message.content
+            if not content:
+                logger.error(
+                    f"Failed to transform query: {query}. Skipping."
+                )
+                raise ValueError(
+                    f"Failed to transform query: {query}."
+                )
             outputs = content.split("\n")
             outputs = [
                 output.strip() for output in outputs if output.strip() != ""

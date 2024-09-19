@@ -33,6 +33,8 @@ class PostgresDBProvider(DatabaseProvider):
         *args,
         **kwargs,
     ):
+        super().__init__(config)
+
         user = config.user or os.getenv("POSTGRES_USER")
         if not user:
             raise ValueError(
@@ -54,7 +56,7 @@ class PostgresDBProvider(DatabaseProvider):
             )
         self.host = host
 
-        port = config.port or os.getenv("POSTGRES_PORT")
+        port = config.port or os.getenv("POSTGRES_PORT")  # type: ignore
         if not port:
             raise ValueError(
                 "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'database' settings of your `r2r.toml`."
@@ -101,14 +103,13 @@ class PostgresDBProvider(DatabaseProvider):
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
-        self.vector = (None,)
-        self.relational = (None,)
 
     async def initialize(self):
         self.vector = self._initialize_vector_db()
         self.relational = await self._initialize_relational_db()
 
     def _initialize_vector_db(self) -> VectorDBProvider:
+        print("E1")
         return PostgresVectorDBProvider(
             self.config,
             connection_string=self.connection_string,
@@ -117,11 +118,14 @@ class PostgresDBProvider(DatabaseProvider):
         )
 
     async def _initialize_relational_db(self) -> RelationalDBProvider:
+        print("E2")
         relational_db = PostgresRelationalDBProvider(
             self.config,
             connection_string=self.connection_string,
             crypto_provider=self.crypto_provider,
             collection_name=self.collection_name,
         )
+        print("E3")
         await relational_db.initialize()
+        print("E4")
         return relational_db

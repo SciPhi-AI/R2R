@@ -46,6 +46,12 @@ class ManagementRouter(BaseRouter):
         self.service: ManagementService = service  # for type hinting
         self.start_time = datetime.now(timezone.utc)
 
+    def _register_workflows(self):
+        pass
+
+    def _load_openapi_extras(self):
+        return {}
+
     # TODO: remove this from the management route, it should be at the base of the server
     def _setup_routes(self):
         @self.router.get("/health")
@@ -57,7 +63,8 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def server_stats(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedServerStatsResponse:
+            response_model=WrappedServerStatsResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only an authorized user can call the `server_stats` endpoint.",
@@ -83,7 +90,8 @@ class ManagementRouter(BaseRouter):
                 {}, description="Input types"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+            response_model=WrappedPromptMessageResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `update_prompt` endpoint.",
@@ -102,7 +110,8 @@ class ManagementRouter(BaseRouter):
             template: str = Body(..., description="Prompt template"),
             input_types: dict[str, str] = Body({}, description="Input types"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+            response_model=WrappedPromptMessageResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `add_prompt` endpoint.",
@@ -122,7 +131,8 @@ class ManagementRouter(BaseRouter):
                 None, description="Prompt override"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+            response_model=WrappedPromptMessageResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_prompt` endpoint.",
@@ -137,7 +147,8 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_all_prompts_app(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGetPromptsResponse:
+            response_model=WrappedGetPromptsResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_all_prompts` endpoint.",
@@ -151,7 +162,8 @@ class ManagementRouter(BaseRouter):
         async def delete_prompt_app(
             prompt_name: str = Path(..., description="Prompt name"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> None:
+            response_model=None,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `delete_prompt` endpoint.",
@@ -166,7 +178,8 @@ class ManagementRouter(BaseRouter):
             filter_criteria: Optional[Json[dict]] = Query({}),
             analysis_types: Optional[Json[dict]] = Query({}),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedAnalyticsResponse:
+            response_model=WrappedAnalyticsResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `analytics` endpoint.", 403
@@ -197,7 +210,8 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedLogResponse:
+            response_model=WrappedLogResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `logs` endpoint.", 403
@@ -213,7 +227,8 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def app_settings(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedAppSettingsResponse:
+            response_model=WrappedAppSettingsResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `app_settings` endpoint.",
@@ -227,7 +242,8 @@ class ManagementRouter(BaseRouter):
             message_id: str = Body(..., description="Message ID"),
             score: float = Body(..., description="Completion score"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedScoreCompletionResponse:
+            response_model=WrappedScoreCompletionResponse,
+        ):
             message_uuid = UUID(message_id)
             return await self.service.score_completion(
                 message_id=message_uuid, score=score
@@ -240,7 +256,8 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserOverviewResponse:
+            response_model=WrappedUserOverviewResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `users_overview` endpoint.",
@@ -260,7 +277,8 @@ class ManagementRouter(BaseRouter):
         async def delete_app(
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> None:
+            response_model=None,
+        ):
             filters_dict = json.loads(filters) if filters else None
             return await self.service.delete(filters=filters_dict)
 
@@ -281,7 +299,7 @@ class ManagementRouter(BaseRouter):
                 document_uuid = UUID(document_id)
             except ValueError:
                 raise R2RException(
-                    status_code=400, detail="Invalid document ID format."
+                    status_code=400, message="Invalid document ID format."
                 )
 
             file_tuple = await self.service.download_file(document_uuid)
@@ -318,7 +336,8 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+            response_model=WrappedDocumentOverviewResponse,
+        ):
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
@@ -341,7 +360,8 @@ class ManagementRouter(BaseRouter):
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=0),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+            response_model=WrappedDocumentChunkResponse,
+        ):
             document_uuid = UUID(document_id)
             chunks = await self.service.document_chunks(
                 document_uuid, offset, limit
@@ -370,7 +390,8 @@ class ManagementRouter(BaseRouter):
             limit: int = 100,
             print_descriptions: bool = False,
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKnowledgeGraphResponse:
+            response_model=WrappedKnowledgeGraphResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `inspect_knowledge_graph` endpoint.",
@@ -389,7 +410,8 @@ class ManagementRouter(BaseRouter):
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionOverviewResponse:
+            response_model=WrappedCollectionOverviewResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `collections_overview` endpoint.",
@@ -413,7 +435,8 @@ class ManagementRouter(BaseRouter):
                 "", description="Collection description"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionResponse:
+            response_model=WrappedCollectionResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can create collections.", 403
@@ -425,7 +448,8 @@ class ManagementRouter(BaseRouter):
         async def get_collection_app(
             collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionResponse:
+            response_model=WrappedCollectionResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get Collection details.", 403
@@ -445,7 +469,8 @@ class ManagementRouter(BaseRouter):
                 None, description="Updated collection description"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionResponse:
+            response_model=WrappedCollectionResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can update collections.", 403
@@ -474,7 +499,8 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
+            response_model=WrappedCollectionListResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can list all collections.", 403
@@ -489,7 +515,8 @@ class ManagementRouter(BaseRouter):
             user_id: str = Body(..., description="User ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
+            response_model=WrappedAddUserResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can add users to collections.", 403
@@ -584,7 +611,8 @@ class ManagementRouter(BaseRouter):
             document_id: str = Body(..., description="Document ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> None:
+            response_model=None,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can remove documents from collections.",
@@ -604,7 +632,8 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
+            response_model=WrappedCollectionListResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get the collections belonging to a document.",
@@ -621,7 +650,8 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+            response_model=WrappedDocumentOverviewResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get documents in a collection.", 403

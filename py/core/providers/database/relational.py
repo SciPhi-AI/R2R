@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 
+from core.base import RelationalDBProvider
 from core.providers.database.base import DatabaseMixin
 from core.providers.database.collection import CollectionMixin
 from core.providers.database.document import DocumentMixin
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresRelationalDBProvider(
+    RelationalDBProvider,
     DocumentMixin,
     CollectionMixin,
     BlacklistedTokensMixin,
@@ -21,12 +23,12 @@ class PostgresRelationalDBProvider(
     def __init__(
         self, config, connection_string, crypto_provider, collection_name
     ):
+        super().__init__(config)
         self.config = config
         self.connection_string = connection_string
         self.crypto_provider = crypto_provider
         self.collection_name = collection_name
         self.pool = None
-        super().__init__()
 
     async def initialize(self):
         try:

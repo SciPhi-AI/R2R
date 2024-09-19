@@ -22,29 +22,31 @@ class SearchRAGPipe(GeneratorPipe):
         self,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        config: GeneratorPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
-        config: Optional[GeneratorPipe] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
-            type=type,
-            config=config
-            or GeneratorPipe.Config(
-                name="default_rag_pipe", task_prompt="default_rag"
-            ),
+            llm_provider,
+            prompt_provider,
+            config,
+            type,
             *args,
             **kwargs,
         )
+        self._config: GeneratorPipe.PipeConfig = config
 
-    async def _run_logic(
+    @property
+    def config(self) -> GeneratorPipe.PipeConfig:  # for type hiting
+        return self._config
+    
+    async def _run_logic( # type: ignore
         self,
         input: Input,
         state: AsyncState,
         rag_generation_config: GenerationConfig,
-        completion_record: Optional[CompletionRecord] = None,
+        completion_record: CompletionRecord,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[RAGCompletion, None]:
@@ -74,10 +76,13 @@ class SearchRAGPipe(GeneratorPipe):
         yield RAGCompletion(completion=response, search_results=search_results)
 
         if run_id:
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Response content is empty")
             await self.enqueue_log(
                 run_id=run_id,
                 key="llm_response",
-                value=response.choices[0].message.content,
+                value=content,
             )
 
     async def _collect_context(
@@ -101,9 +106,10 @@ class SearchRAGPipe(GeneratorPipe):
             context += f"Knowledge Graph ({iteration}):\n"
             it = total_results + 1
             for search_results in results.kg_search_results:  # [1]:
-                context += (
-                    f"Query: {search_results.metadata['associated_query']}\n\n"
-                )
+                if associated_query := search_results.metadata.get('associated_query'):
+                    context += (
+                        f"Query: {associated_query}\n\n"
+                    )
                 context += f"Results:\n"
                 for search_result in search_results:
                     context += f"[{it}]: {search_result}\n\n"

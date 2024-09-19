@@ -7,7 +7,7 @@ from core.base import CryptoConfig, CryptoProvider
 class BCryptConfig(CryptoConfig):
     salt_rounds: int = 12
 
-    def validate(self) -> None:
+    def validate(self) -> None: # type: ignore
         super().validate()
         if self.salt_rounds < 4 or self.salt_rounds > 31:
             raise ValueError("salt_rounds must be between 4 and 31")
@@ -27,6 +27,7 @@ class BCryptProvider(CryptoProvider):
                 "BCryptProvider must be initialized with a BCryptConfig"
             )
         super().__init__(config)
+        self.config: BCryptConfig = config
 
     def get_password_hash(self, password: str) -> str:
         return self.bcrypt.hashpw(

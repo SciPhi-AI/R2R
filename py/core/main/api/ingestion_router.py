@@ -83,7 +83,8 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+            response_model=WrappedIngestionResponse,
+        ):
             """
             Ingest files into the system.
 
@@ -174,7 +175,8 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("document_ids"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+            response_model=WrappedIngestionResponse,
+        ):
             """
             Retry the ingestion of files into the system.
 
@@ -229,7 +231,8 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUpdateResponse:
+            response_model=WrappedUpdateResponse,
+        ):
             """
             Update existing files in the system.
 

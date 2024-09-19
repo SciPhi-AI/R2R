@@ -26,17 +26,16 @@ class ParsingPipe(AsyncPipe):
         self,
         parsing_provider: ParsingProvider,
         file_provider: FileProvider,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[AsyncPipe.PipeConfig] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config
-            or AsyncPipe.PipeConfig(name="default_document_parsing_pipe"),
+            config,
+            type,
+            pipe_logger,
             *args,
             **kwargs,
         )
@@ -50,14 +49,13 @@ class ParsingPipe(AsyncPipe):
         version: str,
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
-            file_name, file_wrapper, file_size = (
-                await self.file_provider.retrieve_file(document.id)
-            )
+            if result:= await self.file_provider.retrieve_file(document.id):
+                file_name, file_wrapper, file_size = result
 
             with file_wrapper as file_content_stream:
                 file_content = file_content_stream.read()
 
-            async for extraction in self.parsing_provider.parse(
+            async for extraction in await self.parsing_provider.parse(
                 file_content, document
             ):
                 extraction_id = generate_id_from_label(
@@ -72,10 +70,10 @@ class ParsingPipe(AsyncPipe):
                 error_message=f"Error parsing document: {str(e)}",
             )
 
-    async def _run_logic(
+    async def _run_logic( # type: ignore
         self,
-        input: Input,
-        state: Optional[AsyncState],
+        input: AsyncPipe.Input,
+        state: AsyncState,
         run_id: UUID,
         *args,
         **kwargs,

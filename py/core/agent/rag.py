@@ -59,6 +59,7 @@ class RAGAgentMixin:
     ) -> list[AggregateSearchResult]:
         response = await self.search_pipeline.run(
             to_async_generator([query]),
+            state=None,
             vector_search_settings=vector_search_settings,
             kg_search_settings=kg_search_settings,
         )
