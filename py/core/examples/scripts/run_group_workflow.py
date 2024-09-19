@@ -48,7 +48,7 @@ if __name__ == "__main__":
         name="UpdatedTestGroup1",
         description="Updated description",
     )
-    print("Group update result:", update_result)
+    print("Collection update result:", update_result)
 
     # Ingest two documents
     print("\nIngesting two documents...")

@@ -11,7 +11,7 @@ services:
   neo4j:
     image: neo4j:5.21.0
     ports:
-      - "7475:7475"  # HTTP
+      - "7474:7474"  # HTTP
       - "7687:7687"  # Bolt
     environment:
       - NEO4J_AUTH=${NEO4J_AUTH:-neo4j/ineedastrongerpassword}

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from ..utils import generate_id_from_label
 
 
-class Group(BaseModel):
+class Collection(BaseModel):
     id: UUID = Field(default=None)
     name: str
     description: Optional[str] = None

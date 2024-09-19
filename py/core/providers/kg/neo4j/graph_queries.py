@@ -1,28 +1,9 @@
-UNIQUE_CONSTRAINTS = [
-    # "create constraint chunk_id if not exists for (c:__Chunk__) require c.id is unique;",
-    # "create constraint document_id if not exists for (d:__Document__) require d.id is unique;",
-    # "create constraint entity_id if not exists for (c:__Community__) require c.community is unique;",
-    # "create constraint entity_id if not exists for (e:__Entity__) require e.id is unique;",
-    # "create constraint entity_title if not exists for (e:__Entity__) require e.name is unique;",
-    # "create constraint entity_title if not exists for (e:__Covariate__) require e.title is unique;",
-    # "create constraint related_id if not exists for ()-[rel:RELATED]->() require rel.id is unique;"
-]
+UNIQUE_CONSTRAINTS = []
 
 GET_CHUNKS_QUERY = """
 MATCH (c:__Chunk__)
 RETURN c
 """
-
-# class DocumentFragment(BaseModel):
-#     """A fragment extracted from a document."""
-
-#     id: uuid.UUID
-#     type: FragmentType
-#     data: DataType
-#     metadata: dict
-#     document_id: uuid.UUID
-#     extraction_id: uuid.UUID
-
 
 PUT_CHUNKS_QUERY = """
 MERGE (c:__Chunk__ {id:value.id})
