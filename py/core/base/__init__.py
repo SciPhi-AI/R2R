@@ -44,8 +44,6 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGLocalSearchResult",
-    "KGGlobalSearchResult",
     "KGSearchResult",
     "KGSearchSettings",
     "VectorSearchResult",
