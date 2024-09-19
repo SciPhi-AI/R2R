@@ -258,7 +258,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             async def process_community(merged_report):
                 output = await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name="graphrag_map_system_prompt",
+                        task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_map_system_prompt,
                         task_inputs={
                             "context_data": merged_report,
                             "input": message,
@@ -293,7 +293,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             # reducing the outputs
             output = await self.llm_provider.aget_completion(
                 messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="graphrag_reduce_system_prompt",
+                    task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_reduce_system_prompt,
                     task_inputs={
                         "response_type": "multiple paragraphs",
                         "report_data": filtered_responses,

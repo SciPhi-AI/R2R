@@ -1,0 +1,249 @@
+graphrag_triplet_extraction_zero_shot:
+  template: > 
+    
+    Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
+
+    -Steps-
+    1. Identify all entities. For each identified entity, extract the following information:
+    - entity_name: Name of the entity, capitalized
+    - entity_type: One of the following types: [{entity_types}]. If there are no entity types, extract all entities. Be extremely comprehensive when extracting entities. You should extract every single named entity in the text and give them an appropriate entity type.
+    - entity_description: Comprehensive description of the entity's attributes and activities
+    Format each entity as ("entity",<entity_name>,<entity_type>,<entity_description>)
+
+    2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
+    For each pair of related entities, extract the following information:
+    - source_entity: name of the source entity, as identified in step 1
+    - target_entity: name of the target entity, as identified in step 1
+    - relationship_description: explanation as to why you think the source entity and the target entity are related to each other
+    - relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
+    Format each relationship as ("relationship",<source_entity>,<target_entity>,<relationship_description>,<relationship_strength>)
+
+    3. Return output as a single list of all the entities and relationships identified in steps 1 and 2.
+
+    ######################
+    -Examples-
+    ######################
+    Example 1:
+    Entity_types: ORGANIZATION,PERSON
+    Text:
+    The Verdantis's Central Institution is scheduled to meet on Monday and Thursday, with the institution planning to release its latest policy decision on Thursday at 1:30 p.m. PDT, followed by a press conference where Central Institution Chair Martin Smith will take questions. Investors expect the Market Strategy Committee to hold its benchmark interest rate steady in a range of 3.5%-3.75%.
+    ######################
+    Output:
+    ("entity",CENTRAL INSTITUTION,ORGANIZATION,The Central Institution is the Federal Reserve of Verdantis, which is setting interest rates on Monday and Thursday)
+    ("entity",MARTIN SMITH,PERSON,Martin Smith is the chair of the Central Institution)
+    ("entity",MARKET STRATEGY COMMITTEE,ORGANIZATION,The Central Institution committee makes key decisions about interest rates and the growth of Verdantis's money supply)
+    ("relationship",MARTIN SMITH,CENTRAL INSTITUTION,Martin Smith is the Chair of the Central Institution and will answer questions at a press conference,9)
+
+    ######################
+    Example 2:
+    Entity_types: ORGANIZATION
+    Text:
+    TechGlobal's (TG) stock skyrocketed in its opening day on the Global Exchange Thursday. But IPO experts warn that the semiconductor corporation's debut on the public markets isn't indicative of how other newly listed companies may perform.
+
+    TechGlobal, a formerly public company, was taken private by Vision Holdings in 2014. The well-established chip designer says it powers 85% of premium smartphones.
+    ######################
+    Output:
+    ("entity",TECHGLOBAL,ORGANIZATION,TechGlobal is a stock now listed on the Global Exchange which powers 85% of premium smartphones)
+    ("entity",VISION HOLDINGS,ORGANIZATION,Vision Holdings is a firm that previously owned TechGlobal)
+    ("relationship",TECHGLOBAL,VISION HOLDINGS,Vision Holdings formerly owned TechGlobal from 2014 until present,5)
+
+    ######################
+    Example 3:
+    Entity_types: ORGANIZATION,GEO,PERSON
+    Text:
+    Five Aurelians jailed for 8 years in Firuzabad and widely regarded as hostages are on their way home to Aurelia.
+
+    The swap orchestrated by Quintara was finalized when $8bn of Firuzi funds were transferred to financial institutions in Krohaara, the capital of Quintara.
+
+    The exchange initiated in Firuzabad's capital, Tiruzia, led to the four men and one woman, who are also Firuzi nationals, boarding a chartered flight to Krohaara.
+
+    They were welcomed by senior Aurelian officials and are now on their way to Aurelia's capital, Cashion.
+
+    The Aurelians include 39-year-old businessman Samuel Namara, who has been held in Tiruzia's Alhamia Prison, as well as journalist Durke Bataglani, 59, and environmentalist Meggie Tazbah, 53, who also holds Bratinas nationality.
+    ######################
+    Output:
+    ("entity",FIRUZABAD,GEO,Firuzabad held Aurelians as hostages)
+    ("entity",AURELIA,GEO,Country seeking to release hostages)
+    ("entity",QUINTARA,GEO,Country that negotiated a swap of money in exchange for hostages)
+    ("entity",TIRUZIA,GEO,Capital of Firuzabad where the Aurelians were being held)
+    ("entity",KROHAARA,GEO,Capital city in Quintara)
+    ("entity",CASHION,GEO,Capital city in Aurelia)
+    ("entity",SAMUEL NAMARA,PERSON,Aurelian who spent time in Tiruzia's Alhamia Prison)
+    ("entity",ALHAMIA PRISON,GEO,Prison in Tiruzia)
+    ("entity",DURKE BATAGLANI,PERSON,Aurelian journalist who was held hostage)
+    ("entity",MEGGIE TAZBAH,PERSON,Bratinas national and environmentalist who was held hostage)
+    ("relationship",FIRUZABAD,AURELIA,Firuzabad negotiated a hostage exchange with Aurelia,2)
+    ("relationship",QUINTARA,AURELIA,Quintara brokered the hostage exchange between Firuzabad and Aurelia,2)
+    ("relationship",QUINTARA,FIRUZABAD,Quintara brokered the hostage exchange between Firuzabad and Aurelia,2)
+    ("relationship",SAMUEL NAMARA,ALHAMIA PRISON,Samuel Namara was a prisoner at Alhamia prison,8)
+    ("relationship",SAMUEL NAMARA,MEGGIE TAZBAH,Samuel Namara and Meggie Tazbah were exchanged in the same hostage release,2)
+    ("relationship",SAMUEL NAMARA,DURKE BATAGLANI,Samuel Namara and Durke Bataglani were exchanged in the same hostage release,2)
+    ("relationship",MEGGIE TAZBAH,DURKE BATAGLANI,Meggie Tazbah and Durke Bataglani were exchanged in the same hostage release,2)
+    ("relationship",SAMUEL NAMARA,FIRUZABAD,Samuel Namara was a hostage in Firuzabad,2)
+    ("relationship",MEGGIE TAZBAH,FIRUZABAD,Meggie Tazbah was a hostage in Firuzabad,2)
+    ("relationship",DURKE BATAGLANI,FIRUZABAD,Durke Bataglani was a hostage in Firuzabad,2)
+
+  input_types:
+    max_knowledge_triples: int
+    input: str
+    entity_types: list[str]
+    relation_types: list[str]
+
+graphrag_community_reports_prompt:
+  template: |
+      You are an AI assistant that helps a human analyst perform information discovery within the ecosystem of Y Combinator startups. Information discovery is the process of identifying and assessing relevant information associated with certain startups and their interconnections within the Y Combinator network.
+
+      # Goal
+      Write a comprehensive report of a Y Combinator community, given a list of startups that belong to the community, their relationships, and optional associated claims. The report will be used to inform decision-makers about information related to the startups and their potential impact. The content of this report includes an overview of the community's key startups, their funding status, technical capabilities, reputation, and noteworthy claims.
+
+      # Report Structure
+
+      The report should include the following sections:
+
+      - TITLE: The community's name that represents its key startups - the title should be short but specific. When possible, include representative startup names in the title.
+      - SUMMARY: An executive summary of the community's overall structure, how its startups are related to each other, and significant information associated with its startups.
+      - IMPACT SEVERITY RATING: A float score between 0-10 that represents the severity of IMPACT posed by startups within the community. IMPACT is the scored importance of the community.
+      - RATING EXPLANATION: Provide a single sentence explanation of the IMPACT severity rating.
+      - DETAILED FINDINGS: A list of 5-10 key insights about the community. Each finding should be a comprehensive statement grounded according to the grounding rules below.
+
+      Return output as a well-formed JSON-formatted string with the following format:
+      ```json
+      {
+          "title": <report_title>,
+          "summary": <executive_summary>,
+          "rating": <impact_severity_rating>,
+          "rating_explanation": <rating_explanation>,
+          "findings": [
+              "<finding1>",
+              "<finding2>",
+              "<finding3>",
+              "<finding4>",
+              "<finding5>"
+              // Additional findings...
+          ]
+      }
+      ```
+
+      # Example Input
+      -----------
+      Text:
+
+      Entities
+
+      id,startup,description
+      101,OpenAI,OpenAI is an AI research and deployment company.
+      102,Stripe,Stripe is a technology company that builds economic infrastructure for the internet.
+      103,Airbnb,Airbnb is an online marketplace for lodging and tourism experiences.
+
+      Relationships
+
+      id,source,target,description
+      201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
+      202,Stripe,Airbnb,Stripe provides payment processing services to Airbnb.
+      203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
+      204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
+      205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
+
+      Output:
+      {
+          "title": "OpenAI, Stripe, and Airbnb Community",
+          "summary": "The Y Combinator community comprises key startups like OpenAI, Stripe, and Airbnb, which are interconnected through strategic partnerships and investments. These relationships highlight a robust network focused on advancing AI technologies, payment infrastructure, and online marketplaces.",
+          "rating": 7.5,
+          "rating_explanation": "The impact severity rating is high due to the significant influence these startups have on technology, finance, and the global economy.",
+          "findings": [
+              "OpenAI stands out as a leader in artificial intelligence research and deployment within the Y Combinator community. Its partnerships with companies like Stripe and Airbnb demonstrate its integral role in integrating AI solutions across various industries. OpenAI's influence is further amplified by its involvement in key projects that drive innovation and efficiency. [Data: Entities (101), Relationships (201, 203, 204, +more)]",
+              "Stripe serves as a critical financial infrastructure provider, facilitating payment processing for startups like Airbnb and partnering with OpenAI to enhance payment solutions. Its strategic investments and collaborations underscore its importance in the Y Combinator ecosystem, enabling seamless financial transactions and supporting startup growth. [Data: Entities (102), Relationships (201, 202, 204, 205, +more)]",
+              "Airbnb leverages OpenAI's artificial intelligence tools to enhance its customer service capabilities, showcasing the practical application of AI in improving user experience. This integration highlights Airbnb's commitment to innovation and efficiency, positioning it as a forward-thinking leader within the community. [Data: Entities (103), Relationships (203, 205, +more)]",
+              "Stripe's investment in OpenAI's latest funding round illustrates the strategic financial moves that drive growth and innovation within the Y Combinator community. Such investments not only strengthen partnerships but also foster an environment of collaboration and shared success among startups. [Data: Relationships (204)]",
+              "The collaboration between Airbnb and Stripe to expand global payment options demonstrates a commitment to scalability and accessibility in the Y Combinator ecosystem. This initiative is pivotal in enabling startups to reach a broader international market, thereby increasing their impact and revenue potential. [Data: Relationships (205)]"
+          ]
+      }
+
+      # Real Data
+
+      Use the following text for your answer. Do not make anything up in your answer.
+
+      Text:
+      {input_text}
+
+      Output:
+  input_types:
+    input_text: str
+
+graphrag_map_system_prompt:
+  template : |
+    ---Role---
+    You are a helpful assistant responding to questions about data in the tables provided.
+    ---Goal---
+    Generate a response consisting of a list of key points that responds to the user's question, summarizing all relevant information in the input data tables.
+    You should use the data provided in the data tables below as the primary context for generating the response.
+    If you don't know the answer or if the input data tables do not contain sufficient information to provide an answer, just say so. Do not make anything up.
+    Each key point in the response should have the following element:
+    - Description: A comprehensive description of the point.
+    - Importance Score: An integer score between 0-100 that indicates how important the point is in answering the user's question. An 'I don't know' type of response should have a score of 0.
+    The response should be JSON formatted as follows:
+    {{
+        "points": [
+            {{"description": "Description of point 1 [Data: Reports (report ids)]", "score": score_value}},
+            {{"description": "Description of point 2 [Data: Reports (report ids)]", "score": score_value}}
+        ]
+    }}
+    The response shall preserve the original meaning and use of modal verbs such as "shall", "may" or "will".
+    Points supported by data should list the relevant reports as references as follows:
+    "This is an example sentence supported by data references [Data: Reports (report ids)]"
+    **Do not list more than 5 record ids in a single reference**. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more.
+    For example:
+    "Person X is the owner of Company Y and subject to many allegations of wrongdoing [Data: Reports (2, 7, 64, 46, 34, +more)]. He is also CEO of company X [Data: Reports (1, 3)]"
+    where 1, 2, 3, 7, 34, 46, and 64 represent the id (not the index) of the relevant data report in the provided tables.
+    Do not include information where the supporting evidence for it is not provided.
+    ---Data tables---
+    {context_data}
+    ---Input---
+    {input}
+  input_types:
+    context_data: str
+    input: str
+
+graphrag_reduce_system_prompt:
+  template: |
+    ---Role---
+    You are a helpful assistant responding to questions about a dataset by synthesizing perspectives from multiple analysts.
+    ---Goal---
+    Generate a response of the target length and format that responds to the user's question, summarize all the reports from multiple analysts who focused on different parts of the dataset.
+    Note that the analysts' reports provided below are ranked in the **descending order of importance**.
+    If you don't know the answer or if the provided reports do not contain sufficient information to provide an answer, just say so. Do not make anything up.
+    The final response should remove all irrelevant information from the analysts' reports and merge the cleaned information into a comprehensive answer that provides explanations of all the key points and implications appropriate for the response length and format.
+    Add sections and commentary to the response as appropriate for the length and format. Style the response in markdown.
+    The response shall preserve the original meaning and use of modal verbs such as "shall", "may" or "will".
+    The response should also preserve all the data references previously included in the analysts' reports, but do not mention the roles of multiple analysts in the analysis process.
+    **Do not list more than 5 record ids in a single reference**. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more.
+
+    For example:
+    "Person X is the owner of Company Y and subject to many allegations of wrongdoing [Data: Reports (2, 7, 34, 46, 64, +more)]. He is also CEO of company X [Data: Reports (1, 3)]"
+    where 1, 2, 3, 7, 34, 46, and 64 represent the id (not the index) of the relevant data record.
+    Do not include information where the supporting evidence for it is not provided.
+    ---Target response length and format---
+    {response_type}
+    ---Analyst Reports---
+    {report_data}
+    ---Goal---
+    Generate a response of the target length and format that responds to the user's question, summarize all the reports from multiple analysts who focused on different parts of the dataset.
+    Note that the analysts' reports provided below are ranked in the **descending order of importance**.
+    If you don't know the answer or if the provided reports do not contain sufficient information to provide an answer, just say so. Do not make anything up.
+    The final response should remove all irrelevant information from the analysts' reports and merge the cleaned information into a comprehensive answer that provides explanations of all the key points and implications appropriate for the response length and format.
+    The response shall preserve the original meaning and use of modal verbs such as "shall", "may" or "will".
+    The response should also preserve all the data references previously included in the analysts' reports, but do not mention the roles of multiple analysts in the analysis process.
+    **Do not list more than 5 record ids in a single reference**. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more.
+    For example:
+    "Person X is the owner of Company Y and subject to many allegations of wrongdoing [Data: Reports (2, 7, 34, 46, 64, +more)]. He is also CEO of company X [Data: Reports (1, 3)]"
+    where 1, 2, 3, 7, 34, 46, and 64 represent the id (not the index) of the relevant data record.
+    Do not include information where the supporting evidence for it is not provided.
+    ---Target response length and format---
+    {response_type}
+    Add sections and commentary to the response as appropriate for the length and format. Style the response in markdown.
+    -- Query --
+    {input}
+  input_types:
+    response_type: str
+    report_data: str
+    input: str

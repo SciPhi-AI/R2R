@@ -9,6 +9,11 @@ from .llm import GenerationConfig
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
+    kg_extraction_prompt: str = Field(
+        default="graphrag_triplet_extraction_zero_shot",
+        description="The prompt to use for knowledge graph extraction.",
+    )
+
     entity_types: list[str] = Field(
         default=[],
         description="The types of entities to extract.",
@@ -37,6 +42,11 @@ class KGCreationSettings(R2RSerializable):
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
+
+    community_reports_prompt: str = Field(
+        default="graphrag_community_reports_prompt",
+        description="The prompt to use for knowledge graph enrichment.",
+    )
 
     max_description_input_length: int = Field(
         default=65536,

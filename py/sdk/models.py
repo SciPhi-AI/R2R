@@ -71,22 +71,48 @@ class GenerationConfig(BaseModel):
 
 
 class KGSearchSettings(BaseModel):
-    use_kg_search: bool = False
-    kg_search_type: str = "global"  # 'global' or 'local'
-    kg_search_level: Optional[str] = None
-    kg_search_generation_config: Optional[GenerationConfig] = Field(
-        default_factory=GenerationConfig
+    """
+    Settings for knowledge graph search.
+    """
+    use_kg_search: bool = Field(
+        default=False,
+        description="Whether to use knowledge graph search",
     )
-    entity_types: list = []
-    relationships: list = []
-    max_community_description_length: int = 65536
-    max_llm_queries_for_global_search: int = 250
-    local_search_limits: dict[str, int] = {
-        "__Entity__": 20,
-        "__Relationship__": 20,
-        "__Community__": 20,
-    }
-
+    kg_search_type: str = Field(
+        default="global",
+        description="The type of knowledge graph search to use",
+    )
+    kg_search_level: Optional[str] = Field(
+        default=None,
+        description="The level of knowledge graph search to use",
+    )
+    kg_search_generation_config: Optional[GenerationConfig] = Field(
+        default_factory=GenerationConfig,
+        description="The generation config to use for knowledge graph search",
+    )
+    max_community_description_length: int = Field(
+        default=65536,
+        description="The maximum length of the description for a community in the graph",
+    )
+    max_llm_queries_for_global_search: int = Field(
+        default=250,
+        description="The maximum number of LLM queries for global search",
+    )
+    local_search_limits: dict[str, int] = Field(
+        default={
+            "__Entity__": 20,
+            "__Relationship__": 20,
+            "__Community__": 20,
+        }
+    )
+    graphrag_map_system_prompt: str = Field(
+        default="graphrag_map_system_prompt",
+        description="The prompt to use for graphrag map",
+    )
+    graphrag_reduce_system_prompt: str = Field(
+        default="graphrag_reduce_system_prompt",
+        description="The prompt to use for graphrag reduce",
+    )
 
 class ProviderConfig(BaseModel, ABC):
     """A base provider configuration class"""

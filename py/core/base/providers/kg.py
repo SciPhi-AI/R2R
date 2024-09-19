@@ -8,6 +8,7 @@ from ...base.utils.base_utils import RelationshipType
 from ..abstractions.graph import Entity, KGExtraction, Triple
 from ..abstractions.llm import GenerationConfig
 from ..abstractions.restructure import KGCreationSettings, KGEnrichmentSettings
+from ..abstractions.search import KGSearchSettings
 from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -23,14 +24,10 @@ class KGConfig(ProviderConfig):
     database: Optional[str] = None
 
     batch_size: Optional[int] = 1
-    kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
-    kg_search_prompt: Optional[str] = "kg_search"
-    kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
-        KGEnrichmentSettings()
-    )
+    kg_enrichment_settings: Optional[KGEnrichmentSettings] = KGEnrichmentSettings()
     kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
+    kg_search_settings: Optional[KGSearchSettings] = KGSearchSettings()
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

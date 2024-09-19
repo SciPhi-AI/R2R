@@ -1,3 +1,4 @@
+import yaml
 import time
 import uuid
 import os
@@ -38,28 +39,66 @@ def generate_id_from_label(label: str) -> uuid.UUID:
 def wait_till_ready(status_var, status_value):
     while True:
         documents_overview = client.documents_overview()['results']
+
+        # print a percentage contribution of each status value value of status var
+        status_counts = {}
+        for document in documents_overview:
+            status = document.get(status_var)
+            if status in status_counts:
+                status_counts[status] += 1
+            else:
+                status_counts[status] = 1
+
+        # show fraction of each status value
+        for status, count in status_counts.items():
+            print(f"{status}: {count / len(documents_overview) * 100:.2f}%")
+
         if all(document.get(status_var) == status_value for document in documents_overview):
             break
+        else:
+            # if at least one says failed, exit
+            if "failure" in status_counts or "enrichment_failure" in status_counts:
+                print(f"At least one document has failed {status_var} => {status_value}")
+                for document in documents_overview:
+                    if document.get(status_var) == "failure":
+                        print(document.get("id"), document.get("status"))
+                exit(1)
         time.sleep(10)
 
 def ingest_data():
+    print("Ingesting data...")
     for text in get_dataset(args.dataset_name, args.save_folder, args.split, args.column_name):
         client.ingest_files(file_paths=[text])
 
-    # wait till all get ingested
+    # wait till all get ingested 
     wait_till_ready("ingestion_status", "success")
+    print("Ingested data")
 
 
 def create_graph():
+    print("Creating graph...")
+    entity_types = ["ORGANIZATION", "GEO", "PERSON", "INDUSTRY_SECTOR", "PRODUCT", "COMPETITOR", "TECHNOLOGY", "ACQUISITION", "INVESTOR", ]
     client.create_graph()
     wait_till_ready("restructuring_status", "success")
 
 
 def enrich_graph():
+    print("Enriching graph...")
     client.enrich_graph()
     wait_till_ready("restructuring_status", "enriched")
 
+def update_prompts():
+    print("Updating prompts...")
+    prompts = yaml.load(open("prompts.yaml", "r"), Loader=yaml.FullLoader)
+    for prompt_name, prompt in prompts.items():
+        client.update_prompt(
+            name=prompt_name,
+            template=prompt["template"],
+            input_types=prompt["input_types"]
+        )
+
 def ingest():
+    update_prompts()
     ingest_data()
     create_graph()
     enrich_graph()
@@ -69,6 +108,7 @@ def ask():
     print(result)
 
 if __name__ == "__main__":
+
     if args.ingest and not args.ask:
         ingest()
         print("Ingested data")
