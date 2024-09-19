@@ -120,7 +120,7 @@ profile = "black"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*'
+exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"

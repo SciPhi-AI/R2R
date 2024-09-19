@@ -56,13 +56,16 @@ class KgExtractAndStoreWorkflow:
                 entity_types=entity_types,
                 relation_types=relation_types,
             )
-
             # Set restructure status to 'success' if completed successfully
             if len(errors) == 0:
                 document_overview.restructuring_status = (
                     RestructureStatus.SUCCESS
                 )
+                await self.restructure_service.providers.database.relational.upsert_documents_overview(
+                    document_overview
+                )
             else:
+
                 document_overview.restructuring_status = (
                     RestructureStatus.FAILURE
                 )
@@ -80,9 +83,11 @@ class KgExtractAndStoreWorkflow:
             await self.restructure_service.providers.database.relational.upsert_documents_overview(
                 document_overview
             )
-            logger.error(
-                f"Error in kg_extract_and_store for document {document_id}: {str(e)}"
+            raise R2RDocumentProcessingError(
+                error_message=e,
+                document_id=document_id,
             )
+
 
         return {"result": None}
 

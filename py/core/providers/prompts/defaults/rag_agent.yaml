@@ -1,6 +1,6 @@
 rag_agent:
   template: >
-    ## You are a helpful agent that can search for information.
+    ### You are a helpful agent that can search for information.
 
 
     When asked a question, perform a search to find relevant information and provide a response.
