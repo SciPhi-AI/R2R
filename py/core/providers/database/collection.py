@@ -12,6 +12,9 @@ from core.base.api.models.management.responses import (
 )
 
 from .base import DatabaseMixin
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CollectionMixin(DatabaseMixin):
@@ -138,20 +141,27 @@ class CollectionMixin(DatabaseMixin):
             raise R2RException(status_code=404, message="Group not found")
 
     async def list_collections(
-        self, offset: int = 0, limit: int = 100
+        self, offset: int = 0, limit: int = -1
     ) -> list[GroupResponse]:
-        """List groups with pagination."""
+        """List collections with pagination."""
         query = f"""
-            SELECT collection_id, name, description, created_at, updated_at
+            SELECT collection_id, name, description, created_at, updated_at, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('collections')}
             ORDER BY name
             OFFSET $1
-            LIMIT $2
         """
-        results = await self.fetch_query(query, [offset, limit])
+
+        conditions = [offset]
+        if limit != -1:
+            query += " LIMIT $2"
+            conditions.append(limit)
+
+        results = await self.fetch_query(query, conditions)
         if not results:
-            return []
-        return [
+            logger.info("No collections found.")
+            return [], 0
+
+        collections = [
             GroupResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
@@ -161,6 +171,9 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
+        total_entries = results[0]["total_entries"]
+
+        return {"results": collections, "total_entries": total_entries}
 
     async def get_collections_by_ids(
         self, collection_ids: list[UUID]
@@ -224,7 +237,7 @@ class CollectionMixin(DatabaseMixin):
             )
 
     async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = 100
+        self, collection_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[UserResponse]:
         """
         Get all users in a specific group with pagination.
@@ -245,16 +258,21 @@ class CollectionMixin(DatabaseMixin):
 
         query = f"""
             SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture
+                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('users')} u
             WHERE $1 = ANY(u.collection_ids)
             ORDER BY u.name
             OFFSET $2
-            LIMIT $3
         """
-        results = await self.fetch_query(query, [collection_id, offset, limit])
 
-        return [
+        conditions = [collection_id, offset]
+        if limit != -1:
+            query += " LIMIT $3"
+            conditions.append(limit)
+
+        results = await self.fetch_query(query, conditions)
+
+        users = [
             UserResponse(
                 id=row["user_id"],
                 email=row["email"],
@@ -272,9 +290,12 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
+        total_entries = results[0]["total_entries"]
+
+        return {"results": users, "total_entries": total_entries}
 
     async def documents_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = 100
+        self, collection_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[DocumentInfo]:
         """
         Get all documents in a specific group with pagination.
@@ -295,10 +316,15 @@ class CollectionMixin(DatabaseMixin):
             WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
             OFFSET $2
-            LIMIT $3
         """
-        results = await self.fetch_query(query, [collection_id, offset, limit])
-        return [
+
+        conditions = [collection_id, offset]
+        if limit != -1:
+            query += " LIMIT $3"
+            conditions.append(limit)
+
+        results = await self.fetch_query(query, conditions)
+        documents = [
             DocumentInfo(
                 id=row["document_id"],
                 user_id=row["user_id"],
@@ -314,14 +340,17 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
+        total_entries = results[0]["total_entries"]
+
+        return {"results": documents, "total_entries": total_entries}
 
     async def get_collections_overview(
         self,
         collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = 100,
+        limit: int = -1,
     ) -> list[GroupOverviewResponse]:
-        """Get an overview of groups, optionally filtered by group IDs, with pagination."""
+        """Get an overview of collections, optionally filtered by group IDs, with pagination."""
         query = f"""
             WITH group_overview AS (
                 SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
@@ -338,8 +367,12 @@ class CollectionMixin(DatabaseMixin):
 
         query += """
                 GROUP BY g.collection_id, g.name, g.description, g.created_at, g.updated_at
+            ),
+            counted_overview AS (
+                SELECT *, COUNT(*) OVER() AS total_entries
+                FROM group_overview
             )
-            SELECT * FROM group_overview
+            SELECT * FROM counted_overview
             ORDER BY name
             OFFSET ${} LIMIT ${}
         """.format(
@@ -349,7 +382,12 @@ class CollectionMixin(DatabaseMixin):
         params.extend([offset, limit])
 
         results = await self.fetch_query(query, params)
-        return [
+
+        if not results:
+            logger.info("No collections found.")
+            return [], 0
+
+        collections = [
             GroupOverviewResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
@@ -362,8 +400,12 @@ class CollectionMixin(DatabaseMixin):
             for row in results
         ]
 
+        total_entries = results[0]["total_entries"] if results else 0
+
+        return {"results": collections, "total_entries": total_entries}
+
     async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = 100
+        self, user_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[GroupResponse]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
@@ -372,11 +414,16 @@ class CollectionMixin(DatabaseMixin):
             WHERE u.user_id = $1
             ORDER BY g.name
             OFFSET $2
-            LIMIT $3
         """
+
+        conditions = [user_id, offset]
+        if limit != -1:
+            query += " LIMIT $3"
+            conditions.append(limit)
+
         results = await self.fetch_query(query, [user_id, offset, limit])
 
-        return [
+        collections = [
             GroupResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
@@ -386,6 +433,9 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
+        total_entries = results[0]["total_entries"]
+
+        return {"results": collections, "total_entries": total_entries}
 
     async def assign_document_to_collection(
         self, document_id: UUID, collection_id: UUID
@@ -447,7 +497,7 @@ class CollectionMixin(DatabaseMixin):
             )
 
     async def document_collections(
-        self, document_id: UUID, offset: int = 0, limit: int = 100
+        self, document_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[GroupResponse]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at
@@ -456,11 +506,16 @@ class CollectionMixin(DatabaseMixin):
             WHERE d.document_id = $1
             ORDER BY g.name
             OFFSET $2
-            LIMIT $3
         """
-        results = await self.fetch_query(query, [document_id, offset, limit])
 
-        return [
+        conditions = [document_id, offset]
+        if limit != -1:
+            query += " LIMIT $3"
+            conditions.append(limit)
+
+        results = await self.fetch_query(query, conditions)
+
+        collections = [
             GroupResponse(
                 collection_id=row["collection_id"],
                 name=row["name"],
@@ -470,6 +525,10 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
+
+        total_entries = results[0]["total_entries"]
+
+        return {"results": collections, "total_entries": total_entries}
 
     async def remove_document_from_collection(
         self, document_id: UUID, collection_id: UUID

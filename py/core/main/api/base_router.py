@@ -48,10 +48,18 @@ class BaseRouter:
                     )
 
                 try:
-                    results = await func(*args, **kwargs)
+                    func_result = await func(*args, **kwargs)
+                    if (
+                        isinstance(func_result, tuple)
+                        and len(func_result) == 2
+                    ):
+                        results, outer_kwargs = func_result
+                    else:
+                        results, outer_kwargs = func_result, {}
+
                     if isinstance(results, StreamingResponse):
                         return results
-                    return {"results": results}
+                    return {"results": results, **outer_kwargs}
                 except R2RException as re:
                     raise HTTPException(
                         status_code=re.status_code,

@@ -316,7 +316,9 @@ class ManagementService(Service):
             documents_overview = []
 
         if documents_overview:
-            document_ids_to_purge.update(doc.id for doc in documents_overview)
+            document_ids_to_purge.update(
+                doc.id for doc in documents_overview["results"]
+            )
 
         if not document_ids_to_purge:
             raise R2RException(

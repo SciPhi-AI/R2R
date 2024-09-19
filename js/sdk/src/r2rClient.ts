@@ -789,12 +789,18 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("documentsOverview")
-  async documentsOverview(document_ids?: string[]): Promise<any> {
+  async documentsOverview(document_ids?: string[], offset?: number, limit?: number): Promise<any> {
     this._ensureAuthenticated();
 
-    let params: Record<string, string[]> = {};
+    let params: Record<string, any> = {};
     if (document_ids && document_ids.length > 0) {
       params.document_ids = document_ids;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
     }
 
     return this._makeRequest("GET", "documents_overview", { params });
@@ -806,13 +812,26 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("documentChunks")
-  async documentChunks(document_id: string): Promise<any> {
+  async documentChunks(
+    document_id: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<any> {
     this._ensureAuthenticated();
+
+    const params: Record<string, number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
 
     return this._makeRequest("GET", `document_chunks/${document_id}`, {
       headers: {
         "Content-Type": "application/json",
       },
+      params,
     });
   }
 
@@ -843,8 +862,8 @@ export class r2rClient {
   @feature("collectionsOverview")
   async collectionsOverview(
     collectionIds?: string[],
-    limit?: number,
     offset?: number,
+    limit?: number,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
@@ -891,7 +910,10 @@ export class r2rClient {
   @feature("getCollection")
   async getCollection(collectionId: string): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    return this._makeRequest("GET", `get_collection/${encodeURIComponent(collectionId)}`);
+    return this._makeRequest(
+      "GET",
+      `get_collection/${encodeURIComponent(collectionId)}`,
+    );
   }
 
   /**
@@ -909,9 +931,10 @@ export class r2rClient {
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
-    const data: { collection_id: string; name?: string; description?: string } = {
-      collection_id: collectionId,
-    };
+    const data: { collection_id: string; name?: string; description?: string } =
+      {
+        collection_id: collectionId,
+      };
     if (name !== undefined) {
       data.name = name;
     }
@@ -1080,7 +1103,9 @@ export class r2rClient {
    * @returns
    */
   @feature("getDocumentCollections")
-  async getDocumentCollections(documentId: string): Promise<Record<string, any>> {
+  async getDocumentCollections(
+    documentId: string,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
     return this._makeRequest(

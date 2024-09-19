@@ -1,6 +1,6 @@
 import concurrent.futures
 import logging
-import os
+import copy
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
@@ -143,10 +143,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `full_text_search`."
             )
-        results = self.collection.full_text_search(
+        return self.collection.full_text_search(
             query_text=query_text, search_settings=search_settings
         )
-        return results
 
     def hybrid_search(
         self,
@@ -168,13 +167,21 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "The `full_text_limit` must be greater than or equal to the `search_limit`."
             )
 
+        semantic_settings = copy.deepcopy(search_settings)
+        semantic_settings.search_limit += search_settings.offset
+
+        full_text_settings = copy.deepcopy(search_settings)
+        full_text_settings.hybrid_search_settings.full_text_limit += (
+            search_settings.offset
+        )
+
         # Use ThreadPoolExecutor to run searches in parallel
         with ThreadPoolExecutor(max_workers=2) as executor:
             semantic_future = executor.submit(
-                self.semantic_search, query_vector, search_settings
+                self.semantic_search, query_vector, semantic_settings
             )
             full_text_future = executor.submit(
-                self.full_text_search, query_text, search_settings
+                self.full_text_search, query_text, full_text_settings
             )
 
             # Wait for both searches to complete
@@ -253,13 +260,16 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 + full_text_score * full_text_weight
             ) / (semantic_weight + full_text_weight)
 
-        # Sort by RRF score and convert to VectorSearchResult
-        limit = min(semantic_limit, full_text_limit)
+        # Sort by RRF score and apply offset and limit
         sorted_results = sorted(
             combined_results.values(),
             key=lambda x: x["rrf_score"],
             reverse=True,
-        )[:limit]
+        )
+        offset_results = sorted_results[
+            search_settings.offset : search_settings.offset
+            + search_settings.search_limit
+        ]
 
         return [
             VectorSearchResult(
@@ -276,7 +286,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     "full_text_rank": result["full_text_rank"],
                 },
             )
-            for result in sorted_results
+            for result in offset_results
         ]
 
     def create_index(
@@ -466,7 +476,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata
+            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
             FROM vecs."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
@@ -481,15 +491,22 @@ class PostgresVectorDBProvider(VectorDBProvider):
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
 
-        return [
-            {
-                "fragment_id": result[0],
-                "extraction_id": result[1],
-                "document_id": result[2],
-                "user_id": result[3],
-                "collection_ids": result[4],
-                "text": result[5],
-                "metadata": result[6],
-            }
-            for result in results
-        ]
+        chunks = []
+        total = 0
+
+        if results:
+            total = results[0][7]
+            chunks = [
+                {
+                    "fragment_id": result[0],
+                    "extraction_id": result[1],
+                    "document_id": result[2],
+                    "user_id": result[3],
+                    "collection_ids": result[4],
+                    "text": result[5],
+                    "metadata": result[6],
+                }
+                for result in results
+            ]
+
+        return {"results": chunks, "total_entries": total}

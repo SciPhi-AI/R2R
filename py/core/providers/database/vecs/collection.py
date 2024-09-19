@@ -237,7 +237,7 @@ class Collection:
                 if x is not None
             ]
         )
-        self._migrate_group_ids_to_collection_ids() # TODO - Remove
+        self._migrate_group_ids_to_collection_ids()  # TODO - Remove
 
         if len(reported_dimensions) == 0:
             raise ArgError(
@@ -255,7 +255,7 @@ class Collection:
                 result = sess.execute(
                     text(
                         f"""
-                        SELECT COUNT(*) 
+                        SELECT COUNT(*)
                         FROM information_schema.columns
                         WHERE table_name = '{self.table.name}' AND column_name = 'group_ids'
                         """
@@ -267,7 +267,7 @@ class Collection:
                     sess.execute(
                         text(
                             f"""
-                            ALTER TABLE "{self.table.name}" 
+                            ALTER TABLE "{self.table.name}"
                             RENAME COLUMN group_ids TO collection_ids
                             """
                         )
@@ -635,6 +635,7 @@ class Collection:
         stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
 
         stmt = stmt.order_by(distance_clause)
+        stmt = stmt.offset(search_settings.offset)
         stmt = stmt.limit(search_settings.search_limit)
 
         with self.client.Session() as sess:
@@ -681,6 +682,7 @@ class Collection:
             .where(self.table.c.fts.op("@@")(ts_query))
             .where(self.build_filters(search_settings.filters))
             .order_by(rank_function.desc())
+            .offset(search_settings.offset)
             .limit(search_settings.hybrid_search_settings.full_text_limit)
         )
 

@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Optional, Union
+from typing import Optional, Union, Any
 from uuid import UUID
 
 import asyncpg
@@ -224,8 +224,8 @@ class DocumentMixin(DatabaseMixin):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = 100,
-    ) -> list[DocumentInfo]:
+        limit: int = -1,
+    ) -> dict[str, Any]:
         conditions = []
         params = []
         param_index = 1
@@ -254,7 +254,8 @@ class DocumentMixin(DatabaseMixin):
 
         query = f"""
             SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
+                size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status,
+                COUNT(*) OVER() AS total_entries
             {base_query}
             ORDER BY created_at DESC
             OFFSET ${param_index}
@@ -265,11 +266,14 @@ class DocumentMixin(DatabaseMixin):
         if limit != -1:
             query += f" LIMIT ${param_index}"
             params.append(limit)
+            param_index += 1
 
         try:
             results = await self.fetch_query(query, params)
 
-            return [
+            total_entries = results[0]["total_entries"] if results else 0
+
+            documents = [
                 DocumentInfo(
                     id=row["document_id"],
                     collection_ids=row["collection_ids"],
@@ -288,6 +292,8 @@ class DocumentMixin(DatabaseMixin):
                 )
                 for row in results
             ]
+
+            return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")
             raise R2RException(

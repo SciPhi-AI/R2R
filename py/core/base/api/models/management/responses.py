@@ -1,10 +1,16 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from core.base.api.models.base import ResultsWrapper
+from core.base.api.models.base import ResultsWrapper, PaginatedResultsWrapper
+
+from core.base import (
+    DocumentType,
+    IngestionStatus,
+    RestructureStatus,
+)
 
 
 class UpdatePromptResponse(BaseModel):
@@ -16,11 +22,11 @@ class PromptResponse(BaseModel):
     template: str
     created_at: datetime
     updated_at: datetime
-    input_types: Dict[str, str]
+    input_types: dict[str, str]
 
 
 class AllPromptsResponse(BaseModel):
-    prompts: Dict[str, PromptResponse]
+    prompts: dict[str, PromptResponse]
 
 
 class LogEntry(BaseModel):
@@ -32,7 +38,7 @@ class LogEntry(BaseModel):
 class LogResponse(BaseModel):
     run_id: UUID
     run_type: str
-    entries: List[LogEntry]
+    entries: list[LogEntry]
     timestamp: Optional[datetime]
     user_id: Optional[UUID]
 
@@ -46,12 +52,12 @@ class ServerStats(BaseModel):
 
 class AnalyticsResponse(BaseModel):
     analytics_data: Optional[dict] = None
-    filtered_logs: Dict[str, Any]
+    filtered_logs: dict[str, Any]
 
 
 class AppSettingsResponse(BaseModel):
-    config: Dict[str, Any]
-    prompts: Dict[str, Any]
+    config: dict[str, Any]
+    prompts: dict[str, Any]
 
 
 class ScoreCompletionResponse(BaseModel):
@@ -62,7 +68,7 @@ class UserOverviewResponse(BaseModel):
     user_id: UUID
     num_files: int
     total_size_in_bytes: int
-    document_ids: List[UUID]
+    document_ids: list[UUID]
 
 
 class DocumentOverviewResponse(BaseModel):
@@ -76,7 +82,7 @@ class DocumentOverviewResponse(BaseModel):
     restructuring_status: str
     version: str
     collection_ids: list[UUID]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class DocumentChunkResponse(BaseModel):
@@ -86,7 +92,7 @@ class DocumentChunkResponse(BaseModel):
     user_id: UUID
     collection_ids: list[UUID]
     text: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 KnowledgeGraphResponse = str
@@ -118,17 +124,21 @@ class AddUserResponse(BaseModel):
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
 WrappedGetPromptsResponse = ResultsWrapper[AllPromptsResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
-WrappedLogResponse = ResultsWrapper[List[LogResponse]]
+WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedScoreCompletionResponse = ResultsWrapper[ScoreCompletionResponse]
-WrappedUserOverviewResponse = ResultsWrapper[List[UserOverviewResponse]]
-WrappedDocumentOverviewResponse = ResultsWrapper[
-    List[DocumentOverviewResponse]
+WrappedUserOverviewResponse = PaginatedResultsWrapper[
+    list[UserOverviewResponse]
 ]
-WrappedDocumentChunkResponse = ResultsWrapper[List[DocumentChunkResponse]]
+WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
+    list[DocumentOverviewResponse]
+]
 WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedCollectionResponse = ResultsWrapper[GroupResponse]
-WrappedCollectionListResponse = ResultsWrapper[List[GroupResponse]]
-WrappedCollectionOverviewResponse = ResultsWrapper[List[GroupOverviewResponse]]
+WrappedCollectionListResponse = ResultsWrapper[list[GroupResponse]]
+WrappedCollectionOverviewResponse = ResultsWrapper[list[GroupOverviewResponse]]
 WrappedAddUserResponse = ResultsWrapper[AddUserResponse]
+WrappedDocumentChunkResponse = PaginatedResultsWrapper[
+    list[DocumentChunkResponse]
+]

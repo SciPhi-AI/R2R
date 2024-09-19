@@ -22,6 +22,7 @@ from .management.responses import (
     WrappedAppSettingsResponse,
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
+    WrappedDocumentChunkResponse,
     WrappedCollectionResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -31,6 +32,7 @@ from .management.responses import (
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
+    WrappedDocumentChunkResponse,
 )
 from .restructure.responses import (
     KGCreationResponse,
@@ -81,12 +83,15 @@ __all__ = [
     "WrappedAppSettingsResponse",
     "WrappedScoreCompletionResponse",
     "WrappedUserOverviewResponse",
+    "WrappedDocumentChunkResponse",
     "WrappedDocumentOverviewResponse",
     "WrappedDocumentChunkResponse",
     "WrappedKnowledgeGraphResponse",
     "WrappedCollectionResponse",
+    "WrappedDocumentChunkResponse",
     "WrappedCollectionListResponse",
     "WrappedAddUserResponse",
+    "WrappedDocumentChunkResponse",
     "WrappedCollectionOverviewResponse",
     # Retrieval Responses
     "SearchResponse",

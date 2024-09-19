@@ -391,18 +391,25 @@ class UserMixin(DatabaseMixin):
         await self.execute_query(query, [user_id])
 
     async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = 100
+        self, collection_id: UUID, offset: int = 0, limit: int = -1
     ) -> list[UserResponse]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('users')}
             WHERE $1 = ANY(collection_ids)
             ORDER BY email
-            OFFSET $2 LIMIT $3
+            OFFSET $2
         """
+
+        conditions = [collection_id, offset]
+
+        if limit != -1:
+            query += " LIMIT $3"
+            conditions.append(limit)
+
         results = await self.fetch_query(query, [collection_id, offset, limit])
 
-        return [
+        users = [
             UserResponse(
                 id=row["user_id"],
                 email=row["email"],
@@ -418,6 +425,10 @@ class UserMixin(DatabaseMixin):
             )
             for row in results
         ]
+
+        total_entries = results[0]["total_entries"]
+
+        return {"results": users, "total_entries": total_entries}
 
     async def get_user_id_by_verification_code(
         self, verification_code: str
@@ -447,7 +458,7 @@ class UserMixin(DatabaseMixin):
         self,
         user_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = 100,
+        limit: int = -1,
     ) -> list[UserStats]:
         query = f"""
             WITH user_docs AS (
@@ -462,7 +473,8 @@ class UserMixin(DatabaseMixin):
                     u.collection_ids,
                     COUNT(d.document_id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
-                    ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
+                    ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids,
+                    COUNT(*) OVER() AS total_entries
                 FROM {self._get_table_name('users')} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
                 {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
@@ -472,16 +484,20 @@ class UserMixin(DatabaseMixin):
             FROM user_docs
             ORDER BY email
             OFFSET $1
-            LIMIT $2
         """
 
-        params = [offset, limit]
+        params = [offset]
+
+        if limit != -1:
+            query += " LIMIT $2"
+            params.append(limit)
+
         if user_ids:
             params.append(user_ids)
 
         results = await self.fetch_query(query, params)
 
-        return [
+        users = [
             UserStats(
                 user_id=row[0],
                 email=row[1],
@@ -497,3 +513,7 @@ class UserMixin(DatabaseMixin):
             )
             for row in results
         ]
+
+        total_entries = results[0]["total_entries"]
+
+        return {"results": users, "total_entries": total_entries}
