@@ -24,7 +24,6 @@ from .management.responses import (
     WrappedCollectionOverviewResponse,
     WrappedDocumentChunkResponse,
     WrappedCollectionResponse,
-    WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
@@ -32,6 +31,8 @@ from .management.responses import (
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
+    WrappedUsersInCollectionResponse,
+    WrappedUserCollectionResponse,
     WrappedDocumentChunkResponse,
 )
 from .restructure.responses import (
@@ -91,6 +92,8 @@ __all__ = [
     "WrappedDocumentChunkResponse",
     "WrappedCollectionListResponse",
     "WrappedAddUserResponse",
+    "WrappedUsersInCollectionResponse",
+    "WrappedUserCollectionResponse",
     "WrappedDocumentChunkResponse",
     "WrappedCollectionOverviewResponse",
     # Retrieval Responses

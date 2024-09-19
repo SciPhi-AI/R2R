@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from core.base import R2RException
@@ -171,7 +171,7 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
-        total_entries = results[0]["total_entries"]
+        total_entries = results[0]["total_entries"] if results else 0
 
         return {"results": collections, "total_entries": total_entries}
 
@@ -290,7 +290,8 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
-        total_entries = results[0]["total_entries"]
+
+        total_entries = results[0]["total_entries"] if results else 0
 
         return {"results": users, "total_entries": total_entries}
 
@@ -340,7 +341,7 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
-        total_entries = results[0]["total_entries"]
+        total_entries = results[0]["total_entries"] if results else 0
 
         return {"results": documents, "total_entries": total_entries}
 
@@ -349,7 +350,7 @@ class CollectionMixin(DatabaseMixin):
         collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = -1,
-    ) -> list[GroupOverviewResponse]:
+    ) -> dict[str, Union[list[GroupOverviewResponse], int]]:
         """Get an overview of collections, optionally filtered by collection IDs, with pagination."""
         query = f"""
             WITH collection_overview AS (
@@ -359,33 +360,31 @@ class CollectionMixin(DatabaseMixin):
                 FROM {self._get_table_name('collections')} g
                 LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
                 LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
-        """
-        params = []
-        if collection_ids:
-            query += " WHERE g.collection_id = ANY($1)"
-            params.append(collection_ids)
-
-        query += """
+                {' WHERE g.collection_id = ANY($1)' if collection_ids else ''}
                 GROUP BY g.collection_id, g.name, g.description, g.created_at, g.updated_at
             ),
             counted_overview AS (
                 SELECT *, COUNT(*) OVER() AS total_entries
-                FROM group_overview
+                FROM collection_overview
             )
-            SELECT * FROM collection_overview
+            SELECT * FROM counted_overview
             ORDER BY name
-            OFFSET ${} LIMIT ${}
-        """.format(
-            len(params) + 1, len(params) + 2
-        )
+            OFFSET ${2 if collection_ids else 1}
+            {f'LIMIT ${3 if collection_ids else 2}' if limit != -1 else ''}
+        """
 
-        params.extend([offset, limit])
+        params = []
+        if collection_ids:
+            params.append(collection_ids)
+        params.append(offset)
+        if limit != -1:
+            params.append(limit)
 
         results = await self.fetch_query(query, params)
 
         if not results:
             logger.info("No collections found.")
-            return [], 0
+            return {"results": [], "total_entries": 0}
 
         collections = [
             GroupOverviewResponse(
@@ -433,7 +432,7 @@ class CollectionMixin(DatabaseMixin):
             )
             for row in results
         ]
-        total_entries = results[0]["total_entries"]
+        total_entries = results[0]["total_entries"] if results else 0
 
         return {"results": collections, "total_entries": total_entries}
 
@@ -528,7 +527,7 @@ class CollectionMixin(DatabaseMixin):
             for row in results
         ]
 
-        total_entries = results[0]["total_entries"]
+        total_entries = results[0]["total_entries"] if results else 0
 
         return {"results": collections, "total_entries": total_entries}
 

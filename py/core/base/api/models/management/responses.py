@@ -136,9 +136,17 @@ WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
 ]
 WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedCollectionResponse = ResultsWrapper[GroupResponse]
-WrappedCollectionListResponse = ResultsWrapper[list[GroupResponse]]
-WrappedCollectionOverviewResponse = ResultsWrapper[list[GroupOverviewResponse]]
+WrappedCollectionListResponse = PaginatedResultsWrapper[list[GroupResponse]]
+WrappedCollectionOverviewResponse = PaginatedResultsWrapper[
+    list[GroupOverviewResponse]
+]
 WrappedAddUserResponse = ResultsWrapper[AddUserResponse]
+WrappedUsersInCollectionResponse = PaginatedResultsWrapper[
+    list[UserOverviewResponse]
+]
+WrappedUserCollectionResponse = PaginatedResultsWrapper[
+    list[GroupOverviewResponse]
+]
 WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]

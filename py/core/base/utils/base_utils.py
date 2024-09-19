@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def format_search_results_for_llm(
     results: AggregateSearchResult,
 ) -> str:

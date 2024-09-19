@@ -26,6 +26,8 @@ from core.base.api.models.management.responses import (
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
+    WrappedUsersInCollectionResponse,
+    WrappedUserCollectionResponse,
     WrappedDocumentChunkResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
@@ -413,9 +415,15 @@ class ManagementRouter(BaseRouter):
                 if collection_ids
                 else None
             )
-            return await self.service.collections_overview(
-                collection_ids=collection_uuids, offset=offset, limit=limit
+            collections_overview_response = (
+                await self.service.collections_overview(
+                    collection_ids=collection_uuids, offset=offset, limit=limit
+                )
             )
+
+            return collections_overview_response["results"], {
+                "total_entries": collections_overview_response["total_entries"]
+            }
 
         @self.router.post("/create_collection")
         @self.base_endpoint
@@ -491,9 +499,13 @@ class ManagementRouter(BaseRouter):
                 raise R2RException(
                     "Only a superuser can list all collections.", 403
                 )
-            return await self.service.list_collections(
+            list_collections_response = await self.service.list_collections(
                 offset=offset, limit=min(max(limit, 1), 1000)
             )
+
+            return list_collections_response["results"], {
+                "total_entries": list_collections_response["total_entries"]
+            }
 
         @self.router.post("/add_user_to_collection")
         @self.base_endpoint
@@ -541,17 +553,23 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedUsersInCollectionResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get users in a collection.", 403
                 )
             collection_uuid = UUID(collection_id)
-            return await self.service.get_users_in_collection(
-                collection_id=collection_uuid,
-                offset=offset,
-                limit=min(max(limit, 1), 1000),
+            users_in_collection_response = (
+                await self.service.get_users_in_collection(
+                    collection_id=collection_uuid,
+                    offset=offset,
+                    limit=min(max(limit, 1), 1000),
+                )
             )
+
+            return users_in_collection_response["results"], {
+                "total_entries": users_in_collection_response["total_entries"]
+            }
 
         @self.router.get("/user_collections/{user_id}")
         @self.base_endpoint
@@ -562,15 +580,21 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedUserCollectionResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get collections for a user.", 403
                 )
             user_uuid = UUID(user_id)
-            return await self.service.get_collections_for_user(
-                user_uuid, offset, limit
+            user_collection_response = (
+                await self.service.get_collections_for_user(
+                    user_uuid, offset, limit
+                )
             )
+
+            return user_collection_response["results"], {
+                "total_entries": user_collection_response["total_entries"]
+            }
 
         @self.router.post("/assign_document_to_collection")
         @self.base_endpoint
@@ -622,9 +646,15 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can get the collections belonging to a document.",
                     403,
                 )
-            return await self.service.document_collections(
-                document_id, offset, limit
+            document_collections_response = (
+                await self.service.document_collections(
+                    document_id, offset, limit
+                )
             )
+
+            return document_collections_response["results"], {
+                "total_entries": document_collections_response["total_entries"]
+            }
 
         @self.router.get("/collection/{collection_id}/documents")
         @self.base_endpoint
@@ -639,6 +669,14 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can get documents in a collection.", 403
                 )
             collection_uuid = UUID(collection_id)
-            return await self.service.documents_in_collection(
-                collection_uuid, offset, limit
+            documents_in_collection_response = (
+                await self.service.documents_in_collection(
+                    collection_uuid, offset, limit
+                )
             )
+
+            return documents_in_collection_response["results"], {
+                "total_entries": documents_in_collection_response[
+                    "total_entries"
+                ]
+            }

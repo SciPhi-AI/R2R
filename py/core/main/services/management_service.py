@@ -508,16 +508,9 @@ class ManagementService(Service):
     async def document_collections(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
-        collection_ids = (
-            await self.providers.database.relational.document_collections(
-                document_id, offset=offset, limit=limit
-            )
+        return await self.providers.database.relational.document_collections(
+            document_id, offset=offset, limit=limit
         )
-        return {
-            "collection_ids": [
-                str(collection_id) for collection_id in collection_ids
-            ]
-        }
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
