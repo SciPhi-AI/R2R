@@ -1,54 +1,74 @@
 'use client';
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { ChatWindow } from '@/components/ChatWindow';
 import { Search } from '@/components/Search';
 import Header from '@/components/Header';
 
 const Index: React.FC = () => {
+  const router = useRouter();
   const [query, setQuery] = useState('');
-  const [agentUrl] = useState("http://0.0.0.0:7272");
+  const [agentUrl] = useState('http://34.133.192.176:7272');
   const [isStreaming, setIsStreaming] = useState(false);
-
   const contentAreaRef = useRef<HTMLDivElement>(null);
-
-  // Add this new state for messages
   const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (router.isReady) {
+      const { q } = router.query;
+      if (typeof q === 'string') {
+        setQuery(q);
+        // Optionally, you can trigger the search immediately
+        // handleSearch(q);
+      }
+    }
+  }, [router.isReady, router.query]);
 
   const handleClearMessages = () => {
     setMessages([]);
     setQuery('');
+    router.push('/', undefined, { shallow: true });
+  };
+
+  const handleSearch = (newQuery: string) => {
+    setQuery(newQuery);
+    router.push(`/?q=${encodeURIComponent(newQuery)}`, undefined, {
+      shallow: true,
+    });
+    // Add your search logic here
   };
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <div className="flex-grow">
-        <div className="main-content-wrapper">
-          <div className="main-content" ref={contentAreaRef}>
-            <div className="w-full max-w-4xl mx-auto flex flex-col flex-grow overflow-auto">
-              {/* Chat Interface */}
-              <div className="flex-1 overflow-auto p-4">
-                <ChatWindow
-                  query={query}
-                  setQuery={setQuery}
-                  agentUrl={agentUrl}
-                  messages={messages}
-                  setMessages={setMessages}
-                  isStreaming={isStreaming}
-                  setIsStreaming={setIsStreaming}
-                />
-              </div>
-
-              {/* Search Bar */}
-              <div className="p-4 w-full">
-                <Search
-                  setQuery={setQuery}
-                  placeholder="Start a conversation..."
-                  onClear={handleClearMessages}
-                  isStreaming={isStreaming}
-                />
-              </div>
-            </div>
+      <div className="flex-grow flex justify-center">
+        <div className="w-full max-w-4xl flex flex-col h-full mt-24">
+          <div className="flex-grow overflow-auto p-4">
+            <ChatWindow
+              query={query}
+              setQuery={setQuery}
+              agentUrl={agentUrl}
+              messages={messages}
+              setMessages={setMessages}
+              isStreaming={isStreaming}
+              setIsStreaming={setIsStreaming}
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        className="p-4 shadow-md sticky bottom-0"
+        style={{ background: 'var(--background)' }}
+      >
+        <div className="flex justify-center">
+          <div className="w-full max-w-4xl">
+            <Search
+              setQuery={handleSearch}
+              placeholder="Start a conversation..."
+              onClear={handleClearMessages}
+              isStreaming={isStreaming}
+            />
           </div>
         </div>
       </div>

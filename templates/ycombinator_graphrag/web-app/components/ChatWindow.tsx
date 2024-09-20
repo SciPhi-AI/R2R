@@ -21,15 +21,17 @@ interface Message {
   searchPerformed?: boolean;
 }
 
-export const ChatWindow: FC<{
+interface ChatWindowProps {
   query: string;
   setQuery: (query: string) => void;
   agentUrl: string;
-  messages: any[];
-  setMessages: React.Dispatch<React.SetStateAction<any[]>>;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   isStreaming: boolean;
   setIsStreaming: React.Dispatch<React.SetStateAction<boolean>>;
-}> = ({
+}
+
+export const ChatWindow: FC<ChatWindowProps> = ({
   query,
   setQuery,
   agentUrl,
@@ -75,7 +77,7 @@ export const ChatWindow: FC<{
             },
           ];
         }
-        return updatedMessages;
+        return prevMessages;
       });
     },
     [setMessages]
@@ -153,17 +155,21 @@ export const ChatWindow: FC<{
           if (buffer.includes(FUNCTION_END_TOKEN)) {
             const [results, rest] = buffer.split(FUNCTION_END_TOKEN);
 
+            console.log('results = ', results);
+            const vectorSearchSources = results.includes('<search>')
+              ? results.split('<search>')[1].split('</search>')[0]
+              : null;
 
-            console.log ( 'results = ', results)
-            const vectorSearchSources = results.includes("<search>")? results
-              .split("<search>")[1]
-              .split("</search>")[0] : null;
+            const kgSearchResult = results.includes('<kg_search>')
+              ? results.split('<kg_search>')[1].split('</kg_search>')[0]
+              : null;
 
-            const kgSearchResult = results.includes("<kg_search>")? results
-            .split("<kg_search>")[1]
-            .split("</kg_search>")[0] : null;
-
-            updateLastMessage(undefined, {vector: vectorSearchSources, kg: kgSearchResult}, undefined, true);
+            updateLastMessage(
+              undefined,
+              { vector: vectorSearchSources, kg: kgSearchResult },
+              undefined,
+              true
+            );
             buffer = rest || '';
             setIsSearching(false);
           }
@@ -214,9 +220,10 @@ export const ChatWindow: FC<{
   ]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
+      {/* Info Alert */}
       {showInfoAlert && (
-        <Alert className="flex flex-col items-start p-4 col-span-full relative border border-gray-300 rounded-lg shadow-lg">
+        <Alert className="flex flex-col items-start p-4 col-span-full relative border border-gray-300 rounded-lg shadow-lg mb-4">
           <div className="flex items-center mb-2">
             <Info className="h-6 w-6 text-blue-500 mr-2" />
             <AlertTitle className="text-lg font-semibold mt-2">
@@ -246,24 +253,28 @@ export const ChatWindow: FC<{
           </button>
         </Alert>
       )}
-      <div className="flex flex-col space-y-8 mb-4">
-        {messages.map((message, index) => (
-          <React.Fragment key={message.id}>
-            {message.role === 'user' ? (
-              <MessageBubble message={message} />
-            ) : (
-              <Answer
-                message={message}
-                isStreaming={message.isStreaming || false}
-                isSearching={index === messages.length - 1 && isSearching}
-              />
-            )}
-          </React.Fragment>
-        ))}
-        <div ref={messagesEndRef} />
+
+      {/* Chat Messages */}
+      <div className="flex-grow overflow-auto">
+        <div className="flex flex-col space-y-8 mb-4">
+          {messages.map((message, index) => (
+            <React.Fragment key={message.id}>
+              {message.role === 'user' ? (
+                <MessageBubble message={message} />
+              ) : (
+                <Answer
+                  message={message}
+                  isStreaming={message.isStreaming || false}
+                  isSearching={index === messages.length - 1 && isSearching}
+                />
+              )}
+            </React.Fragment>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+        {error && <div className="text-red-500">Error: {error}</div>}
+        {messages.length === 0 && <DefaultQueries setQuery={setQuery} />}
       </div>
-      {error && <div className="text-red-500">Error: {error}</div>}
-      {messages.length === 0 && <DefaultQueries setQuery={setQuery} />}
     </div>
   );
 };

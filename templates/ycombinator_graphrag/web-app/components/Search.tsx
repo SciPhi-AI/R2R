@@ -1,5 +1,5 @@
 import { ArrowRight, Trash2 } from 'lucide-react';
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 
 interface SearchProps {
   setQuery: (query: string) => void;
@@ -69,7 +69,7 @@ export const Search: FC<SearchProps> = ({
           }`}
           disabled={isStreaming}
         >
-          <ArrowRight size={20} />
+          <ArrowRight size={20} color="black" />
         </button>
       </div>
     </form>
