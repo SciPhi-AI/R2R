@@ -50,7 +50,19 @@ const AnimatedEllipsis: FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return <span>{dots}</span>;
+  return (
+    <span
+      style={{
+        color: 'black',
+        display: 'inline-block',
+        width: '1em',
+        height: '1em',
+        textAlign: 'left',
+      }}
+    >
+      {dots}
+    </span>
+  );
 };
 
 const SourceItem: FC<{ source: Source }> = ({ source }) => {
@@ -80,7 +92,7 @@ function formatMarkdownNewLines(markdown: string): string {
 const parseVectorSearchSources = (sources: string | object): Source[] => {
   if (typeof sources === 'string') {
     try {
-      const cleanedSources = sources
+      const cleanedSources = sources;
       return JSON.parse(cleanedSources);
     } catch (error) {
       console.error('Failed to parse sources:', error);
@@ -90,19 +102,18 @@ const parseVectorSearchSources = (sources: string | object): Source[] => {
   return sources as Source[];
 };
 
-
 const parseKGSearchResult = (sources: string | object): KGSearchResult[] => {
-    if (typeof sources === 'string') {
-        try {
-            const cleanedSources = sources
-            return JSON.parse(cleanedSources);
-        } catch (error) {
-            console.error('Failed to parse sources:', error);
-            return [];
-        }
+  if (typeof sources === 'string') {
+    try {
+      const cleanedSources = sources;
+      return JSON.parse(cleanedSources);
+    } catch (error) {
+      console.error('Failed to parse sources:', error);
+      return [];
     }
-    return sources as KGSearchResult[];
-}
+  }
+  return sources as KGSearchResult[];
+};
 
 interface KGSearchResultState {
   entities: KGSearchResult[];
@@ -117,18 +128,24 @@ export const Answer: FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [parsedVectorSources, setParsedVectorSources] = useState<Source[]>([]);
   const [parsedEntities, setParsedEntities] = useState<KGSearchResult[]>([]);
-  const [parsedCommunities, setParsedCommunities] = useState<KGSearchResult[]>([]);
+  const [parsedCommunities, setParsedCommunities] = useState<KGSearchResult[]>(
+    []
+  );
   useEffect(() => {
     if (message.sources.vector) {
-        const parsed = parseVectorSearchSources(message.sources.vector);
-        setParsedVectorSources(parsed);
+      const parsed = parseVectorSearchSources(message.sources.vector);
+      setParsedVectorSources(parsed);
     }
     if (message.sources.kg) {
-      console.log('message.sources.kg = ', message.sources.kg)
+      console.log('message.sources.kg = ', message.sources.kg);
       let kgLocalResult: KGSearchResult[] = JSON.parse(message.sources.kg);
 
-      const entitiesArray = kgLocalResult.filter((item: any) => item.result_type === 'entity');
-      const communitiesArray = kgLocalResult.filter((item: any) => item.result_type === 'community');
+      const entitiesArray = kgLocalResult.filter(
+        (item: any) => item.result_type === 'entity'
+      );
+      const communitiesArray = kgLocalResult.filter(
+        (item: any) => item.result_type === 'community'
+      );
       setParsedEntities(entitiesArray);
       setParsedCommunities(communitiesArray);
       // setParsedKGSearchResult(parsedKGSearchResult);
@@ -155,7 +172,7 @@ export const Answer: FC<{
             <p style={{ color: 'black', display: 'inline' }}>
               {children}
               {isStreaming && index === paragraphs.length - 1 && (
-                <span className="animate-pulse">▋</span>
+                <AnimatedEllipsis />
               )}
             </p>
           ),
@@ -177,7 +194,8 @@ export const Answer: FC<{
                   <PopoverTrigger asChild>
                     <span
                       title={metadata?.title}
-                      className="inline-block cursor-pointer transform scale-[60%] no-underline font-medium bg-zinc-500 hover:bg-zinc-500 w-6 text-center h-6 rounded-full origin-top-left"
+                      className="inline-block cursor-pointer transform scale-[60%] no-underline font-medium w-6 text-center h-6 rounded-full origin-top-left"
+                      style={{ background: 'var(--background)' }}
                     >
                       {href}
                     </span>
@@ -215,7 +233,7 @@ export const Answer: FC<{
   };
   return (
     <div className="mt-4">
-      {parsedVectorSources.length > 0 && (
+      {parsedVectorSources.length > 0 || isSearching ? (
         <Accordion
           type="single"
           collapsible
@@ -225,7 +243,7 @@ export const Answer: FC<{
           <AccordionItem value="answer">
             <AccordionTrigger className="py-2 text-lg font-bold text-zinc-200 hover:no-underline text-black">
               <div className="flex items-center justify-between w-full">
-                <Logo width={25} height={25} disableLink={true} />
+                <Logo width={50} height={50} disableLink={true} />
                 <span className="text-sm font-normal text-black">
                   {isSearching ? (
                     <span className="searching-animation">
@@ -238,31 +256,22 @@ export const Answer: FC<{
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <SearchResults vectorSearchResults={parsedVectorSources} entities={parsedEntities} communities={parsedCommunities} />
-              {/* <div className="space-y-2 pt-2">
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {parsedVectorSources.map((item: Source) => (
-                    <SourceItem key={item.id} source={item} />
-                  ))}
-                </div>
-              </div> */}
+              {!isSearching && (
+                <SearchResults
+                  vectorSearchResults={parsedVectorSources}
+                  entities={parsedEntities}
+                  communities={parsedCommunities}
+                />
+              )}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-      )}
-
-      {message.searchPerformed && parsedVectorSources.length === 0 && (
+      ) : message.searchPerformed ? (
         <div className="flex items-center justify-between py-2 text-sm text-zinc-400">
           <Logo width={25} height={25} disableLink={true} />
           <span>No sources found</span>
         </div>
-      )}
-
-      {!message.searchPerformed && (
-        <div className="flex items-center py-2">
-          <Logo width={25} height={25} disableLink={true} />
-        </div>
-      )}
+      ) : null}
 
       <div className="space-y-4 mt-4">
         {message.content || isStreaming ? (
@@ -270,9 +279,16 @@ export const Answer: FC<{
             {message.content ? (
               renderContent()
             ) : (
-              <p style={{ color: 'white', display: 'inline' }}>
+              <div
+                style={{
+                  color: 'black',
+                  display: 'inline-block',
+                  width: '1em',
+                  height: '1em',
+                }}
+              >
                 <AnimatedEllipsis />
-              </p>
+              </div>
             )}
           </div>
         ) : (

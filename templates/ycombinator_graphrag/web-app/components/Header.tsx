@@ -63,10 +63,10 @@ const Header: React.FC<{}> = ({}) => {
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-header border-b border-header-border flex items-center justify-between px-4 z-10">
         <div className="flex items-center">
-          <Logo width={30} height={30} />
+          <Logo width={75} height={75} />
           <Link href="https://sciphi.ai" passHref>
             <h1
-              className="ml-2 text-xl font-semibold text-header-text"
+              className="ml-2 text-2xl font-semibold text-header-text"
               onClick={(e) => {
                 e.preventDefault();
                 window.location.reload();
@@ -76,23 +76,7 @@ const Header: React.FC<{}> = ({}) => {
             </h1>
           </Link>
         </div>
-        <div className="hidden md:flex items-center space-x-2">
-          {/* <button className="px-3 py-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary transition-colors duration-200 text-sm">
-            <a
-              href="https://app.sciphi.ai/deploy?view=r2r-projects"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Deploy It!
-            </a>
-          </button> */}
-          {/* <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-3 py-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary transition-colors duration-200 text-sm"
-          >
-            Sample Docs
-          </button> */}
-        </div>
+        <div className="hidden md:flex items-center space-x-2"></div>
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

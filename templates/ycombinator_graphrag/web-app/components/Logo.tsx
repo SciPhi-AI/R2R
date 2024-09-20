@@ -49,7 +49,15 @@ export function Logo({
   }
 
   return (
-    <Link href="/" passHref onClick={handleClick} className={combinedClassName}>
+    <Link
+      href="/"
+      passHref
+      onClick={(e) => {
+        e.preventDefault();
+        window.location.reload();
+      }}
+      className={combinedClassName}
+    >
       {imageElement}
     </Link>
   );
