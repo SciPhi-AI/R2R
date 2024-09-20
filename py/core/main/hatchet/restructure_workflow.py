@@ -253,11 +253,6 @@ class EnrichGraphWorkflow:
 
                 # Run community summary workflows
                 workflows = []
-                batch_size = 512
-                completed = 0
-                logger.info(
-                    f"Running {len(result['intermediate_communities'])} KG Community Summary Workflows"
-                )
                 for level, community_id in result["intermediate_communities"]:
                     logger.info(
                         f"Running KG Community Summary Workflow for community ID: {community_id} at level {level}"
@@ -277,19 +272,7 @@ class EnrichGraphWorkflow:
                         )
                     )
 
-                    if len(workflows) % batch_size == 0:
-                        results = await asyncio.gather(*workflows)
-                        completed += len(results)
-                        logger.info(
-                            f"KG Community Summary Workflows completed: {completed} out of {len(result['intermediate_communities'])}"
-                        )
-                        workflows = []
-
                 results = await asyncio.gather(*workflows)
-                logger.info(
-                    f"KG Community Summary Workflows completed: {completed} out of {len(result['intermediate_communities'])}"
-                )
-
             else:
                 logger.info(
                     "Skipping Leiden clustering as skip_clustering is True, also skipping community summary workflows"
@@ -341,10 +324,6 @@ class EnrichGraphWorkflow:
 class KGCommunitySummaryWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
-
-    # @r2r_hatchet.concurrency(max_runs=1024, limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN)
-    # def concurrency_limit(self):
-    #     return "key"
 
     @r2r_hatchet.step(retries=1, timeout="60m")
     async def kg_community_summary(self, context: Context) -> dict:
