@@ -108,9 +108,6 @@ class CreateGraphWorkflow:
         )
         documents_overview = documents_overview["results"]
 
-        print("Inside kg_extraction_ingress")
-        print(documents_overview)
-
         document_ids = [
             doc.id
             for doc in documents_overview
