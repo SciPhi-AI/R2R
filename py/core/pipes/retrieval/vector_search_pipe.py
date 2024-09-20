@@ -74,6 +74,7 @@ class VectorSearchPipe(SearchPipe):
                 search_settings=search_settings,
             )
         )
+        print("len(search_results) = ", len(search_results))
         reranked_results = self.embedding_provider.rerank(
             query=message,
             results=search_results,

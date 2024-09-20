@@ -5,6 +5,7 @@ from core.base import CryptoConfig, CryptoProvider
 
 
 class BCryptConfig(CryptoConfig):
+    provider: str = "bcrypt"
     salt_rounds: int = 12
 
     def validate_config(self) -> None:  # type: ignore

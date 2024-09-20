@@ -51,7 +51,7 @@ class UnstructuredParsingProvider(ParsingProvider):
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
-        DocumentType.MP4: [parsers.MovieParser],
+        # DocumentType.MP4: [parsers.MovieParser],
     }
 
     IMAGE_TYPES = {

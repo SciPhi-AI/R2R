@@ -40,10 +40,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Error occurred while attempting to connect to the pgvector provider."
             )
-        self.collection_name = kwargs.get("collection_name", None)
-        if not self.collection_name:
+        self.project_name = kwargs.get("project_name", None)
+        if not self.project_name:
             raise ValueError(
-                "Please provide a valid `collection_name` to the `PostgresVectorDBProvider`."
+                "Please provide a valid `project_name` to the `PostgresVectorDBProvider`."
             )
         dimension = kwargs.get("dimension", None)
         if not dimension:
@@ -53,7 +53,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         self._initialize_vector_db(dimension)
         logger.info(
-            f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
+            f"Successfully initialized PGVectorDB for project: {self.project_name}"
         )
 
     def _initialize_vector_db(self, dimension: int) -> None:
@@ -63,8 +63,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin;"))
             sess.commit()
 
-        self.collection = self.vx.get_or_create_collection(
-            name=self.collection_name, dimension=dimension
+        self.collection = self.vx.get_or_create_vector_table(
+            name=self.project_name, dimension=dimension
         )
         self.create_index()
 
@@ -516,3 +516,11 @@ class PostgresVectorDBProvider(VectorDBProvider):
             ]
 
         return {"results": chunks, "total_entries": total}
+
+    def close(self) -> None:
+        if self.vx:
+            with self.vx.Session() as sess:
+                sess.close()
+                sess.bind.dispose()
+
+        logger.info("Closed PGVectorDB connection.")

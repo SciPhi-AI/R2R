@@ -100,6 +100,7 @@ class Document(R2RSerializable):
 
     class Config:
         arbitrary_types_allowed = True
+        ignore_extra = False
         json_encoders = {
             UUID: str,
         }
