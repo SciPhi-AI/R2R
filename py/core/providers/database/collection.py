@@ -6,10 +6,7 @@ from uuid import UUID
 
 from core.base import R2RException
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
-from core.base.api.models.management.responses import (
-    CollectionOverviewResponse,
-    CollectionResponse,
-)
+from core.base.api.models import CollectionOverviewResponse, CollectionResponse
 
 from .base import DatabaseMixin
 

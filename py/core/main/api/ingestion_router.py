@@ -10,7 +10,7 @@ from fastapi import Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import ChunkingConfig, R2RException, generate_user_document_id
-from core.base.api.models.ingestion.responses import (
+from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
 )

@@ -21,7 +21,7 @@ from core.base import (
     ParsingProvider,
     generate_id_from_label,
 )
-from core.base.abstractions.base import R2RSerializable
+from core.base.abstractions import R2RSerializable
 
 logger = logging.getLogger(__name__)
 

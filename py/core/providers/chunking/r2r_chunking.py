@@ -9,7 +9,7 @@ from core.base import (
     Strategy,
     TextSplitter,
 )
-from core.base.abstractions.document import DocumentExtraction
+from core.base.abstractions import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 

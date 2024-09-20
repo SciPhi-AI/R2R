@@ -5,7 +5,7 @@ from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
-from core.base.api.models.auth.responses import (
+from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,

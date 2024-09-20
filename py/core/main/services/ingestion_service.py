@@ -17,10 +17,10 @@ from core.base import (
     VectorEntry,
     decrement_version,
 )
+from core.base.api.models import UserResponse
 from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ...base.api.models.auth.responses import UserResponse
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service

@@ -3,7 +3,7 @@ from uuid import UUID
 import pytest
 
 from core.base import DocumentInfo, DocumentType, R2RException
-from core.base.api.models.management.responses import CollectionResponse
+from core.base.api.models import CollectionResponse
 
 
 @pytest.mark.asyncio

@@ -115,7 +115,6 @@ class R2RProviderFactory:
             from core.base import UnstructuredChunkingConfig
             from core.providers import UnstructuredChunkingProvider
 
-            print("chunking_config = ", chunking_config)
             chunking_config_unst = UnstructuredChunkingConfig(
                 **chunking_config.extra_fields
             )
@@ -289,7 +288,6 @@ class R2RProviderFactory:
         **kwargs,
     ) -> R2RProviders:
 
-        print("A")
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -297,23 +295,19 @@ class R2RProviderFactory:
             )
         )
 
-        print("B")
         llm_provider = llm_provider_override or self.create_llm_provider(
             self.config.completion, *args, **kwargs
         )
 
-        print("C")
         kg_provider = kg_provider_override or self.create_kg_provider(
             self.config.kg, *args, **kwargs
         )
 
-        print("D")
         crypto_provider = (
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
 
-        print("E")
         database_provider = (
             database_provider_override
             or await self.create_database_provider(
@@ -321,7 +315,6 @@ class R2RProviderFactory:
             )
         )
 
-        print("F")
         auth_provider = (
             auth_provider_override
             or await self.create_auth_provider(
@@ -333,7 +326,6 @@ class R2RProviderFactory:
             )
         )
 
-        print("G")
         prompt_provider = (
             prompt_provider_override
             or await self.create_prompt_provider(
@@ -341,7 +333,6 @@ class R2RProviderFactory:
             )
         )
 
-        print("H")
         parsing_provider = (
             parsing_provider_override
             or self.create_parsing_provider(
@@ -349,23 +340,19 @@ class R2RProviderFactory:
             )
         )
 
-        print("I")
         chunking_provider = chunking_config or self.create_chunking_provider(
             self.config.chunking, *args, **kwargs
         )
 
-        print("J")
         file_provider = file_provider_override or await self.create_file_provider(
             self.config.file, database_provider, *args, **kwargs  # type: ignore
         )
 
-        print("K")
         orchestration_provider = (
             orchestration_provider_override
             or self.create_orchestration_provider()
         )
 
-        print("L")
         return R2RProviders(
             auth=auth_provider,
             chunking=chunking_provider,

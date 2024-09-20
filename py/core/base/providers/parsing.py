@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator
 
 from pydantic import BaseModel, Field
 
-from ..abstractions.document import Document, DocumentType
+from ..abstractions import Document, DocumentType
 from .base import Provider, ProviderConfig
 from .chunking import ChunkingConfig
 

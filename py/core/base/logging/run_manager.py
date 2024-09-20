@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from uuid import UUID
 
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 from core.base.logging.base import RunType
 from core.base.utils import generate_run_id
 

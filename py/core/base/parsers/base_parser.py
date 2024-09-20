@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Generic, TypeVar
 
-from ..abstractions.document import DataType
+from ..abstractions import DataType
 
 T = TypeVar("T")
 

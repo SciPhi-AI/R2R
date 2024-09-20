@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import AsyncGenerator, Optional, Union
 
-from ..abstractions.document import DocumentExtraction
+from ..abstractions import DocumentExtraction
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.base.abstractions.llm import GenerationConfig
+from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
 
 

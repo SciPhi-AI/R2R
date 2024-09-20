@@ -12,7 +12,7 @@ from core.base import (
     PromptProvider,
     format_search_results_for_stream,
 )
-from core.base.abstractions.llm import GenerationConfig
+from core.base.abstractions import GenerationConfig
 
 from ..abstractions.generator_pipe import GeneratorPipe
 

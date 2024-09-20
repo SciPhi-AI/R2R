@@ -7,7 +7,7 @@ from fastapi import Body, Depends
 from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
-from core.base.api.models.restructure.responses import (
+from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )

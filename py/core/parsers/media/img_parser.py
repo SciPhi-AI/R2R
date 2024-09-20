@@ -3,7 +3,7 @@ import logging
 import os
 from typing import AsyncGenerator
 
-from core.base.abstractions.document import DataType
+from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_frame_with_openai
 
