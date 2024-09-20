@@ -88,11 +88,14 @@ class IngestionService(Service):
             size_in_bytes,
         )
 
-        if existing_document_info := await self.providers.database.relational.get_documents_overview(
-            filter_user_ids=[user.id],
-            filter_document_ids=[document_id],
-        ):
-            existing_doc = existing_document_info[0]
+        existing_document_info = (
+            await self.providers.database.relational.get_documents_overview(
+                filter_user_ids=[user.id],
+                filter_document_ids=[document_id],
+            )
+        )
+        if documents := existing_document_info.get("documents", []):
+            existing_doc = documents[0]
             if is_update:
                 if (
                     existing_doc.version >= version

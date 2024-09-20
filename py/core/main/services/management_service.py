@@ -318,7 +318,9 @@ class ManagementService(Service):
             documents_overview = []
 
         if documents_overview:
-            document_ids_to_purge.update(doc.id for doc in documents_overview)
+            document_ids_to_purge.update(
+                doc.id for doc in documents_overview["results"]
+            )
 
         if not document_ids_to_purge:
             raise R2RException(
@@ -495,16 +497,9 @@ class ManagementService(Service):
     async def document_collections(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
-        collection_ids = (
-            await self.providers.database.relational.document_collections(
-                document_id, offset=offset, limit=limit
-            )
+        return await self.providers.database.relational.document_collections(
+            document_id, offset=offset, limit=limit
         )
-        return {
-            "collection_ids": [
-                str(collection_id) for collection_id in collection_ids
-            ]
-        }
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
@@ -623,7 +618,7 @@ class ManagementService(Service):
         await self.providers.database.relational.delete_collection(
             collection_id
         )
-        await self.providers.database.vector.delete_collection(collection_id)
+        self.providers.database.vector.delete_collection(collection_id)
         return True
 
     @telemetry_event("ListCollections")

@@ -635,6 +635,7 @@ class Collection:
         stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
 
         stmt = stmt.order_by(distance_clause)
+        stmt = stmt.offset(search_settings.offset)
         stmt = stmt.limit(search_settings.search_limit)
 
         with self.client.Session() as sess:
@@ -681,6 +682,7 @@ class Collection:
             .where(self.table.c.fts.op("@@")(ts_query))
             .where(self.build_filters(search_settings.filters))
             .order_by(rank_function.desc())
+            .offset(search_settings.offset)
             .limit(search_settings.hybrid_search_settings.full_text_limit)
         )
 

@@ -1,10 +1,16 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from core.base.api.models.base import ResultsWrapper
+from core.base.api.models.base import ResultsWrapper, PaginatedResultsWrapper
+
+from core.base import (
+    DocumentType,
+    IngestionStatus,
+    RestructureStatus,
+)
 
 
 class UpdatePromptResponse(BaseModel):
@@ -16,11 +22,11 @@ class PromptResponse(BaseModel):
     template: str
     created_at: datetime
     updated_at: datetime
-    input_types: Dict[str, str]
+    input_types: dict[str, str]
 
 
 class AllPromptsResponse(BaseModel):
-    prompts: Dict[str, PromptResponse]
+    prompts: dict[str, PromptResponse]
 
 
 class LogEntry(BaseModel):
@@ -32,7 +38,7 @@ class LogEntry(BaseModel):
 class LogResponse(BaseModel):
     run_id: UUID
     run_type: str
-    entries: List[LogEntry]
+    entries: list[LogEntry]
     timestamp: Optional[datetime]
     user_id: Optional[UUID]
 
@@ -46,12 +52,12 @@ class ServerStats(BaseModel):
 
 class AnalyticsResponse(BaseModel):
     analytics_data: Optional[dict] = None
-    filtered_logs: Dict[str, Any]
+    filtered_logs: dict[str, Any]
 
 
 class AppSettingsResponse(BaseModel):
-    config: Dict[str, Any]
-    prompts: Dict[str, Any]
+    config: dict[str, Any]
+    prompts: dict[str, Any]
 
 
 class ScoreCompletionResponse(BaseModel):
@@ -62,7 +68,25 @@ class UserOverviewResponse(BaseModel):
     user_id: UUID
     num_files: int
     total_size_in_bytes: int
-    document_ids: List[UUID]
+    document_ids: list[UUID]
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    email: str
+    is_active: bool = True
+    is_superuser: bool = False
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
+    is_verified: bool = False
+    collection_ids: list[UUID] = []
+
+    # Optional fields (to update or set at creation)
+    hashed_password: Optional[str] = None
+    verification_code_expiry: Optional[datetime] = None
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None
 
 
 class DocumentOverviewResponse(BaseModel):
@@ -76,7 +100,7 @@ class DocumentOverviewResponse(BaseModel):
     restructuring_status: str
     version: str
     collection_ids: list[UUID]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class DocumentChunkResponse(BaseModel):
@@ -86,7 +110,7 @@ class DocumentChunkResponse(BaseModel):
     user_id: UUID
     collection_ids: list[UUID]
     text: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 KnowledgeGraphResponse = str
@@ -118,19 +142,27 @@ class AddUserResponse(BaseModel):
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
 WrappedGetPromptsResponse = ResultsWrapper[AllPromptsResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
-WrappedLogResponse = ResultsWrapper[List[LogResponse]]
+WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedScoreCompletionResponse = ResultsWrapper[ScoreCompletionResponse]
-WrappedUserOverviewResponse = ResultsWrapper[List[UserOverviewResponse]]
-WrappedDocumentOverviewResponse = ResultsWrapper[
-    List[DocumentOverviewResponse]
+WrappedUserOverviewResponse = PaginatedResultsWrapper[
+    list[UserOverviewResponse]
 ]
-WrappedDocumentChunkResponse = ResultsWrapper[List[DocumentChunkResponse]]
+WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
+    list[DocumentOverviewResponse]
+]
 WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
-WrappedCollectionListResponse = ResultsWrapper[List[CollectionResponse]]
+WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
 WrappedCollectionOverviewResponse = ResultsWrapper[
-    List[CollectionOverviewResponse]
+    list[CollectionOverviewResponse]
 ]
 WrappedAddUserResponse = ResultsWrapper[AddUserResponse]
+WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
+WrappedUserCollectionResponse = PaginatedResultsWrapper[
+    list[CollectionOverviewResponse]
+]
+WrappedDocumentChunkResponse = PaginatedResultsWrapper[
+    list[DocumentChunkResponse]
+]

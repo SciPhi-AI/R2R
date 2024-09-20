@@ -336,6 +336,11 @@ class VectorSearchSettings(BaseModel):
         ge=1,
         le=1_000,
     )
+    offset: Optional[int] = Field(
+        default=0,
+        ge=0,
+        description="Offset to paginate search results",
+    )
     selected_collection_ids: list[UUID] = Field(
         default_factory=list,
         description="Collection IDs to search for",

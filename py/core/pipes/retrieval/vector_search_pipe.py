@@ -79,13 +79,11 @@ class VectorSearchPipe(SearchPipe):
             results=search_results,
             limit=search_settings.search_limit,
         )
-        include_title_if_available = kwargs.get(
+        if include_title_if_available := kwargs.get(
             "include_title_if_available", False
-        )
-        if include_title_if_available:
+        ):
             for result in reranked_results:
-                title = result.metadata.get("title", None)
-                if title:
+                if title := result.metadata.get("title", None):
                     text = result.text
                     result.text = f"Document Title:{title}\n\nText:{text}"
 
