@@ -1,16 +1,14 @@
 import logging
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import (
     AsyncState,
-    ChunkingConfig,
     ChunkingProvider,
     DocumentExtraction,
     DocumentFragment,
     PipeType,
     R2RChunkingConfig,
-    R2RDocumentProcessingError,
     RunLoggingSingleton,
     generate_id_from_label,
 )
@@ -61,7 +59,7 @@ class ChunkingPipe(AsyncPipe[DocumentFragment]):
         unstr_iteration = 0  # unstructured already chunks
         for item in input.message:
             iteration = 0
-            async for chunk in chunking_provider.chunk(item): # type: ignore
+            async for chunk in chunking_provider.chunk(item):  # type: ignore
                 if item.metadata.get("partitioned_by_unstructured", False):
                     item.metadata["chunk_order"] = unstr_iteration
                     unstr_iteration += 1

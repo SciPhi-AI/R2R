@@ -6,8 +6,8 @@ from core.base.abstractions import (
     AsyncSyncMeta,
     LLMChatCompletion,
     LLMChatCompletionChunk,
+    Message,
     syncable,
-    Message
 )
 from core.base.agent import Agent
 

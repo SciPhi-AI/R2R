@@ -18,6 +18,7 @@ from core.base.api.models.management.responses import (
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedGetPromptsResponse,
     WrappedKnowledgeGraphResponse,
@@ -25,10 +26,9 @@ from core.base.api.models.management.responses import (
     WrappedPromptMessageResponse,
     WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
+    WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-    WrappedUserCollectionResponse,
-    WrappedDocumentChunkResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 from core.base.providers import OrchestrationProvider
@@ -384,7 +384,9 @@ class ManagementRouter(BaseRouter):
                     404,
                 )
 
-            is_owner = str(document_chunks_result[0].get("user_id")) == str(auth_user.id)
+            is_owner = str(document_chunks_result[0].get("user_id")) == str(
+                auth_user.id
+            )
 
             if not is_owner and not auth_user.is_superuser:
                 raise R2RException(
@@ -579,7 +581,7 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedUsersInCollectionResponse
+            response_model=WrappedUsersInCollectionResponse,
         ):
             if not auth_user.is_superuser:
                 raise R2RException(

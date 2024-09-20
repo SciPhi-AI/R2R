@@ -212,7 +212,7 @@ class Serializable(BaseModel, ABC):
             for key in list(secrets):
                 value = secrets[key]
                 if key in this.__fields__:
-                    secrets[this.__fields__[key].alias] = value # type: ignore
+                    secrets[this.__fields__[key].alias] = value  # type: ignore
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs

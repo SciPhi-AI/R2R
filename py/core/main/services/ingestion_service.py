@@ -157,30 +157,22 @@ class IngestionService(Service):
         self,
         document_info: DocumentInfo,
     ) -> AsyncGenerator[DocumentFragment, None]:
-        if result := await self.providers.file.retrieve_file(document_info.id):
-            file_name, file_wrapper, size_in_bytes = result
-        else:
-            raise R2RException(
-                status_code=404, message=f"File {document_info.id} not found."
-            )
-
-        with file_wrapper as file_content_stream:
-            return await self.pipes.parsing_pipe.run(
-                input=self.pipes.parsing_pipe.Input(
-                    message=Document(
-                        id=document_info.id,
-                        collection_ids=document_info.collection_ids,
-                        user_id=document_info.user_id,
-                        type=document_info.type,
-                        metadata={
-                            "document_type": document_info.type.value,
-                            **document_info.metadata,
-                        },
-                    )
-                ),
-                state=None,
-                run_manager=self.run_manager,
-            )
+        return await self.pipes.parsing_pipe.run(
+            input=self.pipes.parsing_pipe.Input(
+                message=Document(
+                    id=document_info.id,
+                    collection_ids=document_info.collection_ids,
+                    user_id=document_info.user_id,
+                    type=document_info.type,
+                    metadata={
+                        "document_type": document_info.type.value,
+                        **document_info.metadata,
+                    },
+                )
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
 
     async def chunk_document(
         self,

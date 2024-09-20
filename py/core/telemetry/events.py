@@ -16,7 +16,10 @@ class DailyActiveUserEvent(BaseTelemetryEvent):
 
 class FeatureUsageEvent(BaseTelemetryEvent):
     def __init__(
-        self, user_id: str, feature: str, properties: Optional[Dict[str, Any]] = None
+        self,
+        user_id: str,
+        feature: str,
+        properties: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             "FeatureUsage",
@@ -49,7 +52,10 @@ class ErrorEvent(BaseTelemetryEvent):
 
 class RequestLatencyEvent(BaseTelemetryEvent):
     def __init__(
-        self, endpoint: str, latency: float, properties: Optional[Dict[str, Any]] = None
+        self,
+        endpoint: str,
+        latency: float,
+        properties: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             "RequestLatency",
@@ -63,7 +69,10 @@ class RequestLatencyEvent(BaseTelemetryEvent):
 
 class GeographicDistributionEvent(BaseTelemetryEvent):
     def __init__(
-        self, user_id: str, country: str, properties: Optional[Dict[str, Any]] = None
+        self,
+        user_id: str,
+        country: str,
+        properties: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             "GeographicDistribution",
@@ -77,7 +86,10 @@ class GeographicDistributionEvent(BaseTelemetryEvent):
 
 class SessionDurationEvent(BaseTelemetryEvent):
     def __init__(
-        self, user_id: str, duration: float, properties: Optional[Dict[str, Any]] = None
+        self,
+        user_id: str,
+        duration: float,
+        properties: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             "SessionDuration",
@@ -91,7 +103,10 @@ class SessionDurationEvent(BaseTelemetryEvent):
 
 class UserPathEvent(BaseTelemetryEvent):
     def __init__(
-        self, user_id: str, path: str, properties: Optional[Dict[str, Any]] = None
+        self,
+        user_id: str,
+        path: str,
+        properties: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             "UserPath",

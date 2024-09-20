@@ -1,18 +1,17 @@
 import json
+import logging
 from datetime import datetime
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from core.base import R2RException
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
-from core.base.api.models.auth.responses import UserResponse
 from core.base.api.models.management.responses import (
     CollectionOverviewResponse,
     CollectionResponse,
 )
 
 from .base import DatabaseMixin
-import logging
 
 logger = logging.getLogger(__name__)
 

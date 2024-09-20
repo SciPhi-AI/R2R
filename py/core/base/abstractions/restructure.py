@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from pydantic import Field
 
 from .base import R2RSerializable

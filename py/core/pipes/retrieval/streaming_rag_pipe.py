@@ -83,7 +83,9 @@ class StreamingSearchRAGPipe(GeneratorPipe):
 
         yield f"</{self.COMPLETION_STREAM_MARKER}>"
         if not completion_record:
-            raise ValueError("Completion record is expected in the streaming RAG pipe and is used for logging.")
+            raise ValueError(
+                "Completion record is expected in the streaming RAG pipe and is used for logging."
+            )
         completion_record.search_results = search_results
         completion_record.llm_response = response
         completion_record.completion_end_time = datetime.now()

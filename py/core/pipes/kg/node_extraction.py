@@ -15,7 +15,6 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.base.abstractions.graph import Entity, Triple
 from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)

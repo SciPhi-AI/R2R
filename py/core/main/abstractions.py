@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent

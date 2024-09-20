@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator, Dict, Optional, Type
+from typing import Any, AsyncGenerator, Dict
 from uuid import UUID
 
 from core.base import (
@@ -39,7 +39,7 @@ class RoutingSearchPipe(AsyncPipe):
                 f"Search strategy {vector_search_settings.search_strategy} not found"
             )
 
-        async for result in search_pipe._run_logic( # type: ignore
+        async for result in search_pipe._run_logic(  # type: ignore
             input,
             state,
             run_id,

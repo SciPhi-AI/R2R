@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -79,9 +79,7 @@ class VectorSearchPipe(SearchPipe):
             results=search_results,
             limit=search_settings.search_limit,
         )
-        if include_title_if_available := kwargs.get(
-            "include_title_if_available", False
-        ):
+        if kwargs.get("include_title_if_available", False):
             for result in reranked_results:
                 if title := result.metadata.get("title", None):
                     text = result.text

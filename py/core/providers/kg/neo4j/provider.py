@@ -17,8 +17,6 @@ from core.base.abstractions.graph import (
     Triple,
 )
 
-logger = logging.getLogger(__name__)
-
 from .graph_queries import (
     GET_CHUNKS_QUERY,
     GET_COMMUNITIES_QUERY,
@@ -32,6 +30,8 @@ from .graph_queries import (
     PUT_TRIPLES_QUERY,
     UNIQUE_CONSTRAINTS,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Neo4jKGProvider(KGProvider):
@@ -516,7 +516,7 @@ class Neo4jKGProvider(KGProvider):
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
         # step 2: run the hierarchical leiden algorithm on the graph.
-        seed_property = leiden_params.get("seed_property", "communityIds")
+        # seed_property = leiden_params.get("seed_property", "communityIds")
         write_property = leiden_params.get("write_property", "communityIds")
         random_seed = leiden_params.get("random_seed", 42)
         include_intermediate_communities = leiden_params.get(

@@ -8,12 +8,11 @@ from fastapi.responses import StreamingResponse
 
 from core.base import R2RException, manage_run
 from core.base.logging.base import RunType
-
-logger = logging.getLogger(__name__)
-
 from core.base.providers import OrchestrationProvider
 
 from ..services.base import Service
+
+logger = logging.getLogger(__name__)
 
 
 class BaseRouter:

@@ -37,9 +37,8 @@ class IngestionMethods:
             raise ValueError(
                 "Number of metadatas must match number of document IDs."
             )
-        if (
-            chunking_config is not None
-            and not isinstance(chunking_config, ChunkingConfig)
+        if chunking_config is not None and not isinstance(
+            chunking_config, ChunkingConfig
         ):
             # check if the provided dict maps to a ChunkingConfig
             ChunkingConfig(**chunking_config)
@@ -159,7 +158,7 @@ class IngestionMethods:
                 data["metadatas"] = json.dumps(metadatas)
             if chunking_config:
                 data["chunking_config"] = (
-                    chunking_config.model_dump() # type: ignore
+                    chunking_config.model_dump()  # type: ignore
                     if isinstance(chunking_config, ChunkingConfig)
                     else chunking_config
                 )

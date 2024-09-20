@@ -21,7 +21,7 @@ def create_graph(ctx, document_ids):
     """
     client = ctx.obj
     with timer():
-        if document_ids == None:
+        if document_ids is None:
             document_ids = []
         else:
             document_ids = document_ids.split(",")

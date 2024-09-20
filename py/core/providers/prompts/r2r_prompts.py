@@ -108,7 +108,7 @@ class R2RPromptProvider(PromptProvider):
             results = await self.fetch_query(query)
             for row in results:
                 (
-                    prompt_id,
+                    _,
                     name,
                     template,
                     input_types,

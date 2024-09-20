@@ -1,6 +1,5 @@
-import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import (
@@ -11,7 +10,6 @@ from core.base import (
     StorageResult,
     VectorEntry,
 )
-from core.base.abstractions.exception import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)

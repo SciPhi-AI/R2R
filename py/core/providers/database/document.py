@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import asyncpg

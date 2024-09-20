@@ -54,6 +54,7 @@ def ingest_files_from_urls(client, urls):
         for temp_file in temp_files:
             os.unlink(temp_file.name)
 
+
 @cli.command()
 @click.argument(
     "file_paths", nargs=-1, required=True, type=click.Path(exists=True)

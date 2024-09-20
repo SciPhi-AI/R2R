@@ -1,5 +1,5 @@
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (

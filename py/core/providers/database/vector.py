@@ -1,6 +1,6 @@
 import concurrent.futures
-import logging
 import copy
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
@@ -124,7 +124,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         return [
             VectorSearchResult(
                 fragment_id=result[0],  # type: ignore
-                extraction_id=result[1], # type: ignore
+                extraction_id=result[1],  # type: ignore
                 document_id=result[2],  # type: ignore
                 user_id=result[3],  # type: ignore
                 collection_ids=result[4],  # type: ignore
@@ -170,7 +170,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         semantic_settings.search_limit += search_settings.offset
 
         full_text_settings = copy.deepcopy(search_settings)
-        full_text_settings.hybrid_search_settings.full_text_limit += ( # type: ignore
+        full_text_settings.hybrid_search_settings.full_text_limit += (  # type: ignore
             search_settings.offset
         )
 

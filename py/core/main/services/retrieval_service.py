@@ -171,8 +171,8 @@ class RetrievalService(Service):
                     "rag_generation_config": rag_generation_config,
                     **kwargs,
                 }
-                print('kwargs = ', kwargs)
-                print('merged_kwargs = ', merged_kwargs)
+                print("kwargs = ", kwargs)
+                print("merged_kwargs = ", merged_kwargs)
 
                 results = await self.pipelines.rag_pipeline.run(
                     *args,

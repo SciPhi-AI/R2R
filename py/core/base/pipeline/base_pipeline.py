@@ -51,8 +51,8 @@ class AsyncPipeline:
     ):
         """Run the pipeline."""
         run_manager = run_manager or self.run_manager
-        print('args = ', args)
-        print('kwargs = ', kwargs)
+        print("args = ", args)
+        print("kwargs = ", kwargs)
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager):
@@ -148,8 +148,8 @@ class AsyncPipeline:
                 input_dict[upstream_input["input_field"]] = outputs[
                     prev_output_field
                 ]
-        print('final args = ', args)
-        print('final kwargs = ', kwargs)
+        print("final args = ", args)
+        print("final kwargs = ", kwargs)
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,

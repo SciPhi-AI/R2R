@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from core.base.abstractions import R2RException, UserStats
@@ -395,7 +395,7 @@ class UserMixin(DatabaseMixin):
         Raises:
             R2RException: If the collection doesn't exist.
         """
-        if not await self.collection_exists(collection_id): # type: ignore
+        if not await self.collection_exists(collection_id):  # type: ignore
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""

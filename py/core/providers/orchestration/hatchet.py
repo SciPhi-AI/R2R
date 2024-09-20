@@ -3,14 +3,14 @@ from typing import Any, Callable, Optional
 
 from hatchet_sdk import Hatchet
 
-from core.base import OrchestrationProvider, OrchestrationConfig
+from core.base import OrchestrationConfig, OrchestrationProvider
 
 
 class HatchetOrchestrationProvider(OrchestrationProvider):
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         self.orchestrator = Hatchet()
-        self.config: OrchestrationConfig = config # for type hinting
+        self.config: OrchestrationConfig = config  # for type hinting
         self.worker
 
     def register_workflow(self, workflow: Any) -> None:

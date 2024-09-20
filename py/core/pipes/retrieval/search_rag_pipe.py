@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import Any, AsyncGenerator, Optional, Tuple
+from uuid import UUID
 
 from core.base import (
     AggregateSearchResult,

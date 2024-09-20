@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base import (

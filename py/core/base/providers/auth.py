@@ -10,6 +10,7 @@ from ..api.models import UserResponse
 from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,7 +44,7 @@ class AuthProvider(Provider, ABC):
         self.admin_password = config.default_admin_password
         self.crypto_provider = crypto_provider
         super().__init__(config)
-        self.config: AuthConfig = config # for type hinting
+        self.config: AuthConfig = config  # for type hinting
 
     def _get_default_admin_user(self) -> UserResponse:
         return UserResponse(

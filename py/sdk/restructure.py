@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 from .models import (
     KGCreationResponse,
@@ -34,7 +34,9 @@ class RestructureMethods:
         client,
         skip_clustering: bool = False,
         force_enrichment: bool = False,
-        kg_enrichment_settings: Optional[Union[dict, KGEnrichmentSettings]] = None,
+        kg_enrichment_settings: Optional[
+            Union[dict, KGEnrichmentSettings]
+        ] = None,
     ) -> KGEnrichmentResponse:
         """
         Perform graph enrichment over the entire graph.

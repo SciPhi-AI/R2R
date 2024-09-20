@@ -91,7 +91,7 @@ class RetrievalMethods:
             "include_title_if_available": include_title_if_available,
         }
 
-        if rag_generation_config and rag_generation_config.get( # type: ignore
+        if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
             return client._make_streaming_request("POST", "rag", json=data)
@@ -149,7 +149,7 @@ class RetrievalMethods:
             "include_title_if_available": include_title_if_available,
         }
 
-        if rag_generation_config and rag_generation_config.get( # type: ignore
+        if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
             return client._make_streaming_request("POST", "agent", json=data)

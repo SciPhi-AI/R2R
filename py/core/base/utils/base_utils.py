@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Iterable
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType

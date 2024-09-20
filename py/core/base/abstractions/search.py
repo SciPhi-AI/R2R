@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig

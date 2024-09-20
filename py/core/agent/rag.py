@@ -1,5 +1,3 @@
-from typing import AsyncGenerator
-
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
     format_search_results_for_llm,

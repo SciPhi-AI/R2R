@@ -1,4 +1,4 @@
-from typing import Any, TypeVar
+from typing import TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field

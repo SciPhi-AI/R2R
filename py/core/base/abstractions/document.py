@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from pydantic import Field, validator
+from pydantic import Field
 
 from .base import R2RSerializable
 
