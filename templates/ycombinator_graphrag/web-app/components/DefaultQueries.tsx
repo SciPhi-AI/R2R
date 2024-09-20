@@ -11,19 +11,19 @@ interface DefaultQueriesProps {
 export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
   const defaultQueries = [
     {
-      query: 'What are the coolest companies in the batch?',
+      query: 'What does the company Decisional AI do?',
       icon: <Lightbulb className="h-6 w-6 text-yellow-400" />,
     },
     {
-      query: 'How can RAG be used inside of my company?',
+      query: 'Which companies will most likely succeed and which ones will fail?',
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
-      query: 'What is R2R?',
+      query: 'Which companies are NOT building AI agents?',
       icon: <Flame className="h-6 w-6 text-red-400" />,
     },
     {
-      query: 'What makes R2R different from other solutions?',
+      query: 'How can I get in touch with R2R\'s founders?',
       icon: <Earth className="h-6 w-6 text-green-400" />,
     },
   ];
