@@ -205,9 +205,15 @@ class KGSearchSearchPipe(GeneratorPipe):
                     description = summary_json.get("summary", "")
                     name = summary_json.get("title", "")
 
+                    def get_str(finding):
+                        if isinstance(finding, dict):
+                            return f"{finding['summary']} => {finding['explanation']}"
+                        else:
+                            return str(finding)
+
                     description += "\n\n" + "\n".join(
                         [
-                            finding
+                            get_str(finding)
                             for finding in summary_json.get("findings", [])
                         ]
                     )
