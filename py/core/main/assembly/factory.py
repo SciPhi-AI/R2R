@@ -556,7 +556,6 @@ class R2RPipeFactory:
             database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
             chunking_provider=self.providers.chunking,
-            kg_batch_size=self.config.kg.batch_size,
             config=AsyncPipe.PipeConfig(name="kg_extraction_pipe"),
         )
 

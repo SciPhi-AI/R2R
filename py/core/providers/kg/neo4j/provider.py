@@ -270,9 +270,9 @@ class Neo4jKGProvider(KGProvider):
         query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__)
                 WHERE a.communityIds[$level] = $community_id
                 OR b.communityIds[$level] = $community_id
-                RETURN a.name AS source, b.name AS target, a.description AS source_description,
+                RETURN ID(a) AS source_id, a.name AS source, id(b) AS target_id, b.name AS target, a.description AS source_description,
                 b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels,
-                r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
+                r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight, ID(r) AS relationship_id
         """
 
         neo4j_records = self.structured_query(
@@ -285,6 +285,7 @@ class Neo4jKGProvider(KGProvider):
 
         entities = [
             Entity(
+                id=record["source_id"],
                 name=record["source"],
                 description=record["source_description"],
                 category=", ".join(record["source_labels"]),
@@ -294,6 +295,7 @@ class Neo4jKGProvider(KGProvider):
 
         triples = [
             Triple(
+                id=record["relationship_id"],
                 subject=record["source"],
                 predicate=record["relationship_name"],
                 object=record["target"],

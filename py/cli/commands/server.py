@@ -297,19 +297,6 @@ async def serve(
             check=True,
         )
 
-        subprocess.run(
-            [
-                "docker",
-                "build",
-                "-t",
-                "unstructured-docker",
-                "-f",
-                "Dockerfile.unstructured",
-                ".",
-            ],
-            check=True,
-        )
-
     if config_path:
         config_path = os.path.abspath(config_path)
 

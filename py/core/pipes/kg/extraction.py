@@ -85,7 +85,7 @@ class KGTriplesExtractionPipe(
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
-        retries: int = 3,
+        retries: int = 5,
         delay: int = 2,
     ) -> KGExtraction:
         """
@@ -96,7 +96,7 @@ class KGTriplesExtractionPipe(
         combined_fragment: str = " ".join([fragment.data for fragment in fragments])  # type: ignore
 
         messages = self.prompt_provider._get_message_payload(
-            task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
+            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_extraction_prompt,
             task_inputs={
                 "input": combined_fragment,
                 "max_knowledge_triples": max_knowledge_triples,
@@ -134,9 +134,13 @@ class KGTriplesExtractionPipe(
                         and len(entities) == 0
                     ):
                         raise R2RException(
-                            "No entities found in the response string, the selected LLM likely failed to format it's response correctly.",
+                            f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
                             400,
                         )
+                        # logger.warning(
+                        #     f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
+                        # )
+
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
@@ -168,7 +172,6 @@ class KGTriplesExtractionPipe(
                         # check if subject and object are in entities_dict
                         relations_arr.append(
                             Triple(
-                                id=str(uuid.uuid4()),
                                 subject=subject,
                                 predicate=predicate,
                                 object=object,
@@ -207,8 +210,7 @@ class KGTriplesExtractionPipe(
                     logger.error(
                         f"Failed after retries with for fragment {fragments[0].id} of document {fragments[0].document_id}: {e}"
                     )
-                    raise e
-
+                    # raise e # you should raise an error.
         # add metadata to entities and triples
 
         return KGExtraction(
@@ -248,7 +250,9 @@ class KGTriplesExtractionPipe(
             )
             for extraction in self.database_provider.vector.get_document_chunks(
                 document_id=document_id
-            )
+            )[
+                "results"
+            ]
         ]
 
         # sort the fragments accroding to chunk_order field in metadata in ascending order
