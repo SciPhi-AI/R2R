@@ -209,11 +209,12 @@ class UpdateFilesWorkflow:
                 message="Number of ids does not match number of files.",
             )
 
-        documents_overview = await self.ingestion_service.providers.database.relational.get_documents_overview(
-            filter_document_ids=document_ids,
-            filter_user_ids=None if user.is_superuser else [user.id],
-        )
-
+        documents_overview = (
+            await self.ingestion_service.providers.database.relational.get_documents_overview(
+                filter_document_ids=document_ids,
+                filter_user_ids=None if user.is_superuser else [user.id],
+            )
+        )["results"]
         if len(documents_overview) != len(document_ids):
             raise R2RException(
                 status_code=404,

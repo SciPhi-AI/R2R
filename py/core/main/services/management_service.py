@@ -261,7 +261,7 @@ class ManagementService(Service):
     @telemetry_event("Delete")
     async def delete(
         self,
-        filters: dict[str, str],
+        filters: dict[str, Any],
         *args,
         **kwargs,
     ):
@@ -297,14 +297,17 @@ class ManagementService(Service):
         relational_filters = {}
         if "document_id" in filters:
             relational_filters["filter_document_ids"] = [
-                UUID(filters["document_id"])
+                UUID(filters["document_id"]["$eq"])
             ]
+            print("relational_filters = ", relational_filters)
         if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [UUID(filters["user_id"])]
+            relational_filters["filter_user_ids"] = [
+                UUID(filters["user_id"]["$eq"])
+            ]
         if "collection_ids" in filters:
             relational_filters["filter_collection_ids"] = [
                 UUID(collection_id)
-                for collection_id in filters["collection_ids"]
+                for collection_id in filters["collection_ids"]["$in"]
             ]
 
         try:

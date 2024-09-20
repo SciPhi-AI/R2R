@@ -263,6 +263,7 @@ class DocumentMixin(DatabaseMixin):
         params.append(offset)
         param_index += 1
 
+        print("query = ", query)
         if limit != -1:
             query += f" LIMIT ${param_index}"
             params.append(limit)
@@ -270,6 +271,7 @@ class DocumentMixin(DatabaseMixin):
 
         try:
             results = await self.fetch_query(query, params)
+            print("results = ", results)
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = [
