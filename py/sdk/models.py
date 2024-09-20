@@ -38,7 +38,8 @@ class Strategy(str, Enum):
     # R2R methods
     RECURSIVE = "recursive"
     CHARACTER = "character"
-    
+
+
 # TODO - Remove this class
 class ChunkingConfig(R2RSerializable):
     provider: str = "unstructured_local"  # or unstructured_api

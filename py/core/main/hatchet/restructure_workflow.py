@@ -29,12 +29,10 @@ class KgExtractAndStoreWorkflow:
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
 
-        document_overview = (
-            await self.restructure_service.providers.database.relational.get_documents_overview(
-                filter_document_ids=[document_id]
-            )
+        document_overview = await self.restructure_service.providers.database.relational.get_documents_overview(
+            filter_document_ids=[document_id]
         )
-        document_overview = document_overview['results'][0]
+        document_overview = document_overview["results"][0]
 
         try:
 
@@ -105,8 +103,10 @@ class CreateGraphWorkflow:
             **json.loads(input_data["kg_creation_settings"])
         )
 
-        documents_overview = await self.restructure_service.providers.database.relational.get_documents_overview()
-        documents_overview = documents_overview['results']
+        documents_overview = (
+            await self.restructure_service.providers.database.relational.get_documents_overview()
+        )
+        documents_overview = documents_overview["results"]
 
         print("Inside kg_extraction_ingress")
         print(documents_overview)
@@ -122,7 +122,7 @@ class CreateGraphWorkflow:
         documents_overviews = await self.restructure_service.providers.database.relational.get_documents_overview(
             filter_document_ids=document_ids
         )
-        documents_overviews = documents_overviews['results']
+        documents_overviews = documents_overviews["results"]
 
         print("Inside kg_extraction_ingress")
         print(documents_overviews)
@@ -220,7 +220,7 @@ class EnrichGraphWorkflow:
         documents_overview = (
             await self.restructure_service.providers.database.relational.get_documents_overview()
         )
-        documents_overview = documents_overview['results']
+        documents_overview = documents_overview["results"]
 
         if not force_enrichment:
             if any(
@@ -297,7 +297,7 @@ class EnrichGraphWorkflow:
             documents_overview = (
                 await self.restructure_service.providers.database.relational.get_documents_overview()
             )
-            documents_overview = documents_overview['results']
+            documents_overview = documents_overview["results"]
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status
@@ -319,7 +319,7 @@ class EnrichGraphWorkflow:
             documents_overview = (
                 await self.restructure_service.providers.database.relational.get_documents_overview()
             )
-            documents_overview = documents_overview['results']
+            documents_overview = documents_overview["results"]
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status

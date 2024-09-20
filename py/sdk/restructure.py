@@ -55,15 +55,17 @@ class RestructureMethods:
         """
 
         data = {}
-        
+
         if skip_clustering:
             data["skip_clustering"] = skip_clustering
-        
+
         if force_enrichment:
             data["force_enrichment"] = force_enrichment
 
         if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
-            data["kg_enrichment_settings"] = kg_enrichment_settings.model_dump()
+            data["kg_enrichment_settings"] = (
+                kg_enrichment_settings.model_dump()
+            )
         elif kg_enrichment_settings:
             data["kg_enrichment_settings"] = kg_enrichment_settings
 

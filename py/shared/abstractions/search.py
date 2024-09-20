@@ -9,6 +9,7 @@ from pydantic import Field
 from .llm import GenerationConfig
 from .base import R2RSerializable
 
+
 class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
@@ -280,6 +281,7 @@ class VectorSearchSettings(R2RSerializable):
             str(uuid) for uuid in dump["selected_collection_ids"]
         ]
         return dump
+
 
 class KGSearchSettings(R2RSerializable):
     use_kg_search: bool = Field(
