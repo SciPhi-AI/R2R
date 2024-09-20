@@ -109,7 +109,6 @@ class PostgresDBProvider(DatabaseProvider):
         self.relational = await self._initialize_relational_db()
 
     def _initialize_vector_db(self) -> VectorDBProvider:
-        print("E1")
         return PostgresVectorDBProvider(
             self.config,
             connection_string=self.connection_string,
@@ -118,14 +117,11 @@ class PostgresDBProvider(DatabaseProvider):
         )
 
     async def _initialize_relational_db(self) -> RelationalDBProvider:
-        print("E2")
         relational_db = PostgresRelationalDBProvider(
             self.config,
             connection_string=self.connection_string,
             crypto_provider=self.crypto_provider,
             project_name=self.project_name,
         )
-        print("E3")
         await relational_db.initialize()
-        print("E4")
         return relational_db

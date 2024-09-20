@@ -10,8 +10,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from shared.shared_abstractions.llm import MessageType
-from shared.shared_abstractions.search import AggregateSearchResult
+from .llm import MessageType
+from .search import AggregateSearchResult
 
 
 class CompletionRecord(BaseModel):

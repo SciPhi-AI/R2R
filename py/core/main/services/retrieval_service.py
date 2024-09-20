@@ -20,8 +20,7 @@ from core.base import (
     manage_run,
     to_async_generator,
 )
-from core.base.api.models import RAGResponse, SearchResponse
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import RAGResponse, SearchResponse, UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -171,8 +170,6 @@ class RetrievalService(Service):
                     "rag_generation_config": rag_generation_config,
                     **kwargs,
                 }
-                print("kwargs = ", kwargs)
-                print("merged_kwargs = ", merged_kwargs)
 
                 results = await self.pipelines.rag_pipeline.run(
                     *args,

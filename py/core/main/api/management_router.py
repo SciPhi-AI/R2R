@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import Json
 
 from core.base import R2RException
-from core.base.api.models.management.responses import (
+from core.base.api.models import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,

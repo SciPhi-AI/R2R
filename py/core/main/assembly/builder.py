@@ -195,15 +195,12 @@ class R2RBuilder:
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
 
         try:
-            print("1")
             providers = await self._create_providers(
                 provider_factory, *args, **kwargs
             )
-            print("2")
             pipes = self._create_pipes(
                 pipe_factory, providers, *args, **kwargs
             )
-            print("3")
             pipelines = self._create_pipelines(
                 pipeline_factory, pipes, *args, **kwargs
             )

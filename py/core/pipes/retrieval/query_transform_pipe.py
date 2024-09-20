@@ -9,7 +9,7 @@ from core.base import (
     PipeType,
     PromptProvider,
 )
-from core.base.abstractions.llm import GenerationConfig
+from core.base.abstractions import GenerationConfig
 
 from ..abstractions.generator_pipe import GeneratorPipe
 

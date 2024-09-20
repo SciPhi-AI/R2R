@@ -1,14 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from shared.api.models import (
-    KGCreationResponse,
-    KGEnrichmentResponse,
-    RAGResponse,
-    SearchResponse,
-    UserResponse,
-)
-from shared.shared_abstractions import (  # ChunkingConfig,
+from shared.abstractions import (  # ChunkingConfig,
     GenerationConfig,
     HybridSearchSettings,
     KGCommunityResult,
@@ -28,6 +21,13 @@ from shared.shared_abstractions import (  # ChunkingConfig,
     Token,
     VectorSearchResult,
     VectorSearchSettings,
+)
+from shared.api.models import (
+    KGCreationResponse,
+    KGEnrichmentResponse,
+    RAGResponse,
+    SearchResponse,
+    UserResponse,
 )
 
 
@@ -74,7 +74,6 @@ class ChunkingConfig(R2RSerializable):
     xml_keep_tags: bool = False
 
     def validate_config(self) -> None:
-        super().validate_config()
         if self.strategy not in ["auto", "fast", "hi_res"]:
             raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
 

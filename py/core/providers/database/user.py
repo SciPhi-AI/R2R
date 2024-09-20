@@ -3,7 +3,7 @@ from typing import Optional, Union
 from uuid import UUID
 
 from core.base.abstractions import R2RException, UserStats
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 from core.base.utils import generate_id_from_label
 
 from .base import DatabaseMixin, QueryBuilder

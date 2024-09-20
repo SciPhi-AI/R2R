@@ -4,8 +4,8 @@ import logging
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
-from shared.shared_abstractions.graph import EntityType, RelationshipType
-from shared.shared_abstractions.search import AggregateSearchResult
+from ..abstractions.graph import EntityType, RelationshipType
+from ..abstractions.search import AggregateSearchResult
 
 logger = logging.getLogger(__name__)
 

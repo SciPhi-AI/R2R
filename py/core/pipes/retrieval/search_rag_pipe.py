@@ -10,7 +10,7 @@ from core.base import (
     PipeType,
     PromptProvider,
 )
-from core.base.abstractions.llm import GenerationConfig, RAGCompletion
+from core.base.abstractions import GenerationConfig, RAGCompletion
 
 from ..abstractions.generator_pipe import GeneratorPipe
 

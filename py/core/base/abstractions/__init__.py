@@ -1,5 +1,6 @@
-from shared.shared_abstractions.completion import CompletionRecord, MessageType
-from shared.shared_abstractions.document import (
+from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
+from shared.abstractions.completion import CompletionRecord, MessageType
+from shared.abstractions.document import (
     DataType,
     Document,
     DocumentExtraction,
@@ -9,15 +10,15 @@ from shared.shared_abstractions.document import (
     IngestionStatus,
     RestructureStatus,
 )
-from shared.shared_abstractions.embedding import (
+from shared.abstractions.embedding import (
     EmbeddingPurpose,
     default_embedding_prefixes,
 )
-from shared.shared_abstractions.exception import (
+from shared.abstractions.exception import (
     R2RDocumentProcessingError,
     R2RException,
 )
-from shared.shared_abstractions.graph import (
+from shared.abstractions.graph import (
     Community,
     CommunityReport,
     Entity,
@@ -26,19 +27,19 @@ from shared.shared_abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.shared_abstractions.llm import (
+from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
     RAGCompletion,
 )
-from shared.shared_abstractions.prompt import Prompt
-from shared.shared_abstractions.restructure import (
+from shared.abstractions.prompt import Prompt
+from shared.abstractions.restructure import (
     KGCreationSettings,
     KGEnrichmentSettings,
 )
-from shared.shared_abstractions.search import (
+from shared.abstractions.search import (
     AggregateSearchResult,
     HybridSearchSettings,
     KGCommunityResult,
@@ -52,13 +53,8 @@ from shared.shared_abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from shared.shared_abstractions.shared_base import (
-    AsyncSyncMeta,
-    R2RSerializable,
-    syncable,
-)
-from shared.shared_abstractions.user import Token, TokenData, UserStats
-from shared.shared_abstractions.vector import (
+from shared.abstractions.user import Token, TokenData, UserStats
+from shared.abstractions.vector import (
     StorageResult,
     Vector,
     VectorEntry,

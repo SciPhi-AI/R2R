@@ -8,9 +8,9 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from core.base import KGConfig, KGProvider, R2RException
-from core.base.abstractions.document import DocumentFragment
-from core.base.abstractions.graph import (
+from core.base.abstractions import (
     Community,
+    DocumentFragment,
     Entity,
     KGExtraction,
     RelationshipType,

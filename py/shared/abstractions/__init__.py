@@ -1,5 +1,6 @@
-from shared.shared_abstractions.completion import CompletionRecord, MessageType
-from shared.shared_abstractions.document import (
+from .base import AsyncSyncMeta, R2RSerializable, syncable
+from .completion import CompletionRecord, MessageType
+from .document import (
     DataType,
     Document,
     DocumentExtraction,
@@ -9,15 +10,9 @@ from shared.shared_abstractions.document import (
     IngestionStatus,
     RestructureStatus,
 )
-from shared.shared_abstractions.embedding import (
-    EmbeddingPurpose,
-    default_embedding_prefixes,
-)
-from shared.shared_abstractions.exception import (
-    R2RDocumentProcessingError,
-    R2RException,
-)
-from shared.shared_abstractions.graph import (
+from .embedding import EmbeddingPurpose, default_embedding_prefixes
+from .exception import R2RDocumentProcessingError, R2RException
+from .graph import (
     Community,
     CommunityReport,
     Entity,
@@ -26,19 +21,16 @@ from shared.shared_abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.shared_abstractions.llm import (
+from .llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
     RAGCompletion,
 )
-from shared.shared_abstractions.prompt import Prompt
-from shared.shared_abstractions.restructure import (
-    KGCreationSettings,
-    KGEnrichmentSettings,
-)
-from shared.shared_abstractions.search import (
+from .prompt import Prompt
+from .restructure import KGCreationSettings, KGEnrichmentSettings
+from .search import (
     AggregateSearchResult,
     HybridSearchSettings,
     KGCommunityResult,
@@ -52,18 +44,8 @@ from shared.shared_abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from shared.shared_abstractions.shared_base import (
-    AsyncSyncMeta,
-    R2RSerializable,
-    syncable,
-)
-from shared.shared_abstractions.user import Token, TokenData, UserStats
-from shared.shared_abstractions.vector import (
-    StorageResult,
-    Vector,
-    VectorEntry,
-    VectorType,
-)
+from .user import Token, TokenData, UserStats
+from .vector import StorageResult, Vector, VectorEntry, VectorType
 
 __all__ = [
     # Base abstractions

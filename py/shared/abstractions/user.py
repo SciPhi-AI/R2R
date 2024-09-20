@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from shared.utils import generate_id_from_label
+from ..utils import generate_id_from_label
 
 
 class Collection(BaseModel):

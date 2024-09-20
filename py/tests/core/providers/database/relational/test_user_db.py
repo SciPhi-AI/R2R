@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 
 
 @pytest.mark.asyncio

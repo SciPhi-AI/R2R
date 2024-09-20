@@ -16,7 +16,7 @@ from core.base import (
     Token,
     TokenData,
 )
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 
 DEFAULT_ACCESS_LIFETIME_IN_MINUTES = 3600
 DEFAULT_REFRESH_LIFETIME_IN_DAYS = 7

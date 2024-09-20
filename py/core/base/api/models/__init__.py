@@ -2,6 +2,9 @@ from shared.api.models.auth.responses import (
     GenericMessageResponse,
     TokenResponse,
     UserResponse,
+    WrappedGenericMessageResponse,
+    WrappedTokenResponse,
+    WrappedUserResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -29,6 +32,7 @@ from shared.api.models.management.responses import (
     WrappedCollectionResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
+    WrappedGetPromptsResponse,
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
@@ -58,6 +62,9 @@ __all__ = [
     "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
+    "WrappedTokenResponse",
+    "WrappedUserResponse",
+    "WrappedGenericMessageResponse",
     # Ingestion Responses
     "IngestionResponse",
     "WrappedIngestionResponse",
@@ -96,6 +103,7 @@ __all__ = [
     "WrappedCollectionListResponse",
     "WrappedAddUserResponse",
     "WrappedUsersInCollectionResponse",
+    "WrappedGetPromptsResponse",
     "WrappedUserCollectionResponse",
     "WrappedDocumentChunkResponse",
     "WrappedCollectionOverviewResponse",
