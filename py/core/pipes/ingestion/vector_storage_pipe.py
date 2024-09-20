@@ -1,6 +1,5 @@
-import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import (
@@ -11,23 +10,22 @@ from core.base import (
     StorageResult,
     VectorEntry,
 )
-from core.base.abstractions.exception import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class VectorStoragePipe(AsyncPipe):
+class VectorStoragePipe(AsyncPipe[StorageResult]):
     class Input(AsyncPipe.Input):
         message: list[VectorEntry]
 
     def __init__(
         self,
         database_provider: DatabaseProvider,
+        config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 128,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -35,9 +33,9 @@ class VectorStoragePipe(AsyncPipe):
         Initializes the async vector storage pipe with necessary components and configurations.
         """
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
+            config,
+            type,
+            pipe_logger,
             *args,
             **kwargs,
         )
@@ -61,18 +59,16 @@ class VectorStoragePipe(AsyncPipe):
             logger.error(error_message)
             raise ValueError(error_message)
 
-    async def _run_logic(
+    async def _run_logic(  # type: ignore
         self,
-        input: Input,
-        state: Optional[AsyncState],
+        input: AsyncPipe.Input,
+        state: AsyncState,
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[
-        Tuple[UUID, Union[str, R2RDocumentProcessingError]], None
-    ]:
+    ) -> AsyncGenerator[StorageResult, None]:
         vector_batch = []
-        document_counts = {}
+        document_counts: dict[UUID, int] = {}
 
         for msg in input.message:
             vector_batch.append(msg)

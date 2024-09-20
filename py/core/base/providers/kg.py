@@ -4,11 +4,16 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Tuple
 
-from ...base.utils.base_utils import RelationshipType
-from ..abstractions.graph import Entity, KGExtraction, Triple
-from ..abstractions.llm import GenerationConfig
-from ..abstractions.restructure import KGCreationSettings, KGEnrichmentSettings
-from ..abstractions.search import KGSearchSettings
+from ..abstractions import (
+    Entity,
+    GenerationConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGSearchSettings,
+    KGExtraction,
+    RelationshipType,
+    Triple,
+)
 from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -29,13 +34,13 @@ class KGConfig(ProviderConfig):
     kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
     kg_search_settings: Optional[KGSearchSettings] = KGSearchSettings()
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "neo4j", "local"]
+        return ["neo4j", "local"]
 
 
 class KGProvider(ABC):
@@ -51,7 +56,7 @@ class KGProvider(ABC):
         self.validate_config()
 
     def validate_config(self) -> None:
-        self.config.validate()
+        self.config.validate_config()
 
     @property
     @abstractmethod

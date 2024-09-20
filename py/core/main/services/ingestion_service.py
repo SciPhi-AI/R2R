@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, AsyncGenerator, Optional, Sequence, Union
 from uuid import UUID
 
 from core.base import (
@@ -17,10 +17,10 @@ from core.base import (
     VectorEntry,
     decrement_version,
 )
+from core.base.api.models import UserResponse
 from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ...base.api.models.auth.responses import UserResponse
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
@@ -58,11 +58,11 @@ class IngestionService(Service):
         self,
         file_data: dict,
         user: UserResponse,
+        document_id: UUID,
+        size_in_bytes,
         metadata: Optional[dict] = None,
-        document_id: Optional[UUID] = None,
         version: Optional[str] = None,
         is_update: bool = False,
-        size_in_bytes: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -88,21 +88,25 @@ class IngestionService(Service):
             size_in_bytes,
         )
 
-        if existing_document_info := await self.providers.database.relational.get_documents_overview(
-            filter_user_ids=[user.id],
-            filter_document_ids=[document_id],
-        ):
-            existing_doc = existing_document_info[0]
+        existing_document_info = (
+            await self.providers.database.relational.get_documents_overview(
+                filter_user_ids=[user.id],
+                filter_document_ids=[document_id],
+            )
+        )
+        if documents := existing_document_info.get("documents", []):
+            existing_doc = documents[0]
             if is_update:
                 if (
                     existing_doc.version >= version
-                    and existing_doc.ingestion_status == "success"
+                    and existing_doc.ingestion_status
+                    == IngestionStatus.SUCCESS
                 ):
                     raise R2RException(
                         status_code=409,
                         message=f"Must increment version number before attempting to overwrite document {document_id}.",
                     )
-            elif existing_doc.ingestion_status != "failure":
+            elif existing_doc.ingestion_status != IngestionStatus.FAILURE:
                 raise R2RException(
                     status_code=409,
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
@@ -144,7 +148,7 @@ class IngestionService(Service):
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,
-            ingestion_status="pending",
+            ingestion_status=IngestionStatus.PENDING,
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
@@ -152,33 +156,29 @@ class IngestionService(Service):
     async def parse_file(
         self,
         document_info: DocumentInfo,
-    ) -> list[DocumentFragment]:
-        file_name, file_wrapper, size_in_bytes = (
-            await self.providers.file.retrieve_file(document_info.id)
+    ) -> AsyncGenerator[DocumentFragment, None]:
+        return await self.pipes.parsing_pipe.run(
+            input=self.pipes.parsing_pipe.Input(
+                message=Document(
+                    id=document_info.id,
+                    collection_ids=document_info.collection_ids,
+                    user_id=document_info.user_id,
+                    type=document_info.type,
+                    metadata={
+                        "document_type": document_info.type.value,
+                        **document_info.metadata,
+                    },
+                )
+            ),
+            state=None,
+            run_manager=self.run_manager,
         )
-
-        with file_wrapper as file_content_stream:
-            return await self.pipes.parsing_pipe.run(
-                input=self.pipes.parsing_pipe.Input(
-                    message=Document(
-                        id=document_info.id,
-                        collection_ids=document_info.collection_ids,
-                        user_id=document_info.user_id,
-                        type=document_info.type,
-                        metadata={
-                            "document_type": document_info.type.value,
-                            **document_info.metadata,
-                        },
-                    )
-                ),
-                run_manager=self.run_manager,
-            )
 
     async def chunk_document(
         self,
         parsed_documents: list[dict],
-        chunking_config: Optional[ChunkingConfig] = None,
-    ) -> list[DocumentFragment]:
+        chunking_config: ChunkingConfig,
+    ) -> AsyncGenerator[DocumentFragment, None]:
 
         return await self.pipes.chunking_pipe.run(
             input=self.pipes.chunking_pipe.Input(
@@ -187,6 +187,7 @@ class IngestionService(Service):
                     for chunk in parsed_documents
                 ]
             ),
+            state=None,
             run_manager=self.run_manager,
             chunking_config=chunking_config,
         )
@@ -194,7 +195,7 @@ class IngestionService(Service):
     async def embed_document(
         self,
         chunked_documents: list[dict],
-    ) -> list[str]:
+    ) -> AsyncGenerator[VectorEntry, None]:
         return await self.pipes.embedding_pipe.run(
             input=self.pipes.embedding_pipe.Input(
                 message=[
@@ -202,13 +203,14 @@ class IngestionService(Service):
                     for chunk in chunked_documents
                 ]
             ),
+            state=None,
             run_manager=self.run_manager,
         )
 
     async def store_embeddings(
         self,
-        embeddings: list[Union[dict, VectorEntry]],
-    ) -> list[str]:
+        embeddings: Sequence[Union[dict, VectorEntry]],
+    ) -> AsyncGenerator[str, None]:
         vector_entries = [
             (
                 embedding
@@ -220,6 +222,7 @@ class IngestionService(Service):
 
         return await self.pipes.vector_storage_pipe.run(
             input=self.pipes.vector_storage_pipe.Input(message=vector_entries),
+            state=None,
             run_manager=self.run_manager,
         )
 

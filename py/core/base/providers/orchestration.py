@@ -8,7 +8,7 @@ class OrchestrationConfig(ProviderConfig):
     provider: str
     max_threads: int = 256
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 

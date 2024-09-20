@@ -1,27 +1,21 @@
+# type: ignore
 import json
 import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import (
-    KGConfig,
-    KGProvider,
-    R2RException,
-)
-
-from core.base.abstractions.document import DocumentFragment
-from core.base.abstractions.graph import (
+from core.base import KGConfig, KGProvider, R2RException
+from core.base.abstractions import (
     Community,
+    DocumentFragment,
     Entity,
     KGExtraction,
     RelationshipType,
     Triple,
 )
-
-logger = logging.getLogger(__name__)
 
 from .graph_queries import (
     GET_CHUNKS_QUERY,
@@ -36,6 +30,8 @@ from .graph_queries import (
     PUT_TRIPLES_QUERY,
     UNIQUE_CONSTRAINTS,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Neo4jKGProvider(KGProvider):
@@ -452,7 +448,9 @@ class Neo4jKGProvider(KGProvider):
                 for property_name in property_names
             }
 
-    def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
+    def perform_graph_clustering(
+        self, leiden_params: dict
+    ) -> Tuple[int, int, set[tuple[int, Any]]]:
         """
         Perform graph clustering on the graph.
 
@@ -520,7 +518,7 @@ class Neo4jKGProvider(KGProvider):
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
         # step 2: run the hierarchical leiden algorithm on the graph.
-        seed_property = leiden_params.get("seed_property", "communityIds")
+        # seed_property = leiden_params.get("seed_property", "communityIds")
         write_property = leiden_params.get("write_property", "communityIds")
         random_seed = leiden_params.get("random_seed", 42)
         include_intermediate_communities = leiden_params.get(
@@ -553,7 +551,7 @@ class Neo4jKGProvider(KGProvider):
 
         result = self.structured_query(GRAPH_CLUSTERING_QUERY).records[0]
 
-        community_count = result["communityCount"]
+        community_count: int = result["communityCount"]
         modularities = result["modularities"]
 
         logger.info(

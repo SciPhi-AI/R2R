@@ -159,7 +159,6 @@ def main(
         except:
             continue
 
-    print("Inspecting Knowledge Graph")
     print(
         client.inspect_knowledge_graph(0, 1000, print_descriptions=True)[
             "results"

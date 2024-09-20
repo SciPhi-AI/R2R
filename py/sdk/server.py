@@ -19,8 +19,8 @@ class ServerMethods:
     @staticmethod
     async def logs(
         client,
-        offset: int = None,
-        limit: int = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         run_type_filter: Optional[str] = None,
     ) -> dict:
         """

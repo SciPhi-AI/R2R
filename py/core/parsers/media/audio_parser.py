@@ -3,7 +3,6 @@ from typing import AsyncGenerator
 
 from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_audio_with_openai
-from core.telemetry.telemetry_decorator import telemetry_event
 
 
 class AudioParser(AsyncParser[bytes]):
@@ -15,7 +14,7 @@ class AudioParser(AsyncParser[bytes]):
         self.api_base = api_base
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
 
-    async def ingest(
+    async def ingest(  # type: ignore
         self, data: bytes, chunk_size: int = 1024
     ) -> AsyncGenerator[str, None]:
         """Ingest audio data and yield a transcription."""
@@ -24,7 +23,7 @@ class AudioParser(AsyncParser[bytes]):
             f.write(data)
         try:
             transcription_text = process_audio_with_openai(
-                open(temp_audio_path, "rb"), self.openai_api_key
+                open(temp_audio_path, "rb"), self.openai_api_key  # type: ignore
             )
 
             # split text into small chunks and yield them

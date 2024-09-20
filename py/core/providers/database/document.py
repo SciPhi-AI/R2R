@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import asyncpg
@@ -15,7 +15,7 @@ from sqlalchemy import (
     String,
     Table,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as SqlUUID
 
 from core.base import (
     DocumentInfo,
@@ -37,9 +37,9 @@ class DocumentMixin(DatabaseMixin):
         self.document_info_table = Table(
             self._get_table_name("document_info"),
             self.metadata,
-            Column("document_id", UUID, primary_key=True),
-            Column("collection_ids", ARRAY(UUID)),
-            Column("user_id", UUID),
+            Column("document_id", SqlUUID, primary_key=True),
+            Column("collection_ids", ARRAY(SqlUUID)),
+            Column("user_id", SqlUUID),
             Column("type", String),
             Column("metadata", JSON),
             Column("title", String),
@@ -69,7 +69,7 @@ class DocumentMixin(DatabaseMixin):
             updated_at TIMESTAMPTZ DEFAULT NOW(),
             ingestion_attempt_number INT DEFAULT 0
         );
-        CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.collection_name}
+        CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
         ON {self._get_table_name('document_info')} USING GIN (collection_ids);
         """
         await self.execute_query(query)
@@ -104,7 +104,7 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.pool.acquire() as conn:
+                    async with self.pool.acquire() as conn:  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
@@ -224,10 +224,10 @@ class DocumentMixin(DatabaseMixin):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = 1000,
-    ) -> list[DocumentInfo]:
+        limit: int = -1,
+    ) -> dict[str, Any]:
         conditions = []
-        params = []
+        params: list[Any] = []
         param_index = 1
 
         if filter_document_ids:
@@ -254,7 +254,8 @@ class DocumentMixin(DatabaseMixin):
 
         query = f"""
             SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
+                size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status,
+                COUNT(*) OVER() AS total_entries
             {base_query}
             ORDER BY created_at DESC
             OFFSET ${param_index}
@@ -265,11 +266,13 @@ class DocumentMixin(DatabaseMixin):
         if limit != -1:
             query += f" LIMIT ${param_index}"
             params.append(limit)
+            param_index += 1
 
         try:
             results = await self.fetch_query(query, params)
+            total_entries = results[0]["total_entries"] if results else 0
 
-            return [
+            documents = [
                 DocumentInfo(
                     id=row["document_id"],
                     collection_ids=row["collection_ids"],
@@ -288,6 +291,8 @@ class DocumentMixin(DatabaseMixin):
                 )
                 for row in results
             ]
+
+            return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")
             raise R2RException(

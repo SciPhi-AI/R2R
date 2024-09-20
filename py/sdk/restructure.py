@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from .models import (
     KGCreationResponse,
@@ -13,16 +13,16 @@ class RestructureMethods:
     @staticmethod
     async def create_graph(
         client,
-        document_ids: list[str] = None,
-        kg_creation_settings: Union[dict, KGCreationSettings] = None,
+        document_ids: Optional[list[str]] = None,
+        kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
     ) -> KGCreationResponse:
         """
         Create a graph from the given settings.
         """
 
         data = {
-            "document_ids": document_ids,
-            "kg_creation_settings": kg_creation_settings,
+            "document_ids": document_ids or [],
+            "kg_creation_settings": kg_creation_settings or {},
         }
         response = await client._make_request(
             "POST", "create_graph", json=data
@@ -34,7 +34,9 @@ class RestructureMethods:
         client,
         skip_clustering: bool = False,
         force_enrichment: bool = False,
-        kg_enrichment_settings: Union[dict, KGEnrichmentSettings] = None,
+        kg_enrichment_settings: Optional[
+            Union[dict, KGEnrichmentSettings]
+        ] = None,
     ) -> KGEnrichmentResponse:
         """
         Perform graph enrichment over the entire graph.
@@ -50,7 +52,7 @@ class RestructureMethods:
         data = {
             "skip_clustering": skip_clustering,
             "force_enrichment": force_enrichment,
-            "kg_enrichment_settings": kg_enrichment_settings,
+            "kg_enrichment_settings": kg_enrichment_settings or {},
         }
         response = await client._make_request(
             "POST", "enrich_graph", json=data

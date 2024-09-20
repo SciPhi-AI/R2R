@@ -1,6 +1,7 @@
+# type: ignore
 from typing import IO, AsyncGenerator, Optional, Union
 
-from core.base.abstractions.document import DataType
+from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 
 

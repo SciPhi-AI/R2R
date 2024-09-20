@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator
 
 from pydantic import BaseModel, Field
 
-from ..abstractions.document import Document, DocumentType
+from ..abstractions import Document, DocumentType
 from .base import Provider, ProviderConfig
 from .chunking import ChunkingConfig
 
@@ -21,9 +21,9 @@ class ParsingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 
