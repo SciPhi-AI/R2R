@@ -38,10 +38,15 @@ class MarkdownChunker(AdapterStep):
         for section in sections:
             chunks = flu(section.split(" ")).chunk(max_tokens)
 
-            is_not_useless_chunk = lambda i: not i in ["", "\n", []]
+            is_not_useless_chunk = lambda i: not i in [
+                "",
+                "\n",
+                [],
+            ]  # noqa: E731, E713
 
             joined_chunks = filter(
-                is_not_useless_chunk, [" ".join(chunk) for chunk in chunks]
+                is_not_useless_chunk,
+                [" ".join(chunk) for chunk in chunks],  # noqa: E731, E713
             )
 
             for joined_chunk in joined_chunks:
