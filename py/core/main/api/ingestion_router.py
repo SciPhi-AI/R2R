@@ -191,8 +191,6 @@ class IngestionRouter(BaseRouter):
                 )[
                     "results"
                 ]
-                print("qq = ", documents_overview)
-                print("documents_overview = ", documents_overview)
                 if len(documents_overview) != len(document_ids):
                     raise R2RException(
                         status_code=404,
