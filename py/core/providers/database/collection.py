@@ -2,9 +2,9 @@ import json
 import logging
 from datetime import datetime
 from typing import Optional, Union
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from core.base import R2RException
+from core.base import R2RException, generate_id_from_label
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models.management.responses import (
     CollectionOverviewResponse,
@@ -29,25 +29,38 @@ class CollectionMixin(DatabaseMixin):
         """
         await self.execute_query(query)
 
+    async def create_default_collection(self) -> None:
+        """Create a default collection if it doesn't exist."""
+        config = self.get_config()
+        default_collection_name = config.default_collection_name
+        default_collection_description = config.default_collection_description
+
+        default_collection_uuid = generate_id_from_label(default_collection_name)
+
+        if not await self.collection_exists(default_collection_uuid):
+            await self.create_collection(default_collection_name, default_collection_description, default_collection_uuid)
+            logger.info(f"Created default collection: {default_collection_name}")
+        else:
+            logger.info(f"Default collection '{default_collection_name}' already exists")
+
     async def collection_exists(self, collection_id: UUID) -> bool:
-        """Check if a collection exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
         """
-        result = await self.execute_query(query, [collection_id])
-        return bool(result)
+        result = await self.fetchrow_query(query, [collection_id])
+        return result is not None
 
     async def create_collection(
-        self, name: str, description: str = ""
+        self, name: str, description: str = "", collection_id: Optional[UUID] = None
     ) -> CollectionResponse:
         current_time = datetime.utcnow()
         query = f"""
-            INSERT INTO {self._get_table_name('collections')} (name, description, created_at, updated_at)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO {self._get_table_name('collections')} (collection_id, name, description, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING collection_id, name, description, created_at, updated_at
         """
-        params = [name, description, current_time, current_time]
+        params = [collection_id or uuid4(), name, description, current_time, current_time]
 
         try:
             async with self.pool.acquire() as conn:  # type: ignore
@@ -360,7 +373,7 @@ class CollectionMixin(DatabaseMixin):
         return {"results": collections, "total_entries": total_entries}
 
     async def assign_document_to_collection(
-        self, document_id: UUID, collection_id: UUID
+        self, document_id: UUID, collection_id: Optional[UUID] = None
     ) -> None:
         """
         Assign a document to a collection.
@@ -374,6 +387,19 @@ class CollectionMixin(DatabaseMixin):
                         or if there's a database error.
         """
         try:
+            # If no collection_id is provided, assign to the default collection
+            print(f"Attempting to assign document {document_id}")
+            if not collection_id:
+                print(f"No collection_id provided, assigning to default collection")
+                config = self.get_config()
+                print(f"config: {config}")
+                print(f"config.default_collection_name: {config.default_collection_name}")
+                try:
+                    collection_id = generate_id_from_label(config.default_collection_name)
+                except Exception as e:
+                    print(f"Error: {e}")
+                print(f"collection_id: {collection_id}")
+
             if not await self.collection_exists(collection_id):
                 raise R2RException(
                     status_code=404, message="Collection not found"
@@ -388,10 +414,14 @@ class CollectionMixin(DatabaseMixin):
                 document_check_query, [document_id]
             )
 
+            print(f"document_exists: {document_exists}")
+
             if not document_exists:
                 raise R2RException(
                     status_code=404, message="Document not found"
                 )
+            
+            print(f"Document exists, proceeding with assignment")
 
             # If document exists, proceed with the assignment
             assign_query = f"""

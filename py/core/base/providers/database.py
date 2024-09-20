@@ -11,12 +11,16 @@ class DatabaseConfig(ProviderConfig):
     """A base database configuration class"""
 
     provider: str = "postgres"
+
     user: Optional[str] = None
     password: Optional[str] = None
     host: Optional[str] = None
     port: Optional[int] = None
     db_name: Optional[str] = None
     vecs_collection: Optional[str] = None
+
+    default_collection_name: str = "default"
+    default_collection_description: str = "The default collection that all documents and users will be added to."
 
     def __post_init__(self):
         self.validate_config()

@@ -84,6 +84,8 @@ class PostgresRelationalDBProvider(
             for base_class in self.__class__.__bases__:
                 if issubclass(base_class, DatabaseMixin):
                     await base_class.create_table(self)
+            
+            await self.create_default_collection()
 
     async def close(self):
         if self.pool:

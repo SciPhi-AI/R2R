@@ -244,6 +244,19 @@ class IngestionService(Service):
                     ]
                 }
             )
+        
+        # Assign to the default collection
+        try:
+            await self.providers.database.relational.assign_document_to_collection(
+                document_info.id, "10c3b62f-59da-55cb-b24f-2072ecb4348c"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to assign document to default collection: {document_info.id}. Error: {str(e)}"
+            )
+        self.providers.database.vector.assign_document_to_collection(
+            document_info.id, "10c3b62f-59da-55cb-b24f-2072ecb4348c"
+        )
 
         async def empty_generator():
             yield document_info

@@ -154,7 +154,9 @@ class R2RProviderFactory:
             from core.providers import PostgresDBProvider
 
             database_provider = PostgresDBProvider(
-                db_config, vector_db_dimension, crypto_provider=crypto_provider
+                db_config,
+                vector_db_dimension,
+                crypto_provider=crypto_provider,
             )
             await database_provider.initialize()
             return database_provider

@@ -337,7 +337,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `assign_document_to_collection`."
             )
-
+        print("assign_document_to_collection in vector db")
         table_name = self.collection.table.name
         query = text(
             f"""
@@ -353,6 +353,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 query,
                 {"document_id": document_id, "collection_id": collection_id},
             ).fetchone()
+            print(f"result in assign_document_to_collection: {result}")
             sess.commit()
 
         if not result:

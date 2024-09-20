@@ -384,7 +384,7 @@ class ManagementRouter(BaseRouter):
                     404,
                 )
 
-            is_owner = str(document_chunks_result[0].get("user_id")) == str(
+            is_owner = str(document_chunks_result["results"][0].get("user_id")) == str(
                 auth_user.id
             )
 
@@ -638,9 +638,6 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can assign documents to collections.",
                     403,
                 )
-            print(
-                f"document_id: {document_id}, collection_id: {collection_id}"
-            )
             document_uuid = UUID(document_id)
             collection_uuid = UUID(collection_id)
             return await self.service.assign_document_to_collection(
