@@ -5,7 +5,7 @@ from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator, Generator, Optional
 
-from core.base.abstractions.llm import (
+from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,

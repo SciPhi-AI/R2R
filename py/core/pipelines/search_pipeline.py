@@ -3,7 +3,7 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
-from ..base.abstractions.search import (
+from ..base.abstractions import (
     AggregateSearchResult,
     KGSearchSettings,
     VectorSearchSettings,

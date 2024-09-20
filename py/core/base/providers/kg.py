@@ -4,10 +4,15 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Tuple
 
-from ...base.utils.base_utils import RelationshipType
-from ..abstractions.graph import Entity, KGExtraction, Triple
-from ..abstractions.llm import GenerationConfig
-from ..abstractions.restructure import KGCreationSettings, KGEnrichmentSettings
+from ..abstractions import (
+    Entity,
+    GenerationConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGExtraction,
+    RelationshipType,
+    Triple,
+)
 from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)

@@ -2,8 +2,11 @@ import asyncio
 import logging
 from typing import Any, Optional
 
-from ..base.abstractions.llm import GenerationConfig
-from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
+from ..base.abstractions import (
+    GenerationConfig,
+    KGSearchSettings,
+    VectorSearchSettings,
+)
 from ..base.logging import RunType
 from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run

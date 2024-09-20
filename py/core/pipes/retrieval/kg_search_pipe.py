@@ -9,13 +9,11 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
     KGProvider,
-    KGSearchSettings,
     PipeType,
     PromptProvider,
-    R2RException,
     RunLoggingSingleton,
 )
-from core.base.abstractions.search import (
+from core.base.abstractions import (
     KGCommunityResult,
     KGEntityResult,
     KGGlobalResult,
@@ -23,6 +21,8 @@ from core.base.abstractions.search import (
     KGSearchMethod,
     KGSearchResult,
     KGSearchResultType,
+    KGSearchSettings,
+    R2RException,
 )
 
 from ..abstractions.generator_pipe import GeneratorPipe

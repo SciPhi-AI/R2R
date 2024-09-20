@@ -5,9 +5,9 @@ from typing import Optional
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from ...utils import generate_id_from_label
 from ..abstractions import R2RException, Token, TokenData
 from ..api.models import UserResponse
-from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
 

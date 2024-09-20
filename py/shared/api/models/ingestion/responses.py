@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from core.base.api.models.base import ResultsWrapper
+from ..base import ResultsWrapper
 
 T = TypeVar("T")
 

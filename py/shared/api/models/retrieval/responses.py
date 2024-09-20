@@ -2,8 +2,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from core.base.abstractions import KGSearchResult, Message, VectorSearchResult
-from core.base.api.models.base import ResultsWrapper
+from ....abstractions import KGSearchResult, Message, VectorSearchResult
+from ..base import ResultsWrapper
 
 
 class SearchResponse(BaseModel):

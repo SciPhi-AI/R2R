@@ -12,7 +12,7 @@ from core.base import (
     RunLoggingSingleton,
     generate_id_from_label,
 )
-from core.base.abstractions.exception import R2RDocumentProcessingError
+from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)

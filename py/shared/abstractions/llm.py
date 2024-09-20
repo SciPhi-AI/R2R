@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
 
-from core.base.abstractions.base import R2RSerializable
+from .base import R2RSerializable
 
 if TYPE_CHECKING:
     from .search import AggregateSearchResult

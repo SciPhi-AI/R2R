@@ -5,8 +5,11 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Optional
 
-from ..abstractions import EmbeddingPurpose, default_embedding_prefixes
-from ..abstractions.search import VectorSearchResult
+from ..abstractions import (
+    EmbeddingPurpose,
+    VectorSearchResult,
+    default_embedding_prefixes,
+)
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)

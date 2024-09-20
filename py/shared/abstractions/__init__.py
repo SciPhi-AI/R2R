@@ -1,5 +1,5 @@
-from shared.abstractions.completion import CompletionRecord, MessageType
-from shared.abstractions.document import (
+from .completion import CompletionRecord, MessageType
+from .document import (
     DataType,
     Document,
     DocumentExtraction,
@@ -9,15 +9,9 @@ from shared.abstractions.document import (
     IngestionStatus,
     RestructureStatus,
 )
-from shared.abstractions.embedding import (
-    EmbeddingPurpose,
-    default_embedding_prefixes,
-)
-from shared.abstractions.exception import (
-    R2RDocumentProcessingError,
-    R2RException,
-)
-from shared.abstractions.graph import (
+from .embedding import EmbeddingPurpose, default_embedding_prefixes
+from .exception import R2RDocumentProcessingError, R2RException
+from .graph import (
     Community,
     CommunityReport,
     Entity,
@@ -26,19 +20,16 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.abstractions.llm import (
+from .llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
     RAGCompletion,
 )
-from shared.abstractions.prompt import Prompt
-from shared.abstractions.restructure import (
-    KGCreationSettings,
-    KGEnrichmentSettings,
-)
-from shared.abstractions.search import (
+from .prompt import Prompt
+from .restructure import KGCreationSettings, KGEnrichmentSettings
+from .search import (
     AggregateSearchResult,
     HybridSearchSettings,
     KGCommunityResult,
@@ -52,18 +43,9 @@ from shared.abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from shared.abstractions.shared_base import (
-    AsyncSyncMeta,
-    R2RSerializable,
-    syncable,
-)
-from shared.abstractions.user import Token, TokenData, UserStats
-from shared.abstractions.vector import (
-    StorageResult,
-    Vector,
-    VectorEntry,
-    VectorType,
-)
+from .shared_base import AsyncSyncMeta, R2RSerializable, syncable
+from .user import Token, TokenData, UserStats
+from .vector import StorageResult, Vector, VectorEntry, VectorType
 
 __all__ = [
     # Base abstractions

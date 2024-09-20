@@ -7,7 +7,7 @@ from typing import Any, Optional
 import toml
 from pydantic import BaseModel
 
-from ..base.abstractions.llm import GenerationConfig
+from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
 from ..base.logging.run_logger import LoggingConfig
 from ..base.providers.auth import AuthConfig
