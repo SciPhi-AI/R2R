@@ -192,16 +192,24 @@ class KGSearchSearchPipe(GeneratorPipe):
 
                 # try loading it as a json
                 try:
+
+                    if "```json" in summary:
+                        summary = (
+                            summary.strip()
+                            .removeprefix("```json")
+                            .removesuffix("```")
+                            .strip()
+                        )
+
                     summary_json = json.loads(summary)
                     description = summary_json.get("summary", "")
                     name = summary_json.get("title", "")
 
-                    description += "\n\n" + "\n".join(
-                        [
-                            finding["summary"]
-                            for finding in summary_json.get("findings", [])
-                        ]
-                    )
+                    def get_str(finding):
+                        if isinstance(finding, dict):
+                            return f"{finding['summary']} => {finding['explanation']}"
+                        else:
+                            return str(finding)
 
                 except json.JSONDecodeError:
                     logger.warning(f"Summary is not valid JSON")
@@ -213,7 +221,10 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
-                    metadata={"associated_query": message},
+                    metadata={
+                        "associated_query": message,
+                        "findings": summary_json.get("findings", ""),
+                    },
                 )
 
     async def global_search(
@@ -255,13 +266,13 @@ class KGSearchSearchPipe(GeneratorPipe):
             async def process_community(merged_report):
                 output = await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name="graphrag_map_system_prompt",
+                        task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_map_system_prompt,
                         task_inputs={
                             "context_data": merged_report,
                             "input": message,
                         },
                     ),
-                    generation_config=kg_search_settings.kg_search_generation_config,
+                    generation_config=kg_search_settings.generation_config,
                 )
 
                 return output.choices[0].message.content
@@ -290,14 +301,14 @@ class KGSearchSearchPipe(GeneratorPipe):
             # reducing the outputs
             output = await self.llm_provider.aget_completion(
                 messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="graphrag_reduce_system_prompt",
+                    task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_reduce_system_prompt,
                     task_inputs={
                         "response_type": "multiple paragraphs",
                         "report_data": filtered_responses,
                         "input": message,
                     },
                 ),
-                generation_config=kg_search_settings.kg_search_generation_config,
+                generation_config=kg_search_settings.generation_config,
             )
 
             output_text = output.choices[0].message.content
@@ -329,14 +340,15 @@ class KGSearchSearchPipe(GeneratorPipe):
 
         kg_search_type = kg_search_settings.kg_search_type
 
-        if kg_search_type == "local":
+        # runs local and/or global search
+        if kg_search_type == "local" or kg_search_type == "local_and_global":
             logger.info("Performing KG local search")
             async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
                 yield result
 
-        else:
+        if kg_search_type == "global" or kg_search_type == "local_and_global":
             logger.info("Performing KG global search")
             async for result in self.global_search(
                 input, state, run_id, kg_search_settings

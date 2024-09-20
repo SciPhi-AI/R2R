@@ -6,8 +6,8 @@ from uuid import UUID
 
 from pydantic import Field
 
-from .base import R2RSerializable
 from .llm import GenerationConfig
+from .base import R2RSerializable
 
 
 class VectorSearchResult(R2RSerializable):
@@ -257,7 +257,8 @@ class VectorSearchSettings(R2RSerializable):
             "use_vector_search": True,
             "use_hybrid_search": True,
             "filters": {"category": "technology"},
-            "search_limit": 20,
+            "limit": 20,
+            "offset": 0,
             "selected_collection_ids": [
                 "2acb499e-8428-543b-bd85-0d9098718220",
                 "3e157b3a-8469-51db-90d9-52e7d896b49b",
@@ -283,10 +284,30 @@ class VectorSearchSettings(R2RSerializable):
 
 
 class KGSearchSettings(R2RSerializable):
-    use_kg_search: bool = False
-    kg_search_type: str = "global"  # 'global' or 'local'
-    kg_search_level: Optional[str] = None
-    kg_search_generation_config: GenerationConfig = GenerationConfig()
+
+    graphrag_map_system_prompt: str = Field(
+        default="graphrag_map_system_prompt",
+        description="The system prompt for the graphrag map prompt.",
+    )
+
+    graphrag_reduce_system_prompt: str = Field(
+        default="graphrag_reduce_system_prompt",
+        description="The system prompt for the graphrag reduce prompt.",
+    )
+
+    use_kg_search: bool = Field(
+        default=False, description="Whether to use KG search"
+    )
+    kg_search_type: str = Field(
+        default="local", description="KG search type"
+    )  # 'global' or 'local'
+    kg_search_level: Optional[str] = Field(
+        default=None, description="KG search level"
+    )
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="Configuration for text generation during graph search.",
+    )
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []
@@ -304,7 +325,7 @@ class KGSearchSettings(R2RSerializable):
             "use_kg_search": True,
             "kg_search_type": "global",
             "kg_search_level": "0",
-            "kg_search_generation_config": GenerationConfig.Config.json_schema_extra,
+            "generation_config": GenerationConfig.Config.json_schema_extra,
             "max_community_description_length": 65536,
             "max_llm_queries_for_global_search": 250,
             "local_search_limits": {

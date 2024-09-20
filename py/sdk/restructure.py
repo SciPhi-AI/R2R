@@ -1,3 +1,4 @@
+import json
 from typing import Optional, Union
 
 from .models import (
@@ -24,6 +25,7 @@ class RestructureMethods:
             "document_ids": document_ids or [],
             "kg_creation_settings": kg_creation_settings or {},
         }
+
         response = await client._make_request(
             "POST", "create_graph", json=data
         )

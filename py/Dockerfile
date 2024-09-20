@@ -38,6 +38,7 @@ COPY . /app
 # Copy the application and config
 COPY core /app/core
 COPY r2r /app/r2r
+COPY shared /app/shared
 COPY r2r.toml /app/r2r.toml
 COPY pyproject.toml /app/pyproject.toml
 

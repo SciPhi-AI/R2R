@@ -55,7 +55,7 @@ export interface KGSearchSettings {
   use_kg_search?: boolean;
   kg_search_type?: "global" | "local";
   kg_search_level?: number | null;
-  kg_search_generation_config?: GenerationConfig;
+  generation_config?: GenerationConfig;
   entity_types?: any[];
   relationships?: any[];
   max_community_description_length?: number;

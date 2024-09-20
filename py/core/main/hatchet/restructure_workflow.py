@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 
-from hatchet_sdk import Context
+from hatchet_sdk import Context, ConcurrencyLimitStrategy
 
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import R2RDocumentProcessingError
@@ -29,11 +29,10 @@ class KgExtractAndStoreWorkflow:
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
 
-        document_overview = (
-            await self.restructure_service.providers.database.relational.get_documents_overview(
-                filter_document_ids=[document_id]
-            )
-        )[0]
+        document_overview = await self.restructure_service.providers.database.relational.get_documents_overview(
+            filter_document_ids=[document_id]
+        )
+        document_overview = document_overview["results"][0]
 
         try:
 
@@ -99,13 +98,19 @@ class CreateGraphWorkflow:
     @r2r_hatchet.step(retries=1)
     async def kg_extraction_ingress(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
+
         kg_creation_settings = KGCreationSettings(
             **json.loads(input_data["kg_creation_settings"])
         )
 
+        documents_overview = (
+            await self.restructure_service.providers.database.relational.get_documents_overview()
+        )
+        documents_overview = documents_overview["results"]
+
         document_ids = [
             doc.id
-            for doc in await self.restructure_service.providers.database.relational.get_documents_overview()
+            for doc in documents_overview
             if doc.restructuring_status != IngestionStatus.SUCCESS
         ]
 
@@ -114,6 +119,7 @@ class CreateGraphWorkflow:
         documents_overviews = await self.restructure_service.providers.database.relational.get_documents_overview(
             filter_document_ids=document_ids
         )
+        documents_overviews = documents_overviews["results"]
 
         # Only run if restructuring_status is pending or failure
         filtered_document_ids = []
@@ -122,6 +128,7 @@ class CreateGraphWorkflow:
             if restructuring_status in [
                 RestructureStatus.PENDING,
                 RestructureStatus.FAILURE,
+                RestructureStatus.ENRICHMENT_FAILURE,
             ]:
                 filtered_document_ids.append(document_overview.id)
             elif restructuring_status == RestructureStatus.SUCCESS:
@@ -207,6 +214,7 @@ class EnrichGraphWorkflow:
         documents_overview = (
             await self.restructure_service.providers.database.relational.get_documents_overview()
         )
+        documents_overview = documents_overview["results"]
 
         if not force_enrichment:
             if any(
@@ -250,6 +258,7 @@ class EnrichGraphWorkflow:
 
                 result = results[0]
 
+                # Run community summary workflows
                 workflows = []
                 for level, community_id in result["intermediate_communities"]:
                     logger.info(
@@ -271,10 +280,6 @@ class EnrichGraphWorkflow:
                     )
 
                 results = await asyncio.gather(*workflows)
-                logger.info(
-                    f"KG Community Summary Workflows completed: {len(results)}"
-                )
-
             else:
                 logger.info(
                     "Skipping Leiden clustering as skip_clustering is True, also skipping community summary workflows"
@@ -286,6 +291,7 @@ class EnrichGraphWorkflow:
             documents_overview = (
                 await self.restructure_service.providers.database.relational.get_documents_overview()
             )
+            documents_overview = documents_overview["results"]
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status
@@ -300,14 +306,14 @@ class EnrichGraphWorkflow:
                     logger.error(
                         f"Error in kg_clustering for document {document_overview.id}: {str(e)}"
                     )
-
-            return {"result": None}
+            raise e
 
         finally:
 
             documents_overview = (
                 await self.restructure_service.providers.database.relational.get_documents_overview()
             )
+            documents_overview = documents_overview["results"]
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status

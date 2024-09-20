@@ -30,8 +30,8 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "gpt-4o-mini" } # and other generation params below
     leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
-  [kg.kg_search_config]
-    model = "gpt-4o-mini"
+  [kg.kg_search_settings]
+    generation_config = { model = "gpt-4o-mini" }
 ```
 
 
@@ -47,7 +47,7 @@ Let's break down the knowledge graph configuration options:
 - `kg_enrichment_settings`: Similar configuration for the model used in knowledge graph enrichment.
   - `generation_config`: Configuration for the model used in knowledge graph enrichment.
   - `leiden_params`: Parameters for the Leiden algorithm.
-- `kg_search_config`: Similar configuration for the model used in knowledge graph search operations.
+- `kg_search_settings`: Similar configuration for the model used in knowledge graph search operations.
 
 ### Neo4j Configuration
 
@@ -88,7 +88,7 @@ The Neo4jKGProvider supports various operations:
 
 ### Customization
 
-You can customize the knowledge graph extraction and search processes by modifying the `kg_extraction_prompt` and adjusting the model configurations in `kg_extraction_config` and `kg_search_config`. Moreover, you can customize the LLM models used in various parts of the knowledge graph creation process. All of these options can be selected at runtime, with the only exception being the specified database provider. For more details, refer to the knowledge graph settings in the [search API](/api-reference/endpoint/search).
+You can customize the knowledge graph extraction and search processes by modifying the `kg_extraction_prompt` and adjusting the model configurations in `kg_extraction_settings` and `kg_search_settings`. Moreover, you can customize the LLM models used in various parts of the knowledge graph creation process. All of these options can be selected at runtime, with the only exception being the specified database provider. For more details, refer to the knowledge graph settings in the [search API](/api-reference/endpoint/search).
 
 By leveraging the knowledge graph capabilities, you can enhance R2R's understanding of document relationships and improve the quality of search and retrieval operations.
 

@@ -54,7 +54,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     def community_summary_prompt(
         self,
-        prompt: str,
         entities: list[Entity],
         triples: list[Triple],
         max_summary_input_length: int,
@@ -63,17 +62,26 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Preparing the list of entities and triples to be summarized and created into a community summary.
         """
         entities_info = "\n".join(
-            [f"{entity.name}, {entity.description}" for entity in entities]
+            [
+                f"{entity.id}, {entity.name}, {entity.description}"
+                for entity in entities
+            ]
         )
 
         triples_info = "\n".join(
             [
-                f"{triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
+                f"{triple.id}, {triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
                 for triple in triples
             ]
         )
 
-        prompt = prompt.format(entities=entities_info, triples=triples_info)
+        prompt = f"""
+        Entities:
+        {entities_info}
+
+        Relationships:
+        {triples_info}
+        """
 
         if len(prompt) > max_summary_input_length:
             logger.info(
@@ -92,24 +100,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
     ) -> dict:
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
-
-        Input:
-        - level: The level of the hierarchy.
-        - community_id: The ID of the community to process.
-
-        Output:
-        - A dictionary with the community id and the title of the community.
-        - Output format: {"id": community_id, "title": title}
-        """
-
-        input_text = """
-
-            Entities:
-            {entities}
-
-            Triples:
-            {triples}
-
         """
 
         logger.info(
@@ -132,10 +122,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
             (
                 await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name="graphrag_community_reports",
+                        task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
                         task_inputs={
                             "input_text": self.community_summary_prompt(
-                                input_text,
                                 entities,
                                 triples,
                                 max_summary_input_length,
