@@ -325,14 +325,15 @@ class KGSearchSearchPipe(GeneratorPipe):
 
         kg_search_type = kg_search_settings.kg_search_type
 
-        if kg_search_type == "local":
+        # runs local and/or global search
+        if kg_search_type == "local" or kg_search_type == "local_and_global":
             logger.info("Performing KG local search")
             async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
                 yield result
 
-        else:
+        if kg_search_type == "global" or kg_search_type == "local_and_global":
             logger.info("Performing KG global search")
             async for result in self.global_search(
                 input, state, run_id, kg_search_settings
