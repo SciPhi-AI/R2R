@@ -15,7 +15,8 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
       icon: <Lightbulb className="h-6 w-6 text-yellow-400" />,
     },
     {
-      query: 'Which companies will most likely succeed and which ones will fail?',
+      query:
+        'Which companies will most likely succeed and which ones will fail?',
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
@@ -23,7 +24,7 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
       icon: <Flame className="h-6 w-6 text-red-400" />,
     },
     {
-      query: 'How can I get in touch with R2R\'s founders?',
+      query: "How can I get in touch with R2R's founders?",
       icon: <Earth className="h-6 w-6 text-green-400" />,
     },
   ];

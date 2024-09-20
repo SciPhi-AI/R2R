@@ -29,11 +29,10 @@
   --header-bg: #ff6600; /* Orange header */
   --header-border: #ff8533;
   --header-text: #ffffff;
-  
+
   --input: #f0f0f0; /* Light gray for input fields */
   --input-background-color: #f0f0f0;
   --ring: #ff6600; /* Orange for focus ring */
-
 }
 
 * {
@@ -188,7 +187,6 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -215,19 +213,14 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-
   }
-
 }
 
 @layer base {
   * {
     @apply border-border;
-
   }
   body {
     @apply bg-background text-foreground;
-
   }
-
 }
