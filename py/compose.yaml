@@ -194,7 +194,13 @@ services:
       retries: 5
     restart: on-failure
     volumes:
-      - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
+      - type: bind
+        source: ${CONFIG_PATH:-/}
+        target: ${CONFIG_PATH:-/app/config}
+        read_only: true
+        bind:
+          propagation: rslave
+#      - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
       - hatchet_api_key:/hatchet_api_key:ro
     labels:
       - "traefik.enable=true"
@@ -247,6 +253,11 @@ services:
       - "${HATCHET_DASHBOARD_PORT:-8002}:${HATCHET_DASHBOARD_PORT:-8002}"
       - "${TRAEFIK_DASHBOARD_PORT:-8081}:${TRAEFIK_DASHBOARD_PORT:-8081}"
     volumes:
+      - type: bind
+        read_only: true
+        source: /var/run/postgres/postgres.sock
+        target: /var/run/postgres/postgres.sock
+
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
@@ -264,6 +275,7 @@ services:
       retries: 5
 
 volumes:
-  hatchet_certs:
-  hatchet_config:
-  hatchet_api_key:
+    hatchet_certs:
+    hatchet_config:
+    hatchet_api_key:
+
