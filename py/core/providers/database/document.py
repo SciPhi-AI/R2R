@@ -263,7 +263,6 @@ class DocumentMixin(DatabaseMixin):
         params.append(offset)
         param_index += 1
 
-        print("query = ", query)
         if limit != -1:
             query += f" LIMIT ${param_index}"
             params.append(limit)

@@ -299,7 +299,6 @@ class ManagementService(Service):
             relational_filters["filter_document_ids"] = [
                 UUID(filters["document_id"]["$eq"])
             ]
-            print("relational_filters = ", relational_filters)
         if "user_id" in filters:
             relational_filters["filter_user_ids"] = [
                 UUID(filters["user_id"]["$eq"])
