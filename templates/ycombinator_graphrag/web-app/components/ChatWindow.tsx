@@ -153,7 +153,7 @@ export const ChatWindow: FC<{
           if (buffer.includes(FUNCTION_END_TOKEN)) {
             const [results, rest] = buffer.split(FUNCTION_END_TOKEN);
 
-            
+
             console.log ( 'results = ', results)
             const vectorSearchSources = results.includes("<search>")? results
               .split("<search>")[1]

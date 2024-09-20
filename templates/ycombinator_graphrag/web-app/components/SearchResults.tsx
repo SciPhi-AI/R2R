@@ -16,7 +16,7 @@ const VectorSearchResultItem: FC<{
     onOpenPdfPreview: (documentId: string, page?: number) => void;
   }> = ({ source, index, onOpenPdfPreview }) => {
     const { document_id, score, metadata, text } = source;
-  
+
     return (
       <div
         className="p-4 mb-2 flex items-center"
@@ -32,7 +32,7 @@ const VectorSearchResultItem: FC<{
               Similarity Score: {source.score.toFixed(3)}
             </span>
           </div>
-  
+
           <p className="text-xs text-wrap" style={{ whiteSpace: 'normal', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{text}</p>
           <p className="text-xs pt-4 text-zinc-500">
             Document ID: {source.document_id}
@@ -43,7 +43,7 @@ const VectorSearchResultItem: FC<{
       </div>
     );
   };
-  
+
 
 const KGSearchResultItem: FC<{ entity: any, index: number }> = ({ entity, index }) => {
   console.log('entity = ', entity);
@@ -62,7 +62,7 @@ const KGSearchResultItem: FC<{ entity: any, index: number }> = ({ entity, index 
               Similarity Score: 0
             </span>
           </div>
-  
+
           <p className="text-xs text-wrap" style={{ whiteSpace: 'normal', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{entity.content.description}</p>
           <p className="text-xs pt-4 text-zinc-500">
             Document ID: {entity.document_id}
@@ -75,7 +75,7 @@ const KGSearchResultItem: FC<{ entity: any, index: number }> = ({ entity, index 
 };
 
 class KGSearchResult {
-  
+
 }
 
 interface SearchResultsProps {
@@ -147,7 +147,7 @@ return (
           </Carousel>
         </TabsContent>
 
-       
+
         <TabsContent value="kgEntities" >
           {/* {kgSearchResults.map((result, index) => (
             <KGSearchResultItem key={index} entity={result} />
@@ -171,7 +171,7 @@ return (
             <CarouselNext />
           </Carousel>
         </TabsContent>
-  
+
         <TabsContent value="kgCommunities" >
           {/* {kgSearchResults.map((result, index) => (
             <KGSearchResultItem key={index} entity={result} />

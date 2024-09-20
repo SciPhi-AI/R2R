@@ -251,11 +251,13 @@ class EnrichGraphWorkflow:
 
                 result = results[0]
 
-                # Run community summary workflows   
+                # Run community summary workflows
                 workflows = []
                 batch_size = 512
                 completed = 0
-                logger.info(f"Running {len(result['intermediate_communities'])} KG Community Summary Workflows")
+                logger.info(
+                    f"Running {len(result['intermediate_communities'])} KG Community Summary Workflows"
+                )
                 for level, community_id in result["intermediate_communities"]:
                     logger.info(
                         f"Running KG Community Summary Workflow for community ID: {community_id} at level {level}"
@@ -343,7 +345,6 @@ class KGCommunitySummaryWorkflow:
     # @r2r_hatchet.concurrency(max_runs=1024, limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN)
     # def concurrency_limit(self):
     #     return "key"
-
 
     @r2r_hatchet.step(retries=1, timeout="60m")
     async def kg_community_summary(self, context: Context) -> dict:

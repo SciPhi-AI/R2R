@@ -29,7 +29,7 @@ add_title_as_prefix = true
 concurrent_request_limit = 2
 
 
-[kg] 
+[kg]
 provider = "neo4j" # set this to "None" if you don't want to use a knowledge graph
 batch_size = 256
 

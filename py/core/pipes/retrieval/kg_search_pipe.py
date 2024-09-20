@@ -192,9 +192,14 @@ class KGSearchSearchPipe(GeneratorPipe):
 
                 # try loading it as a json
                 try:
-                    
-                    if '```json' in summary:
-                        summary = summary.strip().removeprefix("```json").removesuffix("```").strip()
+
+                    if "```json" in summary:
+                        summary = (
+                            summary.strip()
+                            .removeprefix("```json")
+                            .removesuffix("```")
+                            .strip()
+                        )
 
                     summary_json = json.loads(summary)
                     description = summary_json.get("summary", "")

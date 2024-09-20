@@ -29,8 +29,10 @@ logger = logging.getLogger(__name__)
 
 MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
 
+
 class ClientError(Exception):
     """Base class for client connection errors."""
+
     pass
 
 
@@ -208,7 +210,7 @@ class KGTriplesExtractionPipe(
                     logger.error(
                         f"Failed after retries with for fragment {fragments[0].id} of document {fragments[0].document_id}: {e}"
                     )
-                    # raise e # you should raise an error. 
+                    # raise e # you should raise an error.
         # add metadata to entities and triples
 
         return KGExtraction(

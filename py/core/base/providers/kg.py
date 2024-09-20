@@ -30,7 +30,9 @@ class KGConfig(ProviderConfig):
 
     batch_size: Optional[int] = 1
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: Optional[KGEnrichmentSettings] = KGEnrichmentSettings()
+    kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
+        KGEnrichmentSettings()
+    )
     kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
     kg_search_settings: Optional[KGSearchSettings] = KGSearchSettings()
 

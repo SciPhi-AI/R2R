@@ -122,18 +122,18 @@ export const Answer: FC<{
     if (message.sources.vector) {
         const parsed = parseVectorSearchSources(message.sources.vector);
         setParsedVectorSources(parsed);
-    } 
+    }
     if (message.sources.kg) {
       console.log('message.sources.kg = ', message.sources.kg)
       let kgLocalResult: KGSearchResult[] = JSON.parse(message.sources.kg);
-      
+
       const entitiesArray = kgLocalResult.filter((item: any) => item.result_type === 'entity');
       const communitiesArray = kgLocalResult.filter((item: any) => item.result_type === 'community');
       setParsedEntities(entitiesArray);
       setParsedCommunities(communitiesArray);
       // setParsedKGSearchResult(parsedKGSearchResult);
       // debugger;
-    }      
+    }
   }, [message.sources]);
 
   const renderContent = () => {

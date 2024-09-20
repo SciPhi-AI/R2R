@@ -62,7 +62,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Preparing the list of entities and triples to be summarized and created into a community summary.
         """
         entities_info = "\n".join(
-            [f"{entity.id}, {entity.name}, {entity.description}" for entity in entities]
+            [
+                f"{entity.id}, {entity.name}, {entity.description}"
+                for entity in entities
+            ]
         )
 
         triples_info = "\n".join(
