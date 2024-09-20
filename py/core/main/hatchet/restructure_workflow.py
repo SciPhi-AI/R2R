@@ -123,6 +123,7 @@ class CreateGraphWorkflow:
             if restructuring_status in [
                 RestructureStatus.PENDING,
                 RestructureStatus.FAILURE,
+                RestructureStatus.ENRICHMENT_FAILURE,
             ]:
                 filtered_document_ids.append(document_overview.id)
             elif restructuring_status == RestructureStatus.SUCCESS:
@@ -301,8 +302,7 @@ class EnrichGraphWorkflow:
                     logger.error(
                         f"Error in kg_clustering for document {document_overview.id}: {str(e)}"
                     )
-
-            return {"result": None}
+            raise e
 
         finally:
 

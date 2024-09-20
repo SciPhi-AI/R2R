@@ -113,6 +113,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                 kg_extraction = response.choices[0].message.content
 
+                logger.info(f"Input Prompt: {messages}")
+                logger.info(f"KG Extraction: {kg_extraction}")
+
                 entity_pattern = (
                     r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
                 )
@@ -165,7 +168,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
                         # check if subject and object are in entities_dict
                         relations_arr.append(
                             Triple(
-                                id=str(uuid.uuid4()),
                                 subject=subject,
                                 predicate=predicate,
                                 object=object,

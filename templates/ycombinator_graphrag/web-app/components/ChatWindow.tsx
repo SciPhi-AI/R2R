@@ -159,11 +159,11 @@ export const ChatWindow: FC<{
               .split("<search>")[1]
               .split("</search>")[0] : null;
 
-            const localKGSearchResult = results.includes("<kg_local_search>")? results
-            .split("<kg_local_search>")[1]
-            .split("</kg_local_search>")[0] : null;
+            const kgSearchResult = results.includes("<kg_search>")? results
+            .split("<kg_search>")[1]
+            .split("</kg_search>")[0] : null;
 
-            updateLastMessage(undefined, {vector: vectorSearchSources, localKg: localKGSearchResult}, undefined, true);
+            updateLastMessage(undefined, {vector: vectorSearchSources, kg: kgSearchResult}, undefined, true);
             buffer = rest || '';
             setIsSearching(false);
           }

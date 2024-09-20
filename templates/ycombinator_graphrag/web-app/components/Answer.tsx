@@ -16,6 +16,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { SearchResults } from '@/components/SearchResults';
+import { KGSearchResult } from '@/types';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -89,6 +90,25 @@ const parseVectorSearchSources = (sources: string | object): Source[] => {
   return sources as Source[];
 };
 
+
+const parseKGSearchResult = (sources: string | object): KGSearchResult[] => {
+    if (typeof sources === 'string') {
+        try {
+            const cleanedSources = sources
+            return JSON.parse(cleanedSources);
+        } catch (error) {
+            console.error('Failed to parse sources:', error);
+            return [];
+        }
+    }
+    return sources as KGSearchResult[];
+}
+
+interface KGSearchResultState {
+  entities: KGSearchResult[];
+  communities: KGSearchResult[];
+}
+
 export const Answer: FC<{
   message: Message;
   isStreaming: boolean;
@@ -96,29 +116,23 @@ export const Answer: FC<{
 }> = ({ message, isStreaming, isSearching }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [parsedVectorSources, setParsedVectorSources] = useState<Source[]>([]);
-  const [parsedKGSearchResult, setParsedKGSearchResult] = useState([]);
+  const [parsedEntities, setParsedEntities] = useState<KGSearchResult[]>([]);
+  const [parsedCommunities, setParsedCommunities] = useState<KGSearchResult[]>([]);
   useEffect(() => {
     if (message.sources.vector) {
         const parsed = parseVectorSearchSources(message.sources.vector);
         setParsedVectorSources(parsed);
     } 
-    if (message.sources.localKg) {
-      console.log('message.sources.localKg = ', message.sources.localKg)
-      let kgLocalResult: KGLocalSearchResult = JSON.parse(JSON.parse(message.sources.localKg));
-      console.log('kgLocalResult.communities = ', kgLocalResult.communities)
-      // Parse the 'summary' object on the communities object
-      // const parsedCommunities = kgLocalResult.communities.map((community: any) => {
-      //   return JSON.parse(community);
-      // });
-      const communitiesArray = Object.entries(kgLocalResult.communities);
-      console.log('communitiesArray = ', communitiesArray)
-      const parsedCommunities = communitiesArray.forEach(([key, community]) => {return {key: JSON.parse(community.summary)}} );
-
-      console.log('parsedCommunities = ', parsedCommunities)
-      kgLocalResult.communities = parsedCommunities;
-
-      console.log('kgLocalResult = ', kgLocalResult)
-      setParsedKGSearchResult(kgLocalResult);
+    if (message.sources.kg) {
+      console.log('message.sources.kg = ', message.sources.kg)
+      let kgLocalResult: KGSearchResult[] = JSON.parse(message.sources.kg);
+      
+      const entitiesArray = kgLocalResult.filter((item: any) => item.result_type === 'entity');
+      const communitiesArray = kgLocalResult.filter((item: any) => item.result_type === 'community');
+      setParsedEntities(entitiesArray);
+      setParsedCommunities(communitiesArray);
+      // setParsedKGSearchResult(parsedKGSearchResult);
+      // debugger;
     }      
   }, [message.sources]);
 
@@ -224,7 +238,7 @@ export const Answer: FC<{
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <SearchResults vectorSearchResults={parsedVectorSources} kgLocalSearchResult={parsedKGSearchResult} />
+              <SearchResults vectorSearchResults={parsedVectorSources} entities={parsedEntities} communities={parsedCommunities} />
               {/* <div className="space-y-2 pt-2">
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {parsedVectorSources.map((item: Source) => (

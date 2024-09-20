@@ -350,9 +350,11 @@ export interface KGCommunity {
   explanation: string;
 }
 
-export interface KGLocalSearchResult {
-  query: string;
-  entities: KGEntity[];
-  relationships: KGTriple[];
-  communities: Record<string, CommunityWraper>;
+export interface KGSearchResult {
+  method: 'local' | 'global';
+  content: any;
+  result_type: 'entity' | 'relationship' | 'community' | 'global';
+  fragment_ids: string[];
+  document_ids: string[];
+  metadata: Record<string, any>;
 }

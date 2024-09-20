@@ -8,7 +8,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { VectorSearchResult, KGLocalSearchResult } from '@/types';
+import { VectorSearchResult, KGSearchResult } from '@/types';
 
 const VectorSearchResultItem: FC<{
     source: VectorSearchResult;
@@ -19,22 +19,22 @@ const VectorSearchResultItem: FC<{
   
     return (
       <div
-        className="bg-zinc-700 p-4 rounded-lg mb-2 flex items-center"
-        style={{ width: '100%' }}
+        className="p-4 mb-2 flex items-center"
+        style={{ width: '100%',  }}
       >
         <div className="flex-grow mr-4">
           <div className="flex items-center mb-1">
-            <h3 className="text-sm font-medium text-zinc-300 mr-2 overflow-hidden overflow-ellipsis">
+            <h3 className="text-sm font-medium mr-2 overflow-hidden overflow-ellipsis">
               [{index}] {metadata.title}
             </h3>
             <div className="flex-grow"></div>
-            <span className="text-xs text-zinc-500 ml-2 whitespace-nowrap">
+            <span className="text-xs ml-2 whitespace-nowrap text-zinc-500">
               Similarity Score: {source.score.toFixed(3)}
             </span>
           </div>
   
-          <p className="text-xs text-zinc-400 text-wrap" style={{ whiteSpace: 'normal', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{text}</p>
-          <p className="text-xs text-zinc-500 pt-4">
+          <p className="text-xs text-wrap" style={{ whiteSpace: 'normal', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{text}</p>
+          <p className="text-xs pt-4 text-zinc-500">
             Document ID: {source.document_id}
             <br />
             Fragment ID: {source.fragment_id}
@@ -45,24 +45,54 @@ const VectorSearchResultItem: FC<{
   };
   
 
-const KGEntityResult: FC<{ entity: any }> = ({ entity }) => {
+const KGSearchResultItem: FC<{ entity: any, index: number }> = ({ entity, index }) => {
+  console.log('entity = ', entity);
   return (
-    <div className="bg-zinc-700 p-4 rounded-lg mb-2">
-      <h3 className="text-sm font-medium text-zinc-300 mb-1">{entity.name}</h3>
-      <p className="text-xs text-zinc-400">{entity.description}</p>
-    </div>
+      <div
+        className="p-4 mb-2 flex items-center"
+        style={{ width: '100%',  }}
+      >
+        <div className="flex-grow mr-4">
+          <div className="flex items-center mb-1">
+            <h3 className="text-sm font-medium mr-2 overflow-hidden overflow-ellipsis">
+              [{index}] {entity.content.name}
+            </h3>
+            <div className="flex-grow"></div>
+            <span className="text-xs ml-2 whitespace-nowrap text-zinc-500">
+              Similarity Score: 0
+            </span>
+          </div>
+  
+          <p className="text-xs text-wrap" style={{ whiteSpace: 'normal', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{entity.content.description}</p>
+          <p className="text-xs pt-4 text-zinc-500">
+            Document ID: {entity.document_id}
+            <br />
+            Fragment ID: {entity.fragment_id}
+          </p>
+        </div>
+      </div>
   );
 };
 
+class KGSearchResult {
+  
+}
+
 interface SearchResultsProps {
   vectorSearchResults: VectorSearchResult[];
-  kgLocalSearchResult: KGLocalSearchResult | null;
+  entities: KGSearchResult[];
+  communities: KGSearchResult[];
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
   vectorSearchResults,
-  kgLocalSearchResult,
+  entities,
+  communities,
 }) => {
+
+  console.log('entities = ', entities);
+  console.log('communities = ', communities);
+
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const handleClosePdfPreview = () => {
     setPdfPreviewOpen(false);
@@ -84,34 +114,26 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     setPdfPreviewOpen(true);
   };
 
-  console.log('kgLocalSearchResult.entities = ', kgLocalSearchResult.entities)
-  console.log('kgLocalSearchResult.communities = ', kgLocalSearchResult.communities)
-
 return (
-    <div className="flex justify-center text-zinc-200 bg-zinc-200 rounded-lg">
+    <div className="flex justify-center text-zinc-200 rounded-lg">
       <Tabs defaultValue="vectorSearch" className="text-zinc-900 w-full max-w-2xl">
         <TabsList>
           <TabsTrigger value="vectorSearch" >Vector Search</TabsTrigger>
-          {kgLocalSearchResult && kgLocalSearchResult?.entities && (
-            <TabsTrigger value="kgEntities">KG Entities</TabsTrigger>
-          )}
-          {kgLocalSearchResult && kgLocalSearchResult?.communities && (
-            <TabsTrigger value="kgCommunities">KG Communities</TabsTrigger>
-          )}
-
+          <TabsTrigger value="kgEntities" >KG Entities</TabsTrigger>
+          <TabsTrigger value="kgCommunities" >KG Communities</TabsTrigger>
         </TabsList>
         <TabsContent value="vectorSearch" >
-          <Carousel>
+          <Carousel >
             <CarouselContent>
               {vectorSearchResults.map((source, index) => (
                 <CarouselItem key={index}>
                   <div className="p-4">
-                    <Card className="h-96 overflow-y-auto bg-zinc-900">
+                    <Card className="h-96 overflow-y-auto">
                       <CardContent>
                         <div className="mt-4" />
                         <VectorSearchResultItem
                           source={source}
-                          index={index}
+                          index={index+1}
                           onOpenPdfPreview={openPdfPreview}
                         />
                       </CardContent>
@@ -124,55 +146,55 @@ return (
             <CarouselNext />
           </Carousel>
         </TabsContent>
-        {kgLocalSearchResult && kgLocalSearchResult?.entities && (
-          <TabsContent value="kgEntities">
-            <Carousel>
-              <CarouselContent>
-                {Object.entries(kgLocalSearchResult.entities).map(
-                  ([_, entity]) => (
-                    <CarouselItem key={entity.name}>
-                      <div className="p-4">
-                        <Card className="h-96 overflow-y-auto bg-zinc-900">
-                          <CardContent>
-                            <div className="mt-4" />
-                            <KGEntityResult entity={entity} />
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </CarouselItem>
-                  )
-                )}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
-          </TabsContent>
-        )}
-        {kgLocalSearchResult && kgLocalSearchResult?.communities && (
-          <TabsContent value="kgCommunities">
-            <Carousel>
-              <CarouselContent>
-                {Object.entries(kgLocalSearchResult.communities).map(
-                  ([_, community]) => (
-                    <CarouselItem key={community.title}>
-                      <div className="p-4">
-                        <Card className="h-96 overflow-y-auto bg-zinc-900">
-                          <CardContent>
-                            <div className="mt-4" />
-                            <KGEntityResult entity={community.summary} />
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </CarouselItem>
-                  )
-                )}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
-          </TabsContent>
-        )}
 
+       
+        <TabsContent value="kgEntities" >
+          {/* {kgSearchResults.map((result, index) => (
+            <KGSearchResultItem key={index} entity={result} />
+          ))} */}
+          <Carousel >
+            <CarouselContent>
+              {entities.map((result, index) => (
+                <CarouselItem key={index}>
+                  <div className="p-4">
+                    <Card className="h-96 overflow-y-auto">
+                      <CardContent>
+                        <div className="mt-4" />
+                        <KGSearchResultItem key={index} entity={result} index={index+1} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </TabsContent>
+  
+        <TabsContent value="kgCommunities" >
+          {/* {kgSearchResults.map((result, index) => (
+            <KGSearchResultItem key={index} entity={result} />
+          ))} */}
+          <Carousel>
+            <CarouselContent>
+              {communities.map((result, index) => (
+                <CarouselItem key={index}>
+                  <div className="p-4">
+                    <Card className="h-96 overflow-y-auto">
+                      <CardContent>
+                        <div className="mt-4" />
+                        <KGSearchResultItem key={index} entity={result} index={index+1} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </TabsContent>
       </Tabs>
       {/* <PdfPreviewDialog
         documentId={pdfPreviewDocumentId || ''}

@@ -6,6 +6,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Prompt(BaseModel):
     """A prompt that can be formatted with inputs."""
@@ -19,7 +22,9 @@ class Prompt(BaseModel):
 
     def format_prompt(self, inputs: dict[str, Any]) -> str:
         self._validate_inputs(inputs)
-        return self.template.format(**inputs)
+        logger.info(f"Formatting prompt: {self.template} with inputs: {inputs}")
+        formatted_prompt = self.template.format(**inputs)
+        return formatted_prompt
 
     def _validate_inputs(self, inputs: dict[str, Any]) -> None:
         for var, expected_type_name in self.input_types.items():
