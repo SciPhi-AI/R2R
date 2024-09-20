@@ -48,7 +48,7 @@ batch_size = 256
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
-  [kg.kg_search_config]
+  [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
     generation_config = { model = "ollama/llama3.1" }

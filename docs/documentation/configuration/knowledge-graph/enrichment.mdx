@@ -26,8 +26,8 @@ batch_size = 256
     generation_config = { model = "gpt-4o-mini" } # and other generation params
     leiden_params = { max_levels = 10 } # more params in graspologic/partition/leiden.py
 
-  [kg.kg_search_config]
-    model = "gpt-4o-mini"
+  [kg.kg_search_settings]
+    generation_config = { model = "gpt-4o-mini" }
 ```
 
 Next you can do GraphRAG with the knowledge graph. Find out more about GraphRAG in the [GraphRAG Guide](/cookbooks/graphrag).

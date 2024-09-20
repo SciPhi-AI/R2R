@@ -47,8 +47,8 @@ batch_size = 256
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
-  [kg.kg_search_config]
-    model = "gpt-4o-mini"
+  [kg.kg_search_settings]
+    generation_config = { model = "gpt-4o-mini" }
 ```
 </Accordion>
 </Tab>
@@ -111,8 +111,8 @@ provider = "neo4j"
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
 
-  [kg.kg_search_config]
-    model = "ollama/llama3.1"
+  [kg.kg_search_settings]
+    generation_config = { model = "ollama/llama3.1" }
 
 [database]
 provider = "postgres"
