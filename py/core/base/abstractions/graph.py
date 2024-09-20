@@ -102,7 +102,7 @@ class Triple(BaseModel):
     document_ids: list[str] = []
     """List of document IDs in which the relationship appears (optional)."""
 
-    attributes: dict[str, Any] | str = None
+    attributes: dict[str, Any] | str = {}
     """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
 
     def __init__(self, **kwargs):

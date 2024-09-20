@@ -166,7 +166,7 @@ class ChunkingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
     class Config:
         json_schema_extra = {
@@ -514,7 +514,7 @@ class VectorSearchResult(BaseModel):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def dict(self) -> dict:
+    def as_dict(self) -> dict:
         return {
             "fragment_id": self.fragment_id,
             "extraction_id": self.extraction_id,

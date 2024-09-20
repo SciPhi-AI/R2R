@@ -1,3 +1,4 @@
+# type: ignore
 from typing import AsyncGenerator
 
 from core.base.abstractions.document import DataType

@@ -7,8 +7,9 @@ from core.base.abstractions import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     syncable,
+    Message
 )
-from core.base.agent import Agent, Message
+from core.base.agent import Agent
 
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):
@@ -48,7 +49,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
-    ) -> list[LLMChatCompletion]:
+    ) -> list[Message]:
         self._reset()
 
         if system_instruction or not self.conversation:

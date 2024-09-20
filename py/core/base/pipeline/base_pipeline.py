@@ -24,7 +24,7 @@ class AsyncPipeline:
         self.upstream_outputs: list[list[dict[str, str]]] = []
         self.pipe_logger = pipe_logger or RunLoggingSingleton()
         self.run_manager = run_manager or RunManager(self.pipe_logger)
-        self.futures = {}
+        self.futures: dict[str, asyncio.Future] = {}
         self.level = 0
 
     def add_pipe(
@@ -51,7 +51,8 @@ class AsyncPipeline:
     ):
         """Run the pipeline."""
         run_manager = run_manager or self.run_manager
-
+        print('args = ', args)
+        print('kwargs = ', kwargs)
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager):
@@ -108,7 +109,7 @@ class AsyncPipeline:
         input_dict = {"message": input}
 
         # Collection upstream outputs by prev_pipe_name
-        grouped_upstream_outputs = {}
+        grouped_upstream_outputs: dict[str, list] = {}
         for upstream_input in add_upstream_outputs:
             upstream_pipe_name = upstream_input["prev_pipe_name"]
             if upstream_pipe_name not in grouped_upstream_outputs:
@@ -147,7 +148,8 @@ class AsyncPipeline:
                 input_dict[upstream_input["input_field"]] = outputs[
                     prev_output_field
                 ]
-
+        print('final args = ', args)
+        print('final kwargs = ', kwargs)
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,

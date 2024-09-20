@@ -1,3 +1,4 @@
+# type: ignore
 import json
 from typing import AsyncGenerator
 

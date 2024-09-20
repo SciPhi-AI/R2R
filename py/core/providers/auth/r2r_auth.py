@@ -34,7 +34,7 @@ class R2RAuthProvider(AuthProvider):
         crypto_provider: CryptoProvider,
         db_provider: DatabaseProvider,
     ):
-        super().__init__(config)
+        super().__init__(config, crypto_provider)
         logger.debug(f"Initializing R2RAuthProvider with config: {config}")
         self.crypto_provider = crypto_provider
         self.db_provider = db_provider

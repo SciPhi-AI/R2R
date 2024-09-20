@@ -15,7 +15,6 @@ from core.base import (
 from core.base.abstractions.llm import GenerationConfig
 
 from ..abstractions.generator_pipe import GeneratorPipe
-from .search_rag_pipe import SearchRAGPipe
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class StreamingSearchRAGPipe(GeneratorPipe):
         state: AsyncState,
         run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: CompletionRecord,
+        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
@@ -83,7 +82,8 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             yield chunk_txt
 
         yield f"</{self.COMPLETION_STREAM_MARKER}>"
-
+        if not completion_record:
+            raise ValueError("Completion record is expected in the streaming RAG pipe and is used for logging.")
         completion_record.search_results = search_results
         completion_record.llm_response = response
         completion_record.completion_end_time = datetime.now()

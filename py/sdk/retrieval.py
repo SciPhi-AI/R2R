@@ -91,7 +91,7 @@ class RetrievalMethods:
             "include_title_if_available": include_title_if_available,
         }
 
-        if rag_generation_config and rag_generation_config.get(
+        if rag_generation_config and rag_generation_config.get( # type: ignore
             "stream", False
         ):
             return client._make_streaming_request("POST", "rag", json=data)
@@ -135,13 +135,13 @@ class RetrievalMethods:
         if kg_search_settings and not isinstance(kg_search_settings, dict):
             kg_search_settings = kg_search_settings.model_dump()
 
-        messages = [
+        cast_messages: list[Message] = [
             Message(**msg) if isinstance(msg, dict) else msg
             for msg in messages
         ]
 
         data = {
-            "messages": [msg.model_dump() for msg in messages],
+            "messages": [msg.model_dump() for msg in cast_messages],
             "rag_generation_config": rag_generation_config,
             "vector_search_settings": vector_search_settings,
             "kg_search_settings": kg_search_settings,
@@ -149,7 +149,7 @@ class RetrievalMethods:
             "include_title_if_available": include_title_if_available,
         }
 
-        if rag_generation_config and rag_generation_config.get(
+        if rag_generation_config and rag_generation_config.get( # type: ignore
             "stream", False
         ):
             return client._make_streaming_request("POST", "agent", json=data)

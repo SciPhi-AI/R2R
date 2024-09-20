@@ -18,7 +18,7 @@ class PPTParser(AsyncParser[DataType]):
                 "Error, `python-pptx` is required to run `PPTParser`. Please install it using `pip install python-pptx`."
             )
 
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest PPT data and yield text from each slide."""
         if isinstance(data, str):
             raise ValueError("PPT data must be in bytes format.")

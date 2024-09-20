@@ -1,3 +1,4 @@
+# type: ignore
 from typing import IO, AsyncGenerator, Optional, Union
 
 from core.base.abstractions.document import DataType

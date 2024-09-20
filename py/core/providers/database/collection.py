@@ -102,7 +102,7 @@ class CollectionMixin(DatabaseMixin):
             raise R2RException(status_code=404, message="Collection not found")
 
         update_fields = []
-        params = []
+        params: list = []
 
         if name is not None:
             update_fields.append("name = $1")

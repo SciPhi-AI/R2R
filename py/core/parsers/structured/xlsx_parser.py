@@ -1,3 +1,4 @@
+# type: ignore
 from io import BytesIO
 from typing import AsyncGenerator
 

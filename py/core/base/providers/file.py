@@ -13,7 +13,7 @@ class FileConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["postgres", None]
+        return ["postgres"]
 
 
 class FileProvider(Provider, ABC):

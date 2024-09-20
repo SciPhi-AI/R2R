@@ -81,6 +81,8 @@ class RAGPipeline(AsyncPipeline):
                 "rag_generation_config": rag_generation_config,
             }
 
+            print("_input_kwargs_=", input_kwargs)
+            print("_kwargs_=", kwargs)
             rag_results = await self._rag_pipeline.run(
                 multi_query_generator(input),
                 state,

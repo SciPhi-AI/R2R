@@ -7,11 +7,12 @@ from pydantic import BaseModel
 from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
+    Message,
     MessageType,
 )
 from core.base.providers import CompletionProvider, PromptProvider
 
-from .base import Message, Tool, ToolResult
+from .base import Tool, ToolResult
 
 
 class Conversation:

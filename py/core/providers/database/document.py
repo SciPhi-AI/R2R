@@ -268,7 +268,7 @@ class DocumentMixin(DatabaseMixin):
 
         try:
             results = await self.fetch_query(query, params)
-
+            print('results = ', results)
             return [
                 DocumentInfo(
                     id=row["document_id"],

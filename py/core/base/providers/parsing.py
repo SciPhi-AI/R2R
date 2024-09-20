@@ -21,7 +21,7 @@ class ParsingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:

@@ -10,13 +10,13 @@ from core.base.utils import generate_run_id
 
 from .run_logger import RunLoggingSingleton
 
-run_id_var = contextvars.ContextVar("run_id", default=None)
+run_id_var = contextvars.ContextVar("run_id", default=generate_run_id())
 
 
 class RunManager:
     def __init__(self, logger: RunLoggingSingleton):
         self.logger = logger
-        self.run_info = {}
+        self.run_info: dict[UUID, dict] = {}
 
     async def set_run_info(self, run_type: str, run_id: Optional[UUID] = None):
         run_id = run_id or run_id_var.get()
@@ -71,4 +71,4 @@ async def manage_run(
             run_id_var.reset(token)
         else:
             # We're in a test environment, just reset the run_id_var
-            run_id_var.set(None)
+            run_id_var.set(None) # type: ignore

@@ -1,7 +1,5 @@
-# type: ignore
 import concurrent.futures
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
@@ -52,7 +50,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
             )
 
-        self.collection: Optional[Collection] = None
         self._initialize_vector_db(dimension)
         logger.info(
             f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
@@ -125,14 +122,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         return [
             VectorSearchResult(
-                fragment_id=result[0],
-                extraction_id=result[1],
-                document_id=result[2],
-                user_id=result[3],
-                collection_ids=result[4],
-                text=result[5],
-                score=1 - float(result[6]),
-                metadata=result[7],
+                fragment_id=result[0],  # type: ignore
+                extraction_id=result[1], # type: ignore
+                document_id=result[2],  # type: ignore
+                user_id=result[3],  # type: ignore
+                collection_ids=result[4],  # type: ignore
+                text=result[5],  # type: ignore
+                score=1 - float(result[6]),  # type: ignore
+                metadata=result[7],  # type: ignore
             )
             for result in results
         ]
@@ -241,15 +238,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
         combined_results = {
             k: v
             for k, v in combined_results.items()
-            if v["semantic_rank"] <= semantic_limit * 2
-            and v["full_text_rank"] <= full_text_limit * 2
+            if v["semantic_rank"] <= semantic_limit * 2  # type: ignore
+            and v["full_text_rank"] <= full_text_limit * 2  # type: ignore
         }
 
         # Calculate RRF scores
-        for result in combined_results.values():
-            semantic_score = 1 / (rrf_k + result["semantic_rank"])
-            full_text_score = 1 / (rrf_k + result["full_text_rank"])
-            result["rrf_score"] = (
+        for result in combined_results.values():  # type: ignore
+            semantic_score = 1 / (rrf_k + result["semantic_rank"])  # type: ignore
+            full_text_score = 1 / (rrf_k + result["full_text_rank"])  # type: ignore
+            result["rrf_score"] = (  # type: ignore
                 semantic_score * semantic_weight
                 + full_text_score * full_text_weight
             ) / (semantic_weight + full_text_weight)
@@ -258,21 +255,21 @@ class PostgresVectorDBProvider(VectorDBProvider):
         limit = min(semantic_limit, full_text_limit)
         sorted_results = sorted(
             combined_results.values(),
-            key=lambda x: x["rrf_score"],
+            key=lambda x: x["rrf_score"],  # type: ignore
             reverse=True,
         )[:limit]
 
         return [
             VectorSearchResult(
-                fragment_id=result["data"].fragment_id,
-                extraction_id=result["data"].extraction_id,
-                document_id=result["data"].document_id,
-                user_id=result["data"].user_id,
-                collection_ids=result["data"].collection_ids,
-                text=result["data"].text,
-                score=result["rrf_score"],
+                fragment_id=result["data"].fragment_id,  # type: ignore
+                extraction_id=result["data"].extraction_id,  # type: ignore
+                document_id=result["data"].document_id,  # type: ignore
+                user_id=result["data"].user_id,  # type: ignore
+                collection_ids=result["data"].collection_ids,  # type: ignore
+                text=result["data"].text,  # type: ignore
+                score=result["rrf_score"],  # type: ignore
                 metadata={
-                    **result["data"].metadata,
+                    **result["data"].metadata,  # type: ignore
                     "semantic_rank": result["semantic_rank"],
                     "full_text_rank": result["full_text_rank"],
                 },

@@ -1,3 +1,4 @@
+# type: ignore
 import logging
 import time
 from typing import Any, AsyncGenerator, Union

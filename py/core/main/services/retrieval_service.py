@@ -97,6 +97,7 @@ class RetrievalService(Service):
                     vector_search_settings.filters[filter] = str(value)
             merged_kwargs = {
                 "input": to_async_generator([query]),
+                "state": None,
                 "vector_search_settings": vector_search_settings,
                 "kg_search_settings": kg_search_settings,
                 "run_manager": self.run_manager,
@@ -116,7 +117,7 @@ class RetrievalService(Service):
                 value=latency,
             )
 
-            return results.dict()
+            return results.as_dict()
 
     @telemetry_event("RAG")
     async def rag(
@@ -163,12 +164,15 @@ class RetrievalService(Service):
 
                 merged_kwargs = {
                     "input": to_async_generator([query]),
+                    "state": None,
                     "vector_search_settings": vector_search_settings,
                     "kg_search_settings": kg_search_settings,
                     "run_manager": self.run_manager,
                     "rag_generation_config": rag_generation_config,
                     **kwargs,
                 }
+                print('kwargs = ', kwargs)
+                print('merged_kwargs = ', merged_kwargs)
 
                 results = await self.pipelines.rag_pipeline.run(
                     *args,
@@ -230,6 +234,7 @@ class RetrievalService(Service):
             async with manage_run(self.run_manager, "rag"):
                 merged_kwargs = {
                     "input": to_async_generator([query]),
+                    "state": None,
                     "run_manager": self.run_manager,
                     "vector_search_settings": vector_search_settings,
                     "kg_search_settings": kg_search_settings,

@@ -140,7 +140,7 @@ class AuthService(Service):
     async def delete_user(
         self,
         user_id: UUID,
-        password: Optional[str] = None,
+        password: str,
         delete_vector_data: bool = False,
         is_superuser: bool = False,
     ) -> dict[str, str]:

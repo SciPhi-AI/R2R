@@ -30,7 +30,7 @@ class DatabaseConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["postgres", None]
+        return ["postgres"]
 
 
 class VectorDBProvider(Provider, ABC):
@@ -59,7 +59,7 @@ class DatabaseProvider(Provider):
         self.relational: Any = None
 
     @abstractmethod
-    async def _initialize_vector_db(self) -> VectorDBProvider:
+    def _initialize_vector_db(self) -> VectorDBProvider:
         pass
 
     @abstractmethod

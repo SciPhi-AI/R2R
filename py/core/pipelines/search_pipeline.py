@@ -29,7 +29,7 @@ class SearchPipeline(AsyncPipeline):
         self._vector_search_pipeline: Optional[AsyncPipeline] = None
         self._kg_search_pipeline: Optional[AsyncPipeline] = None
 
-    async def run( # type: ignore
+    async def run(  # type: ignore
         self,
         input: Any,
         state: Optional[AsyncState],
@@ -126,7 +126,9 @@ class SearchPipeline(AsyncPipeline):
             if not self._kg_search_pipeline:
                 self._kg_search_pipeline = AsyncPipeline()
             if not self._kg_search_pipeline:
-                raise ValueError("KG search pipeline not found") # for type hinting
+                raise ValueError(
+                    "KG search pipeline not found"
+                )  # for type hinting
 
             self._kg_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
@@ -135,8 +137,10 @@ class SearchPipeline(AsyncPipeline):
             if not self._vector_search_pipeline:
                 self._vector_search_pipeline = AsyncPipeline()
             if not self._vector_search_pipeline:
-                raise ValueError("Vector search pipeline not found") # for type hinting
-            
+                raise ValueError(
+                    "Vector search pipeline not found"
+                )  # for type hinting
+
             self._vector_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )

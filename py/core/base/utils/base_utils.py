@@ -1,14 +1,14 @@
 import asyncio
 import json
+import logging
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
 from ..abstractions.search import AggregateSearchResult
 
-import logging
-
 logger = logging.getLogger(__name__)
+
 
 def format_search_results_for_llm(
     results: AggregateSearchResult,
@@ -21,13 +21,13 @@ def format_search_results_for_llm(
             formatted_results += f"{i+1}. {text}\n"
 
     if results.kg_search_results:
-        for result in results.kg_search_results:
-            if result.method == "local":
+        for kg_result in results.kg_search_results:
+            if kg_result.method == "local":
                 formatted_results += "KG Local Search Results:\n"
-                formatted_results += str(result.content)
-            elif result.method == "global":
+                formatted_results += str(kg_result.content)
+            elif kg_result.method == "global":
                 formatted_results += "KG Global Search Results:\n"
-                formatted_results += str(result.content)
+                formatted_results += str(kg_result.content)
 
     return formatted_results
 
@@ -44,7 +44,7 @@ def format_search_results_for_stream(
     if result.vector_search_results:
         context += f"<{VECTOR_SEARCH_STREAM_MARKER}>"
         vector_results_list = [
-            result.dict() for result in result.vector_search_results
+            result.as_dict() for result in result.vector_search_results
         ]
         context += json.dumps(vector_results_list, default=str)
         context += f"</{VECTOR_SEARCH_STREAM_MARKER}>"

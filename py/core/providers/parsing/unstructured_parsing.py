@@ -1,3 +1,4 @@
+# TODO - cleanup type issues in this file that relate to `bytes`
 import asyncio
 import base64
 import json
@@ -21,6 +22,7 @@ from core.base import (
     ParsingConfig,
     ParsingProvider,
     generate_id_from_label,
+    AsyncParser
 )
 from core.base.abstractions.base import R2RSerializable
 
@@ -106,7 +108,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             self.client = httpx.AsyncClient()
 
         super().__init__(config)
-        self.parsers = {}
+        self.parsers: dict[DocumentType, AsyncParser] = {}
         self._initialize_parsers()
 
     def _initialize_parsers(self):
@@ -128,19 +130,19 @@ class UnstructuredParsingProvider(ParsingProvider):
         self, file_content: bytes, document: Document, chunk_size: int
     ) -> AsyncGenerator[FallbackElement, None]:
 
-        texts = self.parsers[document.type].ingest(
+        texts = self.parsers[document.type].ingest( # type: ignore
             file_content, chunk_size=chunk_size
         )
 
         chunk_id = 0
-        async for text in texts:
+        async for text in texts: # type: ignore
             if text and text != "":
                 yield FallbackElement(
                     text=text, metadata={"chunk_id": chunk_id}
                 )
                 chunk_id += 1
 
-    async def parse(
+    async def parse( # type: ignore
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
@@ -162,14 +164,14 @@ class UnstructuredParsingProvider(ParsingProvider):
             logger.info(
                 f"Parsing {document.type}: {document.id} with unstructured"
             )
-            if isinstance(file_content, bytes):
-                file_content = BytesIO(file_content)
+            if isinstance(file_content, bytes): 
+                file_content = BytesIO(file_content) # type: ignore
 
             # TODO - Include check on excluded parsers here.
             if self.use_api:
                 logger.info(f"Using API to parse document {document.id}")
-                files = self.shared.Files(
-                    content=file_content.read(),
+                files = self.shared.Files( 
+                    content=file_content.read(), # type: ignore
                     file_name=document.metadata.get("title", "unknown_file"),
                 )
 
@@ -179,15 +181,15 @@ class UnstructuredParsingProvider(ParsingProvider):
                         **self.config.chunking_config.extra_fields,
                     )
                 )
-                elements = self.client.general.partition(req)
-                elements = list(elements.elements)
+                elements = self.client.general.partition(req) # type: ignore
+                elements = list(elements.elements) # type: ignore
 
             else:
                 logger.info(
                     f"Using local unstructured fastapi server to parse document {document.id}"
                 )
                 # Base64 encode the file content
-                encoded_content = base64.b64encode(file_content.read()).decode(
+                encoded_content = base64.b64encode(file_content.read()).decode( # type: ignore
                     "utf-8"
                 )
 

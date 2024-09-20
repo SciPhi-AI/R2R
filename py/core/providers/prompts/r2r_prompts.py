@@ -17,7 +17,7 @@ class R2RPromptProvider(PromptProvider):
     def __init__(self, config: PromptConfig, db_provider: DatabaseProvider):
         super().__init__(config)
         self.prompts: dict[str, Prompt] = {}
-        self.config = config
+        self.config: PromptConfig = config
         self.db_provider = db_provider
         self.pool: Optional[asyncpg.pool.Pool] = None  # Initialize pool
 

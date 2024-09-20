@@ -1,15 +1,11 @@
 import base64
 import logging
 import os
-from io import BytesIO
 from typing import AsyncGenerator
-
-from PIL import Image
 
 from core.base.abstractions.document import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_frame_with_openai
-from core.telemetry.telemetry_decorator import telemetry_event
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +26,7 @@ class ImageParser(AsyncParser[DataType]):
         self.api_base = api_base
         self.max_image_size = max_image_size
 
-    async def ingest(
+    async def ingest(  # type: ignore
         self, data: DataType, chunk_size: int = 1024
     ) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
@@ -40,8 +36,8 @@ class ImageParser(AsyncParser[DataType]):
             data = base64.b64encode(data).decode("utf-8")
 
         openai_text = process_frame_with_openai(
-            data,
-            self.openai_api_key,
+            data,  # type: ignore
+            self.openai_api_key,  # type: ignore
             self.model,
             self.max_tokens,
             self.api_base,

@@ -47,7 +47,7 @@ class GeneratorPipe(AsyncPipe):
         state: AsyncState,
         run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: CompletionRecord,
+        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:

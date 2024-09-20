@@ -39,7 +39,7 @@ class RoutingSearchPipe(AsyncPipe):
                 f"Search strategy {vector_search_settings.search_strategy} not found"
             )
 
-        async for result in await search_pipe._run_logic(
+        async for result in search_pipe._run_logic( # type: ignore
             input,
             state,
             run_id,

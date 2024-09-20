@@ -71,7 +71,7 @@ class StorageResult(R2RSerializable):
     """A result of a storage operation."""
 
     success: bool
-    document_id: UUID = None
+    document_id: UUID
     num_chunks: int = 0
     error_message: Optional[str] = None
 

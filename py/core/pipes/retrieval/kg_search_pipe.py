@@ -314,7 +314,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     name="Global Result", description=output_text
                 ),
                 method=KGSearchMethod.GLOBAL,
-                metadata={'associated_query': message},
+                metadata={"associated_query": message},
             )
 
     async def _run_logic(  # type: ignore

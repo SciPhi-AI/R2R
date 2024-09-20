@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class PromptConfig(ProviderConfig):
-    default_system_name: Optional[str] = "default_system"
-    default_task_name: Optional[str] = "default_rag"
+    default_system_name: str = "default_system"
+    default_task_name: str = "default_rag"
 
     # TODO - Replace this with a database
     file_path: Optional[Path] = None
@@ -30,6 +30,7 @@ class PromptProvider(Provider):
     def __init__(self, config: PromptConfig):
         logger.info(f"Initializing PromptProvider with config {config}.")
         super().__init__(config)
+        self.config: PromptConfig = config
 
     @abstractmethod
     async def add_prompt(

@@ -55,7 +55,7 @@ class ParsingPipe(AsyncPipe):
             with file_wrapper as file_content_stream:
                 file_content = file_content_stream.read()
 
-            async for extraction in await self.parsing_provider.parse(
+            async for extraction in self.parsing_provider.parse( # type: ignore
                 file_content, document
             ):
                 extraction_id = generate_id_from_label(

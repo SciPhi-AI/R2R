@@ -39,12 +39,12 @@ class IngestionMethods:
             )
         if (
             chunking_config is not None
-            and chunking_config is not ChunkingConfig
+            and not isinstance(chunking_config, ChunkingConfig)
         ):
             # check if the provided dict maps to a ChunkingConfig
             ChunkingConfig(**chunking_config)
 
-        all_file_paths = []
+        all_file_paths: list[str] = []
         for path in file_paths:
             if os.path.isdir(path):
                 for root, _, files in os.walk(path):
@@ -55,7 +55,7 @@ class IngestionMethods:
                 all_file_paths.append(path)
 
         with ExitStack() as stack:
-            files = [
+            files_tuples = [
                 (
                     "files",
                     (
@@ -85,7 +85,7 @@ class IngestionMethods:
                 ),
             }
             return await client._make_request(
-                "POST", "ingest_files", data=data, files=files
+                "POST", "ingest_files", data=data, files=files_tuples
             )
 
     @staticmethod
@@ -159,7 +159,7 @@ class IngestionMethods:
                 data["metadatas"] = json.dumps(metadatas)
             if chunking_config:
                 data["chunking_config"] = (
-                    chunking_config.model_dump()
+                    chunking_config.model_dump() # type: ignore
                     if isinstance(chunking_config, ChunkingConfig)
                     else chunking_config
                 )

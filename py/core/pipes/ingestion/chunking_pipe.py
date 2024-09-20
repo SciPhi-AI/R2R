@@ -61,8 +61,7 @@ class ChunkingPipe(AsyncPipe[DocumentFragment]):
         unstr_iteration = 0  # unstructured already chunks
         for item in input.message:
             iteration = 0
-            async for chunk in await chunking_provider.chunk(item):
-
+            async for chunk in chunking_provider.chunk(item): # type: ignore
                 if item.metadata.get("partitioned_by_unstructured", False):
                     item.metadata["chunk_order"] = unstr_iteration
                     unstr_iteration += 1

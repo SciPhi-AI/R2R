@@ -9,7 +9,7 @@ from ..abstractions import R2RException, Token, TokenData
 from ..api.models import UserResponse
 from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
-
+from .crypto import CryptoProvider
 logger = logging.getLogger(__name__)
 
 
@@ -27,13 +27,13 @@ class AuthConfig(ProviderConfig):
         return ["r2r"]
 
     def validate_config(self) -> None:
-        super().model_validate()
+        pass
 
 
 class AuthProvider(Provider, ABC):
     security = HTTPBearer(auto_error=False)
 
-    def __init__(self, config: AuthConfig):
+    def __init__(self, config: AuthConfig, crypto_provider: CryptoProvider):
         if not isinstance(config, AuthConfig):
             raise ValueError(
                 "AuthProvider must be initialized with an AuthConfig"
@@ -41,7 +41,9 @@ class AuthProvider(Provider, ABC):
         self.config = config
         self.admin_email = config.default_admin_email
         self.admin_password = config.default_admin_password
+        self.crypto_provider = crypto_provider
         super().__init__(config)
+        self.config: AuthConfig = config # for type hinting
 
     def _get_default_admin_user(self) -> UserResponse:
         return UserResponse(

@@ -11,18 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from .search import AggregateSearchResult
-
-
-class MessageType(Enum):
-    SYSTEM = "system"
-    USER = "user"
-    ASSISTANT = "assistant"
-    FUNCTION = "function"
-    TOOL = "tool"
-
-    def __str__(self):
-        return self.value
-
+from .llm import MessageType
 
 class CompletionRecord(BaseModel):
     message_id: UUID

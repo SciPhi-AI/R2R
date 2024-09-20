@@ -11,7 +11,7 @@ from cli.utils.timer import timer
 @click.option(
     "--document-ids",
     required=False,
-    default="",
+    default=None,
     help="Document IDs to create graph for (comma-separated)",
 )
 @pass_context
@@ -21,7 +21,7 @@ def create_graph(ctx, document_ids):
     """
     client = ctx.obj
     with timer():
-        if document_ids == "":
+        if document_ids == None:
             document_ids = []
         else:
             document_ids = document_ids.split(",")

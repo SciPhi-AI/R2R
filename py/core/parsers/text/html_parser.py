@@ -1,3 +1,4 @@
+# type: ignore
 from typing import AsyncGenerator
 
 from bs4 import BeautifulSoup

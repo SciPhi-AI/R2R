@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Any, AsyncGenerator, Optional, Tuple
 
 from core.base import (
@@ -45,12 +46,12 @@ class SearchRAGPipe(GeneratorPipe):
         self,
         input: Input,
         state: AsyncState,
+        run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: CompletionRecord,
+        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[RAGCompletion, None]:
-        run_id = kwargs.get("run_id")
         context = ""
         search_iteration = 1
         total_results = 0

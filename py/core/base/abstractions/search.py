@@ -28,7 +28,7 @@ class VectorSearchResult(R2RSerializable):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def dict(self) -> dict:
+    def as_dict(self) -> dict:
         return {
             "fragment_id": self.fragment_id,
             "extraction_id": self.extraction_id,
@@ -152,10 +152,10 @@ class AggregateSearchResult(R2RSerializable):
     def __repr__(self) -> str:
         return f"AggregateSearchResult(vector_search_results={self.vector_search_results}, kg_search_results={self.kg_search_results})"
 
-    def dict(self) -> dict:
+    def as_dict(self) -> dict:
         return {
             "vector_search_results": (
-                [result.dict() for result in self.vector_search_results]
+                [result.as_dict() for result in self.vector_search_results]
                 if self.vector_search_results
                 else []
             ),
