@@ -521,6 +521,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         if self.vx:
             with self.vx.Session() as sess:
                 sess.close()
-                sess.bind.dispose()
+                if sess.bind:
+                    sess.bind.dispose()  # type: ignore
 
         logger.info("Closed PGVectorDB connection.")
