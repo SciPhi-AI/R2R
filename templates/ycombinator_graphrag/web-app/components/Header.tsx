@@ -4,73 +4,23 @@ import Link from 'next/link';
 import Modal from '@/components/Modal';
 import DocumentCard from '@/components/DocumentCard';
 
-const Header: React.FC<{}> = ({}) => {
+interface HeaderProps {
+  onLogoClick: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const sampleDocuments = [
-    {
-      id: 1,
-      name: 'Retrieval-Augmented Generation for Large Language Models: A Survey',
-      type: 'pdf',
-      url: '/data/gao-rag-survey.pdf',
-    },
-    {
-      id: 2,
-      name: 'R2R',
-      type: 'html',
-      url: '/data/r2r.html',
-    },
-    {
-      id: 3,
-      name: 'R2R Installation',
-      type: 'html',
-      url: '/data/r2r-installation.html',
-    },
-    {
-      id: 4,
-      name: 'What is Retrieval-Augmented Generation (RAG)?',
-      type: 'txt',
-      url: '/data/gcp-rag.txt',
-    },
-    {
-      id: 5,
-      name: 'What is retrieval-augmented generation?',
-      type: 'md',
-      url: '/data/ibm-rag.md',
-    },
-    {
-      id: 6,
-      name: 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks',
-      type: 'pdf',
-      url: '/data/lewis-rag.pdf',
-    },
-    {
-      id: 7,
-      name: 'What Is Retrieval-Augmented Generation, aka RAG?',
-      type: 'html',
-      url: '/data/nvidia-blog-rag.html',
-    },
-    {
-      id: 8,
-      name: 'Retrieval-augmented generation',
-      type: 'html',
-      url: '/data/wikipedia-rag.html',
-    },
-  ];
 
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-header border-b border-header-border flex items-center justify-between px-4 z-10">
         <div className="flex items-center">
-          <Logo width={75} height={75} />
-          <Link href="https://sciphi.ai" passHref>
+          <Logo width={75} height={75} onClick={onLogoClick} />
+          <Link href="/" passHref>
             <h1
-              className="ml-2 text-2xl font-semibold text-header-text"
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.reload();
-              }}
+              className="ml-2 text-2xl font-semibold text-header-text cursor-pointer"
+              onClick={onLogoClick}
             >
               SciPhi - YC S24 GraphRAG Agent
             </h1>
@@ -120,17 +70,6 @@ const Header: React.FC<{}> = ({}) => {
           </button>
         </div>
       )}
-
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-2xl font-bold mb-4 text-foreground">
-          Sample Documents
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sampleDocuments.map((doc) => (
-            <DocumentCard key={doc.id} document={doc} />
-          ))}
-        </div>
-      </Modal>
     </>
   );
 };

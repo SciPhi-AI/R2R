@@ -19,8 +19,6 @@ const Index: React.FC = () => {
       const { q } = router.query;
       if (typeof q === 'string') {
         setQuery(q);
-        // Optionally, you can trigger the search immediately
-        // handleSearch(q);
       }
     }
   }, [router.isReady, router.query]);
@@ -39,9 +37,15 @@ const Index: React.FC = () => {
     // Add your search logic here
   };
 
+  const clearUrlAndReload = () => {
+    router.push('/', undefined, { shallow: true }).then(() => {
+      window.location.reload();
+    });
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header onLogoClick={clearUrlAndReload} />
       <div className="flex-grow flex justify-center">
         <div className="w-full max-w-4xl flex flex-col h-full mt-24">
           <div className="flex-grow overflow-auto p-4">
