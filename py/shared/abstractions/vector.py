@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from .base import R2RSerializable
+from shared.shared_abstractions.shared_base import R2RSerializable
 
 
 class VectorType(Enum):

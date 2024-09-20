@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from .base import R2RSerializable
-from .llm import GenerationConfig
+from shared.shared_abstractions.llm import GenerationConfig
+from shared.shared_abstractions.shared_base import R2RSerializable
 
 
 class KGCreationSettings(R2RSerializable):

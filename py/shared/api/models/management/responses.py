@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from ..base import PaginatedResultsWrapper, ResultsWrapper
+from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
 class UpdatePromptResponse(BaseModel):

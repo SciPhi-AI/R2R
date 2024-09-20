@@ -1,7 +1,14 @@
 from enum import Enum
 from typing import Optional
 
-from shared.abstractions import (  # ChunkingConfig,
+from shared.api.models import (
+    KGCreationResponse,
+    KGEnrichmentResponse,
+    RAGResponse,
+    SearchResponse,
+    UserResponse,
+)
+from shared.shared_abstractions import (  # ChunkingConfig,
     GenerationConfig,
     HybridSearchSettings,
     KGCommunityResult,
@@ -21,13 +28,6 @@ from shared.abstractions import (  # ChunkingConfig,
     Token,
     VectorSearchResult,
     VectorSearchSettings,
-)
-from shared.api.models import (
-    KGCreationResponse,
-    KGEnrichmentResponse,
-    RAGResponse,
-    SearchResponse,
-    UserResponse,
 )
 
 

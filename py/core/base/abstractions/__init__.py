@@ -1,5 +1,5 @@
-from shared.abstractions.completion import CompletionRecord, MessageType
-from shared.abstractions.document import (
+from shared.shared_abstractions.completion import CompletionRecord, MessageType
+from shared.shared_abstractions.document import (
     DataType,
     Document,
     DocumentExtraction,
@@ -9,15 +9,15 @@ from shared.abstractions.document import (
     IngestionStatus,
     RestructureStatus,
 )
-from shared.abstractions.embedding import (
+from shared.shared_abstractions.embedding import (
     EmbeddingPurpose,
     default_embedding_prefixes,
 )
-from shared.abstractions.exception import (
+from shared.shared_abstractions.exception import (
     R2RDocumentProcessingError,
     R2RException,
 )
-from shared.abstractions.graph import (
+from shared.shared_abstractions.graph import (
     Community,
     CommunityReport,
     Entity,
@@ -26,19 +26,19 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.abstractions.llm import (
+from shared.shared_abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
     RAGCompletion,
 )
-from shared.abstractions.prompt import Prompt
-from shared.abstractions.restructure import (
+from shared.shared_abstractions.prompt import Prompt
+from shared.shared_abstractions.restructure import (
     KGCreationSettings,
     KGEnrichmentSettings,
 )
-from shared.abstractions.search import (
+from shared.shared_abstractions.search import (
     AggregateSearchResult,
     HybridSearchSettings,
     KGCommunityResult,
@@ -52,13 +52,13 @@ from shared.abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from shared.abstractions.shared_base import (
+from shared.shared_abstractions.shared_base import (
     AsyncSyncMeta,
     R2RSerializable,
     syncable,
 )
-from shared.abstractions.user import Token, TokenData, UserStats
-from shared.abstractions.vector import (
+from shared.shared_abstractions.user import Token, TokenData, UserStats
+from shared.shared_abstractions.vector import (
     StorageResult,
     Vector,
     VectorEntry,

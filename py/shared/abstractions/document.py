@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from .base import R2RSerializable
+from shared.shared_abstractions.shared_base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 

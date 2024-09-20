@@ -1,3 +1,5 @@
+from shared.utils import *
+
 from .abstractions import *
 from .agent import *
 from .api.models import *
@@ -6,7 +8,6 @@ from .parsers import *
 from .pipeline import *
 from .pipes import *
 from .providers import *
-from .utils import *
 
 __all__ = [
     ## ABSTRACTIONS

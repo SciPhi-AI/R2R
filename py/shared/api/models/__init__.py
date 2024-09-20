@@ -1,10 +1,14 @@
-from .auth.responses import GenericMessageResponse, TokenResponse, UserResponse
-from .ingestion.responses import (
+from shared.api.models.auth.responses import (
+    GenericMessageResponse,
+    TokenResponse,
+    UserResponse,
+)
+from shared.api.models.ingestion.responses import (
     IngestionResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
 )
-from .management.responses import (
+from shared.api.models.management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
     CollectionOverviewResponse,
@@ -34,13 +38,13 @@ from .management.responses import (
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
-from .restructure.responses import (
+from shared.api.models.restructure.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
-from .retrieval.responses import (
+from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
     RAGResponse,
     SearchResponse,

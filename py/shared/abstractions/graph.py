@@ -7,7 +7,7 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 
-from .base import R2RSerializable
+from shared.shared_abstractions.shared_base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
