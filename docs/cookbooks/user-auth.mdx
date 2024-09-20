@@ -104,7 +104,7 @@ Users can change their passwords and request password resets:
 
 ```python
 # Change password
-change_password_result = client.change_password("old_password", "new_password")
+change_password_result = client.change_password("password123", "new_password")
 # {"result": {"message": "Password changed successfully"}}
 
 # Request password reset
@@ -126,7 +126,7 @@ profile = client.user()
 # {'results': {'email': 'user1@test.com', 'id': '76eea168-9f98-4672-af3b-2c26ec92d7f8', 'hashed_password': 'null', 'is_superuser': False, 'is_active': True, 'is_verified': True, 'verification_code_expiry': None, 'name': None, 'bio': None, 'profile_picture': None, 'created_at': '2024-07-16T23:06:42.123303Z', 'updated_at': '2024-07-16T23:22:48.256239Z'}}
 
 # Update user profile
-update_result = client.update_user_profile({"name": "John Doe", "bio": "R2R enthusiast"})
+update_result = client.update_user(name="John Doe", bio="R2R enthusiast")
 # {'results': {'email': 'user1@test.com', 'id': '76eea168-9f98-4672-af3b-2c26ec92d7f8', 'hashed_password': 'null', 'is_superuser': False, 'is_active': True, 'is_verified': True, 'verification_code_expiry': None, 'name': 'John Doe', 'bio': 'R2R enthusiast', 'profile_picture': None, 'created_at': '2024-07-16T23:06:42.123303Z', 'updated_at': '2024-07-16T23:22:48.256239Z'}}
 ```
 

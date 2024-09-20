@@ -11,6 +11,7 @@ from core.base import (
     LLMChatCompletionChunk,
     PipeType,
     PromptProvider,
+    format_search_results_for_stream,
 )
 from core.base.abstractions.llm import GenerationConfig
 
@@ -21,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 class StreamingSearchRAGPipe(SearchRAGPipe):
-    SEARCH_STREAM_MARKER = "search"
+    VECTOR_SEARCH_STREAM_MARKER = (
+        "search"  # TODO - change this to vector_search in next major release
+    )
+    KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
+    KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
     COMPLETION_STREAM_MARKER = "completion"
 
     def __init__(
@@ -55,42 +60,33 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         run_id = kwargs.get("run_id")
-        iteration = 0
         context = ""
         async for query, search_results in input.message:
-            yield f"<{self.SEARCH_STREAM_MARKER}>"
-            if search_results.vector_search_results:
-                context += "Vector Search Results:\n"
-                for result in search_results.vector_search_results:
-                    if iteration >= 1:
-                        yield ","
-                    yield json.dumps(result.json())
-                    context += f"{iteration + 1}:\n{result.text}\n\n"
-                    iteration += 1
+            result = format_search_results_for_stream(search_results)
+            yield result
+            context += result
 
-            yield f"</{self.SEARCH_STREAM_MARKER}>"
+        messages = self.prompt_provider._get_message_payload(
+            system_prompt_name=self.config.system_prompt,
+            task_prompt_name=self.config.task_prompt,
+            task_inputs={"query": query, "context": context},
+        )
+        yield f"<{self.COMPLETION_STREAM_MARKER}>"
 
-            messages = self.prompt_provider._get_message_payload(
-                system_prompt_name=self.config.system_prompt,
-                task_prompt_name=self.config.task_prompt,
-                task_inputs={"query": query, "context": context},
-            )
-            yield f"<{self.COMPLETION_STREAM_MARKER}>"
+        response = ""
+        for chunk in self.llm_provider.get_completion_stream(
+            messages=messages, generation_config=rag_generation_config
+        ):
+            chunk = StreamingSearchRAGPipe._process_chunk(chunk)
+            response += chunk
+            yield chunk
 
-            response = ""
-            for chunk in self.llm_provider.get_completion_stream(
-                messages=messages, generation_config=rag_generation_config
-            ):
-                chunk = StreamingSearchRAGPipe._process_chunk(chunk)
-                response += chunk
-                yield chunk
+        yield f"</{self.COMPLETION_STREAM_MARKER}>"
 
-            yield f"</{self.COMPLETION_STREAM_MARKER}>"
-
-            completion_record.search_results = search_results
-            completion_record.llm_response = response
-            completion_record.completion_end_time = datetime.now()
-            await self.log_completion_record(run_id, completion_record)
+        completion_record.search_results = search_results
+        completion_record.llm_response = response
+        completion_record.completion_end_time = datetime.now()
+        await self.log_completion_record(run_id, completion_record)
 
     async def _yield_chunks(
         self,

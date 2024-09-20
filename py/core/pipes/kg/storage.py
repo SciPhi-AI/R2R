@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional, Tuple
+from typing import Any, AsyncGenerator, List, Optional, Tuple
 from uuid import UUID
 
 from core.base import (
@@ -8,6 +8,7 @@ from core.base import (
     EmbeddingProvider,
     KGExtraction,
     PipeType,
+    R2RDocumentProcessingError,
     RunLoggingSingleton,
 )
 from core.base.pipes.base_pipe import AsyncPipe
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class KGStoragePipe(AsyncPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[KGExtraction, None]
+        message: AsyncGenerator[List[R2RDocumentProcessingError], None]
 
     def __init__(
         self,
@@ -72,14 +73,20 @@ class KGStoragePipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Tuple[int, int], None]:
+    ) -> AsyncGenerator[List[R2RDocumentProcessingError], None]:
         """
         Executes the async knowledge graph storage pipe: storing knowledge graph extractions in the graph database.
         """
+
         batch_tasks = []
         kg_batch = []
+        errors = []
 
         async for kg_extraction in input.message:
+            if isinstance(kg_extraction, R2RDocumentProcessingError):
+                errors.append(kg_extraction)
+                continue
+
             kg_batch.append(kg_extraction)
             if len(kg_batch) >= self.storage_batch_size:
                 # Schedule the storage task
@@ -100,5 +107,7 @@ class KGStoragePipe(AsyncPipe):
             )
 
         # Wait for all storage tasks to complete
-        results = await asyncio.gather(*batch_tasks)
-        yield results
+        await asyncio.gather(*batch_tasks)
+
+        for error in errors:
+            yield error

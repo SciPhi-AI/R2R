@@ -75,19 +75,27 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
-            user_groups = set(auth_user.group_ids)
-            selected_groups = set(vector_search_settings.selected_group_ids)
-            allowed_groups = user_groups.intersection(selected_groups)
-            if selected_groups - allowed_groups != set():
+            user_collections = set(auth_user.collection_ids)
+            selected_collections = set(
+                vector_search_settings.selected_collection_ids
+            )
+            allowed_collections = user_collections.intersection(
+                selected_collections
+            )
+            if selected_collections - allowed_collections != set():
                 raise ValueError(
-                    "User does not have access to the specified group(s): "
-                    f"{selected_groups - allowed_groups}"
+                    "User does not have access to the specified collection(s): "
+                    f"{selected_collections - allowed_collections}"
                 )
 
             filters = {
                 "$or": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    {"group_ids": {"$overlap": list(allowed_groups)}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
                 ]
             }
             if vector_search_settings.filters != {}:
@@ -127,7 +135,7 @@ class RetrievalRouter(BaseRouter):
                 None, description=rag_descriptions.get("task_prompt_override")
             ),
             include_title_if_available: bool = Body(
-                True,
+                False,
                 description=rag_descriptions.get("include_title_if_available"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -141,11 +149,15 @@ class RetrievalRouter(BaseRouter):
 
             The generation process can be customized using the rag_generation_config parameter.
             """
-            allowed_groups = set(auth_user.group_ids)
+            allowed_collections = set(auth_user.collection_ids)
             filters = {
                 "$or": [
                     {"user_id": str(auth_user.id)},
-                    {"group_ids": {"$overlap": list(allowed_groups)}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
                 ]
             }
             if vector_search_settings.filters != {}:
@@ -221,11 +233,16 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override parameters.
             """
             # TODO - Don't just copy paste the same code, refactor this
-            allowed_groups = set(auth_user.group_ids)
+            user = auth_user
+            allowed_collections = set(user.collection_ids)
             filters = {
                 "$or": [
-                    {"user_id": str(auth_user.id)},
-                    {"group_ids": {"$overlap": list(allowed_groups)}},
+                    {"user_id": str(user.id)},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
                 ]
             }
             if vector_search_settings.filters != {}:

@@ -18,12 +18,16 @@ from core.base import (
     PipeType,
     PromptProvider,
     R2RDocumentProcessingError,
+    R2RException,
     RunLoggingSingleton,
     Triple,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
+
+
+MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
 
 
 class ClientError(Exception):
@@ -104,7 +108,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
         )
 
         for attempt in range(retries):
-
             try:
                 response = await self.llm_provider.aget_completion(
                     messages,
@@ -112,6 +115,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 )
 
                 kg_extraction = response.choices[0].message.content
+
                 entity_pattern = (
                     r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
                 )
@@ -119,6 +123,16 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                 def parse_fn(response_str: str) -> Any:
                     entities = re.findall(entity_pattern, response_str)
+
+                    if (
+                        len(kg_extraction)
+                        > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
+                        and len(entities) == 0
+                    ):
+                        raise R2RException(
+                            "No entities found in the response string, the selected LLM likely failed to format it's response correctly.",
+                            400,
+                        )
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
@@ -181,6 +195,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 json.JSONDecodeError,
                 KeyError,
                 IndexError,
+                R2RException,
             ) as e:
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
@@ -223,7 +238,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 extraction_id=extraction["extraction_id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
-                group_ids=extraction["group_ids"],
+                collection_ids=extraction["collection_ids"],
                 data=extraction["text"],
                 metadata=extraction["metadata"],
             )
@@ -263,7 +278,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 yield await completed_task
             except Exception as e:
                 logger.error(f"Error in Extracting KG Triples: {e}")
-                raise R2RDocumentProcessingError(
+                yield R2RDocumentProcessingError(
                     document_id=document_id,
                     error_message=str(e),
-                ) from e
+                )

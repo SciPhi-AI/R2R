@@ -87,7 +87,7 @@ class R2RAsyncClient:
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
         self.timeout = timeout
 
-        # Initialize method groups
+        # Initialize methods grouop
         self._auth = AuthMethods
         self._ingestion = IngestionMethods
         self._management = ManagementMethods
@@ -95,9 +95,9 @@ class R2RAsyncClient:
         self._retrieval = RetrievalMethods
         self._server = ServerMethods
 
-        # Collect all methods from the method groups
+        # Collect all methods from the methods group
         self._methods = {}
-        for group in [
+        for collection in [
             self._auth,
             self._ingestion,
             self._management,
@@ -106,7 +106,7 @@ class R2RAsyncClient:
             self._server,
         ]:
             for name, method in inspect.getmembers(
-                group, predicate=inspect.isfunction
+                collection, predicate=inspect.isfunction
             ):
                 if not name.startswith("_"):
                     self._methods[name] = method

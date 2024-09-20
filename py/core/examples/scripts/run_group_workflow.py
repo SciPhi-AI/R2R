@@ -13,38 +13,42 @@ if __name__ == "__main__":
     login_result = client.login("admin@example.com", "change_me_immediately")
     print("Admin login result:", login_result)
 
-    # Create two groups
-    print("\nCreating two groups...")
-    group1_result = client.create_group(
-        "TestGroup1", "A test group for document access"
+    # Create two collections
+    print("\nCreating two collections...")
+    collection1_result = client.create_collection(
+        "TestGroup1", "A test collection for document access"
     )
-    group2_result = client.create_group("TestGroup2", "Another test group")
-    print("Group1 creation result:", group1_result)
-    print("Group2 creation result:", group2_result)
-    group1_id = group1_result["results"]["group_id"]
-    group2_id = group2_result["results"]["group_id"]
+    collection2_result = client.create_collection(
+        "TestGroup2", "Another test collection"
+    )
+    print("Group1 creation result:", collection1_result)
+    print("Group2 creation result:", collection2_result)
+    collection1_id = collection1_result["results"]["collection_id"]
+    collection2_id = collection2_result["results"]["collection_id"]
 
-    # Get groups overview
-    print("\nGetting groups overview...")
-    groups_overview = client.groups_overview()
-    print("Groups overview:", groups_overview)
+    # Get collections overview
+    print("\nGetting collections overview...")
+    collections_overview = client.collections_overview()
+    print("Groups overview:", collections_overview)
 
-    # Get specific group
-    print("\nGetting specific group...")
-    group1_details = client.get_group(group1_id)
-    print("Group1 details:", group1_details)
+    # Get specific collection
+    print("\nGetting specific collection...")
+    collection1_details = client.get_collection(collection1_id)
+    print("Group1 details:", collection1_details)
 
-    # List all groups
-    print("\nListing all groups...")
-    groups_list = client.list_groups()
-    print("Groups list:", groups_list)
+    # List all collections
+    print("\nListing all collections...")
+    collections_list = client.list_collections()
+    print("Groups list:", collections_list)
 
-    # Update a group
+    # Update a collection
     print("\nUpdating Group1...")
-    update_result = client.update_group(
-        group1_id, name="UpdatedTestGroup1", description="Updated description"
+    update_result = client.update_collection(
+        collection1_id,
+        name="UpdatedTestGroup1",
+        description="Updated description",
     )
-    print("Group update result:", update_result)
+    print("Collection update result:", update_result)
 
     # Ingest two documents
     print("\nIngesting two documents...")
@@ -62,18 +66,22 @@ if __name__ == "__main__":
     document1_id = ingestion_result1["results"]["processed_documents"][0]["id"]
     document2_id = ingestion_result2["results"]["processed_documents"][0]["id"]
 
-    # Assign documents to groups
-    print("\nAssigning documents to groups...")
-    assign_result1 = client.assign_document_to_group(document1_id, group1_id)
-    assign_result2 = client.assign_document_to_group(document2_id, group2_id)
+    # Assign documents to collections
+    print("\nAssigning documents to collections...")
+    assign_result1 = client.assign_document_to_collection(
+        document1_id, collection1_id
+    )
+    assign_result2 = client.assign_document_to_collection(
+        document2_id, collection2_id
+    )
     print("Document1 assignment result:", assign_result1)
     print("Document2 assignment result:", assign_result2)
 
     # document1_id = "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
-    # Get document groups
-    print("\nGetting groups for Document1...")
-    doc1_groups = client.document_groups(document1_id)
-    print("Document1 groups:", doc1_groups)
+    # Get document collections
+    print("\nGetting collections for Document1...")
+    doc1_collections = client.document_collections(document1_id)
+    print("Document1 collections:", doc1_collections)
 
     # Create three test users
     print("\nCreating three test users...")
@@ -84,51 +92,51 @@ if __name__ == "__main__":
     print("User2 creation result:", user2_result)
     print("User3 creation result:", user3_result)
 
-    # Add users to groups
-    print("\nAdding users to groups...")
-    add_user1_result = client.add_user_to_group(
-        user1_result["results"]["id"], group1_id
+    # Add users to collections
+    print("\nAdding users to collections...")
+    add_user1_result = client.add_user_to_collection(
+        user1_result["results"]["id"], collection1_id
     )
-    add_user2_result = client.add_user_to_group(
-        user2_result["results"]["id"], group2_id
+    add_user2_result = client.add_user_to_collection(
+        user2_result["results"]["id"], collection2_id
     )
-    add_user3_result1 = client.add_user_to_group(
-        user3_result["results"]["id"], group1_id
+    add_user3_result1 = client.add_user_to_collection(
+        user3_result["results"]["id"], collection1_id
     )
-    add_user3_result2 = client.add_user_to_group(
-        user3_result["results"]["id"], group2_id
+    add_user3_result2 = client.add_user_to_collection(
+        user3_result["results"]["id"], collection2_id
     )
-    print("Add user1 to group1 result:", add_user1_result)
-    print("Add user2 to group2 result:", add_user2_result)
-    print("Add user3 to group1 result:", add_user3_result1)
-    print("Add user3 to group2 result:", add_user3_result2)
+    print("Add user1 to collection1 result:", add_user1_result)
+    print("Add user2 to collection2 result:", add_user2_result)
+    print("Add user3 to collection1 result:", add_user3_result1)
+    print("Add user3 to collection2 result:", add_user3_result2)
 
-    # Get users in a group
+    # Get users in a collection
     print("\nGetting users in Group1...")
-    users_in_group1 = client.user_groups(group1_id)
-    print("Users in Group1:", users_in_group1)
+    users_in_collection1 = client.user_collections(collection1_id)
+    print("Users in Group1:", users_in_collection1)
 
-    # Get groups for a user
-    print("\nGetting groups for User3...")
-    user3_groups = client.user_groups(user3_result["results"]["id"])
-    print("User3 groups:", user3_groups)
+    # Get collections for a user
+    print("\nGetting collections for User3...")
+    user3_collections = client.user_collections(user3_result["results"]["id"])
+    print("User3 collections:", user3_collections)
 
-    # Get documents in a group
+    # Get documents in a collection
     print("\nGetting documents in Group1...")
-    docs_in_group1 = client.documents_in_group(group1_id)
-    print("Documents in Group1:", docs_in_group1)
+    docs_in_collection1 = client.documents_in_collection(collection1_id)
+    print("Documents in Group1:", docs_in_collection1)
 
-    # Remove user from group
+    # Remove user from collection
     print("\nRemoving User3 from Group1...")
-    remove_user_result = client.remove_user_from_group(
-        user3_result["results"]["id"], group1_id
+    remove_user_result = client.remove_user_from_collection(
+        user3_result["results"]["id"], collection1_id
     )
     print("Remove user result:", remove_user_result)
 
-    # Remove document from group
+    # Remove document from collection
     print("\nRemoving Document1 from Group1...")
-    remove_doc_result = client.remove_document_from_group(
-        document1_id, group1_id
+    remove_doc_result = client.remove_document_from_collection(
+        document1_id, collection1_id
     )
     print("Remove document result:", remove_doc_result)
 
@@ -143,7 +151,7 @@ if __name__ == "__main__":
     # Search for documents (should see document1 but not document2)
     print("\nUser1 searching for documents...")
     search_result_user1 = client.search(
-        "philosophy", {"selected_group_ids": [group1_id]}
+        "philosophy", {"selected_collection_ids": [collection1_id]}
     )
     print("User1 search result:", search_result_user1)
 
@@ -159,12 +167,13 @@ if __name__ == "__main__":
     print("\nUser3 searching for documents...")
     try:
         search_result_user3 = client.search(
-            "philosophy", {"selected_group_ids": [group1_id, group2_id]}
+            "philosophy",
+            {"selected_collection_ids": [collection1_id, collection2_id]},
         )
     except Exception as e:
         print("User3 search result error:", e)
         search_result_user3 = client.search(
-            "philosophy", {"selected_group_ids": [group2_id]}
+            "philosophy", {"selected_collection_ids": [collection2_id]}
         )
 
     print("User3 search result:", search_result_user3)
@@ -178,10 +187,10 @@ if __name__ == "__main__":
     # Login as admin again
     client.login("admin@example.com", "change_me_immediately")
 
-    # Delete the groups
-    print("Deleting the groups...")
-    client.delete_group(group1_id)
-    client.delete_group(group2_id)
+    # Delete the collections
+    print("Deleting the collections...")
+    client.delete_collection(collection1_id)
+    client.delete_collection(collection2_id)
 
     # Logout admin
     print("\nLogging out admin...")

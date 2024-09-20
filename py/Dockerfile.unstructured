@@ -4,50 +4,26 @@ FROM python:3.10-slim AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
     tesseract-ocr libtesseract-dev libleptonica-dev pkg-config \
-    poppler-utils libmagic1 \
+    poppler-utils libmagic1 pandoc libreoffice \
     libgl1-mesa-glx libglib2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
 
-RUN pip install --no-cache-dir poetry
-
-# Copy the entire project into the container
-COPY . /app
-WORKDIR /app/py
-
-# Install dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn
-
-# Create the final image
-FROM python:3.10-slim
-
-# Install runtime dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    curl tesseract-ocr poppler-utils libmagic1 \
-    libgl1-mesa-glx libglib2.0-0 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Copy the installed packages from the builder
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+RUN pip install --no-cache-dir unstructured "unstructured[all-docs]"
 
-# Copy the application and config
-COPY core /app/core
-COPY r2r /app/r2r
-COPY r2r.toml /app/r2r.toml
-COPY pyproject.toml /app/pyproject.toml
 
-# Expose the port
-ARG PORT=8000
-ARG HOST=0.0.0.0
-ENV PORT=$PORT HOST=$HOST
-EXPOSE $PORT
+RUN python -c "from unstructured.partition.model_init import initialize; initialize()"
 
-# Run the application
-CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $PORT"]
+RUN pip install gunicorn uvicorn fastapi httpx
+
+COPY core/integrations/unstructured/main.py .
+
+EXPOSE 7275
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7275", "--workers", "8"]

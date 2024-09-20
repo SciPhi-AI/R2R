@@ -8,7 +8,7 @@ import sys
 import time
 from typing import Optional
 
-import click
+import asyncclick as click
 import requests
 from requests.exceptions import RequestException
 
@@ -71,7 +71,7 @@ def remove_r2r_network():
     )
 
 
-def run_local_serve(
+async def run_local_serve(
     host: str,
     port: int,
     config_name: Optional[str] = None,
@@ -90,7 +90,7 @@ def run_local_serve(
     if not config_path and not config_name:
         config_name = "default"
 
-    r2r_instance = R2RBuilder(
+    r2r_instance = await R2RBuilder(
         config=R2RConfig.load(config_name, config_path)
     ).build()
 
@@ -104,6 +104,7 @@ def run_local_serve(
     click.echo("R2R now runs on port 7272 by default!")
     available_port = find_available_port(port)
 
+    await r2r_instance.orchestration_provider.start_worker()
     r2r_instance.serve(host, available_port)
 
 
@@ -254,7 +255,7 @@ def check_set_docker_env_vars(
             "POSTGRES_PASSWORD",
             "POSTGRES_PORT",
             "POSTGRES_DBNAME",
-            "POSTGRES_VECS_COLLECTION",
+            # "POSTGRES_PROJECT_NAME", TODO - uncomment in next release
         ]
         env_vars.extend(postgres_vars)
 
@@ -287,9 +288,10 @@ def check_set_docker_env_vars(
 
 def set_config_env_vars(obj):
     if config_path := obj.get("config_path"):
-        os.environ["CONFIG_PATH"] = config_path
+        os.environ["CONFIG_PATH"] = f'"{config_path}"'
     else:
-        os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
+        config_name = obj.get("config_name") or "default"
+        os.environ["CONFIG_NAME"] = f'"{config_name}"'
 
 
 def get_compose_files():

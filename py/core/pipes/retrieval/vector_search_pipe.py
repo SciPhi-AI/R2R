@@ -84,7 +84,7 @@ class VectorSearchPipe(SearchPipe):
             for result in reranked_results:
                 title = result.metadata.get("title", None)
                 if title:
-                    text = result.metadata.get("text", "")
+                    text = result.text
                     result.text = f"Document Title:{title}\n\nText:{text}"
 
         for result in reranked_results:

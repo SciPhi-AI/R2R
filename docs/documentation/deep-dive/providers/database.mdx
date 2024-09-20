@@ -29,7 +29,7 @@ password = "your_postgres_password"
 host = "your_postgres_host"
 port = "your_postgres_port"
 db_name = "your_database_name"
-vecs_collection = "your_collection_name"
+your_project_name = "your_project_name"
 ```
 
 Alternatively, you can set these values using environment variables:
@@ -40,7 +40,7 @@ export POSTGRES_PASSWORD=your_postgres_password
 export POSTGRES_HOST=your_postgres_host
 export POSTGRES_PORT=your_postgres_port
 export POSTGRES_DBNAME=your_database_name
-export POSTGRES_VECS_COLLECTION=your_collection_name
+export POSTGRES_PROJECT_NAME=your_collection_name
 ```
 Environment variables take precedence over the config settings in case of conflicts. The R2R Docker includes configuration options that facilitate integration with a combined Postgres+pgvector database setup.
 

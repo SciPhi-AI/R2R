@@ -189,91 +189,87 @@ class ChunkingConfig(ProviderConfig):
         }
 
 
-class KGLocalSearchResult(BaseModel):
-    query: str
-    entities: list[dict[str, Any]]
-    relationships: list[dict[str, Any]]
-    communities: list[dict[str, Any]]
-
-    def __str__(self) -> str:
-        return f"KGLocalSearchResult(query={self.query}, entities={self.entities}, relationships={self.relationships}, communities={self.communities})"
-
-    def dict(self) -> dict:
-        return {
-            "query": self.query,
-            "entities": self.entities,
-            "relationships": self.relationships,
-            "communities": self.communities,
-        }
+class KGSearchResultType(str, Enum):
+    ENTITY = "entity"
+    RELATIONSHIP = "relationship"
+    COMMUNITY = "community"
 
 
-class KGGlobalSearchResult(BaseModel):
-    query: str
-    search_result: list[str]
-
-    def __str__(self) -> str:
-        return f"KGGlobalSearchResult(query={self.query}, search_result={self.search_result})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def dict(self) -> dict:
-        return {"query": self.query, "search_result": self.search_result}
+class KGSearchMethod(str, Enum):
+    LOCAL = "local"
+    GLOBAL = "global"
 
 
-class KGSearchResult(BaseModel):
-    local_result: Optional[KGLocalSearchResult] = None
-    global_result: Optional[KGGlobalSearchResult] = None
-
-    def __str__(self) -> str:
-        return f"KGSearchResult(local_result={self.local_result}, global_result={self.global_result})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def dict(self) -> dict:
-        return {
-            "local_result": (
-                self.local_result.dict() if self.local_result else None
-            ),
-            "global_result": (
-                self.global_result.dict() if self.global_result else None
-            ),
-        }
+class KGEntityResult(BaseModel):
+    name: str
+    description: str
+    metadata: Optional[dict[str, Any]] = None
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "local_result": {
-                    "query": "Who is Aristotle?",
-                    "entities": {
-                        "0": {
-                            "name": "Aristotle",
-                            "description": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...",
-                        }
-                    },
-                    "relationships": {
-                        "0": {
-                            "name": "Influenced",
-                            "description": "Aristotle influenced numerous thinkers and philosophers, including Plato, who was his student. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced thinkers from antiquity through the Middle Ages and beyond.",
-                        }
-                    },
-                    "communities": {
-                        "0": {
-                            "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought."
-                        }
-                    },
-                },
-                "global_result": {
-                    "query": "Who is Aristotle?",
-                    "search_result": [
-                        """### Aristotle's Key Contributions to Philosophy
-                        Aristotle, an ancient Greek philosopher and polymath, made foundational contributions to numerous fields, including philosophy, logic, biology, and political science. His works have had a lasting impact on Western thought and the development of modern science.
+            "name": "Entity Name",
+            "description": "Entity Description",
+            "metadata": {},
+        }
 
-                        ...."""
-                    ],
-                },
-            }
+
+class KGRelationshipResult(BaseModel):
+    name: str
+    description: str
+    metadata: Optional[dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "name": "Relationship Name",
+            "description": "Relationship Description",
+            "metadata": {},
+        }
+
+
+class KGCommunityResult(BaseModel):
+    name: str
+    description: str
+    metadata: Optional[dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "name": "Community Name",
+            "description": "Community Description",
+            "metadata": {},
+        }
+
+
+class KGGlobalResult(BaseModel):
+    name: str
+    description: str
+    metadata: Optional[dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "name": "Global Result Name",
+            "description": "Global Result Description",
+            "metadata": {},
+        }
+
+
+class KGSearchResult(BaseModel):
+    method: KGSearchMethod
+    content: Union[
+        KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
+    ]
+    result_type: Optional[KGSearchResultType] = None
+    fragment_ids: Optional[list[UUID]] = None
+    document_ids: Optional[list[UUID]] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "method": "local",
+            "content": KGEntityResult.Config.json_schema_extra,
+            "result_type": "entity",
+            "fragment_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+            "document_ids": ["3e157b3a-8469-51db-90d9-52e7d896b49b"],
+            "metadata": {"associated_query": "What is the capital of France?"},
         }
 
 
@@ -340,9 +336,9 @@ class VectorSearchSettings(BaseModel):
         ge=1,
         le=1_000,
     )
-    selected_group_ids: list[UUID] = Field(
+    selected_collection_ids: list[UUID] = Field(
         default_factory=list,
-        description="Group IDs to search for",
+        description="Collection IDs to search for",
     )
     index_measure: IndexMeasure = Field(
         default=IndexMeasure.cosine_distance,
@@ -376,7 +372,7 @@ class VectorSearchSettings(BaseModel):
             "use_hybrid_search": True,
             "filters": {"category": "technology"},
             "search_limit": 20,
-            "selected_group_ids": [
+            "selected_collection_ids": [
                 "2acb499e-8428-543b-bd85-0d9098718220",
                 "3e157b3a-8469-51db-90d9-52e7d896b49b",
             ],
@@ -394,8 +390,8 @@ class VectorSearchSettings(BaseModel):
 
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
-        dump["selected_group_ids"] = [
-            str(uuid) for uuid in dump["selected_group_ids"]
+        dump["selected_collection_ids"] = [
+            str(uuid) for uuid in dump["selected_collection_ids"]
         ]
         return dump
 
@@ -490,7 +486,7 @@ class UserResponse(BaseModel):
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     is_verified: bool = False
-    group_ids: list[UUID] = []
+    collection_ids: list[UUID] = []
 
     # Optional fields (to update or set at creation)
     hashed_password: Optional[str] = None
@@ -507,7 +503,7 @@ class VectorSearchResult(BaseModel):
     extraction_id: UUID
     document_id: UUID
     user_id: UUID
-    group_ids: list[UUID]
+    collection_ids: list[UUID]
     score: float
     text: str
     metadata: dict[str, Any]
@@ -524,7 +520,7 @@ class VectorSearchResult(BaseModel):
             "extraction_id": self.extraction_id,
             "document_id": self.document_id,
             "user_id": self.user_id,
-            "group_ids": self.group_ids,
+            "collection_ids": self.collection_ids,
             "score": self.score,
             "text": self.text,
             "metadata": self.metadata,
@@ -536,7 +532,7 @@ class VectorSearchResult(BaseModel):
             "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
+            "collection_ids": [],
             "score": 0.23943702876567796,
             "text": "Example text from the document",
             "metadata": {
@@ -603,7 +599,7 @@ class RAGResponse(BaseModel):
                             "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
                             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
                             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                            "group_ids": [],
+                            "collection_ids": [],
                             "score": 0.23943702876567796,
                             "text": "Paris is the capital and most populous city of France.",
                             "metadata": {

@@ -241,6 +241,24 @@ class ManagementMethods:
         ) or {"results": {}}
 
     @staticmethod
+    async def download_file(
+        client,
+        document_id: Union[str, UUID],
+    ):
+        """
+        Download a file from the R2R deployment.
+
+        Args:
+            document_id (str): The ID of the document to download.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request(
+            "GET", f"download_file/{str(document_id)}"
+        )
+
+    @staticmethod
     async def documents_overview(
         client,
         document_ids: Optional[list[Union[UUID, str]]] = None,
@@ -325,46 +343,46 @@ class ManagementMethods:
         )
 
     @staticmethod
-    async def groups_overview(
+    async def collections_overview(
         client,
-        group_ids: Optional[list[str]] = None,
+        collection_ids: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        Get an overview of existing groups.
+        Get an overview of existing collections.
 
         Args:
-            group_ids (Optional[list[str]]): List of group IDs to get an overview for.
-            limit (Optional[int]): The maximum number of groups to return.
-            offset (Optional[int]): The offset to start listing groups from.
+            collection_ids (Optional[list[str]]): List of collection IDs to get an overview for.
+            limit (Optional[int]): The maximum number of collections to return.
+            offset (Optional[int]): The offset to start listing collections from.
 
         Returns:
-            dict: The overview of groups in the system.
+            dict: The overview of collections in the system.
         """
         params = {}
-        if group_ids:
-            params["group_ids"] = group_ids
+        if collection_ids:
+            params["collection_ids"] = collection_ids
         if offset:
             params["offset"] = offset
         if limit:
             params["limit"] = limit
         return await client._make_request(
-            "GET", "groups_overview", params=params
+            "GET", "collections_overview", params=params
         )
 
     @staticmethod
-    async def create_group(
+    async def create_collection(
         client,
         name: str,
         description: Optional[str] = None,
     ) -> dict:
         """
-        Create a new group.
+        Create a new collection.
 
         Args:
-            name (str): The name of the group.
-            description (Optional[str]): The description of the group.
+            name (str): The name of the collection.
+            description (Optional[str]): The description of the collection.
 
         Returns:
             dict: The response from the server.
@@ -373,66 +391,72 @@ class ManagementMethods:
         if description is not None:
             data["description"] = description
 
-        return await client._make_request("POST", "create_group", json=data)
+        return await client._make_request(
+            "POST", "create_collection", json=data
+        )
 
     @staticmethod
-    async def get_group(
+    async def get_collection(
         client,
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
     ) -> dict:
         """
-        Get a group by its ID.
+        Get a collection by its ID.
 
         Args:
-            group_id (str): The ID of the group to get.
+            collection_id (str): The ID of the collection to get.
 
         Returns:
-            dict: The group data.
+            dict: The collection data.
         """
-        return await client._make_request("GET", f"get_group/{str(group_id)}")
+        return await client._make_request(
+            "GET", f"get_collection/{str(collection_id)}"
+        )
 
     @staticmethod
-    async def update_group(
+    async def update_collection(
         client,
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> dict:
         """
-        Updates the name and description of a group.
+        Updates the name and description of a collection.
 
         Args:
-            group_id (str): The ID of the group to update.
-            name (Optional[str]): The new name for the group.
-            description (Optional[str]): The new description of the group.
+            collection_id (str): The ID of the collection to update.
+            name (Optional[str]): The new name for the collection.
+            description (Optional[str]): The new description of the collection.
 
         Returns:
             dict: The response from the server.
         """
-        data = {"group_id": str(group_id)}
+        data = {"collection_id": str(collection_id)}
         if name is not None:
             data["name"] = name
         if description is not None:
             data["description"] = description
 
-        return await client._make_request("PUT", "update_group", json=data)
+        return await client._make_request(
+            "PUT", "update_collection", json=data
+        )
 
     @staticmethod
-    async def delete_group(
+    async def delete_collection(
         client,
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
     ) -> dict:
         """
-        Delete a group by its ID.
+        Delete a collection by its ID.
 
         Args:
-            group_id (str): The ID of the group to delete.
+            collection_id (str): The ID of the collection to delete.
 
         Returns:
             dict: The response from the server.
         """
         return await client._make_request(
-            "DELETE", f"delete_group/{str(group_id)}"
+            "DELETE", f"delete_collection/{str(collection_id)}"
         )
 
     @staticmethod
@@ -443,10 +467,10 @@ class ManagementMethods:
         delete_vector_data: bool = False,
     ) -> dict:
         """
-        Delete a group by its ID.
+        Delete a collection by its ID.
 
         Args:
-            group_id (str): The ID of the group to delete.
+            collection_id (str): The ID of the collection to delete.
 
         Returns:
             dict: The response from the server.
@@ -464,93 +488,95 @@ class ManagementMethods:
             )
 
     @staticmethod
-    async def list_groups(
+    async def list_collections(
         client,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        List all groups in the R2R deployment.
+        List all collections in the R2R deployment.
 
         Args:
-            offset (Optional[int]): The offset to start listing groups from.
-            limit (Optional[int]): The maximum number of groups to return.
+            offset (Optional[int]): The offset to start listing collections from.
+            limit (Optional[int]): The maximum number of collections to return.
 
         Returns:
-            dict: The list of groups.
+            dict: The list of collections.
         """
         params = {}
         if offset is not None:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request("GET", "list_groups", params=params)
+        return await client._make_request(
+            "GET", "list_collections", params=params
+        )
 
     @staticmethod
-    async def add_user_to_group(
+    async def add_user_to_collection(
         client,
         user_id: Union[str, UUID],
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
     ) -> dict:
         """
-        Add a user to a group.
+        Add a user to a collection.
 
         Args:
             user_id (str): The ID of the user to add.
-            group_id (str): The ID of the group to add the user to.
+            collection_id (str): The ID of the collection to add the user to.
 
         Returns:
             dict: The response from the server.
         """
         data = {
             "user_id": str(user_id),
-            "group_id": str(group_id),
+            "collection_id": str(collection_id),
         }
         return await client._make_request(
-            "POST", "add_user_to_group", json=data
+            "POST", "add_user_to_collection", json=data
         )
 
     @staticmethod
-    async def remove_user_from_group(
+    async def remove_user_from_collection(
         client,
         user_id: Union[str, UUID],
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
     ) -> dict:
         """
-        Remove a user from a group.
+        Remove a user from a collection.
 
         Args:
             user_id (str): The ID of the user to remove.
-            group_id (str): The ID of the group to remove the user from.
+            collection_id (str): The ID of the collection to remove the user from.
 
         Returns:
             dict: The response from the server.
         """
         data = {
             "user_id": str(user_id),
-            "group_id": str(group_id),
+            "collection_id": str(collection_id),
         }
         return await client._make_request(
-            "POST", "remove_user_from_group", json=data
+            "POST", "remove_user_from_collection", json=data
         )
 
     @staticmethod
-    async def get_users_in_group(
+    async def get_users_in_collection(
         client,
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        Get all users in a group.
+        Get all users in a collection.
 
         Args:
-            group_id (str): The ID of the group to get users for.
+            collection_id (str): The ID of the collection to get users for.
             offset (Optional[int]): The offset to start listing users from.
             limit (Optional[int]): The maximum number of users to return.
 
         Returns:
-            dict: The list of users in the group.
+            dict: The list of users in the collection.
         """
         params = {}
         if offset is not None:
@@ -558,24 +584,26 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         return await client._make_request(
-            "GET", f"get_users_in_group/{str(group_id)}", params=params
+            "GET",
+            f"get_users_in_collection/{str(collection_id)}",
+            params=params,
         )
 
     @staticmethod
-    async def user_groups(
+    async def user_collections(
         client,
         user_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        Get all groups that a user is a member of.
+        Get all collections that a user is a member of.
 
         Args:
-            user_id (str): The ID of the user to get groups for.
+            user_id (str): The ID of the user to get collections for.
 
         Returns:
-            dict: The list of groups that the user is a member of.
+            dict: The list of collections that the user is a member of.
         """
         params = {}
         if offset is not None:
@@ -584,77 +612,77 @@ class ManagementMethods:
             params["limit"] = limit
         if not params:
             return await client._make_request(
-                "GET", f"user_groups/{str(user_id)}"
+                "GET", f"user_collections/{str(user_id)}"
             )
         else:
             return await client._make_request(
-                "GET", f"user_groups/{str(user_id)}", params=params
+                "GET", f"user_collections/{str(user_id)}", params=params
             )
 
     @staticmethod
-    async def assign_document_to_group(
+    async def assign_document_to_collection(
         client,
         document_id: Union[str, UUID],
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
     ) -> dict:
         """
-        Assign a document to a group.
+        Assign a document to a collection.
 
         Args:
             document_id (str): The ID of the document to assign.
-            group_id (str): The ID of the group to assign the document to.
+            collection_id (str): The ID of the collection to assign the document to.
 
         Returns:
             dict: The response from the server.
         """
         data = {
             "document_id": str(document_id),
-            "group_id": str(group_id),
+            "collection_id": str(collection_id),
         }
         return await client._make_request(
-            "POST", "assign_document_to_group", json=data
+            "POST", "assign_document_to_collection", json=data
         )
 
     # TODO: Verify that this method is implemented, also, should be a PUT request
     @staticmethod
-    async def remove_document_from_group(
+    async def remove_document_from_collection(
         client,
         document_id: Union[str, UUID],
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
     ) -> dict:
         """
-        Remove a document from a group.
+        Remove a document from a collection.
 
         Args:
             document_id (str): The ID of the document to remove.
-            group_id (str): The ID of the group to remove the document from.
+            collection_id (str): The ID of the collection to remove the document from.
 
         Returns:
             dict: The response from the server.
         """
         data = {
             "document_id": str(document_id),
-            "group_id": str(group_id),
+            "collection_id": str(collection_id),
         }
         return await client._make_request(
-            "POST", "remove_document_from_group", json=data
+            "POST", "remove_document_from_collection", json=data
         )
 
     @staticmethod
-    async def document_groups(
+    async def document_collections(
         client,
         document_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        Get all groups that a document is assigned to.
+        Get all collections that a document is assigned to.
 
         Args:
-            document_id (str): The ID of the document to get groups for.
+            document_id (str): The ID of the document to get collections for.
 
         Returns:
-            dict: The list of groups that the document is assigned to.
+            dict: The list of collections that the document is assigned to.
         """
         params = {}
         if offset is not None:
@@ -663,30 +691,32 @@ class ManagementMethods:
             params["limit"] = limit
         if not params:
             return await client._make_request(
-                "GET", f"document_groups/{str(document_id)}", params=params
+                "GET",
+                f"document_collections/{str(document_id)}",
+                params=params,
             )
         else:
             return await client._make_request(
-                "GET", f"document_groups/{str(document_id)}"
+                "GET", f"document_collections/{str(document_id)}"
             )
 
     @staticmethod
-    async def documents_in_group(
+    async def documents_in_collection(
         client,
-        group_id: Union[str, UUID],
+        collection_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        Get all documents in a group.
+        Get all documents in a collection.
 
         Args:
-            group_id (str): The ID of the group to get documents for.
+            collection_id (str): The ID of the collection to get documents for.
             offset (Optional[int]): The offset to start listing documents from.
             limit (Optional[int]): The maximum number of documents to return.
 
         Returns:
-            dict: The list of documents in the group.
+            dict: The list of documents in the collection.
         """
         params = {}
         if offset is not None:
@@ -694,5 +724,5 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         return await client._make_request(
-            "GET", f"group/{str(group_id)}/documents", params=params
+            "GET", f"collection/{str(collection_id)}/documents", params=params
         )

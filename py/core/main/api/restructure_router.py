@@ -89,9 +89,7 @@ class RestructureRouter(BaseRouter):
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
             # Check if the user is a superuser
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 # Add any necessary permission checks here
                 pass
 
@@ -106,7 +104,7 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = r2r_hatchet.admin.run_workflow(
                 "create-graph", {"request": workflow_input}
             )
 
@@ -140,9 +138,7 @@ class RestructureRouter(BaseRouter):
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
             # Check if the user is a superuser
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 # Add any necessary permission checks here
                 pass
 
@@ -155,12 +151,14 @@ class RestructureRouter(BaseRouter):
                 "skip_clustering": skip_clustering,
                 "force_enrichment": force_enrichment,
                 "generation_config": kg_enrichment_settings.generation_config.to_dict(),
+                "max_description_input_length": kg_enrichment_settings.max_description_input_length,
                 "max_summary_input_length": kg_enrichment_settings.max_summary_input_length,
+                "max_description_input_length": kg_enrichment_settings.max_description_input_length,
                 "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = r2r_hatchet.admin.run_workflow(
                 "enrich-graph", {"request": workflow_input}
             )
 

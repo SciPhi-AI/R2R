@@ -145,17 +145,6 @@ Neo4j uses ports 7474 (HTTP) and 7687 (Bolt). If these are conflicting:
    sudo lsof -i :7687
    ```
 
-2. Modify the Neo4j service in docker-compose.yml:
-   ```yaml
-   services:
-     neo4j:
-       ports:
-         - "7475:7474"
-         - "7688:7687"
-   ```
-
-3. Update Neo4j connection strings in your R2R configuration to use the new ports.
-
 ### Hatchet Engine Conflict
 
 If the Hatchet engine (default port 7077) is conflicting:

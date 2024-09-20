@@ -28,7 +28,7 @@ search_response = client.search("What was Uber's profit in 2020?")
                 'extraction_id': '2b8ff2e9-c135-573d-bf8a-7a2db60a0a11',
                 'document_id': '3e157b3a-8469-51db-90d9-52e7d896b49b',
                 'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-                'group_ids': [],
+                'collection_ids': [],
                 'score': 0.7449709925072809,
                 'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement ...',
                 'metadata': {'title': 'uber_2021.pdf', 'version': 'v0', 'chunk_order': 5, 'associatedQuery': "What was Uber's profit in 2020?"}
@@ -67,7 +67,7 @@ search_response = client.search("What was Uber's profit in 2020?")
     Maximum number of results to return (1-1000).
     </ParamField>
 
-    <ParamField path="selected_group_ids" type="list[UUID]" default="[]">
+    <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
     Group IDs to search for.
     </ParamField>
 
@@ -330,7 +330,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
     Maximum number of results to return (1-1000).
     </ParamField>
 
-    <ParamField path="selected_group_ids" type="list[UUID]" default="[]">
+    <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
     Group IDs to search for.
     </ParamField>
 
@@ -640,7 +640,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
     Maximum number of results to return (1-1000).
     </ParamField>
 
-    <ParamField path="selected_group_ids" type="list[UUID]" default="[]">
+    <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
     Group IDs to search for.
     </ParamField>
 

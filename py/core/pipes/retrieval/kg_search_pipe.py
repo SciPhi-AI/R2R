@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -16,9 +16,13 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.base.abstractions.search import (
-    KGGlobalSearchResult,
-    KGLocalSearchResult,
     KGSearchResult,
+    KGGlobalResult,
+    KGSearchMethod,
+    KGSearchResultType,
+    KGEntityResult,
+    KGRelationshipResult,
+    KGCommunityResult,
 )
 
 from ..abstractions.generator_pipe import GeneratorPipe
@@ -108,7 +112,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> KGLocalSearchResult:
+    ) -> AsyncGenerator[KGSearchResult, None]:
         # search over communities and
         # do 3 searches. One over entities, one over relationships, one over communities
 
@@ -117,44 +121,103 @@ class KGSearchSearchPipe(GeneratorPipe):
                 await self.embedding_provider.async_get_embedding(message)
             )
 
-            all_search_results = []
-            for search_type in [
-                "__Entity__",
-                "__Relationship__",
-                "__Community__",
-            ]:
-                search_result = self.kg_provider.vector_query(
-                    input,
-                    search_type=search_type,
-                    search_type_limits=kg_search_settings.local_search_limits[
-                        search_type
-                    ],
-                    query_embedding=query_embedding,
-                    embedding_type=(
-                        "summary_embedding"
-                        if search_type == "__Community__"
-                        else "description_embedding"
+            # entity search
+            search_type = "__Entity__"
+            async for search_result in self.kg_provider.vector_query(
+                input,
+                search_type=search_type,
+                search_type_limits=kg_search_settings.local_search_limits[
+                    search_type
+                ],
+                query_embedding=query_embedding,
+                property_names=[
+                    "name",
+                    "description",
+                    "fragment_ids",
+                    "document_ids",
+                ],
+            ):
+                print(search_result)
+                yield KGSearchResult(
+                    content=KGEntityResult(
+                        name=search_result["name"],
+                        description=search_result["description"],
                     ),
-                    property_names=(
-                        ["summary"]
-                        if search_type == "__Community__"
-                        else ["name", "description"]
-                    ),
-                )
-                all_search_results.append(search_result)
-
-            if len(all_search_results[0]) == 0:
-                raise R2RException(
-                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
-                    400,
+                    method=KGSearchMethod.LOCAL,
+                    result_type=KGSearchResultType.ENTITY,
+                    fragment_ids=search_result["fragment_ids"],
+                    document_ids=search_result["document_ids"],
+                    metadata={"associated_query": message},
                 )
 
-            yield KGLocalSearchResult(
-                query=message,
-                entities=all_search_results[0],
-                relationships=all_search_results[1],
-                communities=all_search_results[2],
-            )
+            # relationship search
+            search_type = "__Relationship__"
+            async for search_result in self.kg_provider.vector_query(
+                input,
+                search_type=search_type,
+                search_type_limits=kg_search_settings.local_search_limits[
+                    search_type
+                ],
+                query_embedding=query_embedding,
+                property_names=[
+                    "name",
+                    "description",
+                    "fragment_ids",
+                    "document_ids",
+                ],
+            ):
+                yield KGSearchResult(
+                    content=KGRelationshipResult(
+                        name=search_result["name"],
+                        description=search_result["description"],
+                    ),
+                    method=KGSearchMethod.LOCAL,
+                    result_type=KGSearchResultType.RELATIONSHIP,
+                    fragment_ids=search_result["fragment_ids"],
+                    document_ids=search_result["document_ids"],
+                    metadata={"associated_query": message},
+                )
+
+            # community search
+            search_type = "__Community__"
+            async for search_result in self.kg_provider.vector_query(
+                input,
+                search_type=search_type,
+                search_type_limits=kg_search_settings.local_search_limits[
+                    search_type
+                ],
+                embedding_type="summary_embedding",
+                query_embedding=query_embedding,
+                property_names=["title", "summary"],
+            ):
+
+                summary = search_result["summary"]
+
+                # try loading it as a json
+                try:
+                    summary_json = json.loads(summary)
+                    description = summary_json.get("summary", "")
+                    name = summary_json.get("title", "")
+
+                    description += "\n\n" + "\n".join(
+                        [
+                            finding["summary"]
+                            for finding in summary_json.get("findings", [])
+                        ]
+                    )
+
+                except json.JSONDecodeError:
+                    logger.warning(f"Summary is not valid JSON")
+                    continue
+
+                yield KGSearchResult(
+                    content=KGCommunityResult(
+                        name=name, description=description
+                    ),
+                    method=KGSearchMethod.LOCAL,
+                    result_type=KGSearchResultType.COMMUNITY,
+                    metadata={"associated_query": message},
+                )
 
     async def global_search(
         self,
@@ -164,7 +227,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> KGGlobalSearchResult:
+    ) -> AsyncGenerator[KGSearchResult, None]:
         # map reduce
         async for message in input.message:
             map_responses = []
@@ -240,9 +303,15 @@ class KGSearchSearchPipe(GeneratorPipe):
                 generation_config=kg_search_settings.kg_search_generation_config,
             )
 
-            output = [output.choices[0].message.content]
+            output = output.choices[0].message.content
 
-            yield KGGlobalSearchResult(query=message, search_result=output)
+            yield KGSearchResult(
+                content=KGGlobalResult(
+                    name="Global Result", description=output
+                ),
+                method=KGSearchMethod.GLOBAL,
+                metadata={'associated_query': message},
+            )
 
     async def _run_logic(
         self,
@@ -252,7 +321,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> KGSearchResult:
+    ) -> AsyncGenerator[KGSearchResult, None]:
 
         kg_search_type = kg_search_settings.kg_search_type
 
@@ -261,11 +330,11 @@ class KGSearchSearchPipe(GeneratorPipe):
             async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
-                yield KGSearchResult(local_result=result)
+                yield result
 
         else:
             logger.info("Performing KG global search")
             async for result in self.global_search(
                 input, state, run_id, kg_search_settings
             ):
-                yield KGSearchResult(global_result=result)
+                yield result

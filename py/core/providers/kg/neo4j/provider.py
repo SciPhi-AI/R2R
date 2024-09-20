@@ -3,15 +3,15 @@ import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
     KGConfig,
-    KGCreationSettings,
-    KGEnrichmentSettings,
     KGProvider,
+    R2RException,
 )
+
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -383,7 +383,9 @@ class Neo4jKGProvider(KGProvider):
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
         return False
 
-    def vector_query(self, query, **kwargs: Any) -> dict[str, Any]:
+    async def vector_query(
+        self, query, **kwargs: Any
+    ) -> AsyncGenerator[dict[str, Any], None]:
 
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "__Entity__")
@@ -432,14 +434,21 @@ class Neo4jKGProvider(KGProvider):
         # get the descriptions from the neo4j results
         # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
         # return descriptions, scores
-        ret = {}
-        for i, record in enumerate(neo4j_results.records):
-            ret[str(i)] = {
+        if search_type == "__Entity__" and len(neo4j_results.records) == 0:
+            raise R2RException(
+                "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
+                400,
+            )
+
+        logger.info(
+            f"Neo4j results: Returning {len(neo4j_results.records)} records for query of type {search_type}"
+        )
+
+        for record in neo4j_results.records:
+            yield {
                 property_name: record[property_name]
                 for property_name in property_names
             }
-
-        return ret
 
     def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
         """
@@ -505,8 +514,6 @@ class Neo4jKGProvider(KGProvider):
                     undirectedRelationshipTypes: ['*']
                 }
             )"""
-
-        # print(GRAPH_PROJECTION_QUERY)
 
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 

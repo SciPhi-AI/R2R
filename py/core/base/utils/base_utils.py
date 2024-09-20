@@ -1,8 +1,64 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+import json
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
+from ..abstractions.search import AggregateSearchResult
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+def format_search_results_for_llm(
+    results: AggregateSearchResult,
+) -> str:
+    formatted_results = ""
+    if results.vector_search_results:
+        formatted_results += "Vector Search Results:\n"
+        for i, result in enumerate(results.vector_search_results):
+            text = result.text
+            formatted_results += f"{i+1}. {text}\n"
+
+    if results.kg_search_results:
+        for result in results.kg_search_results:
+            if result.method == "local":
+                formatted_results += "KG Local Search Results:\n"
+                formatted_results += str(result.content)
+            elif result.method == "global":
+                formatted_results += "KG Global Search Results:\n"
+                formatted_results += str(result.content)
+
+    return formatted_results
+
+
+def format_search_results_for_stream(
+    result: AggregateSearchResult,
+) -> str:
+    VECTOR_SEARCH_STREAM_MARKER = (
+        "search"  # TODO - change this to vector_search in next major release
+    )
+    KG_SEARCH_STREAM_MARKER = "kg_search"
+
+    context = ""
+    if result.vector_search_results:
+        context += f"<{VECTOR_SEARCH_STREAM_MARKER}>"
+        vector_results_list = [
+            result.dict() for result in result.vector_search_results
+        ]
+        context += json.dumps(vector_results_list, default=str)
+        context += f"</{VECTOR_SEARCH_STREAM_MARKER}>"
+
+    if result.kg_search_results:
+        context += f"<{KG_SEARCH_STREAM_MARKER}>"
+        kg_results_list = [
+            result.dict() for result in result.kg_search_results
+        ]
+        context += json.dumps(kg_results_list, default=str)
+        context += f"</{KG_SEARCH_STREAM_MARKER}>"
+
+    return context
+
 
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline

@@ -1,10 +1,17 @@
-import threading
+import asyncio
 from typing import Any, Callable, Optional
+
+from hatchet_sdk import Hatchet
 
 from core.base import OrchestrationProvider
 
 
 class HatchetOrchestrationProvider(OrchestrationProvider):
+    def __init__(self, config: Any):
+        super().__init__(config)
+        self.orchestrator = Hatchet()
+        self.worker
+
     def register_workflow(self, workflow: Any) -> None:
         if self.worker:
             self.worker.register_workflow(workflow)
@@ -25,10 +32,10 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     def step(self, *args, **kwargs) -> Callable:
         return self.orchestrator.step(*args, **kwargs)
 
-    def start_worker(self):
+    async def start_worker(self):
         if not self.worker:
             raise ValueError(
                 "Worker not initialized. Call get_worker() first."
             )
-        worker_thread = threading.Thread(target=self.worker.start, daemon=True)
-        worker_thread.start()
+
+        asyncio.create_task(self.worker.async_start())

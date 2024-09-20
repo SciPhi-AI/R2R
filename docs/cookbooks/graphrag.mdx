@@ -42,6 +42,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
+    max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
@@ -105,6 +106,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
+    max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
@@ -152,7 +154,7 @@ r2r documents-overview
 ```
 
 ```bash Example Response
-{'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 'title': 'aristotle.txt', 'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 'type': 'txt', 'created_at': '2024-09-05T18:20:47.921933Z', 'updated_at': '2024-09-05T18:20:47.921938Z', 'ingestion_status': 'success', 'restructuring_status': 'pending', 'version': 'v0', 'group_ids': [], 'metadata': {'version': 'v0'}}
+{'id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1', 'title': 'aristotle.txt', 'user_id': '2acb499e-8428-543b-bd85-0d9098718220', 'type': 'txt', 'created_at': '2024-09-05T18:20:47.921933Z', 'updated_at': '2024-09-05T18:20:47.921938Z', 'ingestion_status': 'success', 'restructuring_status': 'pending', 'version': 'v0', 'collection_ids': [], 'metadata': {'version': 'v0'}}
 ```
 
 When ingestion completes successfully for a given file we will find that `ingestion_status` reads `success` in the corresponding output.
@@ -176,7 +178,17 @@ r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
 This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
 
 
-1. Using the `r2r inspect-knowledge-graph` command.
+1. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
+
+```
+MATCH (a)
+RETURN a
+```
+
+![Aristotle Graph](../images/aristotle.png)
+
+
+2. Using the `r2r inspect-knowledge-graph` command.
 
 ```bash
 r2r inspect-knowledge-graph
@@ -209,17 +221,6 @@ Number of connected components: 7
   Lesbos: 0.0189
   Nicomachus: 0.0189
 ```
-
-2. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
-
-```
-MATCH (a)
-RETURN a
-```
-
-![Aristotle Graph](../images/aristotle.png)
-
-
 
 ## Graph Enrichment
 
@@ -259,7 +260,7 @@ Vector search results:
     'extraction_id': '92d78034-8447-5046-bf4d-e019932fbc20',
     'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
     'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-    'group_ids': [],
+    'collection_ids': [],
     'score': 0.7393344796100582,
     'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.\n\nLittle is known about Aristotle's life. He was born in the city of Stagira in northern Greece during the Classical period. His father, Nicomachus, died when Aristotle was a child, and he was brought up by a guardian. At 17 or 18, he joined Plato's Academy in Athens and remained there until the age of 37 (c.\u2009347 BC). Shortly after Plato died, Aristotle left Athens and, at the request of Philip II of Macedon, tutored his son Alexander the Great beginning in 343 BC. He established a library in the Lyceum, which helped him to produce many of his hundreds of books on papyrus scrolls.\n\nThough Aristotle wrote many elegant treatises and dia ...",
     'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'file_name': 'tmpm3ceiqs__aristotle.txt', 'chunk_order': 0, 'document_type': 'txt', 'size_in_bytes': 73353, 'unstructured_filetype': 'text/plain', 'unstructured_languages': ['eng'], 'partitioned_by_unstructured': True, 'associatedQuery': 'Who is Aristotle?'}}
