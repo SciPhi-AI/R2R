@@ -66,19 +66,23 @@ class IngestionMethods:
                 for file in all_file_paths
             ]
 
-            data = {}
-            if metadatas:
-                data["metadatas"] = json.dumps(metadatas)
-
-            if isinstance(chunking_config, ChunkingConfig):
-                data["chunking_config"] = chunking_config.model_dump()
-            elif chunking_config:
-                data["chunking_config"] = chunking_config
-
-            if document_ids:
-                data["document_ids"] = json.dumps(
-                    [str(doc_id) for doc_id in document_ids]
-                )
+            data = {
+                "metadatas": json.dumps(metadatas) if metadatas else None,
+                "document_ids": (
+                    json.dumps([str(doc_id) for doc_id in document_ids])
+                    if document_ids
+                    else None
+                ),
+                "chunking_config": (
+                    json.dumps(
+                        chunking_config.model_dump()
+                        if isinstance(chunking_config, ChunkingConfig)
+                        else chunking_config
+                    )
+                    if chunking_config
+                    else None
+                ),
+            }
 
             return await client._make_request(
                 "POST", "ingest_files", data=data, files=files_tuples

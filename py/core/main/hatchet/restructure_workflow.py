@@ -124,9 +124,6 @@ class CreateGraphWorkflow:
         )
         documents_overviews = documents_overviews["results"]
 
-        print("Inside kg_extraction_ingress")
-        print(documents_overviews)
-
         # Only run if restructuring_status is pending or failure
         filtered_document_ids = []
         for document_overview in documents_overviews:

@@ -91,7 +91,7 @@ def search(ctx, query, **kwargs):
             "use_kg_search",
             "kg_search_type",
             "kg_search_level",
-            "kg_search_generation_config",
+            "generation_config",
             "entity_types",
             "relationships",
             "max_community_description_length",
@@ -219,7 +219,7 @@ def rag(ctx, query, **kwargs):
     }
 
     if kg_search_settings.get("kg_search_model"):
-        kg_search_settings["kg_search_generation_config"] = {
+        kg_search_settings["generation_config"] = {
             "model": kg_search_settings.pop("kg_search_model")
         }
 
