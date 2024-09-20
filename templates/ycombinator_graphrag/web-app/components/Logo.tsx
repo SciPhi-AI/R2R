@@ -6,7 +6,7 @@ interface LogoProps {
   width?: number;
   height?: number;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
   disableLink?: boolean;
   priority?: boolean;
 }
@@ -23,7 +23,7 @@ export function Logo({
   const handleClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
     if (onClick) {
       e.preventDefault();
-      onClick();
+      onClick(e);
     }
   };
 
@@ -33,6 +33,7 @@ export function Logo({
       src="/sciphi.svg"
       width={width}
       height={height}
+      priority={priority}
       {...rest}
     />
   );
@@ -49,15 +50,7 @@ export function Logo({
   }
 
   return (
-    <Link
-      href="/"
-      passHref
-      onClick={(e) => {
-        e.preventDefault();
-        window.location.reload();
-      }}
-      className={combinedClassName}
-    >
+    <Link href="/" passHref className={combinedClassName} onClick={handleClick}>
       {imageElement}
     </Link>
   );
