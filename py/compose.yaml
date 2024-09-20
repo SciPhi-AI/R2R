@@ -258,7 +258,6 @@ services:
         source: /var/run/postgres/postgres.sock
         target: /var/run/postgres/postgres.sock
 
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
 
