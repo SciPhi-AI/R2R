@@ -21,13 +21,13 @@ class PostgresRelationalDBProvider(
     UserMixin,
 ):
     def __init__(
-        self, config, connection_string, crypto_provider, collection_name
+        self, config, connection_string, crypto_provider, project_name
     ):
         super().__init__(config)
         self.config = config
         self.connection_string = connection_string
         self.crypto_provider = crypto_provider
-        self.collection_name = collection_name
+        self.project_name = project_name
         self.pool = None
 
     async def initialize(self):
@@ -44,7 +44,7 @@ class PostgresRelationalDBProvider(
         await self._initialize_relational_db()
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{base_name}_{self.collection_name}"
+        return f"{base_name}_{self.project_name}"
 
     @asynccontextmanager
     async def get_connection(self):

@@ -268,24 +268,23 @@ class PostgresFileProvider(FileProvider):
 
         conditions = []
         params = []
-
-        if filter_document_ids:
-            conditions.append("document_id = ANY($1)")
-            params.append(filter_document_ids)
-
-        if filter_file_names:
-            conditions.append("file_name = ANY($2)")
-            params.append(filter_file_names)
-
         query = f"""
         SELECT document_id, file_name, file_oid, file_size, file_type, created_at, updated_at
         FROM {self._get_table_name('file_storage')}
         """
 
+        if filter_document_ids:
+            conditions.append(f"document_id = ANY(${len(params) + 1})")
+            params.append([str(doc_id) for doc_id in filter_document_ids])
+
+        if filter_file_names:
+            conditions.append(f"file_name = ANY(${len(params) + 1})")
+            params.append(filter_file_names)
+
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        query += " ORDER BY created_at DESC OFFSET $3 LIMIT $4"
+        query += f" ORDER BY created_at DESC OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}"
         params.extend([offset, limit])
 
         async with self.pool.acquire() as conn:

@@ -633,7 +633,6 @@ class Collection:
 
         # if filters:
         stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
-
         stmt = stmt.order_by(distance_clause)
         stmt = stmt.offset(search_settings.offset)
         stmt = stmt.limit(search_settings.search_limit)
@@ -650,7 +649,12 @@ class Collection:
                     sess.execute(
                         text(
                             "set local hnsw.ef_search = :ef_search"
-                        ).bindparams(ef_search=search_settings.ef_search)
+                        ).bindparams(
+                            ef_search=max(
+                                search_settings.ef_search,
+                                search_settings.search_limit,
+                            )
+                        )
                     )
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
@@ -949,6 +953,16 @@ class Collection:
             return True
 
         return False
+
+    def close(self):
+        """
+        Closes the database connection associated with this collection.
+
+        This method should be called when you are done using the collection to release
+        the database resources.
+        """
+        if self.client:
+            self.client.close()
 
     def create_index(
         self,

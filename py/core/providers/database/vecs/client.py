@@ -144,7 +144,7 @@ class Client:
             and not self.vector_version.startswith("0.0")
         )
 
-    def get_or_create_collection(
+    def get_or_create_vector_table(
         self,
         name: str,
         *,
@@ -181,7 +181,7 @@ class Client:
 
         return collection._create_if_not_exists()
 
-    @deprecated("use Client.get_or_create_collection")
+    @deprecated("use Client.get_or_create_vector_table")
     def create_collection(self, name: str, dimension: int) -> Collection:
         """
         Create a new vector collection.
@@ -200,7 +200,7 @@ class Client:
 
         return Collection(name, dimension, self)._create()
 
-    @deprecated("use Client.get_or_create_collection")
+    @deprecated("use Client.get_or_create_vector_table")
     def get_collection(self, name: str) -> Collection:
         """
         Retrieve an existing vector collection.

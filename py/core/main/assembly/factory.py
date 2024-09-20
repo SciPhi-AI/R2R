@@ -139,7 +139,7 @@ class R2RProviderFactory:
     async def create_database_provider(
         self,
         db_config: DatabaseConfig,
-        crypto_provider: Optional[CryptoProvider] = None,
+        crypto_provider: CryptoProvider,
         *args,
         **kwargs,
     ) -> DatabaseProvider:

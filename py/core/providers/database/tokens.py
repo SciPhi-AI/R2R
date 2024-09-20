@@ -12,9 +12,9 @@ class BlacklistedTokensMixin(DatabaseMixin):
             token TEXT NOT NULL,
             blacklisted_at TIMESTAMPTZ DEFAULT NOW()
         );
-        CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_token
+        CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.project_name}_token
         ON {self._get_table_name('blacklisted_tokens')} (token);
-        CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_blacklisted_at
+        CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.project_name}_blacklisted_at
         ON {self._get_table_name('blacklisted_tokens')} (blacklisted_at);
         """
         await self.execute_query(query)

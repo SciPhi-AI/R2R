@@ -69,7 +69,7 @@ class DocumentMixin(DatabaseMixin):
             updated_at TIMESTAMPTZ DEFAULT NOW(),
             ingestion_attempt_number INT DEFAULT 0
         );
-        CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.collection_name}
+        CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
         ON {self._get_table_name('document_info')} USING GIN (collection_ids);
         """
         await self.execute_query(query)

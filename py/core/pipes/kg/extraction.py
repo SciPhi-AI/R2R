@@ -91,6 +91,7 @@ class KGTriplesExtractionPipe(
         """
         Extracts NER triples from a fragment with retries.
         """
+
         # combine all fragments into a single string
         combined_fragment: str = " ".join([fragment.data for fragment in fragments])  # type: ignore
 
@@ -253,11 +254,14 @@ class KGTriplesExtractionPipe(
         # sort the fragments accroding to chunk_order field in metadata in ascending order
         fragments = sorted(fragments, key=lambda x: x.metadata["chunk_order"])
 
+        print("raw fragments = ", fragments)
         # group these extractions into groups of fragment_merge_count
         fragments_groups = [
             fragments[i : i + fragment_merge_count]
             for i in range(0, len(fragments), fragment_merge_count)
         ]
+
+        print("fragments_groups = ", fragments_groups)
 
         logger.info(
             f"Extracting KG Triples from {len(fragments_groups)} fragment groups from originally {len(fragments)} fragments for document {document_id}"

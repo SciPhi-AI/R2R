@@ -338,12 +338,12 @@ class CollectionMixin(DatabaseMixin):
             OFFSET $2
         """
 
-        conditions = [user_id, offset]
+        params = [user_id, offset]
         if limit != -1:
             query += " LIMIT $3"
-            conditions.append(limit)
+            params.append(limit)
 
-        results = await self.fetch_query(query, [user_id, offset, limit])
+        results = await self.fetch_query(query, params)
 
         collections = [
             CollectionResponse(
