@@ -213,7 +213,7 @@ class VectorSearchSettings(R2RSerializable):
         ge=1,
         le=1_000,
     )
-    offset: Optional[int] = Field(
+    offset: int = Field(
         default=0,
         ge=0,
         description="Offset to paginate search results",

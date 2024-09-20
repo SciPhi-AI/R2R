@@ -384,14 +384,13 @@ class ManagementRouter(BaseRouter):
                     404,
                 )
 
-            # is_owner = str(document_chunks_response[0].get("user_id")) == str(auth_user.id)
-            # is_owner = str(chunks[0].get("user_id")) == str(auth_user.id)
+            is_owner = str(document_chunks_result[0].get("user_id")) == str(auth_user.id)
 
-            # if not is_owner and not auth_user.is_superuser:
-            #     raise R2RException(
-            #         "Only a superuser can arbitrarily call document_chunks.",
-            #         403,
-            #     )
+            if not is_owner and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can arbitrarily call document_chunks.",
+                    403,
+                )
 
             return document_chunks_result["results"], {
                 "total_entries": document_chunks_result["total_entries"]
@@ -580,7 +579,8 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUsersInCollectionResponse:
+            response_model=WrappedUsersInCollectionResponse
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get users in a collection.", 403
@@ -607,7 +607,8 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserCollectionResponse:
+            response_model=WrappedUserCollectionResponse,
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get collections for a user.", 403

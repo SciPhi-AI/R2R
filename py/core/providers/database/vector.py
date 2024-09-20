@@ -170,7 +170,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         semantic_settings.search_limit += search_settings.offset
 
         full_text_settings = copy.deepcopy(search_settings)
-        full_text_settings.hybrid_search_settings.full_text_limit += (
+        full_text_settings.hybrid_search_settings.full_text_limit += ( # type: ignore
             search_settings.offset
         )
 
@@ -474,7 +474,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
     def get_document_chunks(
         self, document_id: str, offset: int = 0, limit: int = -1
-    ) -> list[dict]:
+    ) -> dict[str, Any]:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 

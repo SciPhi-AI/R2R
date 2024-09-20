@@ -161,7 +161,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def list_collections(
         self, offset: int = 0, limit: int = -1
-    ) -> list[CollectionResponse]:
+    ) -> dict[str, Union[list[CollectionResponse], int]]:
         """List collections with pagination."""
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at, COUNT(*) OVER() AS total_entries
@@ -178,7 +178,7 @@ class CollectionMixin(DatabaseMixin):
         results = await self.fetch_query(query, conditions)
         if not results:
             logger.info("No collections found.")
-            return [], 0
+            return {"results": [], "total_entries": 0}
 
         collections = [
             CollectionResponse(
@@ -219,107 +219,9 @@ class CollectionMixin(DatabaseMixin):
             for row in results
         ]
 
-    async def add_user_to_collection(
-        self, user_id: UUID, collection_id: UUID
-    ) -> bool:
-        """Add a user to a collection."""
-        if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
-
-        query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET collection_ids = array_append(collection_ids, $1)
-            WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
-            RETURNING user_id
-        """
-        result = await self.fetchrow_query(query, [collection_id, user_id])
-        return bool(result)
-
-    async def remove_user_from_collection(
-        self, user_id: UUID, collection_id: UUID
-    ) -> None:
-        """Remove a user from a collection."""
-        if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
-
-        query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET collection_ids = array_remove(collection_ids, $1)
-            WHERE user_id = $2 AND $1 = ANY(collection_ids)
-            RETURNING user_id
-        """
-        result = await self.fetchrow_query(query, [collection_id, user_id])
-        if not result:
-            raise R2RException(
-                status_code=404,
-                message="User is not a member of the specified collection",
-            )
-
-    async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
-    ) -> list[UserResponse]:
-        """
-        Get all users in a specific collection with pagination.
-
-        Args:
-            collection_id (UUID): The ID of the collection to get users from.
-            offset (int): The number of users to skip.
-            limit (int): The maximum number of users to return.
-
-        Returns:
-            List[UserResponse]: A list of UserResponse objects representing the users in the collection.
-
-        Raises:
-            R2RException: If the collection doesn't exist.
-        """
-        if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
-
-        query = f"""
-            SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture,
-                COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('users')} u
-            WHERE $1 = ANY(u.collection_ids)
-            ORDER BY u.name
-            OFFSET $2
-        """
-
-        conditions = [collection_id, offset]
-        if limit != -1:
-            query += " LIMIT $3"
-            conditions.append(limit)
-
-        results = await self.fetch_query(query, conditions)
-
-        print(results)
-
-        users = [
-            UserResponse(
-                id=row["user_id"],
-                email=row["email"],
-                is_active=row["is_active"],
-                is_superuser=row["is_superuser"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-                is_verified=row["is_verified"],
-                collection_ids=row["collection_ids"],
-                name=row["name"],
-                bio=row["bio"],
-                profile_picture=row["profile_picture"],
-                hashed_password=None,
-                verification_code_expiry=None,
-            )
-            for row in results
-        ]
-
-        total_entries = results[0]["total_entries"] if results else 0
-
-        return {"results": users, "total_entries": total_entries}
-
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = -1
-    ) -> list[DocumentInfo]:
+    ) -> dict[str, Union[list[DocumentInfo], int]]:
         """
         Get all documents in a specific collection with pagination.
         Args:
@@ -395,7 +297,7 @@ class CollectionMixin(DatabaseMixin):
             {f'LIMIT ${3 if collection_ids else 2}' if limit != -1 else ''}
         """
 
-        params = []
+        params: list = []
         if collection_ids:
             params.append(collection_ids)
         params.append(offset)
@@ -427,7 +329,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = -1
-    ) -> list[CollectionResponse]:
+    ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('collections')} g
@@ -521,7 +423,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def document_collections(
         self, document_id: UUID, offset: int = 0, limit: int = -1
-    ) -> list[CollectionResponse]:
+    ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('collections')} g
