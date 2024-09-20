@@ -23,16 +23,18 @@ class PostgresDBProvider(DatabaseProvider):
         self,
         config: DatabaseConfig,
         dimension: int,
-        crypto_provider: Optional[CryptoProvider] = None,
+        crypto_provider: CryptoProvider,
         user: Optional[str] = None,
         password: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[int] = None,
         db_name: Optional[str] = None,
-        collection_name: Optional[str] = None,
+        project_name: Optional[str] = None,
         *args,
         **kwargs,
     ):
+        super().__init__(config)
+
         user = config.user or os.getenv("POSTGRES_USER")
         if not user:
             raise ValueError(
@@ -54,7 +56,7 @@ class PostgresDBProvider(DatabaseProvider):
             )
         self.host = host
 
-        port = config.port or os.getenv("POSTGRES_PORT")
+        port = config.port or os.getenv("POSTGRES_PORT")  # type: ignore
         if not port:
             raise ValueError(
                 "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'database' settings of your `r2r.toml`."
@@ -68,18 +70,18 @@ class PostgresDBProvider(DatabaseProvider):
             )
         self.db_name = db_name
 
-        collection_name = (
+        project_name = (
             config.vecs_collection
             or os.getenv("POSTGRES_PROJECT_NAME")
             or os.getenv("POSTGRES_VECS_COLLECTION")
         )
-        if not collection_name:
+        if not project_name:
             raise ValueError(
                 "Error, please set a valid POSTGRES_PROJECT_NAME environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
             )
-        self.collection_name = collection_name
+        self.project_name = project_name
 
-        if not all([user, password, host, port, db_name, collection_name]):
+        if not all([user, password, host, port, db_name, project_name]):
             raise ValueError(
                 "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_PROJECT_NAME environment variables to use pgvector database."
             )
@@ -97,12 +99,10 @@ class PostgresDBProvider(DatabaseProvider):
             logger.info("Connecting to Postgres via TCP/IP")
 
         self.vector_db_dimension = dimension
-        self.collection_name = collection_name
+        self.project_name = project_name
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
-        self.vector = (None,)
-        self.relational = (None,)
 
     async def initialize(self):
         self.vector = self._initialize_vector_db()
@@ -112,7 +112,7 @@ class PostgresDBProvider(DatabaseProvider):
         return PostgresVectorDBProvider(
             self.config,
             connection_string=self.connection_string,
-            collection_name=self.collection_name,
+            project_name=self.project_name,
             dimension=self.vector_db_dimension,
         )
 
@@ -121,7 +121,7 @@ class PostgresDBProvider(DatabaseProvider):
             self.config,
             connection_string=self.connection_string,
             crypto_provider=self.crypto_provider,
-            collection_name=self.collection_name,
+            project_name=self.project_name,
         )
         await relational_db.initialize()
         return relational_db

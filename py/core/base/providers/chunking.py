@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import AsyncGenerator, Optional, Union
 
-from ..abstractions.document import DocumentExtraction
+from ..abstractions import DocumentExtraction
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -21,13 +21,13 @@ class Strategy(str, Enum):
 class ChunkingConfig(ProviderConfig):
     provider: str = "unstructured_local"
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
     class Config:
         json_schema_extra = {
@@ -47,14 +47,14 @@ class ChunkingConfig(ProviderConfig):
         }
 
 
-class R2RChunkingConfig(ProviderConfig):
+class R2RChunkingConfig(ChunkingConfig):
     provider: str = "r2r"
     method: Strategy = Strategy.RECURSIVE
     chunk_size: int = 512
     chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
         if self.chunk_size <= 0:
@@ -64,7 +64,7 @@ class R2RChunkingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
     class Config:
         json_schema_extra = {
@@ -119,8 +119,8 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 
-    def validate(self) -> None:
-        super().validate()
+    def validate_config(self) -> None:
+        super().validate_config()
         if self.strategy not in ["auto", "fast", "hi_res"]:
             raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
 

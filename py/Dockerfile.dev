@@ -26,6 +26,7 @@ RUN poetry config virtualenvs.create false \
 # Copy only the necessary application files
 COPY core /app/core
 COPY r2r /app/r2r
+COPY shared /app/shared
 COPY r2r.toml /app/r2r.toml
 
 # Stage 2: Final Image
@@ -45,6 +46,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy only the necessary application files from the builder
 COPY --from=builder /app/core /app/core
 COPY --from=builder /app/r2r /app/r2r
+COPY --from=builder /app/shared /app/shared
 COPY --from=builder /app/r2r.toml /app/r2r.toml
 
 # Set environment variables for port and host

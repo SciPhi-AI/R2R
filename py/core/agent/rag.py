@@ -1,5 +1,3 @@
-from typing import AsyncGenerator
-
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
     format_search_results_for_llm,
@@ -59,6 +57,7 @@ class RAGAgentMixin:
     ) -> list[AggregateSearchResult]:
         response = await self.search_pipeline.run(
             to_async_generator([query]),
+            state=None,
             vector_search_settings=vector_search_settings,
             kg_search_settings=kg_search_settings,
         )

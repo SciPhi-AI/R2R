@@ -26,8 +26,8 @@ graphrag_triplet_extraction_zero_shot:
 
     Example 1:
     If the list is empty, extract all entities and relations.
-    Entity_types: 
-    Relation_types: 
+    Entity_types:
+    Relation_types:
     Text:
     The Verdantis's Central Institution is scheduled to meet on Monday and Thursday, with the institution planning to release its latest policy decision on Thursday at 1:30 p.m. PDT, followed by a press conference where Central Institution Chair Martin Smith will take questions. Investors expect the Market Strategy Committee to hold its benchmark interest rate steady in a range of 3.5%-3.75%.
     ######################
@@ -111,7 +111,7 @@ graphrag_triplet_extraction_zero_shot:
     Entity_types: {entity_types}
     Relation_types: {relation_types}
 
-    Text: 
+    Text:
     {input}
     ######################
     Output:

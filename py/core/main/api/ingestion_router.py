@@ -10,7 +10,7 @@ from fastapi import Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import ChunkingConfig, R2RException, generate_user_document_id
-from core.base.api.models.ingestion.responses import (
+from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
 )
@@ -83,7 +83,8 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+            response_model=WrappedIngestionResponse,
+        ):
             """
             Ingest files into the system.
 
@@ -174,7 +175,8 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("document_ids"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+            response_model=WrappedIngestionResponse,
+        ):
             """
             Retry the ingestion of files into the system.
 
@@ -229,7 +231,8 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUpdateResponse:
+            response_model=WrappedUpdateResponse,
+        ):
             """
             Update existing files in the system.
 
@@ -310,7 +313,7 @@ class IngestionRouter(BaseRouter):
         from ..assembly.factory import R2RProviderFactory
 
         if chunking_config:
-            chunking_config.validate()
+            chunking_config.validate_config()
             R2RProviderFactory.create_chunking_provider(chunking_config)
         else:
             logger.info("No chunking config override provided. Using default.")

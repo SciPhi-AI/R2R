@@ -1,6 +1,6 @@
 import concurrent.futures
+import copy
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
@@ -40,10 +40,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Error occurred while attempting to connect to the pgvector provider."
             )
-        self.collection_name = kwargs.get("collection_name", None)
-        if not self.collection_name:
+        self.project_name = kwargs.get("project_name", None)
+        if not self.project_name:
             raise ValueError(
-                "Please provide a valid `collection_name` to the `PostgresVectorDBProvider`."
+                "Please provide a valid `project_name` to the `PostgresVectorDBProvider`."
             )
         dimension = kwargs.get("dimension", None)
         if not dimension:
@@ -51,10 +51,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
             )
 
-        self.collection: Optional[Collection] = None
         self._initialize_vector_db(dimension)
         logger.info(
-            f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
+            f"Successfully initialized PGVectorDB for project: {self.project_name}"
         )
 
     def _initialize_vector_db(self, dimension: int) -> None:
@@ -64,8 +63,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin;"))
             sess.commit()
 
-        self.collection = self.vx.get_or_create_collection(
-            name=self.collection_name, dimension=dimension
+        self.collection = self.vx.get_or_create_vector_table(
+            name=self.project_name, dimension=dimension
         )
         self.create_index()
 
@@ -124,14 +123,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         return [
             VectorSearchResult(
-                fragment_id=result[0],
-                extraction_id=result[1],
-                document_id=result[2],
-                user_id=result[3],
-                collection_ids=result[4],
-                text=result[5],
-                score=1 - float(result[6]),
-                metadata=result[7],
+                fragment_id=result[0],  # type: ignore
+                extraction_id=result[1],  # type: ignore
+                document_id=result[2],  # type: ignore
+                user_id=result[3],  # type: ignore
+                collection_ids=result[4],  # type: ignore
+                text=result[5],  # type: ignore
+                score=1 - float(result[6]),  # type: ignore
+                metadata=result[7],  # type: ignore
             )
             for result in results
         ]
@@ -143,10 +142,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `full_text_search`."
             )
-        results = self.collection.full_text_search(
+        return self.collection.full_text_search(
             query_text=query_text, search_settings=search_settings
         )
-        return results
 
     def hybrid_search(
         self,
@@ -168,20 +166,28 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "The `full_text_limit` must be greater than or equal to the `search_limit`."
             )
 
+        semantic_settings = copy.deepcopy(search_settings)
+        semantic_settings.search_limit += search_settings.offset
+
+        full_text_settings = copy.deepcopy(search_settings)
+        full_text_settings.hybrid_search_settings.full_text_limit += (  # type: ignore
+            search_settings.offset
+        )
+
         # Use ThreadPoolExecutor to run searches in parallel
         with ThreadPoolExecutor(max_workers=2) as executor:
             semantic_future = executor.submit(
-                self.semantic_search, query_vector, search_settings
+                self.semantic_search, query_vector, semantic_settings
             )
             full_text_future = executor.submit(
-                self.full_text_search, query_text, search_settings
+                self.full_text_search, query_text, full_text_settings
             )
 
             # Wait for both searches to complete
             concurrent.futures.wait([semantic_future, full_text_future])
 
-        semantic_results = semantic_future.result()
-        full_text_results = full_text_future.result()
+        semantic_results: list[VectorSearchResult] = semantic_future.result()
+        full_text_results: list[VectorSearchResult] = full_text_future.result()
 
         semantic_limit = search_settings.search_limit
         full_text_limit = (
@@ -240,43 +246,46 @@ class PostgresVectorDBProvider(VectorDBProvider):
         combined_results = {
             k: v
             for k, v in combined_results.items()
-            if v["semantic_rank"] <= semantic_limit * 2
-            and v["full_text_rank"] <= full_text_limit * 2
+            if v["semantic_rank"] <= semantic_limit * 2  # type: ignore
+            and v["full_text_rank"] <= full_text_limit * 2  # type: ignore
         }
 
         # Calculate RRF scores
-        for result in combined_results.values():
-            semantic_score = 1 / (rrf_k + result["semantic_rank"])
-            full_text_score = 1 / (rrf_k + result["full_text_rank"])
-            result["rrf_score"] = (
+        for result in combined_results.values():  # type: ignore
+            semantic_score = 1 / (rrf_k + result["semantic_rank"])  # type: ignore
+            full_text_score = 1 / (rrf_k + result["full_text_rank"])  # type: ignore
+            result["rrf_score"] = (  # type: ignore
                 semantic_score * semantic_weight
                 + full_text_score * full_text_weight
             ) / (semantic_weight + full_text_weight)
 
-        # Sort by RRF score and convert to VectorSearchResult
-        limit = min(semantic_limit, full_text_limit)
+        # Sort by RRF score and apply offset and limit
         sorted_results = sorted(
             combined_results.values(),
-            key=lambda x: x["rrf_score"],
+            key=lambda x: x["rrf_score"],  # type: ignore
             reverse=True,
-        )[:limit]
+        )
+        offset_results = sorted_results[
+            search_settings.offset : search_settings.offset
+            + search_settings.search_limit
+        ]
 
         return [
             VectorSearchResult(
-                fragment_id=result["data"].fragment_id,
-                extraction_id=result["data"].extraction_id,
-                document_id=result["data"].document_id,
-                user_id=result["data"].user_id,
-                collection_ids=result["data"].collection_ids,
-                text=result["data"].text,
-                score=result["rrf_score"],
+                fragment_id=result["data"].fragment_id,  # type: ignore
+                extraction_id=result["data"].extraction_id,  # type: ignore
+                document_id=result["data"].document_id,  # type: ignore
+                user_id=result["data"].user_id,  # type: ignore
+                collection_ids=result["data"].collection_ids,  # type: ignore
+                text=result["data"].text,  # type: ignore
+                score=result["rrf_score"],  # type: ignore
                 metadata={
-                    **result["data"].metadata,
+                    **result["data"].metadata,  # type: ignore
                     "semantic_rank": result["semantic_rank"],
                     "full_text_rank": result["full_text_rank"],
                 },
             )
-            for result in sorted_results
+            for result in offset_results
         ]
 
     def create_index(
@@ -303,7 +312,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def delete(
         self,
         filters: dict[str, Any],
-    ) -> list[str]:
+    ) -> dict[str, dict[str, str]]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete`."
@@ -343,10 +352,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
             result = sess.execute(
                 query,
                 {"document_id": document_id, "collection_id": collection_id},
-            )
+            ).fetchone()
             sess.commit()
 
-        if result.rowcount == 0:
+        if not result:
             logger.warning(
                 f"Document {document_id} not found or already assigned to collection {collection_id}"
             )
@@ -383,10 +392,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
             result = sess.execute(
                 query,
                 {"document_id": document_id, "collection_id": collection_id},
-            )
+            ).fetchone()
             sess.commit()
 
-        if result.rowcount == 0:
+        if not result:
             logger.warning(
                 f"Document {document_id} not found in collection {collection_id} or already removed"
             )
@@ -448,8 +457,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"collection_id": collection_id})
+            result = sess.execute(
+                query, {"collection_id": collection_id}
+            ).fetchone()
             sess.commit()
+
+        if not result:
+            raise ValueError(
+                f"Collection {collection_id} not found in any documents."
+            )
 
         affected_rows = result.rowcount
         logger.info(
@@ -458,7 +474,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
     def get_document_chunks(
         self, document_id: str, offset: int = 0, limit: int = -1
-    ) -> dict:
+    ) -> dict[str, Any]:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 
@@ -466,7 +482,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata
+            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
             FROM vecs."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
@@ -481,15 +497,31 @@ class PostgresVectorDBProvider(VectorDBProvider):
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
 
-        return [
-            {
-                "fragment_id": result[0],
-                "extraction_id": result[1],
-                "document_id": result[2],
-                "user_id": result[3],
-                "collection_ids": result[4],
-                "text": result[5],
-                "metadata": result[6],
-            }
-            for result in results
-        ]
+        chunks = []
+        total = 0
+
+        if results:
+            total = results[0][7]
+            chunks = [
+                {
+                    "fragment_id": result[0],
+                    "extraction_id": result[1],
+                    "document_id": result[2],
+                    "user_id": result[3],
+                    "collection_ids": result[4],
+                    "text": result[5],
+                    "metadata": result[6],
+                }
+                for result in results
+            ]
+
+        return {"results": chunks, "total_entries": total}
+
+    def close(self) -> None:
+        if self.vx:
+            with self.vx.Session() as sess:
+                sess.close()
+                if sess.bind:
+                    sess.bind.dispose()  # type: ignore
+
+        logger.info("Closed PGVectorDB connection.")

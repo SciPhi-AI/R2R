@@ -72,7 +72,7 @@ def ingest_data():
     for text in get_dataset(args.dataset_name, args.save_folder, args.split, args.column_name):
         client.ingest_files(file_paths=[text])
 
-    # wait till all get ingested 
+    # wait till all get ingested
     wait_till_ready("ingestion_status", "success")
     print("Ingested data")
 

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator, Generator, Optional
 
-from core.base.abstractions.llm import (
+from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
@@ -24,7 +24,7 @@ class CompletionConfig(ProviderConfig):
     initial_backoff: float = 1.0
     max_backoff: float = 60.0
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if not self.provider:
             raise ValueError("Provider must be set.")
         if self.provider not in self.supported_providers:

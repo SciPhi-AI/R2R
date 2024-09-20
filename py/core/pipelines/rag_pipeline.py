@@ -2,9 +2,12 @@ import asyncio
 import logging
 from typing import Any, Optional
 
-from ..base.abstractions.llm import GenerationConfig
-from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
-from ..base.api.models.auth.responses import UserResponse
+from ..base.abstractions import (
+    GenerationConfig,
+    KGSearchSettings,
+    VectorSearchSettings,
+)
+from ..base.logging import RunType
 from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
@@ -23,13 +26,13 @@ class RAGPipeline(AsyncPipeline):
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
-        self._search_pipeline = None
-        self._rag_pipeline = None
+        self._search_pipeline: Optional[AsyncPipeline] = None
+        self._rag_pipeline: Optional[AsyncPipeline] = None
 
-    async def run(
+    async def run(  # type: ignore
         self,
         input: Any,
-        state: Optional[AsyncState] = None,
+        state: Optional[AsyncState],
         run_manager: Optional[RunManager] = None,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
@@ -37,8 +40,16 @@ class RAGPipeline(AsyncPipeline):
         *args: Any,
         **kwargs: Any,
     ):
+        if not self._rag_pipeline:
+            raise ValueError(
+                "`_rag_pipeline` must be set before running the RAG pipeline"
+            )
         self.state = state or AsyncState()
-        async with manage_run(run_manager):
+        # TODO - This feels anti-pattern.
+        run_manager = (
+            run_manager or self.run_manager or RunManager(self.pipe_logger)
+        )
+        async with manage_run(run_manager, RunType.RETRIEVAL):
             if not self._search_pipeline:
                 raise ValueError(
                     "`_search_pipeline` must be set before running the RAG pipeline"
@@ -47,16 +58,19 @@ class RAGPipeline(AsyncPipeline):
             async def multi_query_generator(input):
                 tasks = []
                 async for query in input:
+                    input_kwargs = {
+                        **kwargs,
+                        "vector_search_settings": vector_search_settings,
+                        "kg_search_settings": kg_search_settings,
+                    }
                     task = asyncio.create_task(
                         self._search_pipeline.run(
                             to_async_generator([query]),
-                            state=state,
-                            stream=False,
-                            run_manager=run_manager,
-                            vector_search_settings=vector_search_settings,
-                            kg_search_settings=kg_search_settings,
+                            state,
+                            False,
+                            run_manager,
                             *args,
-                            **kwargs,
+                            **input_kwargs,
                         )
                     )
                     tasks.append((query, task))
@@ -64,14 +78,18 @@ class RAGPipeline(AsyncPipeline):
                 for query, task in tasks:
                     yield (query, await task)
 
-            rag_results = await self._rag_pipeline.run(
-                input=multi_query_generator(input),
-                state=state,
-                stream=rag_generation_config.stream,
-                run_manager=run_manager,
-                rag_generation_config=rag_generation_config,
-                *args,
+            input_kwargs = {
                 **kwargs,
+                "rag_generation_config": rag_generation_config,
+            }
+
+            rag_results = await self._rag_pipeline.run(
+                multi_query_generator(input),
+                state,
+                rag_generation_config.stream,
+                run_manager,
+                *args,
+                **input_kwargs,
             )
             return rag_results
 

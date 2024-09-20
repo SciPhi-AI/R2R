@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
-from core.base.abstractions.document import DataType
+from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 
 
@@ -18,7 +18,7 @@ class DOCXParser(AsyncParser[DataType]):
                 "Error, `python-docx` is required to run `DOCXParser`. Please install it using `pip install python-docx`."
             )
 
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest DOCX data and yield text from each paragraph."""
         if isinstance(data, str):
             raise ValueError("DOCX data must be in bytes format.")
