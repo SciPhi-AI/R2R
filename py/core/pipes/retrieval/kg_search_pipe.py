@@ -195,13 +195,17 @@ class KGSearchSearchPipe(GeneratorPipe):
 
                 # try loading it as a json
                 try:
+                    
+                    if '```json' in summary:
+                        summary = summary.strip().removeprefix("```json").removesuffix("```").strip()
+
                     summary_json = json.loads(summary)
                     description = summary_json.get("summary", "")
                     name = summary_json.get("title", "")
 
                     description += "\n\n" + "\n".join(
                         [
-                            finding["summary"]
+                            finding
                             for finding in summary_json.get("findings", [])
                         ]
                     )

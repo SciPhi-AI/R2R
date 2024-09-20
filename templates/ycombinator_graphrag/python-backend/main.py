@@ -27,7 +27,7 @@ def get_dataset(dataset_name, save_folder = '.data', split = "train", column_nam
     data = load_dataset(dataset_name)
     data = data[split].select(range(args.num_companies))
     for item in data:
-        file_path = os.path.join(save_folder, f"{item['id']}.txt")
+        file_path = os.path.join(save_folder, f"{item['slug']}.txt")
         # Check if the item contains JSON data
         with open(file_path, "w") as f:
             f.write(item[column_name])
@@ -38,11 +38,12 @@ def generate_id_from_label(label: str) -> uuid.UUID:
 
 def wait_till_ready(status_var, status_value):
     while True:
-        documents_overview = client.documents_overview()['results']
+        documents_overview = client.documents_overview(limit=1000)['results']
 
         # print a percentage contribution of each status value value of status var
         status_counts = {}
         for document in documents_overview:
+            print(document.get("name"), document.get(status_var))
             status = document.get(status_var)
             if status in status_counts:
                 status_counts[status] += 1
@@ -52,6 +53,7 @@ def wait_till_ready(status_var, status_value):
         # show fraction of each status value
         for status, count in status_counts.items():
             print(f"{status}: {count / len(documents_overview) * 100:.2f}%")
+
 
         if all(document.get(status_var) == status_value for document in documents_overview):
             break
@@ -78,7 +80,9 @@ def ingest_data():
 def create_graph():
     print("Creating graph...")
     entity_types = ["ORGANIZATION", "GEO", "PERSON", "INDUSTRY_SECTOR", "PRODUCT", "COMPETITOR", "TECHNOLOGY", "ACQUISITION", "INVESTOR", ]
-    client.create_graph()
+    documents_overview = client.documents_overview(limit=1000)['results']
+    document_ids = [document.get("id") for document in documents_overview if document.get("restructuring_status") in ["pending", "failure", "enrichment_failure"]]
+    client.create_graph(document_ids = document_ids)
     wait_till_ready("restructuring_status", "success")
 
 
@@ -99,8 +103,8 @@ def update_prompts():
 
 def ingest():
     update_prompts()
-    ingest_data()
-    create_graph()
+    # ingest_data()
+    # create_graph()
     enrich_graph()
 
 def ask():

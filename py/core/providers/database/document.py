@@ -224,7 +224,7 @@ class DocumentMixin(DatabaseMixin):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = 100,
+        limit: int = 1000,
     ) -> list[DocumentInfo]:
         conditions = []
         params = []
