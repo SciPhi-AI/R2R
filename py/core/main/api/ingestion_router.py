@@ -188,7 +188,9 @@ class IngestionRouter(BaseRouter):
                 documents_overview = await self.service.providers.database.relational.get_documents_overview(
                     filter_document_ids=document_ids,
                     filter_user_ids=[auth_user.id],
-                )
+                )[
+                    "results"
+                ]
                 if len(documents_overview) != len(document_ids):
                     raise R2RException(
                         status_code=404,
