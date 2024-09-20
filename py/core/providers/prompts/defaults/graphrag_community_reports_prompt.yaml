@@ -17,7 +17,7 @@ graphrag_community_reports_prompt:
 
       Return output as a well-formed JSON-formatted string with the following format:
       ```json
-      {
+      {{
           "title": <report_title>,
           "summary": <executive_summary>,
           "rating": <impact_severity_rating>,
@@ -30,7 +30,7 @@ graphrag_community_reports_prompt:
               "<finding5>"
               // Additional findings...
           ]
-      }
+      }}
       ```
 
       # Grounding Rules
@@ -69,7 +69,7 @@ graphrag_community_reports_prompt:
       205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
 
       Output:
-      {
+      {{
           "title": "OpenAI, Stripe, and Airbnb Community",
           "summary": "The Y Combinator community comprises key startups like OpenAI, Stripe, and Airbnb, which are interconnected through strategic partnerships and investments. These relationships highlight a robust network focused on advancing AI technologies, payment infrastructure, and online marketplaces.",
           "rating": 7.5,
@@ -81,7 +81,7 @@ graphrag_community_reports_prompt:
               "Stripe's investment in OpenAI's latest funding round illustrates the strategic financial moves that drive growth and innovation within the Y Combinator community. Such investments not only strengthen partnerships but also foster an environment of collaboration and shared success among startups. [Data: Relationships (204)]",
               "The collaboration between Airbnb and Stripe to expand global payment options demonstrates a commitment to scalability and accessibility in the Y Combinator ecosystem. This initiative is pivotal in enabling startups to reach a broader international market, thereby increasing their impact and revenue potential. [Data: Relationships (205)]"
           ]
-      }
+      }}
 
       # Real Data
 

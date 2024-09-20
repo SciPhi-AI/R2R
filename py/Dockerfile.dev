@@ -49,6 +49,8 @@ COPY --from=builder /app/r2r /app/r2r
 COPY --from=builder /app/shared /app/shared
 COPY --from=builder /app/r2r.toml /app/r2r.toml
 
+COPY pyproject.toml /app/pyproject.toml
+
 # Set environment variables for port and host
 ARG PORT=7272
 ARG HOST=0.0.0.0
