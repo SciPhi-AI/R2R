@@ -16,7 +16,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { SearchResults } from '@/components/SearchResults';
-import { KGSearchResult } from '@/types';
+import { KGSearchResult, VectorSearchResult } from '@/types';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -28,7 +28,7 @@ interface Message {
   searchPerformed?: boolean;
 }
 
-interface Source {
+interface Source extends VectorSearchResult {
   id: string;
   score: number;
   metadata: {
@@ -62,21 +62,6 @@ const AnimatedEllipsis: FC = () => {
     >
       {dots}
     </span>
-  );
-};
-
-const SourceItem: FC<{ source: Source }> = ({ source }) => {
-  const { score, metadata } = source;
-
-  return (
-    <div className="bg-zinc-700 p-3 rounded-lg mb-2 w-full">
-      <h3 className="text-xs font-medium text-zinc-200 mb-1">
-        {metadata.title || 'Untitled'} (Similarity: {score.toFixed(3)})
-      </h3>
-      <p className="text-xs text-zinc-400">
-        {metadata.text || 'No content available'}
-      </p>
-    </div>
   );
 };
 
@@ -115,10 +100,23 @@ const parseKGSearchResult = (sources: string | object): KGSearchResult[] => {
   return sources as KGSearchResult[];
 };
 
-interface KGSearchResultState {
-  entities: KGSearchResult[];
-  communities: KGSearchResult[];
-}
+const SourceInfo: React.FC<{ isSearching: boolean; sourcesCount: number }> = ({
+  isSearching,
+  sourcesCount,
+}) => (
+  <div className="flex items-center justify-between w-full">
+    <Logo width={50} height={50} disableLink={true} />
+    <span className="text-sm font-normal text-black">
+      {isSearching ? (
+        <span className="searching-animation">Searching over sources...</span>
+      ) : sourcesCount > 0 ? (
+        `View ${sourcesCount} Sources`
+      ) : (
+        'No sources found'
+      )}
+    </span>
+  </div>
+);
 
 export const Answer: FC<{
   message: Message;
@@ -132,12 +130,12 @@ export const Answer: FC<{
     []
   );
   useEffect(() => {
-    if (message.sources.vector) {
+    if (message.sources && message.sources.vector) {
       const parsed = parseVectorSearchSources(message.sources.vector);
       setParsedVectorSources(parsed);
     }
-    if (message.sources.kg) {
-      console.log('message.sources.kg = ', message.sources.kg);
+
+    if (message.sources && message.sources.kg) {
       let kgLocalResult: KGSearchResult[] = JSON.parse(message.sources.kg);
 
       const entitiesArray = kgLocalResult.filter(
@@ -148,8 +146,6 @@ export const Answer: FC<{
       );
       setParsedEntities(entitiesArray);
       setParsedCommunities(communitiesArray);
-      // setParsedKGSearchResult(parsedKGSearchResult);
-      // debugger;
     }
   }, [message.sources]);
 
@@ -233,45 +229,30 @@ export const Answer: FC<{
   };
   return (
     <div className="mt-4">
-      {parsedVectorSources.length > 0 || isSearching ? (
-        <Accordion
-          type="single"
-          collapsible
-          className="w-full"
-          onValueChange={(value) => setIsOpen(value === 'answer')}
-        >
-          <AccordionItem value="answer">
-            <AccordionTrigger className="py-2 text-lg font-bold text-zinc-200 hover:no-underline text-black">
-              <div className="flex items-center justify-between w-full">
-                <Logo width={50} height={50} disableLink={true} />
-                <span className="text-sm font-normal text-black">
-                  {isSearching ? (
-                    <span className="searching-animation">
-                      Searching over sources...
-                    </span>
-                  ) : (
-                    `View ${parsedVectorSources.length} Sources`
-                  )}
-                </span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              {!isSearching && (
-                <SearchResults
-                  vectorSearchResults={parsedVectorSources}
-                  entities={parsedEntities}
-                  communities={parsedCommunities}
-                />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : message.searchPerformed ? (
-        <div className="flex items-center justify-between py-2 text-sm text-zinc-400">
-          <Logo width={25} height={25} disableLink={true} />
-          <span>No sources found</span>
-        </div>
-      ) : null}
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full"
+        onValueChange={(value) => setIsOpen(value === 'answer')}
+      >
+        <AccordionItem value="answer">
+          <AccordionTrigger className="py-2 text-lg font-bold text-zinc-200 hover:no-underline text-black">
+            <SourceInfo
+              isSearching={isSearching}
+              sourcesCount={parsedVectorSources.length}
+            />
+          </AccordionTrigger>
+          <AccordionContent>
+            {!isSearching && parsedVectorSources.length > 0 && (
+              <SearchResults
+                vectorSearchResults={parsedVectorSources}
+                entities={parsedEntities}
+                communities={parsedCommunities}
+              />
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <div className="space-y-4 mt-4">
         {message.content || isStreaming ? (
