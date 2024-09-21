@@ -11,20 +11,20 @@ interface DefaultQueriesProps {
 export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
   const defaultQueries = [
     {
-      query: 'What does the company Decisional AI do?',
+      query: 'What common themes emerged in this YC batch?',
       icon: <Lightbulb className="h-6 w-6 text-yellow-400" />,
     },
     {
       query:
-        'Which companies will most likely succeed and which ones will fail?',
+        'What companies are leveraging AI agents in unique and interesting ways?',
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
-      query: 'Which companies are NOT building AI agents?',
+      query: 'What challenges are S24 companies facing?',
       icon: <Flame className="h-6 w-6 text-red-400" />,
     },
     {
-      query: "How can I get in touch with R2R's founders?",
+      query: "Which companies might R2R's graphrag help? And how?",
       icon: <Earth className="h-6 w-6 text-green-400" />,
     },
   ];
