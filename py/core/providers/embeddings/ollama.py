@@ -183,10 +183,3 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         limit: int = 10,
     ) -> list[VectorSearchResult]:
         return results[:limit]
-
-    def tokenize_string(
-        self, text: str, model: str, stage: EmbeddingProvider.PipeStage
-    ) -> list[int]:
-        raise NotImplementedError(
-            "Tokenization is not supported by OllamaEmbeddingProvider."
-        )

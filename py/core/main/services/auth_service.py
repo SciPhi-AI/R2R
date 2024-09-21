@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from core.base import R2RException, RunLoggingSingleton, RunManager, Token
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -33,11 +33,13 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(self, email: str, password: str) -> dict[str, str]:
         return await self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
-    async def verify_email(self, email: str, verification_code: str) -> bool:
+    async def verify_email(
+        self, email: str, verification_code: str
+    ) -> dict[str, str]:
 
         if not self.config.auth.require_email_verification:
             raise R2RException(
@@ -70,7 +72,7 @@ class AuthService(Service):
 
     @telemetry_event("GetCurrentUser")
     async def user(self, token: str) -> UserResponse:
-        token_data = self.providers.auth.decode_token(token)
+        token_data = await self.providers.auth.decode_token(token)
         user = await self.providers.database.relational.get_user_by_email(
             token_data.email
         )
@@ -138,7 +140,7 @@ class AuthService(Service):
     async def delete_user(
         self,
         user_id: UUID,
-        password: Optional[str] = None,
+        password: str,
         delete_vector_data: bool = False,
         is_superuser: bool = False,
     ) -> dict[str, str]:
@@ -147,7 +149,7 @@ class AuthService(Service):
             raise R2RException(status_code=404, message="User not found")
         if not (
             is_superuser
-            or self.providers.auth.crypto_provider.verify_password(
+            or self.providers.auth.crypto_provider.verify_password(  # type: ignore
                 password, user.hashed_password
             )
         ):
@@ -160,7 +162,9 @@ class AuthService(Service):
 
     @telemetry_event("CleanExpiredBlacklistedTokens")
     async def clean_expired_blacklisted_tokens(
-        self, max_age_hours: int = 7 * 24, current_time: datetime = None
+        self,
+        max_age_hours: int = 7 * 24,
+        current_time: Optional[datetime] = None,
     ):
         await self.providers.database.relational.clean_expired_blacklisted_tokens(
             max_age_hours, current_time

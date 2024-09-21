@@ -1,19 +1,18 @@
 import functools
 import logging
 from abc import abstractmethod
-from typing import Optional
+from typing import Callable, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from core.base import R2RException, manage_run
 from core.base.logging.base import RunType
-
-logger = logging.getLogger(__name__)
-
 from core.base.providers import OrchestrationProvider
 
 from ..services.base import Service
+
+logger = logging.getLogger(__name__)
 
 
 class BaseRouter:
@@ -34,7 +33,7 @@ class BaseRouter:
     def get_router(self):
         return self.router
 
-    def base_endpoint(self, func: callable):
+    def base_endpoint(self, func: Callable):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
@@ -48,10 +47,18 @@ class BaseRouter:
                     )
 
                 try:
-                    results = await func(*args, **kwargs)
+                    func_result = await func(*args, **kwargs)
+                    if (
+                        isinstance(func_result, tuple)
+                        and len(func_result) == 2
+                    ):
+                        results, outer_kwargs = func_result
+                    else:
+                        results, outer_kwargs = func_result, {}
+
                     if isinstance(results, StreamingResponse):
                         return results
-                    return {"results": results}
+                    return {"results": results, **outer_kwargs}
                 except R2RException as re:
                     raise HTTPException(
                         status_code=re.status_code,

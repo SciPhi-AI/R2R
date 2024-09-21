@@ -28,7 +28,7 @@ class LoggingConfig(ProviderConfig):
     log_info_table: str = "log_info"
     logging_path: Optional[str] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @property
@@ -148,6 +148,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         key: str,
         value: str,
     ):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         await self.conn.execute(
             f"""
             INSERT INTO {self.log_table} (timestamp, run_id, key, value)
@@ -163,6 +168,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         run_type: RunType,
         user_id: UUID,
     ):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         await self.conn.execute(
             f"""
             INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id)
@@ -183,6 +193,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         cursor = await self.conn.cursor()
         query = "SELECT run_id, run_type, timestamp, user_id"
         query += f" FROM {self.log_info_table}"
@@ -217,6 +232,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         cursor = await self.conn.cursor()
         placeholders = ",".join(["?" for _ in run_ids])
         query = f"""
@@ -249,6 +269,10 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     async def score_completion(
         self, run_id: UUID, message_id: UUID, score: float
     ):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
         cursor = await self.conn.cursor()
 
         await cursor.execute(
@@ -281,6 +305,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                     f"UPDATE {self.log_table} SET value = ? WHERE run_id = ? AND key = 'completion_record'",
                     (json.dumps(completion_record), str(run_id)),
                 )
+
                 await self.conn.commit()
                 return {"message": "Score updated successfully."}
 
@@ -292,7 +317,7 @@ class PostgresLoggingConfig(LoggingConfig):
     log_table: str = "logs"
     log_info_table: str = "log_info"
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         required_env_vars = [
             "POSTGRES_DBNAME",
             "POSTGRES_USER",
@@ -386,6 +411,11 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         key: str,
         value: str,
     ):
+        if not self.pool:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         async with self.pool.acquire() as conn:
             await conn.execute(
                 f"INSERT INTO {self.log_table} (timestamp, run_id, key, value) VALUES (NOW(), $1, $2, $3)",
@@ -400,6 +430,11 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         run_type: RunType,
         user_id: UUID,
     ):
+        if not self.pool:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         async with self.pool.acquire() as conn:
             await conn.execute(
                 f"INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id) VALUES (NOW(), $1, $2, $3)",
@@ -415,6 +450,11 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
+        if not self.pool:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         query = f"SELECT run_id, run_type, timestamp, user_id FROM {self.log_info_table}"
         conditions = []
         params = []
@@ -453,6 +493,10 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
     ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
+        if not self.pool:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
 
         placeholders = ",".join([f"${i + 1}" for i in range(len(run_ids))])
         query = f"""
@@ -472,6 +516,11 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
     async def score_completion(
         self, run_id: UUID, message_id: UUID, score: float
     ):
+        if not self.pool:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"SELECT value FROM {self.log_table} WHERE run_id = $1 AND key = 'completion_record'",
@@ -510,205 +559,14 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         return {"message": "Score not updated."}
 
 
-class RedisLoggingConfig(LoggingConfig):
-    provider: str = "redis"
-    log_table: str = "logs"
-    log_info_table: str = "log_info"
-
-    def validate(self) -> None:
-        required_env_vars = ["REDIS_CLUSTER_IP", "REDIS_CLUSTER_PORT"]
-        for var in required_env_vars:
-            if not os.getenv(var):
-                raise ValueError(f"Environment variable {var} is not set.")
-
-    @property
-    def supported_providers(self) -> list[str]:
-        return ["redis"]
-
-
-class RedisRunLoggingProvider(RunLoggingProvider):
-    def __init__(self, config: RedisLoggingConfig):
-        logger.info(
-            f"Initializing RedisRunLoggingProvider with config: {config}"
-        )
-
-        if not all(
-            [
-                os.getenv("REDIS_CLUSTER_IP"),
-                os.getenv("REDIS_CLUSTER_PORT"),
-            ]
-        ):
-            raise ValueError(
-                "Please set the environment variables REDIS_CLUSTER_IP and REDIS_CLUSTER_PORT to run `LoggingDatabaseConnection` with `redis`."
-            )
-        try:
-            from redis.asyncio import Redis
-        except ImportError:
-            raise ValueError(
-                "Error, `redis` is not installed. Please install it using `pip install redis`."
-            )
-
-        cluster_ip = os.getenv("REDIS_CLUSTER_IP")
-        port = os.getenv("REDIS_CLUSTER_PORT")
-        self.redis = Redis(host=cluster_ip, port=port, decode_responses=True)
-        self.log_key = config.log_table
-        self.log_info_key = config.log_info_table
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.close()
-
-    async def close(self):
-        await self.redis.close()
-
-    async def log(
-        self,
-        run_id: UUID,
-        key: str,
-        value: str,
-    ):
-        timestamp = datetime.now().timestamp()
-        log_entry = {
-            "timestamp": timestamp,
-            "run_id": str(run_id),
-            "key": key,
-            "value": value,
-        }
-        await self.redis.lpush(
-            f"{self.log_key}:{str(run_id)}", json.dumps(log_entry)
-        )
-
-    async def info_log(
-        self,
-        run_id: UUID,
-        run_type: RunType,
-        user_id: UUID,
-    ):
-        timestamp = datetime.now().timestamp()
-        log_entry = {
-            "timestamp": timestamp,
-            "run_id": str(run_id),
-            "run_type": run_type,
-            "user_id": str(user_id),
-        }
-        await self.redis.hset(
-            self.log_info_key, str(run_id), json.dumps(log_entry)
-        )
-        await self.redis.zadd(
-            f"{self.log_info_key}_sorted", {str(run_id): timestamp}
-        )
-
-    async def get_info_logs(
-        self,
-        offset: int = 0,
-        limit: int = 100,
-        run_type_filter: Optional[RunType] = None,
-        user_ids: Optional[list[UUID]] = None,
-    ) -> list[RunInfoLog]:
-        run_info_list = []
-        start = offset
-        count_per_batch = 100  # Adjust batch size as needed
-
-        while len(run_info_list) < limit:
-            run_ids = await self.redis.zrevrange(
-                f"{self.log_info_key}_sorted",
-                start,
-                start + count_per_batch - 1,
-            )
-            if not run_ids:
-                break  # No more log IDs to process
-
-            start += count_per_batch
-
-            for run_id in run_ids:
-                log_entry = json.loads(
-                    await self.redis.hget(self.log_info_key, run_id)
-                )
-
-                # Check if the log entry matches the filters
-                if (
-                    run_type_filter is None
-                    or log_entry["run_type"] == run_type_filter
-                ) and (
-                    user_ids is None or UUID(log_entry["user_id"]) in user_ids
-                ):
-                    run_info_list.append(
-                        RunInfoLog(
-                            run_id=UUID(log_entry["run_id"]),
-                            run_type=log_entry["run_type"],
-                            timestamp=datetime.fromtimestamp(
-                                log_entry["timestamp"]
-                            ),
-                            user_id=UUID(log_entry["user_id"]),
-                        )
-                    )
-
-                if len(run_info_list) >= limit:
-                    break
-
-        return run_info_list[:limit]
-
-    async def get_logs(
-        self, run_ids: list[UUID], limit_per_run: int = 10
-    ) -> list:
-        logs = []
-        for run_id in run_ids:
-            raw_logs = await self.redis.lrange(
-                f"{self.log_key}:{str(run_id)}", 0, limit_per_run - 1
-            )
-            for raw_log in raw_logs:
-                json_log = json.loads(raw_log)
-                json_log["run_id"] = UUID(json_log["run_id"])
-                logs.append(json_log)
-        return logs
-
-    async def score_completion(
-        self, run_id: UUID, message_id: UUID, score: float
-    ):
-        log_key = f"{self.log_key}:{str(run_id)}"
-        logs = await self.redis.lrange(log_key, 0, -1)
-
-        for i, log_entry in enumerate(logs):
-            log_data = json.loads(log_entry)
-            if log_data.get("key") == "completion_record":
-                completion_record = json.loads(log_data["value"])
-
-                if completion_record.get("message_id") == str(message_id):
-                    if (
-                        "score" not in completion_record
-                        or completion_record["score"] is None
-                    ):
-                        completion_record["score"] = [score]
-                    elif isinstance(completion_record["score"], list):
-                        completion_record["score"] = [
-                            x
-                            for x in completion_record["score"]
-                            if x is not None
-                        ]
-                        completion_record["score"].append(score)
-                    else:
-                        completion_record["score"] = [
-                            completion_record["score"],
-                            score,
-                        ]
-
-                    log_data["value"] = json.dumps(completion_record)
-                    await self.redis.lset(log_key, i, json.dumps(log_data))
-                    return {"message": "Score updated successfully."}
-
-        return {"message": "Score not updated."}
-
-
 class RunLoggingSingleton:
     _instance = None
     _is_configured = False
+    _config: Optional[LoggingConfig] = None
 
     SUPPORTED_PROVIDERS = {
         "local": LocalRunLoggingProvider,
         "postgres": PostgresRunLoggingProvider,
-        "redis": RedisRunLoggingProvider,
     }
 
     @classmethod
@@ -716,9 +574,7 @@ class RunLoggingSingleton:
         return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
-    def configure(
-        cls, logging_config: Optional[LoggingConfig] = LoggingConfig()
-    ):
+    def configure(cls, logging_config: LoggingConfig = LoggingConfig()):
         if not cls._is_configured:
             cls._config = logging_config
             cls._is_configured = True

@@ -4,7 +4,7 @@ from typing import Any
 
 from openai import AsyncOpenAI, OpenAI
 
-from core.base.abstractions.llm import GenerationConfig
+from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
 logger = logging.getLogger(__name__)

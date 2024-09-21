@@ -6,7 +6,7 @@ __all__ = [
     # From cli.py
     "cli",
     "main",
-    # From Command Group
+    # From Command Collection
     "command_group_cli",
     # From Commands
     "auth",

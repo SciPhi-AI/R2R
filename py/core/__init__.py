@@ -112,8 +112,6 @@ __all__ = [
     "LoggingConfig",
     "PostgresLoggingConfig",
     "PostgresRunLoggingProvider",
-    "RedisLoggingConfig",
-    "RedisRunLoggingProvider",
     "RunLoggingSingleton",
     # Run Manager
     "RunManager",
@@ -246,7 +244,6 @@ __all__ = [
     "StreamingSearchRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "WebSearchPipe",
     "KGStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS

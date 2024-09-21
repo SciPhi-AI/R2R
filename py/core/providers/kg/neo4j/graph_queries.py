@@ -1,3 +1,4 @@
+# type: ignore
 UNIQUE_CONSTRAINTS = []
 
 GET_CHUNKS_QUERY = """

@@ -1,6 +1,6 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional, Sequence, Union
 
-from sqlalchemy import text
+from sqlalchemy import TextClause, text
 
 from .vecs import Client
 
@@ -8,7 +8,7 @@ from .vecs import Client
 # TODO: This should be defined at the mixin, not here
 def execute_query(
     vx: Client,
-    query: Union[str, text],
+    query: Union[str, TextClause],
     params: Optional[dict[str, Any]] = None,
 ):
     with vx.Session() as sess:
@@ -22,12 +22,12 @@ def execute_query(
 class QueryBuilder:
     def __init__(self, table_name: str):
         self.table_name = table_name
-        self.conditions = []
-        self.params = {}
+        self.conditions: list[str] = []
+        self.params: dict = {}
         self.select_fields = "*"
         self.operation = "SELECT"
-        self.insert_data = None
-        self.limit_value = None
+        self.limit_value: Optional[int] = None
+        self.insert_data: Optional[dict] = None
 
     def select(self, fields: list[str]):
         self.select_fields = ", ".join(fields)
@@ -80,17 +80,23 @@ class DatabaseMixin:
         raise NotImplementedError("Subclasses must implement this method")
 
     def execute_query(
-        self, query: Union[str, text], params: Optional[dict[str, Any]] = None
+        self,
+        query: Union[str, TextClause],
+        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
     ):
         raise NotImplementedError("Subclasses must implement this method")
 
     def fetch_query(
-        self, query: Union[str, text], params: Optional[dict[str, Any]] = None
+        self,
+        query: Union[str, TextClause],
+        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
     ):
         raise NotImplementedError("Subclasses must implement this method")
 
     def fetchrow_query(
-        self, query: Union[str, text], params: Optional[dict[str, Any]] = None
+        self,
+        query: Union[str, TextClause],
+        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
     ):
         raise NotImplementedError("Subclasses must implement this method")
 

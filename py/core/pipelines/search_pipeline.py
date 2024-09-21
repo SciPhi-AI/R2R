@@ -3,7 +3,7 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
-from ..base.abstractions.search import (
+from ..base.abstractions import (
     AggregateSearchResult,
     KGSearchSettings,
     VectorSearchSettings,
@@ -25,14 +25,14 @@ class SearchPipeline(AsyncPipeline):
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
-        self._parsing_pipe = None
-        self._vector_search_pipeline = None
-        self._kg_search_pipeline = None
+        self._parsing_pipe: Optional[AsyncPipe] = None
+        self._vector_search_pipeline: Optional[AsyncPipeline] = None
+        self._kg_search_pipeline: Optional[AsyncPipeline] = None
 
-    async def run(
+    async def run(  # type: ignore
         self,
         input: Any,
-        state: Optional[AsyncState] = None,
+        state: Optional[AsyncState],
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
@@ -51,8 +51,8 @@ class SearchPipeline(AsyncPipeline):
         )
         run_manager = run_manager or self.run_manager
         async with manage_run(run_manager):
-            vector_search_queue = Queue()
-            kg_queue = Queue()
+            vector_search_queue: Queue[str] = Queue()
+            kg_queue: Queue[str] = Queue()
 
             async def enqueue_requests():
                 async for message in input:
@@ -69,6 +69,9 @@ class SearchPipeline(AsyncPipeline):
 
             # Start the embedding and KG pipelines in parallel
             if use_vector_search:
+                if not self._vector_search_pipeline:
+                    raise ValueError("Vector search pipeline not found")
+
                 vector_search_task = asyncio.create_task(
                     self._vector_search_pipeline.run(
                         dequeue_requests(vector_search_queue),
@@ -82,6 +85,8 @@ class SearchPipeline(AsyncPipeline):
                 )
 
             if do_kg:
+                if not self._kg_search_pipeline:
+                    raise ValueError("KG search pipeline not found")
                 kg_task = asyncio.create_task(
                     self._kg_search_pipeline.run(
                         dequeue_requests(kg_queue),
@@ -120,12 +125,22 @@ class SearchPipeline(AsyncPipeline):
         if kg_extraction_pipe:
             if not self._kg_search_pipeline:
                 self._kg_search_pipeline = AsyncPipeline()
+            if not self._kg_search_pipeline:
+                raise ValueError(
+                    "KG search pipeline not found"
+                )  # for type hinting
+
             self._kg_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         elif vector_search_pipe:
             if not self._vector_search_pipeline:
                 self._vector_search_pipeline = AsyncPipeline()
+            if not self._vector_search_pipeline:
+                raise ValueError(
+                    "Vector search pipeline not found"
+                )  # for type hinting
+
             self._vector_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )

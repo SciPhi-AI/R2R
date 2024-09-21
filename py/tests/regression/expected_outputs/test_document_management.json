@@ -1,1183 +1,1026 @@
 {
   "ingest_sample_files": {
-    "results": {
-      "processed_documents": [
-        {
-          "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "html",
-          "metadata": {},
-          "title": "pg_essay_1.html",
-          "version": "v0",
-          "size_in_bytes": 131503,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344768",
-          "updated_at": "2024-08-13T17:43:28.344768"
-        },
-        {
-          "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "txt",
-          "metadata": {},
-          "title": "got.txt",
-          "version": "v0",
-          "size_in_bytes": 9491,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344841",
-          "updated_at": "2024-08-13T17:43:28.344841"
-        },
-        {
-          "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "mp3",
-          "metadata": {},
-          "title": "sample.mp3",
-          "version": "v0",
-          "size_in_bytes": 121671,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344851",
-          "updated_at": "2024-08-13T17:43:28.344851"
-        },
-        {
-          "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "pdf",
-          "metadata": {},
-          "title": "uber_2021.pdf",
-          "version": "v0",
-          "size_in_bytes": 1880483,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344856",
-          "updated_at": "2024-08-13T17:43:28.344856"
-        },
-        {
-          "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "mp3",
-          "metadata": {},
-          "title": "sample2.mp3",
-          "version": "v0",
-          "size_in_bytes": 72456,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344867",
-          "updated_at": "2024-08-13T17:43:28.344867"
-        },
-        {
-          "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "txt",
-          "metadata": {},
-          "title": "aristotle_v2.txt",
-          "version": "v0",
-          "size_in_bytes": 7443,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344871",
-          "updated_at": "2024-08-13T17:43:28.344871"
-        },
-        {
-          "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "html",
-          "metadata": {},
-          "title": "pg_essay_4.html",
-          "version": "v0",
-          "size_in_bytes": 118113,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344874",
-          "updated_at": "2024-08-13T17:43:28.344874"
-        },
-        {
-          "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "html",
-          "metadata": {},
-          "title": "pg_essay_5.html",
-          "version": "v0",
-          "size_in_bytes": 123779,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344879",
-          "updated_at": "2024-08-13T17:43:28.344879"
-        },
-        {
-          "id": "2f576170-c4f9-5141-a910-a0924f341de4",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "pdf",
-          "metadata": {},
-          "title": "lyft_2021.pdf",
-          "version": "v0",
-          "size_in_bytes": 1440303,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344884",
-          "updated_at": "2024-08-13T17:43:28.344884"
-        },
-        {
-          "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "txt",
-          "metadata": {},
-          "title": "test.txt",
-          "version": "v0",
-          "size_in_bytes": 20,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344889",
-          "updated_at": "2024-08-13T17:43:28.344889"
-        },
-        {
-          "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "html",
-          "metadata": {},
-          "title": "pg_essay_2.html",
-          "version": "v0",
-          "size_in_bytes": 125112,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344893",
-          "updated_at": "2024-08-13T17:43:28.344893"
-        },
-        {
-          "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "txt",
-          "metadata": {},
-          "title": "aristotle.txt",
-          "version": "v0",
-          "size_in_bytes": 73353,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344898",
-          "updated_at": "2024-08-13T17:43:28.344898"
-        },
-        {
-          "id": "d421207a-d799-5806-8d67-46b2005b15d4",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "txt",
-          "metadata": {},
-          "title": "yc_companies.txt",
-          "version": "v0",
-          "size_in_bytes": 47209,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344901",
-          "updated_at": "2024-08-13T17:43:28.344901"
-        },
-        {
-          "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "png",
-          "metadata": {},
-          "title": "screen_shot.png",
-          "version": "v0",
-          "size_in_bytes": 791764,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344905",
-          "updated_at": "2024-08-13T17:43:28.344905"
-        },
-        {
-          "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "html",
-          "metadata": {},
-          "title": "pg_essay_3.html",
-          "version": "v0",
-          "size_in_bytes": 124915,
-          "status": "success",
-          "created_at": "2024-08-13T17:43:28.344908",
-          "updated_at": "2024-08-13T17:43:28.344908"
-        }
-      ],
-      "failed_documents": [],
-      "skipped_documents": []
-    }
+    "results": [
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "77ba1665-2646-457c-a892-da3c791f5e88",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "ae150ce4-1f91-4fa6-affb-7dd8ab1ad063",
+        "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "1d733a99-2c79-4d3e-bb0c-a0d49b26dc37",
+        "document_id": "52e12576-090f-59db-91f4-6d4b2e29ae6c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "c7d0b32c-00d9-4f0c-9f0d-240f86056665",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "da16c185-57bf-4f30-bc8a-598e127824a1",
+        "document_id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "460abc23-60de-4d11-8f10-81079d7d4990",
+        "document_id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "aa01d8e2-c866-4e60-8190-3c7894afc263",
+        "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "6da2d33b-7b00-4cd3-9ede-9748ca5fd936",
+        "document_id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "b16a158c-85da-4290-92ae-6f0a4881c279",
+        "document_id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "fcdb9219-9d4f-4de2-aeb0-4fc688ffb7b4",
+        "document_id": "2f576170-c4f9-5141-a910-a0924f341de4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "082de59f-0252-4f2e-b038-90253b8066f5",
+        "document_id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "8864c244-3372-4196-80c2-0d9dd667c3fd",
+        "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "2fe08ebb-7157-452c-811c-7ede2b05e750",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "78ea4936-8bf6-4539-9db3-68f0e5b5bbe5",
+        "document_id": "d421207a-d799-5806-8d67-46b2005b15d4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "ad23dd8d-f0c1-4641-a6a2-e909ede1b3d1",
+        "document_id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "c100a64b-c975-4a5e-bde4-7f1a0718b851",
+        "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
+      }
+    ]
   },
   "reingest_sample_file": {
-    "results": "All provided documents already exist. Use the `update_files` endpoint instead to update these documents."
+    "results": [
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "d0c84b68-407c-4329-b7ce-fb32df9f196b",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "8134708a-ac7e-436c-977a-4ba1434aeb94",
+        "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "fcf12fcf-092c-43c6-85fa-3c02b62231a1",
+        "document_id": "52e12576-090f-59db-91f4-6d4b2e29ae6c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "ab4f1bc7-7d62-47ee-9e21-6b4fab7ccfb7",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "ef38bf7b-5688-4bb4-b861-6e06dd4603dc",
+        "document_id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "8bb837ed-d586-4d8b-8f80-e69e6d848dba",
+        "document_id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "873adc8b-c630-49e8-9859-b49e2588e72c",
+        "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "e2552c6f-884d-42eb-b279-ae881d6a8338",
+        "document_id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "ff2a206b-f9cb-4369-ad7f-be5f930ab6f0",
+        "document_id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "2c26fd9d-e35b-4597-821e-c1e4031df1f8",
+        "document_id": "2f576170-c4f9-5141-a910-a0924f341de4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "1352946d-1a09-4534-ad29-94e6679ee4cf",
+        "document_id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "36191afd-7628-4faa-aa7c-4da16cf4ee46",
+        "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "07acc8f2-48d6-4e1c-8932-3f0c594105bf",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "d0f06ec0-265e-45c8-a768-04411f96a54c",
+        "document_id": "d421207a-d799-5806-8d67-46b2005b15d4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "56187544-b442-4e5d-8338-bce2881e0d16",
+        "document_id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "5a1d66ee-976c-4dd5-a19e-8e20c1470339",
+        "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
+      }
+    ]
   },
   "documents_overview": {
     "results": [
       {
-        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "group_ids": [],
+        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "type": "html",
-        "metadata": {},
-        "title": "pg_essay_1.html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_3.html",
         "version": "v0",
-        "size_in_bytes": 131503,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344768Z",
-        "updated_at": "2024-08-13T17:43:28.344768Z"
-      },
-      {
-        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "got.txt",
-        "version": "v0",
-        "size_in_bytes": 9491,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344841Z",
-        "updated_at": "2024-08-13T17:43:28.344841Z"
-      },
-      {
-        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "mp3",
-        "metadata": {},
-        "title": "sample.mp3",
-        "version": "v0",
-        "size_in_bytes": 121671,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344851Z",
-        "updated_at": "2024-08-13T17:43:28.344851Z"
-      },
-      {
-        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "pdf",
-        "metadata": {},
-        "title": "uber_2021.pdf",
-        "version": "v0",
-        "size_in_bytes": 1880483,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344856Z",
-        "updated_at": "2024-08-13T17:43:28.344856Z"
-      },
-      {
-        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "mp3",
-        "metadata": {},
-        "title": "sample2.mp3",
-        "version": "v0",
-        "size_in_bytes": 72456,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344867Z",
-        "updated_at": "2024-08-13T17:43:28.344867Z"
-      },
-      {
-        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "aristotle_v2.txt",
-        "version": "v0",
-        "size_in_bytes": 7443,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344871Z",
-        "updated_at": "2024-08-13T17:43:28.344871Z"
-      },
-      {
-        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {},
-        "title": "pg_essay_4.html",
-        "version": "v0",
-        "size_in_bytes": 118113,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344874Z",
-        "updated_at": "2024-08-13T17:43:28.344874Z"
-      },
-      {
-        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {},
-        "title": "pg_essay_5.html",
-        "version": "v0",
-        "size_in_bytes": 123779,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344879Z",
-        "updated_at": "2024-08-13T17:43:28.344879Z"
-      },
-      {
-        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "pdf",
-        "metadata": {},
-        "title": "lyft_2021.pdf",
-        "version": "v0",
-        "size_in_bytes": 1440303,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344884Z",
-        "updated_at": "2024-08-13T17:43:28.344884Z"
-      },
-      {
-        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "test.txt",
-        "version": "v0",
-        "size_in_bytes": 20,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344889Z",
-        "updated_at": "2024-08-13T17:43:28.344889Z"
-      },
-      {
-        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {},
-        "title": "pg_essay_2.html",
-        "version": "v0",
-        "size_in_bytes": 125112,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344893Z",
-        "updated_at": "2024-08-13T17:43:28.344893Z"
-      },
-      {
-        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "aristotle.txt",
-        "version": "v0",
-        "size_in_bytes": 73353,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344898Z",
-        "updated_at": "2024-08-13T17:43:28.344898Z"
-      },
-      {
-        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "yc_companies.txt",
-        "version": "v0",
-        "size_in_bytes": 47209,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344901Z",
-        "updated_at": "2024-08-13T17:43:28.344901Z"
+        "size_in_bytes": 166556,
+        "ingestion_status": "pending",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:27.535113Z",
+        "updated_at": "2024-09-20T22:31:28.791381Z",
+        "ingestion_attempt_number": null
       },
       {
         "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
-        "group_ids": [],
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "type": "png",
-        "metadata": {},
+        "metadata": {
+          "version": "v0"
+        },
         "title": "screen_shot.png",
         "version": "v0",
-        "size_in_bytes": 791764,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344905Z",
-        "updated_at": "2024-08-13T17:43:28.344905Z"
+        "size_in_bytes": 1055688,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:27.522881Z",
+        "updated_at": "2024-09-20T22:26:27.522885Z",
+        "ingestion_attempt_number": null
       },
       {
-        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
-        "group_ids": [],
+        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "yc_companies.txt",
+        "version": "v0",
+        "size_in_bytes": 62948,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.639855Z",
+        "updated_at": "2024-09-20T22:31:28.766869Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "test.txt",
+        "version": "v0",
+        "size_in_bytes": 28,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.525053Z",
+        "updated_at": "2024-09-20T22:31:28.806823Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle.txt",
+        "version": "v0",
+        "size_in_bytes": 97804,
+        "ingestion_status": "pending",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.521911Z",
+        "updated_at": "2024-09-20T22:31:28.835132Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "type": "html",
-        "metadata": {},
-        "title": "pg_essay_3.html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
         "version": "v0",
-        "size_in_bytes": 124915,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344908Z",
-        "updated_at": "2024-08-13T17:43:28.344908Z"
+        "size_in_bytes": 166816,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.517088Z",
+        "updated_at": "2024-09-20T22:31:28.836602Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "lyft_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 1920404,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.513642Z",
+        "updated_at": "2024-09-20T22:26:26.513644Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_5.html",
+        "version": "v0",
+        "size_in_bytes": 165040,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.511219Z",
+        "updated_at": "2024-09-20T22:31:28.786697Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "graphrag.pdf",
+        "version": "v0",
+        "size_in_bytes": 2287544,
+        "ingestion_status": "pending",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.504459Z",
+        "updated_at": "2024-09-20T22:31:28.767620Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_4.html",
+        "version": "v0",
+        "size_in_bytes": 157484,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.528586Z",
+        "updated_at": "2024-09-20T22:31:28.789182Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v0",
+        "size_in_bytes": 3380,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.524513Z",
+        "updated_at": "2024-09-20T22:31:28.766240Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "got.txt",
+        "version": "v0",
+        "size_in_bytes": 12656,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.517526Z",
+        "updated_at": "2024-09-20T22:31:28.765359Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "uber_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 2507312,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.515504Z",
+        "updated_at": "2024-09-20T22:31:28.782778Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample2.mp3",
+        "version": "v0",
+        "size_in_bytes": 96608,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.514341Z",
+        "updated_at": "2024-09-20T22:31:28.764706Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample.mp3",
+        "version": "v0",
+        "size_in_bytes": 162228,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.511994Z",
+        "updated_at": "2024-09-20T22:31:28.770493Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_1.html",
+        "version": "v0",
+        "size_in_bytes": 175340,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:21.855243Z",
+        "updated_at": "2024-09-20T22:31:28.769460Z",
+        "ingestion_attempt_number": null
       }
-    ]
+    ],
+    "total_entries": 16
   },
   "document_chunks_test": {
     "results": [
       {
-        "fragment_id": "cd85f762-5739-5f19-86d9-a4a9fe213e44",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
+        "fragment_id": "67e7ab57-eaa0-57d8-9276-da273abcdabd",
+        "extraction_id": "286b3218-517c-50bf-b8ea-1262e8ec6b42",
         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "A Project of One's Own",
+        "collection_ids": [],
+        "text": "June 2021 A few days ago, on the way home from school, my nine year old son",
         "metadata": {
-          "text": "A Project of One's Own",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "cd38c41d-a14a-52ba-8882-83eaafcbb163",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "June 2021A few days ago, on the way home from school, my nine year old son\ntold me he couldn't wait to get home to write more of the story he\nwas working on. This made me as happy as anything I've heard him\nsay \u2014 not just because he was excited about his story, but because\nhe'd discovered this way of working. Working on a project of your\nown is as different from ordinary work as skating is from walking.",
-        "metadata": {
-          "text": "June 2021A few days ago, on the way home from school, my nine year old son\ntold me he couldn't wait to get home to write more of the story he\nwas working on. This made me as happy as anything I've heard him\nsay \u2014 not just because he was excited about his story, but because\nhe'd discovered this way of working. Working on a project of your\nown is as different from ordinary work as skating is from walking.",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "fb968ad0-15ab-50b1-982c-08d1e1a1cbd9",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "It's more fun, but also much more productive.What proportion of great work has been done by people who were\nskating in this sense? If not all of it, certainly a lot.There is something special about working on a project of your own.\nI wouldn't say exactly that you're happier. A better word would be\nexcited, or engaged. You're happy when things are going well, but\noften they aren't. When I'm writing an essay, most of the time I'm\nworried and puzzled: worried that the essay will turn out badly,",
-        "metadata": {
-          "text": "It's more fun, but also much more productive.What proportion of great work has been done by people who were\nskating in this sense? If not all of it, certainly a lot.There is something special about working on a project of your own.\nI wouldn't say exactly that you're happier. A better word would be\nexcited, or engaged. You're happy when things are going well, but\noften they aren't. When I'm writing an essay, most of the time I'm\nworried and puzzled: worried that the essay will turn out badly,",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "263476d3-7650-52c9-99ad-ec9d5406c581",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "and puzzled because I'm groping for some idea that I can't see\nclearly enough. Will I be able to pin it down with words? In the\nend I usually can, if I take long enough, but I'm never sure; the\nfirst few attempts often fail.You have moments of happiness when things work out, but they don't\nlast long, because then you're on to the next problem. So why do\nit at all? Because to the kind of people who like working this way,\nnothing else feels as right. You feel as if you're an animal in its",
-        "metadata": {
-          "text": "and puzzled because I'm groping for some idea that I can't see\nclearly enough. Will I be able to pin it down with words? In the\nend I usually can, if I take long enough, but I'm never sure; the\nfirst few attempts often fail.You have moments of happiness when things work out, but they don't\nlast long, because then you're on to the next problem. So why do\nit at all? Because to the kind of people who like working this way,\nnothing else feels as right. You feel as if you're an animal in its",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "28c70d00-ee77-5e5e-9c0e-ff79332ffabb",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "natural habitat, doing what you were meant to do \u2014 not always\nhappy, maybe, but awake and alive.Many kids experience the excitement of working on projects of their\nown. The hard part is making this converge with the work you do as\nan adult. And our customs make it harder. We treat \"playing\" and\n\"hobbies\" as qualitatively different from \"work\". It's not clear\nto a kid building a treehouse that there's a direct (though long)\nroute from that to architecture or engineering. And instead of",
-        "metadata": {
-          "text": "natural habitat, doing what you were meant to do \u2014 not always\nhappy, maybe, but awake and alive.Many kids experience the excitement of working on projects of their\nown. The hard part is making this converge with the work you do as\nan adult. And our customs make it harder. We treat \"playing\" and\n\"hobbies\" as qualitatively different from \"work\". It's not clear\nto a kid building a treehouse that there's a direct (though long)\nroute from that to architecture or engineering. And instead of",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "67a4ddfc-d362-5b4b-afaf-5b3f53ec7ac5",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "pointing out the route, we conceal it, by implicitly treating the\nstuff kids do as different from real work.\n[1]Instead of telling kids that their treehouses could be on the path\nto the work they do as adults, we tell them the path goes through\nschool. And unfortunately schoolwork tends to be very different from\nworking on projects of one's own. It's usually neither a project,\nnor one's own. So as school gets more serious, working on projects",
-        "metadata": {
-          "text": "pointing out the route, we conceal it, by implicitly treating the\nstuff kids do as different from real work.\n[1]Instead of telling kids that their treehouses could be on the path\nto the work they do as adults, we tell them the path goes through\nschool. And unfortunately schoolwork tends to be very different from\nworking on projects of one's own. It's usually neither a project,\nnor one's own. So as school gets more serious, working on projects",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "001c1335-737c-5585-9ec1-441ee9c49348",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "of one's own is something that survives, if at all, as a thin thread\noff to the side.It's a bit sad to think of all the high school kids turning their\nbacks on building treehouses and sitting in class dutifully learning\nabout Darwin or Newton to pass some exam, when the work that made\nDarwin and Newton famous was actually closer in spirit to building\ntreehouses than studying for exams.If I had to choose between my kids getting good grades and\nworking on ambitious projects of their own, I'd pick",
-        "metadata": {
-          "text": "of one's own is something that survives, if at all, as a thin thread\noff to the side.It's a bit sad to think of all the high school kids turning their\nbacks on building treehouses and sitting in class dutifully learning\nabout Darwin or Newton to pass some exam, when the work that made\nDarwin and Newton famous was actually closer in spirit to building\ntreehouses than studying for exams.If I had to choose between my kids getting good grades and\nworking on ambitious projects of their own, I'd pick",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "c3759b2a-fbec-55db-b850-511d4730de7e",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "techniques for preserving that excitement.\n[4]The team that made the original Macintosh were a great example of\nthis phenomenon. People like Burrell Smith and Andy Hertzfeld and\nBill Atkinson and Susan Kare were not just following orders. They\nwere not tennis balls hit by Steve Jobs, but rockets let loose by\nSteve Jobs. There was a lot of collaboration between them, but\nthey all seem to have individually felt the excitement of",
-        "metadata": {
-          "text": "techniques for preserving that excitement.\n[4]The team that made the original Macintosh were a great example of\nthis phenomenon. People like Burrell Smith and Andy Hertzfeld and\nBill Atkinson and Susan Kare were not just following orders. They\nwere not tennis balls hit by Steve Jobs, but rockets let loose by\nSteve Jobs. There was a lot of collaboration between them, but\nthey all seem to have individually felt the excitement of",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "540d1c52-6dae-5fb4-b4ad-3d5bbd938abe",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "the projects. And not because I'm an indulgent parent, but because\nI've been on the other end and I know which has more predictive\nvalue. When I was picking startups for Y Combinator, I didn't care\nabout applicants' grades. But if they'd worked on projects of their\nown, I wanted to hear all about those.\n[2]It may be inevitable that school is the way it is. I'm not saying\nwe have to redesign it (though I'm not saying we don't), just that\nwe should understand what it does to our attitudes to work \u2014 that",
-        "metadata": {
-          "text": "the projects. And not because I'm an indulgent parent, but because\nI've been on the other end and I know which has more predictive\nvalue. When I was picking startups for Y Combinator, I didn't care\nabout applicants' grades. But if they'd worked on projects of their\nown, I wanted to hear all about those.\n[2]It may be inevitable that school is the way it is. I'm not saying\nwe have to redesign it (though I'm not saying we don't), just that\nwe should understand what it does to our attitudes to work \u2014 that",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "fee3d54e-dd02-5f46-9edc-ee4f5d7a70d4",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "it steers us toward the dutiful plodding kind of work, often using\ncompetition as bait, and away from skating.There are occasionally times when schoolwork becomes a project of\none's own. Whenever I had to write a paper, that would become a\nproject of my own \u2014 except in English classes, ironically, because\nthe things one has to write in English classes are so\nbogus. And\nwhen I got to college and started taking CS classes, the programs\nI had to write became projects of my own. Whenever I was writing",
-        "metadata": {
-          "text": "it steers us toward the dutiful plodding kind of work, often using\ncompetition as bait, and away from skating.There are occasionally times when schoolwork becomes a project of\none's own. Whenever I had to write a paper, that would become a\nproject of my own \u2014 except in English classes, ironically, because\nthe things one has to write in English classes are so\nbogus. And\nwhen I got to college and started taking CS classes, the programs\nI had to write became projects of my own. Whenever I was writing",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "05f02dc2-53ab-539b-9b4d-899eada47a3c",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "or programming, I was usually skating, and that has been true ever\nsince.So where exactly is the edge of projects of one's own? That's an\ninteresting question, partly because the answer is so complicated,\nand partly because there's so much at stake. There turn out to be\ntwo senses in which work can be one's own: 1) that you're doing it\nvoluntarily, rather than merely because someone told you to, and\n2) that you're doing it by yourself.The edge of the former is quite sharp. People who care a lot about",
-        "metadata": {
-          "text": "or programming, I was usually skating, and that has been true ever\nsince.So where exactly is the edge of projects of one's own? That's an\ninteresting question, partly because the answer is so complicated,\nand partly because there's so much at stake. There turn out to be\ntwo senses in which work can be one's own: 1) that you're doing it\nvoluntarily, rather than merely because someone told you to, and\n2) that you're doing it by yourself.The edge of the former is quite sharp. People who care a lot about",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "42b9d617-6d85-5ba4-a8a6-bb3489faf930",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "their work are usually very sensitive to the difference between\npulling, and being pushed, and work tends to fall into one category\nor the other. But the test isn't simply whether you're told to do\nsomething. You can choose to do something you're told to do. Indeed,\nyou can own it far more thoroughly than the person who told you to\ndo it.For example, math homework is for most people something they're\ntold to do. But for my father, who was a mathematician, it wasn't.",
-        "metadata": {
-          "text": "their work are usually very sensitive to the difference between\npulling, and being pushed, and work tends to fall into one category\nor the other. But the test isn't simply whether you're told to do\nsomething. You can choose to do something you're told to do. Indeed,\nyou can own it far more thoroughly than the person who told you to\ndo it.For example, math homework is for most people something they're\ntold to do. But for my father, who was a mathematician, it wasn't.",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "d9876b6c-42ab-5852-a98f-15032c7687c7",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "Most of us think of the problems in a math book as a way to test\nor develop our knowledge of the material explained in each section.\nBut to my father the problems were the part that mattered, and the\ntext was merely a sort of annotation. Whenever he got a new math\nbook it was to him like being given a puzzle: here was a new set\nof problems to solve, and he'd immediately set about solving all\nof them.The other sense of a project being one's own \u2014 working on it by",
-        "metadata": {
-          "text": "Most of us think of the problems in a math book as a way to test\nor develop our knowledge of the material explained in each section.\nBut to my father the problems were the part that mattered, and the\ntext was merely a sort of annotation. Whenever he got a new math\nbook it was to him like being given a puzzle: here was a new set\nof problems to solve, and he'd immediately set about solving all\nof them.The other sense of a project being one's own \u2014 working on it by",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "bec313c9-3fe3-5197-8792-078069a484e2",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "oneself \u2014 has a much softer edge. It shades gradually into\ncollaboration. And interestingly, it shades into collaboration in\ntwo different ways. One way to collaborate is to share a single\nproject. For example, when two mathematicians collaborate on a proof\nthat takes shape in the course of a conversation between them. The\nother way is when multiple people work on separate projects of their\nown that fit together like a jigsaw puzzle. For example, when one",
-        "metadata": {
-          "text": "oneself \u2014 has a much softer edge. It shades gradually into\ncollaboration. And interestingly, it shades into collaboration in\ntwo different ways. One way to collaborate is to share a single\nproject. For example, when two mathematicians collaborate on a proof\nthat takes shape in the course of a conversation between them. The\nother way is when multiple people work on separate projects of their\nown that fit together like a jigsaw puzzle. For example, when one",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "8626ebe9-8132-5222-ba90-eef6a380ea65",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "person writes the text of a book and another does the graphic design.\n[3]These two paths into collaboration can of course be combined. But\nunder the right conditions, the excitement of working on a project\nof one's own can be preserved for quite a while before disintegrating\ninto the turbulent flow of work in a large organization. Indeed,\nthe history of successful organizations is partly the history of\ntechniques for preserving that excitement.",
-        "metadata": {
-          "text": "person writes the text of a book and another does the graphic design.\n[3]These two paths into collaboration can of course be combined. But\nunder the right conditions, the excitement of working on a project\nof one's own can be preserved for quite a while before disintegrating\ninto the turbulent flow of work in a large organization. Indeed,\nthe history of successful organizations is partly the history of\ntechniques for preserving that excitement.",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "759018be-fcfc-5e53-bc2e-ce2e6e677d61",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "working on a project of one's own.In Andy Hertzfeld's book on the Macintosh, he describes how they'd\ncome back into the office after dinner and work late into the night.\nPeople who've never experienced the thrill of working on a project\nthey're excited about can't distinguish this kind of working long\nhours from the kind that happens in sweatshops and boiler rooms,\nbut they're at opposite ends of the spectrum. That's why it's a\nmistake to insist dogmatically on \"work/life balance.\" Indeed, the",
-        "metadata": {
-          "text": "working on a project of one's own.In Andy Hertzfeld's book on the Macintosh, he describes how they'd\ncome back into the office after dinner and work late into the night.\nPeople who've never experienced the thrill of working on a project\nthey're excited about can't distinguish this kind of working long\nhours from the kind that happens in sweatshops and boiler rooms,\nbut they're at opposite ends of the spectrum. That's why it's a\nmistake to insist dogmatically on \"work/life balance.\" Indeed, the",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "4f01bc15-500e-586f-97f0-a89b36248ea2",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "mere expression \"work/life\" embodies a mistake: it assumes work and\nlife are distinct. For those to whom the word \"work\" automatically\nimplies the dutiful plodding kind, they are. But for the skaters,\nthe relationship between work and life would be better represented\nby a dash than a slash. I wouldn't want to work on anything that I didn't\nwant to take over my life.Of course, it's easier to achieve this level of motivation when\nyou're making something like the Macintosh. It's easy for something",
-        "metadata": {
-          "text": "mere expression \"work/life\" embodies a mistake: it assumes work and\nlife are distinct. For those to whom the word \"work\" automatically\nimplies the dutiful plodding kind, they are. But for the skaters,\nthe relationship between work and life would be better represented\nby a dash than a slash. I wouldn't want to work on anything that I didn't\nwant to take over my life.Of course, it's easier to achieve this level of motivation when\nyou're making something like the Macintosh. It's easy for something",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "31e60d4e-e223-53ae-aa46-f30821fd7a92",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "new to feel like a project of your own. That's one of the reasons\nfor the tendency programmers have to rewrite things that don't need\nrewriting, and to write their own versions of things that already\nexist. This sometimes alarms managers, and measured by total number\nof characters typed, it's rarely the optimal solution. But it's not\nalways driven simply by arrogance or cluelessness.\nWriting code from scratch is also much more rewarding \u2014 so much",
-        "metadata": {
-          "text": "new to feel like a project of your own. That's one of the reasons\nfor the tendency programmers have to rewrite things that don't need\nrewriting, and to write their own versions of things that already\nexist. This sometimes alarms managers, and measured by total number\nof characters typed, it's rarely the optimal solution. But it's not\nalways driven simply by arrogance or cluelessness.\nWriting code from scratch is also much more rewarding \u2014 so much",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "194d9ee6-13f4-527a-ba02-595131ace02a",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "more rewarding that a good programmer can end up net ahead, despite\nthe shocking waste of characters. Indeed, it may be one of the\nadvantages of capitalism that it encourages such rewriting. A company\nthat needs software to do something can't use the software already\nwritten to do it at another company, and thus has to write their\nown, which often turns out better.\n[5]The natural alignment between skating and solving new problems is\none of the reasons the payoffs from startups are so high. Not only",
-        "metadata": {
-          "text": "more rewarding that a good programmer can end up net ahead, despite\nthe shocking waste of characters. Indeed, it may be one of the\nadvantages of capitalism that it encourages such rewriting. A company\nthat needs software to do something can't use the software already\nwritten to do it at another company, and thus has to write their\nown, which often turns out better.\n[5]The natural alignment between skating and solving new problems is\none of the reasons the payoffs from startups are so high. Not only",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "d3fee2f7-a7bd-523e-957e-427712013146",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "is the market price of unsolved problems higher, you also get a\ndiscount on productivity when you work on them. In fact, you get a\ndouble increase in productivity: when you're doing a clean-sheet\ndesign, it's easier to recruit skaters, and they get to spend all\ntheir time skating.Steve Jobs knew a thing or two about skaters from having watched\nSteve Wozniak. If you can find the right people, you only have to\ntell them what to do at the highest level. They'll handle the",
-        "metadata": {
-          "text": "is the market price of unsolved problems higher, you also get a\ndiscount on productivity when you work on them. In fact, you get a\ndouble increase in productivity: when you're doing a clean-sheet\ndesign, it's easier to recruit skaters, and they get to spend all\ntheir time skating.Steve Jobs knew a thing or two about skaters from having watched\nSteve Wozniak. If you can find the right people, you only have to\ntell them what to do at the highest level. They'll handle the",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "e78bb470-5e0e-5b05-9f76-b60b9e43e90d",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "details. Indeed, they insist on it. For a project to feel like your\nown, you must have sufficient autonomy. You can't be working to\norder, or slowed down\nby bureaucracy.One way to ensure autonomy is not to have a boss at all. There are\ntwo ways to do that: to be the boss yourself, and to work on projects\noutside of work. Though they're at opposite ends of the scale\nfinancially, startups and open source projects have a lot in common,\nincluding the fact that they're often run by skaters. And indeed,",
-        "metadata": {
-          "text": "details. Indeed, they insist on it. For a project to feel like your\nown, you must have sufficient autonomy. You can't be working to\norder, or slowed down\nby bureaucracy.One way to ensure autonomy is not to have a boss at all. There are\ntwo ways to do that: to be the boss yourself, and to work on projects\noutside of work. Though they're at opposite ends of the scale\nfinancially, startups and open source projects have a lot in common,\nincluding the fact that they're often run by skaters. And indeed,",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "abed8147-50aa-5c90-8f66-cdbfe02d068f",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "there's a wormhole from one end of the scale to the other: one of\nthe best ways to discover\nstartup ideas is to work on a project\njust for fun.If your projects are the kind that make money, it's easy to work\non them. It's harder when they're not. And the hardest part, usually,\nis morale. That's where adults have it harder than kids. Kids just\nplunge in and build their treehouse without worrying about whether\nthey're wasting their time, or how it compares to other treehouses.",
-        "metadata": {
-          "text": "there's a wormhole from one end of the scale to the other: one of\nthe best ways to discover\nstartup ideas is to work on a project\njust for fun.If your projects are the kind that make money, it's easy to work\non them. It's harder when they're not. And the hardest part, usually,\nis morale. That's where adults have it harder than kids. Kids just\nplunge in and build their treehouse without worrying about whether\nthey're wasting their time, or how it compares to other treehouses.",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "80fbb24a-999e-593f-93a2-f9c42b46c98b",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "And frankly we could learn a lot from kids here. The high standards\nmost grownups have for \"real\" work do not always serve us well.The most important phase in a project of one's own is at the\nbeginning: when you go from thinking it might be cool to do x to\nactually doing x. And at that point high standards are not merely\nuseless but positively harmful. There are a few people who start\ntoo many new projects, but far more, I suspect, who are deterred",
-        "metadata": {
-          "text": "And frankly we could learn a lot from kids here. The high standards\nmost grownups have for \"real\" work do not always serve us well.The most important phase in a project of one's own is at the\nbeginning: when you go from thinking it might be cool to do x to\nactually doing x. And at that point high standards are not merely\nuseless but positively harmful. There are a few people who start\ntoo many new projects, but far more, I suspect, who are deterred",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "5be9b626-b309-5502-941e-250efd5d23be",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "by fear of failure from starting projects that would have succeeded\nif they had.But if we couldn't benefit as kids from the knowledge that our\ntreehouses were on the path to grownup projects, we can at least\nbenefit as grownups from knowing that our projects are on a path\nthat stretches back to treehouses. Remember that careless confidence\nyou had as a kid when starting something new? That would be a\npowerful thing to recapture.If it's harder as adults to retain that kind of confidence, we at",
-        "metadata": {
-          "text": "by fear of failure from starting projects that would have succeeded\nif they had.But if we couldn't benefit as kids from the knowledge that our\ntreehouses were on the path to grownup projects, we can at least\nbenefit as grownups from knowing that our projects are on a path\nthat stretches back to treehouses. Remember that careless confidence\nyou had as a kid when starting something new? That would be a\npowerful thing to recapture.If it's harder as adults to retain that kind of confidence, we at",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "6139c5ce-049d-5f31-86b5-efd3a2be1e5d",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "least tend to be more aware of what we're doing. Kids bounce, or\nare herded, from one kind of work to the next, barely realizing\nwhat's happening to them. Whereas we know more about different types\nof work and have more control over which we do. Ideally we can have\nthe best of both worlds: to be deliberate in choosing to work on\nprojects of our own, and carelessly confident in starting new ones.\nNotes[1]\n\"Hobby\" is a curious word. Now it means work that isn't real",
-        "metadata": {
-          "text": "least tend to be more aware of what we're doing. Kids bounce, or\nare herded, from one kind of work to the next, barely realizing\nwhat's happening to them. Whereas we know more about different types\nof work and have more control over which we do. Ideally we can have\nthe best of both worlds: to be deliberate in choosing to work on\nprojects of our own, and carelessly confident in starting new ones.\nNotes[1]\n\"Hobby\" is a curious word. Now it means work that isn't real",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "d3027d33-3720-5a1e-8563-7249b05ac5c5",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "work \u2014 work that one is not to be judged by \u2014 but originally it just\nmeant an obsession in a fairly general sense (even a political\nopinion, for example) that one metaphorically rode as a child rides\na hobby-horse. It's hard to say if its recent, narrower meaning is\na change for the better or the worse. For sure there are lots of\nfalse positives \u2014 lots of projects that end up being important but\nare dismissed initially as mere hobbies. But on the other hand, the",
-        "metadata": {
-          "text": "work \u2014 work that one is not to be judged by \u2014 but originally it just\nmeant an obsession in a fairly general sense (even a political\nopinion, for example) that one metaphorically rode as a child rides\na hobby-horse. It's hard to say if its recent, narrower meaning is\na change for the better or the worse. For sure there are lots of\nfalse positives \u2014 lots of projects that end up being important but\nare dismissed initially as mere hobbies. But on the other hand, the",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "b6587cfc-01dc-5324-af32-08c059b099cd",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "concept provides valuable cover for projects in the early, ugly\nduckling phase.[2]\nTiger parents, as parents so often do, are fighting the last\nwar. Grades mattered more in the old days when the route to success\nwas to acquire\ncredentials\nwhile ascending some predefined ladder.\nBut it's just as well that their tactics are focused on grades. How\nawful it would be if they invaded the territory of projects, and\nthereby gave their kids a distaste for this kind of work by forcing",
-        "metadata": {
-          "text": "concept provides valuable cover for projects in the early, ugly\nduckling phase.[2]\nTiger parents, as parents so often do, are fighting the last\nwar. Grades mattered more in the old days when the route to success\nwas to acquire\ncredentials\nwhile ascending some predefined ladder.\nBut it's just as well that their tactics are focused on grades. How\nawful it would be if they invaded the territory of projects, and\nthereby gave their kids a distaste for this kind of work by forcing",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "57b17831-a919-5d01-b7c1-1077285ffd38",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "them to do it. Grades are already a grim, fake world, and aren't\nharmed much by parental interference, but working on one's own\nprojects is a more delicate, private thing that could be damaged\nvery easily.[3]\nThe complicated, gradual edge between working on one's own\nprojects and collaborating with others is one reason there is so\nmuch disagreement about the idea of the \"lone genius.\" In practice\npeople collaborate (or not) in all kinds of different ways, but the",
-        "metadata": {
-          "text": "them to do it. Grades are already a grim, fake world, and aren't\nharmed much by parental interference, but working on one's own\nprojects is a more delicate, private thing that could be damaged\nvery easily.[3]\nThe complicated, gradual edge between working on one's own\nprojects and collaborating with others is one reason there is so\nmuch disagreement about the idea of the \"lone genius.\" In practice\npeople collaborate (or not) in all kinds of different ways, but the",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "8e943dae-6cbf-543f-9092-16600569621c",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "idea of the lone genius is definitely not a myth. There's a core\nof truth to it that goes with a certain way of working.[4]\nCollaboration is powerful too. The optimal organization would\ncombine collaboration and ownership in such a way as to do the least\ndamage to each. Interestingly, companies and university departments\napproach this ideal from opposite directions: companies insist on\ncollaboration, and occasionally also manage both to recruit skaters",
-        "metadata": {
-          "text": "idea of the lone genius is definitely not a myth. There's a core\nof truth to it that goes with a certain way of working.[4]\nCollaboration is powerful too. The optimal organization would\ncombine collaboration and ownership in such a way as to do the least\ndamage to each. Interestingly, companies and university departments\napproach this ideal from opposite directions: companies insist on\ncollaboration, and occasionally also manage both to recruit skaters",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "8ad34f88-fe21-598e-b6d7-1d66224075c3",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "and allow them to skate, and university departments insist on the\nability to do independent research (which is by custom treated as\nskating, whether it is or not), and the people they hire collaborate\nas much as they choose.[5]\nIf a company could design its software in such a way that the\nbest newly arrived programmers always got a clean sheet, it could\nhave a kind of eternal youth. That might not be impossible. If you\nhad a software backbone defining a game with sufficiently clear",
-        "metadata": {
-          "text": "and allow them to skate, and university departments insist on the\nability to do independent research (which is by custom treated as\nskating, whether it is or not), and the people they hire collaborate\nas much as they choose.[5]\nIf a company could design its software in such a way that the\nbest newly arrived programmers always got a clean sheet, it could\nhave a kind of eternal youth. That might not be impossible. If you\nhad a software backbone defining a game with sufficiently clear",
-          "title": "pg_essay_1.html"
-        }
-      },
-      {
-        "fragment_id": "5127d109-8748-5615-92c1-082bd728df43",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "group_ids": [],
-        "text": "rules, individual programmers could write their own players.\nThanks to Trevor Blackwell, Paul Buchheit, Andy Hertzfeld, Jessica\nLivingston, and Peter Norvig for reading drafts of this.",
-        "metadata": {
-          "text": "rules, individual programmers could write their own players.\nThanks to Trevor Blackwell, Paul Buchheit, Andy Hertzfeld, Jessica\nLivingston, and Peter Norvig for reading drafts of this.",
-          "title": "pg_essay_1.html"
+          "version": "v0",
+          "chunk_order": 0,
+          "document_type": "html",
+          "unstructured_filetype": "text/html",
+          "unstructured_languages": [
+            "eng"
+          ],
+          "unstructured_text_as_html": "<table><tr><td>June 2021 A few days ago, on the way home from school, my nine year old son</td></tr></table>",
+          "partitioned_by_unstructured": true,
+          "unstructured_is_continuation": true
         }
       }
-    ]
+    ],
+    "total_entries": 1
   },
   "update_document_test": {
     "results": {
-      "processed_documents": [
-        {
-          "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-          "group_ids": [],
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "type": "txt",
-          "metadata": {},
-          "title": "aristotle_v2.txt",
-          "version": "v1",
-          "size_in_bytes": 7443,
-          "status": "success",
-          "created_at": "2024-08-13T17:47:20.150851",
-          "updated_at": "2024-08-13T17:47:20.150851"
-        }
-      ],
-      "failed_documents": [],
-      "skipped_documents": []
+      "message": "Update task queued successfully.",
+      "task_id": "1828ac12-0804-47cf-9623-8110324a52b1",
+      "document_ids": [
+        "db02076e-989a-59cd-98d5-e24e15a0bd27"
+      ]
     }
   },
-  "delete_document_test": {
-    "results": {
-      "cd85f762-5739-5f19-86d9-a4a9fe213e44": {
-        "fragment_id": "cd85f762-5739-5f19-86d9-a4a9fe213e44",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "A Project of One's Own"
-      },
-      "cd38c41d-a14a-52ba-8882-83eaafcbb163": {
-        "fragment_id": "cd38c41d-a14a-52ba-8882-83eaafcbb163",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "June 2021A few days ago, on the way home from school, my nine year old son\ntold me he couldn't wait to get home to write more of the story he\nwas working on. This made me as happy as anything I've heard him\nsay \u2014 not just because he was excited about his story, but because\nhe'd discovered this way of working. Working on a project of your\nown is as different from ordinary work as skating is from walking."
-      },
-      "fb968ad0-15ab-50b1-982c-08d1e1a1cbd9": {
-        "fragment_id": "fb968ad0-15ab-50b1-982c-08d1e1a1cbd9",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "It's more fun, but also much more productive.What proportion of great work has been done by people who were\nskating in this sense? If not all of it, certainly a lot.There is something special about working on a project of your own.\nI wouldn't say exactly that you're happier. A better word would be\nexcited, or engaged. You're happy when things are going well, but\noften they aren't. When I'm writing an essay, most of the time I'm\nworried and puzzled: worried that the essay will turn out badly,"
-      },
-      "263476d3-7650-52c9-99ad-ec9d5406c581": {
-        "fragment_id": "263476d3-7650-52c9-99ad-ec9d5406c581",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "and puzzled because I'm groping for some idea that I can't see\nclearly enough. Will I be able to pin it down with words? In the\nend I usually can, if I take long enough, but I'm never sure; the\nfirst few attempts often fail.You have moments of happiness when things work out, but they don't\nlast long, because then you're on to the next problem. So why do\nit at all? Because to the kind of people who like working this way,\nnothing else feels as right. You feel as if you're an animal in its"
-      },
-      "28c70d00-ee77-5e5e-9c0e-ff79332ffabb": {
-        "fragment_id": "28c70d00-ee77-5e5e-9c0e-ff79332ffabb",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "natural habitat, doing what you were meant to do \u2014 not always\nhappy, maybe, but awake and alive.Many kids experience the excitement of working on projects of their\nown. The hard part is making this converge with the work you do as\nan adult. And our customs make it harder. We treat \"playing\" and\n\"hobbies\" as qualitatively different from \"work\". It's not clear\nto a kid building a treehouse that there's a direct (though long)\nroute from that to architecture or engineering. And instead of"
-      },
-      "67a4ddfc-d362-5b4b-afaf-5b3f53ec7ac5": {
-        "fragment_id": "67a4ddfc-d362-5b4b-afaf-5b3f53ec7ac5",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "pointing out the route, we conceal it, by implicitly treating the\nstuff kids do as different from real work.\n[1]Instead of telling kids that their treehouses could be on the path\nto the work they do as adults, we tell them the path goes through\nschool. And unfortunately schoolwork tends to be very different from\nworking on projects of one's own. It's usually neither a project,\nnor one's own. So as school gets more serious, working on projects"
-      },
-      "001c1335-737c-5585-9ec1-441ee9c49348": {
-        "fragment_id": "001c1335-737c-5585-9ec1-441ee9c49348",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "of one's own is something that survives, if at all, as a thin thread\noff to the side.It's a bit sad to think of all the high school kids turning their\nbacks on building treehouses and sitting in class dutifully learning\nabout Darwin or Newton to pass some exam, when the work that made\nDarwin and Newton famous was actually closer in spirit to building\ntreehouses than studying for exams.If I had to choose between my kids getting good grades and\nworking on ambitious projects of their own, I'd pick"
-      },
-      "c3759b2a-fbec-55db-b850-511d4730de7e": {
-        "fragment_id": "c3759b2a-fbec-55db-b850-511d4730de7e",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "techniques for preserving that excitement.\n[4]The team that made the original Macintosh were a great example of\nthis phenomenon. People like Burrell Smith and Andy Hertzfeld and\nBill Atkinson and Susan Kare were not just following orders. They\nwere not tennis balls hit by Steve Jobs, but rockets let loose by\nSteve Jobs. There was a lot of collaboration between them, but\nthey all seem to have individually felt the excitement of"
-      },
-      "540d1c52-6dae-5fb4-b4ad-3d5bbd938abe": {
-        "fragment_id": "540d1c52-6dae-5fb4-b4ad-3d5bbd938abe",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "the projects. And not because I'm an indulgent parent, but because\nI've been on the other end and I know which has more predictive\nvalue. When I was picking startups for Y Combinator, I didn't care\nabout applicants' grades. But if they'd worked on projects of their\nown, I wanted to hear all about those.\n[2]It may be inevitable that school is the way it is. I'm not saying\nwe have to redesign it (though I'm not saying we don't), just that\nwe should understand what it does to our attitudes to work \u2014 that"
-      },
-      "fee3d54e-dd02-5f46-9edc-ee4f5d7a70d4": {
-        "fragment_id": "fee3d54e-dd02-5f46-9edc-ee4f5d7a70d4",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "it steers us toward the dutiful plodding kind of work, often using\ncompetition as bait, and away from skating.There are occasionally times when schoolwork becomes a project of\none's own. Whenever I had to write a paper, that would become a\nproject of my own \u2014 except in English classes, ironically, because\nthe things one has to write in English classes are so\nbogus. And\nwhen I got to college and started taking CS classes, the programs\nI had to write became projects of my own. Whenever I was writing"
-      },
-      "05f02dc2-53ab-539b-9b4d-899eada47a3c": {
-        "fragment_id": "05f02dc2-53ab-539b-9b4d-899eada47a3c",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "or programming, I was usually skating, and that has been true ever\nsince.So where exactly is the edge of projects of one's own? That's an\ninteresting question, partly because the answer is so complicated,\nand partly because there's so much at stake. There turn out to be\ntwo senses in which work can be one's own: 1) that you're doing it\nvoluntarily, rather than merely because someone told you to, and\n2) that you're doing it by yourself.The edge of the former is quite sharp. People who care a lot about"
-      },
-      "42b9d617-6d85-5ba4-a8a6-bb3489faf930": {
-        "fragment_id": "42b9d617-6d85-5ba4-a8a6-bb3489faf930",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "their work are usually very sensitive to the difference between\npulling, and being pushed, and work tends to fall into one category\nor the other. But the test isn't simply whether you're told to do\nsomething. You can choose to do something you're told to do. Indeed,\nyou can own it far more thoroughly than the person who told you to\ndo it.For example, math homework is for most people something they're\ntold to do. But for my father, who was a mathematician, it wasn't."
-      },
-      "d9876b6c-42ab-5852-a98f-15032c7687c7": {
-        "fragment_id": "d9876b6c-42ab-5852-a98f-15032c7687c7",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "Most of us think of the problems in a math book as a way to test\nor develop our knowledge of the material explained in each section.\nBut to my father the problems were the part that mattered, and the\ntext was merely a sort of annotation. Whenever he got a new math\nbook it was to him like being given a puzzle: here was a new set\nof problems to solve, and he'd immediately set about solving all\nof them.The other sense of a project being one's own \u2014 working on it by"
-      },
-      "bec313c9-3fe3-5197-8792-078069a484e2": {
-        "fragment_id": "bec313c9-3fe3-5197-8792-078069a484e2",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "oneself \u2014 has a much softer edge. It shades gradually into\ncollaboration. And interestingly, it shades into collaboration in\ntwo different ways. One way to collaborate is to share a single\nproject. For example, when two mathematicians collaborate on a proof\nthat takes shape in the course of a conversation between them. The\nother way is when multiple people work on separate projects of their\nown that fit together like a jigsaw puzzle. For example, when one"
-      },
-      "8626ebe9-8132-5222-ba90-eef6a380ea65": {
-        "fragment_id": "8626ebe9-8132-5222-ba90-eef6a380ea65",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "person writes the text of a book and another does the graphic design.\n[3]These two paths into collaboration can of course be combined. But\nunder the right conditions, the excitement of working on a project\nof one's own can be preserved for quite a while before disintegrating\ninto the turbulent flow of work in a large organization. Indeed,\nthe history of successful organizations is partly the history of\ntechniques for preserving that excitement."
-      },
-      "759018be-fcfc-5e53-bc2e-ce2e6e677d61": {
-        "fragment_id": "759018be-fcfc-5e53-bc2e-ce2e6e677d61",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "working on a project of one's own.In Andy Hertzfeld's book on the Macintosh, he describes how they'd\ncome back into the office after dinner and work late into the night.\nPeople who've never experienced the thrill of working on a project\nthey're excited about can't distinguish this kind of working long\nhours from the kind that happens in sweatshops and boiler rooms,\nbut they're at opposite ends of the spectrum. That's why it's a\nmistake to insist dogmatically on \"work/life balance.\" Indeed, the"
-      },
-      "4f01bc15-500e-586f-97f0-a89b36248ea2": {
-        "fragment_id": "4f01bc15-500e-586f-97f0-a89b36248ea2",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "mere expression \"work/life\" embodies a mistake: it assumes work and\nlife are distinct. For those to whom the word \"work\" automatically\nimplies the dutiful plodding kind, they are. But for the skaters,\nthe relationship between work and life would be better represented\nby a dash than a slash. I wouldn't want to work on anything that I didn't\nwant to take over my life.Of course, it's easier to achieve this level of motivation when\nyou're making something like the Macintosh. It's easy for something"
-      },
-      "31e60d4e-e223-53ae-aa46-f30821fd7a92": {
-        "fragment_id": "31e60d4e-e223-53ae-aa46-f30821fd7a92",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "new to feel like a project of your own. That's one of the reasons\nfor the tendency programmers have to rewrite things that don't need\nrewriting, and to write their own versions of things that already\nexist. This sometimes alarms managers, and measured by total number\nof characters typed, it's rarely the optimal solution. But it's not\nalways driven simply by arrogance or cluelessness.\nWriting code from scratch is also much more rewarding \u2014 so much"
-      },
-      "194d9ee6-13f4-527a-ba02-595131ace02a": {
-        "fragment_id": "194d9ee6-13f4-527a-ba02-595131ace02a",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "more rewarding that a good programmer can end up net ahead, despite\nthe shocking waste of characters. Indeed, it may be one of the\nadvantages of capitalism that it encourages such rewriting. A company\nthat needs software to do something can't use the software already\nwritten to do it at another company, and thus has to write their\nown, which often turns out better.\n[5]The natural alignment between skating and solving new problems is\none of the reasons the payoffs from startups are so high. Not only"
-      },
-      "d3fee2f7-a7bd-523e-957e-427712013146": {
-        "fragment_id": "d3fee2f7-a7bd-523e-957e-427712013146",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "is the market price of unsolved problems higher, you also get a\ndiscount on productivity when you work on them. In fact, you get a\ndouble increase in productivity: when you're doing a clean-sheet\ndesign, it's easier to recruit skaters, and they get to spend all\ntheir time skating.Steve Jobs knew a thing or two about skaters from having watched\nSteve Wozniak. If you can find the right people, you only have to\ntell them what to do at the highest level. They'll handle the"
-      },
-      "e78bb470-5e0e-5b05-9f76-b60b9e43e90d": {
-        "fragment_id": "e78bb470-5e0e-5b05-9f76-b60b9e43e90d",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "details. Indeed, they insist on it. For a project to feel like your\nown, you must have sufficient autonomy. You can't be working to\norder, or slowed down\nby bureaucracy.One way to ensure autonomy is not to have a boss at all. There are\ntwo ways to do that: to be the boss yourself, and to work on projects\noutside of work. Though they're at opposite ends of the scale\nfinancially, startups and open source projects have a lot in common,\nincluding the fact that they're often run by skaters. And indeed,"
-      },
-      "abed8147-50aa-5c90-8f66-cdbfe02d068f": {
-        "fragment_id": "abed8147-50aa-5c90-8f66-cdbfe02d068f",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "there's a wormhole from one end of the scale to the other: one of\nthe best ways to discover\nstartup ideas is to work on a project\njust for fun.If your projects are the kind that make money, it's easy to work\non them. It's harder when they're not. And the hardest part, usually,\nis morale. That's where adults have it harder than kids. Kids just\nplunge in and build their treehouse without worrying about whether\nthey're wasting their time, or how it compares to other treehouses."
-      },
-      "80fbb24a-999e-593f-93a2-f9c42b46c98b": {
-        "fragment_id": "80fbb24a-999e-593f-93a2-f9c42b46c98b",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "And frankly we could learn a lot from kids here. The high standards\nmost grownups have for \"real\" work do not always serve us well.The most important phase in a project of one's own is at the\nbeginning: when you go from thinking it might be cool to do x to\nactually doing x. And at that point high standards are not merely\nuseless but positively harmful. There are a few people who start\ntoo many new projects, but far more, I suspect, who are deterred"
-      },
-      "5be9b626-b309-5502-941e-250efd5d23be": {
-        "fragment_id": "5be9b626-b309-5502-941e-250efd5d23be",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "by fear of failure from starting projects that would have succeeded\nif they had.But if we couldn't benefit as kids from the knowledge that our\ntreehouses were on the path to grownup projects, we can at least\nbenefit as grownups from knowing that our projects are on a path\nthat stretches back to treehouses. Remember that careless confidence\nyou had as a kid when starting something new? That would be a\npowerful thing to recapture.If it's harder as adults to retain that kind of confidence, we at"
-      },
-      "6139c5ce-049d-5f31-86b5-efd3a2be1e5d": {
-        "fragment_id": "6139c5ce-049d-5f31-86b5-efd3a2be1e5d",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "least tend to be more aware of what we're doing. Kids bounce, or\nare herded, from one kind of work to the next, barely realizing\nwhat's happening to them. Whereas we know more about different types\nof work and have more control over which we do. Ideally we can have\nthe best of both worlds: to be deliberate in choosing to work on\nprojects of our own, and carelessly confident in starting new ones.\nNotes[1]\n\"Hobby\" is a curious word. Now it means work that isn't real"
-      },
-      "d3027d33-3720-5a1e-8563-7249b05ac5c5": {
-        "fragment_id": "d3027d33-3720-5a1e-8563-7249b05ac5c5",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "work \u2014 work that one is not to be judged by \u2014 but originally it just\nmeant an obsession in a fairly general sense (even a political\nopinion, for example) that one metaphorically rode as a child rides\na hobby-horse. It's hard to say if its recent, narrower meaning is\na change for the better or the worse. For sure there are lots of\nfalse positives \u2014 lots of projects that end up being important but\nare dismissed initially as mere hobbies. But on the other hand, the"
-      },
-      "b6587cfc-01dc-5324-af32-08c059b099cd": {
-        "fragment_id": "b6587cfc-01dc-5324-af32-08c059b099cd",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "concept provides valuable cover for projects in the early, ugly\nduckling phase.[2]\nTiger parents, as parents so often do, are fighting the last\nwar. Grades mattered more in the old days when the route to success\nwas to acquire\ncredentials\nwhile ascending some predefined ladder.\nBut it's just as well that their tactics are focused on grades. How\nawful it would be if they invaded the territory of projects, and\nthereby gave their kids a distaste for this kind of work by forcing"
-      },
-      "57b17831-a919-5d01-b7c1-1077285ffd38": {
-        "fragment_id": "57b17831-a919-5d01-b7c1-1077285ffd38",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "them to do it. Grades are already a grim, fake world, and aren't\nharmed much by parental interference, but working on one's own\nprojects is a more delicate, private thing that could be damaged\nvery easily.[3]\nThe complicated, gradual edge between working on one's own\nprojects and collaborating with others is one reason there is so\nmuch disagreement about the idea of the \"lone genius.\" In practice\npeople collaborate (or not) in all kinds of different ways, but the"
-      },
-      "8e943dae-6cbf-543f-9092-16600569621c": {
-        "fragment_id": "8e943dae-6cbf-543f-9092-16600569621c",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "idea of the lone genius is definitely not a myth. There's a core\nof truth to it that goes with a certain way of working.[4]\nCollaboration is powerful too. The optimal organization would\ncombine collaboration and ownership in such a way as to do the least\ndamage to each. Interestingly, companies and university departments\napproach this ideal from opposite directions: companies insist on\ncollaboration, and occasionally also manage both to recruit skaters"
-      },
-      "8ad34f88-fe21-598e-b6d7-1d66224075c3": {
-        "fragment_id": "8ad34f88-fe21-598e-b6d7-1d66224075c3",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "and allow them to skate, and university departments insist on the\nability to do independent research (which is by custom treated as\nskating, whether it is or not), and the people they hire collaborate\nas much as they choose.[5]\nIf a company could design its software in such a way that the\nbest newly arrived programmers always got a clean sheet, it could\nhave a kind of eternal youth. That might not be impossible. If you\nhad a software backbone defining a game with sufficiently clear"
-      },
-      "5127d109-8748-5615-92c1-082bd728df43": {
-        "fragment_id": "5127d109-8748-5615-92c1-082bd728df43",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
-        "text": "rules, individual programmers could write their own players.\nThanks to Trevor Blackwell, Paul Buchheit, Andy Hertzfeld, Jessica\nLivingston, and Peter Norvig for reading drafts of this."
-      }
-    }
-  },
-  "rerun_documents_overview_test": {
+  "rerun_documents_overview_test_1": {
     "results": [
       {
-        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "got.txt",
-        "version": "v0",
-        "size_in_bytes": 9491,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344841Z",
-        "updated_at": "2024-08-13T17:43:28.344841Z"
-      },
-      {
-        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "mp3",
-        "metadata": {},
-        "title": "sample.mp3",
-        "version": "v0",
-        "size_in_bytes": 121671,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344851Z",
-        "updated_at": "2024-08-13T17:43:28.344851Z"
-      },
-      {
-        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "pdf",
-        "metadata": {},
-        "title": "uber_2021.pdf",
-        "version": "v0",
-        "size_in_bytes": 1880483,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344856Z",
-        "updated_at": "2024-08-13T17:43:28.344856Z"
-      },
-      {
-        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "mp3",
-        "metadata": {},
-        "title": "sample2.mp3",
-        "version": "v0",
-        "size_in_bytes": 72456,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344867Z",
-        "updated_at": "2024-08-13T17:43:28.344867Z"
-      },
-      {
-        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "aristotle_v2.txt",
-        "version": "v0",
-        "size_in_bytes": 7443,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344871Z",
-        "updated_at": "2024-08-13T17:43:28.344871Z"
-      },
-      {
-        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
-        "group_ids": [],
+        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "type": "html",
-        "metadata": {},
-        "title": "pg_essay_4.html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_3.html",
         "version": "v0",
-        "size_in_bytes": 118113,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344874Z",
-        "updated_at": "2024-08-13T17:43:28.344874Z"
-      },
-      {
-        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {},
-        "title": "pg_essay_5.html",
-        "version": "v0",
-        "size_in_bytes": 123779,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344879Z",
-        "updated_at": "2024-08-13T17:43:28.344879Z"
-      },
-      {
-        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "pdf",
-        "metadata": {},
-        "title": "lyft_2021.pdf",
-        "version": "v0",
-        "size_in_bytes": 1440303,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344884Z",
-        "updated_at": "2024-08-13T17:43:28.344884Z"
-      },
-      {
-        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "test.txt",
-        "version": "v0",
-        "size_in_bytes": 20,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344889Z",
-        "updated_at": "2024-08-13T17:43:28.344889Z"
-      },
-      {
-        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {},
-        "title": "pg_essay_2.html",
-        "version": "v0",
-        "size_in_bytes": 125112,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344893Z",
-        "updated_at": "2024-08-13T17:43:28.344893Z"
-      },
-      {
-        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
-        "group_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {},
-        "title": "yc_companies.txt",
-        "version": "v0",
-        "size_in_bytes": 47209,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344901Z",
-        "updated_at": "2024-08-13T17:43:28.344901Z"
+        "size_in_bytes": 166556,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:27.535113Z",
+        "updated_at": "2024-09-20T22:31:28.791381Z",
+        "ingestion_attempt_number": null
       },
       {
         "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
-        "group_ids": [],
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "type": "png",
-        "metadata": {},
+        "metadata": {
+          "version": "v0"
+        },
         "title": "screen_shot.png",
         "version": "v0",
-        "size_in_bytes": 791764,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344905Z",
-        "updated_at": "2024-08-13T17:43:28.344905Z"
+        "size_in_bytes": 1055688,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:27.522881Z",
+        "updated_at": "2024-09-20T22:31:28.779863Z",
+        "ingestion_attempt_number": null
       },
       {
-        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
-        "group_ids": [],
+        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {},
-        "title": "pg_essay_3.html",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "yc_companies.txt",
         "version": "v0",
-        "size_in_bytes": 124915,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344908Z",
-        "updated_at": "2024-08-13T17:43:28.344908Z"
+        "size_in_bytes": 62948,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.639855Z",
+        "updated_at": "2024-09-20T22:31:28.766869Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "test.txt",
+        "version": "v0",
+        "size_in_bytes": 28,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.525053Z",
+        "updated_at": "2024-09-20T22:31:28.806823Z",
+        "ingestion_attempt_number": null
       },
       {
         "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-        "group_ids": [],
+        "collection_ids": [],
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "type": "txt",
-        "metadata": {},
+        "metadata": {
+          "title": "aristotle_v2.txt",
+          "version": "v1"
+        },
         "title": "aristotle_v2.txt",
         "version": "v1",
-        "size_in_bytes": 7443,
-        "status": "success",
-        "created_at": "2024-08-13T17:43:28.344898Z",
-        "updated_at": "2024-08-13T17:47:20.150851Z"
+        "size_in_bytes": 2534,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.521911Z",
+        "updated_at": "2024-09-20T22:31:45.500072Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.517088Z",
+        "updated_at": "2024-09-20T22:31:28.836602Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "lyft_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 1920404,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.513642Z",
+        "updated_at": "2024-09-20T22:31:28.773388Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_5.html",
+        "version": "v0",
+        "size_in_bytes": 165040,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.511219Z",
+        "updated_at": "2024-09-20T22:31:28.786697Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "graphrag.pdf",
+        "version": "v0",
+        "size_in_bytes": 2287544,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.504459Z",
+        "updated_at": "2024-09-20T22:31:28.767620Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_4.html",
+        "version": "v0",
+        "size_in_bytes": 157484,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.528586Z",
+        "updated_at": "2024-09-20T22:31:28.789182Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v0",
+        "size_in_bytes": 3380,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.524513Z",
+        "updated_at": "2024-09-20T22:31:28.766240Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "got.txt",
+        "version": "v0",
+        "size_in_bytes": 12656,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.517526Z",
+        "updated_at": "2024-09-20T22:31:28.765359Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "uber_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 2507312,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.515504Z",
+        "updated_at": "2024-09-20T22:31:28.782778Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample2.mp3",
+        "version": "v0",
+        "size_in_bytes": 96608,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.514341Z",
+        "updated_at": "2024-09-20T22:31:28.764706Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample.mp3",
+        "version": "v0",
+        "size_in_bytes": 162228,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.511994Z",
+        "updated_at": "2024-09-20T22:31:28.770493Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_1.html",
+        "version": "v0",
+        "size_in_bytes": 175340,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:21.855243Z",
+        "updated_at": "2024-09-20T22:31:28.769460Z",
+        "ingestion_attempt_number": null
       }
-    ]
+    ],
+    "total_entries": 16
+  },
+  "delete_document_test": {
+    "results": {}
+  },
+  "rerun_documents_overview_test_2": {
+    "results": [
+      {
+        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_3.html",
+        "version": "v0",
+        "size_in_bytes": 166556,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:27.535113Z",
+        "updated_at": "2024-09-20T22:31:28.791381Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "png",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "screen_shot.png",
+        "version": "v0",
+        "size_in_bytes": 1055688,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:27.522881Z",
+        "updated_at": "2024-09-20T22:31:28.779863Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "yc_companies.txt",
+        "version": "v0",
+        "size_in_bytes": 62948,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.639855Z",
+        "updated_at": "2024-09-20T22:31:28.766869Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "test.txt",
+        "version": "v0",
+        "size_in_bytes": 28,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.525053Z",
+        "updated_at": "2024-09-20T22:31:28.806823Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "title": "aristotle_v2.txt",
+          "version": "v1"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v1",
+        "size_in_bytes": 2534,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.521911Z",
+        "updated_at": "2024-09-20T22:31:45.500072Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.517088Z",
+        "updated_at": "2024-09-20T22:31:28.836602Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "lyft_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 1920404,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.513642Z",
+        "updated_at": "2024-09-20T22:31:28.773388Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_5.html",
+        "version": "v0",
+        "size_in_bytes": 165040,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.511219Z",
+        "updated_at": "2024-09-20T22:31:28.786697Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "graphrag.pdf",
+        "version": "v0",
+        "size_in_bytes": 2287544,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:26.504459Z",
+        "updated_at": "2024-09-20T22:31:28.767620Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_4.html",
+        "version": "v0",
+        "size_in_bytes": 157484,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.528586Z",
+        "updated_at": "2024-09-20T22:31:28.789182Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v0",
+        "size_in_bytes": 3380,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.524513Z",
+        "updated_at": "2024-09-20T22:31:28.766240Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "got.txt",
+        "version": "v0",
+        "size_in_bytes": 12656,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.517526Z",
+        "updated_at": "2024-09-20T22:31:28.765359Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "uber_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 2507312,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.515504Z",
+        "updated_at": "2024-09-20T22:31:28.782778Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample2.mp3",
+        "version": "v0",
+        "size_in_bytes": 96608,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.514341Z",
+        "updated_at": "2024-09-20T22:31:28.764706Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample.mp3",
+        "version": "v0",
+        "size_in_bytes": 162228,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:26:22.511994Z",
+        "updated_at": "2024-09-20T22:31:28.770493Z",
+        "ingestion_attempt_number": null
+      }
+    ],
+    "total_entries": 15
   },
   "rerun_document_chunks_test": {
-    "results": "No chunks found for the given document ID."
+    "results": "{\"detail\":{\"message\":\"An error 'list index out of range' occurred during document_chunks_app\",\"error\":\"list index out of range\",\"error_type\":\"IndexError\"}}"
   }
 }
