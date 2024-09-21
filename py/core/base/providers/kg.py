@@ -9,8 +9,8 @@ from ..abstractions import (
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGSearchSettings,
     KGExtraction,
+    KGSearchSettings,
     RelationshipType,
     Triple,
 )

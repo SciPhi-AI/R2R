@@ -134,7 +134,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                     "document_ids",
                 ],
             ):
-                print(search_result)
                 yield KGSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],

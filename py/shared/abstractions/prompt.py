@@ -1,12 +1,11 @@
 """Abstraction for a prompt that can be formatted with inputs."""
 
+import logging
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-
-import logging
 
 logger = logging.getLogger(__name__)
 
