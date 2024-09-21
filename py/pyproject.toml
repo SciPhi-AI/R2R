@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.1.40"
+version = "3.1.41"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -77,7 +77,7 @@ asyncclick = "^8.1.7.2"
 core = [
     "future", "pydantic", "python-multipart", "fire", "gunicorn", "unstructured", "unstructured-client",
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
-    "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
+    "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
     "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff",
 ]
