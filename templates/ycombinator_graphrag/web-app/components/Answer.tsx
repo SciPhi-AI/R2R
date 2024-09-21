@@ -135,7 +135,7 @@ export const Answer: FC<{
       setParsedVectorSources(parsed);
     }
 
-    if (message.sources?.kg) {
+    if (message.sources && message.sources.kg) {
       let kgLocalResult: KGSearchResult[] = JSON.parse(message.sources.kg);
 
       const entitiesArray = kgLocalResult.filter(
