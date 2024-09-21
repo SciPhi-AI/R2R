@@ -8,7 +8,7 @@
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [],
-          "score": 0.2381485473557875,
+          "score": 0.23822619091116293,
           "text": "Finance Leases\n\n2022 2023 2024 2025 2026 Thereafter Total undiscounted lease payments Less: imputed interest\n\n$\n\n280 $ 312 264 214 198 2,067 3,335 (1,506) 1,829 $\n\n140 60 34 9 \u2014 1 244 (10) 234\n\nTotal lease liabilities\n\n$\n\nAs of December 31, 2021, we had additional operating leases and finance leases, primarily for corporate offices and servers, that have not yet commenced of $421 million and $19 million, respectively. These operating and finance leases will commence between fiscal year 2022 and fiscal year 2023 with lease terms of 2 years to 13 years.\n\nMission Bay 1 & 2\n\nIn 2015, we entered into a joint venture (\u201cJV\u201d) agreement with a real estate developer (\u201cJV Partner\u201d) to develop land (\u201cthe Land\u201d) in San Francisco to construct our new headquarters (the \u201cHeadquarters\u201d). The Headquarters consists of two adjacent office buildings totaling approximately 423,000 rentable square feet. In connection with the JV arrangement, we acquired a 49% interest in the JV, the principal asset of which was the Land.",
           "metadata": {
             "version": "v0",
@@ -29,7 +29,7 @@
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [],
-          "score": 0.21556836366653442,
+          "score": 0.21572618390761744,
           "text": "(c)\n\nCommuting and Corporate Housing Expenses. During your Employment, the Company shall cover the cost of your reasonable and substantiated expenses for travel between your primary residence and the Company\u2019s headquarters in San Francisco and corporate housing in the San Francisco Bay Area, up to a pre-tax maximum of $200,000 per year in the aggregate. All expense reimbursements shall be made in accordance with the Company\u2019s expense reimbursement policy.\n\n(d)",
           "metadata": {
             "version": "v0",
@@ -40,27 +40,6 @@
               "eng"
             ],
             "unstructured_page_number": 170,
-            "partitioned_by_unstructured": true,
-            "associated_query": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "e74d31b4-5de3-581c-abaf-8d28f48f924b",
-          "extraction_id": "f4aa1be1-c0fa-5edd-a536-d5af7f023b31",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "collection_ids": [],
-          "score": 0.21189823746681213,
-          "text": "\u201cPlatform\u201d has the meaning set forth in Section 9.01(d).\n\n\u201cPrime Rate\u201d means the rate of interest the rate of interest published by the Wall Street Journal, from time to time, as the prime rate.\n\nThe Prime Rate is a reference rate and does not necessarily represent the lowest or best rate actually charged to any customer. The Administrative Agent or any other Lender may make commercial loans or other loans at rates of interest at, above or below the Prime Rate.\n\n\u201cPrincipal Office\u201d for each of the Administrative Agent and any Issuing Bank, means the office of the Administrative Agent and such Issuing Bank as set forth in Section 9.01(a), or such other office or office of a third party or sub-agent, as appropriate, as such Person may from time to time designate to Borrower and each Lender upon two Business Days\u2019 written notice.",
-          "metadata": {
-            "version": "v0",
-            "chunk_order": 1210,
-            "document_type": "pdf",
-            "unstructured_filetype": "application/pdf",
-            "unstructured_languages": [
-              "eng"
-            ],
-            "unstructured_page_number": 205,
             "partitioned_by_unstructured": true,
             "associated_query": "What is the capital of France?"
           }
@@ -87,49 +66,6 @@
           }
         },
         {
-          "fragment_id": "cc5fc17f-0b58-5d6c-8e58-e719bae8b752",
-          "extraction_id": "656ba1c8-7f7d-5b74-8e94-97fabb9f5ce4",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "collection_ids": [],
-          "score": 0.19365209341049194,
-          "text": "all at all times be valued at the full stated principal amount thereof.",
-          "metadata": {
-            "version": "v0",
-            "chunk_order": 1262,
-            "document_type": "pdf",
-            "unstructured_filetype": "application/pdf",
-            "unstructured_languages": [
-              "eng"
-            ],
-            "unstructured_page_number": 216,
-            "partitioned_by_unstructured": true,
-            "unstructured_is_continuation": true,
-            "associated_query": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "2abca1b8-f005-59dd-9716-adf883ec3aca",
-          "extraction_id": "edd4f1f9-f6c8-5341-a1e7-ce57cac7f2fb",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "collection_ids": [],
-          "score": 0.19269584693598296,
-          "text": "(b)\n\nSolely for purposes of Article II and related definitional provisions to the extent used therein, the applicable amount of any\n\ncurrency (other than dollars) for purposes of the Loan Documents shall be such Dollar Equivalent amount as determined by the Administrative Agent and notified to the applicable Issuing Bank and the Borrower in accordance with Section 1.06(a). Amounts denominated in a Permitted Foreign Currency will be converted to dollars for the purposes of calculating the Senior Secured Net Leverage Ratio at the Exchange Rate as of the date of calculation.",
-          "metadata": {
-            "version": "v0",
-            "chunk_order": 1266,
-            "document_type": "pdf",
-            "unstructured_filetype": "application/pdf",
-            "unstructured_languages": [
-              "eng"
-            ],
-            "unstructured_page_number": 216,
-            "partitioned_by_unstructured": true,
-            "associated_query": "What is the capital of France?"
-          }
-        },
-        {
           "fragment_id": "c96ee688-6e36-5abb-b066-d87779be1cf6",
           "extraction_id": "eb08b70d-2e82-5de3-90ee-98537a761ea8",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
@@ -151,54 +87,12 @@
           }
         },
         {
-          "fragment_id": "85474903-20cc-58e6-ad3c-a1b64de77557",
-          "extraction_id": "b69b89e5-48e1-526e-ba04-c9f5c0c56fa6",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "collection_ids": [],
-          "score": 0.1894184407418502,
-          "text": "Interest, net of amount capitalized Income taxes, net of refunds\n\n$\n\nNon-cash investing and financing activities:\n\nConversion of redeemable convertible preferred stock to common stock upon initial public offering Conversion of convertible notes to common stock upon initial public offering Conversion of convertible notes to common stock related to Careem Finance lease obligations Common stock issued in connection with acquisitions Ownership interest received in exchange for divestitures Issuance of Careem Notes including the holdback amount\n\nThe accompanying notes are an integral part of these consolidated financial statements.\n\n81\n\n2019",
-          "metadata": {
-            "version": "v0",
-            "chunk_order": 590,
-            "document_type": "pdf",
-            "unstructured_filetype": "application/pdf",
-            "unstructured_languages": [
-              "eng"
-            ],
-            "unstructured_page_number": 83,
-            "partitioned_by_unstructured": true,
-            "associated_query": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "a2f05c5a-0d43-538d-b4d0-ffd29d215437",
-          "extraction_id": "f1cb0bd8-0721-59ab-9e39-110efccf33dd",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "collection_ids": [],
-          "score": 0.18724104762077332,
-          "text": "(1) the rate, or methodology for this rate, and conventions for this rate selected or recommendedby the Relevant Governmental Body\n\nfor determining compounded SOFR; provided that:\n\n(2) if, and to the extent that, the Administrative Agent determines that Compounded SOFRcannot\n\nbe determined in accordance with clause (1) above, then the rate, or methodology for this rate, and conventions for this rate that the Administrative Agent determines are substantially consistent with prevailing market convention for determining Compounded SOFR for U.S. dollar-denominated syndicated credit facilities at such time (as a result of amendment or as originally executed);",
-          "metadata": {
-            "version": "v0",
-            "chunk_order": 1102,
-            "document_type": "pdf",
-            "unstructured_filetype": "application/pdf",
-            "unstructured_languages": [
-              "eng"
-            ],
-            "unstructured_page_number": 186,
-            "partitioned_by_unstructured": true,
-            "associated_query": "What is the capital of France?"
-          }
-        },
-        {
           "fragment_id": "cfc07310-2da0-5cfb-ba9b-b3c669084882",
           "extraction_id": "376938c5-338f-5c56-b599-efcf94ace67a",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [],
-          "score": 0.1816259080656144,
+          "score": 0.18162215163575735,
           "text": "Property and equipment, net\n\n$\n\nWe capitalized $76 million and $55 million in internal-use software costs during the years ended December 31, 2020 and 2021, respectively, which is included in property and equipment, net on the consolidated balance sheets. Amortization of capitalized software development costs was $22 million, $55 million, and $69 million for the years ended December 31, 2019, 2020 and 2021, respectively.\n\nAmounts in construction in progress represent buildings, leasehold improvements, assets under construction, and other assets not placed in service.",
           "metadata": {
             "version": "v0",
@@ -212,6 +106,111 @@
             "partitioned_by_unstructured": true,
             "associated_query": "What is the capital of France?"
           }
+        },
+        {
+          "fragment_id": "2654f646-222c-50af-bd1c-c7311e6a9dc9",
+          "extraction_id": "b25d210b-1b58-578a-b038-34f76d77f377",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.18122072927828292,
+          "text": "\u201cCanadian BA Rate Borrowing\u201d refers to a Borrowing bearing interest at a rate determined by reference to the Canadian BA Rate.\n\n10\n\n\u201cCanadian BA Rate Loan\u201d refers to a Loan bearing interest at a rate determined by reference to the Canadian BA Rate.\n\n\u201cCanadian Dollars\u201d means the lawful currency of Canada.\n\n\u201cCapital Lease Obligations\u201d of any Person means the obligations of such Person to pay rent or other amounts under any lease of (or",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 1085,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 182,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "309f729d-78eb-569a-837c-50367c20e898",
+          "extraction_id": "dfc368a6-efaf-5f4d-a20b-0fd6059a5f35",
+          "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.1806427240371704,
+          "text": "principal payments on finance lease obligations for $35.5 million.\n\nCash provided by financing activities was $512.6 million for the year ended December 31, 2020, which primarily consisted of proceeds from issuance of our 2025\n\nNotes of $734.1 million offset by the purchase of the Capped Calls for $132.7 million.\n\nLiquidity and Capital Resources",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 531,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 71,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "a0a98796-ca8a-5c8b-9063-a15064a914d4",
+          "extraction_id": "411a2659-a240-5c20-b11a-305b2b66987d",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.16736936076696907,
+          "text": "Depreciation and Amortization\n\nDepreciation and amortization expenses primarily consist of depreciation on buildings, site improvements, computer and network equipment, software, leasehold improvements, furniture and fixtures, and amortization of intangible assets. Depreciation includes expenses associated with buildings, site improvements, computer and network equipment, leased vehicles, and furniture, fixtures, as well as leasehold improvements. Amortization includes expenses associated with our capitalized internal-use software and acquired intangible assets.\n\nAs our business recovers from the impacts of COVID-19, we would anticipate depreciation and amortization expenses to increase as we continue to build out\n\nour network infrastructure and building locations.",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 457,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 55,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "b31fdb40-3d2e-54ba-8064-321fd1420f38",
+          "extraction_id": "ff6c949e-ff32-5c38-983c-eba10f3a9609",
+          "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.1666801671171001,
+          "text": "Our future capital requirements will depend on many factors, including, but not limited to our growth, our ability to maintain profitability on an Adjusted EBITDA basis, our ability to attract and retain drivers and riders on our platform, the continuing market acceptance of our offerings, the timing and extent of spending to support our efforts to develop our platform, actual insurance payments for which we have made reserves, measures we take in response to the COVID-19 pandemic, our ability to maintain demand for and confidence in the safety of our platform during and following the COVID-19 pandemic, and the expansion of sales and marketing activities. As noted above, we expect to see continued suppression of demand for our platform and the resultant negative impacts on revenue for so long as the travel restrictions and other social distancing measures in response to COVID-19 remain in place. Further, we may in the future enter into arrangements to acquire or invest in businesses, products, services and",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 538,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 72,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "ff0eb83c-ea67-51e2-8201-4211aa9d591a",
+          "extraction_id": "69e31e99-75df-5850-b71b-2b973d4cf244",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.1657480697932172,
+          "text": "(1)\n\n(2)\n\nFor the year ended December 31, 2019, the increase in the valuation allowance was primarily attributable to a step-up in the tax basis of intellectual property rights, an increase in U.S. federal, state and Netherlands deferred tax assets resulting from the loss from operations, and tax credits generated during the year.\n\nFor the year ended December 31, 2020, the increase in the valuation allowance was primarily attributable to an increase in tax rate in Netherlands, an increase\n\nin U.S. federal, state and Netherlands deferred tax assets resulting from the loss from operations, and tax credits generated during the year.",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 969,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 148,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
         }
       ],
       "kg_search_results": null
@@ -220,14 +219,14 @@
   "basic_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-A9iCJ8mgch4HrSPjYv64cTlPyuYEr",
+        "id": "chatcmpl-A9gpFrelYOJObG7VkyoUz23HCc0r2",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "Uber did not make a profit in 2020. Instead, Uber reported a net loss attributable to Uber Technologies, Inc. of $6.8 billion for the year ended December 31, 2020 [3].",
+              "content": "Uber's profit in 2020 was actually a net loss. The net loss attributable to Uber Technologies, Inc. for the year ended December 31, 2020, was $6.8 billion [3].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -235,15 +234,15 @@
             }
           }
         ],
-        "created": 1726878211,
+        "created": 1726872937,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
         "system_fingerprint": "fp_3537616b13",
         "usage": {
-          "completion_tokens": 45,
+          "completion_tokens": 44,
           "prompt_tokens": 2320,
-          "total_tokens": 2365,
+          "total_tokens": 2364,
           "completion_tokens_details": {
             "reasoning_tokens": 0
           }
@@ -383,7 +382,7 @@
             "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.6321083903312683,
+            "score": 0.632179401387013,
             "text": "2019\n\n100.0 %\n\n60.2 17.6 41.6 22.5 32.8 174.7 (74.7) \u2014 2.8 (71.9) 0.1 (72.0)%\n\n2019 to 2020 % Change\n\n(35) %\n\nsecond quarter of 2021. These increases were offset by investments in driver supply by increasing driver incentives recorded as a reduction to revenue by $942.9 million in 2021 as compared to the prior year as rider demand outpaced driver supply during certain periods of the pandemic recovery in 2021. Revenue in 2020 was also higher in the first quarter of 2020 prior to the implementation of shelter-in-place orders and other travel restrictions across North America beginning March 2020.\n\nWe expect to see continued recovery in demand for our platform and the resulting positive impacts on revenue as there are more widespread immunity levels, more communities reopen and other restrictive travel and social distancing measures in response to COVID-19 are eased. However, we cannot predict the impact of COVID variants and the longer term impact of the pandemic on consumer behavior.\n\nCost of Revenue\n\n2021",
             "metadata": {
               "version": "v0",
@@ -469,14 +468,14 @@
   "hybrid_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-A9iCLvNhWTkpvqixGn9Cc2r9aRyFi",
+        "id": "chatcmpl-A9gpGNU67ZRKhvfOaZSOwJnzbVP2S",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "John Snow is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations [4].",
+              "content": "John Snow is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations [1].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -484,15 +483,15 @@
             }
           }
         ],
-        "created": 1726878213,
+        "created": 1726872938,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
-        "system_fingerprint": "fp_e375328146",
+        "system_fingerprint": "fp_3537616b13",
         "usage": {
           "completion_tokens": 57,
-          "prompt_tokens": 1878,
-          "total_tokens": 1935,
+          "prompt_tokens": 1426,
+          "total_tokens": 1483,
           "completion_tokens_details": {
             "reasoning_tokens": 0
           }
@@ -501,75 +500,12 @@
       "search_results": {
         "vector_search_results": [
           {
-            "fragment_id": "9807d584-423f-54c1-b83d-369bd4dc7555",
-            "extraction_id": "881b4013-e528-59c3-a292-7a9e48e8a620",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "collection_ids": [],
-            "score": 0.3859012790977199,
-            "text": "Early Modern science\n\nWilliam Harvey's De Motu Cordis, 1628, showed that the blood circulated, contrary to classical era thinking. In the Early Modern period, scientists such as William Harvey in England and Galileo Galilei in Italy reacted against the theories of Aristotle and other classical era thinkers like Galen, establishing new theories based to some degree on observation and experiment. Harvey demonstrated the circulation of the blood, establishing that the heart functioned as a pump rather than being the seat of the soul and the controller of the body's heat, as Aristotle thought. [184] Galileo used more doubtful arguments to displace Aristotle's physics, proposing that bodies all fall at the same speed whatever their weight. [185]",
-            "metadata": {
-              "title": "aristotle.txt",
-              "version": "v0",
-              "chunk_order": 96,
-              "document_type": "txt",
-              "unstructured_filetype": "text/plain",
-              "unstructured_languages": [
-                "eng"
-              ],
-              "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "566f659f-7166-57de-a62a-2d13885270e3",
-            "extraction_id": "acccef73-96ff-5a27-9b32-82ac07489552",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "collection_ids": [],
-            "score": 0.2769707441329956,
-            "text": "Geology and natural sciences Further information: History of geology\n\nAristotle noted that the ground level of the Aeolian islands changed before a volcanic eruption. Aristotle was one of the first people to record any geological observations. He stated that geological change was too slow to be observed in one person's lifetime. [56][57] The geologist Charles Lyell noted that Aristotle described such change, including \"lakes that had dried up\" and \"deserts that had become watered by rivers\", giving as examples the growth of the Nile delta since the time of Homer, and \"the upheaving of one of the Aeolian islands, previous to a volcanic eruption. \"'[58]",
-            "metadata": {
-              "title": "aristotle.txt",
-              "version": "v0",
-              "chunk_order": 38,
-              "document_type": "txt",
-              "unstructured_filetype": "text/plain",
-              "unstructured_languages": [
-                "eng"
-              ],
-              "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "b8bdbdf3-b599-5a39-be5d-2f3a08c3ffed",
-            "extraction_id": "a55a3b37-c4bf-52a9-9c20-cc0fffd097ba",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "collection_ids": [],
-            "score": 0.26821274364628633,
-            "text": "Meteorologica lends its name to the modern study of meteorology, but its modern usage diverges from the content of Aristotle's ancient treatise on meteors. The ancient Greeks did use the term for a range of atmospheric phenomena, but also for earthquakes and volcanic eruptions. Aristotle proposed that the cause of earthquakes was a gas or vapor (anathymiaseis) that was trapped inside the earth and trying to escape, following other Greek authors Anaxagoras, Empedocles and Democritus. [59]\n\nAristotle also made many observations about the hydrologic cycle. For example, he made some of the earliest observations about desalination: he observed early \u2013 and correctly \u2013 that when seawater is heated, freshwater evaporates and that the oceans are then replenished by the cycle of rainfall and river runoff (\"I have proved by experiment that salt water evaporated forms fresh and the vapor does not when it condenses condense into sea water again. \")[60]\n\nBiology",
-            "metadata": {
-              "title": "aristotle.txt",
-              "version": "v0",
-              "chunk_order": 39,
-              "document_type": "txt",
-              "unstructured_filetype": "text/plain",
-              "unstructured_languages": [
-                "eng"
-              ],
-              "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
-            }
-          },
-          {
             "fragment_id": "7cbdab86-1689-5779-81bd-62f7eb3ab36d",
             "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.26240772008895874,
+            "score": 0.2625822126865387,
             "text": "Eddard (Ned) Stark\n\nThe Lord of Winterfell and new Hand of the King. A devoted father and dutiful lord, he is best characterized by his strong sense of honor, and he strives to always do what is right, regardless of his personal feelings.\n\nCatelyn (Cat) Tully\n\nNed\u2019s wife and Lady Stark of Winterfell. She is intelligent, strong, and fiercely devoted to her family, leading her to seek out the person responsible for trying to kill her son Bran.\n\nDaenerys Stormborn Targaryen\n\nThe Dothraki khaleesi (queen) and Targaryen princess. She and her brother are the only surviving members of the Targaryen family, and she grows from a frightened girl to a confident ruler, while still maintaining her kindness, over the course of the novel.\n\nJon Snow\n\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.",
             "metadata": {
               "version": "v0",
@@ -589,32 +525,11 @@
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.2610799748027318,
+            "score": 0.2610678750594818,
             "text": "Jeor Mormont (Commander Mormont)\n\nLord Commander of the Night\u2019s Watch at Castle Black. Commander Mormont is tough, old, and wise, and his men call him \u201cThe Old Bear.\u201d\n\nMaester Aemon\n\nThe chief man of learning at Castle Black. Despite his blind white eyes, Maester Aemon sees and speaks the truth in cryptic ways. Though few people realize it, Aemon is one of the few surviving members of the Targaryen family, but he has always put his vows to the Night\u2019s Watch ahead of any family loyalties.\n\nSamwell (Sam) Tarly\n\nA new recruit to the Night\u2019s Watch who is fat and cowardly but very smart. Sam loves to read and eat but hates to fight, and he quickly becomes one of Jon Snow\u2019s closest companions at the Wall.\n\nSer Allister Thorne\n\nCastle Black\u2019s resentful master-at-arms. He hard on the new recruits to the Night\u2019s Watch and seems to enjoy making them suffer, causing Jon to rebel against him. During Robert\u2019s rebellion against the former king, he was a Targaryen loyalist.",
             "metadata": {
               "version": "v0",
               "chunk_order": 7,
-              "document_type": "txt",
-              "unstructured_filetype": "text/plain",
-              "unstructured_languages": [
-                "eng"
-              ],
-              "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "31063306-890e-51e2-9ae7-1c0305d04b31",
-            "extraction_id": "d4160131-637f-5bee-87eb-232da6290155",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "collection_ids": [],
-            "score": 0.2592737310475477,
-            "text": "The first medical teacher at Alexandria, Herophilus of Chalcedon, corrected Aristotle, placing intelligence in the brain, and connected the nervous system to motion and sensation. Herophilus also distinguished between veins and arteries, noting that the latter pulse while the former do not. [157] Though a few ancient atomists such as Lucretius challenged the teleological viewpoint of Aristotelian ideas about life, teleology (and after the rise of Christianity, natural theology) would remain central to biological thought essentially until the 18th and 19th centuries. Ernst Mayr states that there was \"nothing of any real consequence in biology after Lucretius and Galen until the Renaissance. \"[158]",
-            "metadata": {
-              "title": "aristotle.txt",
-              "version": "v0",
-              "chunk_order": 87,
               "document_type": "txt",
               "unstructured_filetype": "text/plain",
               "unstructured_languages": [
@@ -630,7 +545,7 @@
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.2572833588977643,
+            "score": 0.2574058771133423,
             "text": "Varys (The Spider)\n\nThe Red Keep\u2019s master of whispers and a eunuch. His role in the court is to run a network of spies and keep the king informed, and he often uses what he knows to manipulate those around him, including the king.\n\nRobert Baratheon\n\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\n\nSer Jorah Mormont\n\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.",
             "metadata": {
               "version": "v0",
@@ -645,17 +560,16 @@
             }
           },
           {
-            "fragment_id": "935c3890-20ff-5fd6-a0cf-cc954a0d9c13",
-            "extraction_id": "26b00892-988e-5056-96ba-95def196e581",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+            "fragment_id": "3cb1c2db-01e4-5ea8-a39f-31f5949637f8",
+            "extraction_id": "02b64e7c-5aa5-5380-8fa0-3d8b64866aa8",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.2538354694843292,
-            "text": "Instead, he practiced a different style of science: systematically gathering data, discovering patterns common to whole groups of animals, and inferring possible causal explanations from these. [78][79] This style is common in modern biology when large amounts of data become available in a new field, such as genomics. It does not result in the same certainty as experimental science, but it sets out testable hypotheses and constructs a narrative explanation of what is observed. In this sense, Aristotle's biology is scientific. [78]",
+            "score": 0.20913409943187866,
+            "text": "Aerys II Targaryen\n\nKing of Westeros before Robert Baratheon. He was known as The Mad King because of his cruelty. Aerys murdered Ned\u2019s older brother, Brandon Stark, in the Red Keep\u2019s throne room. At the end of the war that followed, Jaime Lannister slew Aerys in the same room.\n\nRhaegar Targaryen\n\nThe heir to Aerys and older brother of Daenerys and Viserys. Rhaegar kidnapped Lyanna Stark, Robert\u2019s betrothed, helping to set in motion the events that led to Robert\u2019s Rebellion. The war effectively ended when Robert slew Rhaegar with his warhammer on the Trident River.\n\nJon Arryn\n\nThe recently deceased Lord of the Eyrie and Hand of the King. Jon Arryn fostered Ned Stark and Robert Baratheon at the Eyrie. When Robert became king, Jon Arryn served as his Hand until his murder.",
             "metadata": {
-              "title": "aristotle.txt",
               "version": "v0",
-              "chunk_order": 45,
+              "chunk_order": 10,
               "document_type": "txt",
               "unstructured_filetype": "text/plain",
               "unstructured_languages": [
@@ -666,17 +580,16 @@
             }
           },
           {
-            "fragment_id": "a2ae3896-5828-5c5c-9cbe-5ebe8790cacf",
-            "extraction_id": "1cf1a736-c23c-569e-8beb-bc8acb757259",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+            "fragment_id": "5d09c80f-ba83-5204-a6b3-f08831e150b0",
+            "extraction_id": "f86a905c-8d82-52ff-ad72-a800ca3af6f4",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.23399800062179565,
-            "text": "Scientific style\n\nAristotle inferred growth laws from his observations on animals, including that brood size decreases with body mass, whereas gestation period increases. He was correct in these predictions, at least for mammals: data are shown for mouse and elephant. Aristotle did not do experiments in the modern sense. [74] He used the ancient Greek term pepeiramenoi to mean observations, or at most investigative procedures like dissection. [75] In Generation of Animals, he finds a fertilized hen's egg of a suitable stage and opens it to see the embryo's heart beating inside. [76][77]",
+            "score": 0.1912464201450348,
+            "text": "Illyrio Mopatis\n\nAn obese merchant from the Free Cities who helps Daenerys and Viserys Targaryen. Illyrio is very rich and very well-informed. He is quick to please, especially when there is a possibility that his kindness will help him avoid trouble or gain greater fortune in the future.\n\nSer Barristan Selmy\n\nLord Commander of the Kingsguard. He has served kings Jaehaerys, Aerys II, and Robert. Though he has grown old, Barristan \u201cThe Bold\u201d is a formidable fighter. He is, and has always been, an honorable knight.\n\nRenly Baratheon\n\nThe youngest of the three Baratheon brothers. Renly is lighthearted and opportunistic, and unexpectedly ambitious. He serves on Robert\u2019s royal council.\n\nStannis Baratheon\n\nThe middle brother of the three Baratheons. Stannis does not appear in A Game of Thrones, but as the brother of the king, he is a potential heir to the throne. Stannis does not seem to be well-liked.",
             "metadata": {
-              "title": "aristotle.txt",
               "version": "v0",
-              "chunk_order": 44,
+              "chunk_order": 8,
               "document_type": "txt",
               "unstructured_filetype": "text/plain",
               "unstructured_languages": [
@@ -687,17 +600,16 @@
             }
           },
           {
-            "fragment_id": "12271374-4bd3-5253-9688-c205fd24c036",
-            "extraction_id": "d4d42555-3e22-5088-a45d-f4cb4ce86889",
-            "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+            "fragment_id": "d143b410-f9a4-5f3b-bb46-fb412eda8201",
+            "extraction_id": "37f940e2-18f4-50f5-93aa-cec422fc9211",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
-            "score": 0.2261321097612381,
-            "text": "18th and 19th-century science The English mathematician George Boole fully accepted Aristotle's logic, but decided \"to go under, over, and beyond\" it with his system of algebraic logic in his 1854 book The Laws of Thought. This gives logic a mathematical foundation with equations, enables it to solve equations as well as check validity, and allows it to handle a wider class of problems by expanding propositions of any number of terms, not just two. [186]\n\nCharles Darwin regarded Aristotle as the most important contributor to the subject of biology. In an 1882 letter he wrote that \"Linnaeus and Cuvier have been my two gods, though in very different ways, but they were mere schoolboys to old Aristotle\". [187][188] Also, in later editions of the book \"On the Origin of Species', Darwin traced evolutionary ideas as far back as Aristotle;[189] the text he cites is a summary by Aristotle of the ideas of the earlier Greek philosopher Empedocles. [190]",
+            "score": 0.1862841248512268,
+            "text": "Sandor (The Hound) Clegane\n\nPrince Joff\u2019s unofficial bodyguard. Proud that he is not a knight, The Hound appears to have no scruples whatsoever and does what Joffrey orders, however cruel or unjust, without question. His face is scarred on one side by extensive burning inflicted by his brother, Gregor.\n\nRobb Stark\n\nThe eldest Stark son and thus heir to Ned Stark. Though just fourteen, he is mature beyond his age as well as being brave and dutiful like his father.\n\nMaester Luwin\n\nCounselor to Ned, Catelyn, and Robb. Luwin is old and wise, and his advice proves indispensible to the Starks.\n\nTheon Greyjoy\n\nThe Starks\u2019s ward and Robb\u2019s best friend. Ned Stark took the young Theon, now nineteen, as a ward after putting down a rebellion led by the Greyjoy family, and Theon consequently grew up with the Stark children as something like a brother.",
             "metadata": {
-              "title": "aristotle.txt",
               "version": "v0",
-              "chunk_order": 97,
+              "chunk_order": 5,
               "document_type": "txt",
               "unstructured_filetype": "text/plain",
               "unstructured_languages": [
@@ -718,7 +630,7 @@
         "choices": [
           {
             "message": {
-              "content": "<search>[{\"fragment_id\": \"94684f2d-fe60-5ba3-b1e8-0a921841bac9\", \"extraction_id\": \"fde39a49-00fc-5622-addd-13eb9c3bad4b\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6675317487158475, \"text\": \"Total Stockholders\\u2019 Equity (Deficit) 1,676,163\\n\\n5,184\\n\\n\\u2014\\n\\n(26,298)\\n\\n28,637\\n\\n(1) 721,710 (2,038) (1,009,359) 1,393,998\\n\\nLyft, Inc. Consolidated Statements of Cash Flows (in thousands)\\n\\n2021\\n\\nCash flows from operating activities Net loss Adjustments to reconcile net loss to net cash used in operating activities\\n\\n$\\n\\n(1,009,359)\\n\\nDepreciation and amortization Stock-based compensation Amortization of premium on marketable securities Accretion of discount on marketable securities Amortization of debt discount and issuance costs Deferred income tax from convertible senior notes Loss on sale and disposal of assets, net Gain on divestiture Other Changes in operating assets and liabilities, net effects of acquisition\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 572, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 82, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"0d5c5803-8846-59d4-8ae3-3696b718f162\", \"extraction_id\": \"fa3d2549-593a-5a80-88a2-b2d031d79771\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6647325554330692, \"text\": \"79\\n\\n2019 3,615,960\\n\\n2,176,469 636,116 1,505,640 814,122 1,186,093 6,318,440 (2,702,480) \\u2014 102,595 (2,599,885) 2,356 (2,602,241)\\n\\n(11.44)\\n\\n227,498\\n\\n81,321 75,212 971,941 72,046 398,791\\n\\nLyft, Inc. Consolidated Statements of Comprehensive Loss (in thousands)\\n\\nNet loss Other comprehensive income (loss)\\n\\n$\\n\\nYear Ended December 31, 2020 (1,752,857) $\\n\\n2021 (1,009,359) $\\n\\nForeign currency translation adjustment Unrealized gain (loss) on marketable securities, net of taxes\\n\\nOther comprehensive income (loss)\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 567, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 79, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"5d663f0a-c9a9-580f-818b-5ca0a1ca73f2\", \"extraction_id\": \"12916d2c-0691-528c-86aa-6784c1f35c55\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6628073848967198, \"text\": \"Overview\\n\\nLyft, Inc (the \\u201cCompany\\u201d or \\u201cLyft\\u201d) started a movement to revolutionize transportation. In 2012, we launched our peer-to-peer marketplace for on-demand ridesharing and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United States and Canada.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 16, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"7133acca-f147-5f43-b2e0-71228282fda0\", \"extraction_id\": \"212d8290-564d-5039-93cc-00cea31a1771\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6603650057098371, \"text\": \"Revenues from Contracts with Customers (ASC 606)\\n\\nWe generate substantially all our revenue from our ridesharing marketplace that connects drivers and riders. We recognize revenue from fees paid by drivers for use of our Lyft Platform offerings in accordance with ASC 606 as described in Note 2 of the notes to our consolidated financial statements. Drivers enter into terms of service (\\u201cToS\\u201d) with us in order to use our Lyft Driver App.\\n\\n58\\n\\n2019 to 2020 % Change\\n\\n19.0% (1.8)% (6.7)% 2.3%\\n\\nWe provide a service to drivers to complete a successful transportation service for riders. This service includes on-demand lead generation that assists drivers to find, receive and fulfill on-demand requests from riders seeking transportation services and related collection activities using our Lyft Platform. As a result, our single performance obligation in the transaction is to connect drivers with riders to facilitate the completion of a successful transportation service for riders.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 459, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 58, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"1a76991f-fa85-59b2-b522-700d47b2d809\", \"extraction_id\": \"0773cd62-b39f-517f-b6f1-be788b38374d\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6477405428886459, \"text\": \"Corporate Information\\n\\nWe were incorporated in 2007 as Bounder Web, Inc., a Delaware corporation. In 2008, we changed our name to Zimride, Inc. We founded Lyft in 2012 and\\n\\nchanged our name to Lyft, Inc. in 2013 when we sold the assets related to our Zimride operations.\\n\\n13\\n\\nAvailable Information\\n\\nOur website is located at www.lyft.com, and our investor relations website is located at investor.lyft.com. Copies of our Annual Report on Form 10-K, Quarterly Reports on Form 10-Q, Current Reports on Form 8-K and amendments to these reports filed or furnished pursuant to Section 13(a) or 15(d) of the Exchange Act, as amended, are available free of charge on our investor relations website as soon as reasonably practicable after we file such material electronically with or furnish it to the Securities and Exchange Commission (the \\u201cSEC\\u201d). The SEC also maintains a website that contains our SEC filings at www.sec.gov.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 82, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 13, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"17673edc-6fb7-577d-9bca-457c5745382d\", \"extraction_id\": \"bde94416-baaa-573a-9bc7-86ddf28535b1\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6405872916825343, \"text\": \"We generate substantially all of our revenue from our ridesharing marketplace that connects drivers and riders. We collect service fees and commissions from drivers for their use of our ridesharing marketplace. As drivers accept more rider leads and complete more rides, we earn more revenue. We also generate revenue from riders renting Light Vehicles, drivers renting vehicles through Express Drive, Lyft Rentals renters, Lyft Driver Center and Lyft Auto Care users, and by making our ridesharing marketplace available to organizations through our Lyft Business offerings, such as our Concierge and Corporate Business Travel programs. In the second quarter of 2021, we began generating revenues from licensing and data access agreements, primarily with third-party autonomous vehicle companies.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 20, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"8f6299b7-4582-5bac-8c74-7ca57714aefa\", \"extraction_id\": \"310e9e1f-25d3-5287-a905-5446f661d6da\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6395827913035638, \"text\": \"Revenue Recognition\\n\\nThe Company generates its revenue from its multimodal transportation networks that offer access to a variety of transportation options through the Lyft Platform and mobile-based applications. Substantially all of the Company\\u2019s revenue is generated from its ridesharing marketplace that connects drivers and riders and is recognized in accordance with Accounting Standards Codification Topic 606 (\\u201cASC 606\\u201d). In addition, the Company generates revenue in accordance with ASC 606 from licensing and data access, primarily with third-party autonomous vehicle companies. The Company also generates rental revenue from Flexdrive, its network of Light Vehicles and Lyft Rentals, which is recognized in accordance with Accounting Standards Codification Topic 842 (\\u201cASC 842\\u201d).\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 591, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 86, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"ff837ea0-0062-59ca-bb4f-aa7a1c9cecd0\", \"extraction_id\": \"41e4db8a-0478-5015-8263-cde0618ec626\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6309025067628935, \"text\": \"Light Vehicle Rider and Lyft Rentals Renter Incentives\\n\\nIncentives offered to Light Vehicle riders and Lyft Rentals renters were not material for the years ended December 31, 2021 and 2020.\\n\\nFor the years ended December 31, 2021, 2020 and 2019, in relation to the driver, rider, Light Vehicle riders and Lyft Rentals renters incentive programs, the Company recorded $1.3 billion, $390.8 million and $560.3 million as a reduction to revenue and $64.7 million, $135.0 million and $381.5 million as sales and marketing expense, respectively.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 611, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 89, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"c24d144b-c22d-5c08-876f-a03e43620aa4\", \"extraction_id\": \"2a4caab0-6193-5263-8eab-c7763e8f38e8\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6294938325882002, \"text\": \"Software Development Costs\\n\\nThe Company incurs costs related to developing the Lyft Platform and related support systems. The Company capitalizes development costs related to the Lyft Platform and related support systems once the preliminary project stage is complete and it is probable that the project will be completed and the software will be used to perform the function intended. The Company capitalized $16.2 million and $12.8 million of software development costs during the year ended December 31, 2021 and 2020, respectively. For the year ended December 31, 2019, capitalized software development costs was not material.\\n\\nInsurance Reserves\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 649, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 94, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"83985ff5-653f-53eb-b137-f616b4292f51\", \"extraction_id\": \"0919e3d5-03b0-5d54-b5f3-7f6ad4534412\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6223346365889701, \"text\": \"32.1\\u2020\\n\\nCertifications of Principal Executive Officer and Principal Financial Officer pursuant to 18 U.S.C. Section 1350, as adopted pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.\\n\\n101\\n\\nThe following financial information from Lyft, Inc.\\u2019s Annual Report on Form 10-K for the fiscal year ended December 31, 2021 formatted in Inline XBRL (eXtensible Business Reporting Language): (i) Consolidated Statements of Operations for the fiscal years ended December 31, 2021, 2020 and 2019; (ii) Consolidated Statements of Comprehensive Income (Loss) for the fiscal years ended December 31, 2021, 2020, and 2019; (iii) Consolidated Balance Sheets as of December 31, 2021 and 2020; (iv) Consolidated Statements of Cash Flows for the fiscal years ended December 31, 2021, 2020, and 2019; (v) Consolidated Statements of Redeemable Convertible Preferred Stock and Stockholders\\u2019 Equity for the fiscal years ended December 31, 2021, 2020, and 2019; and (vi) Notes to the Consolidated Financial Statements.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 817, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 127, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}]</search><completion>Lyft's profit in 2020 was a net loss of $1,752,857,000 [2].</completion>"
+              "content": "<search>[{\"fragment_id\": \"94684f2d-fe60-5ba3-b1e8-0a921841bac9\", \"extraction_id\": \"fde39a49-00fc-5622-addd-13eb9c3bad4b\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6675721804840684, \"text\": \"Total Stockholders\\u2019 Equity (Deficit) 1,676,163\\n\\n5,184\\n\\n\\u2014\\n\\n(26,298)\\n\\n28,637\\n\\n(1) 721,710 (2,038) (1,009,359) 1,393,998\\n\\nLyft, Inc. Consolidated Statements of Cash Flows (in thousands)\\n\\n2021\\n\\nCash flows from operating activities Net loss Adjustments to reconcile net loss to net cash used in operating activities\\n\\n$\\n\\n(1,009,359)\\n\\nDepreciation and amortization Stock-based compensation Amortization of premium on marketable securities Accretion of discount on marketable securities Amortization of debt discount and issuance costs Deferred income tax from convertible senior notes Loss on sale and disposal of assets, net Gain on divestiture Other Changes in operating assets and liabilities, net effects of acquisition\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 572, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 82, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"0d5c5803-8846-59d4-8ae3-3696b718f162\", \"extraction_id\": \"fa3d2549-593a-5a80-88a2-b2d031d79771\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6647443571534382, \"text\": \"79\\n\\n2019 3,615,960\\n\\n2,176,469 636,116 1,505,640 814,122 1,186,093 6,318,440 (2,702,480) \\u2014 102,595 (2,599,885) 2,356 (2,602,241)\\n\\n(11.44)\\n\\n227,498\\n\\n81,321 75,212 971,941 72,046 398,791\\n\\nLyft, Inc. Consolidated Statements of Comprehensive Loss (in thousands)\\n\\nNet loss Other comprehensive income (loss)\\n\\n$\\n\\nYear Ended December 31, 2020 (1,752,857) $\\n\\n2021 (1,009,359) $\\n\\nForeign currency translation adjustment Unrealized gain (loss) on marketable securities, net of taxes\\n\\nOther comprehensive income (loss)\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 567, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 79, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"5d663f0a-c9a9-580f-818b-5ca0a1ca73f2\", \"extraction_id\": \"12916d2c-0691-528c-86aa-6784c1f35c55\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6628832616140414, \"text\": \"Overview\\n\\nLyft, Inc (the \\u201cCompany\\u201d or \\u201cLyft\\u201d) started a movement to revolutionize transportation. In 2012, we launched our peer-to-peer marketplace for on-demand ridesharing and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United States and Canada.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 16, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"7133acca-f147-5f43-b2e0-71228282fda0\", \"extraction_id\": \"212d8290-564d-5039-93cc-00cea31a1771\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6603014862717096, \"text\": \"Revenues from Contracts with Customers (ASC 606)\\n\\nWe generate substantially all our revenue from our ridesharing marketplace that connects drivers and riders. We recognize revenue from fees paid by drivers for use of our Lyft Platform offerings in accordance with ASC 606 as described in Note 2 of the notes to our consolidated financial statements. Drivers enter into terms of service (\\u201cToS\\u201d) with us in order to use our Lyft Driver App.\\n\\n58\\n\\n2019 to 2020 % Change\\n\\n19.0% (1.8)% (6.7)% 2.3%\\n\\nWe provide a service to drivers to complete a successful transportation service for riders. This service includes on-demand lead generation that assists drivers to find, receive and fulfill on-demand requests from riders seeking transportation services and related collection activities using our Lyft Platform. As a result, our single performance obligation in the transaction is to connect drivers with riders to facilitate the completion of a successful transportation service for riders.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 459, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 58, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"1a76991f-fa85-59b2-b522-700d47b2d809\", \"extraction_id\": \"0773cd62-b39f-517f-b6f1-be788b38374d\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6477650017878516, \"text\": \"Corporate Information\\n\\nWe were incorporated in 2007 as Bounder Web, Inc., a Delaware corporation. In 2008, we changed our name to Zimride, Inc. We founded Lyft in 2012 and\\n\\nchanged our name to Lyft, Inc. in 2013 when we sold the assets related to our Zimride operations.\\n\\n13\\n\\nAvailable Information\\n\\nOur website is located at www.lyft.com, and our investor relations website is located at investor.lyft.com. Copies of our Annual Report on Form 10-K, Quarterly Reports on Form 10-Q, Current Reports on Form 8-K and amendments to these reports filed or furnished pursuant to Section 13(a) or 15(d) of the Exchange Act, as amended, are available free of charge on our investor relations website as soon as reasonably practicable after we file such material electronically with or furnish it to the Securities and Exchange Commission (the \\u201cSEC\\u201d). The SEC also maintains a website that contains our SEC filings at www.sec.gov.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 82, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 13, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"17673edc-6fb7-577d-9bca-457c5745382d\", \"extraction_id\": \"bde94416-baaa-573a-9bc7-86ddf28535b1\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6406270265579269, \"text\": \"We generate substantially all of our revenue from our ridesharing marketplace that connects drivers and riders. We collect service fees and commissions from drivers for their use of our ridesharing marketplace. As drivers accept more rider leads and complete more rides, we earn more revenue. We also generate revenue from riders renting Light Vehicles, drivers renting vehicles through Express Drive, Lyft Rentals renters, Lyft Driver Center and Lyft Auto Care users, and by making our ridesharing marketplace available to organizations through our Lyft Business offerings, such as our Concierge and Corporate Business Travel programs. In the second quarter of 2021, we began generating revenues from licensing and data access agreements, primarily with third-party autonomous vehicle companies.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 20, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"8f6299b7-4582-5bac-8c74-7ca57714aefa\", \"extraction_id\": \"310e9e1f-25d3-5287-a905-5446f661d6da\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6395331787506555, \"text\": \"Revenue Recognition\\n\\nThe Company generates its revenue from its multimodal transportation networks that offer access to a variety of transportation options through the Lyft Platform and mobile-based applications. Substantially all of the Company\\u2019s revenue is generated from its ridesharing marketplace that connects drivers and riders and is recognized in accordance with Accounting Standards Codification Topic 606 (\\u201cASC 606\\u201d). In addition, the Company generates revenue in accordance with ASC 606 from licensing and data access, primarily with third-party autonomous vehicle companies. The Company also generates rental revenue from Flexdrive, its network of Light Vehicles and Lyft Rentals, which is recognized in accordance with Accounting Standards Codification Topic 842 (\\u201cASC 842\\u201d).\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 591, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 86, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"ff837ea0-0062-59ca-bb4f-aa7a1c9cecd0\", \"extraction_id\": \"41e4db8a-0478-5015-8263-cde0618ec626\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6308713775353904, \"text\": \"Light Vehicle Rider and Lyft Rentals Renter Incentives\\n\\nIncentives offered to Light Vehicle riders and Lyft Rentals renters were not material for the years ended December 31, 2021 and 2020.\\n\\nFor the years ended December 31, 2021, 2020 and 2019, in relation to the driver, rider, Light Vehicle riders and Lyft Rentals renters incentive programs, the Company recorded $1.3 billion, $390.8 million and $560.3 million as a reduction to revenue and $64.7 million, $135.0 million and $381.5 million as sales and marketing expense, respectively.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 611, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 89, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"c24d144b-c22d-5c08-876f-a03e43620aa4\", \"extraction_id\": \"2a4caab0-6193-5263-8eab-c7763e8f38e8\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6294938325882002, \"text\": \"Software Development Costs\\n\\nThe Company incurs costs related to developing the Lyft Platform and related support systems. The Company capitalizes development costs related to the Lyft Platform and related support systems once the preliminary project stage is complete and it is probable that the project will be completed and the software will be used to perform the function intended. The Company capitalized $16.2 million and $12.8 million of software development costs during the year ended December 31, 2021 and 2020, respectively. For the year ended December 31, 2019, capitalized software development costs was not material.\\n\\nInsurance Reserves\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 649, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 94, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"83985ff5-653f-53eb-b137-f616b4292f51\", \"extraction_id\": \"0919e3d5-03b0-5d54-b5f3-7f6ad4534412\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6223346365889701, \"text\": \"32.1\\u2020\\n\\nCertifications of Principal Executive Officer and Principal Financial Officer pursuant to 18 U.S.C. Section 1350, as adopted pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.\\n\\n101\\n\\nThe following financial information from Lyft, Inc.\\u2019s Annual Report on Form 10-K for the fiscal year ended December 31, 2021 formatted in Inline XBRL (eXtensible Business Reporting Language): (i) Consolidated Statements of Operations for the fiscal years ended December 31, 2021, 2020 and 2019; (ii) Consolidated Statements of Comprehensive Income (Loss) for the fiscal years ended December 31, 2021, 2020, and 2019; (iii) Consolidated Balance Sheets as of December 31, 2021 and 2020; (iv) Consolidated Statements of Cash Flows for the fiscal years ended December 31, 2021, 2020, and 2019; (v) Consolidated Statements of Redeemable Convertible Preferred Stock and Stockholders\\u2019 Equity for the fiscal years ended December 31, 2021, 2020, and 2019; and (vi) Notes to the Consolidated Financial Statements.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 817, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 127, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}]</search><completion>Lyft's profit in 2020 was a net loss of $1,752,857,000 [2].</completion>"
             }
           }
         ]
