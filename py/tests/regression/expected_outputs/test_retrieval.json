@@ -3,160 +3,230 @@
     "results": {
       "vector_search_results": [
         {
-          "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-          "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+          "fragment_id": "392ab9b4-c4bc-5894-8edf-332fcd9245bb",
+          "extraction_id": "cd49a88d-92e5-59f1-8331-3d3d3ecb7f3a",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.23943702876567796,
-          "text": "Alternate Base Rate means, for any day, a rate per annum  equal to the greatest of (i) the Prime Rate in effect on such day, (ii) the Federal Funds Effective Rate in effect on such day \nplus  \u00bd of 1% and (iii) the sum of (a) the Adjusted LIBO Rate that would be payable onsuch day for a Eurodollar Borrowing with a one-month interest period",
+          "collection_ids": [],
+          "score": 0.2381485473557875,
+          "text": "Finance Leases\n\n2022 2023 2024 2025 2026 Thereafter Total undiscounted lease payments Less: imputed interest\n\n$\n\n280 $ 312 264 214 198 2,067 3,335 (1,506) 1,829 $\n\n140 60 34 9 \u2014 1 244 (10) 234\n\nTotal lease liabilities\n\n$\n\nAs of December 31, 2021, we had additional operating leases and finance leases, primarily for corporate offices and servers, that have not yet commenced of $421 million and $19 million, respectively. These operating and finance leases will commence between fiscal year 2022 and fiscal year 2023 with lease terms of 2 years to 13 years.\n\nMission Bay 1 & 2\n\nIn 2015, we entered into a joint venture (\u201cJV\u201d) agreement with a real estate developer (\u201cJV Partner\u201d) to develop land (\u201cthe Land\u201d) in San Francisco to construct our new headquarters (the \u201cHeadquarters\u201d). The Headquarters consists of two adjacent office buildings totaling approximately 423,000 rentable square feet. In connection with the JV arrangement, we acquired a 49% interest in the JV, the principal asset of which was the Land.",
           "metadata": {
-            "text": "Alternate Base Rate means, for any day, a rate per annum  equal to the greatest of (i) the Prime Rate in effect on such day, (ii) the Federal Funds Effective Rate in effect on such day \nplus  \u00bd of 1% and (iii) the sum of (a) the Adjusted LIBO Rate that would be payable onsuch day for a Eurodollar Borrowing with a one-month interest period",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
+            "version": "v0",
+            "chunk_order": 759,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 109,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
           }
         },
         {
-          "fragment_id": "f0b40c99-e200-507b-a4b9-e931e0b5f321",
-          "extraction_id": "0348ae71-bccb-58d1-8b5f-36810e46245a",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.22033508121967305,
-          "text": "s, could also restrict our future access to the capital markets.ITEM 1B. UNRESOLVED STAFF\n COMMENTSNot applicable.\nITEM 2. PROPERTIES\nAs\n of December 31, 2021, we leased and owned office facilities around the world totaling 10.6 million square feet, including 2.6 million square feet for ourcorporate headquarte\nrs in the San Francisco Bay Area, California.We",
-          "metadata": {
-            "text": "s, could also restrict our future access to the capital markets.ITEM 1B. UNRESOLVED STAFF\n COMMENTSNot applicable.\nITEM 2. PROPERTIES\nAs\n of December 31, 2021, we leased and owned office facilities around the world totaling 10.6 million square feet, including 2.6 million square feet for ourcorporate headquarte\nrs in the San Francisco Bay Area, California.We",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "967c4291-0629-55b6-9323-e2291de8730d",
-          "extraction_id": "7595cdf2-d1b0-5f13-b853-8ce6857ca5f5",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.21763332188129403,
-          "text": "RFR means, for any RFR Loan denominated in (a) British Pounds, SONIA and (b) Swiss Francs, SARON. \nRFR Borrowing means, as to any Borrowing, the RFR Loans comprising such Borrowing. \nRFR Business Day means, for any Loan denominated in (a) British Pounds, any day except for (i) a Saturday, (ii) a Sunday or (iii) a day on which banks are closed for general business in London and (b) Swiss Francs, any day except for (i) a Saturday, (ii) a Sunday or",
-          "metadata": {
-            "text": "RFR means, for any RFR Loan denominated in (a) British Pounds, SONIA and (b) Swiss Francs, SARON. \nRFR Borrowing means, as to any Borrowing, the RFR Loans comprising such Borrowing. \nRFR Business Day means, for any Loan denominated in (a) British Pounds, any day except for (i) a Saturday, (ii) a Sunday or (iii) a day on which banks are closed for general business in London and (b) Swiss Francs, any day except for (i) a Saturday, (ii) a Sunday or",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "188b7dd5-9554-53cb-9e68-b97e5ee71342",
-          "extraction_id": "7595cdf2-d1b0-5f13-b853-8ce6857ca5f5",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.21672844886779796,
-          "text": "RFR Interest Day has the meaning specified in the definition of Daily Simple RFR. \nRFR Loan means a Loan that bears interest at a rate based on the Adjusted Daily Simple RFR. For the avoidance of doubt, only Loans denominated in British Pounds and Swiss Francs shall bear interest at a rate based on the Adjusted Daily Simple RFR.",
-          "metadata": {
-            "text": "RFR Interest Day has the meaning specified in the definition of Daily Simple RFR. \nRFR Loan means a Loan that bears interest at a rate based on the Adjusted Daily Simple RFR. For the avoidance of doubt, only Loans denominated in British Pounds and Swiss Francs shall bear interest at a rate based on the Adjusted Daily Simple RFR.",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "8e88e5b1-9785-5b26-a296-15150737dc10",
-          "extraction_id": "dd07e341-17f4-5ff7-9985-3e4719a4e145",
+          "fragment_id": "fd8508db-c444-5ed9-afce-67340354fb1e",
+          "extraction_id": "7f16fa20-9bc1-5841-ba74-95cdbb27e9fb",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.21409947956201303,
-          "text": "Restricted\n cash and cash equivalents consist primarily of amounts held in separate trust accounts and restricted bank accounts as collateral for insurance purposesand amounts pledged\n to secure certain letters of credit.Investments\nDebt Securities\nThe Companys accounting for its investme\nnts in debt securities is based on the legal form of the security, the Companys intended holding period for the security,and",
+          "collection_ids": [],
+          "score": 0.21556836366653442,
+          "text": "(c)\n\nCommuting and Corporate Housing Expenses. During your Employment, the Company shall cover the cost of your reasonable and substantiated expenses for travel between your primary residence and the Company\u2019s headquarters in San Francisco and corporate housing in the San Francisco Bay Area, up to a pre-tax maximum of $200,000 per year in the aggregate. All expense reimbursements shall be made in accordance with the Company\u2019s expense reimbursement policy.\n\n(d)",
           "metadata": {
-            "text": "Restricted\n cash and cash equivalents consist primarily of amounts held in separate trust accounts and restricted bank accounts as collateral for insurance purposesand amounts pledged\n to secure certain letters of credit.Investments\nDebt Securities\nThe Companys accounting for its investme\nnts in debt securities is based on the legal form of the security, the Companys intended holding period for the security,and",
-            "title": "lyft_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
+            "version": "v0",
+            "chunk_order": 971,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 170,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
           }
         },
         {
-          "fragment_id": "cbc7d77c-ca2f-5e66-89c9-706588902653",
-          "extraction_id": "1b94a71e-a37d-5270-ba32-11b728014017",
+          "fragment_id": "e74d31b4-5de3-581c-abaf-8d28f48f924b",
+          "extraction_id": "f4aa1be1-c0fa-5edd-a536-d5af7f023b31",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.20865452782457905,
-          "text": "Fax: \n212-701-5165 (iv)\nif to MSSF, in its capacity as a Lender, to it at: Morgan Stanley Senior Funding, Inc.\n1 New York Plaza, 41st Floor\nNew York, New York, 10004\nAttention: Agency Team\nFax: (212) 507-6680\n(iv)    if to any other Lender or any other Issuing Bank, to it at its address (or telecopy number) set forth in its Administrative\nQuestionnaire.\n112",
+          "collection_ids": [],
+          "score": 0.21189823746681213,
+          "text": "\u201cPlatform\u201d has the meaning set forth in Section 9.01(d).\n\n\u201cPrime Rate\u201d means the rate of interest the rate of interest published by the Wall Street Journal, from time to time, as the prime rate.\n\nThe Prime Rate is a reference rate and does not necessarily represent the lowest or best rate actually charged to any customer. The Administrative Agent or any other Lender may make commercial loans or other loans at rates of interest at, above or below the Prime Rate.\n\n\u201cPrincipal Office\u201d for each of the Administrative Agent and any Issuing Bank, means the office of the Administrative Agent and such Issuing Bank as set forth in Section 9.01(a), or such other office or office of a third party or sub-agent, as appropriate, as such Person may from time to time designate to Borrower and each Lender upon two Business Days\u2019 written notice.",
           "metadata": {
-            "text": "Fax: \n212-701-5165 (iv)\nif to MSSF, in its capacity as a Lender, to it at: Morgan Stanley Senior Funding, Inc.\n1 New York Plaza, 41st Floor\nNew York, New York, 10004\nAttention: Agency Team\nFax: (212) 507-6680\n(iv)    if to any other Lender or any other Issuing Bank, to it at its address (or telecopy number) set forth in its Administrative\nQuestionnaire.\n112",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
+            "version": "v0",
+            "chunk_order": 1210,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 205,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
           }
         },
         {
-          "fragment_id": "abb86b50-d271-57ef-a5a0-fafa06d4590b",
-          "extraction_id": "9dcfaa51-83d4-5119-9fab-c6591ca32cb0",
+          "fragment_id": "76d010b2-1498-531a-bf89-66aa17331203",
+          "extraction_id": "f31920df-e1db-5a2c-9b8f-9c7b845a21c1",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.19467422366142273,
+          "text": "45-2647441 (I.R.S. Employer Identification No.)\n\n1515 3rd Street San Francisco, California 94158 (Address of principal executive offices, including zip code) (415) 612-8582 (Registrant\u2019s telephone number, including area code) ____________________________________________\n\nSecurities registered pursuant to Section 12(b) of the Act:\n\nTitle of each class Common Stock, par value $0.00001 per share",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 1,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 1,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "c96ee688-6e36-5abb-b066-d87779be1cf6",
+          "extraction_id": "eb08b70d-2e82-5de3-90ee-98537a761ea8",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.20697565376758598,
-          "text": "24,757   24,757 Money market deposit accoun\nts162   162 Term deposits\n6,506   6,506 Certificates of deposit\n481,154 213 (3) 481,364 Commercial paper\n469,193 57 (10) 469,240 Corporate bonds\n184,560 67 (26) 184,601 Total restricted cash equivale\nnts and investments1,166,332 337 (39) 1,166,630 Total unrestricted and \nrestricted cash equivalents and investments$ 3,283,497 $ 668 $ (104) $ 3,284,061 _______________\n(1)",
+          "collection_ids": [],
+          "score": 0.19264961779117584,
+          "text": "Item 2. Properties.\n\nOur corporate headquarters are located in San Francisco, California, and consist of approximately 420,000 square feet under lease agreements through May 31,\n\n2030. We maintain additional offices in multiple locations in the U.S. and internationally in Montreal, Canada, Munich, Germany and Minsk, Belarus.\n\nWe lease all of our facilities and do not own any real property. We believe our facilities are adequate and suitable for our current needs and that, should it be\n\nneeded, suitable additional or alternative space will be available to accommodate our operations.\n\n53\n\nItem 3. Legal Proceedings.\n\nSee discussion under the heading Legal Proceedings in Note 9 to the consolidated financial statements included in Part II, Item 8 of this report.\n\nItem 4. Mine Safety Disclosures.\n\nNot applicable.\n\n54\n\nPART II\n\nItem 5. Market for Registrant\u2019s Common Equity, Related Stockholder Matters and Issuer Purchases of Equity Securities.",
           "metadata": {
-            "text": "24,757   24,757 Money market deposit accoun\nts162   162 Term deposits\n6,506   6,506 Certificates of deposit\n481,154 213 (3) 481,364 Commercial paper\n469,193 57 (10) 469,240 Corporate bonds\n184,560 67 (26) 184,601 Total restricted cash equivale\nnts and investments1,166,332 337 (39) 1,166,630 Total unrestricted and \nrestricted cash equivalents and investments$ 3,283,497 $ 668 $ (104) $ 3,284,061 _______________\n(1)",
-            "title": "lyft_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
+            "version": "v0",
+            "chunk_order": 434,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 53,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
           }
         },
         {
-          "fragment_id": "24dd1910-d09b-5af2-9608-542777d8cbca",
-          "extraction_id": "7b1e614f-bda0-5c9d-adc5-a8dd25658c4c",
+          "fragment_id": "2abca1b8-f005-59dd-9716-adf883ec3aca",
+          "extraction_id": "edd4f1f9-f6c8-5341-a1e7-ce57cac7f2fb",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.19248970195712467,
+          "text": "(b)\n\nSolely for purposes of Article II and related definitional provisions to the extent used therein, the applicable amount of any\n\ncurrency (other than dollars) for purposes of the Loan Documents shall be such Dollar Equivalent amount as determined by the Administrative Agent and notified to the applicable Issuing Bank and the Borrower in accordance with Section 1.06(a). Amounts denominated in a Permitted Foreign Currency will be converted to dollars for the purposes of calculating the Senior Secured Net Leverage Ratio at the Exchange Rate as of the date of calculation.",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 1266,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 216,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "85474903-20cc-58e6-ad3c-a1b64de77557",
+          "extraction_id": "b69b89e5-48e1-526e-ba04-c9f5c0c56fa6",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.1894184407418502,
+          "text": "Interest, net of amount capitalized Income taxes, net of refunds\n\n$\n\nNon-cash investing and financing activities:\n\nConversion of redeemable convertible preferred stock to common stock upon initial public offering Conversion of convertible notes to common stock upon initial public offering Conversion of convertible notes to common stock related to Careem Finance lease obligations Common stock issued in connection with acquisitions Ownership interest received in exchange for divestitures Issuance of Careem Notes including the holdback amount\n\nThe accompanying notes are an integral part of these consolidated financial statements.\n\n81\n\n2019",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 590,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 83,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "a2f05c5a-0d43-538d-b4d0-ffd29d215437",
+          "extraction_id": "f1cb0bd8-0721-59ab-9e39-110efccf33dd",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.18724104762077332,
+          "text": "(1) the rate, or methodology for this rate, and conventions for this rate selected or recommendedby the Relevant Governmental Body\n\nfor determining compounded SOFR; provided that:\n\n(2) if, and to the extent that, the Administrative Agent determines that Compounded SOFRcannot\n\nbe determined in accordance with clause (1) above, then the rate, or methodology for this rate, and conventions for this rate that the Administrative Agent determines are substantially consistent with prevailing market convention for determining Compounded SOFR for U.S. dollar-denominated syndicated credit facilities at such time (as a result of amendment or as originally executed);",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 1102,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 186,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "2654f646-222c-50af-bd1c-c7311e6a9dc9",
+          "extraction_id": "b25d210b-1b58-578a-b038-34f76d77f377",
+          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+          "collection_ids": [],
+          "score": 0.18122072927828292,
+          "text": "\u201cCanadian BA Rate Borrowing\u201d refers to a Borrowing bearing interest at a rate determined by reference to the Canadian BA Rate.\n\n10\n\n\u201cCanadian BA Rate Loan\u201d refers to a Loan bearing interest at a rate determined by reference to the Canadian BA Rate.\n\n\u201cCanadian Dollars\u201d means the lawful currency of Canada.\n\n\u201cCapital Lease Obligations\u201d of any Person means the obligations of such Person to pay rent or other amounts under any lease of (or",
+          "metadata": {
+            "version": "v0",
+            "chunk_order": 1085,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 182,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
+          }
+        },
+        {
+          "fragment_id": "309f729d-78eb-569a-837c-50367c20e898",
+          "extraction_id": "dfc368a6-efaf-5f4d-a20b-0fd6059a5f35",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.20446833968162503,
-          "text": "our future capital requirements;\nour ability to service our current and future debt, and counterparty risk with respect to our capped call transactions;\nour ability to make and successfully integrate acquisitions and investments or complete divestitures, joint ventures, partnerships or other strategic transactions;\nour tax liabilities, ability to use our net operating loss carryforwards and future changes in tax matters;Governance Risks and Risks related to Ownership o\nf our Capital Stock",
+          "collection_ids": [],
+          "score": 0.1806427240371704,
+          "text": "principal payments on finance lease obligations for $35.5 million.\n\nCash provided by financing activities was $512.6 million for the year ended December 31, 2020, which primarily consisted of proceeds from issuance of our 2025\n\nNotes of $734.1 million offset by the purchase of the Capped Calls for $132.7 million.\n\nLiquidity and Capital Resources",
           "metadata": {
-            "text": "our future capital requirements;\nour ability to service our current and future debt, and counterparty risk with respect to our capped call transactions;\nour ability to make and successfully integrate acquisitions and investments or complete divestitures, joint ventures, partnerships or other strategic transactions;\nour tax liabilities, ability to use our net operating loss carryforwards and future changes in tax matters;Governance Risks and Risks related to Ownership o\nf our Capital Stock",
-            "title": "lyft_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "aa169f74-9fdb-5f76-ae71-33230ef0291b",
-          "extraction_id": "efee52c0-afbf-522e-a82b-1cbe07df4a66",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.20252158030738998,
-          "text": "UK Financial Institution means any BRRD Undertaking (as such term is defined under the PRA Rulebook (as amended form time to time) promulgated by the United Kingdom Prudential Regulation Authority) or any person falling within IFPRU 11.6 of the FCA\nHandbook (as amended from time to time) promulgated by the United Kingdom Financial Conduct Authority, which includes certain credit\ninstitutions and investment firms, and certain affiliates of such credit institutions or investment firms.",
-          "metadata": {
-            "text": "UK Financial Institution means any BRRD Undertaking (as such term is defined under the PRA Rulebook (as amended form time to time) promulgated by the United Kingdom Prudential Regulation Authority) or any person falling within IFPRU 11.6 of the FCA\nHandbook (as amended from time to time) promulgated by the United Kingdom Financial Conduct Authority, which includes certain credit\ninstitutions and investment firms, and certain affiliates of such credit institutions or investment firms.",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
-          }
-        },
-        {
-          "fragment_id": "129a19b8-9164-52f1-990e-0af926045c59",
-          "extraction_id": "b4000f00-a84f-51bd-abf8-4b6eff9f6ada",
-          "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-          "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-          "group_ids": [],
-          "score": 0.20240467786788896,
-          "text": "l executive offices are located at 1515 3rd Street, San Francisco, California 94158, and our telephone number is (415) 612-8582.10",
-          "metadata": {
-            "text": "l executive offices are located at 1515 3rd Street, San Francisco, California 94158, and our telephone number is (415) 612-8582.10",
-            "title": "uber_2021.pdf",
-            "associatedQuery": "What is the capital of France?"
+            "version": "v0",
+            "chunk_order": 531,
+            "document_type": "pdf",
+            "unstructured_filetype": "application/pdf",
+            "unstructured_languages": [
+              "eng"
+            ],
+            "unstructured_page_number": 71,
+            "partitioned_by_unstructured": true,
+            "associated_query": "What is the capital of France?"
           }
         }
       ],
-      "kg_search_results": []
+      "kg_search_results": null
     }
   },
   "basic_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-9vwee7AtlnR6nxgbSG60VOpb9bxtE",
+        "id": "chatcmpl-A9ggQHI4VJvvkrhyrkBwUtQQ26Ab2",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "Uber did not make a profit in 2020. Instead, it reported a net loss attributable to Uber Technologies, Inc. of $6,768 million [4], [5], [9].",
+              "content": "Uber did not make a profit in 2020. Instead, Uber reported a net loss attributable to Uber Technologies, Inc. of $6.8 billion for the year ended December 31, 2020 [3].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -164,157 +234,230 @@
             }
           }
         ],
-        "created": 1723597192,
+        "created": 1726872390,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
-        "system_fingerprint": "fp_3aa7262c27",
+        "system_fingerprint": "fp_3537616b13",
         "usage": {
-          "completion_tokens": 40,
-          "prompt_tokens": 1483,
-          "total_tokens": 1523
+          "completion_tokens": 45,
+          "prompt_tokens": 2320,
+          "total_tokens": 2365,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
         }
       },
       "search_results": {
         "vector_search_results": [
           {
-            "fragment_id": "13a12fc0-cbce-5e35-b179-d413c15179cb",
-            "extraction_id": "2b8ff2e9-c135-573d-bf8a-7a2db60a0a11",
+            "fragment_id": "07aa09c5-81a8-5a48-953a-532064a446f8",
+            "extraction_id": "d3060c36-85dc-5e8d-b8ff-cfe4c1753ccc",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.744923337991438,
-            "text": "Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted",
+            "collection_ids": [],
+            "score": 0.7445549521115464,
+            "text": "Revenue was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable to the acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase in volumes with our top shippers.\n\nNet loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of our ATG Business to Aurora, a $1.6 billion pre-tax net benefit relating to Uber\u2019s equity investments, as well as reductions in our fixed cost structure and increased variable cost efficiencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.",
             "metadata": {
-              "text": "Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 445,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 53,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "26fc1632-7d88-5107-91a6-db2ffda6d5eb",
-            "extraction_id": "bb7ea09e-04a8-5d9d-8133-9408ba51dc0b",
+            "fragment_id": "2044e305-c042-5f0d-b05d-a2b97181f7a8",
+            "extraction_id": "4329441a-5faf-5e9d-801f-ebd753ee1bd3",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.671538352966309,
-            "text": "See  the section titled Reconciliations of Non-GAAP Financial Measures for our definition and a reconciliation of net loss attributable toUber Technologies, Inc. to Adjusted EBITDA.\nYear Ended December 31,\n(In millions, except percentages)\n2020 2021 2020 to 2021 %Change\nAdjusted EBITDA\n$ (2,528) $ (774) 69 %2021 Compared to 2020\nAdjusted\n EBITDA  loss  improved  $1.8  billion,  or  69%,  primarily  attributable  to  a  $525  million  improvement  in  Delivery  Adjusted  EBITDA  loss,  a  $427million",
+            "collection_ids": [],
+            "score": 0.7071289420127869,
+            "text": "Total costs and expenses Loss from operations\n\nInterest expense Other income (expense), net Loss before income taxes and loss from equity method investments Provision for (benefit from) income taxes Loss from equity method investments Net loss including non-controlling interests\n\nLess: net loss attributable to non-controlling interests, net of tax\n\n100 %\n\n46 % 16 % 32 % 20 % 24 % 5 % 144 % (44)% (4)% (15)% (62)% (2)% \u2014 % (61)% \u2014 % (61)%\n\n100 %\n\n54 % 11 % 27 % 12 % 13 % 5 % 122 % (22)% (3)% 19 % (6)% (3)% \u2014 % (3)% \u2014 % (3)%\n\nNet loss attributable to Uber Technologies, Inc.\n\n(1)\n\nTotals of percentage of revenues may not foot due to rounding.\n\nComparison of the Years Ended December 31, 2020 and 2021\n\nRevenue\n\nYear Ended December 31,\n\n(In millions, except percentages)\n\n2020\n\n2021\n\n2020 to 2021 % Change\n\nRevenue\n\n$\n\n11,139 $\n\n17,455\n\n57 %",
             "metadata": {
-              "text": "See  the section titled Reconciliations of Non-GAAP Financial Measures for our definition and a reconciliation of net loss attributable toUber Technologies, Inc. to Adjusted EBITDA.\nYear Ended December 31,\n(In millions, except percentages)\n2020 2021 2020 to 2021 %Change\nAdjusted EBITDA\n$ (2,528) $ (774) 69 %2021 Compared to 2020\nAdjusted\n EBITDA  loss  improved  $1.8  billion,  or  69%,  primarily  attributable  to  a  $525  million  improvement  in  Delivery  Adjusted  EBITDA  loss,  a  $427million",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 463,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 57,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "fc79cf57-a508-5781-874e-afca763f2efd",
-            "extraction_id": "cdf49309-5eeb-58df-b62f-15a2fe7444db",
+            "fragment_id": "3840834b-7c74-5417-9252-9080e609fb2f",
+            "extraction_id": "cf934fe1-926d-5525-a230-30946961cf28",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.667392492294312,
-            "text": "24 59 83 Other income (expense), net\n$ 722 $ (1,625) $ 3,292 During\n the year ended December 31, 2020, gain on business divestitures, net represented a $154 million gain on the sale of our Uber Eats India operationsto Zomato\n recognized in the first quarter of 2020 and a $77 million gain on the sale of our European Freight Business to sennder GmbH (Sennder) recognized inthe fourth quarter of 2020, pa",
+            "collection_ids": [],
+            "score": 0.6809690201571295,
+            "text": "Year Ended December 31, 2020\n\nRevenue Costs and expenses Cost of revenue, exclusive of depreciation and amortization shown separately below Operations and support Sales and marketing Research and development General and administrative Depreciation and amortization\n\nTotal costs and expenses Loss from operations\n\nInterest expense Other income (expense), net Loss before income taxes and loss from equity method investments Provision for (benefit from) income taxes Loss from equity method investments Net loss including non-controlling interests\n\nLess: net loss attributable to non-controlling interests, net of tax\n\n$\n\n13,000 $\n\n6,061 2,302 4,626 4,836 3,299 472 21,596 (8,596) (559) 722 (8,433) 45 (34) (8,512) (6) (8,506) $\n\n11,139 $\n\n5,154 1,819 3,583 2,205 2,666 575 16,002 (4,863) (458) (1,625) (6,946) (192) (34) (6,788) (20) (6,768) $\n\nNet loss attributable to Uber Technologies, Inc. Net loss per share attributable to Uber Technologies, Inc. common stockholders:\n\n$\n\nBasic\n\n$\n\n(6.81) $\n\n(3.86) $",
             "metadata": {
-              "text": "24 59 83 Other income (expense), net\n$ 722 $ (1,625) $ 3,292 During\n the year ended December 31, 2020, gain on business divestitures, net represented a $154 million gain on the sale of our Uber Eats India operationsto Zomato\n recognized in the first quarter of 2020 and a $77 million gain on the sale of our European Freight Business to sennder GmbH (Sennder) recognized inthe fourth quarter of 2020, pa",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 574,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 77,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "8d585c42-a618-50e0-be1d-709f94978ace",
-            "extraction_id": "b314fcfb-f0d2-5344-8397-8904f96282c7",
+            "fragment_id": "e2a37b27-0644-59e4-9746-37d48592a299",
+            "extraction_id": "6b86ac2f-ce33-5126-83e6-a8731ea677c8",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.657597821045186,
-            "text": "The following table presents a reconciliation of net loss attributable to Uber Technologies, Inc., the most directly comparable GAAP financial measure, toAdjusted EBITDA for each of the periods ind\nicated:Year Ended December 31,\n(In millions)\n2020 2021 Adjusted EBITDA reconciliation:\nNet loss attributable to Ube\nr Technologies, Inc.$ (6,768) $ (496) Add (deduct):\nNet loss attributable to non\n-controlling interests, net of tax(20) (74) Provision for (benefit fro",
+            "collection_ids": [],
+            "score": 0.6805637085605776,
+            "text": "Less: net loss attributable to non-controlling interests, net of tax\n\n$\n\n11,139 $\n\n5,154 1,819 3,583 2,205 2,666 575 16,002 (4,863) (458) (1,625) (6,946) (192) (34) (6,788) (20) (6,768) $\n\n17,455\n\n9,351 1,877 4,789 2,054 2,316 902 21,289 (3,834) (483) 3,292 (1,025) (492) (37) (570) (74) (496)\n\nNet loss attributable to Uber Technologies, Inc.\n\n$\n\n54\n\nThe following table sets forth the components of our consolidated statements of operations for each of the periods presented as a percentage of revenue\n\n(1)\n\n:\n\nYear Ended December 31, 2021 2020\n\nRevenue Costs and expenses Cost of revenue, exclusive of depreciation and amortization shown separately below Operations and support Sales and marketing Research and development General and administrative Depreciation and amortization",
             "metadata": {
-              "text": "The following table presents a reconciliation of net loss attributable to Uber Technologies, Inc., the most directly comparable GAAP financial measure, toAdjusted EBITDA for each of the periods ind\nicated:Year Ended December 31,\n(In millions)\n2020 2021 Adjusted EBITDA reconciliation:\nNet loss attributable to Ube\nr Technologies, Inc.$ (6,768) $ (496) Add (deduct):\nNet loss attributable to non\n-controlling interests, net of tax(20) (74) Provision for (benefit fro",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 462,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 56,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "e11e0d27-9bb6-5db1-97ba-cbb7f082f4f7",
-            "extraction_id": "2b8ff2e9-c135-573d-bf8a-7a2db60a0a11",
+            "fragment_id": "de30c3c9-cdfd-5872-bdaf-4859bef5c3a8",
+            "extraction_id": "33bc6d8b-9fdc-5df7-be1d-fa7de176a0b5",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.627140164375305,
-            "text": "Financial and Operational HighlightsYear Ended December 31,\nConstant Currency (In millions, except percentages)\n2020 2021 2020 to 2021 %Change\n2020 to 2021 % Change Monthly Active Platform Consumers \n(MAPCs) 93 118 27 %Trips \n5,025 6,368 27 %Gross Bookings \n$ 57,897 $ 90,415 56 %53 % Revenue\n$ 11,139 $ 17,455 57 %54 % Net loss attributable to Ube\nr Technologies, Inc. $ (6,768) $ (496) 93 %Mobility Adjusted EBITDA\n$ 1,169 $ 1,596 37 %Delivery Adjusted EBITDA\n$ (873) $ (348) 60 %Adjusted EBITDA",
+            "collection_ids": [],
+            "score": 0.6537506580352783,
+            "text": "The Uber Service activities are performed to satisfy our sole performance obligation in the transaction, which is to connect Drivers and Merchants with end-\n\nusers to facilitate the completion of a successful transaction.\n\nIn 2020, we began charging Mobility end-users a fee to use the platform in certain markets. In these transactions, in addition to a performance obligation to Drivers, we also have a performance obligation to end-users, which is to connect end-users to Drivers in the marketplace. We recognize revenue when a trip is complete. We present revenue on a net basis for these transactions, as we do not control the service provided by Drivers to end-users. For the years ended December 31, 2020 and 2021, we recognized total revenue of $323 million and $336 million, respectively, associated with these fees charged to end-users.",
             "metadata": {
-              "text": "Financial and Operational HighlightsYear Ended December 31,\nConstant Currency (In millions, except percentages)\n2020 2021 2020 to 2021 %Change\n2020 to 2021 % Change Monthly Active Platform Consumers \n(MAPCs) 93 118 27 %Trips \n5,025 6,368 27 %Gross Bookings \n$ 57,897 $ 90,415 56 %53 % Revenue\n$ 11,139 $ 17,455 57 %54 % Net loss attributable to Ube\nr Technologies, Inc. $ (6,768) $ (496) 93 %Mobility Adjusted EBITDA\n$ 1,169 $ 1,596 37 %Delivery Adjusted EBITDA\n$ (873) $ (348) 60 %Adjusted EBITDA",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 642,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 90,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "4cc24e78-c6c5-56a6-9a2c-c361a1172116",
-            "extraction_id": "2b6f0786-5dc4-5581-bb83-b63f1175111a",
+            "fragment_id": "4b6ee3eb-daca-5930-bafe-946cad56cdcc",
+            "extraction_id": "eb2bc121-0b00-5f70-8eb6-549e1fb1ed72",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.6232549323591561,
-            "text": "ments(34) (34) (37) Net loss including non-controlling interests\n(8,512) (6,788) (570) Less: net loss attributab\nle to non-controlling interests, net of tax(6) (20) (74) Net loss attributable to Uber Technologies, Inc.\n$ (8,506) $ (6,768) $ (496) Net loss per share attributable to Uber Technologies, Inc. co\nmmon stockholders:Basic\n$ (6.81) $ (3.86) $ (0.26) Diluted\n$ (6.81) $ (3.86) $ (0.29) Weighted-average shares used to compute net loss per shar\ne attributable to common stockholders:Basic",
+            "collection_ids": [],
+            "score": 0.6387766599655151,
+            "text": "Other income (expense), net\n\n$\n\nDuring the year ended December 31, 2020, gain on business divestitures, net represented a $154 million gain on the sale of our Uber Eats India operations to Zomato recognized in the first quarter of 2020 and a $77 million gain on the sale of our European Freight Business to sennder GmbH (\u201cSennder\u201d) recognized in the fourth quarter of 2020, partially offset by a $27 million loss on the sale of our JUMP operations to Lime recognized in the second quarter of 2020.\n\n(1)\n\nDuring the year ended December 31, 2021, gain on business divestitures, net represented a $1.6 billion gain on the sale of our ATG Business to Aurora",
             "metadata": {
-              "text": "ments(34) (34) (37) Net loss including non-controlling interests\n(8,512) (6,788) (570) Less: net loss attributab\nle to non-controlling interests, net of tax(6) (20) (74) Net loss attributable to Uber Technologies, Inc.\n$ (8,506) $ (6,768) $ (496) Net loss per share attributable to Uber Technologies, Inc. co\nmmon stockholders:Basic\n$ (6.81) $ (3.86) $ (0.26) Diluted\n$ (6.81) $ (3.86) $ (0.29) Weighted-average shares used to compute net loss per shar\ne attributable to common stockholders:Basic",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 799,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 118,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "3b9425c9-5147-5559-ac48-2d32a5f2fa50",
-            "extraction_id": "e0668732-8b42-53c5-a719-39f72634e380",
-            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+            "fragment_id": "af5f93d3-8b2f-5e71-a358-0dd56c2f68ac",
+            "extraction_id": "acf12622-2e6e-5234-9768-ba448294a81d",
+            "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.62315821647644,
-            "text": "issued to new investors in close proximity to the time of our transaction with Zomato. The transaction resulted in a gain on disposal of $154 millionrecognized\n in other income (expense), net in the consolidated statements of operations during the first quarter of 2020. The income tax effect of the sale was notmaterial.\n The divestiture  of Uber Eats India did not represent  a strategic  shift that would have had a major  effect  on our operations  and financial  results, andtherefore does not quali",
+            "collection_ids": [],
+            "score": 0.6321083903312683,
+            "text": "2019\n\n100.0 %\n\n60.2 17.6 41.6 22.5 32.8 174.7 (74.7) \u2014 2.8 (71.9) 0.1 (72.0)%\n\n2019 to 2020 % Change\n\n(35) %\n\nsecond quarter of 2021. These increases were offset by investments in driver supply by increasing driver incentives recorded as a reduction to revenue by $942.9 million in 2021 as compared to the prior year as rider demand outpaced driver supply during certain periods of the pandemic recovery in 2021. Revenue in 2020 was also higher in the first quarter of 2020 prior to the implementation of shelter-in-place orders and other travel restrictions across North America beginning March 2020.\n\nWe expect to see continued recovery in demand for our platform and the resulting positive impacts on revenue as there are more widespread immunity levels, more communities reopen and other restrictive travel and social distancing measures in response to COVID-19 are eased. However, we cannot predict the impact of COVID variants and the longer term impact of the pandemic on consumer behavior.\n\nCost of Revenue\n\n2021",
             "metadata": {
-              "text": "issued to new investors in close proximity to the time of our transaction with Zomato. The transaction resulted in a gain on disposal of $154 millionrecognized\n in other income (expense), net in the consolidated statements of operations during the first quarter of 2020. The income tax effect of the sale was notmaterial.\n The divestiture  of Uber Eats India did not represent  a strategic  shift that would have had a major  effect  on our operations  and financial  results, andtherefore does not quali",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 493,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 63,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "7d297996-f186-5f08-aa4f-2ff30ad8cc6f",
-            "extraction_id": "eeadc634-c141-5748-98d0-4c89aa5404b1",
+            "fragment_id": "d5379124-e7ff-509f-b47f-a79152eec2d4",
+            "extraction_id": "2562b865-e4df-5376-9e70-927be9afbb7e",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.6223304271698,
-            "text": "is presented in the following tables for the years ended December 31, 2019, 2020 and 2021, respectively (in millions):Year Ended December 31,\n2019\n2020 2021 Mobility revenue \n$ 10,707 $ 6,089 $ 6,953 Delivery revenue \n1,401 3,904 8,362 Freight revenue\n731 1,011 2,132 All Other revenue\n161 135 8 Total revenue\n$ 13,000 $ 11,139 $ 17,455  We\n offer subscription memberships to end-users including Uber One, Uber Pass, Rides Pass, and Eats Pass (Subscription). We recognize Subscriptionfees",
+            "collection_ids": [],
+            "score": 0.63012705682194,
+            "text": "For additional discussion, see the risk factor titled \u201c\u2014If we are unable to attract or maintain a critical mass of Drivers, consumers, merchants, shippers, and carriers, whether as a result of competition or other factors, our platform will become less appealing to platform users, and our financial results would be adversely impacted.\u201d included in Part I, Item 1A of this Annual Report on Form 10-K as well our 2021 ESG Report and our 2021 People and Culture Report. The information in these reports is not a part of this Form 10-K.\n\nAdditional Information\n\nWe were founded in 2009 and incorporated as Ubercab, Inc., a Delaware corporation, in July 2010. In February 2011, we changed our name to Uber\n\nTechnologies, Inc. Our principal executive offices are located at 1515 3rd Street, San Francisco, California 94158, and our telephone number is (415) 612-8582.\n\n10",
             "metadata": {
-              "text": "is presented in the following tables for the years ended December 31, 2019, 2020 and 2021, respectively (in millions):Year Ended December 31,\n2019\n2020 2021 Mobility revenue \n$ 10,707 $ 6,089 $ 6,953 Delivery revenue \n1,401 3,904 8,362 Freight revenue\n731 1,011 2,132 All Other revenue\n161 135 8 Total revenue\n$ 13,000 $ 11,139 $ 17,455  We\n offer subscription memberships to end-users including Uber One, Uber Pass, Rides Pass, and Eats Pass (Subscription). We recognize Subscriptionfees",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 77,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 12,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "5d2bb46e-d9ad-5cdc-9658-09e8e6f9bd4d",
-            "extraction_id": "2a3a3cef-bc9d-5c62-9691-14d892c521c9",
+            "fragment_id": "98a93be5-13ba-5bd6-9a18-e7ceef0fae88",
+            "extraction_id": "8ab931e3-8f47-5598-90b8-928f387ec256",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.6163432230744841,
-            "text": "(458) (483) Other income (expense), net\n(1,625) 3,292 Loss before income taxes and loss from equity me\nthod investments(6,946) (1,025) Provision for (benefit fro\nm) income taxes(192) (492) Loss from equity method invest\nments(34) (37) Net loss including non-controlling interests\n(6,788) (570) Less: net loss attributab\nle to non-controlling interests, net of tax(20) (74) Net loss attributable to Uber Technologies, Inc.\n$ (6,768) $ (496) 54",
+            "collection_ids": [],
+            "score": 0.6285917009601995,
+            "text": "Uber Technologies, Inc. (\u201cUber,\u201d \u201cwe,\u201d \u201cour,\u201d or \u201cus\u201d) was incorporated in Delaware in July 2010, and is headquartered in San Francisco, California. Uber is a technology platform that uses a massive network, leading technology, operational excellence and product expertise to power movement from point A to point B. Uber develops and operates proprietary technology applications supporting a variety of offerings on its platform (\u201cplatform(s)\u201d or \u201cPlatform(s)\u201d). Uber connects consumers (\u201cRider(s)\u201d) with independent providers of ride services (\u201cMobility Driver(s)\u201d) for ridesharing services, and connects Riders and other consumers (\u201cEaters\u201d) with restaurants, grocers and other stores (collectively, \u201cMerchants\u201d) with delivery service providers (\u201cCouriers\u201d) for meal preparation, grocery and other delivery services. Riders and Eaters are collectively referred to as \u201cend-user(s)\u201d or \u201cconsumer(s).\u201d Mobility Drivers and Couriers are collectively referred to as \u201cDriver(s).\u201d Uber also connects consumers with public",
             "metadata": {
-              "text": "(458) (483) Other income (expense), net\n(1,625) 3,292 Loss before income taxes and loss from equity me\nthod investments(6,946) (1,025) Provision for (benefit fro\nm) income taxes(192) (492) Loss from equity method invest\nments(34) (37) Net loss including non-controlling interests\n(6,788) (570) Less: net loss attributab\nle to non-controlling interests, net of tax(20) (74) Net loss attributable to Uber Technologies, Inc.\n$ (6,768) $ (496) 54",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 592,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 84,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           },
           {
-            "fragment_id": "b89e13fa-4d7a-5b0a-87db-d51de1ce777f",
-            "extraction_id": "45650893-257d-5ae5-8a35-35edd54f7699",
+            "fragment_id": "d87084d1-c52a-5a4b-96ad-9fc1cb98bfc5",
+            "extraction_id": "8361bf60-bce2-56c2-b982-376a75e47d58",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.606526911258698,
-            "text": "UBER TECHNOLOGIES, INC.NOTES TO CONSOLIDATED \nFINANCIAL STATEMENTSNote 1  Description of Business and Summary of Significant Accounting Policies\nDescription of Business\nUber\n Technologies, Inc. (Uber, we, our, or us) was incorporated in Delaware in July 2010, and is headquartered in San Francisco, California. Uber isa\n technology platform that uses a massive network, leading technology, operational excellence and product expertise to power movement from point A to point B.Uber",
+            "collection_ids": [],
+            "score": 0.6283430678639979,
+            "text": "Year Ended December 31, 2020\n\n1,000 49 1,189 (27) \u2014 (138) (34) 8,939 (4) 3,824\n\n247 125 2,628 (527) (891) (224) 38 1,379 (92) (4,327)\n\n8,209 34 12,067 $\n\n12,067 (349) 7,391 $\n\n332 $ 133\n\n412 $ 82\n\n14,224 4,229 \u2014 251 9 \u2014 \u2014\n\n\u2014 \u2014 \u2014 196 3,898 171 1,634\n\n2021\n\n675 107 1,484 (27) (307) (226) 101 1,780 (69) 65\n\n7,391 349 7,805\n\n449 87\n\n\u2014 \u2014 232 184 1,868 1,018 \u2014\n\nUBER TECHNOLOGIES, INC.\n\nNOTES TO CONSOLIDATED FINANCIAL STATEMENTS\n\nNote 1 \u2013 Description of Business and Summary of Significant Accounting Policies\n\nDescription of Business",
             "metadata": {
-              "text": "UBER TECHNOLOGIES, INC.NOTES TO CONSOLIDATED \nFINANCIAL STATEMENTSNote 1  Description of Business and Summary of Significant Accounting Policies\nDescription of Business\nUber\n Technologies, Inc. (Uber, we, our, or us) was incorporated in Delaware in July 2010, and is headquartered in San Francisco, California. Uber isa\n technology platform that uses a massive network, leading technology, operational excellence and product expertise to power movement from point A to point B.Uber",
-              "title": "uber_2021.pdf",
-              "associatedQuery": "What was Uber's profit in 2020?"
+              "version": "v0",
+              "chunk_order": 591,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 83,
+              "partitioned_by_unstructured": true,
+              "associated_query": "What was Uber's profit in 2020?"
             }
           }
         ],
@@ -325,14 +468,14 @@
   "hybrid_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-9vwegy0zTZ75kT3Y52UopJ7QYeFFi",
+        "id": "chatcmpl-A9ggSfpp9sr3LZdfzBYse7JjT8eCK",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "John Snow, referred to as Jon Snow in the context, is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not considered a proper member of the Stark family, which often makes him feel like an outsider. He is also a highly capable swordsman and thinker, known for his piercing observations [1].",
+              "content": "John Snow is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations [1].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -340,197 +483,225 @@
             }
           }
         ],
-        "created": 1723597194,
+        "created": 1726872392,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
-        "system_fingerprint": "fp_3aa7262c27",
+        "system_fingerprint": "fp_3537616b13",
         "usage": {
-          "completion_tokens": 68,
-          "prompt_tokens": 1147,
-          "total_tokens": 1215
+          "completion_tokens": 57,
+          "prompt_tokens": 1810,
+          "total_tokens": 1867,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
         }
       },
       "search_results": {
         "vector_search_results": [
           {
-            "fragment_id": "378da9e2-4ba7-503f-b3a5-bbb0c3095f55",
+            "fragment_id": "7cbdab86-1689-5779-81bd-62f7eb3ab36d",
             "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0476190476190476,
-            "text": "Jon Snow\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.\nTyrion (The Imp) Lannister\nA small man with a giant intellect and sharp tongue. Tyrion does not pity himself but rather accepts his shortcomings as a little person and turns them to his advantage. He loves his family but recognizes their greed and ambition.",
+            "collection_ids": [],
+            "score": 0.26240772008895874,
+            "text": "Eddard (Ned) Stark\n\nThe Lord of Winterfell and new Hand of the King. A devoted father and dutiful lord, he is best characterized by his strong sense of honor, and he strives to always do what is right, regardless of his personal feelings.\n\nCatelyn (Cat) Tully\n\nNed\u2019s wife and Lady Stark of Winterfell. She is intelligent, strong, and fiercely devoted to her family, leading her to seek out the person responsible for trying to kill her son Bran.\n\nDaenerys Stormborn Targaryen\n\nThe Dothraki khaleesi (queen) and Targaryen princess. She and her brother are the only surviving members of the Targaryen family, and she grows from a frightened girl to a confident ruler, while still maintaining her kindness, over the course of the novel.\n\nJon Snow\n\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.",
             "metadata": {
-              "text": "Jon Snow\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.\nTyrion (The Imp) Lannister\nA small man with a giant intellect and sharp tongue. Tyrion does not pity himself but rather accepts his shortcomings as a little person and turns them to his advantage. He loves his family but recognizes their greed and ambition.",
-              "title": "got.txt",
-              "semantic_score": 0.289943260553881,
-              "semantic_rank": 1,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
+              "version": "v0",
+              "chunk_order": 0,
+              "document_type": "txt",
+              "unstructured_filetype": "text/plain",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
             }
           },
           {
-            "fragment_id": "2a4f2509-a218-5919-b5b1-6018760d5c66",
-            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
+            "fragment_id": "8e563fb1-4665-53a8-8a83-63a1f88e2aea",
+            "extraction_id": "f6bc23b5-bc80-5e49-9b55-25e9abe97073",
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0454545454545455,
-            "text": "Maester Aemon\nThe chief man of learning at Castle Black. Despite his blind white eyes, Maester Aemon sees and speaks the truth in cryptic ways. Though few people realize it, Aemon is one of the few surviving members of the Targaryen family, but he has always put his vows to the Night\u2019s Watch ahead of any family loyalties.\nSamwell (Sam) Tarly",
+            "collection_ids": [],
+            "score": 0.2610799748027318,
+            "text": "Jeor Mormont (Commander Mormont)\n\nLord Commander of the Night\u2019s Watch at Castle Black. Commander Mormont is tough, old, and wise, and his men call him \u201cThe Old Bear.\u201d\n\nMaester Aemon\n\nThe chief man of learning at Castle Black. Despite his blind white eyes, Maester Aemon sees and speaks the truth in cryptic ways. Though few people realize it, Aemon is one of the few surviving members of the Targaryen family, but he has always put his vows to the Night\u2019s Watch ahead of any family loyalties.\n\nSamwell (Sam) Tarly\n\nA new recruit to the Night\u2019s Watch who is fat and cowardly but very smart. Sam loves to read and eat but hates to fight, and he quickly becomes one of Jon Snow\u2019s closest companions at the Wall.\n\nSer Allister Thorne\n\nCastle Black\u2019s resentful master-at-arms. He hard on the new recruits to the Night\u2019s Watch and seems to enjoy making them suffer, causing Jon to rebel against him. During Robert\u2019s rebellion against the former king, he was a Targaryen loyalist.",
             "metadata": {
-              "text": "Maester Aemon\nThe chief man of learning at Castle Black. Despite his blind white eyes, Maester Aemon sees and speaks the truth in cryptic ways. Though few people realize it, Aemon is one of the few surviving members of the Targaryen family, but he has always put his vows to the Night\u2019s Watch ahead of any family loyalties.\nSamwell (Sam) Tarly",
-              "title": "got.txt",
-              "semantic_score": 0.285634236671582,
-              "semantic_rank": 2,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
+              "version": "v0",
+              "chunk_order": 7,
+              "document_type": "txt",
+              "unstructured_filetype": "text/plain",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
             }
           },
           {
-            "fragment_id": "2acc7019-c9dc-5ff9-bcaa-6df98f2831d9",
-            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
+            "fragment_id": "eaf48cfe-592e-55fa-9f07-613a4f221c45",
+            "extraction_id": "fdf6127b-e623-58bc-a50b-b7e7b040c03a",
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0434782608695652,
-            "text": "Samwell (Sam) Tarly\nA new recruit to the Night\u2019s Watch who is fat and cowardly but very smart. Sam loves to read and eat but hates to fight, and he quickly becomes one of Jon Snow\u2019s closest companions at the Wall.\nSer Allister Thorne\nCastle Black\u2019s resentful master-at-arms. He hard on the new recruits to the Night\u2019s Watch and seems to enjoy making them suffer, causing Jon to rebel against him. During Robert\u2019s rebellion against the former king, he was a Targaryen loyalist.\nIllyrio Mopatis",
+            "collection_ids": [],
+            "score": 0.2572833588977643,
+            "text": "Varys (The Spider)\n\nThe Red Keep\u2019s master of whispers and a eunuch. His role in the court is to run a network of spies and keep the king informed, and he often uses what he knows to manipulate those around him, including the king.\n\nRobert Baratheon\n\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\n\nSer Jorah Mormont\n\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.",
             "metadata": {
-              "text": "Samwell (Sam) Tarly\nA new recruit to the Night\u2019s Watch who is fat and cowardly but very smart. Sam loves to read and eat but hates to fight, and he quickly becomes one of Jon Snow\u2019s closest companions at the Wall.\nSer Allister Thorne\nCastle Black\u2019s resentful master-at-arms. He hard on the new recruits to the Night\u2019s Watch and seems to enjoy making them suffer, causing Jon to rebel against him. During Robert\u2019s rebellion against the former king, he was a Targaryen loyalist.\nIllyrio Mopatis",
-              "title": "got.txt",
-              "semantic_score": 0.264474719762802,
-              "semantic_rank": 3,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
+              "version": "v0",
+              "chunk_order": 3,
+              "document_type": "txt",
+              "unstructured_filetype": "text/plain",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
             }
           },
           {
-            "fragment_id": "7f3f6e6f-9ec5-5ae0-8879-e89c5a892fcc",
-            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
+            "fragment_id": "3cb1c2db-01e4-5ea8-a39f-31f5949637f8",
+            "extraction_id": "02b64e7c-5aa5-5380-8fa0-3d8b64866aa8",
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0416666666666667,
-            "text": "Ser Jorah Mormont\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.\nViserys Targaryen",
+            "collection_ids": [],
+            "score": 0.20903720205800558,
+            "text": "Aerys II Targaryen\n\nKing of Westeros before Robert Baratheon. He was known as The Mad King because of his cruelty. Aerys murdered Ned\u2019s older brother, Brandon Stark, in the Red Keep\u2019s throne room. At the end of the war that followed, Jaime Lannister slew Aerys in the same room.\n\nRhaegar Targaryen\n\nThe heir to Aerys and older brother of Daenerys and Viserys. Rhaegar kidnapped Lyanna Stark, Robert\u2019s betrothed, helping to set in motion the events that led to Robert\u2019s Rebellion. The war effectively ended when Robert slew Rhaegar with his warhammer on the Trident River.\n\nJon Arryn\n\nThe recently deceased Lord of the Eyrie and Hand of the King. Jon Arryn fostered Ned Stark and Robert Baratheon at the Eyrie. When Robert became king, Jon Arryn served as his Hand until his murder.",
             "metadata": {
-              "text": "Ser Jorah Mormont\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.\nViserys Targaryen",
-              "title": "got.txt",
-              "semantic_score": 0.259267091751099,
-              "semantic_rank": 4,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
+              "version": "v0",
+              "chunk_order": 10,
+              "document_type": "txt",
+              "unstructured_filetype": "text/plain",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
             }
           },
           {
-            "fragment_id": "b732d643-eb13-5ed3-a31b-ae2ef7877428",
-            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
-            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.04,
-            "text": "Daenerys Stormborn Targaryen\nThe Dothraki khaleesi (queen) and Targaryen princess. She and her brother are the only surviving members of the Targaryen family, and she grows from a frightened girl to a confident ruler, while still maintaining her kindness, over the course of the novel.\nJon Snow",
-            "metadata": {
-              "text": "Daenerys Stormborn Targaryen\nThe Dothraki khaleesi (queen) and Targaryen princess. She and her brother are the only surviving members of the Targaryen family, and she grows from a frightened girl to a confident ruler, while still maintaining her kindness, over the course of the novel.\nJon Snow",
-              "title": "got.txt",
-              "semantic_score": 0.253841363237027,
-              "semantic_rank": 5,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "2252087b-54d3-5df8-9e0f-f3718e7f42e3",
-            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
-            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0384615384615385,
-            "text": "Robert Baratheon\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\nSer Jorah Mormont",
-            "metadata": {
-              "text": "Robert Baratheon\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\nSer Jorah Mormont",
-              "title": "got.txt",
-              "semantic_score": 0.23582898080349,
-              "semantic_rank": 6,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "fe72ba41-30c1-5b96-b0ce-d6eebf137d38",
-            "extraction_id": "9caef060-01ee-51f0-a342-4852adb0ad43",
-            "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.037037037037037,
-            "text": "allowed them to work on problems they only half understood (they\nwere literally described as \"clowns\" by one eminent insider), and\ntheir impatience and competitiveness got them to the answer ahead\nof two other groups that would otherwise have found it within the\nnext year, if not the next several months.\n[2]The idea that there could be fierce nerds is an unfamiliar one not\njust to many normal people but even to some young nerds. Especially\nearly on, nerds spend so much of their time in ordinary social",
-            "metadata": {
-              "text": "allowed them to work on problems they only half understood (they\nwere literally described as \"clowns\" by one eminent insider), and\ntheir impatience and competitiveness got them to the answer ahead\nof two other groups that would otherwise have found it within the\nnext year, if not the next several months.\n[2]The idea that there could be fierce nerds is an unfamiliar one not\njust to many normal people but even to some young nerds. Especially\nearly on, nerds spend so much of their time in ordinary social",
-              "title": "pg_essay_2.html",
-              "semantic_score": 0.234802625620444,
-              "semantic_rank": 7,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "d7ed83c7-0a72-5346-bca9-dc1cb0e956ea",
-            "extraction_id": "8ee4678a-1fa8-58a6-8d6f-ec88cf10a6dc",
-            "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0357142857142857,
-            "text": "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel",
-            "metadata": {
-              "text": "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel",
-              "title": "pg_essay_3.html",
-              "semantic_score": 0.230954363942146,
-              "semantic_rank": 8,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "0de20d43-9e29-5686-9033-3e184a60cf6a",
-            "extraction_id": "06e9714f-4805-5dc8-a72f-61ecd0241b49",
+            "fragment_id": "ac15f806-8723-5fe7-832d-ed0427bd3550",
+            "extraction_id": "416b07ed-cdd6-51fd-8f54-4164c0160860",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0344827586206897,
-            "text": "to  economic,  social,  weather,  and  regulatory  conditions  or  other  circumstances  in  each  of  these  large  metropolitan  areas.  Outbreaks  of  contagiousdiseases\n or other viruses, such as COVID-19, could lead to a sustained decline in the desirability of living, working and congregating in metropolitan areas inwhich we operate. Any short-term o\nr long-term shifts in the travel patterns of consumers away from metropolitan areas, due to health concerns regarding epidemicsor",
+            "collection_ids": [],
+            "score": 0.19556865096092224,
+            "text": "\u201cSanctions\u201d means economic or financial sanctions or trade embargoes imposed, administered or enforced from time to time by (a)\n\nthe U.S. government, including those administered by the Office of Foreign Assets Control of the U.S. Department of the Treasury or the U.S. Department of State, or (b) the United Nations Security Council, the European Union, any European Union member state, Her Majesty\u2019s Treasury of the United Kingdom or other relevant sanctions authority.\n\n\u201cSARON\u201d means, with respect to any Business Day, a rate per annum equal to the Swiss Average Rate Overnight for such Business\n\nDay published by the SARON Administrator on the SARON Administrator\u2019s Website.\n\n\u201cSARON Administrator\u201d means the SIX Swiss Exchange AG (or any successor administrator of the Swiss Average Rate",
             "metadata": {
-              "text": "to  economic,  social,  weather,  and  regulatory  conditions  or  other  circumstances  in  each  of  these  large  metropolitan  areas.  Outbreaks  of  contagiousdiseases\n or other viruses, such as COVID-19, could lead to a sustained decline in the desirability of living, working and congregating in metropolitan areas inwhich we operate. Any short-term o\nr long-term shifts in the travel patterns of consumers away from metropolitan areas, due to health concerns regarding epidemicsor",
-              "title": "uber_2021.pdf",
-              "semantic_score": 0.22635568537448,
-              "semantic_rank": 9,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
+              "version": "v0",
+              "chunk_order": 1221,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 208,
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
             }
           },
           {
-            "fragment_id": "78e0fcac-92e2-571f-a5bd-54d8c6da69ee",
-            "extraction_id": "8ee4678a-1fa8-58a6-8d6f-ec88cf10a6dc",
-            "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+            "fragment_id": "5d09c80f-ba83-5204-a6b3-f08831e150b0",
+            "extraction_id": "f86a905c-8d82-52ff-ad72-a800ca3af6f4",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0333333333333333,
-            "text": "completely as soon as it was discovered \u2014 that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable",
+            "collection_ids": [],
+            "score": 0.19119779765605927,
+            "text": "Illyrio Mopatis\n\nAn obese merchant from the Free Cities who helps Daenerys and Viserys Targaryen. Illyrio is very rich and very well-informed. He is quick to please, especially when there is a possibility that his kindness will help him avoid trouble or gain greater fortune in the future.\n\nSer Barristan Selmy\n\nLord Commander of the Kingsguard. He has served kings Jaehaerys, Aerys II, and Robert. Though he has grown old, Barristan \u201cThe Bold\u201d is a formidable fighter. He is, and has always been, an honorable knight.\n\nRenly Baratheon\n\nThe youngest of the three Baratheon brothers. Renly is lighthearted and opportunistic, and unexpectedly ambitious. He serves on Robert\u2019s royal council.\n\nStannis Baratheon\n\nThe middle brother of the three Baratheons. Stannis does not appear in A Game of Thrones, but as the brother of the king, he is a potential heir to the throne. Stannis does not seem to be well-liked.",
             "metadata": {
-              "text": "completely as soon as it was discovered \u2014 that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable",
-              "title": "pg_essay_3.html",
-              "semantic_score": 0.224857065098637,
-              "semantic_rank": 10,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
+              "version": "v0",
+              "chunk_order": 8,
+              "document_type": "txt",
+              "unstructured_filetype": "text/plain",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "b47050a2-9906-5922-b6d4-52e4dedb499f",
+            "extraction_id": "d436c7f7-d7c7-509e-a383-94a94360e601",
+            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "collection_ids": [],
+            "score": 0.18726881596221867,
+            "text": "121",
+            "metadata": {
+              "version": "v0",
+              "chunk_order": 1719,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 293,
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "d143b410-f9a4-5f3b-bb46-fb412eda8201",
+            "extraction_id": "37f940e2-18f4-50f5-93aa-cec422fc9211",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "collection_ids": [],
+            "score": 0.18609081208705902,
+            "text": "Sandor (The Hound) Clegane\n\nPrince Joff\u2019s unofficial bodyguard. Proud that he is not a knight, The Hound appears to have no scruples whatsoever and does what Joffrey orders, however cruel or unjust, without question. His face is scarred on one side by extensive burning inflicted by his brother, Gregor.\n\nRobb Stark\n\nThe eldest Stark son and thus heir to Ned Stark. Though just fourteen, he is mature beyond his age as well as being brave and dutiful like his father.\n\nMaester Luwin\n\nCounselor to Ned, Catelyn, and Robb. Luwin is old and wise, and his advice proves indispensible to the Starks.\n\nTheon Greyjoy\n\nThe Starks\u2019s ward and Robb\u2019s best friend. Ned Stark took the young Theon, now nineteen, as a ward after putting down a rebellion led by the Greyjoy family, and Theon consequently grew up with the Stark children as something like a brother.",
+            "metadata": {
+              "version": "v0",
+              "chunk_order": 5,
+              "document_type": "txt",
+              "unstructured_filetype": "text/plain",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "09f57c70-e7c6-548b-897f-fb8e9aba31c8",
+            "extraction_id": "a021aa95-14d9-5301-9252-b06bcb852956",
+            "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "collection_ids": [],
+            "score": 0.17496788948965758,
+            "text": "Shared and Shared Saver Rides enables unrelated parties traveling along similar routes to benefit from a discounted fare at the cost of possibly longer travel times. With a Shared or Shared Saver Ride, when the first rider requests a ride, our algorithms use the first rider\u2019s destination and attempt to match them with other riders traveling along a similar route. If a match between riders is made, our algorithms re-route the driver to include the pick-up location of the matched rider on the active route. For Shared and Shared Saver Rides, drivers earn a fixed amount based on a number of factors, including the time and distance of the ride, the base fare charged to riders and the level of rider demand. We determine the rider fare based on the predicted time and distance of the ride, the level of rider demand and the likelihood of being able to match additional riders along the given route, and such fare is quoted to the riders prior to their commitment to the ride. The fare charged to the riders is decoupled",
+            "metadata": {
+              "version": "v0",
+              "chunk_order": 276,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 36,
+              "partitioned_by_unstructured": true,
+              "associated_query": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "dbd5427c-f5ef-5fa6-83ae-a4a8ddbb48c2",
+            "extraction_id": "14b08757-0819-5105-af37-509686dd6d01",
+            "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "collection_ids": [],
+            "score": 0.16958434879779816,
+            "text": "s, drivers, and the communities they serve.",
+            "metadata": {
+              "version": "v0",
+              "chunk_order": 77,
+              "document_type": "pdf",
+              "unstructured_filetype": "application/pdf",
+              "unstructured_languages": [
+                "eng"
+              ],
+              "unstructured_page_number": 13,
+              "partitioned_by_unstructured": true,
+              "unstructured_is_continuation": true,
+              "associated_query": "Who is John Snow?"
             }
           }
         ],
@@ -544,7 +715,7 @@
         "choices": [
           {
             "message": {
-              "content": "<search>\"{\\\"fragment_id\\\":\\\"14745860-73d2-5d40-81aa-9f7085c52d25\\\",\\\"extraction_id\\\":\\\"a1ba66bf-a034-5cc6-b88b-0df6f1c38dbc\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.761440396308899,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Operations\\\\n(in thousands, except for per share data\\\\n) Year Ended December 31,\\\\n2021\\\\n2020 2019 Revenue\\\\n$ 3,208,323 $ 2,364,681 $ 3,615,960 Costs and expenses\\\\nCost of revenue\\\\n1,649,532 1,447,516 2,176,469 Operations and support\\\\n402,233 453,963 636,116 Research and development\\\\n911,946 909,126 1,505,640 Sales and marketing\\\\n411,406 416,331 814,122 General and administrative\\\\n915,638 946,127 1,186,093 Total costs and expenses\\\\n4,290,755 4,173,063 6,318,440 Loss from operations\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Operations\\\\n(in thousands, except for per share data\\\\n) Year Ended December 31,\\\\n2021\\\\n2020 2019 Revenue\\\\n$ 3,208,323 $ 2,364,681 $ 3,615,960 Costs and expenses\\\\nCost of revenue\\\\n1,649,532 1,447,516 2,176,469 Operations and support\\\\n402,233 453,963 636,116 Research and development\\\\n911,946 909,126 1,505,640 Sales and marketing\\\\n411,406 416,331 814,122 General and administrative\\\\n915,638 946,127 1,186,093 Total costs and expenses\\\\n4,290,755 4,173,063 6,318,440 Loss from operations\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"14478ac4-8f43-5f09-bbe3-7b1ddfdece40\\\",\\\"extraction_id\\\":\\\"12cff898-f0fe-59b8-929b-00d3d56fd73d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.69296767157509,\\\"text\\\":\\\"was  attributable  to  the  divestiture  of  certain  assets  related  to  the  Level  5  division  and  how  much  was  attributable  to  the  commercial  agreements  for  theutilization\\\\n of Lyft rideshare and fleet data. For the year ended December 31, 2021, the Company recognized a $119.3 million pre-tax gain for the divestiture of certainassets\\\",\\\"metadata\\\":{\\\"text\\\":\\\"was  attributable  to  the  divestiture  of  certain  assets  related  to  the  Level  5  division  and  how  much  was  attributable  to  the  commercial  agreements  for  theutilization\\\\n of Lyft rideshare and fleet data. For the year ended December 31, 2021, the Company recognized a $119.3 million pre-tax gain for the divestiture of certainassets\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"1a76991f-fa85-59b2-b522-700d47b2d809\\\",\\\"extraction_id\\\":\\\"0773cd62-b39f-517f-b6f1-be788b38374d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.683727383613586,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Cash flows from operating activities\\\\nNet loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Adjustments to reconcile net loss to net cash used in operating activities\\\\nDepreciation and amortization\\\\n139,347 157,353 108,429 Stock-based compensation\\\\n724,560 565,807 1,599,311 Amortization of premium on marketable securities\\\\n4,100 6,461 597 Accretion of discount on marketable securities\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Cash flows from operating activities\\\\nNet loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Adjustments to reconcile net loss to net cash used in operating activities\\\\nDepreciation and amortization\\\\n139,347 157,353 108,429 Stock-based compensation\\\\n724,560 565,807 1,599,311 Amortization of premium on marketable securities\\\\n4,100 6,461 597 Accretion of discount on marketable securities\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"bfc29c59-2925-5621-951a-645df5c892b2\\\",\\\"extraction_id\\\":\\\"94c562ae-c5cc-5622-b91c-34a0effcb6e1\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.671545108304772,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Comprehensive Loss\\\\n(in thousands) \\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Net loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Other comprehensive incom\\\\ne (loss)Foreign currency transla\\\\ntion adjustment(931) (2,187) 162 Unrealized gain (loss) on m\\\\narketable securities, net of taxes(1,107) (1,011) 2,430 Other comprehensive incom\\\\ne (loss)(2,038) (3,198) 2,592 Comprehensive loss\\\\n$ (1,011,397) $ (1,756,055) $ (2,599,649) The accompanying notes are\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Comprehensive Loss\\\\n(in thousands) \\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Net loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Other comprehensive incom\\\\ne (loss)Foreign currency transla\\\\ntion adjustment(931) (2,187) 162 Unrealized gain (loss) on m\\\\narketable securities, net of taxes(1,107) (1,011) 2,430 Other comprehensive incom\\\\ne (loss)(2,038) (3,198) 2,592 Comprehensive loss\\\\n$ (1,011,397) $ (1,756,055) $ (2,599,649) The accompanying notes are\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"dbd5427c-f5ef-5fa6-83ae-a4a8ddbb48c2\\\",\\\"extraction_id\\\":\\\"14b08757-0819-5105-af37-509686dd6d01\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.6639652450074329,\\\"text\\\":\\\"Lyft, Inc.Consolidated Balance Sheets\\\\n(in thousands, except for share and per share da\\\\nta) December 31,\\\\n2021\\\\n2020 Assets\\\\nCurrent assets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 Short-term investments\\\\n1,796,533 1,931,334 Prepaid expenses and other cur\\\\nrent assets522,212 343,070 Total current assets\\\\n2,776,070 2,594,138 Restricted cash and cash equ\\\\nivalents73,205 118,559 Restricted investments\\\\n1,044,855 1,101,712 Other investments\\\\n80,411 10,000 Property and equipment, net\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Balance Sheets\\\\n(in thousands, except for share and per share da\\\\nta) December 31,\\\\n2021\\\\n2020 Assets\\\\nCurrent assets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 Short-term investments\\\\n1,796,533 1,931,334 Prepaid expenses and other cur\\\\nrent assets522,212 343,070 Total current assets\\\\n2,776,070 2,594,138 Restricted cash and cash equ\\\\nivalents73,205 118,559 Restricted investments\\\\n1,044,855 1,101,712 Other investments\\\\n80,411 10,000 Property and equipment, net\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"ba4bdf94-9b0d-5548-b3b0-b28595c39b2a\\\",\\\"extraction_id\\\":\\\"12cff898-f0fe-59b8-929b-00d3d56fd73d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.657470505539123,\\\"text\\\":\\\"Lyft rideshare and fleet data. The Company will receive, in total, approximately $515 million in cash in connection with this transaction, with $165 million paid upfrontand\\\\n $350  million  to  be  paid  over  a  five-year  period.  As  the  transaction  included  multiple  elements,  management  had  to  estimate  how  much  of  the  arrangementconsideration\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft rideshare and fleet data. The Company will receive, in total, approximately $515 million in cash in connection with this transaction, with $165 million paid upfrontand\\\\n $350  million  to  be  paid  over  a  five-year  period.  As  the  transaction  included  multiple  elements,  management  had  to  estimate  how  much  of  the  arrangementconsideration\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"68519877-163f-545b-a96f-77e2595ef720\\\",\\\"extraction_id\\\":\\\"9e45b68a-e773-5903-a9e7-05f860a05cf5\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.644272885067888,\\\"text\\\":\\\"Lyft, Inc.Notes to Consolidated Financial Statements\\\\n1. Description of Business and Basis of Presentation\\\\nOrganization and Description of Business\\\\nLyft,\\\\n Inc.  (the  Company  or  Lyft)  is  incorporated  in  Delaware  with  its  headquarters  in  San  Francisco,  California.  The  Company  operates  multimodaltransportation\\\\n networks  in  the  United  States  and  Canada  that  offer  access  to  a  variety  of  transportation  options  through  the  Companys  platform  and  mobile-basedapplications.\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Notes to Consolidated Financial Statements\\\\n1. Description of Business and Basis of Presentation\\\\nOrganization and Description of Business\\\\nLyft,\\\\n Inc.  (the  Company  or  Lyft)  is  incorporated  in  Delaware  with  its  headquarters  in  San  Francisco,  California.  The  Company  operates  multimodaltransportation\\\\n networks  in  the  United  States  and  Canada  that  offer  access  to  a  variety  of  transportation  options  through  the  Companys  platform  and  mobile-basedapplications.\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"05ddcc28-fd4b-5318-9224-6f2cd3d16c5c\\\",\\\"extraction_id\\\":\\\"7ce2fcae-d65b-5a4c-b45d-dcd87c4df38e\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.642513496576135,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Reconciliation of cash, cash equivalents and restricted cash and cash equivalents to the consolidated balance sheets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 $ 358,319 Restricted cash and cash equivalents\\\\n73,205 118,559 204,976 Restricted cash, included in prepaid expenses and other current \\\\nassets663 192 1,170 Total cash, cash equivalents and restricted cash and cash equivalents\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Reconciliation of cash, cash equivalents and restricted cash and cash equivalents to the consolidated balance sheets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 $ 358,319 Restricted cash and cash equivalents\\\\n73,205 118,559 204,976 Restricted cash, included in prepaid expenses and other current \\\\nassets663 192 1,170 Total cash, cash equivalents and restricted cash and cash equivalents\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"e89d60be-9148-52f1-8907-03187fdd2b65\\\",\\\"extraction_id\\\":\\\"ac9c9f74-c545-586e-8acf-5545cf0864d5\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.633240878582001,\\\"text\\\":\\\"Lyft,  Inc.  for  the  fiscal  year  ended  December  31,  2021  fully  complies  with  the  requirements  of  Section  13(a)  or  15(d)  of  the  Securities  Exchange  Act  of  1934,  asamended,\\\\n and that the information contained in such Annual Report on Form 10-K fairly presents, in all material respects, the financial condition and results of operationsof Lyft, Inc.\\\\nDate:\\\\nFebruary 28, 2022 By: /s/ Logan Green Name:\\\\nLogan Green Title:\\\\nChief Executive Officer (Principal Executive Officer)\\\\nI, Elaine\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft,  Inc.  for  the  fiscal  year  ended  December  31,  2021  fully  complies  with  the  requirements  of  Section  13(a)  or  15(d)  of  the  Securities  Exchange  Act  of  1934,  asamended,\\\\n and that the information contained in such Annual Report on Form 10-K fairly presents, in all material respects, the financial condition and results of operationsof Lyft, Inc.\\\\nDate:\\\\nFebruary 28, 2022 By: /s/ Logan Green Name:\\\\nLogan Green Title:\\\\nChief Executive Officer (Principal Executive Officer)\\\\nI, Elaine\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"b230ec93-1003-5382-98e3-15505dc5bdba\\\",\\\"extraction_id\\\":\\\"9f117275-9d93-5b4a-97d8-bb270db8b94e\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.621775843010894,\\\"text\\\":\\\"PART IItem 1. Business.\\\\nOur Mission\\\\nImprove peoples lives with \\\\nthe worlds best transportation.Overview\\\\nLyft,\\\\n Inc  (the  Company  or  Lyft)  started  a  movement  to  revolutionize  transportation.  In  2012,  we  launched  our  peer-to-peer  marketplace  for  on-demandridesharing\\\\n and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United Statesand Canada.\\\\nWe\\\",\\\"metadata\\\":{\\\"text\\\":\\\"PART IItem 1. Business.\\\\nOur Mission\\\\nImprove peoples lives with \\\\nthe worlds best transportation.Overview\\\\nLyft,\\\\n Inc  (the  Company  or  Lyft)  started  a  movement  to  revolutionize  transportation.  In  2012,  we  launched  our  peer-to-peer  marketplace  for  on-demandridesharing\\\\n and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United Statesand Canada.\\\\nWe\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\"</search><completion>Lyft did not make a profit in 2020. Instead, the company reported a net loss of $1,752,857,000 for the year ended December 31, 2020 [3], [4].</completion>"
+              "content": "<search>[{\"fragment_id\": \"94684f2d-fe60-5ba3-b1e8-0a921841bac9\", \"extraction_id\": \"fde39a49-00fc-5622-addd-13eb9c3bad4b\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6675721804840684, \"text\": \"Total Stockholders\\u2019 Equity (Deficit) 1,676,163\\n\\n5,184\\n\\n\\u2014\\n\\n(26,298)\\n\\n28,637\\n\\n(1) 721,710 (2,038) (1,009,359) 1,393,998\\n\\nLyft, Inc. Consolidated Statements of Cash Flows (in thousands)\\n\\n2021\\n\\nCash flows from operating activities Net loss Adjustments to reconcile net loss to net cash used in operating activities\\n\\n$\\n\\n(1,009,359)\\n\\nDepreciation and amortization Stock-based compensation Amortization of premium on marketable securities Accretion of discount on marketable securities Amortization of debt discount and issuance costs Deferred income tax from convertible senior notes Loss on sale and disposal of assets, net Gain on divestiture Other Changes in operating assets and liabilities, net effects of acquisition\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 572, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 82, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"0d5c5803-8846-59d4-8ae3-3696b718f162\", \"extraction_id\": \"fa3d2549-593a-5a80-88a2-b2d031d79771\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6647443571534382, \"text\": \"79\\n\\n2019 3,615,960\\n\\n2,176,469 636,116 1,505,640 814,122 1,186,093 6,318,440 (2,702,480) \\u2014 102,595 (2,599,885) 2,356 (2,602,241)\\n\\n(11.44)\\n\\n227,498\\n\\n81,321 75,212 971,941 72,046 398,791\\n\\nLyft, Inc. Consolidated Statements of Comprehensive Loss (in thousands)\\n\\nNet loss Other comprehensive income (loss)\\n\\n$\\n\\nYear Ended December 31, 2020 (1,752,857) $\\n\\n2021 (1,009,359) $\\n\\nForeign currency translation adjustment Unrealized gain (loss) on marketable securities, net of taxes\\n\\nOther comprehensive income (loss)\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 567, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 79, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"5d663f0a-c9a9-580f-818b-5ca0a1ca73f2\", \"extraction_id\": \"12916d2c-0691-528c-86aa-6784c1f35c55\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6628832616140414, \"text\": \"Overview\\n\\nLyft, Inc (the \\u201cCompany\\u201d or \\u201cLyft\\u201d) started a movement to revolutionize transportation. In 2012, we launched our peer-to-peer marketplace for on-demand ridesharing and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United States and Canada.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 16, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"7133acca-f147-5f43-b2e0-71228282fda0\", \"extraction_id\": \"212d8290-564d-5039-93cc-00cea31a1771\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6603014862717096, \"text\": \"Revenues from Contracts with Customers (ASC 606)\\n\\nWe generate substantially all our revenue from our ridesharing marketplace that connects drivers and riders. We recognize revenue from fees paid by drivers for use of our Lyft Platform offerings in accordance with ASC 606 as described in Note 2 of the notes to our consolidated financial statements. Drivers enter into terms of service (\\u201cToS\\u201d) with us in order to use our Lyft Driver App.\\n\\n58\\n\\n2019 to 2020 % Change\\n\\n19.0% (1.8)% (6.7)% 2.3%\\n\\nWe provide a service to drivers to complete a successful transportation service for riders. This service includes on-demand lead generation that assists drivers to find, receive and fulfill on-demand requests from riders seeking transportation services and related collection activities using our Lyft Platform. As a result, our single performance obligation in the transaction is to connect drivers with riders to facilitate the completion of a successful transportation service for riders.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 459, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 58, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"1a76991f-fa85-59b2-b522-700d47b2d809\", \"extraction_id\": \"0773cd62-b39f-517f-b6f1-be788b38374d\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6477107388714619, \"text\": \"Corporate Information\\n\\nWe were incorporated in 2007 as Bounder Web, Inc., a Delaware corporation. In 2008, we changed our name to Zimride, Inc. We founded Lyft in 2012 and\\n\\nchanged our name to Lyft, Inc. in 2013 when we sold the assets related to our Zimride operations.\\n\\n13\\n\\nAvailable Information\\n\\nOur website is located at www.lyft.com, and our investor relations website is located at investor.lyft.com. Copies of our Annual Report on Form 10-K, Quarterly Reports on Form 10-Q, Current Reports on Form 8-K and amendments to these reports filed or furnished pursuant to Section 13(a) or 15(d) of the Exchange Act, as amended, are available free of charge on our investor relations website as soon as reasonably practicable after we file such material electronically with or furnish it to the Securities and Exchange Commission (the \\u201cSEC\\u201d). The SEC also maintains a website that contains our SEC filings at www.sec.gov.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 82, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 13, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"17673edc-6fb7-577d-9bca-457c5745382d\", \"extraction_id\": \"bde94416-baaa-573a-9bc7-86ddf28535b1\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6406270265579269, \"text\": \"We generate substantially all of our revenue from our ridesharing marketplace that connects drivers and riders. We collect service fees and commissions from drivers for their use of our ridesharing marketplace. As drivers accept more rider leads and complete more rides, we earn more revenue. We also generate revenue from riders renting Light Vehicles, drivers renting vehicles through Express Drive, Lyft Rentals renters, Lyft Driver Center and Lyft Auto Care users, and by making our ridesharing marketplace available to organizations through our Lyft Business offerings, such as our Concierge and Corporate Business Travel programs. In the second quarter of 2021, we began generating revenues from licensing and data access agreements, primarily with third-party autonomous vehicle companies.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 20, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"8f6299b7-4582-5bac-8c74-7ca57714aefa\", \"extraction_id\": \"310e9e1f-25d3-5287-a905-5446f661d6da\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6394975757149678, \"text\": \"Revenue Recognition\\n\\nThe Company generates its revenue from its multimodal transportation networks that offer access to a variety of transportation options through the Lyft Platform and mobile-based applications. Substantially all of the Company\\u2019s revenue is generated from its ridesharing marketplace that connects drivers and riders and is recognized in accordance with Accounting Standards Codification Topic 606 (\\u201cASC 606\\u201d). In addition, the Company generates revenue in accordance with ASC 606 from licensing and data access, primarily with third-party autonomous vehicle companies. The Company also generates rental revenue from Flexdrive, its network of Light Vehicles and Lyft Rentals, which is recognized in accordance with Accounting Standards Codification Topic 842 (\\u201cASC 842\\u201d).\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 591, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 86, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"ff837ea0-0062-59ca-bb4f-aa7a1c9cecd0\", \"extraction_id\": \"41e4db8a-0478-5015-8263-cde0618ec626\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6308713775353904, \"text\": \"Light Vehicle Rider and Lyft Rentals Renter Incentives\\n\\nIncentives offered to Light Vehicle riders and Lyft Rentals renters were not material for the years ended December 31, 2021 and 2020.\\n\\nFor the years ended December 31, 2021, 2020 and 2019, in relation to the driver, rider, Light Vehicle riders and Lyft Rentals renters incentive programs, the Company recorded $1.3 billion, $390.8 million and $560.3 million as a reduction to revenue and $64.7 million, $135.0 million and $381.5 million as sales and marketing expense, respectively.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 611, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 89, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"c24d144b-c22d-5c08-876f-a03e43620aa4\", \"extraction_id\": \"2a4caab0-6193-5263-8eab-c7763e8f38e8\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6295160430381335, \"text\": \"Software Development Costs\\n\\nThe Company incurs costs related to developing the Lyft Platform and related support systems. The Company capitalizes development costs related to the Lyft Platform and related support systems once the preliminary project stage is complete and it is probable that the project will be completed and the software will be used to perform the function intended. The Company capitalized $16.2 million and $12.8 million of software development costs during the year ended December 31, 2021 and 2020, respectively. For the year ended December 31, 2019, capitalized software development costs was not material.\\n\\nInsurance Reserves\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 649, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 94, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"fragment_id\": \"83985ff5-653f-53eb-b137-f616b4292f51\", \"extraction_id\": \"0919e3d5-03b0-5d54-b5f3-7f6ad4534412\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [], \"score\": 0.6223346365889701, \"text\": \"32.1\\u2020\\n\\nCertifications of Principal Executive Officer and Principal Financial Officer pursuant to 18 U.S.C. Section 1350, as adopted pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.\\n\\n101\\n\\nThe following financial information from Lyft, Inc.\\u2019s Annual Report on Form 10-K for the fiscal year ended December 31, 2021 formatted in Inline XBRL (eXtensible Business Reporting Language): (i) Consolidated Statements of Operations for the fiscal years ended December 31, 2021, 2020 and 2019; (ii) Consolidated Statements of Comprehensive Income (Loss) for the fiscal years ended December 31, 2021, 2020, and 2019; (iii) Consolidated Balance Sheets as of December 31, 2021 and 2020; (iv) Consolidated Statements of Cash Flows for the fiscal years ended December 31, 2021, 2020, and 2019; (v) Consolidated Statements of Redeemable Convertible Preferred Stock and Stockholders\\u2019 Equity for the fiscal years ended December 31, 2021, 2020, and 2019; and (vi) Notes to the Consolidated Financial Statements.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 817, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 127, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}]</search><completion>Lyft's profit in 2020 was a net loss of $1,752,857,000 [2].</completion>"
             }
           }
         ]

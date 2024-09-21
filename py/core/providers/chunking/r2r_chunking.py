@@ -1,3 +1,4 @@
+# type: ignore
 import logging
 from typing import Any, AsyncGenerator, Union
 
@@ -8,7 +9,7 @@ from core.base import (
     Strategy,
     TextSplitter,
 )
-from core.base.abstractions.document import DocumentExtraction
+from core.base.abstractions import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class R2RChunkingProvider(ChunkingProvider):
         else:
             raise ValueError(f"Unsupported method type: {self.config.method}")
 
-    def validate(self) -> bool:
+    def validate_config(self) -> bool:
         return self.config.chunk_size > 0 and self.config.chunk_overlap >= 0
 
     def update_config(self, config_override: R2RChunkingConfig):

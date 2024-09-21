@@ -1,8 +1,9 @@
+# type: ignore
 import logging
 from typing import AsyncGenerator, Union
 
 from core.base import ChunkingProvider, Strategy, UnstructuredChunkingConfig
-from core.base.abstractions.document import DocumentExtraction
+from core.base.abstractions import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 

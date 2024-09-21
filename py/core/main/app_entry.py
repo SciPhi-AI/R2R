@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     app.router.routes = r2r_app.app.routes
 
     # Copy middleware and exception handlers
-    app.middleware = r2r_app.app.middleware
+    app.middleware = r2r_app.app.middleware  # type: ignore
     app.exception_handlers = r2r_app.app.exception_handlers
 
     # Start the scheduler

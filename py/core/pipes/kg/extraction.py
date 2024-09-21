@@ -36,7 +36,9 @@ class ClientError(Exception):
     pass
 
 
-class KGTriplesExtractionPipe(AsyncPipe):
+class KGTriplesExtractionPipe(
+    AsyncPipe[Union[KGExtraction, R2RDocumentProcessingError]]
+):
     """
     Extracts knowledge graph information from document extractions.
     """
@@ -51,12 +53,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
+        config: AsyncPipe.PipeConfig,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -76,11 +78,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
         self.pipe_run_info = None
         self.graph_rag = graph_rag
 
-    def map_to_str(self, fragments: list[DocumentFragment]) -> str:
-        # convert fragment to dict object
-        fragment = json.loads(json.dumps(fragment))
-        return fragment
-
     async def extract_kg(
         self,
         fragments: list[DocumentFragment],
@@ -88,17 +85,18 @@ class KGTriplesExtractionPipe(AsyncPipe):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
-        retries: int = 3,
+        retries: int = 5,
         delay: int = 2,
     ) -> KGExtraction:
         """
         Extracts NER triples from a fragment with retries.
         """
+
         # combine all fragments into a single string
-        combined_fragment = " ".join([fragment.data for fragment in fragments])
+        combined_fragment: str = " ".join([fragment.data for fragment in fragments])  # type: ignore
 
         messages = self.prompt_provider._get_message_payload(
-            task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
+            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_extraction_prompt,
             task_inputs={
                 "input": combined_fragment,
                 "max_knowledge_triples": max_knowledge_triples,
@@ -116,6 +114,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                 kg_extraction = response.choices[0].message.content
 
+                if not kg_extraction:
+                    raise R2RException(
+                        "No knowledge graph extraction found in the response string, the selected LLM likely failed to format it's response correctly.",
+                        400,
+                    )
+
                 entity_pattern = (
                     r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
                 )
@@ -130,9 +134,13 @@ class KGTriplesExtractionPipe(AsyncPipe):
                         and len(entities) == 0
                     ):
                         raise R2RException(
-                            "No entities found in the response string, the selected LLM likely failed to format it's response correctly.",
+                            f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
                             400,
                         )
+                        # logger.warning(
+                        #     f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
+                        # )
+
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
@@ -164,7 +172,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
                         # check if subject and object are in entities_dict
                         relations_arr.append(
                             Triple(
-                                id=str(uuid.uuid4()),
                                 subject=subject,
                                 predicate=predicate,
                                 object=object,
@@ -203,8 +210,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     logger.error(
                         f"Failed after retries with for fragment {fragments[0].id} of document {fragments[0].document_id}: {e}"
                     )
-                    raise e
-
+                    # raise e # you should raise an error.
         # add metadata to entities and triples
 
         return KGExtraction(
@@ -214,7 +220,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
             triples=[],
         )
 
-    async def _run_logic(
+    async def _run_logic(  # type: ignore
         self,
         input: Input,
         state: AsyncState,
@@ -244,7 +250,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
             )
             for extraction in self.database_provider.vector.get_document_chunks(
                 document_id=document_id
-            )
+            )[
+                "results"
+            ]
         ]
 
         # sort the fragments accroding to chunk_order field in metadata in ascending order

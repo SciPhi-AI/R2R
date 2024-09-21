@@ -1,3 +1,4 @@
+# type: ignore
 from .html_parser import HTMLParser
 from .md_parser import MDParser
 from .text_parser import TextParser

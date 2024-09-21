@@ -7,11 +7,12 @@ from pydantic import BaseModel
 from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
+    Message,
     MessageType,
 )
 from core.base.providers import CompletionProvider, PromptProvider
 
-from .base import Message, Tool, ToolResult
+from .base import Tool, ToolResult
 
 
 class Conversation:
@@ -73,9 +74,9 @@ class Agent(ABC):
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.config = config
-        self.conversation = []
+        self.conversation: list[Message] = []
         self._completed = False
-        self._tools = []
+        self._tools: list[Tool] = []
         self._register_tools()
 
     @abstractmethod
@@ -116,15 +117,15 @@ class Agent(ABC):
     @abstractmethod
     async def process_llm_response(
         self,
-        response: Union[Dict[str, Any], AsyncGenerator[Dict[str, Any], None]],
+        response: Any,
         *args,
         **kwargs,
-    ) -> Union[str, AsyncGenerator[str, None]]:
+    ) -> Union[None, AsyncGenerator[str, None]]:
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:
         if tool := next((t for t in self.tools if t.name == tool_name), None):
-            return await tool.function(*args, **kwargs)
+            return await tool.results_function(*args, **kwargs)
         else:
             return f"Error: Tool {tool_name} not found."
 
@@ -176,7 +177,7 @@ class Agent(ABC):
         tool_id: Optional[str] = None,
         *args,
         **kwargs,
-    ) -> Union[str, AsyncGenerator[str, None]]:
+    ) -> ToolResult:
         (
             self.conversation.append(
                 Message(
@@ -225,7 +226,6 @@ class Agent(ABC):
             (
                 self.conversation.append(
                     Message(
-                        tool_call_id=tool_id,
                         role="tool",
                         content=str(tool_result.llm_formatted_result),
                         name=function_name,

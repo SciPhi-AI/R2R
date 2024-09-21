@@ -19,7 +19,7 @@ class LogProcessor:
 
     def __init__(self, filters: Dict[str, Callable[[Dict[str, Any]], bool]]):
         self.filters = filters
-        self.populations = {name: [] for name in filters}
+        self.populations: dict = {name: [] for name in filters}
 
     def process_log(self, log: Dict[str, Any]):
         for name, filter_func in self.filters.items():

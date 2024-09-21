@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Optional, AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import (
@@ -9,20 +9,20 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
     KGProvider,
-    KGSearchSettings,
     PipeType,
     PromptProvider,
-    R2RException,
     RunLoggingSingleton,
 )
-from core.base.abstractions.search import (
-    KGSearchResult,
-    KGGlobalResult,
-    KGSearchMethod,
-    KGSearchResultType,
-    KGEntityResult,
-    KGRelationshipResult,
+from core.base.abstractions import (
     KGCommunityResult,
+    KGEntityResult,
+    KGGlobalResult,
+    KGRelationshipResult,
+    KGSearchMethod,
+    KGSearchResult,
+    KGSearchResultType,
+    KGSearchSettings,
+    R2RException,
 )
 
 from ..abstractions.generator_pipe import GeneratorPipe
@@ -41,9 +41,9 @@ class KGSearchSearchPipe(GeneratorPipe):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
+        config: GeneratorPipe.PipeConfig,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[GeneratorPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -51,14 +51,11 @@ class KGSearchSearchPipe(GeneratorPipe):
         Initializes the embedding pipe with necessary components and configurations.
         """
         super().__init__(
-            llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
-            type=type,
-            config=config
-            or GeneratorPipe.Config(
-                name="kg_rag_pipe", task_prompt="kg_search"
-            ),
-            pipe_logger=pipe_logger,
+            llm_provider,
+            prompt_provider,
+            config,
+            type,
+            pipe_logger,
             *args,
             **kwargs,
         )
@@ -123,7 +120,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "__Entity__"
-            async for search_result in self.kg_provider.vector_query(
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -137,7 +134,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                     "document_ids",
                 ],
             ):
-                print(search_result)
                 yield KGSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],
@@ -152,7 +148,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # relationship search
             search_type = "__Relationship__"
-            async for search_result in self.kg_provider.vector_query(
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -180,7 +176,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # community search
             search_type = "__Community__"
-            async for search_result in self.kg_provider.vector_query(
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -195,16 +191,24 @@ class KGSearchSearchPipe(GeneratorPipe):
 
                 # try loading it as a json
                 try:
+
+                    if "```json" in summary:
+                        summary = (
+                            summary.strip()
+                            .removeprefix("```json")
+                            .removesuffix("```")
+                            .strip()
+                        )
+
                     summary_json = json.loads(summary)
                     description = summary_json.get("summary", "")
                     name = summary_json.get("title", "")
 
-                    description += "\n\n" + "\n".join(
-                        [
-                            finding["summary"]
-                            for finding in summary_json.get("findings", [])
-                        ]
-                    )
+                    def get_str(finding):
+                        if isinstance(finding, dict):
+                            return f"{finding['summary']} => {finding['explanation']}"
+                        else:
+                            return str(finding)
 
                 except json.JSONDecodeError:
                     logger.warning(f"Summary is not valid JSON")
@@ -216,7 +220,10 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
-                    metadata={"associated_query": message},
+                    metadata={
+                        "associated_query": message,
+                        "findings": summary_json.get("findings", ""),
+                    },
                 )
 
     async def global_search(
@@ -231,7 +238,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         # map reduce
         async for message in input.message:
             map_responses = []
-            communities = self.kg_provider.get_communities(
+            communities = self.kg_provider.get_communities(  # type: ignore
                 level=kg_search_settings.kg_search_level
             )
 
@@ -258,13 +265,13 @@ class KGSearchSearchPipe(GeneratorPipe):
             async def process_community(merged_report):
                 output = await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name="graphrag_map_system_prompt",
+                        task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_map_system_prompt,
                         task_inputs={
                             "context_data": merged_report,
                             "input": message,
                         },
                     ),
-                    generation_config=kg_search_settings.kg_search_generation_config,
+                    generation_config=kg_search_settings.generation_config,
                 )
 
                 return output.choices[0].message.content
@@ -293,27 +300,34 @@ class KGSearchSearchPipe(GeneratorPipe):
             # reducing the outputs
             output = await self.llm_provider.aget_completion(
                 messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="graphrag_reduce_system_prompt",
+                    task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_reduce_system_prompt,
                     task_inputs={
                         "response_type": "multiple paragraphs",
                         "report_data": filtered_responses,
                         "input": message,
                     },
                 ),
-                generation_config=kg_search_settings.kg_search_generation_config,
+                generation_config=kg_search_settings.generation_config,
             )
 
-            output = output.choices[0].message.content
+            output_text = output.choices[0].message.content
+
+            if not output_text:
+                logger.warning(f"No output generated for query: {message}.")
+                raise R2RException(
+                    "No output generated for query.",
+                    400,
+                )
 
             yield KGSearchResult(
                 content=KGGlobalResult(
-                    name="Global Result", description=output
+                    name="Global Result", description=output_text
                 ),
                 method=KGSearchMethod.GLOBAL,
-                metadata={'associated_query': message},
+                metadata={"associated_query": message},
             )
 
-    async def _run_logic(
+    async def _run_logic(  # type: ignore
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
@@ -325,14 +339,15 @@ class KGSearchSearchPipe(GeneratorPipe):
 
         kg_search_type = kg_search_settings.kg_search_type
 
-        if kg_search_type == "local":
+        # runs local and/or global search
+        if kg_search_type == "local" or kg_search_type == "local_and_global":
             logger.info("Performing KG local search")
             async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
                 yield result
 
-        else:
+        if kg_search_type == "global" or kg_search_type == "local_and_global":
             logger.info("Performing KG global search")
             async for result in self.global_search(
                 input, state, run_id, kg_search_settings

@@ -5,7 +5,7 @@ from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
-from core.base.api.models.auth.responses import (
+from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
@@ -27,6 +27,13 @@ class AuthRouter(BaseRouter):
         orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         super().__init__(auth_service, run_type, orchestration_provider)
+        self.service: AuthService = auth_service  # for type hinting
+
+    def _register_workflows(self):
+        pass
+
+    def _load_openapi_extras(self):
+        return {}
 
     def _setup_routes(self):
         @self.router.post("/register", response_model=WrappedUserResponse)

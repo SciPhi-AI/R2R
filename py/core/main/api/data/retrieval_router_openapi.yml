@@ -20,7 +20,7 @@ search:
                   "use_kg_search": True, # graph needs to be constructed first
                   "kg_search_type": "local",
                   "kg_search_level": "0",
-                  "kg_search_generation_config": {
+                  "generation_config": {
                       "model": "gpt-4o-mini",
                       "temperature": 0.7,
                   },
@@ -50,7 +50,7 @@ search:
                 "use_kg_search": true, # graph needs to be constructed first
                 "kg_search_type": "local",
                 "kg_search_level": "0",
-                "kg_search_generation_config": {
+                "generation_config": {
                     "model": "gpt-4o-mini",
                     "temperature": 0.7
                 },
@@ -91,7 +91,7 @@ rag:
                   "use_kg_search": True,
                   "kg_search_type": "local",
                   "kg_search_level": "0",
-                  "kg_search_generation_config": {
+                  "generation_config": {
                       "model": "gpt-4o-mini",
                       "temperature": 0.7,
                   },
@@ -126,7 +126,7 @@ rag:
                 "use_kg_search": true, # graph needs to be constructed first
                 "kg_search_type": "local",
                 "kg_search_level": "0",
-                "kg_search_generation_config": {
+                "generation_config": {
                     "model": "gpt-4o-mini",
                     "temperature": 0.7
                 },

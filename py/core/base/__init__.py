@@ -86,8 +86,6 @@ __all__ = [
     "LoggingConfig",
     "PostgresLoggingConfig",
     "PostgresRunLoggingProvider",
-    "RedisLoggingConfig",
-    "RedisRunLoggingProvider",
     "RunLoggingSingleton",
     # Run Manager
     "RunManager",

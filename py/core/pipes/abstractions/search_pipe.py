@@ -14,7 +14,7 @@ from core.base import (
 logger = logging.getLogger(__name__)
 
 
-class SearchPipe(AsyncPipe):
+class SearchPipe(AsyncPipe[VectorSearchResult]):
     class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
         filters: dict = {}
@@ -25,16 +25,16 @@ class SearchPipe(AsyncPipe):
 
     def __init__(
         self,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.SEARCH,
-        config: Optional[AsyncPipe.PipeConfig] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
+            config,
+            type,
+            pipe_logger,
             *args,
             **kwargs,
         )
@@ -43,8 +43,7 @@ class SearchPipe(AsyncPipe):
     async def search(
         self,
         query: str,
-        filters: dict[str, Any] = {},
-        limit: int = 10,
+        search_settings: Any,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
@@ -53,7 +52,7 @@ class SearchPipe(AsyncPipe):
     @abstractmethod
     async def _run_logic(
         self,
-        input: Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
         *args: Any,

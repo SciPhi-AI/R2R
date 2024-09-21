@@ -14,6 +14,7 @@ from core.base import (
     R2RException,
     RunLoggingSingleton,
     RunManager,
+    RunType,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -50,7 +51,7 @@ class ManagementService(Service):
         self,
         offset: int = 0,
         limit: int = 100,
-        run_type_filter: Optional[str] = None,
+        run_type_filter: Optional[RunType] = None,
     ):
         if self.logging_connection is None:
             raise R2RException(
@@ -128,7 +129,7 @@ class ManagementService(Service):
                     else log.get("key") == value
                 )
 
-        log_processor = LogProcessor(filters)
+        log_processor = LogProcessor(filters)  # type: ignore
         for log in logs:
             if "entries" in log and isinstance(log["entries"], list):
                 log_processor.process_log(log)
@@ -198,7 +199,7 @@ class ManagementService(Service):
         self,
         message_id: UUID,
         score: float = 0.0,
-        run_type_filter: str = None,
+        run_type_filter: Optional[RunType] = None,
         max_runs: int = 100,
         *args: Any,
         **kwargs: Any,
@@ -260,7 +261,7 @@ class ManagementService(Service):
     @telemetry_event("Delete")
     async def delete(
         self,
-        filters: dict[str, str],
+        filters: dict[str, Any],
         *args,
         **kwargs,
     ):
@@ -282,7 +283,7 @@ class ManagementService(Service):
             logger.error(f"Error deleting from vector database: {e}")
             vector_delete_results = {}
 
-        document_ids_to_purge = set()
+        document_ids_to_purge: set[UUID] = set()
         if vector_delete_results:
             document_ids_to_purge.update(
                 doc_id
@@ -296,14 +297,16 @@ class ManagementService(Service):
         relational_filters = {}
         if "document_id" in filters:
             relational_filters["filter_document_ids"] = [
-                UUID(filters["document_id"])
+                UUID(filters["document_id"]["$eq"])
             ]
         if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [UUID(filters["user_id"])]
+            relational_filters["filter_user_ids"] = [
+                UUID(filters["user_id"]["$eq"])
+            ]
         if "collection_ids" in filters:
             relational_filters["filter_collection_ids"] = [
                 UUID(collection_id)
-                for collection_id in filters["collection_ids"]
+                for collection_id in filters["collection_ids"]["$in"]
             ]
 
         try:
@@ -317,7 +320,9 @@ class ManagementService(Service):
             documents_overview = []
 
         if documents_overview:
-            document_ids_to_purge.update(doc.id for doc in documents_overview)
+            document_ids_to_purge.update(
+                doc.id for doc in documents_overview["results"]
+            )
 
         if not document_ids_to_purge:
             raise R2RException(
@@ -354,7 +359,7 @@ class ManagementService(Service):
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
         offset: Optional[int] = 0,
-        limit: Optional[int] = 100,
+        limit: Optional[int] = 1000,
         *args: Any,
         **kwargs: Any,
     ):
@@ -378,18 +383,6 @@ class ManagementService(Service):
         return self.providers.database.vector.get_document_chunks(
             document_id, offset=offset, limit=limit
         )
-
-    @telemetry_event("UpdatePrompt")
-    async def update_prompt(
-        self,
-        name: str,
-        template: Optional[str] = None,
-        input_types: Optional[dict[str, str]] = None,
-    ):
-        if input_types is None:
-            input_types = {}
-        self.providers.prompt.update_prompt(name, template, input_types)
-        return {"message": f"Prompt '{name}' updated successfully."}
 
     @telemetry_event("InspectKnowledgeGraph")
     async def inspect_knowledge_graph(
@@ -477,7 +470,7 @@ class ManagementService(Service):
                 message=f"An error occurred while fetching relationships: {str(e)}",
             )
 
-    @telemetry_event("AssignDocumentToGroup")
+    @telemetry_event("AssignDocumentToCollection")
     async def assign_document_to_collection(
         self, document_id: str, collection_id: UUID
     ):
@@ -490,7 +483,7 @@ class ManagementService(Service):
         )
         return {"message": "Document assigned to collection successfully"}
 
-    @telemetry_event("RemoveDocumentFromGroup")
+    @telemetry_event("RemoveDocumentFromCollection")
     async def remove_document_from_collection(
         self, document_id: str, collection_id: UUID
     ):
@@ -502,26 +495,21 @@ class ManagementService(Service):
         )
         return {"message": "Document removed from collection successfully"}
 
-    @telemetry_event("DocumentGroups")
+    @telemetry_event("DocumentCollections")
     async def document_collections(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
-        collection_ids = (
-            await self.providers.database.relational.document_collections(
-                document_id, offset=offset, limit=limit
-            )
+        return await self.providers.database.relational.document_collections(
+            document_id, offset=offset, limit=limit
         )
-        return {
-            "collection_ids": [
-                str(collection_id) for collection_id in collection_ids
-            ]
-        }
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
     ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
         graph = defaultdict(list)
-        grouped = defaultdict(lambda: defaultdict(list))
+        grouped: Dict[str, Dict[str, list[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for subject, relation, obj in relationships:
             graph[subject].append(obj)
             grouped[subject][relation].append(obj)
@@ -602,7 +590,7 @@ class ManagementService(Service):
         }
         return sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:5]
 
-    @telemetry_event("CreateGroup")
+    @telemetry_event("CreateCollection")
     async def create_collection(
         self, name: str, description: str = ""
     ) -> UUID:
@@ -610,29 +598,32 @@ class ManagementService(Service):
             name, description
         )
 
-    @telemetry_event("GetGroup")
+    @telemetry_event("GetCollection")
     async def get_collection(self, collection_id: UUID) -> Optional[dict]:
         return await self.providers.database.relational.get_collection(
             collection_id
         )
 
-    @telemetry_event("UpdateGroup")
+    @telemetry_event("UpdateCollection")
     async def update_collection(
-        self, collection_id: UUID, name: str = None, description: str = None
+        self,
+        collection_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> bool:
         return await self.providers.database.relational.update_collection(
             collection_id, name, description
         )
 
-    @telemetry_event("DeleteGroup")
+    @telemetry_event("DeleteCollection")
     async def delete_collection(self, collection_id: UUID) -> bool:
         await self.providers.database.relational.delete_collection(
             collection_id
         )
-        await self.providers.database.vector.delete_collection(collection_id)
+        self.providers.database.vector.delete_collection(collection_id)
         return True
 
-    @telemetry_event("ListGroups")
+    @telemetry_event("ListCollections")
     async def list_collections(
         self, offset: int = 0, limit: int = 100
     ) -> list[dict]:
@@ -640,7 +631,7 @@ class ManagementService(Service):
             offset=offset, limit=limit
         )
 
-    @telemetry_event("AddUserToGroup")
+    @telemetry_event("AddUserToCollection")
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
@@ -648,7 +639,7 @@ class ManagementService(Service):
             user_id, collection_id
         )
 
-    @telemetry_event("RemoveUserFromGroup")
+    @telemetry_event("RemoveUserFromCollection")
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
@@ -656,7 +647,7 @@ class ManagementService(Service):
             user_id, collection_id
         )
 
-    @telemetry_event("GetUsersInGroup")
+    @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
@@ -666,7 +657,7 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("GetGroupsForUser")
+    @telemetry_event("GetCollectionsForUser")
     async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
@@ -676,7 +667,7 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("GroupsOverview")
+    @telemetry_event("CollectionsOverview")
     async def collections_overview(
         self,
         collection_ids: Optional[list[UUID]] = None,
@@ -697,7 +688,7 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("GetDocumentsInGroup")
+    @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
@@ -705,14 +696,6 @@ class ManagementService(Service):
             await self.providers.database.relational.documents_in_collection(
                 collection_id, offset=offset, limit=limit
             )
-        )
-
-    @telemetry_event("DocumentGroups")
-    async def document_collections(
-        self, document_id: str, offset: int = 0, limit: int = 100
-    ) -> list[str]:
-        return await self.providers.database.relational.document_collections(
-            document_id, offset, limit
         )
 
     @telemetry_event("AddPrompt")
@@ -731,10 +714,10 @@ class ManagementService(Service):
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,
         prompt_override: Optional[str] = None,
-    ) -> str:
+    ) -> dict:
         try:
             return {
-                "message": await self.providers.prompt.get_prompt(
+                "message": self.providers.prompt.get_prompt(
                     prompt_name, inputs, prompt_override
                 )
             }
@@ -743,7 +726,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
-        return await self.providers.prompt.get_all_prompts()
+        return self.providers.prompt.get_all_prompts()
 
     @telemetry_event("UpdatePrompt")
     async def update_prompt(

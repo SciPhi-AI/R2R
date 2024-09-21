@@ -38,21 +38,6 @@ class IngestFilesWorkflow:
             status=IngestionStatus.PARSING,
         )
 
-        return {
-            "status": "Successfully parsed file",
-            "document_info": document_info.to_dict(),
-        }
-
-    @r2r_hatchet.step(parents=["parse"], timeout="60m")
-    async def extract(self, context: Context) -> dict:
-        document_info_dict = context.step_output("parse")["document_info"]
-        document_info = DocumentInfo(**document_info_dict)
-
-        await self.ingestion_service.update_document_status(
-            document_info,
-            status=IngestionStatus.EXTRACTING,
-        )
-
         extractions_generator = await self.ingestion_service.parse_file(
             document_info
         )
@@ -71,9 +56,9 @@ class IngestFilesWorkflow:
             "document_info": document_info.to_dict(),
         }
 
-    @r2r_hatchet.step(parents=["extract"], timeout="60m")
+    @r2r_hatchet.step(parents=["parse"], timeout="60m")
     async def chunk(self, context: Context) -> dict:
-        document_info_dict = context.step_output("extract")["document_info"]
+        document_info_dict = context.step_output("parse")["document_info"]
         document_info = DocumentInfo(**document_info_dict)
 
         await self.ingestion_service.update_document_status(
@@ -81,7 +66,7 @@ class IngestFilesWorkflow:
             status=IngestionStatus.CHUNKING,
         )
 
-        extractions = context.step_output("extract")["extractions"]
+        extractions = context.step_output("parse")["extractions"]
         chunking_config = context.workflow_input()["request"].get(
             "chunking_config"
         )
@@ -128,7 +113,7 @@ class IngestFilesWorkflow:
             status=IngestionStatus.STORING,
         )
 
-        storage_generator = await self.ingestion_service.store_embeddings(
+        storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
             embeddings
         )
 
@@ -224,11 +209,12 @@ class UpdateFilesWorkflow:
                 message="Number of ids does not match number of files.",
             )
 
-        documents_overview = await self.ingestion_service.providers.database.relational.get_documents_overview(
-            filter_document_ids=document_ids,
-            filter_user_ids=None if user.is_superuser else [user.id],
-        )
-
+        documents_overview = (
+            await self.ingestion_service.providers.database.relational.get_documents_overview(
+                filter_document_ids=document_ids,
+                filter_user_ids=None if user.is_superuser else [user.id],
+            )
+        )["results"]
         if len(documents_overview) != len(document_ids):
             raise R2RException(
                 status_code=404,

@@ -59,8 +59,8 @@ def main():
         pass
     except Exception as e:
         # Handle other exceptions if needed
-        print(f"An error occurred: {e}")
-        sys.exit(1)
+        print(f"CLI error: An error occurred")
+        raise e
 
 
 if __name__ == "__main__":
