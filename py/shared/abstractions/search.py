@@ -9,6 +9,7 @@ from pydantic import Field
 from .llm import GenerationConfig
 from .base import R2RSerializable
 
+
 class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
@@ -206,7 +207,7 @@ class VectorSearchSettings(R2RSerializable):
         default_factory=dict,
         description="Filters to apply to the vector search",
     )
-    limit: int = Field(
+    search_limit: int = Field(
         default=10,
         description="Maximum number of results to return",
         ge=1,
@@ -281,7 +282,19 @@ class VectorSearchSettings(R2RSerializable):
         ]
         return dump
 
+
 class KGSearchSettings(R2RSerializable):
+
+    graphrag_map_system_prompt: str = Field(
+        default="graphrag_map_system_prompt",
+        description="The system prompt for the graphrag map prompt.",
+    )
+
+    graphrag_reduce_system_prompt: str = Field(
+        default="graphrag_reduce_system_prompt",
+        description="The system prompt for the graphrag reduce prompt.",
+    )
+
     use_kg_search: bool = Field(
         default=False, description="Whether to use KG search"
     )
@@ -291,8 +304,9 @@ class KGSearchSettings(R2RSerializable):
     kg_search_level: Optional[str] = Field(
         default=None, description="KG search level"
     )
-    generation_config: Optional[GenerationConfig] = Field(
-        default_factory=GenerationConfig
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="Configuration for text generation during graph search.",
     )
     # TODO: add these back in
     # entity_types: list = []

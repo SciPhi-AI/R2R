@@ -211,13 +211,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                         else:
                             return str(finding)
 
-                    description += "\n\n" + "\n".join(
-                        [
-                            get_str(finding)
-                            for finding in summary_json.get("findings", [])
-                        ]
-                    )
-
                 except json.JSONDecodeError:
                     logger.warning(f"Summary is not valid JSON")
                     continue
@@ -228,7 +221,10 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
-                    metadata={"associated_query": message},
+                    metadata={
+                        "associated_query": message,
+                        "findings": summary_json.get("findings", ""),
+                    },
                 )
 
     async def global_search(
@@ -276,7 +272,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                             "input": message,
                         },
                     ),
-                    generation_config=kg_search_settings.kg_search_generation_config,
+                    generation_config=kg_search_settings.generation_config,
                 )
 
                 return output.choices[0].message.content
@@ -312,7 +308,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                         "input": message,
                     },
                 ),
-                generation_config=kg_search_settings.kg_search_generation_config,
+                generation_config=kg_search_settings.generation_config,
             )
 
             output_text = output.choices[0].message.content

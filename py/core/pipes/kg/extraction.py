@@ -250,7 +250,9 @@ class KGTriplesExtractionPipe(
             )
             for extraction in self.database_provider.vector.get_document_chunks(
                 document_id=document_id
-            )['results']
+            )[
+                "results"
+            ]
         ]
 
         # sort the fragments accroding to chunk_order field in metadata in ascending order

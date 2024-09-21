@@ -180,7 +180,7 @@ graphrag_community_reports_prompt:
       Output:
       {{
           "title": "OpenAI, Stripe, and Airbnb Community",
-          "summary": "The Y Combinator community comprises key startups like OpenAI, Stripe, and Airbnb, which are interconnected through strategic partnerships and investments. These relationships highlight a robust network focused on advancing AI technologies, payment infrastructure, and online marketplaces.",
+          "summary": "The community comprises key startups like OpenAI, Stripe, and Airbnb, which are interconnected through strategic partnerships and investments. These relationships highlight a robust network focused on advancing AI technologies, payment infrastructure, and online marketplaces.",
           "rating": 7.5,
           "rating_explanation": "The impact severity rating is high due to the significant influence these startups have on technology, finance, and the global economy.",
           "findings": [
