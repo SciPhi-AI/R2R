@@ -130,13 +130,12 @@ export const Answer: FC<{
     []
   );
   useEffect(() => {
-    if (message.sources?.vector) {
+    if (message.sources && message.sources.vector) {
       const parsed = parseVectorSearchSources(message.sources.vector);
       setParsedVectorSources(parsed);
     }
 
     if (message.sources?.kg) {
-      console.log('message.sources.kg = ', message.sources.kg);
       let kgLocalResult: KGSearchResult[] = JSON.parse(message.sources.kg);
 
       const entitiesArray = kgLocalResult.filter(
