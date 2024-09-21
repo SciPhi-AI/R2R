@@ -69,6 +69,7 @@ class RetrievalRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedSearchResponse,
         ):
+            print("kg_search_settings = ", kg_search_settings)
             """
             Perform a search query on the vector database and knowledge graph.
 
@@ -154,6 +155,8 @@ class RetrievalRouter(BaseRouter):
 
             The generation process can be customized using the rag_generation_config parameter.
             """
+            print("kg_search_settings = ", kg_search_settings)
+
             allowed_collections = set(auth_user.collection_ids)
             filters = {
                 "$or": [

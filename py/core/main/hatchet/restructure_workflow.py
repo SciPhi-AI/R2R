@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 
-from hatchet_sdk import Context, ConcurrencyLimitStrategy
+from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import R2RDocumentProcessingError

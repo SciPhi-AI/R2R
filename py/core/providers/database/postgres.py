@@ -71,13 +71,16 @@ class PostgresDBProvider(DatabaseProvider):
         self.db_name = db_name
 
         project_name = (
-            config.vecs_collection
+            config.project_name
+            or config.vecs_collection  # remove after deprecation
             or os.getenv("POSTGRES_PROJECT_NAME")
-            or os.getenv("POSTGRES_VECS_COLLECTION")
+            or os.getenv(
+                "POSTGRES_VECS_COLLECTION"
+            )  # remove after deprecation
         )
         if not project_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_PROJECT_NAME environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
+                "Error, please set a valid POSTGRES_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `r2r.toml`."
             )
         self.project_name = project_name
 

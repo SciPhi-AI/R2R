@@ -17,6 +17,7 @@ class DatabaseConfig(ProviderConfig):
     port: Optional[int] = None
     db_name: Optional[str] = None
     vecs_collection: Optional[str] = None
+    project_name: Optional[str] = None
 
     def __post_init__(self):
         self.validate_config()

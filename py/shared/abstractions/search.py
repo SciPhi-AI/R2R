@@ -6,8 +6,8 @@ from uuid import UUID
 
 from pydantic import Field
 
-from .llm import GenerationConfig
 from .base import R2RSerializable
+from .llm import GenerationConfig
 
 
 class VectorSearchResult(R2RSerializable):

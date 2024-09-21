@@ -18,16 +18,20 @@ def format_search_results_for_llm(
         formatted_results += "Vector Search Results:\n"
         for i, result in enumerate(results.vector_search_results):
             text = result.text
-            formatted_results += f"{i+1}. {text}\n"
+            formatted_results += f"Source [{i+1}]:\n{text}\n"
 
     if results.kg_search_results:
-        for kg_result in results.kg_search_results:
-            if kg_result.method == "local":
-                formatted_results += "KG Local Search Results:\n"
-                formatted_results += str(kg_result.content)
-            elif kg_result.method == "global":
-                formatted_results += "KG Global Search Results:\n"
-                formatted_results += str(kg_result.content)
+        formatted_results += "KG Local Results:\n"
+        for j, kg_result in enumerate(results.kg_search_results):
+            formatted_results += (
+                f"Source [{j+1}]: Name - {kg_result.content.name}\n"
+            )
+            formatted_results += (
+                f"Description - {kg_result.content.description}\n"
+            )
+            findings = kg_result.metadata.get("findings", None)
+            if findings:
+                formatted_results += f"Supporting Findings: {findings}\n"
 
     return formatted_results
 

@@ -24,7 +24,6 @@ overlap = 20
 provider = "litellm"
 concurrent_request_limit = 16
 
-
   [completion.generation_config]
   model = "openai/gpt-4o"
   temperature = 0.1

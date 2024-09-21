@@ -147,7 +147,7 @@ def search(ctx, query, **kwargs):
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-search-type", default="global", help="Local or Global")
+@click.option("--kg-search-type", default="local", help="Local or Global")
 @click.option(
     "--kg-search-level",
     default=None,
@@ -224,6 +224,7 @@ def rag(ctx, query, **kwargs):
         }
 
     with timer():
+        print("passing kg_search_settings = ", kg_search_settings)
         response = client.rag(
             query,
             rag_generation_config,

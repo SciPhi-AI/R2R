@@ -80,7 +80,7 @@ def db_config():
 
     random_project_name = f"test_collection_{collection_id.hex}"
     return DatabaseConfig.create(
-        provider="postgres", vecs_collection=random_project_name
+        provider="postgres", project_name=random_project_name
     )
 
 
@@ -105,7 +105,7 @@ def db_config_temporary():
 
     random_project_name = f"test_collection_{collection_id.hex}"
     return DatabaseConfig.create(
-        provider="postgres", vecs_collection=random_project_name
+        provider="postgres", project_name=random_project_name
     )
 
 

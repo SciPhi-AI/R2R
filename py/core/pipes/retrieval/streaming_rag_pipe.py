@@ -10,6 +10,7 @@ from core.base import (
     LLMChatCompletionChunk,
     PipeType,
     PromptProvider,
+    format_search_results_for_llm,
     format_search_results_for_stream,
 )
 from core.base.abstractions import GenerationConfig
@@ -64,7 +65,9 @@ class StreamingSearchRAGPipe(GeneratorPipe):
         async for query, search_results in input.message:
             result = format_search_results_for_stream(search_results)
             yield result
-            context += result
+            gen_context = format_search_results_for_llm(search_results)
+            print("gen_context = ", gen_context)
+            context += gen_context
 
         messages = self.prompt_provider._get_message_payload(
             system_prompt_name=self.config.system_prompt,
