@@ -16,7 +16,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { SearchResults } from '@/components/SearchResults';
-import { KGSearchResult } from '@/types';
+import { KGSearchResult, VectorSearchResult } from '@/types';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -28,7 +28,7 @@ interface Message {
   searchPerformed?: boolean;
 }
 
-interface Source {
+interface Source extends VectorSearchResult {
   id: string;
   score: number;
   metadata: {
@@ -100,7 +100,10 @@ const parseKGSearchResult = (sources: string | object): KGSearchResult[] => {
   return sources as KGSearchResult[];
 };
 
-const SourceInfo = ({ isSearching, sourcesCount }) => (
+const SourceInfo: React.FC<{ isSearching: boolean; sourcesCount: number }> = ({
+  isSearching,
+  sourcesCount,
+}) => (
   <div className="flex items-center justify-between w-full">
     <Logo width={50} height={50} disableLink={true} />
     <span className="text-sm font-normal text-black">

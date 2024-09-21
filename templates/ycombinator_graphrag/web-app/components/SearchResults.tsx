@@ -109,13 +109,13 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   return (
     <div className="flex justify-center text-zinc-200 rounded-lg">
       <Tabs
-        defaultValue="vectorSearch"
+        defaultValue="kgEntities"
         className="text-zinc-900 w-full max-w-2xl"
       >
         <TabsList>
-          <TabsTrigger value="vectorSearch">Vector Search</TabsTrigger>
           <TabsTrigger value="kgEntities">KG Entities</TabsTrigger>
           <TabsTrigger value="kgCommunities">KG Communities</TabsTrigger>
+          <TabsTrigger value="vectorSearch">Vector Search</TabsTrigger>
         </TabsList>
         <TabsContent value="vectorSearch">
           <ResultCarousel
