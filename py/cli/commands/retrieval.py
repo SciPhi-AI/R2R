@@ -224,7 +224,6 @@ def rag(ctx, query, **kwargs):
         }
 
     with timer():
-        print("passing kg_search_settings = ", kg_search_settings)
         response = client.rag(
             query,
             rag_generation_config,

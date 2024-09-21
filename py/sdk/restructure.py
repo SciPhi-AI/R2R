@@ -21,10 +21,12 @@ class RestructureMethods:
         Create a graph from the given settings.
         """
 
-        data = {
-            "document_ids": document_ids or [],
-            "kg_creation_settings": kg_creation_settings or {},
-        }
+        data = {}
+
+        if document_ids:
+            data["document_ids"] = document_ids
+        if kg_creation_settings:
+            data["kg_creation_settings"] = kg_creation_settings
 
         response = await client._make_request(
             "POST", "create_graph", json=data
@@ -51,11 +53,15 @@ class RestructureMethods:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
 
-        data = {
-            "skip_clustering": skip_clustering,
-            "force_enrichment": force_enrichment,
-            "kg_enrichment_settings": kg_enrichment_settings or {},
-        }
+        data = {}
+
+        if skip_clustering:
+            data["skip_clustering"] = skip_clustering
+        if force_enrichment:
+            data["force_enrichment"] = force_enrichment
+        if kg_enrichment_settings:
+            data["kg_enrichment_settings"] = kg_enrichment_settings
+
         response = await client._make_request(
             "POST", "enrich_graph", json=data
         )
