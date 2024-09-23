@@ -181,17 +181,45 @@ export const Answer: FC<{
           em: (props) => <em style={{ color: 'black' }} {...props} />,
           code: (props) => <code style={{ color: 'black' }} {...props} />,
           pre: (props) => <pre style={{ color: 'black' }} {...props} />,
+
           a: ({ href, ...props }) => {
             if (!href) return null;
-            const source = parsedVectorSources[+href - 1];
+            let source: Source | KGSearchResult | null = null;
+            let isKGElement = false;
+
+            if (+href - 1 < parsedVectorSources.length) {
+              source = parsedVectorSources[+href - 1];
+            } else if (
+              +href - 1 >= parsedVectorSources.length &&
+              +href - 1 < parsedVectorSources.length + parsedEntities.length
+            ) {
+              source = parsedEntities[+href - parsedVectorSources.length - 1];
+              isKGElement = true;
+            } else if (
+              +href - 1 >=
+              parsedVectorSources.length + parsedEntities.length
+            ) {
+              source =
+                parsedCommunities[
+                  +href - parsedVectorSources.length - parsedEntities.length - 1
+                ];
+              isKGElement = true;
+            }
             if (!source) return null;
-            const metadata = source.metadata;
+
+            const metadata = isKGElement
+              ? (source as KGSearchResult).content
+              : (source as Source).metadata;
+            const title = isKGElement ? metadata.name : metadata.title;
+            const description = isKGElement
+              ? metadata.description
+              : (source as Source).text;
             return (
               <span className="inline-block w-4">
                 <Popover>
                   <PopoverTrigger asChild>
                     <span
-                      title={metadata?.title}
+                      title={title}
                       className="inline-block cursor-pointer transform scale-[60%] no-underline font-medium w-6 text-center h-6 rounded-full origin-top-left"
                       style={{ background: 'var(--background)' }}
                     >
@@ -203,18 +231,20 @@ export const Answer: FC<{
                     className="max-w-screen-md flex flex-col gap-2 bg-zinc-800 shadow-transparent ring-zinc-600 border-zinc-600 ring-4 text-xs"
                   >
                     <div className="text-zinc-200 text-ellipsis overflow-hidden whitespace-nowrap font-medium">
-                      {metadata.title ? `Title: ${metadata.title}` : ''}
-                      {metadata?.documentid
+                      {title ? `Title: ${title}` : ''}
+                      {!isKGElement && metadata?.documentid
                         ? `, DocumentId: ${metadata.documentid.slice(0, 8)}`
                         : ''}
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1">
+                        {!isKGElement && (
+                          <div className="line-clamp-4 text-zinc-300 break-words">
+                            {metadata?.snippet ?? ''}
+                          </div>
+                        )}
                         <div className="line-clamp-4 text-zinc-300 break-words">
-                          {metadata?.snippet ?? ''}
-                        </div>
-                        <div className="line-clamp-4 text-zinc-300 break-words">
-                          {source.text ?? ''}
+                          {description ?? ''}
                         </div>
                       </div>
                     </div>
@@ -241,7 +271,11 @@ export const Answer: FC<{
           <AccordionTrigger className="py-2 text-lg font-bold text-zinc-200 hover:no-underline text-black">
             <SourceInfo
               isSearching={isSearching}
-              sourcesCount={parsedVectorSources.length+parsedEntities.length+parsedCommunities.length}
+              sourcesCount={
+                parsedVectorSources.length +
+                parsedEntities.length +
+                parsedCommunities.length
+              }
             />
           </AccordionTrigger>
           <AccordionContent>
