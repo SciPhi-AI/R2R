@@ -15,15 +15,15 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
       icon: <Lightbulb className="h-6 w-6 text-yellow-400" />,
     },
     {
-      query: 'How is AI being used across the batch?',
+      query: 'What is "Decisional AI" and who is similar to them?',
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
-      query: 'Who works at YC (list as many as possible)?',
+      query: 'List as many healthcare startups as you can.',
       icon: <Flame className="h-6 w-6 text-red-400" />,
     },
     {
-      query: "Which companies might R2R's graphrag help?",
+      query: "Which startups are likely to use LinkedIn heavily?",
       icon: <Earth className="h-6 w-6 text-green-400" />,
     },
   ];
