@@ -74,7 +74,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             task_inputs={"query": query, "context": context},
         )
         yield f"<{self.COMPLETION_STREAM_MARKER}>"
-
         response = ""
         for chunk in self.llm_provider.get_completion_stream(
             messages=messages, generation_config=rag_generation_config
