@@ -40,7 +40,8 @@ class SearchPipeline(AsyncPipeline):
         *args: Any,
         **kwargs: Any,
     ):
-        self.state = state or AsyncState()
+        request_state = state or AsyncState()
+
         use_vector_search = (
             self._vector_search_pipeline is not None
             and vector_search_settings.use_vector_search
@@ -75,7 +76,7 @@ class SearchPipeline(AsyncPipeline):
                 vector_search_task = asyncio.create_task(
                     self._vector_search_pipeline.run(
                         dequeue_requests(vector_search_queue),
-                        state,
+                        request_state,
                         stream,
                         run_manager,
                         vector_search_settings=vector_search_settings,
@@ -90,7 +91,7 @@ class SearchPipeline(AsyncPipeline):
                 kg_task = asyncio.create_task(
                     self._kg_search_pipeline.run(
                         dequeue_requests(kg_queue),
-                        state,
+                        request_state,
                         stream,
                         run_manager,
                         kg_search_settings=kg_search_settings,
