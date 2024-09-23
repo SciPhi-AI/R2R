@@ -16,13 +16,13 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-header border-b border-header-border flex items-center justify-between px-4 z-10">
         <div className="flex items-center">
-          <Logo width={75} height={75} onClick={onLogoClick} />
+          <Logo width={60} height={60} onClick={onLogoClick} />
           <Link href="/" passHref>
             <h1
               className="ml-2 text-2xl font-semibold text-header-text cursor-pointer"
               onClick={onLogoClick}
             >
-              SciPhi - YC S24 GraphRAG Agent
+              R2R - YC S24 GraphRAG Agent
             </h1>
           </Link>
         </div>

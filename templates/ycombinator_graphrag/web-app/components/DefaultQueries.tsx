@@ -16,7 +16,7 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
     },
     {
       query:
-        'What companies are leveraging AI agents in unique and interesting ways?',
+        'How is AI being used across the batch?',
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
@@ -24,7 +24,7 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
       icon: <Flame className="h-6 w-6 text-red-400" />,
     },
     {
-      query: "Which companies might R2R's graphrag help? And how?",
+      query: "Which companies might R2R's graphrag help?",
       icon: <Earth className="h-6 w-6 text-green-400" />,
     },
   ];

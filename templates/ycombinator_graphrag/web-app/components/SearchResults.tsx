@@ -109,9 +109,10 @@ interface SearchResultsProps {
   communities: KGSearchResult[];
 }
 
-const ResultCarousel: FC<{ items: any[]; ItemComponent: FC<any> }> = ({
+const ResultCarousel: FC<{ items: any[]; ItemComponent: FC<any> , offset: number}> = ({
   items,
   ItemComponent,
+  offset = 0,
 }) => (
   <Carousel>
     <CarouselContent>
@@ -119,7 +120,7 @@ const ResultCarousel: FC<{ items: any[]; ItemComponent: FC<any> }> = ({
         <CarouselItem key={index}>
           <Card className="h-48 overflow-y-auto">
             <CardContent>
-              <ItemComponent {...item} index={index + 1} />
+              <ItemComponent {...item} index={index + offset + 1} />
             </CardContent>
           </Card>
         </CarouselItem>
@@ -150,13 +151,13 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   return (
     <div className="flex justify-center text-zinc-200 rounded-lg">
       <Tabs
-        defaultValue="kgEntities"
+        defaultValue="kgCommunities"
         className="text-zinc-900 w-full max-w-2xl"
       >
         <TabsList>
-        <TabsTrigger value="kgCommunities">KG Communities</TabsTrigger>
+        <TabsTrigger value="vectorSearch">Vector Search</TabsTrigger>
         <TabsTrigger value="kgEntities">KG Entities</TabsTrigger>
-          <TabsTrigger value="vectorSearch">Vector Search</TabsTrigger>
+        <TabsTrigger value="kgCommunities">KG Communities</TabsTrigger>
         </TabsList>
         <TabsContent value="vectorSearch">
           <ResultCarousel
@@ -165,18 +166,22 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
               onOpenPdfPreview: openPdfPreview,
             }))}
             ItemComponent={VectorSearchResultItem}
+            offset={0}
           />
         </TabsContent>
         <TabsContent value="kgEntities">
           <ResultCarousel
             items={entities.map((entity) => ({ entity }))}
             ItemComponent={KGSearchResultItem}
+            offset={vectorSearchResults.length}
           />
         </TabsContent>
         <TabsContent value="kgCommunities">
           <ResultCarousel
             items={communities.map((entity) => ({ entity }))}
             ItemComponent={KGSearchResultItem}
+            offset={vectorSearchResults.length + entities.length}
+
           />
         </TabsContent>
       </Tabs>

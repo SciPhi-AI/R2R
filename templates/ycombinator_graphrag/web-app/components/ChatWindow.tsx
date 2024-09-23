@@ -44,6 +44,7 @@ export const ChatWindow: FC<ChatWindowProps> = ({
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showInfoAlert, setShowInfoAlert] = useState(true);
+  const [showInfoAlertDesc, setShowInfoAlertDesc] = useState(true);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,8 +89,8 @@ export const ChatWindow: FC<ChatWindowProps> = ({
       return;
     }
 
-    setShowInfoAlert(false);
-
+    // setShowInfoAlert(false);
+    setShowInfoAlertDesc(false);
     const parseStreaming = async () => {
       setIsStreaming(true);
       setIsSearching(true);
@@ -238,13 +239,13 @@ export const ChatWindow: FC<ChatWindowProps> = ({
               </a>
             </AlertTitle>
           </div>
-          <AlertDescription className="text-sm text-left mb-2">
+          {showInfoAlertDesc && <AlertDescription className="text-sm text-left mb-2">
             GraphRAG excels at answering complex questions that other methods of
             search struggle with. By developing deep understanding of complex
             datasets and their relationships, GraphRAG can provide more accurate
             and informative answers to your users.
             <br /> <br />
-            Learn more about GraphRAG from &nbsp;
+            Learn more about GraphRAG from&nbsp;
             <a
               href="https://microsoft.github.io/graphrag/"
               target="_blank"
@@ -253,21 +254,21 @@ export const ChatWindow: FC<ChatWindowProps> = ({
             >
               Microsoft&apos;s research
             </a>
-            &nbsp; or from our blog post on &nbsp;
+            &nbsp;or from our blog post on&nbsp;
             <a
               href="https://www.sciphi.ai/blog/graphrag"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500"
             >
-              production ready GrapRAG
+             production ready GrapRAG.
             </a>
             <br /> <br />
             Here, we&apos;ve connected to am R2R server and built a knowledge
             graph over the profiles of the YC S24 companies. Feel free to ask
             any questions you have about the companies, their founders, or
             anything else you&apos;d like to know!
-          </AlertDescription>
+          </AlertDescription> }
           <button
             className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 rounded-full"
             onClick={() => setShowInfoAlert(false)}

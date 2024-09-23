@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FC } from 'react';
 import Markdown from 'react-markdown';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info, X } from 'lucide-react';
 
 import {
   Popover,
@@ -239,7 +241,7 @@ export const Answer: FC<{
           <AccordionTrigger className="py-2 text-lg font-bold text-zinc-200 hover:no-underline text-black">
             <SourceInfo
               isSearching={isSearching}
-              sourcesCount={parsedVectorSources.length}
+              sourcesCount={parsedVectorSources.length+parsedEntities.length+parsedCommunities.length}
             />
           </AccordionTrigger>
           <AccordionContent>
