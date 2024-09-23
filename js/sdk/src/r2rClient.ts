@@ -772,19 +772,17 @@ export class r2rClient {
   /**
    * Delete data from the database given a set of filters.
    * @param filters The filters to delete by.
-   * @returns
+   * @returns The results of the deletion.
    */
   @feature("delete")
-  async delete(filters: { [key: string]: string | string[] }): Promise<any> {
+  async delete(filters: { [key: string]: any }): Promise<any> {
     this._ensureAuthenticated();
 
     const params = {
       filters: JSON.stringify(filters),
     };
 
-    return this._makeRequest("DELETE", "delete", {
-      params,
-    });
+    return this._makeRequest("DELETE", "delete", { params }) || { results: {} };
   }
 
   /**
