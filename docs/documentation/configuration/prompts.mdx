@@ -105,7 +105,7 @@ from r2r import R2RClient
 
 client = R2RClient()
 
-response = await client.add_prompt(
+response = client.add_prompt(
     name="my_new_prompt",
     template="Hello, {name}! Welcome to {service}.",
     input_types={"name": "str", "service": "str"}
@@ -117,7 +117,7 @@ response = await client.add_prompt(
 To update an existing prompt:
 
 ```python
-response = await client.update_prompt(
+response = client.update_prompt(
     name="my_existing_prompt",
     template="Updated template: {variable}",
     input_types={"variable": "str"}
@@ -129,7 +129,7 @@ response = await client.update_prompt(
 To get a specific prompt:
 
 ```python
-response = await client.get_prompt(
+response = client.get_prompt(
     prompt_name="my_prompt",
     inputs={"variable": "example"},
     prompt_override="Optional override text"
@@ -141,7 +141,7 @@ response = await client.get_prompt(
 To retrieve all prompts:
 
 ```python
-response = await client.get_all_prompts()
+response = client.get_all_prompts()
 ```
 
 ### Deleting a Prompt
@@ -149,7 +149,7 @@ response = await client.get_all_prompts()
 To delete a prompt:
 
 ```python
-response = await client.delete_prompt("prompt_to_delete")
+response = client.delete_prompt("prompt_to_delete")
 ```
 
 ## Security Considerations
