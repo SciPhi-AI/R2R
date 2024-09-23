@@ -62,8 +62,8 @@ export default async function handler(req: Request) {
     REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
     `;
 
-    const streamResponse = await client.agent(
-      messages,
+    const streamResponse = await client.rag(
+      messages[0].content,
       searchParams,
       kgSearchParams,
       ragConfig,
