@@ -302,9 +302,10 @@ async def serve(
 
         # For Windows, convert backslashes to forward slashes and prepend /host_mnt/
         if platform.system() == "Windows":
-            config_path = "/host_mnt/" + config_path.replace(
-                "\\", "/"
-            ).replace(":", "")
+            drive, path = os.path.splitdrive(config_path)
+            config_path = (
+                f"/host_mnt/{drive[0].lower()}{path.replace('\\', '/')}"
+            )
 
     if docker:
         run_docker_serve(
