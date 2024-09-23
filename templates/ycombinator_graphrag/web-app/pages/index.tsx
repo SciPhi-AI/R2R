@@ -39,6 +39,8 @@ const Index: React.FC = () => {
   };
 
   const clearUrlAndReload = () => {
+    setQuery('');
+    setMessages([]);
     router.push('/', undefined, { shallow: true }).then(() => {
       window.location.reload();
     });
