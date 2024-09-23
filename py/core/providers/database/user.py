@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from core.base.abstractions import R2RException, UserStats
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 from core.base.utils import generate_id_from_label
 
 from .base import DatabaseMixin, QueryBuilder
@@ -101,23 +101,19 @@ class UserMixin(DatabaseMixin):
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-        return (
-            UserResponse(
-                id=result["user_id"],
-                email=result["email"],
-                hashed_password=result["hashed_password"],
-                is_superuser=result["is_superuser"],
-                is_active=result["is_active"],
-                is_verified=result["is_verified"],
-                created_at=result["created_at"],
-                updated_at=result["updated_at"],
-                name=result["name"],
-                profile_picture=result["profile_picture"],
-                bio=result["bio"],
-                collection_ids=result["collection_ids"],
-            )
-            if result
-            else None
+        return UserResponse(
+            id=result["user_id"],
+            email=result["email"],
+            hashed_password=result["hashed_password"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            name=result["name"],
+            profile_picture=result["profile_picture"],
+            bio=result["bio"],
+            collection_ids=result["collection_ids"],
         )
 
     async def create_user(self, email: str, password: str) -> UserResponse:
@@ -131,7 +127,7 @@ class UserMixin(DatabaseMixin):
             if e.status_code != 404:
                 raise e
 
-        hashed_password = self.crypto_provider.get_password_hash(password)
+        hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query = f"""
             INSERT INTO {self._get_table_name('users')}
             (email, user_id, hashed_password, collection_ids)
@@ -382,6 +378,66 @@ class UserMixin(DatabaseMixin):
             )
         return None
 
+    async def get_users_in_collection(
+        self, collection_id: UUID, offset: int = 0, limit: int = -1
+    ) -> dict[str, Union[list[UserResponse], int]]:
+        """
+        Get all users in a specific collection with pagination.
+
+        Args:
+            collection_id (UUID): The ID of the collection to get users from.
+            offset (int): The number of users to skip.
+            limit (int): The maximum number of users to return.
+
+        Returns:
+            List[UserResponse]: A list of UserResponse objects representing the users in the collection.
+
+        Raises:
+            R2RException: If the collection doesn't exist.
+        """
+        if not await self.collection_exists(collection_id):  # type: ignore
+            raise R2RException(status_code=404, message="Collection not found")
+
+        query = f"""
+            SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
+                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture,
+                COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name('users')} u
+            WHERE $1 = ANY(u.collection_ids)
+            ORDER BY u.name
+            OFFSET $2
+        """
+
+        conditions = [collection_id, offset]
+        if limit != -1:
+            query += " LIMIT $3"
+            conditions.append(limit)
+
+        results = await self.fetch_query(query, conditions)
+
+        users = [
+            UserResponse(
+                id=row["user_id"],
+                email=row["email"],
+                is_active=row["is_active"],
+                is_superuser=row["is_superuser"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                is_verified=row["is_verified"],
+                collection_ids=row["collection_ids"],
+                name=row["name"],
+                bio=row["bio"],
+                profile_picture=row["profile_picture"],
+                hashed_password=None,
+                verification_code_expiry=None,
+            )
+            for row in results
+        ]
+
+        total_entries = results[0]["total_entries"] if results else 0
+
+        return {"results": users, "total_entries": total_entries}
+
     async def mark_user_as_superuser(self, user_id: UUID):
         query = f"""
             UPDATE {self._get_table_name('users')}
@@ -389,35 +445,6 @@ class UserMixin(DatabaseMixin):
             WHERE user_id = $1
         """
         await self.execute_query(query, [user_id])
-
-    async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[UserResponse]:
-        query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
-            FROM {self._get_table_name('users')}
-            WHERE $1 = ANY(collection_ids)
-            ORDER BY email
-            OFFSET $2 LIMIT $3
-        """
-        results = await self.fetch_query(query, [collection_id, offset, limit])
-
-        return [
-            UserResponse(
-                id=row["user_id"],
-                email=row["email"],
-                is_superuser=row["is_superuser"],
-                is_active=row["is_active"],
-                is_verified=row["is_verified"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-                name=row["name"],
-                profile_picture=row["profile_picture"],
-                bio=row["bio"],
-                collection_ids=row["collection_ids"],
-            )
-            for row in results
-        ]
 
     async def get_user_id_by_verification_code(
         self, verification_code: str
@@ -447,8 +474,8 @@ class UserMixin(DatabaseMixin):
         self,
         user_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = 100,
-    ) -> list[UserStats]:
+        limit: int = -1,
+    ) -> dict[str, Union[list[UserStats], int]]:
         query = f"""
             WITH user_docs AS (
                 SELECT
@@ -462,7 +489,8 @@ class UserMixin(DatabaseMixin):
                     u.collection_ids,
                     COUNT(d.document_id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
-                    ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
+                    ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids,
+                    COUNT(*) OVER() AS total_entries
                 FROM {self._get_table_name('users')} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
                 {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
@@ -472,16 +500,20 @@ class UserMixin(DatabaseMixin):
             FROM user_docs
             ORDER BY email
             OFFSET $1
-            LIMIT $2
         """
 
-        params = [offset, limit]
+        params: list = [offset]
+
+        if limit != -1:
+            query += " LIMIT $2"
+            params.append(limit)
+
         if user_ids:
             params.append(user_ids)
 
         results = await self.fetch_query(query, params)
 
-        return [
+        users = [
             UserStats(
                 user_id=row[0],
                 email=row[1],
@@ -497,3 +529,7 @@ class UserMixin(DatabaseMixin):
             )
             for row in results
         ]
+
+        total_entries = results[0]["total_entries"]
+
+        return {"results": users, "total_entries": total_entries}

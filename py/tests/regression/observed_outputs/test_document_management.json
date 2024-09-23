@@ -1,0 +1,1024 @@
+{
+  "ingest_sample_files": {
+    "results": [
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "234d5f77-3a09-4ee4-873b-dc97db81afe8",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "e361567a-cc8f-47be-914a-0e07286fa3bb",
+        "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "327685d0-ef5f-4405-a522-bdf8cfc79789",
+        "document_id": "52e12576-090f-59db-91f4-6d4b2e29ae6c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "965b2b3f-74aa-4a39-9c36-ab1aad27fb25",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "1a467abd-31bf-4c21-b05d-dcb36822b050",
+        "document_id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "0ae9a48e-bc5c-4eea-bf86-54bf00b09f8f",
+        "document_id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "4915b7ed-e255-459b-8af0-3a423e09c881",
+        "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "96248159-021b-442e-9d14-783a1e80b39f",
+        "document_id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "e886cf3f-362a-4b41-ab98-303a03a2292a",
+        "document_id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "0ae3812e-071b-4b12-ba2d-a425c9d2bacc",
+        "document_id": "2f576170-c4f9-5141-a910-a0924f341de4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "41c6357d-0657-44a1-a0e4-12e99d552b82",
+        "document_id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "1985e9a6-9e2c-4f0f-9d3c-99f8be6db02b",
+        "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "937ea186-fa97-4a08-a13c-240de51f9e9a",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "ceb2f270-595d-4bd6-bfd1-bd2925dc5b96",
+        "document_id": "d421207a-d799-5806-8d67-46b2005b15d4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "9c90d5e4-1513-48c3-a598-beaccd8fcf09",
+        "document_id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "d88a4951-22ec-4778-b65c-298710b8e937",
+        "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
+      }
+    ]
+  },
+  "reingest_sample_file": {
+    "results": [
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "f0d71ddb-7516-4331-ad7e-c7f0205f6f66",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "d2c55f19-ceb4-4aad-995d-37569419b40e",
+        "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "9e15204c-4f3a-41cc-9f34-0deff009df46",
+        "document_id": "52e12576-090f-59db-91f4-6d4b2e29ae6c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "dadbbaf6-559d-48d4-8db4-881f33760af5",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "0892bd5e-57a5-47f5-9a0a-8c558db7b4c1",
+        "document_id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "04b91d55-2b46-40a7-9ddb-da362286f6bc",
+        "document_id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "142a0871-1ab2-4f9b-a9c5-b77ff10141ea",
+        "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "c60fa8db-33c4-4d66-8317-f4615568835d",
+        "document_id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "154593d2-8498-4b92-b765-005dfa9b0de0",
+        "document_id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "e076c320-2e29-4787-92a6-f60afd2db533",
+        "document_id": "2f576170-c4f9-5141-a910-a0924f341de4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "c7bfee83-259d-4663-9dcc-05d8def34632",
+        "document_id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "96875e20-aa60-4ba9-a0c7-013bfd883e68",
+        "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "706ea773-4345-48cb-a5c8-b4296d7cf906",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "55182343-2d74-43e7-873b-50ec76f4c6cd",
+        "document_id": "d421207a-d799-5806-8d67-46b2005b15d4"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "b41719da-cb6f-4667-919e-23fd0b7bf094",
+        "document_id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb"
+      },
+      {
+        "message": "Ingestion task queued successfully.",
+        "task_id": "228230e4-4f54-413e-9655-2c9ae06c6754",
+        "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
+      }
+    ]
+  },
+  "documents_overview": {
+    "results": [
+      {
+        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_3.html",
+        "version": "v0",
+        "size_in_bytes": 166556,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:10.456776Z",
+        "updated_at": "2024-09-20T22:50:10.456787Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "png",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "screen_shot.png",
+        "version": "v0",
+        "size_in_bytes": 1055688,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:10.445592Z",
+        "updated_at": "2024-09-20T22:50:10.445596Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.506868Z",
+        "updated_at": "2024-09-20T22:50:09.506871Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle.txt",
+        "version": "v0",
+        "size_in_bytes": 97804,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.476022Z",
+        "updated_at": "2024-09-20T22:50:09.476024Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "yc_companies.txt",
+        "version": "v0",
+        "size_in_bytes": 62948,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.471883Z",
+        "updated_at": "2024-09-20T22:50:09.471886Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "test.txt",
+        "version": "v0",
+        "size_in_bytes": 28,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.470416Z",
+        "updated_at": "2024-09-20T22:50:09.470418Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "lyft_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 1920404,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.469252Z",
+        "updated_at": "2024-09-20T22:50:09.469256Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_5.html",
+        "version": "v0",
+        "size_in_bytes": 165040,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.465810Z",
+        "updated_at": "2024-09-20T22:55:12.531882Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "graphrag.pdf",
+        "version": "v0",
+        "size_in_bytes": 2287544,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.455913Z",
+        "updated_at": "2024-09-20T22:55:12.517199Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_4.html",
+        "version": "v0",
+        "size_in_bytes": 157484,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:07.036336Z",
+        "updated_at": "2024-09-20T22:55:12.484462Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v0",
+        "size_in_bytes": 3380,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:05.565359Z",
+        "updated_at": "2024-09-20T22:55:12.516690Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample2.mp3",
+        "version": "v0",
+        "size_in_bytes": 96608,
+        "ingestion_status": "chunking",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:04.622762Z",
+        "updated_at": "2024-09-20T22:55:12.486232Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "uber_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 2507312,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:04.211252Z",
+        "updated_at": "2024-09-20T22:55:12.509328Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample.mp3",
+        "version": "v0",
+        "size_in_bytes": 162228,
+        "ingestion_status": "storing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.699362Z",
+        "updated_at": "2024-09-20T22:55:10.516462Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_1.html",
+        "version": "v0",
+        "size_in_bytes": 175340,
+        "ingestion_status": "storing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.517969Z",
+        "updated_at": "2024-09-20T22:55:10.518388Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "got.txt",
+        "version": "v0",
+        "size_in_bytes": 12656,
+        "ingestion_status": "chunking",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.516278Z",
+        "updated_at": "2024-09-20T22:55:10.519709Z",
+        "ingestion_attempt_number": null
+      }
+    ],
+    "total_entries": 16
+  },
+  "document_chunks_test": {
+    "results": [
+      {
+        "fragment_id": "67e7ab57-eaa0-57d8-9276-da273abcdabd",
+        "extraction_id": "286b3218-517c-50bf-b8ea-1262e8ec6b42",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "June 2021 A few days ago, on the way home from school, my nine year old son",
+        "metadata": {
+          "version": "v0",
+          "chunk_order": 0,
+          "document_type": "html",
+          "unstructured_filetype": "text/html",
+          "unstructured_languages": [
+            "eng"
+          ],
+          "unstructured_text_as_html": "<table><tr><td>June 2021 A few days ago, on the way home from school, my nine year old son</td></tr></table>",
+          "partitioned_by_unstructured": true,
+          "unstructured_is_continuation": true
+        }
+      }
+    ],
+    "total_entries": 1
+  },
+  "update_document_test": {
+    "results": {
+      "message": "Update task queued successfully.",
+      "task_id": "ce9a5927-64b8-4431-acf0-fe12ad2230e5",
+      "document_ids": [
+        "db02076e-989a-59cd-98d5-e24e15a0bd27"
+      ]
+    }
+  },
+  "rerun_documents_overview_test_1": {
+    "results": [
+      {
+        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_3.html",
+        "version": "v0",
+        "size_in_bytes": 166556,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:10.456776Z",
+        "updated_at": "2024-09-20T22:55:14.529464Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "png",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "screen_shot.png",
+        "version": "v0",
+        "size_in_bytes": 1055688,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:10.445592Z",
+        "updated_at": "2024-09-20T22:55:14.539605Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.506868Z",
+        "updated_at": "2024-09-20T22:55:14.533120Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle.txt",
+        "version": "v0",
+        "size_in_bytes": 97804,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.476022Z",
+        "updated_at": "2024-09-20T22:55:14.531133Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "yc_companies.txt",
+        "version": "v0",
+        "size_in_bytes": 62948,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.471883Z",
+        "updated_at": "2024-09-20T22:55:14.531772Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "test.txt",
+        "version": "v0",
+        "size_in_bytes": 28,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.470416Z",
+        "updated_at": "2024-09-20T22:55:14.536782Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "lyft_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 1920404,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.469252Z",
+        "updated_at": "2024-09-20T22:55:14.569269Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_5.html",
+        "version": "v0",
+        "size_in_bytes": 165040,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.465810Z",
+        "updated_at": "2024-09-20T22:55:12.531882Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "graphrag.pdf",
+        "version": "v0",
+        "size_in_bytes": 2287544,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.455913Z",
+        "updated_at": "2024-09-20T22:55:12.517199Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_4.html",
+        "version": "v0",
+        "size_in_bytes": 157484,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:07.036336Z",
+        "updated_at": "2024-09-20T22:55:12.484462Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v0",
+        "size_in_bytes": 3380,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:05.565359Z",
+        "updated_at": "2024-09-20T22:55:12.516690Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample2.mp3",
+        "version": "v0",
+        "size_in_bytes": 96608,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:04.622762Z",
+        "updated_at": "2024-09-20T22:55:12.486232Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "uber_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 2507312,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:04.211252Z",
+        "updated_at": "2024-09-20T22:55:12.509328Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample.mp3",
+        "version": "v0",
+        "size_in_bytes": 162228,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.699362Z",
+        "updated_at": "2024-09-20T22:55:10.516462Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_1.html",
+        "version": "v0",
+        "size_in_bytes": 175340,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.517969Z",
+        "updated_at": "2024-09-20T22:55:10.518388Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "got.txt",
+        "version": "v0",
+        "size_in_bytes": 12656,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.516278Z",
+        "updated_at": "2024-09-20T22:55:10.519709Z",
+        "ingestion_attempt_number": null
+      }
+    ],
+    "total_entries": 16
+  },
+  "delete_document_test": {
+    "results": {}
+  },
+  "rerun_documents_overview_test_2": {
+    "results": [
+      {
+        "id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_3.html",
+        "version": "v0",
+        "size_in_bytes": 166556,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:10.456776Z",
+        "updated_at": "2024-09-20T22:55:14.529464Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "png",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "screen_shot.png",
+        "version": "v0",
+        "size_in_bytes": 1055688,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:10.445592Z",
+        "updated_at": "2024-09-20T22:55:14.539605Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.506868Z",
+        "updated_at": "2024-09-20T22:55:14.533120Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle.txt",
+        "version": "v0",
+        "size_in_bytes": 97804,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.476022Z",
+        "updated_at": "2024-09-20T22:55:14.531133Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "d421207a-d799-5806-8d67-46b2005b15d4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "yc_companies.txt",
+        "version": "v0",
+        "size_in_bytes": 62948,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.471883Z",
+        "updated_at": "2024-09-20T22:55:14.531772Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "test.txt",
+        "version": "v0",
+        "size_in_bytes": 28,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.470416Z",
+        "updated_at": "2024-09-20T22:55:14.536782Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "2f576170-c4f9-5141-a910-a0924f341de4",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "lyft_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 1920404,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.469252Z",
+        "updated_at": "2024-09-20T22:55:14.569269Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_5.html",
+        "version": "v0",
+        "size_in_bytes": 165040,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.465810Z",
+        "updated_at": "2024-09-20T22:55:12.531882Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "graphrag.pdf",
+        "version": "v0",
+        "size_in_bytes": 2287544,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:09.455913Z",
+        "updated_at": "2024-09-20T22:55:12.517199Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_4.html",
+        "version": "v0",
+        "size_in_bytes": 157484,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:07.036336Z",
+        "updated_at": "2024-09-20T22:55:12.484462Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v0",
+        "size_in_bytes": 3380,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:05.565359Z",
+        "updated_at": "2024-09-20T22:55:12.516690Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample2.mp3",
+        "version": "v0",
+        "size_in_bytes": 96608,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:04.622762Z",
+        "updated_at": "2024-09-20T22:55:12.486232Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "pdf",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "uber_2021.pdf",
+        "version": "v0",
+        "size_in_bytes": 2507312,
+        "ingestion_status": "parsing",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:04.211252Z",
+        "updated_at": "2024-09-20T22:55:12.509328Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "mp3",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "sample.mp3",
+        "version": "v0",
+        "size_in_bytes": 162228,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.699362Z",
+        "updated_at": "2024-09-20T22:55:10.516462Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "got.txt",
+        "version": "v0",
+        "size_in_bytes": 12656,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-20T22:50:02.516278Z",
+        "updated_at": "2024-09-20T22:55:10.519709Z",
+        "ingestion_attempt_number": null
+      }
+    ],
+    "total_entries": 15
+  },
+  "rerun_document_chunks_test": {
+    "results": "{\"detail\":{\"message\":\"An error 'list index out of range' occurred during document_chunks_app\",\"error\":\"list index out of range\",\"error_type\":\"IndexError\"}}"
+  }
+}

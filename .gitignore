@@ -8,6 +8,8 @@ py/workspace/
 uploads/
 env/
 **/__pycache__
+**/.mypy_cache
+**/.pytest_cache
 dump/*
 .next
 node_modules

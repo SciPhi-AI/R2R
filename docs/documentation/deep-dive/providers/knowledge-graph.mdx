@@ -29,13 +29,13 @@ These are located in the `r2r.toml` file, under the `[kg]` section.
 [kg]
 provider = "neo4j"
 batch_size = 256
-kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 user = "your_neo4j_user"
 password = "your_neo4j_password"
 url = "your_neo4j_url"
 database = "your_neo4j_database"
 
   [kg.kg_creation_settings]
+    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     entity_types = ["Person", "Organization", "Location"] # if empty, all entities are extracted
     relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted
     max_knowledge_triples = 100

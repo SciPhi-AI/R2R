@@ -23,3 +23,10 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+
+      - id: mypy
+        name: mypy
+        entry: bash -c 'cd py && poetry run mypy .'
+        language: system
+        types: [python]
+        pass_filenames: false

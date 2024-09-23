@@ -3,19 +3,21 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Optional
 
+from core.base.abstractions import Prompt
+
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
 
 class PromptConfig(ProviderConfig):
-    default_system_name: Optional[str] = "default_system"
-    default_task_name: Optional[str] = "default_rag"
+    default_system_name: str = "default_system"
+    default_task_name: str = "default_rag"
 
     # TODO - Replace this with a database
     file_path: Optional[Path] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @property
@@ -25,39 +27,41 @@ class PromptConfig(ProviderConfig):
 
 
 class PromptProvider(Provider):
-    def __init__(self, config: Optional[PromptConfig] = None):
-        if config is None:
-            config = PromptConfig()
-        elif not isinstance(config, PromptConfig):
-            raise ValueError(
-                "PromptProvider must be initialized with a `PromptConfig`."
-            )
+    def __init__(self, config: PromptConfig):
         logger.info(f"Initializing PromptProvider with config {config}.")
         super().__init__(config)
+        self.config: PromptConfig = config
 
     @abstractmethod
-    def add_prompt(
+    async def add_prompt(
         self, name: str, template: str, input_types: dict[str, str]
     ) -> None:
         pass
 
     @abstractmethod
     def get_prompt(
-        self, prompt_name: str, inputs: Optional[dict[str, Any]] = None
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
     ) -> str:
         pass
 
     @abstractmethod
-    def get_all_prompts(self) -> dict[str, str]:
+    def get_all_prompts(self) -> dict[str, Prompt]:
         pass
 
     @abstractmethod
-    def update_prompt(
+    async def update_prompt(
         self,
         name: str,
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
+        pass
+
+    @abstractmethod
+    async def delete_prompt(self, name: str) -> None:
         pass
 
     def _get_message_payload(
@@ -70,7 +74,7 @@ class PromptProvider(Provider):
         task_role: str = "user",
         task_inputs: dict = {},
         task_prompt_override: Optional[str] = None,
-    ) -> dict:
+    ) -> list[dict]:
         system_prompt = system_prompt_override or self.get_prompt(
             system_prompt_name or self.config.default_system_name,
             system_inputs,

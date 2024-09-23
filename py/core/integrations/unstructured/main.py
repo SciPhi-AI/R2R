@@ -16,7 +16,7 @@ app = FastAPI()
 
 
 class PartitionRequestModel(BaseModel):
-    file_content: bytes
+    file_content: str
     chunking_config: Dict
 
 

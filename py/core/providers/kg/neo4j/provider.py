@@ -1,27 +1,21 @@
+# type: ignore
 import json
 import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import (
-    KGConfig,
-    KGProvider,
-    R2RException,
-)
-
-from core.base.abstractions.document import DocumentFragment
-from core.base.abstractions.graph import (
+from core.base import KGConfig, KGProvider, R2RException
+from core.base.abstractions import (
     Community,
+    DocumentFragment,
     Entity,
     KGExtraction,
     RelationshipType,
     Triple,
 )
-
-logger = logging.getLogger(__name__)
 
 from .graph_queries import (
     GET_CHUNKS_QUERY,
@@ -36,6 +30,8 @@ from .graph_queries import (
     PUT_TRIPLES_QUERY,
     UNIQUE_CONSTRAINTS,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Neo4jKGProvider(KGProvider):
@@ -274,9 +270,9 @@ class Neo4jKGProvider(KGProvider):
         query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__)
                 WHERE a.communityIds[$level] = $community_id
                 OR b.communityIds[$level] = $community_id
-                RETURN a.name AS source, b.name AS target, a.description AS source_description,
+                RETURN ID(a) AS source_id, a.name AS source, id(b) AS target_id, b.name AS target, a.description AS source_description,
                 b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels,
-                r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight
+                r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight, ID(r) AS relationship_id
         """
 
         neo4j_records = self.structured_query(
@@ -289,6 +285,7 @@ class Neo4jKGProvider(KGProvider):
 
         entities = [
             Entity(
+                id=record["source_id"],
                 name=record["source"],
                 description=record["source_description"],
                 category=", ".join(record["source_labels"]),
@@ -298,6 +295,7 @@ class Neo4jKGProvider(KGProvider):
 
         triples = [
             Triple(
+                id=record["relationship_id"],
                 subject=record["source"],
                 predicate=record["relationship_name"],
                 object=record["target"],
@@ -450,7 +448,9 @@ class Neo4jKGProvider(KGProvider):
                 for property_name in property_names
             }
 
-    def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
+    def perform_graph_clustering(
+        self, leiden_params: dict
+    ) -> Tuple[int, int, set[tuple[int, Any]]]:
         """
         Perform graph clustering on the graph.
 
@@ -518,7 +518,7 @@ class Neo4jKGProvider(KGProvider):
         result = self.structured_query(GRAPH_PROJECTION_QUERY)
 
         # step 2: run the hierarchical leiden algorithm on the graph.
-        seed_property = leiden_params.get("seed_property", "communityIds")
+        # seed_property = leiden_params.get("seed_property", "communityIds")
         write_property = leiden_params.get("write_property", "communityIds")
         random_seed = leiden_params.get("random_seed", 42)
         include_intermediate_communities = leiden_params.get(
@@ -551,7 +551,7 @@ class Neo4jKGProvider(KGProvider):
 
         result = self.structured_query(GRAPH_CLUSTERING_QUERY).records[0]
 
-        community_count = result["communityCount"]
+        community_count: int = result["communityCount"]
         modularities = result["modularities"]
 
         logger.info(

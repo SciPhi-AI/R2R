@@ -56,20 +56,6 @@ def ingest_files_from_urls(client, urls):
 
 
 @cli.command()
-@pass_context
-def ingest_sample_file(ctx):
-    """Ingest the first sample file into R2R."""
-    client = ctx.obj
-    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
-
-    with timer():
-        response = ingest_files_from_urls(client, [sample_file_url])
-    click.echo(
-        f"Sample file ingestion completed. Ingest files response:\n\n{response}"
-    )
-
-
-@cli.command()
 @click.argument(
     "file_paths", nargs=-1, required=True, type=click.Path(exists=True)
 )
@@ -134,48 +120,6 @@ def update_files(ctx, file_paths, document_ids, metadatas):
 
         response = client.update_files(file_paths, document_ids, metadatas)
     click.echo(json.dumps(response, indent=2))
-
-
-def ingest_files_from_urls(client, urls):
-    """Download and ingest files from given URLs."""
-    files_to_ingest = []
-    metadatas = []
-    document_ids = []
-    temp_files = []
-
-    try:
-        for url in urls:
-            filename = os.path.basename(urlparse(url).path)
-            is_pdf = filename.lower().endswith(".pdf")
-
-            temp_file = tempfile.NamedTemporaryFile(
-                mode="wb" if is_pdf else "w+",
-                delete=False,
-                suffix=f"_{filename}",
-            )
-            temp_files.append(temp_file)
-
-            response = requests.get(url)
-            response.raise_for_status()
-            if is_pdf:
-                temp_file.write(response.content)
-            else:
-                temp_file.write(response.text)
-            temp_file.close()
-
-            files_to_ingest.append(temp_file.name)
-            metadatas.append({"title": filename})
-            document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, url))
-
-        response = client.ingest_files(
-            files_to_ingest, metadatas=metadatas, document_ids=document_ids
-        )
-
-        return response["results"]
-    finally:
-        # Clean up temporary files
-        for temp_file in temp_files:
-            os.unlink(temp_file.name)
 
 
 @cli.command()

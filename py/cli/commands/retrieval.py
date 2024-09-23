@@ -91,7 +91,7 @@ def search(ctx, query, **kwargs):
             "use_kg_search",
             "kg_search_type",
             "kg_search_level",
-            "kg_search_generation_config",
+            "generation_config",
             "entity_types",
             "relationships",
             "max_community_description_length",
@@ -147,7 +147,7 @@ def search(ctx, query, **kwargs):
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-search-type", default="global", help="Local or Global")
+@click.option("--kg-search-type", default="local", help="Local or Global")
 @click.option(
     "--kg-search-level",
     default=None,
@@ -219,7 +219,7 @@ def rag(ctx, query, **kwargs):
     }
 
     if kg_search_settings.get("kg_search_model"):
-        kg_search_settings["kg_search_generation_config"] = {
+        kg_search_settings["generation_config"] = {
             "model": kg_search_settings.pop("kg_search_model")
         }
 

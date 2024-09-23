@@ -10,8 +10,6 @@ from .api.management_router import ManagementRouter
 from .api.restructure_router import RestructureRouter
 from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
-from .services.ingestion_service import IngestionService
-from .services.restructure_service import RestructureService
 
 
 class R2RApp:

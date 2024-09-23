@@ -15,7 +15,7 @@ class ProviderConfig(BaseModel, ABC):
         ignore_extra = True
 
     @abstractmethod
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         pass
 
     @classmethod
@@ -38,13 +38,18 @@ class ProviderConfig(BaseModel, ABC):
         """Define a list of supported providers."""
         pass
 
+    @classmethod
+    def from_dict(
+        cls: Type["ProviderConfig"], data: dict[str, Any]
+    ) -> "ProviderConfig":
+        """Create a new instance of the config from a dictionary."""
+        return cls.create(**data)
+
 
 class Provider(ABC):
     """A base provider class to provide a common interface for all providers."""
 
-    def __init__(
-        self, config: Optional[ProviderConfig] = None, *args, **kwargs
-    ):
+    def __init__(self, config: ProviderConfig, *args, **kwargs):
         if config:
-            config.validate()
+            config.validate_config()
         self.config = config

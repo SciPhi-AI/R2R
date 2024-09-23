@@ -237,7 +237,6 @@ class Collection:
                 if x is not None
             ]
         )
-        self._migrate_group_ids_to_collection_ids()  # TODO - Remove
 
         if len(reported_dimensions) == 0:
             raise ArgError(
@@ -247,31 +246,6 @@ class Collection:
             raise MismatchedDimension(
                 "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
             )
-
-    def _migrate_group_ids_to_collection_ids(self):
-        with self.client.Session() as sess:
-            with sess.begin():
-                # Check if the group_ids column exists
-                result = sess.execute(
-                    text(
-                        f"""
-                        SELECT COUNT(*)
-                        FROM information_schema.columns
-                        WHERE table_name = '{self.table.name}' AND column_name = 'group_ids'
-                        """
-                    )
-                ).scalar()
-
-                if result > 0:
-                    # Rename the group_ids column to collection_ids
-                    sess.execute(
-                        text(
-                            f"""
-                            ALTER TABLE "{self.table.name}"
-                            RENAME COLUMN group_ids TO collection_ids
-                            """
-                        )
-                    )
 
     def __repr__(self):
         """
@@ -633,8 +607,8 @@ class Collection:
 
         # if filters:
         stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
-
         stmt = stmt.order_by(distance_clause)
+        stmt = stmt.offset(search_settings.offset)
         stmt = stmt.limit(search_settings.search_limit)
 
         with self.client.Session() as sess:
@@ -649,7 +623,12 @@ class Collection:
                     sess.execute(
                         text(
                             "set local hnsw.ef_search = :ef_search"
-                        ).bindparams(ef_search=search_settings.ef_search)
+                        ).bindparams(
+                            ef_search=max(
+                                search_settings.ef_search,
+                                search_settings.search_limit,
+                            )
+                        )
                     )
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
@@ -681,6 +660,7 @@ class Collection:
             .where(self.table.c.fts.op("@@")(ts_query))
             .where(self.build_filters(search_settings.filters))
             .order_by(rank_function.desc())
+            .offset(search_settings.offset)
             .limit(search_settings.hybrid_search_settings.full_text_limit)
         )
 
@@ -947,6 +927,16 @@ class Collection:
             return True
 
         return False
+
+    def close(self):
+        """
+        Closes the database connection associated with this collection.
+
+        This method should be called when you are done using the collection to release
+        the database resources.
+        """
+        if self.client:
+            self.client.close()
 
     def create_index(
         self,

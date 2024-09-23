@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -24,36 +24,38 @@ class VectorSearchPipe(SearchPipe):
         self,
         database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
+        config: SearchPipe.SearchConfig,
         type: PipeType = PipeType.SEARCH,
-        config: Optional[SearchPipe.SearchConfig] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            type=type,
-            config=config or SearchPipe.SearchConfig(),
+            config,
+            type,
             *args,
             **kwargs,
         )
         self.embedding_provider = embedding_provider
         self.database_provider = database_provider
 
-    async def search(
+        self._config: SearchPipe.SearchConfig = config
+
+    @property
+    def config(self) -> SearchPipe.SearchConfig:
+        return self._config
+
+    async def search(  # type: ignore
         self,
         message: str,
-        run_id: UUID,
-        vector_search_settings: VectorSearchSettings,
+        search_settings: VectorSearchSettings,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
-        await self.enqueue_log(
-            run_id=run_id, key="search_query", value=message
+        search_settings.filters = (
+            search_settings.filters or self.config.filters
         )
-        vector_search_settings.filters = (
-            vector_search_settings.filters or self.config.filters
-        )
-        vector_search_settings.search_limit = (
-            vector_search_settings.search_limit or self.config.search_limit
+        search_settings.search_limit = (
+            search_settings.search_limit or self.config.search_limit
         )
         results = []
         query_vector = self.embedding_provider.get_embedding(
@@ -64,26 +66,22 @@ class VectorSearchPipe(SearchPipe):
             self.database_provider.vector.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
-                search_settings=vector_search_settings,
+                search_settings=search_settings,
             )
-            if vector_search_settings.use_hybrid_search
+            if search_settings.use_hybrid_search
             else self.database_provider.vector.semantic_search(
                 query_vector=query_vector,
-                search_settings=vector_search_settings,
+                search_settings=search_settings,
             )
         )
         reranked_results = self.embedding_provider.rerank(
             query=message,
             results=search_results,
-            limit=vector_search_settings.search_limit,
+            limit=search_settings.search_limit,
         )
-        include_title_if_available = kwargs.get(
-            "include_title_if_available", False
-        )
-        if include_title_if_available:
+        if kwargs.get("include_title_if_available", False):
             for result in reranked_results:
-                title = result.metadata.get("title", None)
-                if title:
+                if title := result.metadata.get("title", None):
                     text = result.text
                     result.text = f"Document Title:{title}\n\nText:{text}"
 
@@ -92,13 +90,7 @@ class VectorSearchPipe(SearchPipe):
             results.append(result)
             yield result
 
-        await self.enqueue_log(
-            run_id=run_id,
-            key="search_results",
-            value=json.dumps([ele.json() for ele in results]),
-        )
-
-    async def _run_logic(
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
@@ -111,15 +103,24 @@ class VectorSearchPipe(SearchPipe):
         search_results = []
         async for search_request in input.message:
             search_queries.append(search_request)
+            await self.enqueue_log(
+                run_id=run_id, key="search_query", value=search_request
+            )
+
             async for result in self.search(
-                message=search_request,
-                run_id=run_id,
-                vector_search_settings=vector_search_settings,
+                search_request,
+                vector_search_settings,
                 *args,
                 **kwargs,
             ):
                 search_results.append(result)
                 yield result
+
+        await self.enqueue_log(
+            run_id=run_id,
+            key="search_results",
+            value=json.dumps([ele.json() for ele in search_results]),
+        )
 
         await state.update(
             self.config.name, {"output": {"search_results": search_results}}

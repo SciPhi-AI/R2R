@@ -22,7 +22,7 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        data = {name: name}
+        data: dict = {name: name}
         if template is not None:
             data["template"] = template
         if input_types is not None:
@@ -81,31 +81,6 @@ class ManagementMethods:
         return await client._make_request(
             "GET", f"get_prompt/{prompt_name}", params=params
         )
-
-    @staticmethod
-    async def update_prompt(
-        client,
-        name: str,
-        template: Optional[str] = None,
-        input_types: Optional[dict[str, str]] = None,
-    ) -> dict:
-        """
-        Update an existing prompt in the system.
-
-        Args:
-            name (str): The name of the prompt to update.
-            template (Optional[str]): The new template for the prompt.
-            input_types (Optional[dict[str, str]]): The new input types for the prompt.
-
-        Returns:
-            dict: The response from the server.
-        """
-        data = {"name": name}
-        if template is not None:
-            data["template"] = template
-        if input_types is not None:
-            data["input_types"] = input_types
-        return await client._make_request("POST", "update_prompt", json=data)
 
     @staticmethod
     async def get_all_prompts(client) -> dict:
@@ -209,7 +184,7 @@ class ManagementMethods:
         Returns:
             dict: The overview of users in the system.
         """
-        params = {}
+        params: dict = {}
         if user_ids is not None:
             params["user_ids"] = [str(uid) for uid in user_ids]
         if offset is not None:
@@ -274,7 +249,7 @@ class ManagementMethods:
         Returns:
             dict: The overview of documents in the system.
         """
-        params = {}
+        params: dict = {}
         document_ids = (
             [str(doc_id) for doc_id in document_ids] if document_ids else None
         )
@@ -304,7 +279,7 @@ class ManagementMethods:
         Returns:
             dict: The chunks for the document.
         """
-        params = {}
+        params: dict = {}
         if offset is not None:
             params["offset"] = offset
         if limit is not None:
@@ -360,7 +335,7 @@ class ManagementMethods:
         Returns:
             dict: The overview of collections in the system.
         """
-        params = {}
+        params: dict = {}
         if collection_ids:
             params["collection_ids"] = collection_ids
         if offset:
@@ -475,7 +450,7 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        params = {}
+        params: dict = {}
         if password is not None:
             params["password"] = password
         if delete_vector_data:

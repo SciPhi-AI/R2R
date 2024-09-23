@@ -1,6 +1,6 @@
-from .base import AsyncSyncMeta, syncable
-from .completion import CompletionRecord, MessageType
-from .document import (
+from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
+from shared.abstractions.completion import CompletionRecord, MessageType
+from shared.abstractions.document import (
     DataType,
     Document,
     DocumentExtraction,
@@ -10,9 +10,15 @@ from .document import (
     IngestionStatus,
     RestructureStatus,
 )
-from .embedding import EmbeddingPurpose, default_embedding_prefixes
-from .exception import R2RDocumentProcessingError, R2RException
-from .graph import (
+from shared.abstractions.embedding import (
+    EmbeddingPurpose,
+    default_embedding_prefixes,
+)
+from shared.abstractions.exception import (
+    R2RDocumentProcessingError,
+    R2RException,
+)
+from shared.abstractions.graph import (
     Community,
     CommunityReport,
     Entity,
@@ -21,27 +27,43 @@ from .graph import (
     RelationshipType,
     Triple,
 )
-from .llm import (
+from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
     RAGCompletion,
 )
-from .prompt import Prompt
-from .restructure import KGCreationSettings, KGEnrichmentSettings
-from .search import (
+from shared.abstractions.prompt import Prompt
+from shared.abstractions.restructure import (
+    KGCreationSettings,
+    KGEnrichmentSettings,
+)
+from shared.abstractions.search import (
     AggregateSearchResult,
+    HybridSearchSettings,
+    KGCommunityResult,
+    KGEntityResult,
+    KGGlobalResult,
+    KGRelationshipResult,
+    KGSearchMethod,
     KGSearchResult,
+    KGSearchResultType,
     KGSearchSettings,
     VectorSearchResult,
     VectorSearchSettings,
 )
-from .user import Token, TokenData, UserStats
-from .vector import StorageResult, Vector, VectorEntry, VectorType
+from shared.abstractions.user import Token, TokenData, UserStats
+from shared.abstractions.vector import (
+    StorageResult,
+    Vector,
+    VectorEntry,
+    VectorType,
+)
 
 __all__ = [
     # Base abstractions
+    "R2RSerializable",
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
@@ -81,9 +103,16 @@ __all__ = [
     # Search abstractions
     "AggregateSearchResult",
     "KGSearchResult",
+    "KGSearchMethod",
+    "KGSearchResultType",
+    "KGEntityResult",
+    "KGRelationshipResult",
+    "KGCommunityResult",
+    "KGGlobalResult",
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "HybridSearchSettings",
     # Restructure abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",

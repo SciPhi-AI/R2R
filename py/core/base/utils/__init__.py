@@ -1,4 +1,6 @@
-from .base_utils import (
+from shared.utils import (
+    RecursiveCharacterTextSplitter,
+    TextSplitter,
     decrement_version,
     format_entity_types,
     format_relations,
@@ -11,7 +13,6 @@ from .base_utils import (
     run_pipeline,
     to_async_generator,
 )
-from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
 __all__ = [
     "format_entity_types",
