@@ -228,7 +228,7 @@ class AuthRouter(BaseRouter):
             This endpoint allows users to delete their own account or, for superusers,
             to delete any user account.
             """
-            if auth_user.id != user_id and not auth_user.is_superuser:
+            if str(auth_user.id) != user_id and not auth_user.is_superuser:
                 raise Exception("User ID does not match authenticated user")
             if not auth_user.is_superuser and not password:
                 raise Exception("Password is required for non-superusers")

@@ -41,8 +41,8 @@ jobs:
           POSTGRES_PROJECT_NAME: ${{ secrets.POSTGRES_PROJECT_NAME }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          r2r serve --port=7272 > r2r_server.log 2>&1 &
-          sleep 15
+          r2r serve --docker
+          sleep 60
 
       - name: Use Node.js
         uses: actions/setup-node@v2
