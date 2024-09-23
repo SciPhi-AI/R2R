@@ -15,8 +15,7 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
       icon: <Lightbulb className="h-6 w-6 text-yellow-400" />,
     },
     {
-      query:
-        'How is AI being used across the batch?',
+      query: 'How is AI being used across the batch?',
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
