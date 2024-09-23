@@ -101,7 +101,8 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
+    image: r2r/test
     build:
       context: .
       args:

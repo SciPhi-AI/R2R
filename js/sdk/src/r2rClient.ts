@@ -202,10 +202,6 @@ export class r2rClient {
     // }
   }
 
-  async health(): Promise<any> {
-    return await this._makeRequest("GET", "health");
-  }
-
   // -----------------------------------------------------------------------------
   //
   // Auth
@@ -332,7 +328,12 @@ export class r2rClient {
     const response = await this._makeRequest<RefreshTokenResponse>(
       "POST",
       "refresh_access_token",
-      { data: { refresh_token: this.refreshToken } },
+      {
+        data: this.refreshToken,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
     );
 
     if (response && response.results) {
@@ -403,14 +404,9 @@ export class r2rClient {
   @feature("deleteUser")
   async deleteUser(userId: string, password?: string): Promise<any> {
     this._ensureAuthenticated();
-
-    const data: Record<string, any> = { user_id: userId };
-
-    if (password) {
-      data.password = password;
-    }
-
-    return await this._makeRequest("DELETE", "user", { data });
+    return await this._makeRequest("DELETE", `user/${userId}`, {
+      data: { password },
+    });
   }
 
   // -----------------------------------------------------------------------------
@@ -605,6 +601,14 @@ export class r2rClient {
   // Management
   //
   // -----------------------------------------------------------------------------
+
+  /**
+   * Check the health of the R2R deployment.
+   * @returns A promise that resolves to the response from the server.
+   */
+  async health(): Promise<any> {
+    return await this._makeRequest("GET", "health");
+  }
 
   /**
    * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.

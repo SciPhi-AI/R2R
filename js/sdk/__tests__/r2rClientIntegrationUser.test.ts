@@ -68,7 +68,11 @@ describe("r2rClient Integration Tests", () => {
   // Deletes rasolnikov.txt
   test("Delete document", async () => {
     await expect(
-      client.delete({ document_id: "91662726-7271-51a5-a0ae-34818509e1fd" }),
+      client.delete({
+        document_id: {
+          $eq: "91662726-7271-51a5-a0ae-34818509e1fd",
+        },
+      }),
     ).resolves.not.toThrow();
   });
 
@@ -95,12 +99,20 @@ describe("r2rClient Integration Tests", () => {
   test("Clean up remaining documents", async () => {
     // Deletes karamozov.txt
     await expect(
-      client.delete({ document_id: "00f69fa0-c947-5f5f-a374-1837a1283366" }),
+      client.delete({
+        document_id: {
+          $eq: "00f69fa0-c947-5f5f-a374-1837a1283366",
+        },
+      }),
     ).resolves.not.toThrow();
 
     // Deletes myshkin.txt
     await expect(
-      client.delete({ document_id: "0b80081e-a37a-579f-a06d-7d2032435d65" }),
+      client.delete({
+        document_id: {
+          $eq: "0b80081e-a37a-579f-a06d-7d2032435d65",
+        },
+      }),
     ).resolves.not.toThrow;
   });
 
@@ -110,9 +122,10 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
-  // TODO: Fix this test
-  // test("Delete User", async () => {
-  //   const currentUser = await client.user();
-  //   await expect(client.deleteUser(currentUser.id, "new_password")).resolves.not.toThrow();
-  // });
+  test("Delete User", async () => {
+    const currentUser = await client.user();
+    await expect(
+      client.deleteUser(currentUser.results.id, "new_password"),
+    ).resolves.not.toThrow();
+  });
 });

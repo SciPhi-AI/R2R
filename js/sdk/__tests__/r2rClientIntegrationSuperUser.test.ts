@@ -1,5 +1,6 @@
 import { r2rClient } from "../src/index";
 const fs = require("fs");
+import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
@@ -7,6 +8,61 @@ const baseUrl = "http://localhost:7272";
  * raskolnikov.txt should have an id of `f9f61fc8-079c-52d0-910a-c657958e385b`
  * karamozov.txt should have an id of `73749580-1ade-50c6-8fbe-a5e9e87783c8`
  * myshkin.txt should have an id of `2e05b285-2746-5778-9e4a-e293db92f3be`
+ */
+
+/**
+ * Coverage
+ *     - health
+ *    Auth:
+ *     X register
+ *     X verifyEmail
+ *     - login
+ *     - logout
+ *     X user
+ *     X updateUser
+ *     X refreshAccessToken
+ *     X changePassword
+ *     X requestPasswordReset
+ *     X confirmPasswordReset
+ *     X deleteUser
+ *    Ingestion:
+ *     - ingestFiles
+ *     - updateFiles
+ *    Management:
+ *     - serverStats
+ *     X updatePrompt
+ *     - analytics
+ *     - logs
+ *     - appSettings
+ *     - scoreCompletion
+ *     - usersOverview
+ *     - delete
+ *     X downloadFile
+ *     - documentsOverview
+ *     - documentChunks
+ *     X inspectKnowledgeGraph
+ *     X collectionsOverview
+ *     X createCollection
+ *     X getCollection
+ *     X updateCollection
+ *     X deleteCollection
+ *     X listCollections
+ *     X addUserToCollection
+ *     X removeUserFromCollection
+ *     X getUsersInCollection
+ *     X getCollectionsForUser
+ *     X assignDocumentToCollection
+ *     X removeDocumentFromCollection
+ *     X getDocumentCollections
+ *     X getDocumentsInCollection
+ *    Restructure:
+ *     X enrichGraph
+ *    Retrieval:
+ *     - search
+ *     - rag
+ *     X streamingRag
+ *     - agent
+ *     X streamingAgent
  */
 
 describe("r2rClient Integration Tests", () => {
@@ -94,32 +150,34 @@ describe("r2rClient Integration Tests", () => {
   });
 
   // TOOD: Fix in R2R, table logs has no column named run_id
-  // test("Agentic RAG response with streaming", async () => {
-  //   const messages = [
-  //     { role: "system", content: "You are a helpful assistant." },
-  //     { role: "user", content: "Tell me about Raskolnikov." },
-  //   ];
+  test("Agentic RAG response with streaming", async () => {
+    const messages = [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "Tell me about Raskolnikov." },
+    ];
 
-  //   const stream = await client.agent(messages, undefined, undefined, {
-  //     stream: true,
-  //   });
+    const stream = await client.agent(messages, undefined, undefined, {
+      stream: true,
+    });
 
-  //   expect(stream).toBeDefined();
+    expect(stream).toBeDefined();
 
-  //   let fullResponse = "";
+    let fullResponse = "";
 
-  //   for await (const chunk of stream) {
-  //     fullResponse += chunk;
-  //   }
+    for await (const chunk of stream) {
+      fullResponse += chunk;
+    }
 
-  //   expect(fullResponse.length).toBeGreaterThan(0);
-  // }, 30000);
+    expect(fullResponse.length).toBeGreaterThan(0);
+  }, 30000);
 
   // Deletes raskolnikov.txt
   test("Delete document", async () => {
     await expect(
       client.delete({
-        document_id: "f9f61fc8-079c-52d0-910a-c657958e385b",
+        document_id: {
+          $eq: "f9f61fc8-079c-52d0-910a-c657958e385b",
+        },
       }),
     ).resolves.toBe("");
   });
@@ -130,6 +188,10 @@ describe("r2rClient Integration Tests", () => {
 
   test("App settings", async () => {
     await expect(client.appSettings()).resolves.not.toThrow();
+  });
+
+  test("Refresh access token", async () => {
+    await expect(client.refreshAccessToken()).resolves.not.toThrow();
   });
 
   test("Get analytics", async () => {
@@ -163,12 +225,20 @@ describe("r2rClient Integration Tests", () => {
   test("Clean up remaining documents", async () => {
     // Deletes karamozov.txt
     await expect(
-      client.delete({ document_id: "73749580-1ade-50c6-8fbe-a5e9e87783c8" }),
+      client.delete({
+        document_id: {
+          $eq: "73749580-1ade-50c6-8fbe-a5e9e87783c8",
+        },
+      }),
     ).resolves.toBe("");
 
     // Deletes myshkin.txt
     await expect(
-      client.delete({ document_id: "2e05b285-2746-5778-9e4a-e293db92f3be" }),
+      client.delete({
+        document_id: {
+          $eq: "2e05b285-2746-5778-9e4a-e293db92f3be",
+        },
+      }),
     ).resolves.toBe("");
   });
 
