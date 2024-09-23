@@ -73,14 +73,13 @@ class IngestionMethods:
                 )
             if metadatas:
                 data["metadatas"] = json.dumps(metadatas)
-                
+
             if chunking_config:
                 data["chunking_config"] = (
                     chunking_config.model_dump()  # type: ignore
                     if isinstance(chunking_config, ChunkingConfig)
                     else chunking_config
                 )
-
 
             return await client._make_request(
                 "POST", "ingest_files", data=data, files=files_tuples

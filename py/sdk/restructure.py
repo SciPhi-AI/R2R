@@ -26,7 +26,9 @@ class RestructureMethods:
         if document_ids:
             data["document_ids"] = document_ids
         if kg_creation_settings:
-            data["kg_creation_settings"] = kg_creation_settings
+            if isinstance(kg_creation_settings, KGCreationSettings):
+                kg_creation_settings = kg_creation_settings.dict()
+            data["kg_creation_settings"] = kg_creation_settings  # type: ignore
 
         response = await client._make_request(
             "POST", "create_graph", json=data
@@ -60,7 +62,9 @@ class RestructureMethods:
         if force_enrichment:
             data["force_enrichment"] = force_enrichment
         if kg_enrichment_settings:
-            data["kg_enrichment_settings"] = kg_enrichment_settings
+            if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
+                kg_enrichment_settings = kg_enrichment_settings.dict()
+            data["kg_enrichment_settings"] = kg_enrichment_settings  # type: ignore
 
         response = await client._make_request(
             "POST", "enrich_graph", json=data

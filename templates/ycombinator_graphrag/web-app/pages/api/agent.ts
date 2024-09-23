@@ -38,7 +38,6 @@ export default async function handler(req: Request) {
       // kg_search_type: "local", // kg_search_type ?? 'local',
     };
 
-    console.log('searchParams = ', searchParams);
 
     const kgSearchParams = use_kg_search
       ? { use_kg_search: true, kg_search_type: 'local' }
