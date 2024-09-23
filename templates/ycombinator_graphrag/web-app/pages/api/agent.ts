@@ -63,9 +63,9 @@ export default async function handler(req: Request) {
 
     ALSO, NOTE - Above is combined output from a knowledge graph and search engine for YCombinator. PAY CLOSE ATTENTION TO THE KNOWLEDGE GRAPH RESULTS ABOVE, and give a detailed synthesis of the information in your response. ANY POOR RESPONSES WILL RESULT IN YOUR TERMINATION.
     `;
-
+    const content = messages[messages.length - 1].content;
     const streamResponse = await client.rag(
-      messages[0].content,
+      content,
       searchParams,
       kgSearchParams,
       ragConfig,
