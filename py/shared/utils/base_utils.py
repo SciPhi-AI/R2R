@@ -24,7 +24,7 @@ def format_search_results_for_llm(
         formatted_results += "KG Local Results:\n"
         for j, kg_result in enumerate(results.kg_search_results):
             formatted_results += (
-                f"Source [{j+1}]: Name - {kg_result.content.name}\n"
+                f"Source [{j+i+1}]: Name - {kg_result.content.name}\n"
             )
             formatted_results += (
                 f"Description - {kg_result.content.description}\n"

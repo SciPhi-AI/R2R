@@ -9,8 +9,8 @@ import Header from '@/components/Header';
 const Index: React.FC = () => {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [agentUrl] = useState('https://infra.sciphi.ai');
-  // const [agentUrl] = useState('http://0.0.0.0:7272');
+  // const [agentUrl] = useState('https://infra.sciphi.ai');
+  const [agentUrl] = useState('http://0.0.0.0:7272');
   const [isStreaming, setIsStreaming] = useState(false);
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<any[]>([]);
