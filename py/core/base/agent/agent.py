@@ -214,7 +214,6 @@ class Agent(ABC):
 
             raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
-            print("llm_formatted_result = ", llm_formatted_result)
 
             tool_result = ToolResult(
                 raw_result=raw_result,
