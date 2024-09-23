@@ -20,7 +20,7 @@ const baseUrl = "http://localhost:7272";
  *     - logout
  *     X user
  *     X updateUser
- *     X refreshAccessToken
+ *     - refreshAccessToken
  *     X changePassword
  *     X requestPasswordReset
  *     X confirmPasswordReset

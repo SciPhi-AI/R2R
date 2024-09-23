@@ -9,6 +9,61 @@ const baseUrl = "http://localhost:7272";
  * myshkin.txt should have an id of `0b80081e-a37a-579f-a06d-7d2032435d65`
  */
 
+/**
+ * Coverage
+ *     - health
+ *    Auth:
+ *     - register
+ *     X verifyEmail
+ *     - login
+ *     - logout
+ *     X user
+ *     X updateUser
+ *     - refreshAccessToken
+ *     - changePassword
+ *     X requestPasswordReset
+ *     X confirmPasswordReset
+ *     - deleteUser
+ *    Ingestion:
+ *     - ingestFiles
+ *     - updateFiles
+ *    Management:
+ *     X serverStats
+ *     X updatePrompt
+ *     X analytics
+ *     X logs
+ *     - appSettings
+ *     X scoreCompletion
+ *     X usersOverview
+ *     - delete
+ *     X downloadFile
+ *     - documentsOverview
+ *     X documentChunks
+ *     X inspectKnowledgeGraph
+ *     X collectionsOverview
+ *     X createCollection
+ *     X getCollection
+ *     X updateCollection
+ *     X deleteCollection
+ *     X listCollections
+ *     X addUserToCollection
+ *     X removeUserFromCollection
+ *     X getUsersInCollection
+ *     X getCollectionsForUser
+ *     X assignDocumentToCollection
+ *     X removeDocumentFromCollection
+ *     X getDocumentCollections
+ *     X getDocumentsInCollection
+ *    Restructure:
+ *     X enrichGraph
+ *    Retrieval:
+ *     - search
+ *     X rag
+ *     X streamingRag
+ *     X agent
+ *     X streamingAgent
+ */
+
 describe("r2rClient Integration Tests", () => {
   let client: r2rClient;
 
@@ -80,6 +135,10 @@ describe("r2rClient Integration Tests", () => {
     await expect(client.appSettings()).rejects.toThrow(
       "Status 403: Only a superuser can call the `app_settings` endpoint.",
     );
+  });
+
+  test("Refresh access token", async () => {
+    await expect(client.refreshAccessToken()).resolves.not.toThrow();
   });
 
   test("Get documents overview", async () => {
