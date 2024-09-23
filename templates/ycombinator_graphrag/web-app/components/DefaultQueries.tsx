@@ -19,11 +19,11 @@ export const DefaultQueries: FC<DefaultQueriesProps> = ({ setQuery }) => {
       icon: <FlaskConical className="h-6 w-6 text-purple-400" />,
     },
     {
-      query: 'List as many healthcare startups as you can.',
+      query: 'Which startups are likely to use LinkedIn heavily?',
       icon: <Flame className="h-6 w-6 text-red-400" />,
     },
     {
-      query: "Which startups are likely to use LinkedIn heavily?",
+      query: "Which startups are building RAG agents?",
       icon: <Earth className="h-6 w-6 text-green-400" />,
     },
   ];

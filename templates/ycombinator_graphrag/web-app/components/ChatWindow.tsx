@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useState, useRef, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, X } from 'lucide-react';
+import posthog from 'posthog-js';
 
 import MessageBubble from '@/components/MessageBubble';
 import { Answer } from '@/components/Answer';
@@ -124,6 +125,9 @@ export const ChatWindow: FC<ChatWindowProps> = ({
       let inLLMResponse = false;
       let fullContent = '';
 
+      const startTime = Date.now();
+      let firstChunkTime: number | null = null;
+
       try {
         const response = await fetch('/api/agent', {
           method: 'POST',
@@ -149,6 +153,13 @@ export const ChatWindow: FC<ChatWindowProps> = ({
           const { done, value } = await reader.read();
           if (done) {
             break;
+          }
+
+          if (firstChunkTime === null) {
+            firstChunkTime = Date.now();
+            posthog.capture('first_chunk_received', {
+              time_to_first_chunk: firstChunkTime - startTime,
+            });
           }
 
           buffer += decoder.decode(value, { stream: true });
@@ -197,7 +208,14 @@ export const ChatWindow: FC<ChatWindowProps> = ({
             updateLastMessage(fullContent, undefined, true);
           }
         }
+        posthog.capture('llm_response_complete', {
+          total_response_time: Date.now() - startTime,
+          response_content: fullContent,
+        });
       } catch (err: unknown) {
+        posthog.capture('llm_response_error', {
+          error: err instanceof Error ? err.message : String(err),
+        });
         console.error('Error in streaming:', err);
         setError(err instanceof Error ? err.message : String(err));
       } finally {
