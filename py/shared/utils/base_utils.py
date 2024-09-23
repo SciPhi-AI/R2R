@@ -14,12 +14,14 @@ def format_search_results_for_llm(
     results: AggregateSearchResult,
 ) -> str:
     formatted_results = ""
+    i = 0
     if results.vector_search_results:
         formatted_results += "Vector Search Results:\n"
         for i, result in enumerate(results.vector_search_results):
             text = result.text
             formatted_results += f"Source [{i+1}]:\n{text}\n"
 
+        i = len(results.vector_search_results)
     if results.kg_search_results:
         formatted_results += "KG Local Results:\n"
         for j, kg_result in enumerate(results.kg_search_results):
