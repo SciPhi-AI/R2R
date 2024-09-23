@@ -467,11 +467,21 @@ def check_docker_compose_version():
         compose_version = version_match[1]
         min_version = "2.25.0"
 
+        # 2.29.6 throws an `invalid mount config` https://github.com/docker/compose/issues/12139
+        incompatible_versions = ["2.29.6"]
+
         if parse_version(compose_version) < parse_version(min_version):
             click.secho(
                 f"Warning: Docker Compose version {compose_version} is outdated. "
                 f"Please upgrade to version {min_version} or higher.",
                 fg="yellow",
+                bold=True,
+            )
+        elif compose_version in incompatible_versions:
+            click.secho(
+                f"Warning: Docker Compose version {compose_version} is known to be incompatible."
+                f"Please upgrade to a newer version.",
+                fg="red",
                 bold=True,
             )
 
