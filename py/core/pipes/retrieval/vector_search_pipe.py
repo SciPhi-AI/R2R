@@ -99,14 +99,12 @@ class VectorSearchPipe(SearchPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
-        search_queries = []
-        search_results = []
         async for search_request in input.message:
-            search_queries.append(search_request)
             await self.enqueue_log(
                 run_id=run_id, key="search_query", value=search_request
             )
 
+            search_results = []
             async for result in self.search(
                 search_request,
                 vector_search_settings,
@@ -116,22 +114,23 @@ class VectorSearchPipe(SearchPipe):
                 search_results.append(result)
                 yield result
 
-        await self.enqueue_log(
-            run_id=run_id,
-            key="search_results",
-            value=json.dumps([ele.json() for ele in search_results]),
-        )
+            await self.enqueue_log(
+                run_id=run_id,
+                key="search_results",
+                value=json.dumps([ele.json() for ele in search_results]),
+            )
 
-        await state.update(
-            self.config.name, {"output": {"search_results": search_results}}
-        )
+            await state.update(
+                self.config.name,
+                {"output": {"search_results": search_results}},
+            )
 
-        await state.update(
-            self.config.name,
-            {
-                "output": {
-                    "search_queries": search_queries,
-                    "search_results": search_results,
-                }
-            },
-        )
+            await state.update(
+                self.config.name,
+                {
+                    "output": {
+                        "search_query": search_request,
+                        "search_results": search_results,
+                    }
+                },
+            )
