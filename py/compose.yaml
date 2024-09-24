@@ -84,13 +84,13 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
       POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
-      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
+      POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
       DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
       DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
       DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
-      DATABASE_POSTGRES_DB_NAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
