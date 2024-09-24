@@ -230,7 +230,6 @@ class RetrievalService(Service):
     ):
         async def stream_response():
             async with manage_run(self.run_manager, "rag"):
-                print("received query = ", query)
                 merged_kwargs = {
                     "input": to_async_generator([query]),
                     "state": None,

@@ -1,4 +1,4 @@
-from .auth import R2RAuthProvider
+from .auth import R2RAuthProvider, SupabaseAuthProvider
 from .chunking import (  # type: ignore
     R2RChunkingProvider,
     UnstructuredChunkingProvider,
@@ -20,6 +20,7 @@ from .prompts import R2RPromptProvider
 __all__ = [
     # Auth
     "R2RAuthProvider",
+    "SupabaseAuthProvider",
     # Chunking
     "R2RChunkingProvider",  # type: ignore
     "UnstructuredChunkingProvider",  # type: ignore

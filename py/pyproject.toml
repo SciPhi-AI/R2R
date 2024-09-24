@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.1.48"
+version = "3.1.49"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -67,10 +67,8 @@ pyjwt = { version = "^2.8.0", optional = true }
 pyyaml = { version = "^6.0.1", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
-tokenizers = { version = "^0.19", optional = true }
-
-opencv-python = { version = "^4.10.0.82", optional = true }
-moviepy = { version = "^1.0.3", optional = true }
+tokenizers = { version = "0.19", optional = true }
+supabase = "^2.7.4"
 
 [tool.poetry.extras]
 core = [
