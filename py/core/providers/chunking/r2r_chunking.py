@@ -40,8 +40,8 @@ class R2RChunkingProvider(ChunkingProvider):
                     "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
                 )
             return CharacterTextSplitter(
-                chunk_size=self.config.extra_fields["chunk_size"],
-                chunk_overlap=self.config.extra_fields["chunk_overlap"],
+                chunk_size=self.config.chunk_size,
+                chunk_overlap=self.config.chunk_overlap,
                 separator=separator,
                 keep_separator=False,
                 strip_whitespace=True,
