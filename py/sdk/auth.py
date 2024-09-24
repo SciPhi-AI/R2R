@@ -172,8 +172,9 @@ class AuthMethods:
         return await client._make_request("POST", "reset_password", json=data)
 
     @staticmethod
-    async def login_with_tokens(
-        client, access_token: str, refresh_token: str
+    async def login_with_token(
+        client,
+        access_token: str,
     ) -> dict[str, Token]:
         """
         Logs in a user using existing access and refresh tokens.
@@ -186,17 +187,12 @@ class AuthMethods:
             dict[str, Token]: The access and refresh tokens from the server.
         """
         client.access_token = access_token
-        client._refresh_token = refresh_token
-
         # Verify the tokens by making a request to the user endpoint
         try:
             await client._make_request("GET", "user")
             return {
                 "access_token": Token(
                     token=access_token, token_type="access_token"
-                ),
-                "refresh_token": Token(
-                    token=refresh_token, token_type="refresh_token"
                 ),
             }
         except Exception:

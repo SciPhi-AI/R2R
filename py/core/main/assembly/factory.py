@@ -54,7 +54,9 @@ class R2RProviderFactory:
         elif auth_config.provider == "supabase":
             from core.providers import SupabaseAuthProvider
 
-            return SupabaseAuthProvider(auth_config)
+            return SupabaseAuthProvider(
+                auth_config, crypto_provider, db_provider
+            )
         else:
             raise ValueError(
                 f"Auth provider {auth_config.provider} not supported."
