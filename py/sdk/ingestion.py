@@ -37,11 +37,11 @@ class IngestionMethods:
             raise ValueError(
                 "Number of metadatas must match number of document IDs."
             )
-        if chunking_config is not None and not isinstance(
-            chunking_config, ChunkingConfig
-        ):
-            # check if the provided dict maps to a ChunkingConfig
-            ChunkingConfig(**chunking_config)
+        # if chunking_config is not None and not isinstance(
+        #     chunking_config, ChunkingConfig
+        # ):
+        #     # check if the provided dict maps to a ChunkingConfig
+        #     ChunkingConfig(**chunking_config)
 
         all_file_paths: list[str] = []
         for path in file_paths:
@@ -75,12 +75,13 @@ class IngestionMethods:
                 data["metadatas"] = json.dumps(metadatas)
 
             if chunking_config:
-                data["chunking_config"] = (
+                data["chunking_config"] = json.dumps(
                     chunking_config.model_dump()  # type: ignore
                     if isinstance(chunking_config, ChunkingConfig)
                     else chunking_config
                 )
 
+            print("data = ", data)
             return await client._make_request(
                 "POST", "ingest_files", data=data, files=files_tuples
             )

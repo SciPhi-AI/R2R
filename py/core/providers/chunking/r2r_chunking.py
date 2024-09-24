@@ -24,12 +24,12 @@ class R2RChunkingProvider(ChunkingProvider):
 
     def _initialize_text_splitter(self) -> TextSplitter:
         logger.info(
-            f"Initializing text splitter with method: {self.config.extra_fields['method']}"
+            f"Initializing text splitter with method: {self.config.method}"
         )  # Debug log
         if self.config.method == Strategy.RECURSIVE:
             return RecursiveCharacterTextSplitter(
-                chunk_size=self.config.extra_fields["chunk_size"],
-                chunk_overlap=self.config.extra_fields["chunk_overlap"],
+                chunk_size=self.config.chunk_size,
+                chunk_overlap=self.config.chunk_overlap,
             )
         elif self.config.method == Strategy.CHARACTER:
             from core.base.utils.splitter.text import CharacterTextSplitter
@@ -39,6 +39,7 @@ class R2RChunkingProvider(ChunkingProvider):
                 separator = self.config.extra_fields.get(
                     "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
                 )
+            print("self.config = ", self.config)
             return CharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,

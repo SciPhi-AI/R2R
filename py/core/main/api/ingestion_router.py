@@ -78,7 +78,7 @@ class IngestionRouter(BaseRouter):
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
-            chunking_config: Optional[Json[ChunkingConfig]] = Form(
+            chunking_config: Optional[str] = Form(
                 None,
                 description=ingest_files_descriptions.get("chunking_config"),
             ),
@@ -92,7 +92,14 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
-            self._validate_chunking_config(chunking_config)
+            if chunking_config:
+                print("ingress chunking_config = ", chunking_config)
+                import json
+
+                chunking_config = (
+                    json.loads(chunking_config) if chunking_config else None
+                )
+            # self._validate_chunking_config(chunking_config)
             # Check if the user is a superuser
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
@@ -127,11 +134,7 @@ class IngestionRouter(BaseRouter):
                     "file_data": file_data,
                     "document_id": str(document_id),
                     "metadata": metadatas[it] if metadatas else None,
-                    "chunking_config": (
-                        chunking_config.model_dump_json()
-                        if chunking_config
-                        else None
-                    ),
+                    "chunking_config": chunking_config,
                     "user": auth_user.model_dump_json(),
                     "size_in_bytes": content_length,
                     "is_update": False,
