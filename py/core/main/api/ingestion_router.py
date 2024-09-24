@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 from io import BytesIO
 from pathlib import Path
@@ -93,9 +94,6 @@ class IngestionRouter(BaseRouter):
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
             if chunking_config:
-                print("ingress chunking_config = ", chunking_config)
-                import json
-
                 chunking_config = (
                     json.loads(chunking_config) if chunking_config else None
                 )

@@ -5,8 +5,6 @@ import uuid
 
 from datasets import load_dataset
 
-from r2r import R2RClient
-
 args = argparse.ArgumentParser()
 args.add_argument("--dataset_name", type=str, default="shreyaspimpalgaonkar/ycombinator_s24")
 args.add_argument("--split", type=str, default="train")
