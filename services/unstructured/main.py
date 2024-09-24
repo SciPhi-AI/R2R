@@ -1,14 +1,13 @@
-import asyncio
-import base64
-import concurrent.futures
-import logging
-import os
-from io import BytesIO
-from typing import Dict, List
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import List, Dict
+from io import BytesIO
+import asyncio
+import concurrent.futures
+import os
+import base64
 from unstructured.partition.auto import partition
+import logging
 
 logger = logging.getLogger(__name__)
 
