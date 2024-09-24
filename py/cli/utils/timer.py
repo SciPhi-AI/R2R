@@ -5,7 +5,7 @@ A timer context manager to measure the time taken to execute each command in the
 import time
 from contextlib import contextmanager
 
-import click
+import asyncclick as click
 
 
 @contextmanager

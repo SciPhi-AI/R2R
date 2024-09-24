@@ -79,7 +79,7 @@ wrap the text and put a `>` before every line:
 > This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
 > consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
 > Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
-> 
+>
 > Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
 > id sem consectetuer libero luctus adipiscing.
 
@@ -106,12 +106,12 @@ Blockquotes can contain other Markdown elements, including headers, lists,
 and code blocks:
 
 > ## This is a header.
-> 
+>
 > 1.   This is the first list item.
 > 2.   This is the second list item.
-> 
+>
 > Here's some example code:
-> 
+>
 >     return shell_exec("echo $input | $markdown_script");
 
 Any decent text editor should make email-style quoting easy. For

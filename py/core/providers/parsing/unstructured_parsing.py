@@ -1,4 +1,5 @@
-import asyncio
+# TODO - cleanup type issues in this file that relate to `bytes`
+import base64
 import logging
 import os
 import time
@@ -6,12 +7,13 @@ from copy import copy
 from io import BytesIO
 from typing import Any, AsyncGenerator
 
-from pydantic import BaseModel
+import httpx
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
 from core import parsers
 from core.base import (
+    AsyncParser,
     Document,
     DocumentExtraction,
     DocumentType,
@@ -19,7 +21,7 @@ from core.base import (
     ParsingProvider,
     generate_id_from_label,
 )
-from core.base.abstractions.base import R2RSerializable
+from core.base.abstractions import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ class UnstructuredParsingProvider(ParsingProvider):
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
-        DocumentType.MP4: [parsers.MovieParser],
+        # DocumentType.MP4: [parsers.MovieParser],
     }
 
     IMAGE_TYPES = {
@@ -61,6 +63,8 @@ class UnstructuredParsingProvider(ParsingProvider):
     }
 
     def __init__(self, use_api: bool, config: ParsingConfig):
+        super().__init__(config)
+        self.config: ParsingConfig = config
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
@@ -88,18 +92,20 @@ class UnstructuredParsingProvider(ParsingProvider):
             self.operations = operations
 
         else:
+
             try:
-                from unstructured.partition.auto import partition
-
-                self.partition = partition
-
-            except ImportError as e:
-                raise ImportError(
-                    "Please install the unstructured package to use the unstructured parsing provider."
+                self.local_unstructured_url = os.environ[
+                    "UNSTRUCTURED_LOCAL_URL"
+                ]
+            except KeyError as e:
+                raise ValueError(
+                    "UNSTRUCTURED_LOCAL_URL environment variable is not set"
                 ) from e
 
+            self.client = httpx.AsyncClient()
+
         super().__init__(config)
-        self.parsers = {}
+        self.parsers: dict[DocumentType, AsyncParser] = {}
         self._initialize_parsers()
 
     def _initialize_parsers(self):
@@ -121,19 +127,19 @@ class UnstructuredParsingProvider(ParsingProvider):
         self, file_content: bytes, document: Document, chunk_size: int
     ) -> AsyncGenerator[FallbackElement, None]:
 
-        texts = self.parsers[document.type].ingest(
+        texts = self.parsers[document.type].ingest(  # type: ignore
             file_content, chunk_size=chunk_size
         )
 
         chunk_id = 0
-        async for text in texts:
+        async for text in texts:  # type: ignore
             if text and text != "":
                 yield FallbackElement(
                     text=text, metadata={"chunk_id": chunk_id}
                 )
                 chunk_id += 1
 
-    async def parse(
+    async def parse(  # type: ignore
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
@@ -155,15 +161,14 @@ class UnstructuredParsingProvider(ParsingProvider):
             logger.info(
                 f"Parsing {document.type}: {document.id} with unstructured"
             )
-
             if isinstance(file_content, bytes):
-                file_content = BytesIO(file_content)
+                file_content = BytesIO(file_content)  # type: ignore
 
             # TODO - Include check on excluded parsers here.
             if self.use_api:
                 logger.info(f"Using API to parse document {document.id}")
                 files = self.shared.Files(
-                    content=file_content.read(),
+                    content=file_content.read(),  # type: ignore
                     file_name=document.metadata.get("title", "unknown_file"),
                 )
 
@@ -173,35 +178,56 @@ class UnstructuredParsingProvider(ParsingProvider):
                         **self.config.chunking_config.extra_fields,
                     )
                 )
-                elements = self.client.general.partition(req)
-                elements = list(elements.elements)
+                elements = self.client.general.partition(req)  # type: ignore
+                elements = list(elements.elements)  # type: ignore
 
             else:
                 logger.info(
-                    f"Using local unstructured to parse document {document.id}"
+                    f"Using local unstructured fastapi server to parse document {document.id}"
                 )
-                elements = self.partition(
-                    file=file_content,
-                    **self.config.chunking_config.extra_fields,
+                # Base64 encode the file content
+                encoded_content = base64.b64encode(file_content.read()).decode(  # type: ignore
+                    "utf-8"
                 )
+
+                logger.info(
+                    f"Sending a request to {self.local_unstructured_url}/partition"
+                )
+
+                response = await self.client.post(
+                    f"{self.local_unstructured_url}/partition",
+                    json={
+                        "file_content": encoded_content,  # Use encoded string
+                        "chunking_config": self.config.chunking_config.extra_fields,
+                    },
+                    timeout=300,  # Adjust timeout as needed
+                )
+
+                elements = response.json().get("elements", [])
 
         iteration = 0  # if there are no chunks
         for iteration, element in enumerate(elements):
-            if not isinstance(element, dict):
-                element = element.to_dict()
+            if isinstance(element, FallbackElement):
+                text = element.text
+                metadata = copy(document.metadata)
+                metadata.update(element.metadata)
+            else:
+                element_dict = (
+                    element.to_dict()
+                    if not isinstance(element, dict)
+                    else element
+                )
+                text = element_dict.get("text", "")
+                if text == "":
+                    continue
 
-            if element.get("text", "") == "":
-                continue
-
-            metadata = copy(document.metadata)
-            for key, value in element.items():
-                if key == "text":
-                    text = value
-                elif key == "metadata":
-                    for k, v in value.items():
-                        if k not in metadata:
-                            if k != "orig_elements":
-                                metadata[f"unstructured_{k}"] = v
+                metadata = copy(document.metadata)
+                for key, value in element_dict.items():
+                    if key == "metadata":
+                        for k, v in value.items():
+                            if k not in metadata:
+                                if k != "orig_elements":
+                                    metadata[f"unstructured_{k}"] = v
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline
@@ -212,10 +238,14 @@ class UnstructuredParsingProvider(ParsingProvider):
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,
                 user_id=document.user_id,
-                group_ids=document.group_ids,
+                collection_ids=document.collection_ids,
                 data=text,
                 metadata=metadata,
             )
+
+        # TODO: explore why this is throwing inadvertedly
+        # if iteration == 0:
+        #     raise ValueError(f"No chunks found for document {document.id}")
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

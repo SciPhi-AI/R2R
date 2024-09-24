@@ -37,14 +37,13 @@ class IngestionMethods:
             raise ValueError(
                 "Number of metadatas must match number of document IDs."
             )
-        if (
-            chunking_config is not None
-            and chunking_config is not ChunkingConfig
+        if chunking_config is not None and not isinstance(
+            chunking_config, ChunkingConfig
         ):
             # check if the provided dict maps to a ChunkingConfig
             ChunkingConfig(**chunking_config)
 
-        all_file_paths = []
+        all_file_paths: list[str] = []
         for path in file_paths:
             if os.path.isdir(path):
                 for root, _, files in os.walk(path):
@@ -55,7 +54,7 @@ class IngestionMethods:
                 all_file_paths.append(path)
 
         with ExitStack() as stack:
-            files = [
+            files_tuples = [
                 (
                     "files",
                     (
@@ -67,26 +66,44 @@ class IngestionMethods:
                 for file in all_file_paths
             ]
 
-            data = {
-                "metadatas": json.dumps(metadatas) if metadatas else None,
-                "document_ids": (
-                    json.dumps([str(doc_id) for doc_id in document_ids])
-                    if document_ids
-                    else None
-                ),
-                "chunking_config": (
-                    json.dumps(
-                        chunking_config.model_dump()
-                        if isinstance(chunking_config, ChunkingConfig)
-                        else chunking_config
-                    )
-                    if chunking_config
-                    else None
-                ),
-            }
+            data = {}
+            if document_ids:
+                data["document_ids"] = json.dumps(
+                    [str(doc_id) for doc_id in document_ids]
+                )
+            if metadatas:
+                data["metadatas"] = json.dumps(metadatas)
+
+            if chunking_config:
+                data["chunking_config"] = (
+                    chunking_config.model_dump()  # type: ignore
+                    if isinstance(chunking_config, ChunkingConfig)
+                    else chunking_config
+                )
+
             return await client._make_request(
-                "POST", "ingest_files", data=data, files=files
+                "POST", "ingest_files", data=data, files=files_tuples
             )
+
+    @staticmethod
+    async def retry_ingest_files(
+        client,
+        document_ids: list[Union[str, UUID]],
+    ) -> dict:
+        """
+        Retry ingestion for failed documents.
+
+        Args:
+            document_ids (List[Union[str, UUID]]): List of document IDs to retry.
+
+        Returns:
+            dict: Retry results containing processed, failed, and skipped documents.
+        """
+        return await client._make_request(
+            "POST",
+            "retry_ingest_files",
+            data={"document_ids": [str(doc_id) for doc_id in document_ids]},
+        )
 
     @staticmethod
     async def update_files(
@@ -139,7 +156,7 @@ class IngestionMethods:
                 data["metadatas"] = json.dumps(metadatas)
             if chunking_config:
                 data["chunking_config"] = (
-                    chunking_config.model_dump()
+                    chunking_config.model_dump()  # type: ignore
                     if isinstance(chunking_config, ChunkingConfig)
                     else chunking_config
                 )

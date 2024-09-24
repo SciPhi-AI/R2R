@@ -32,9 +32,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
+        config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -54,7 +54,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     def community_summary_prompt(
         self,
-        prompt: str,
         entities: list[Entity],
         triples: list[Triple],
         max_summary_input_length: int,
@@ -63,17 +62,26 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Preparing the list of entities and triples to be summarized and created into a community summary.
         """
         entities_info = "\n".join(
-            [f"{entity.name}, {entity.description}" for entity in entities]
+            [
+                f"{entity.id}, {entity.name}, {entity.description}"
+                for entity in entities
+            ]
         )
 
         triples_info = "\n".join(
             [
-                f"{triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
+                f"{triple.id}, {triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
                 for triple in triples
             ]
         )
 
-        prompt = prompt.format(entities=entities_info, triples=triples_info)
+        prompt = f"""
+        Entities:
+        {entities_info}
+
+        Relationships:
+        {triples_info}
+        """
 
         if len(prompt) > max_summary_input_length:
             logger.info(
@@ -92,24 +100,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
     ) -> dict:
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
-
-        Input:
-        - level: The level of the hierarchy.
-        - community_id: The ID of the community to process.
-
-        Output:
-        - A dictionary with the community id and the title of the community.
-        - Output format: {"id": community_id, "title": title}
-        """
-
-        input_text = """
-
-            Entities:
-            {entities}
-
-            Triples:
-            {triples}
-
         """
 
         logger.info(
@@ -117,22 +107,24 @@ class KGCommunitySummaryPipe(AsyncPipe):
         )
 
         entities, triples = (
-            self.kg_provider.get_community_entities_and_triples(
+            self.kg_provider.get_community_entities_and_triples(  # type: ignore
                 level=level, community_id=community_id
             )
         )
 
         if entities == [] or triples == []:
-            return None
+            # TODO - Does this logic work well with the full workflow?
+            raise ValueError(
+                f"Community {community_id} at level {level} has no entities or triples."
+            )
 
         description = (
             (
                 await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name="graphrag_community_reports",
+                        task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
                         task_inputs={
                             "input_text": self.community_summary_prompt(
-                                input_text,
                                 entities,
                                 triples,
                                 max_summary_input_length,
@@ -146,6 +138,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             .message.content
         )
 
+        if not description:
+            raise ValueError(
+                f"Failed to generate a summary for community {community_id} at level {level}."
+            )
+
         community = Community(
             id=str(community_id),
             level=str(level),
@@ -155,7 +152,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        self.kg_provider.upsert_communities([community])
+        self.kg_provider.upsert_communities([community])  # type: ignore
 
         try:
             summary = json.loads(community.summary)
@@ -164,7 +161,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         return {"id": community.id, "title": summary["title"]}
 
-    async def _run_logic(
+    async def _run_logic(  # type: ignore
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
@@ -181,11 +178,16 @@ class KGCommunitySummaryPipe(AsyncPipe):
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
 
-        community_summary = await self.process_community(
-            level=level,
-            community_id=community_id,
-            max_summary_input_length=max_summary_input_length,
-            generation_config=generation_config,
-        )
+        try:
+            community_summary = await self.process_community(
+                level=level,
+                community_id=community_id,
+                max_summary_input_length=max_summary_input_length,
+                generation_config=generation_config,
+            )
 
-        yield community_summary
+            yield community_summary
+        except Exception as e:
+            error_message = f"Failed to process community {community_id} at level {level}: {e}"
+            logger.error(error_message)
+            raise ValueError(error_message)

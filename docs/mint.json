@@ -99,7 +99,7 @@
                 "documentation/python-sdk/ingestion",
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
-                "documentation/python-sdk/groups",
+                "documentation/python-sdk/collections",
                 "documentation/python-sdk/observability"
               ]
             },
@@ -323,21 +323,21 @@
       ]
     },
     {
-      "group": "Groups",
+      "group": "Collections",
       "pages": [
-        "api-reference/endpoint/create_group",
-        "api-reference/endpoint/get_group",
-        "api-reference/endpoint/update_group",
-        "api-reference/endpoint/delete_group",
-        "api-reference/endpoint/list_groups",
-        "api-reference/endpoint/add_user_to_group",
-        "api-reference/endpoint/remove_user_from_group",
-        "api-reference/endpoint/get_users_in_group",
-        "api-reference/endpoint/get_groups_for_user",
-        "api-reference/endpoint/groups_overview",
-        "api-reference/endpoint/assign_document_to_group",
-        "api-reference/endpoint/remove_document_from_group",
-        "api-reference/endpoint/get_document_groups"
+        "api-reference/endpoint/create_collection",
+        "api-reference/endpoint/get_collection",
+        "api-reference/endpoint/update_collection",
+        "api-reference/endpoint/delete_collection",
+        "api-reference/endpoint/list_collections",
+        "api-reference/endpoint/add_user_to_collection",
+        "api-reference/endpoint/remove_user_from_collection",
+        "api-reference/endpoint/get_users_in_collection",
+        "api-reference/endpoint/get_collections_for_user",
+        "api-reference/endpoint/collections_overview",
+        "api-reference/endpoint/assign_document_to_collection",
+        "api-reference/endpoint/remove_document_from_collection",
+        "api-reference/endpoint/get_document_collections"
       ]
     },
 
@@ -393,7 +393,7 @@
       "group": "Auth & Admin",
       "pages": [
         "cookbooks/user-auth",
-        "cookbooks/groups",
+        "cookbooks/collections",
         "cookbooks/observability",
         "cookbooks/application"
       ]

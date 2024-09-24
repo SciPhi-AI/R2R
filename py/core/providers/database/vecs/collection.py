@@ -197,7 +197,7 @@ class Collection:
         "extraction_id",
         "document_id",
         "user_id",
-        "group_ids",
+        "collection_ids",
     ]
 
     def __init__(
@@ -237,13 +237,14 @@ class Collection:
                 if x is not None
             ]
         )
+
         if len(reported_dimensions) == 0:
             raise ArgError(
                 "One of dimension or adapter must provide a dimension"
             )
         elif len(reported_dimensions) > 1:
             raise MismatchedDimension(
-                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_VECS_COLLECTION` environment variable."
+                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
             )
 
     def __repr__(self):
@@ -312,7 +313,7 @@ class Collection:
         )
         if len(reported_dimensions) > 1:
             raise MismatchedDimension(
-                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_VECS_COLLECTION` environment variable."
+                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
             )
 
         if not collection_dimension:
@@ -400,7 +401,7 @@ class Collection:
                                 "extraction_id": record[1],
                                 "document_id": record[2],
                                 "user_id": record[3],
-                                "group_ids": record[4],
+                                "collection_ids": record[4],
                                 "vec": record[5],
                                 "text": record[6],
                                 "metadata": record[7],
@@ -415,7 +416,7 @@ class Collection:
                             extraction_id=stmt.excluded.extraction_id,
                             document_id=stmt.excluded.document_id,
                             user_id=stmt.excluded.user_id,
-                            group_ids=stmt.excluded.group_ids,
+                            collection_ids=stmt.excluded.collection_ids,
                             vec=stmt.excluded.vec,
                             text=stmt.excluded.text,
                             metadata=stmt.excluded.metadata,
@@ -593,7 +594,7 @@ class Collection:
             self.table.c.extraction_id,
             self.table.c.document_id,
             self.table.c.user_id,
-            self.table.c.group_ids,
+            self.table.c.collection_ids,
             self.table.c.text,
         ]
         if search_settings.include_values:
@@ -606,8 +607,8 @@ class Collection:
 
         # if filters:
         stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
-
         stmt = stmt.order_by(distance_clause)
+        stmt = stmt.offset(search_settings.offset)
         stmt = stmt.limit(search_settings.search_limit)
 
         with self.client.Session() as sess:
@@ -622,7 +623,12 @@ class Collection:
                     sess.execute(
                         text(
                             "set local hnsw.ef_search = :ef_search"
-                        ).bindparams(ef_search=search_settings.ef_search)
+                        ).bindparams(
+                            ef_search=max(
+                                search_settings.ef_search,
+                                search_settings.search_limit,
+                            )
+                        )
                     )
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
@@ -646,7 +652,7 @@ class Collection:
                 self.table.c.extraction_id,
                 self.table.c.document_id,
                 self.table.c.user_id,
-                self.table.c.group_ids,
+                self.table.c.collection_ids,
                 self.table.c.text,
                 self.table.c.metadata,
                 rank_function,
@@ -654,6 +660,7 @@ class Collection:
             .where(self.table.c.fts.op("@@")(ts_query))
             .where(self.build_filters(search_settings.filters))
             .order_by(rank_function.desc())
+            .offset(search_settings.offset)
             .limit(search_settings.hybrid_search_settings.full_text_limit)
         )
 
@@ -668,7 +675,7 @@ class Collection:
                 extraction_id=str(r.extraction_id),
                 document_id=str(r.document_id),
                 user_id=str(r.user_id),
-                group_ids=r.group_ids,
+                collection_ids=r.collection_ids,
                 text=r.text,
                 score=float(r.rank),
                 metadata=r.metadata,
@@ -715,7 +722,7 @@ class Collection:
                     elif op == "$contains":
                         return column.contains(clause)
                     elif op == "$any":
-                        if key == "group_ids":
+                        if key == "collection_ids":
                             # Use ANY for UUID array comparison
                             return func.array_to_string(column, ",").like(
                                 f"%{clause}%"
@@ -921,6 +928,16 @@ class Collection:
 
         return False
 
+    def close(self):
+        """
+        Closes the database connection associated with this collection.
+
+        This method should be called when you are done using the collection to release
+        the database resources.
+        """
+        if self.client:
+            self.client.close()
+
     def create_index(
         self,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
@@ -1077,7 +1094,9 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         Column("document_id", postgresql.UUID, nullable=False),
         Column("user_id", postgresql.UUID, nullable=False),
         Column(
-            "group_ids", postgresql.ARRAY(postgresql.UUID), server_default="{}"
+            "collection_ids",
+            postgresql.ARRAY(postgresql.UUID),
+            server_default="{}",
         ),
         Column("vec", Vector(dimension), nullable=False),
         Column("text", postgresql.TEXT, nullable=True),

@@ -192,8 +192,12 @@ class AuthMethods:
         try:
             await client._make_request("GET", "user")
             return {
-                "access_token": Token(token=access_token),
-                "refresh_token": Token(token=refresh_token),
+                "access_token": Token(
+                    token=access_token, token_type="access_token"
+                ),
+                "refresh_token": Token(
+                    token=refresh_token, token_type="refresh_token"
+                ),
             }
         except Exception:
             # If the request fails, clear the tokens and raise an exception

@@ -4,10 +4,16 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Tuple
 
-from ...base.utils.base_utils import RelationshipType
-from ..abstractions.graph import Entity, KGExtraction, Triple
-from ..abstractions.llm import GenerationConfig
-from ..abstractions.restructure import KGCreationSettings, KGEnrichmentSettings
+from ..abstractions import (
+    Entity,
+    GenerationConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGExtraction,
+    KGSearchSettings,
+    RelationshipType,
+    Triple,
+)
 from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -23,22 +29,18 @@ class KGConfig(ProviderConfig):
     database: Optional[str] = None
 
     batch_size: Optional[int] = 1
-    kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
-    kg_search_prompt: Optional[str] = "kg_search"
-    kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
-        KGEnrichmentSettings()
-    )
-    kg_creation_settings: Optional[KGCreationSettings] = KGCreationSettings()
+    kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
+    kg_creation_settings: KGCreationSettings = KGCreationSettings()
+    kg_search_settings: KGSearchSettings = KGSearchSettings()
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "neo4j", "local"]
+        return ["neo4j", "local"]
 
 
 class KGProvider(ABC):
@@ -54,7 +56,7 @@ class KGProvider(ABC):
         self.validate_config()
 
     def validate_config(self) -> None:
-        self.config.validate()
+        self.config.validate_config()
 
     @property
     @abstractmethod
@@ -127,7 +129,7 @@ class KGProvider(ABC):
             param_map = {}
 
     @abstractmethod
-    def vector_query(
+    async def vector_query(
         self, query, **kwargs: Any
     ) -> Tuple[list[Entity], list[float]]:
         """Abstract method to query the graph store with a vector store query."""

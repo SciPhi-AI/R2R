@@ -1,39 +1,40 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Optional
 
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from ...utils import generate_id_from_label
 from ..abstractions import R2RException, Token, TokenData
 from ..api.models import UserResponse
-from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
+from .crypto import CryptoProvider
 
 logger = logging.getLogger(__name__)
 
 
 class AuthConfig(ProviderConfig):
     secret_key: Optional[str] = None
-    require_authentication: Optional[bool] = False
-    require_email_verification: Optional[bool] = False
+    require_authentication: bool = False
+    require_email_verification: bool = False
+    default_admin_email: str = "admin@example.com"
+    default_admin_password: str = "change_me_immediately"
     access_token_lifetime_in_minutes: Optional[int] = None
     refresh_token_lifetime_in_days: Optional[int] = None
-    default_admin_email: Optional[str] = "admin@example.com"
-    default_admin_password: Optional[str] = "change_me_immediately"
 
     @property
     def supported_providers(self) -> list[str]:
         return ["r2r"]
 
-    def validate(self) -> None:
-        super().validate()
+    def validate_config(self) -> None:
+        pass
 
 
 class AuthProvider(Provider, ABC):
     security = HTTPBearer(auto_error=False)
 
-    def __init__(self, config: AuthConfig):
+    def __init__(self, config: AuthConfig, crypto_provider: CryptoProvider):
         if not isinstance(config, AuthConfig):
             raise ValueError(
                 "AuthProvider must be initialized with an AuthConfig"
@@ -41,7 +42,9 @@ class AuthProvider(Provider, ABC):
         self.config = config
         self.admin_email = config.default_admin_email
         self.admin_password = config.default_admin_password
+        self.crypto_provider = crypto_provider
         super().__init__(config)
+        self.config: AuthConfig = config  # for type hinting
 
     def _get_default_admin_user(self) -> UserResponse:
         return UserResponse(
@@ -64,11 +67,11 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def decode_token(self, token: str) -> TokenData:
+    async def decode_token(self, token: str) -> TokenData:
         pass
 
     @abstractmethod
-    def user(self, token: str) -> UserResponse:
+    async def user(self, token: str) -> UserResponse:
         pass
 
     @abstractmethod
@@ -78,21 +81,23 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def register(self, email: str, password: str) -> Dict[str, str]:
+    async def register(self, email: str, password: str) -> dict[str, str]:
         pass
 
     @abstractmethod
-    def verify_email(
+    async def verify_email(
         self, email: str, verification_code: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         pass
 
     @abstractmethod
-    def login(self, email: str, password: str) -> Dict[str, Token]:
+    async def login(self, email: str, password: str) -> dict[str, Token]:
         pass
 
     @abstractmethod
-    def refresh_access_token(self, refresh_token: str) -> Dict[str, str]:
+    async def refresh_access_token(
+        self, refresh_token: str
+    ) -> dict[str, Token]:
         pass
 
     async def auth_wrapper(
@@ -108,10 +113,29 @@ class AuthProvider(Provider, ABC):
             )
 
         try:
-            user = self.user(auth.credentials)
-            return user
+            return await self.user(auth.credentials)
         except Exception as e:
             raise R2RException(
-                message=f"Error '{e}' occured during authentication.",
+                message=f"Error '{e}' occurred during authentication.",
                 status_code=401,
             )
+
+    @abstractmethod
+    async def change_password(
+        self, user: UserResponse, current_password: str, new_password: str
+    ) -> dict[str, str]:
+        pass
+
+    @abstractmethod
+    async def request_password_reset(self, email: str) -> dict[str, str]:
+        pass
+
+    @abstractmethod
+    async def confirm_password_reset(
+        self, reset_token: str, new_password: str
+    ) -> dict[str, str]:
+        pass
+
+    @abstractmethod
+    async def logout(self, token: str) -> dict[str, str]:
+        pass

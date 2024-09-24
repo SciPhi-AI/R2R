@@ -62,26 +62,33 @@ class RestructureService(Service):
                     "relation_types": relation_types,
                 }
             ),
+            state=None,
             run_manager=self.run_manager,
         )
 
         result_gen = await self.pipes.kg_storage_pipe.run(
             input=self.pipes.kg_storage_pipe.Input(message=triples),
+            state=None,
             run_manager=self.run_manager,
         )
 
         return await _collect_results(result_gen)
 
     @telemetry_event("kg_node_creation")
-    async def kg_node_creation(self):
-        node_extrations = await self.pipes.kg_node_extraction_pipe.run(
+    async def kg_node_creation(self, max_description_input_length: int):
+        node_extractions = await self.pipes.kg_node_extraction_pipe.run(
             input=self.pipes.kg_node_extraction_pipe.Input(message=None),
+            state=None,
             run_manager=self.run_manager,
         )
         result_gen = await self.pipes.kg_node_description_pipe.run(
             input=self.pipes.kg_node_description_pipe.Input(
-                message=node_extrations
+                message={
+                    "node_extractions": node_extractions,
+                    "max_description_input_length": max_description_input_length,
+                }
             ),
+            state=None,
             run_manager=self.run_manager,
         )
         return await _collect_results(result_gen)
@@ -95,6 +102,7 @@ class RestructureService(Service):
                     "generation_config": generation_config,
                 }
             ),
+            state=None,
             run_manager=self.run_manager,
         )
 
@@ -117,6 +125,7 @@ class RestructureService(Service):
                     "max_summary_input_length": max_summary_input_length,
                 }
             ),
+            state=None,
             run_manager=self.run_manager,
         )
         return await _collect_results(summary_results)

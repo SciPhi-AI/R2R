@@ -1,4 +1,5 @@
 from typing import Any, AsyncGenerator, Optional, Tuple
+from uuid import UUID
 
 from core.base import (
     AggregateSearchResult,
@@ -9,7 +10,7 @@ from core.base import (
     PipeType,
     PromptProvider,
 )
-from core.base.abstractions.llm import GenerationConfig, RAGCompletion
+from core.base.abstractions import GenerationConfig, RAGCompletion
 
 from ..abstractions.generator_pipe import GeneratorPipe
 
@@ -22,33 +23,35 @@ class SearchRAGPipe(GeneratorPipe):
         self,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        config: GeneratorPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
-        config: Optional[GeneratorPipe] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
-            type=type,
-            config=config
-            or GeneratorPipe.Config(
-                name="default_rag_pipe", task_prompt="default_rag"
-            ),
+            llm_provider,
+            prompt_provider,
+            config,
+            type,
             *args,
             **kwargs,
         )
+        self._config: GeneratorPipe.PipeConfig = config
 
-    async def _run_logic(
+    @property
+    def config(self) -> GeneratorPipe.PipeConfig:  # for type hiting
+        return self._config
+
+    async def _run_logic(  # type: ignore
         self,
         input: Input,
         state: AsyncState,
+        run_id: UUID,
         rag_generation_config: GenerationConfig,
         completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[RAGCompletion, None]:
-        run_id = kwargs.get("run_id")
         context = ""
         search_iteration = 1
         total_results = 0
@@ -74,10 +77,13 @@ class SearchRAGPipe(GeneratorPipe):
         yield RAGCompletion(completion=response, search_results=search_results)
 
         if run_id:
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Response content is empty")
             await self.enqueue_log(
                 run_id=run_id,
                 key="llm_response",
-                value=response.choices[0].message.content,
+                value=content,
             )
 
     async def _collect_context(
@@ -100,8 +106,11 @@ class SearchRAGPipe(GeneratorPipe):
         if results.kg_search_results:
             context += f"Knowledge Graph ({iteration}):\n"
             it = total_results + 1
-            for query, search_results in results.kg_search_results:  # [1]:
-                context += f"Query: {query}\n\n"
+            for search_results in results.kg_search_results:  # [1]:
+                if associated_query := search_results.metadata.get(
+                    "associated_query"
+                ):
+                    context += f"Query: {associated_query}\n\n"
                 context += f"Results:\n"
                 for search_result in search_results:
                     context += f"[{it}]: {search_result}\n\n"

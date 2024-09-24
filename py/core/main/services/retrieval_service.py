@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from core import R2RStreamingRAGAgent
 from core.base import (
     CompletionRecord,
     GenerationConfig,
@@ -14,13 +15,13 @@ from core.base import (
     R2RException,
     RunLoggingSingleton,
     RunManager,
+    RunType,
     VectorSearchSettings,
     generate_id_from_label,
     manage_run,
     to_async_generator,
 )
-from core.base.api.models import RAGResponse, SearchResponse
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import RAGResponse, SearchResponse, UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -60,7 +61,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ) -> SearchResponse:
-        async with manage_run(self.run_manager, "search_app") as run_id:
+        async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             t0 = time.time()
 
             if (
@@ -94,14 +95,17 @@ class RetrievalService(Service):
             for filter, value in vector_search_settings.filters.items():
                 if isinstance(value, UUID):
                     vector_search_settings.filters[filter] = str(value)
-
-            results = await self.pipelines.search_pipeline.run(
-                input=to_async_generator([query]),
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
-                run_manager=self.run_manager,
-                *args,
+            merged_kwargs = {
+                "input": to_async_generator([query]),
+                "state": None,
+                "vector_search_settings": vector_search_settings,
+                "kg_search_settings": kg_search_settings,
+                "run_manager": self.run_manager,
                 **kwargs,
+            }
+            results = await self.pipelines.search_pipeline.run(
+                *args,
+                **merged_kwargs,
             )
 
             t1 = time.time()
@@ -113,7 +117,7 @@ class RetrievalService(Service):
                 value=latency,
             )
 
-            return results.dict()
+            return results.as_dict()
 
     @telemetry_event("RAG")
     async def rag(
@@ -125,7 +129,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ) -> RAGResponse:
-        async with manage_run(self.run_manager, "rag_app") as run_id:
+        async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             try:
                 # TODO - Remove these transforms once we have a better way to handle this
                 for (
@@ -158,14 +162,19 @@ class RetrievalService(Service):
                         **kwargs,
                     )
 
-                results = await self.pipelines.rag_pipeline.run(
-                    input=to_async_generator([query]),
-                    run_manager=self.run_manager,
-                    vector_search_settings=vector_search_settings,
-                    kg_search_settings=kg_search_settings,
-                    rag_generation_config=rag_generation_config,
-                    *args,
+                merged_kwargs = {
+                    "input": to_async_generator([query]),
+                    "state": None,
+                    "vector_search_settings": vector_search_settings,
+                    "kg_search_settings": kg_search_settings,
+                    "run_manager": self.run_manager,
+                    "rag_generation_config": rag_generation_config,
                     **kwargs,
+                }
+
+                results = await self.pipelines.rag_pipeline.run(
+                    *args,
+                    **merged_kwargs,
                 )
 
                 if len(results) == 0:
@@ -221,17 +230,23 @@ class RetrievalService(Service):
     ):
         async def stream_response():
             async with manage_run(self.run_manager, "rag"):
+                print("received query = ", query)
+                merged_kwargs = {
+                    "input": to_async_generator([query]),
+                    "state": None,
+                    "run_manager": self.run_manager,
+                    "vector_search_settings": vector_search_settings,
+                    "kg_search_settings": kg_search_settings,
+                    "rag_generation_config": rag_generation_config,
+                    "completion_record": completion_record,
+                    **kwargs,
+                }
+
                 async for (
                     chunk
                 ) in await self.pipelines.streaming_rag_pipeline.run(
-                    input=to_async_generator([query]),
-                    run_manager=self.run_manager,
-                    vector_search_settings=vector_search_settings,
-                    kg_search_settings=kg_search_settings,
-                    rag_generation_config=rag_generation_config,
-                    completion_record=completion_record,
                     *args,
-                    **kwargs,
+                    **merged_kwargs,
                 ):
                     yield chunk
 
@@ -249,7 +264,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ):
-        async with manage_run(self.run_manager, "agent_app") as run_id:
+        async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             try:
                 t0 = time.time()
 
@@ -273,9 +288,13 @@ class RetrievalService(Service):
 
                     async def stream_response():
                         async with manage_run(self.run_manager, "rag_agent"):
-                            async for (
-                                chunk
-                            ) in self.agents.streaming_rag_agent.arun(
+                            agent = R2RStreamingRAGAgent(
+                                llm_provider=self.providers.llm,
+                                prompt_provider=self.providers.prompt,
+                                config=self.config.agent,
+                                search_pipeline=self.pipelines.search_pipeline,
+                            )
+                            async for chunk in agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,
@@ -403,7 +422,7 @@ class RetrievalServiceAdapter:
         user: UserResponse,
     ) -> dict:
         return {
-            "messages": [message.to_dict() for message in messages],
+            "messages": [message.to_dict() for message in messages],  # type: ignore
             "vector_search_settings": vector_search_settings.to_dict(),
             "kg_search_settings": kg_search_settings.to_dict(),
             "rag_generation_config": rag_generation_config.to_dict(),
@@ -416,7 +435,7 @@ class RetrievalServiceAdapter:
     def parse_agent_input(data: dict):
         return {
             "messages": [
-                Message.from_dict(message) for message in data["messages"]
+                Message.from_dict(message) for message in data["messages"]  # type: ignore
             ],
             "vector_search_settings": VectorSearchSettings.from_dict(
                 data["vector_search_settings"]

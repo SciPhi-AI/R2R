@@ -31,7 +31,7 @@ def process_frame_with_openai(
                     },
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{data}"},
+                        "image_url": {"url": f"data:image/jpeg;base64,{data}"},  # type: ignore
                     },
                 ],
             }

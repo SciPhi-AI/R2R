@@ -202,10 +202,6 @@ export class r2rClient {
     // }
   }
 
-  async health(): Promise<any> {
-    return await this._makeRequest("GET", "health");
-  }
-
   // -----------------------------------------------------------------------------
   //
   // Auth
@@ -332,7 +328,12 @@ export class r2rClient {
     const response = await this._makeRequest<RefreshTokenResponse>(
       "POST",
       "refresh_access_token",
-      { data: { refresh_token: this.refreshToken } },
+      {
+        data: this.refreshToken,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
     );
 
     if (response && response.results) {
@@ -403,14 +404,9 @@ export class r2rClient {
   @feature("deleteUser")
   async deleteUser(userId: string, password?: string): Promise<any> {
     this._ensureAuthenticated();
-
-    const data: Record<string, any> = { user_id: userId };
-
-    if (password) {
-      data.password = password;
-    }
-
-    return await this._makeRequest("DELETE", "user", { data });
+    return await this._makeRequest("DELETE", `user/${userId}`, {
+      data: { password },
+    });
   }
 
   // -----------------------------------------------------------------------------
@@ -607,6 +603,14 @@ export class r2rClient {
   // -----------------------------------------------------------------------------
 
   /**
+   * Check the health of the R2R deployment.
+   * @returns A promise that resolves to the response from the server.
+   */
+  async health(): Promise<any> {
+    return await this._makeRequest("GET", "health");
+  }
+
+  /**
    * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
    * @returns A promise that resolves to the response from the server.
    */
@@ -738,14 +742,30 @@ export class r2rClient {
 
   /**
    * An overview of the users in the R2R deployment.
-   * @param user_ids
+   * @param user_ids List of user IDs to get an overview for.
+   * * @param offset The offset to start listing users from.
+   * @param limit The maximum number of users to return.
    * @returns
    */
   @feature("usersOverview")
-  async usersOverview(user_ids?: string[]): Promise<Record<string, any>> {
+  async usersOverview(
+    user_ids?: string[],
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
-    const params: { user_ids?: string[] } = {};
+    let params: Record<string, any> = {};
+    if (user_ids && user_ids.length > 0) {
+      params.user_ids = user_ids;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+
     if (user_ids && user_ids.length > 0) {
       params.user_ids = user_ids;
     }
@@ -756,33 +776,55 @@ export class r2rClient {
   /**
    * Delete data from the database given a set of filters.
    * @param filters The filters to delete by.
-   * @returns
+   * @returns The results of the deletion.
    */
   @feature("delete")
-  async delete(filters: { [key: string]: string | string[] }): Promise<any> {
+  async delete(filters: { [key: string]: any }): Promise<any> {
     this._ensureAuthenticated();
 
     const params = {
       filters: JSON.stringify(filters),
     };
 
-    return this._makeRequest("DELETE", "delete", {
-      params,
+    return this._makeRequest("DELETE", "delete", { params }) || { results: {} };
+  }
+
+  /**
+   * Download the raw file associated with a document.
+   * @param documentId The ID of the document to retrieve.
+   * @returns A promise that resolves to a Blob representing the PDF.
+   */
+  @feature("downloadFile")
+  async downloadFile(documentId: string): Promise<Blob> {
+    return await this._makeRequest<Blob>("GET", `download_file/${documentId}`, {
+      responseType: "blob",
     });
   }
 
   /**
    * Get an overview of documents in the R2R deployment.
    * @param document_ids List of document IDs to get an overview for.
+   * @param offset The offset to start listing documents from.
+   * @param limit The maximum number of documents to return.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("documentsOverview")
-  async documentsOverview(document_ids?: string[]): Promise<any> {
+  async documentsOverview(
+    document_ids?: string[],
+    offset?: number,
+    limit?: number,
+  ): Promise<any> {
     this._ensureAuthenticated();
 
-    let params: Record<string, string[]> = {};
+    let params: Record<string, any> = {};
     if (document_ids && document_ids.length > 0) {
       params.document_ids = document_ids;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
     }
 
     return this._makeRequest("GET", "documents_overview", { params });
@@ -794,13 +836,26 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("documentChunks")
-  async documentChunks(document_id: string): Promise<any> {
+  async documentChunks(
+    document_id: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<any> {
     this._ensureAuthenticated();
+
+    const params: Record<string, number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
 
     return this._makeRequest("GET", `document_chunks/${document_id}`, {
       headers: {
         "Content-Type": "application/json",
       },
+      params,
     });
   }
 
@@ -810,128 +865,7 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("inspectKnowledgeGraph")
-  async inspectKnowledgeGraph(limit?: number): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: { limit?: number } = {};
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest("GET", "inspect_knowledge_graph", { params });
-  }
-
-  /**
-   * Get an overview of existing groups.
-   * @param groupIds List of group IDs to get an overview for.
-   * @param limit The maximum number of groups to return.
-   * @param offset The offset to start listing groups from.
-   * @returns
-   */
-  @feature("groupsOverview")
-  async groupsOverview(
-    groupIds?: string[],
-    limit?: number,
-    offset?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string | number | string[]> = {};
-    if (groupIds && groupIds.length > 0) {
-      params.group_ids = groupIds;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-
-    return this._makeRequest("GET", "groups_overview", { params });
-  }
-
-  /**
-   * Create a new group.
-   * @param name The name of the group.
-   * @param description The description of the group.
-   * @returns
-   */
-  @feature("createGroup")
-  async createGroup(
-    name: string,
-    description?: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data: { name: string; description?: string } = { name };
-    if (description !== undefined) {
-      data.description = description;
-    }
-
-    return this._makeRequest("POST", "create_group", { data });
-  }
-
-  /**
-   * Get a group by its ID.
-   * @param groupId The ID of the group to get.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getGroup")
-  async getGroup(groupId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("GET", `get_group/${encodeURIComponent(groupId)}`);
-  }
-
-  /**
-   * Updates the name and description of a group.
-   * @param groupId The ID of the group to update.
-   * @param name The new name for the group.
-   * @param description The new description of the group.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("updateGroup")
-  async updateGroup(
-    groupId: string,
-    name?: string,
-    description?: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data: { group_id: string; name?: string; description?: string } = {
-      group_id: groupId,
-    };
-    if (name !== undefined) {
-      data.name = name;
-    }
-    if (description !== undefined) {
-      data.description = description;
-    }
-
-    return this._makeRequest("PUT", "update_group", { data });
-  }
-
-  /**
-   * Delete a group by its ID.
-   * @param groupId The ID of the group to delete.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("deleteGroup")
-  async deleteGroup(groupId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest(
-      "DELETE",
-      `delete_group/${encodeURIComponent(groupId)}`,
-    );
-  }
-
-  /**
-   * List all groups in the R2R deployment.
-   * @param offset The offset to start listing groups from.
-   * @param limit The maximum numberof groups to return.
-   * @returns
-   */
-  @feature("listGroups")
-  async listGroups(
+  async inspectKnowledgeGraph(
     offset?: number,
     limit?: number,
   ): Promise<Record<string, any>> {
@@ -945,53 +879,184 @@ export class r2rClient {
       params.limit = limit;
     }
 
-    return this._makeRequest("GET", "list_groups", { params });
+    return this._makeRequest("GET", "inspect_knowledge_graph", { params });
   }
 
   /**
-   * Add a user to a group.
-   * @param userId The ID of the user to add.
-   * @param groupId The ID of the group to add the user to.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("addUserToGroup")
-  async addUserToGroup(
-    userId: string,
-    groupId: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("POST", "add_user_to_group", {
-      data: { user_id: userId, group_id: groupId },
-    });
-  }
-
-  /**
-   * Remove a user from a group.
-   * @param userId The ID of the user to remove.
-   * @param groupId The ID of the group to remove the user from.
+   * Get an overview of existing collections.
+   * @param collectionIds List of collection IDs to get an overview for.
+   * @param limit The maximum number of collections to return.
+   * @param offset The offset to start listing collections from.
    * @returns
    */
-  @feature("removeUserFromGroup")
-  async removeUserFromGroup(
-    userId: string,
-    groupId: string,
+  @feature("collectionsOverview")
+  async collectionsOverview(
+    collectionIds?: string[],
+    offset?: number,
+    limit?: number,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    return this._makeRequest("POST", "remove_user_from_group", {
-      data: { user_id: userId, group_id: groupId },
+
+    const params: Record<string, string | number | string[]> = {};
+    if (collectionIds && collectionIds.length > 0) {
+      params.collection_ids = collectionIds;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+
+    return this._makeRequest("GET", "collections_overview", { params });
+  }
+
+  /**
+   * Create a new collection.
+   * @param name The name of the collection.
+   * @param description The description of the collection.
+   * @returns
+   */
+  @feature("createCollection")
+  async createCollection(
+    name: string,
+    description?: string,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const data: { name: string; description?: string } = { name };
+    if (description !== undefined) {
+      data.description = description;
+    }
+
+    return this._makeRequest("POST", "create_collection", { data });
+  }
+
+  /**
+   * Get a collection by its ID.
+   * @param collectionId The ID of the collection to get.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("getCollection")
+  async getCollection(collectionId: string): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return this._makeRequest(
+      "GET",
+      `get_collection/${encodeURIComponent(collectionId)}`,
+    );
+  }
+
+  /**
+   * Updates the name and description of a collection.
+   * @param collectionId The ID of the collection to update.
+   * @param name The new name for the collection.
+   * @param description The new description of the collection.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("updateCollection")
+  async updateCollection(
+    collectionId: string,
+    name?: string,
+    description?: string,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const data: { collection_id: string; name?: string; description?: string } =
+      {
+        collection_id: collectionId,
+      };
+    if (name !== undefined) {
+      data.name = name;
+    }
+    if (description !== undefined) {
+      data.description = description;
+    }
+
+    return this._makeRequest("PUT", "update_collection", { data });
+  }
+
+  /**
+   * Delete a collection by its ID.
+   * @param collectionId The ID of the collection to delete.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("deleteCollection")
+  async deleteCollection(collectionId: string): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return this._makeRequest(
+      "DELETE",
+      `delete_collection/${encodeURIComponent(collectionId)}`,
+    );
+  }
+
+  /**
+   * List all collections in the R2R deployment.
+   * @param offset The offset to start listing collections from.
+   * @param limit The maximum numberof collections to return.
+   * @returns
+   */
+  @feature("listCollections")
+  async listCollections(
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+
+    return this._makeRequest("GET", "list_collections", { params });
+  }
+
+  /**
+   * Add a user to a collection.
+   * @param userId The ID of the user to add.
+   * @param collectionId The ID of the collection to add the user to.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("addUserToCollection")
+  async addUserToCollection(
+    userId: string,
+    collectionId: string,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return this._makeRequest("POST", "add_user_to_collection", {
+      data: { user_id: userId, collection_id: collectionId },
     });
   }
 
   /**
-   * Get all users in a group.
-   * @param groupId The ID of the group to get users for.
+   * Remove a user from a collection.
+   * @param userId The ID of the user to remove.
+   * @param collectionId The ID of the collection to remove the user from.
+   * @returns
+   */
+  @feature("removeUserFromCollection")
+  async removeUserFromCollection(
+    userId: string,
+    collectionId: string,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return this._makeRequest("POST", "remove_user_from_collection", {
+      data: { user_id: userId, collection_id: collectionId },
+    });
+  }
+
+  /**
+   * Get all users in a collection.
+   * @param collectionId The ID of the collection to get users for.
    * @param offset The offset to start listing users from.
    * @param limit The maximum number of users to return.
    * @returns A promise that resolves to the response from the server.
    */
-  @feature("getUsersInGroup")
-  async getUsersInGroup(
-    groupId: string,
+  @feature("getUsersInCollection")
+  async getUsersInCollection(
+    collectionId: string,
     offset?: number,
     limit?: number,
   ): Promise<Record<string, any>> {
@@ -1007,86 +1072,113 @@ export class r2rClient {
 
     return this._makeRequest(
       "GET",
-      `get_users_in_group/${encodeURIComponent(groupId)}`,
+      `get_users_in_collection/${encodeURIComponent(collectionId)}`,
       { params },
     );
   }
 
   /**
-   * Get all groups that a user is a member of.
-   * @param userId The ID of the user to get groups for.
+   * Get all collections that a user is a member of.
+   * @param userId The ID of the user to get collections for.
    * @returns A promise that resolves to the response from the server.
    */
-  @feature("getGroupsForUser")
-  async getGroupsForUser(userId: string): Promise<Record<string, any>> {
+  @feature("getCollectionsForUser")
+  async getCollectionsForUser(
+    userId: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
+
+    const params: Record<string, string | number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+
     return this._makeRequest(
       "GET",
-      `get_groups_for_user/${encodeURIComponent(userId)}`,
+      `user_collections/${encodeURIComponent(userId)}`,
+      { params },
     );
   }
 
   /**
-   * Assign a document to a group.
+   * Assign a document to a collection.
    * @param document_id The ID of the document to assign.
-   * @param group_id The ID of the group to assign the document to.
+   * @param collection_id The ID of the collection to assign the document to.
    * @returns
    */
-  @feature("assignDocumentToGroup")
-  async assignDocumentToGroup(
+  @feature("assignDocumentToCollection")
+  async assignDocumentToCollection(
     document_id: string,
-    group_id: string,
+    collection_id: string,
   ): Promise<any> {
     this._ensureAuthenticated();
 
-    return this._makeRequest("POST", "assign_document_to_group", {
-      data: { document_id, group_id },
+    return this._makeRequest("POST", "assign_document_to_collection", {
+      data: { document_id, collection_id },
     });
   }
 
   /**
-   * Remove a document from a group.
+   * Remove a document from a collection.
    * @param document_id The ID of the document to remove.
-   * @param group_id The ID of the group to remove the document from.
+   * @param collection_id The ID of the collection to remove the document from.
    * @returns A promise that resolves to the response from the server.
    */
-  @feature("removeDocumentFromGroup")
-  async removeDocumentFromGroup(
+  @feature("removeDocumentFromCollection")
+  async removeDocumentFromCollection(
     document_id: string,
-    group_id: string,
+    collection_id: string,
   ): Promise<any> {
     this._ensureAuthenticated();
 
-    return this._makeRequest("POST", "remove_document_from_group", {
-      data: { document_id, group_id },
+    return this._makeRequest("POST", "remove_document_from_collection", {
+      data: { document_id, collection_id },
     });
   }
 
   /**
-   * Get all groups that a document is assigned to.
-   * @param documentId The ID of the document to get groups for.
+   * Get all collections that a document is assigned to.
+   * @param documentId The ID of the document to get collections for.
    * @returns
    */
-  @feature("getDocumentGroups")
-  async getDocumentGroups(documentId: string): Promise<Record<string, any>> {
+  @feature("getDocumentCollections")
+  async getDocumentCollections(
+    documentId: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
+
+    const params: Record<string, string | number> = {};
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
 
     return this._makeRequest(
       "GET",
-      `get_document_groups/${encodeURIComponent(documentId)}`,
+      `get_document_collections/${encodeURIComponent(documentId)}`,
+      { params },
     );
   }
 
   /**
-   * Get all documents in a group.
-   * @param groupId The ID of the group to get documents for.
+   * Get all documents in a collection.
+   * @param collectionId The ID of the collection to get documents for.
    * @param offset The offset to start listing documents from.
    * @param limit The maximum number of documents to return.
    * @returns A promise that resolves to the response from the server.
    */
-  @feature("getDocumentsInGroup")
-  async getDocumentsInGroup(
-    groupId: string,
+  @feature("getDocumentsInCollection")
+  async getDocumentsInCollection(
+    collectionId: string,
     offset?: number,
     limit?: number,
   ): Promise<Record<string, any>> {
@@ -1102,7 +1194,7 @@ export class r2rClient {
 
     return this._makeRequest(
       "GET",
-      `group/${encodeURIComponent(groupId)}/documents`,
+      `collection/${encodeURIComponent(collectionId)}/documents`,
       { params },
     );
   }

@@ -7,7 +7,7 @@ from core.base.abstractions import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from core.base.pipes.base_pipe import AsyncPipe
+from core.base.pipes.base_pipe import AsyncPipe, PipeType
 
 from ..abstractions.search_pipe import SearchPipe
 from .query_transform_pipe import QueryTransformPipe
@@ -25,23 +25,29 @@ class MultiSearchPipe(AsyncPipe):
         self,
         query_transform_pipe: QueryTransformPipe,
         inner_search_pipe: SearchPipe,
-        config: Optional[PipeConfig] = None,
+        config: PipeConfig,
         *args,
         **kwargs,
     ):
         self.query_transform_pipe = query_transform_pipe
         self.vector_search_pipe = inner_search_pipe
 
+        config = config or MultiSearchPipe.PipeConfig(
+            name=query_transform_pipe.config.name
+        )
         super().__init__(
-            config=config
-            or MultiSearchPipe.PipeConfig(
-                name=query_transform_pipe.config.name
-            ),
+            config,
+            PipeType.SEARCH,
             *args,
             **kwargs,
         )
+        self._config: MultiSearchPipe.PipeConfig = config  # for type hinting
 
-    async def _run_logic(
+    @property
+    def config(self) -> PipeConfig:
+        return self._config
+
+    async def _run_logic(  # type: ignore
         self,
         input: Any,
         state: Any,
@@ -82,8 +88,8 @@ class MultiSearchPipe(AsyncPipe):
             ):
                 results.append(search_result)
 
-            # Group results by their associated queries
-            grouped_results = {}
+            # Collection results by their associated queries
+            grouped_results: dict[str, list[VectorSearchResult]] = {}
             for result in results:
                 query = result.metadata["associated_query"]
                 if query not in grouped_results:
@@ -106,18 +112,19 @@ class MultiSearchPipe(AsyncPipe):
     def reciprocal_rank_fusion(
         self, all_results: Dict[str, List[VectorSearchResult]]
     ) -> List[VectorSearchResult]:
-        document_scores = {}
-        document_results = {}
-        document_queries = {}
+        document_scores: dict[UUID, float] = {}
+        document_results: dict[UUID, VectorSearchResult] = {}
+        document_queries: dict[UUID, set[str]] = {}
         for query, results in all_results.items():
             for rank, result in enumerate(results, 1):
                 doc_id = result.fragment_id
                 if doc_id not in document_scores:
                     document_scores[doc_id] = 0
                     document_results[doc_id] = result
-                    document_queries[doc_id] = set()
+                    set_: set[str] = set()
+                    document_queries[doc_id] = set_
                 document_scores[doc_id] += 1 / (rank + self.config.rrf_k)
-                document_queries[doc_id].add(query)
+                document_queries[doc_id].add(query)  # type: ignore
 
         # Sort documents by their RRF score
         sorted_docs = sorted(
@@ -132,7 +139,7 @@ class MultiSearchPipe(AsyncPipe):
                 rrf_score  # Replace the original score with the RRF score
             )
             result.metadata["associated_queries"] = list(
-                document_queries[doc_id]
+                document_queries[doc_id]  # type: ignore
             )  # Add list of associated queries
             result.metadata["is_rrf_score"] = True
             if "associated_query" in result.metadata:

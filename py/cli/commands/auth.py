@@ -1,6 +1,6 @@
 import secrets
 
-import click
+import asyncclick as click
 
 from cli.command_group import cli
 

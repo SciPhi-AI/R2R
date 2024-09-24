@@ -1,21 +1,22 @@
+import asyncio
 import contextvars
 from contextlib import asynccontextmanager
 from typing import Optional
 from uuid import UUID
 
-from core.base.api.models.auth.responses import UserResponse
+from core.base.api.models import UserResponse
 from core.base.logging.base import RunType
 from core.base.utils import generate_run_id
 
 from .run_logger import RunLoggingSingleton
 
-run_id_var = contextvars.ContextVar("run_id", default=None)
+run_id_var = contextvars.ContextVar("run_id", default=generate_run_id())
 
 
 class RunManager:
     def __init__(self, logger: RunLoggingSingleton):
         self.logger = logger
-        self.run_info = {}
+        self.run_info: dict[UUID, dict] = {}
 
     async def set_run_info(self, run_type: str, run_id: Optional[UUID] = None):
         run_id = run_id or run_id_var.get()
@@ -36,6 +37,9 @@ class RunManager:
         run_type: RunType,
         user: UserResponse,
     ):
+        if asyncio.iscoroutine(user):
+            user = await user
+
         if run_id := run_id_var.get():
             await self.logger.info_log(
                 run_id=run_id,
@@ -67,4 +71,4 @@ async def manage_run(
             run_id_var.reset(token)
         else:
             # We're in a test environment, just reset the run_id_var
-            run_id_var.set(None)
+            run_id_var.set(None)  # type: ignore

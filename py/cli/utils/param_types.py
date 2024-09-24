@@ -1,13 +1,13 @@
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-import click
+import asyncclick as click
 
 
 class JsonParamType(click.ParamType):
     name = "json"
 
-    def convert(self, value, param, ctx) -> Dict[str, Any]:
+    def convert(self, value, param, ctx) -> Optional[Dict[str, Any]]:
         if value is None:
             return None
         if isinstance(value, dict):

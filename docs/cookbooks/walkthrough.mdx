@@ -107,7 +107,7 @@ R2R efficiently handles diverse document types using Postgres with pgvector, com
 Key features include:
 
 - Unique `document_id` generation for each ingested file
-- User and group permissioning through `user_id` and `group_ids`
+- User and collection permissions through `user_id` and `collection_ids`
 - Document versioning for tracking changes over time
 - Granular access to document content through chunk retrieval
 - Flexible deletion and update mechanisms
@@ -165,7 +165,7 @@ This command initiates the ingestion process, producing output similar to:
 
 Key features of the ingestion process:
 1. Unique `document_id` generation for each file
-2. Metadata association, including `user_id` and `group_ids` for document management
+2. Metadata association, including `user_id` and `collection_ids` for document management
 3. Efficient parsing, chunking, and embedding of diverse file types
 </Accordion>
 
@@ -222,7 +222,7 @@ This command returns document metadata, including:
     'ingestion_status': 'success',
     'restructuring_status': 'pending',
     'version': 'v0',
-    'group_ids': [],
+    'collection_ids': [],
     'metadata': {'title': 'aristotle.txt', 'version': 'v0'}
   }
   ...
@@ -396,7 +396,7 @@ This flexible deletion mechanism ensures precise control over document managemen
     ```bash
     curl -X POST http://localhost:7272/v2/update_files \
     -H "Content-Type: multipart/form-data" \
-    -F "files=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
+    -F "file_paths=@/path/to/your/r2r/examples/data/aristotle_v2.txt" \
     -F 'document_ids=["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]'
     ```
     </Tab>
@@ -508,7 +508,7 @@ curl -X POST http://localhost:7272/v2/search \
           'extraction_id': '429976dd-4350-5033-b06d-8ffb67d7e8c8',
           'document_id': '26e0b128-3043-5674-af22-a6f7b0e54769',
           'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-          'group_ids': [],
+          'collection_ids': [],
           'score': 0.285747126074015,
           'text': 'Net\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted',
           'metadata': {'title': 'uber_2021.pdf', 'version': 'v0', 'chunk_order': 5, 'associatedQuery': "What was Uber's profit in 2020?"}
