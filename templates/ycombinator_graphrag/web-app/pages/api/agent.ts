@@ -38,7 +38,6 @@ export default async function handler(req: Request) {
       // kg_search_type: "local", // kg_search_type ?? 'local',
     };
 
-
     const kgSearchParams = use_kg_search
       ? { use_kg_search: true, kg_search_type: 'local' }
       : undefined;
@@ -61,8 +60,9 @@ export default async function handler(req: Request) {
     If no obvious question is present, then do not carry out a search, and instead ask for clarification.\
 
     REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
-    `;
 
+    ALSO, NOTE - Above is combined output from a knowledge graph and search engine for YCombinator. PAY CLOSE ATTENTION TO THE KNOWLEDGE GRAPH RESULTS ABOVE, and give a detailed synthesis of the information in your response. ANY POOR RESPONSES WILL RESULT IN YOUR TERMINATION.
+    `;
     const streamResponse = await client.agent(
       messages,
       searchParams,

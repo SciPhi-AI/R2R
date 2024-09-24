@@ -202,10 +202,6 @@ export class r2rClient {
     // }
   }
 
-  async health(): Promise<any> {
-    return await this._makeRequest("GET", "health");
-  }
-
   // -----------------------------------------------------------------------------
   //
   // Auth
@@ -332,7 +328,12 @@ export class r2rClient {
     const response = await this._makeRequest<RefreshTokenResponse>(
       "POST",
       "refresh_access_token",
-      { data: { refresh_token: this.refreshToken } },
+      {
+        data: this.refreshToken,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
     );
 
     if (response && response.results) {
@@ -403,14 +404,9 @@ export class r2rClient {
   @feature("deleteUser")
   async deleteUser(userId: string, password?: string): Promise<any> {
     this._ensureAuthenticated();
-
-    const data: Record<string, any> = { user_id: userId };
-
-    if (password) {
-      data.password = password;
-    }
-
-    return await this._makeRequest("DELETE", "user", { data });
+    return await this._makeRequest("DELETE", `user/${userId}`, {
+      data: { password },
+    });
   }
 
   // -----------------------------------------------------------------------------
@@ -607,6 +603,14 @@ export class r2rClient {
   // -----------------------------------------------------------------------------
 
   /**
+   * Check the health of the R2R deployment.
+   * @returns A promise that resolves to the response from the server.
+   */
+  async health(): Promise<any> {
+    return await this._makeRequest("GET", "health");
+  }
+
+  /**
    * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
    * @returns A promise that resolves to the response from the server.
    */
@@ -772,19 +776,17 @@ export class r2rClient {
   /**
    * Delete data from the database given a set of filters.
    * @param filters The filters to delete by.
-   * @returns
+   * @returns The results of the deletion.
    */
   @feature("delete")
-  async delete(filters: { [key: string]: string | string[] }): Promise<any> {
+  async delete(filters: { [key: string]: any }): Promise<any> {
     this._ensureAuthenticated();
 
     const params = {
       filters: JSON.stringify(filters),
     };
 
-    return this._makeRequest("DELETE", "delete", {
-      params,
-    });
+    return this._makeRequest("DELETE", "delete", { params }) || { results: {} };
   }
 
   /**

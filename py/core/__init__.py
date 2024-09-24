@@ -248,6 +248,7 @@ __all__ = [
     "MultiSearchPipe",
     ## PROVIDERS
     # Auth
+    "SupabaseAuthProvider",
     "R2RAuthProvider",
     # Chunking
     "R2RChunkingProvider",

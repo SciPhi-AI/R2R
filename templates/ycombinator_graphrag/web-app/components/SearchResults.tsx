@@ -109,11 +109,11 @@ interface SearchResultsProps {
   communities: KGSearchResult[];
 }
 
-const ResultCarousel: FC<{ items: any[]; ItemComponent: FC<any> , offset: number}> = ({
-  items,
-  ItemComponent,
-  offset = 0,
-}) => (
+const ResultCarousel: FC<{
+  items: any[];
+  ItemComponent: FC<any>;
+  offset: number;
+}> = ({ items, ItemComponent, offset = 0 }) => (
   <Carousel>
     <CarouselContent>
       {items.map((item, index) => (
@@ -155,9 +155,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         className="text-zinc-900 w-full max-w-2xl"
       >
         <TabsList>
-        <TabsTrigger value="vectorSearch">Vector Search</TabsTrigger>
-        <TabsTrigger value="kgEntities">KG Entities</TabsTrigger>
-        <TabsTrigger value="kgCommunities">KG Communities</TabsTrigger>
+          <TabsTrigger value="vectorSearch">Vector Search</TabsTrigger>
+          <TabsTrigger value="kgEntities">KG Entities</TabsTrigger>
+          <TabsTrigger value="kgCommunities">KG Communities</TabsTrigger>
         </TabsList>
         <TabsContent value="vectorSearch">
           <ResultCarousel
@@ -181,7 +181,6 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             items={communities.map((entity) => ({ entity }))}
             ItemComponent={KGSearchResultItem}
             offset={vectorSearchResults.length + entities.length}
-
           />
         </TabsContent>
       </Tabs>

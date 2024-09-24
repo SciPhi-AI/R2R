@@ -1,10 +1,9 @@
-import yaml
+import argparse
+import os
 import time
 import uuid
-import os
-from r2r import R2RClient
+
 from datasets import load_dataset
-import argparse
 
 args = argparse.ArgumentParser()
 args.add_argument("--dataset_name", type=str, default="shreyaspimpalgaonkar/ycombinator_s24")

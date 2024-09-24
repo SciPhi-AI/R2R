@@ -39,6 +39,7 @@ class R2RChunkingProvider(ChunkingProvider):
                 separator = self.config.extra_fields.get(
                     "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
                 )
+            print("self.config = ", self.config)
             return CharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,

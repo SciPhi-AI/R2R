@@ -1,5 +1,6 @@
 import { ArrowRight, Trash2 } from 'lucide-react';
 import React, { FC, useState, useEffect } from 'react';
+import posthog from 'posthog-js';
 
 interface SearchProps {
   setQuery: (query: string) => void;
@@ -20,6 +21,7 @@ export const Search: FC<SearchProps> = ({
     e.preventDefault();
     if (value.trim() && !isStreaming) {
       setQuery(value.trim());
+      posthog.capture('user_query', { query: value.trim() });
       setValue('');
     }
   };
