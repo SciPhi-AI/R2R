@@ -53,13 +53,24 @@ function handleRequestError(response: AxiosResponse): void {
 export class r2rClient {
   private axiosInstance: AxiosInstance;
   private baseUrl: string;
+  private anonymousTelemetry: boolean;
+
+  // Authorization tokens
   private accessToken: string | null;
   private refreshToken: string | null;
 
-  constructor(baseURL: string, prefix: string = "/v2") {
+  constructor(
+    baseURL: string,
+    prefix: string = "/v2",
+    anonymousTelemetry = true,
+  ) {
     this.baseUrl = `${baseURL}${prefix}`;
+    this.anonymousTelemetry = anonymousTelemetry;
+
     this.accessToken = null;
     this.refreshToken = null;
+
+    initializeTelemetry(this.anonymousTelemetry);
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -90,8 +101,6 @@ export class r2rClient {
         },
       ],
     });
-
-    initializeTelemetry();
   }
 
   setTokens(accessToken: string, refreshToken: string): void {
