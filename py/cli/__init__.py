@@ -5,7 +5,6 @@ from .main import main
 __all__ = [
     # From cli.py
     "main",
-    "main",
     # From Command Collection
     "command_group_cli",
     # From Commands
