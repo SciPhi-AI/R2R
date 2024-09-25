@@ -15,10 +15,8 @@ from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
 )
-from core.base.providers import OrchestrationProvider
+from core.base.providers import OrchestrationProvider, Workflow
 
-from ...main.hatchet import r2r_hatchet
-from ..hatchet import IngestFilesWorkflow, UpdateFilesWorkflow
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
 
@@ -29,22 +27,15 @@ class IngestionRouter(BaseRouter):
     def __init__(
         self,
         service: IngestionService,
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.INGESTION,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        if not orchestration_provider:
-            raise ValueError(
-                "IngestionRouter requires an orchestration provider."
-            )
-        super().__init__(service, run_type, orchestration_provider)
+        super().__init__(service, orchestration_provider, run_type)
         self.service: IngestionService = service
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
-            IngestFilesWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            UpdateFilesWorkflow(self.service)
+            Workflow.INGESTION, self.service
         )
 
     def _load_openapi_extras(self):
@@ -146,9 +137,9 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
 
-                task_id = r2r_hatchet.admin.run_workflow(
-                    "ingest-file",
-                    {"request": workflow_input},
+                task_id = self.orchestration_provider.run_workflow(
+                    workflow_name="ingest-file",
+                    parameters={"request": workflow_input},
                     options={
                         "additional_metadata": {
                             "document_id": str(document_id),

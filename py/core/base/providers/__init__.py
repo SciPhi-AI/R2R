@@ -18,7 +18,7 @@ from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
 from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
-from .orchestration import OrchestrationConfig, OrchestrationProvider
+from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
 from .parsing import OverrideParser, ParsingConfig, ParsingProvider
 from .prompt import PromptConfig, PromptProvider
 
@@ -55,6 +55,7 @@ __all__ = [
     # Orchestration provider
     "OrchestrationConfig",
     "OrchestrationProvider",
+    "Workflow",
     # Parsing provider
     "ParsingConfig",
     "ParsingProvider",

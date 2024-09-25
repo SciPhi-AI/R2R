@@ -233,16 +233,20 @@ class R2RBuilder:
         orchestration_provider = providers.orchestration
 
         routers = {
-            "auth_router": AuthRouter(services["auth"]).get_router(),
+            "auth_router": AuthRouter(
+                services["auth"], orchestration_provider=orchestration_provider
+            ).get_router(),
             "ingestion_router": IngestionRouter(
                 services["ingestion"],
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "management_router": ManagementRouter(
-                services["management"]
+                services["management"],
+                orchestration_provider=orchestration_provider,
             ).get_router(),
             "retrieval_router": RetrievalRouter(
-                services["retrieval"]
+                services["retrieval"],
+                orchestration_provider=orchestration_provider,
             ).get_router(),
             "restructure_router": RestructureRouter(
                 services["restructure"],

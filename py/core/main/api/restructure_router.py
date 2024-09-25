@@ -11,15 +11,8 @@ from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
-from core.base.providers import OrchestrationProvider
+from core.base.providers import OrchestrationProvider, Workflow
 
-from ...main.hatchet import r2r_hatchet
-from ..hatchet import (
-    CreateGraphWorkflow,
-    EnrichGraphWorkflow,
-    KGCommunitySummaryWorkflow,
-    KgExtractAndStoreWorkflow,
-)
 from ..services.restructure_service import RestructureService
 from .base_router import BaseRouter, RunType
 
@@ -30,14 +23,10 @@ class RestructureRouter(BaseRouter):
     def __init__(
         self,
         service: RestructureService,
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.RESTRUCTURE,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        if not orchestration_provider:
-            raise ValueError(
-                "RestructureRouter requires an orchestration provider."
-            )
-        super().__init__(service, run_type, orchestration_provider)
+        super().__init__(service, orchestration_provider, run_type)
         self.service: RestructureService = service
 
     def _load_openapi_extras(self):
@@ -50,16 +39,7 @@ class RestructureRouter(BaseRouter):
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
-            EnrichGraphWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            KgExtractAndStoreWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            CreateGraphWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            KGCommunitySummaryWorkflow(self.service)
+            Workflow.RESTRUCTURE, self.service
         )
 
     def _setup_routes(self):

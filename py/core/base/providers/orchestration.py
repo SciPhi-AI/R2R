@@ -1,7 +1,13 @@
 from abc import abstractmethod
+from enum import Enum
 from typing import Any, Callable
 
 from .base import Provider, ProviderConfig
+
+
+class Workflow(Enum):
+    INGESTION = "ingestion"
+    RESTRUCTURE = "restructure"
 
 
 class OrchestrationConfig(ProviderConfig):
@@ -24,7 +30,7 @@ class OrchestrationProvider(Provider):
         self.worker = None
 
     @abstractmethod
-    def register_workflow(self, workflow: Any) -> None:
+    async def start_worker(self):
         pass
 
     @abstractmethod
@@ -32,13 +38,5 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def workflow(self, *args, **kwargs) -> Callable:
-        pass
-
-    @abstractmethod
-    def step(self, *args, **kwargs) -> Callable:
-        pass
-
-    @abstractmethod
-    def start_worker(self):
+    def register_workflow(self, workflow: Workflow) -> None:
         pass
