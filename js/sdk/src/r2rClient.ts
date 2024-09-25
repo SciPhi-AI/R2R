@@ -271,6 +271,27 @@ export class r2rClient {
     return response.results;
   }
 
+  @feature("loginWithToken")
+  async loginWithToken(
+    accessToken: string,
+  ): Promise<{ access_token: TokenInfo }> {
+    this.accessToken = accessToken;
+
+    try {
+      await this._makeRequest("GET", "user");
+
+      return {
+        access_token: {
+          token: accessToken,
+          token_type: "access_token",
+        },
+      };
+    } catch (error) {
+      this.accessToken = null;
+      throw new Error("Invalid token provided");
+    }
+  }
+
   /**
    * Logs out the currently authenticated user.
    * @returns A promise that resolves to the response from the server.
