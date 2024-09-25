@@ -29,10 +29,10 @@ class RetrievalRouter(BaseRouter):
     def __init__(
         self,
         service: RetrievalService,
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.RETRIEVAL,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(service, run_type, orchestration_provider)
+        super().__init__(service, orchestration_provider, run_type)
         self.service: RetrievalService = service  # for type hinting
 
     def _load_openapi_extras(self):
