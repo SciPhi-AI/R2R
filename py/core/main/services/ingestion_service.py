@@ -289,7 +289,7 @@ class IngestionServiceAdapter:
 
     @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
-
+        print('data["chunking_config"] = ', data["chunking_config"])
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadata": data["metadata"],
