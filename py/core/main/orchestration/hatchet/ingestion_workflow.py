@@ -1,29 +1,23 @@
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 from hatchet_sdk import Context
 
-from core.base import (
-    IngestionStatus,
-    OrchestrationProvider,
-    R2RDocumentProcessingError,
-    increment_version,
-)
+from core.base import IngestionStatus, OrchestrationProvider, increment_version
 from core.base.abstractions import DocumentInfo, R2RException
 
 from ...services import IngestionService, IngestionServiceAdapter
 
+if TYPE_CHECKING:
+    from hatchet_sdk import Hatchet
+
 logger = logging.getLogger(__name__)
 
 
-def hatchet_ingestion_workflow(
+def hatchet_ingestion_factory(
     orchestration_provider: OrchestrationProvider, service: IngestionService
-):
-    # print("making workflow....")
-    # from hatchet_sdk import Hatchet
-
-    # r2r_hatchet = Hatchet()
-
+) -> list["Hatchet.Workflow"]:
     @orchestration_provider.workflow(
         name="ingest-file",
         timeout="60m",
@@ -157,7 +151,7 @@ def hatchet_ingestion_workflow(
                 "document_info": document_info.to_dict(),
             }
 
-        @orchestration_provider.on_failure_step()
+        @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
             request = context.workflow_input().get("request", {})
             document_id = request.get("document_id")
@@ -192,101 +186,103 @@ def hatchet_ingestion_workflow(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    return HatchetIngestFilesWorkflow(service)
+    # TODO: Implement a check to see if the file is actually changed before updating
+    @orchestration_provider.workflow(name="update-files", timeout="60m")
+    class HatchetUpdateFilesWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
 
-    # # TODO: Implement a check to see if the file is actually changed before updating
-    # @orchestration_provider.workflow(name="update-files", timeout="60m")
-    # class HatchetUpdateFilesWorkflow:
-    #     def __init__(self, ingestion_service: IngestionService):
-    #         self.ingestion_service = ingestion_service
+        @orchestration_provider.step(retries=0, timeout="60m")
+        async def update_files(self, context: Context) -> None:
+            data = context.workflow_input()["request"]
+            parsed_data = IngestionServiceAdapter.parse_update_files_input(
+                data
+            )
 
-    #     @orchestration_provider.step(retries=0, timeout="60m")
-    #     async def update_files(self, context: Context) -> None:
-    #         data = context.workflow_input()["request"]
-    #         parsed_data = IngestionServiceAdapter.parse_update_files_input(
-    #             data
-    #         )
+            file_datas = parsed_data["file_datas"]
+            user = parsed_data["user"]
+            document_ids = parsed_data["document_ids"]
+            metadatas = parsed_data["metadatas"]
+            chunking_config = parsed_data["chunking_config"]
+            file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
 
-    #         file_datas = parsed_data["file_datas"]
-    #         user = parsed_data["user"]
-    #         document_ids = parsed_data["document_ids"]
-    #         metadatas = parsed_data["metadatas"]
-    #         chunking_config = parsed_data["chunking_config"]
-    #         file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
+            if not file_datas:
+                raise R2RException(
+                    status_code=400, message="No files provided for update."
+                )
+            if len(document_ids) != len(file_datas):
+                raise R2RException(
+                    status_code=400,
+                    message="Number of ids does not match number of files.",
+                )
 
-    #         if not file_datas:
-    #             raise R2RException(
-    #                 status_code=400, message="No files provided for update."
-    #             )
-    #         if len(document_ids) != len(file_datas):
-    #             raise R2RException(
-    #                 status_code=400,
-    #                 message="Number of ids does not match number of files.",
-    #             )
+            documents_overview = (
+                await self.ingestion_service.providers.database.relational.get_documents_overview(
+                    filter_document_ids=document_ids,
+                    filter_user_ids=None if user.is_superuser else [user.id],
+                )
+            )["results"]
+            if len(documents_overview) != len(document_ids):
+                raise R2RException(
+                    status_code=404,
+                    message="One or more documents not found.",
+                )
 
-    #         documents_overview = (
-    #             await self.ingestion_service.providers.database.relational.get_documents_overview(
-    #                 filter_document_ids=document_ids,
-    #                 filter_user_ids=None if user.is_superuser else [user.id],
-    #             )
-    #         )["results"]
-    #         if len(documents_overview) != len(document_ids):
-    #             raise R2RException(
-    #                 status_code=404,
-    #                 message="One or more documents not found.",
-    #             )
+            results = []
 
-    #         results = []
+            for idx, (
+                file_data,
+                doc_id,
+                doc_info,
+                file_size_in_bytes,
+            ) in enumerate(
+                zip(
+                    file_datas,
+                    document_ids,
+                    documents_overview,
+                    file_sizes_in_bytes,
+                )
+            ):
+                new_version = increment_version(doc_info.version)
 
-    #         for idx, (
-    #             file_data,
-    #             doc_id,
-    #             doc_info,
-    #             file_size_in_bytes,
-    #         ) in enumerate(
-    #             zip(
-    #                 file_datas,
-    #                 document_ids,
-    #                 documents_overview,
-    #                 file_sizes_in_bytes,
-    #             )
-    #         ):
-    #             new_version = increment_version(doc_info.version)
+                updated_metadata = (
+                    metadatas[idx] if metadatas else doc_info.metadata
+                )
+                updated_metadata["title"] = (
+                    updated_metadata.get("title")
+                    or file_data["filename"].split("/")[-1]
+                )
 
-    #             updated_metadata = (
-    #                 metadatas[idx] if metadatas else doc_info.metadata
-    #             )
-    #             updated_metadata["title"] = (
-    #                 updated_metadata.get("title")
-    #                 or file_data["filename"].split("/")[-1]
-    #             )
+                # Prepare input for ingest_file workflow
+                ingest_input = {
+                    "file_data": file_data,
+                    "user": data.get("user"),
+                    "metadata": updated_metadata,
+                    "document_id": str(doc_id),
+                    "version": new_version,
+                    "chunking_config": (
+                        chunking_config.model_dump_json()
+                        if chunking_config
+                        else None
+                    ),
+                    "size_in_bytes": file_size_in_bytes,
+                    "is_update": True,
+                }
 
-    #             # Prepare input for ingest_file workflow
-    #             ingest_input = {
-    #                 "file_data": file_data,
-    #                 "user": data.get("user"),
-    #                 "metadata": updated_metadata,
-    #                 "document_id": str(doc_id),
-    #                 "version": new_version,
-    #                 "chunking_config": (
-    #                     chunking_config.model_dump_json()
-    #                     if chunking_config
-    #                     else None
-    #                 ),
-    #                 "size_in_bytes": file_size_in_bytes,
-    #                 "is_update": True,
-    #             }
+                # Spawn ingest_file workflow as a child workflow
+                child_result = (
+                    await context.aio.spawn_workflow(
+                        "ingest-file",
+                        {"request": ingest_input},
+                        key=f"ingest_file_{doc_id}",
+                    )
+                ).result()
+                results.append(child_result)
 
-    #             # Spawn ingest_file workflow as a child workflow
-    #             child_result = (
-    #                 await context.aio.spawn_workflow(
-    #                     "ingest-file",
-    #                     {"request": ingest_input},
-    #                     key=f"ingest_file_{doc_id}",
-    #                 )
-    #             ).result()
-    #             results.append(child_result)
+            await asyncio.gather(*results)
 
-    #         await asyncio.gather(*results)
+            return None
 
-    #         return None
+    ingest_files_workflow = HatchetIngestFilesWorkflow(service)
+    update_files_workflow = HatchetUpdateFilesWorkflow(service)
+    return [ingest_files_workflow, update_files_workflow]

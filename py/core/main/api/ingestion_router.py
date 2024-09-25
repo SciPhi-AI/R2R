@@ -34,7 +34,7 @@ class IngestionRouter(BaseRouter):
         self.service: IngestionService = service
 
     def _register_workflows(self):
-        self.orchestration_provider.register_workflow(
+        self.orchestration_provider.register_workflows(
             Workflow.INGESTION, self.service
         )
 
@@ -138,8 +138,8 @@ class IngestionRouter(BaseRouter):
                 )
 
                 task_id = self.orchestration_provider.run_workflow(
-                    workflow_name="ingest-file",
-                    parameters={"request": workflow_input},
+                    "ingest-file",
+                    {"request": workflow_input},
                     options={
                         "additional_metadata": {
                             "document_id": str(document_id),
@@ -155,50 +155,6 @@ class IngestionRouter(BaseRouter):
                     }
                 )
             return messages
-
-        @self.router.post(
-            "/retry_ingest_files",
-            openapi_extra=ingest_files_extras.get("openapi_extra"),
-        )
-        @self.base_endpoint
-        async def retry_ingest_files(
-            document_ids: list[UUID] = Form(
-                ...,
-                description=ingest_files_descriptions.get("document_ids"),
-            ),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedIngestionResponse,
-        ):
-            """
-            Retry the ingestion of files into the system.
-
-            This endpoint allows you to retry the ingestion of files that have previously failed to ingest into R2R.
-
-            A valid user authentication token is required to access this endpoint, as regular users can only retry the ingestion of their own files. More expansive collection permissioning is under development.
-            """
-            if not auth_user.is_superuser:
-                documents_overview = await self.service.providers.database.relational.get_documents_overview(
-                    filter_document_ids=document_ids,
-                    filter_user_ids=[auth_user.id],
-                )[
-                    "results"
-                ]
-                if len(documents_overview) != len(document_ids):
-                    raise R2RException(
-                        status_code=404,
-                        message="One or more documents not found.",
-                    )
-
-            # FIXME:  This is throwing an aiohttp.client_exceptions.ClientConnectionError: Cannot connect to host localhost:8080 ssl:default… can we whitelist the host?
-            workflow_list = await r2r_hatchet.rest.workflow_run_list()
-
-            # TODO: we want to extract the hatchet run ids for the document ids, and then retry them
-
-            return {
-                "message": "Retry tasks queued successfully.",
-                "task_ids": [str(task_id) for task_id in workflow_list],
-                "document_ids": [str(doc_id) for doc_id in document_ids],
-            }
 
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
@@ -292,8 +248,8 @@ class IngestionRouter(BaseRouter):
                 "is_update": True,
             }
 
-            task_id = r2r_hatchet.admin.run_workflow(
-                "update-files", {"request": workflow_input}
+            task_id = self.orchestration_provider.run_workflow(
+                "update-files", {"request": workflow_input}, {}
             )
 
             return {

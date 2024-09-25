@@ -38,5 +38,28 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def register_workflow(self, workflow: Workflow) -> None:
+    def step(self, *args, **kwargs) -> Any:
+        pass
+
+    @abstractmethod
+    def workflow(self, *args, **kwargs) -> Any:
+        pass
+
+    @abstractmethod
+    def failure(self, *args, **kwargs) -> Any:
+        pass
+
+    @abstractmethod
+    def register_workflows(self, workflow: Workflow, service: Any) -> None:
+        pass
+
+    @abstractmethod
+    def run_workflow(
+        self,
+        workflow_name: str,
+        parameters: dict,
+        options: dict,
+        *args,
+        **kwargs,
+    ) -> Any:
         pass

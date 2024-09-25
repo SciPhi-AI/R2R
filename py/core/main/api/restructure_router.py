@@ -38,7 +38,7 @@ class RestructureRouter(BaseRouter):
         return yaml_content
 
     def _register_workflows(self):
-        self.orchestration_provider.register_workflow(
+        self.orchestration_provider.register_workflows(
             Workflow.RESTRUCTURE, self.service
         )
 
@@ -82,8 +82,8 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.admin.run_workflow(
-                "create-graph", {"request": workflow_input}
+            task_id = self.orchestration_provider.run_workflow(
+                "create-graph", {"request": workflow_input}, {}
             )
 
             return {
@@ -137,8 +137,8 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.admin.run_workflow(
-                "enrich-graph", {"request": workflow_input}
+            task_id = self.orchestration_provider.run_workflow(
+                "enrich-graph", {"request": workflow_input}, {}
             )
 
             return {

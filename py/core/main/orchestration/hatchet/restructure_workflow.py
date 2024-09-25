@@ -12,11 +12,15 @@ from core.base.abstractions import RestructureStatus
 from ...services import RestructureService
 
 logger = logging.getLogger(__name__)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hatchet_sdk import Hatchet
 
 
 def hatchet_restructure_workflow(
     orchestration_provider: OrchestrationProvider, service: RestructureService
-):
+) -> list["Hatchet.Workflow"]:
     @orchestration_provider.workflow(
         name="kg-extract-and-store", timeout="60m"
     )
@@ -363,3 +367,10 @@ def hatchet_restructure_workflow(
                 generation_config=generation_config,
             )
             return {"result": None}
+
+    return [
+        KgExtractAndStoreWorkflow(service),
+        CreateGraphWorkflow(service),
+        EnrichGraphWorkflow(service),
+        KGCommunitySummaryWorkflow(service),
+    ]
