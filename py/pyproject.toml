@@ -28,16 +28,14 @@ asyncclick = "^8.1.7.2"
 boto3 = "^1.35.17" # for AWS bedrock support
 click = "^8.0.0"
 fastapi = "^0.114.0"
-hatchet-sdk = "^0.36.17"
 httpx = "^0.27.0"
 nest-asyncio = "^1.6.0"
-numpy = ">=1.22.4,<1.29.0"
 openai =  "^1.11.1"
 python-dotenv = "^1.0.1"
 requests = "^2.31.0"
 toml = "^0.10.2"
 types-requests = "^2.31.0"
-unstructured-client = "^0.25.5"
+posthog = "^3.5.0"
 
 # Core dependencies (optional)
 future = { version = "^1.0.0", optional = true }
@@ -58,7 +56,6 @@ python-docx = { version = "^1.1.0", optional = true }
 vecs = { version = "^0.4.0", optional = true }
 litellm = { version = "^1.42.3", optional = true }
 fsspec = { version = "^2024.6.0", optional = true }
-posthog = { version = "^3.5.0", optional = true }
 sqlalchemy = { version = "^2.0.30", optional = true }
 ollama = { version = "^0.3.1", optional = true }
 neo4j = { version = "^5.21.0", optional = true }
@@ -68,16 +65,20 @@ pyjwt = { version = "^2.8.0", optional = true }
 pyyaml = { version = "^6.0.1", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
+supabase = { version = "^2.7.4", optional = true }
 tokenizers = { version = "0.19", optional = true }
-supabase = "^2.7.4"
+unstructured-client = { version = "^0.25.5", optional = true }
+hatchet-sdk = { version = "^0.36.17", optional = true }
+numpy = { version = ">=1.22.4,<1.29.0", optional = true }
 
 [tool.poetry.extras]
 core = [
     "future", "pydantic", "fire", "gunicorn", "uvicorn", "aiosqlite",
     "asyncpg", "redis", "beautifulsoup4", "openpyxl", "markdown", "pypdf",
     "python-pptx", "python-docx", "vecs", "litellm", "python-multipart",
-    "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
-    "pyjwt", "pyyaml", "psutil", "deepdiff", "tokenizers"
+    "fsspec", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
+    "pyjwt", "pyyaml", "psutil", "deepdiff", "tokenizers", "supabase",
+    "unstructured-client"
 ]
 core-ingest-movies = ["opencv-python", "moviepy"]
 
