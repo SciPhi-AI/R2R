@@ -13,7 +13,7 @@ if (typeof window === "undefined") {
   });
 }
 
-import { feature, featureGenerator, initializeTelemetry } from "./feature";
+import { feature, initializeTelemetry } from "./feature";
 import {
   LoginResponse,
   TokenInfo,
@@ -92,6 +92,11 @@ export class r2rClient {
     });
 
     initializeTelemetry();
+  }
+
+  setTokens(accessToken: string, refreshToken: string): void {
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
   }
 
   private async _makeRequest<T = any>(

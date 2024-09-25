@@ -50,7 +50,9 @@ class R2RProviderFactory:
         if auth_config.provider == "r2r":
             from core.providers import R2RAuthProvider
 
-            r2r_auth = R2RAuthProvider(auth_config, crypto_provider, db_provider)
+            r2r_auth = R2RAuthProvider(
+                auth_config, crypto_provider, db_provider
+            )
             await r2r_auth.initialize()
             return r2r_auth
         elif auth_config.provider == "supabase":

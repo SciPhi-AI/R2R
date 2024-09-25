@@ -250,6 +250,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
+    labels:
+      - "traefik.http.middlewares.no-cache-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store, must-revalidate"
+      - "traefik.http.routers.hatchet-api.middlewares=no-cache-headers"
 
   unstructured:
     image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}

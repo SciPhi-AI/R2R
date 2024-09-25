@@ -23,7 +23,7 @@ class IngestFilesWorkflow:
     @r2r_hatchet.step(timeout="60m")
     async def parse(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
-        print("input_data = ", input_data)
+
         parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
             input_data
         )
