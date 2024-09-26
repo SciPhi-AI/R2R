@@ -193,7 +193,7 @@ class Neo4jKGProvider(KGProvider):
         ]
         return entities
 
-    def upsert_nodes_and_relationships(
+    async def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
     ) -> Tuple[int, int]:
 

@@ -41,6 +41,11 @@ class KGCreationSettings(R2RSerializable):
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
+    postgres_project_name: str = Field(
+        default="vecs",
+        description="The name of the project.",
+    )
+
     community_reports_prompt: str = Field(
         default="graphrag_community_reports_prompt",
         description="The prompt to use for knowledge graph enrichment.",

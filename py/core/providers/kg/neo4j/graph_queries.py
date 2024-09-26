@@ -40,7 +40,7 @@ node.attributes = CASE
     ELSE node.attributes + '\n\n' + value.attributes
 END
 WITH node as e, value
-UNWIND value.text_unit_ids AS text_unit
+UNWIND value.fragment_ids AS text_unit
 MATCH (c:__Chunk__ {id:text_unit})
 MERGE (e)-[:APPEARS_IN_CHUNK]->(c)
 WITH e, value
@@ -94,9 +94,9 @@ rel.attributes = CASE
     WHEN rel.attributes IS NULL THEN value.attributes
     ELSE rel.attributes + '\n\n' + value.attributes
 END,
-rel.text_unit_ids = CASE
-    WHEN rel.text_unit_ids IS NULL THEN value.text_unit_ids
-    ELSE rel.text_unit_ids + value.text_unit_ids
+rel.fragment_ids = CASE
+    WHEN rel.fragment_ids IS NULL THEN value.fragment_ids
+    ELSE rel.fragment_ids + value.fragment_ids
 END,
 rel.document_ids = CASE
     WHEN rel.document_ids IS NULL THEN value.document_ids

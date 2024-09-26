@@ -54,7 +54,7 @@ class Entity(R2RSerializable):
     name_embedding: Optional[list[float]] = None
     graph_embedding: Optional[list[float]] = None
     community_ids: Optional[list[str]] = None
-    text_unit_ids: Optional[list[str]] = None
+    fragment_ids: Optional[list[str]] = None
     document_ids: Optional[list[str]] = None
     rank: Optional[int] = 1
     attributes: Optional[Union[dict[str, Any], str]] = None
@@ -99,7 +99,7 @@ class Triple(BaseModel):
     predicate_embedding: list[float] = []
     """The semantic embedding for the relationship description (optional)."""
 
-    text_unit_ids: list[str] = []
+    fragment_ids: list[str] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
     document_ids: list[str] = []
@@ -127,7 +127,7 @@ class Triple(BaseModel):
         predicate_key: str = "predicate",
         description_key: str = "description",
         weight_key: str = "weight",
-        text_unit_ids_key: str = "text_unit_ids",
+        fragment_ids_key: str = "fragment_ids",
         document_ids_key: str = "document_ids",
         attributes_key: str = "attributes",
     ) -> "Triple":
@@ -141,7 +141,7 @@ class Triple(BaseModel):
             predicate=d.get(predicate_key),
             description=d.get(description_key),
             weight=d.get(weight_key, 1.0),
-            text_unit_ids=d.get(text_unit_ids_key),
+            fragment_ids=d.get(fragment_ids_key),
             document_ids=d.get(document_ids_key),
             attributes=d.get(attributes_key, {}),
         )
@@ -293,7 +293,7 @@ class Covariate(Identified):
     covariate_type: str = "claim"
     """The covariate type."""
 
-    text_unit_ids: list[str] | None = None
+    fragment_ids: list[str] | None = None
     """List of text unit IDs in which the covariate info appears (optional)."""
 
     document_ids: list[str] | None = None
@@ -315,7 +315,7 @@ class Covariate(Identified):
         subject_type_key: str = "subject_type",
         covariate_type_key: str = "covariate_type",
         short_id_key: str = "short_id",
-        text_unit_ids_key: str = "text_unit_ids",
+        fragment_ids_key: str = "fragment_ids",
         document_ids_key: str = "document_ids",
         attributes_key: str = "attributes",
     ) -> "Covariate":
@@ -326,7 +326,7 @@ class Covariate(Identified):
             subject_id=d[subject_id_key],
             subject_type=d.get(subject_type_key, "entity"),
             covariate_type=d.get(covariate_type_key, "claim"),
-            text_unit_ids=d.get(text_unit_ids_key),
+            fragment_ids=d.get(fragment_ids_key),
             document_ids=d.get(document_ids_key),
             attributes=d.get(attributes_key),
         )
@@ -404,6 +404,6 @@ class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
     fragment_ids: list[uuid.UUID]
-    document_id: uuid.UUID
-    entities: dict[str, Entity]
+    document_ids: list[uuid.UUID]
+    entities: list[Entity]
     triples: list[Triple]

@@ -74,55 +74,73 @@ class RestructureService(Service):
 
         return await _collect_results(result_gen)
 
-    @telemetry_event("kg_node_creation")
-    async def kg_node_creation(self, max_description_input_length: int):
-        node_extractions = await self.pipes.kg_node_extraction_pipe.run(
-            input=self.pipes.kg_node_extraction_pipe.Input(message=None),
-            state=None,
-            run_manager=self.run_manager,
-        )
-        result_gen = await self.pipes.kg_node_description_pipe.run(
+    # @telemetry_event("kg_node_creation")
+    # async def kg_node_creation(self, max_description_input_length: int):
+    #     node_extractions = await self.pipes.kg_node_extraction_pipe.run(
+    #         input=self.pipes.kg_node_extraction_pipe.Input(message=None),
+    #         state=None,
+    #         run_manager=self.run_manager,
+    #     )
+    #     # result_gen = await self.pipes.kg_node_description_pipe.run(
+    #     #     input=self.pipes.kg_node_description_pipe.Input(
+    #     #         message={
+    #     #             "node_extractions": node_extractions,
+    #     #             "max_description_input_length": max_description_input_length,
+    #     #         }
+    #     #     ),
+    #     #     state=None,
+    #     #     run_manager=self.run_manager,
+    #     # )
+    #     return await _collect_results(node_extractions)
+
+    @telemetry_event("kg_node_description")
+    async def kg_node_description(self, offset: int, limit: int, max_description_input_length: int, project_name: str):
+        node_extractions = await self.pipes.kg_node_description_pipe.run(
             input=self.pipes.kg_node_description_pipe.Input(
                 message={
-                    "node_extractions": node_extractions,
+                    "offset": offset,
+                    "limit": limit,
                     "max_description_input_length": max_description_input_length,
+                    "project_name": project_name,
                 }
             ),
             state=None,
             run_manager=self.run_manager,
         )
-        return await _collect_results(result_gen)
+        return await _collect_results(node_extractions)
 
     @telemetry_event("kg_clustering")
-    async def kg_clustering(self, leiden_params, generation_config):
+    async def kg_clustering(self, leiden_params, generation_config, project_name):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "leiden_params": leiden_params,
                     "generation_config": generation_config,
+                    "project_name": project_name,
                 }
             ),
             state=None,
             run_manager=self.run_manager,
         )
-
         return await _collect_results(clustering_result)
 
     @telemetry_event("kg_community_summary")
     async def kg_community_summary(
         self,
-        community_id: str,
-        level: int,
+        offset: int,
+        limit: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
+        project_name: str,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
             input=self.pipes.kg_community_summary_pipe.Input(
                 message={
-                    "community_id": community_id,
-                    "level": level,
+                    "offset": offset,
+                    "limit": limit,
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
+                    "project_name": project_name,
                 }
             ),
             state=None,

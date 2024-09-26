@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import uuid
+import math
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
@@ -124,6 +125,8 @@ class CreateGraphWorkflow:
         # Only run if restructuring_status is pending or failure
         filtered_document_ids = []
         for document_overview in documents_overviews:
+            filtered_document_ids.append(document_overview.id)
+            continue
             restructuring_status = document_overview.restructuring_status
             if restructuring_status in [
                 RestructureStatus.PENDING,
@@ -183,29 +186,62 @@ class CreateGraphWorkflow:
         return {"result": "success"}
 
 
+# @r2r_hatchet.workflow(name="kg-node-description", timeout="60m")
+# class KGNodeDescriptionWorkflow:
+#     def __init__(self, restructure_service: RestructureService):
+#         self.restructure_service = restructure_service
+
+#     @r2r_hatchet.step(retries=3, timeout="60m")
+#     async def kg_node_description(self, context: Context) -> dict:
+#         input_data = context.workflow_input()["request"]
+#         max_description_input_length = input_data["max_description_input_length"]
+#         collection_name = input_data["collection_name"]
+#         result = await self.restructure_service.kg_node_description(
+#             offset=0,
+#             limit=1000,
+#             max_description_input_length=max_description_input_length,
+#             collection_name=collection_name,
+#         )
+#         return {"result": "success"}
+
 @r2r_hatchet.workflow(name="enrich-graph", timeout="60m")
 class EnrichGraphWorkflow:
     def __init__(self, restructure_service: RestructureService):
         self.restructure_service = restructure_service
 
-    @r2r_hatchet.step(retries=3, timeout="60m")
-    async def kg_node_creation(self, context: Context) -> dict:
-        input_data = context.workflow_input()["request"]
-        max_description_input_length = input_data[
-            "max_description_input_length"
-        ]
-        await self.restructure_service.kg_node_creation(
-            max_description_input_length=max_description_input_length
-        )
-        return {"result": None}
+    # @r2r_hatchet.step(retries=3, timeout="60m")
+    # async def kg_node_creation(self, context: Context) -> dict:
+    #     input_data = context.workflow_input()["request"]
+    #     max_description_input_length = input_data[
+    #         "max_description_input_length"
+    #     ]
+    #     await self.restructure_service.kg_node_creation(
+    #         max_description_input_length=max_description_input_length
+    #     )
+    #     return {"result": "success"}
 
-    @r2r_hatchet.step(retries=3, parents=["kg_node_creation"], timeout="60m")
+    # @r2r_hatchet.step(retries=3, timeout="60m")
+    # async def kg_node_description(self, context: Context) -> dict:
+    #     input_data = context.workflow_input()["request"]
+    #     max_description_input_length = input_data["max_description_input_length"]
+    #     project_name = input_data["project_name"]
+    #     result = await self.restructure_service.kg_node_description(
+    #         max_description_input_length=max_description_input_length, 
+    #         offset=0,
+    #         limit=1000,
+    #         project_name=project_name,
+    #     )
+    #     import pdb; pdb.set_trace()
+    #     return {"result": "success"}
+
+    @r2r_hatchet.step(retries=3, parents=[], timeout="60m")
     async def kg_clustering(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         skip_clustering = input_data["skip_clustering"]
         force_enrichment = input_data["force_enrichment"]
         leiden_params = input_data["leiden_params"]
         max_summary_input_length = input_data["max_summary_input_length"]
+        project_name = input_data["project_name"]
         generation_config = GenerationConfig(**input_data["generation_config"])
 
         # todo: check if documets are already being clustered
@@ -222,20 +258,18 @@ class EnrichGraphWorkflow:
                 == RestructureStatus.PROCESSING
                 for document_overview in documents_overview
             ):
-                logger.error(
+                raise ValueError(
                     "Graph creation is still in progress for some documents, skipping enrichment, please set force_enrichment to true if you want to run enrichment anyway"
                 )
-                return {"result": None}
 
             if any(
                 document_overview.restructuring_status
                 == RestructureStatus.ENRICHING
                 for document_overview in documents_overview
             ):
-                logger.error(
+                raise ValueError(
                     "Graph enrichment is still in progress for some documents, skipping enrichment, please set force_enrichment to true if you want to run enrichment anyway"
                 )
-                return {"result": None}
 
         for document_overview in documents_overview:
             if document_overview.restructuring_status in [
@@ -253,38 +287,40 @@ class EnrichGraphWorkflow:
         try:
             if not skip_clustering:
                 results = await self.restructure_service.kg_clustering(
-                    leiden_params, generation_config
+                    leiden_params, generation_config, project_name
                 )
 
                 result = results[0]
+                num_communities = result["num_communities"]
 
+                # pagination, summarize a max of 10 communities in one job.
                 # Run community summary workflows
+                parallel_communities = 10
+                total_workflows = math.ceil(num_communities / parallel_communities)
                 workflows = []
-                for level, community_id in result["intermediate_communities"]:
-                    logger.info(
-                        f"Running KG Community Summary Workflow for community ID: {community_id} at level {level}"
-                    )
+                for i, offset in enumerate(range(0, num_communities, parallel_communities)):
                     workflows.append(
                         context.aio.spawn_workflow(
                             "kg-community-summary",
                             {
                                 "request": {
-                                    "community_id": str(community_id),
-                                    "level": level,
+                                    "offset": offset,
+                                    "limit": parallel_communities,
                                     "generation_config": generation_config.to_dict(),
                                     "max_summary_input_length": max_summary_input_length,
+                                    "project_name": project_name,
                                 }
                             },
-                            key=f"kg-community-summary_{community_id}_{level}",
+                            key=f"{i}/{total_workflows}_community_summary",
                         )
                     )
-
                 results = await asyncio.gather(*workflows)
+                return {"result": f"Finished {total_workflows} community summary workflows"}
             else:
                 logger.info(
                     "Skipping Leiden clustering as skip_clustering is True, also skipping community summary workflows"
                 )
-                return {"result": None}
+                return {"result": "skipped"}
 
         except Exception as e:
             logger.error(f"Error in kg_clustering: {str(e)}", exc_info=True)
@@ -337,14 +373,16 @@ class KGCommunitySummaryWorkflow:
     @r2r_hatchet.step(retries=1, timeout="60m")
     async def kg_community_summary(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
-        community_id = input_data["community_id"]
-        level = input_data["level"]
+        offset = input_data["offset"]
+        limit = input_data["limit"]
         generation_config = GenerationConfig(**input_data["generation_config"])
         max_summary_input_length = input_data["max_summary_input_length"]
+        project_name = input_data["project_name"]
         await self.restructure_service.kg_community_summary(
-            community_id=community_id,
-            level=level,
+            offset=offset,
+            limit=limit,
             max_summary_input_length=max_summary_input_length,
             generation_config=generation_config,
+            project_name=project_name,
         )
         return {"result": None}

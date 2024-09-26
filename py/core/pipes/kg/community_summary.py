@@ -93,7 +93,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        level: int,
         community_id: str,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
@@ -102,20 +101,16 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
         """
 
-        logger.info(
-            f"Processing community {community_id} at level {level} with max summary input length {max_summary_input_length}."
-        )
-
         entities, triples = (
             self.kg_provider.get_community_entities_and_triples(  # type: ignore
-                level=level, community_id=community_id
+                community_id=community_id
             )
         )
 
         if entities == [] or triples == []:
             # TODO - Does this logic work well with the full workflow?
             raise ValueError(
-                f"Community {community_id} at level {level} has no entities or triples."
+                f"Community {community_id} has no entities or triples."
             )
 
         description = (
@@ -172,22 +167,27 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         Executes the KG community summary pipe: summarizing communities.
         """
-
-        community_id = input.message["community_id"]
-        level = input.message["level"]
+        
+        offset = input.message["offset"]
+        limit = input.message["limit"]
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
+        project_name = input.message["project_name"]
 
-        try:
-            community_summary = await self.process_community(
-                level=level,
-                community_id=community_id,
-                max_summary_input_length=max_summary_input_length,
-                generation_config=generation_config,
-            )
+        communities = self.kg_provider.get_communities(offset=offset, limit=limit, project_name=project_name)
 
-            yield community_summary
-        except Exception as e:
-            error_message = f"Failed to process community {community_id} at level {level}: {e}"
-            logger.error(error_message)
-            raise ValueError(error_message)
+        for community in communities:   
+            try:
+                community_summary = await self.process_community(
+                    level=community.level,
+                    community_id=community.id,
+                    max_summary_input_length=max_summary_input_length,
+                    generation_config=generation_config,
+                )
+
+                yield community_summary
+                
+            except Exception as e:
+                error_message = f"Failed to process community {community.id} at level {community.level}: {e}"
+                logger.error(error_message)
+                raise ValueError(error_message)

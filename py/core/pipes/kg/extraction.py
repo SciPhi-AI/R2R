@@ -145,20 +145,24 @@ class KGTriplesExtractionPipe(
                         relationship_pattern, response_str
                     )
 
-                    entities_dict = {}
+                    entities_arr = []
                     for entity in entities:
                         entity_value = entity[0]
                         entity_category = entity[1]
                         entity_description = entity[2]
-                        entities_dict[entity_value] = Entity(
-                            category=entity_category,
-                            description=entity_description,
-                            name=entity_value,
-                            document_ids=[str(fragments[0].document_id)],
-                            text_unit_ids=[
-                                str(fragment.id) for fragment in fragments
-                            ],
-                            attributes={"fragment_text": combined_fragment},
+                        entities_arr.append(
+                            Entity(
+                                category=entity_category,
+                                description=entity_description,
+                                name=entity_value,
+                                document_ids=[str(fragments[0].document_id)],
+                                fragment_ids=[
+                                    str(fragment.id) for fragment in fragments
+                                ],
+                                attributes={
+                                    # "fragment_text": combined_fragment
+                                },
+                            )
                         )
 
                     relations_arr = []
@@ -178,21 +182,21 @@ class KGTriplesExtractionPipe(
                                 description=description,
                                 weight=weight,
                                 document_ids=[str(fragments[0].document_id)],
-                                text_unit_ids=[
+                                fragment_ids=[
                                     str(fragment.id) for fragment in fragments
                                 ],
                                 attributes={
-                                    "fragment_text": combined_fragment
+                                    # "fragment_text": combined_fragment
                                 },
                             )
                         )
 
-                    return entities_dict, relations_arr
+                    return entities_arr, relations_arr
 
                 entities, triples = parse_fn(kg_extraction)
                 return KGExtraction(
                     fragment_ids=[fragment.id for fragment in fragments],
-                    document_id=fragments[0].document_id,
+                    document_ids=[fragments[0].document_id],
                     entities=entities,
                     triples=triples,
                 )
@@ -215,7 +219,7 @@ class KGTriplesExtractionPipe(
 
         return KGExtraction(
             fragment_ids=[fragment.id for fragment in fragments],
-            document_id=fragments[0].document_id,
+            document_ids=[fragments[0].document_id],
             entities={},
             triples=[],
         )

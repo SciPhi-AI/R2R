@@ -57,11 +57,6 @@ def main():
     except SystemExit:
         # Silently exit without printing the traceback
         pass
-    except Exception as e:
-        # Handle other exceptions if needed
-        print(f"CLI error: An error occurred")
-        raise e
-
 
 if __name__ == "__main__":
     main()

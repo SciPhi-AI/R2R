@@ -49,6 +49,7 @@ class KGClusteringPipe(AsyncPipe):
 
     async def cluster_kg(
         self,
+        project_name: str,
         leiden_params: dict,
         generation_config: GenerationConfig,
     ):
@@ -56,18 +57,13 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
 
-        num_communities, num_hierarchies, intermediate_communities = (
-            self.kg_provider.perform_graph_clustering(leiden_params)  # type: ignore
+        num_communities = (
+            await self.kg_provider.perform_graph_clustering(project_name, leiden_params)  # type: ignore
         )
 
-        logger.info(
-            f"Clustering completed. Generated {num_communities} communities with {num_hierarchies} hierarchies with intermediate communities: {intermediate_communities}."
-        )
 
         return {
             "num_communities": num_communities,
-            "num_hierarchies": num_hierarchies,
-            "intermediate_communities": intermediate_communities,
         }
 
     async def _run_logic(  # type: ignore
@@ -83,17 +79,18 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         leiden_params = input.message["leiden_params"]
+        project_name = input.message["project_name"]
         if not leiden_params:
             raise ValueError("Leiden parameters not provided.")
         generation_config = input.message["generation_config"]
         if not generation_config:
             raise ValueError("Generation config not provided.")
+#
+#        base_dimension = self.embedding_provider.config.base_dimension
+#        vector_index_fn = self.kg_provider.create_vector_index
+#        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
+#        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
+#        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
+#        vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        base_dimension = self.embedding_provider.config.base_dimension
-        vector_index_fn = self.kg_provider.create_vector_index
-        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
-        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
-        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
-        vector_index_fn("__Community__", "summary_embedding", base_dimension)
-
-        yield await self.cluster_kg(leiden_params, generation_config)
+        yield await self.cluster_kg(project_name, leiden_params, generation_config)

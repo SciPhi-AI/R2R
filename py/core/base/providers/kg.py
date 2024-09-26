@@ -40,7 +40,7 @@ class KGConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["neo4j", "local"]
+        return ["neo4j", "local", "postgres"]
 
 
 class KGProvider(ABC):
@@ -104,7 +104,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_nodes_and_relationships(
+    async def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
     ) -> None:
         """Abstract method to add triplet."""

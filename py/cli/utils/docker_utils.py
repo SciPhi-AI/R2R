@@ -105,7 +105,11 @@ async def run_local_serve(
     available_port = find_available_port(port)
 
     await r2r_instance.orchestration_provider.start_worker()
-    r2r_instance.serve(host, available_port)
+
+    import uvicorn
+    uvicorn.run("core.main.app_entry:app", host=host, port=available_port, reload=False)
+
+    # r2r_instance.serve(host, available_port)
 
 
 def run_docker_serve(

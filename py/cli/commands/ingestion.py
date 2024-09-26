@@ -126,7 +126,7 @@ def update_files(ctx, file_paths, document_ids, metadatas):
 @pass_context
 def ingest_sample_file(ctx):
     """Ingest the first sample file into R2R."""
-    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
+    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle_v2.txt"
     client = ctx.obj
 
     with timer():
