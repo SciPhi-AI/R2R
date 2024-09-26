@@ -20,7 +20,7 @@ class OrchestrationConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["hatchet"]
+        return ["hatchet", "simple"]
 
 
 class OrchestrationProvider(Provider):

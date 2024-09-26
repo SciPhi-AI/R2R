@@ -48,13 +48,16 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         *args,
         **kwargs,
     ) -> Any:
-        self.orchestrator.admin.run_workflow(
+        task_id = self.orchestrator.admin.run_workflow(
             workflow_name,
             parameters,
             options=options,
             *args,
             **kwargs,
         )
+        return {
+            "task_id": str(task_id),
+        }
 
     def register_workflows(self, workflow: Workflow, service: Any) -> None:
         if workflow == Workflow.INGESTION:
