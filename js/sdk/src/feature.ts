@@ -15,10 +15,15 @@ function isBrowser(
   return typeof window !== "undefined";
 }
 
-export function initializeTelemetry() {
+let telemetryEnabled = true;
+
+export function initializeTelemetry(enableTelemetry: boolean = true) {
   if (isPostHogInitialized) {
     return;
   }
+
+  telemetryEnabled =
+    enableTelemetry && process.env.R2R_JS_DISABLE_TELEMETRY !== "true";
 
   if (typeof window !== "undefined") {
     // Browser environment
@@ -28,8 +33,14 @@ export function initializeTelemetry() {
         api_host: posthogHost,
       });
 
+      if (!telemetryEnabled) {
+        posthog.opt_out_capturing();
+      }
+
       window.addEventListener("beforeunload", () => {
-        (posthog as PostHogJs.PostHog).capture("PageUnload");
+        if (telemetryEnabled) {
+          (posthog as PostHogJs.PostHog).capture("PageUnload");
+        }
       });
 
       isPostHogInitialized = true;
@@ -37,22 +48,15 @@ export function initializeTelemetry() {
   } else {
     // Node.js environment
     posthog = new PostHogNodeClient(posthogApiKey, { host: posthogHost });
-    isPostHogInitialized = true;
-  }
-
-  if (process.env.R2R_JS_DISABLE_TELEMETRY === "true") {
-    if (isBrowser(posthog)) {
-      posthog.opt_out_capturing();
-    } else {
+    if (!telemetryEnabled) {
       posthog.disable();
     }
+    isPostHogInitialized = true;
   }
 }
 
-type AsyncFunction = (...args: any[]) => Promise<any>;
-
 function captureEvent(eventName: string, properties?: Record<string, any>) {
-  if (isPostHogInitialized) {
+  if (isPostHogInitialized && telemetryEnabled) {
     const environment = typeof window !== "undefined" ? "browser" : "node";
     const eventProperties = { ...properties, environment };
 
@@ -68,6 +72,8 @@ function captureEvent(eventName: string, properties?: Record<string, any>) {
   }
 }
 
+type AsyncFunction = (...args: any[]) => Promise<any>;
+
 export function feature(operationName: string) {
   return function (
     _target: any,
@@ -82,17 +88,21 @@ export function feature(operationName: string) {
     ): Promise<any> {
       try {
         const result = await originalMethod.apply(this, args);
-        captureEvent("TSClient", { operation: operationName });
+        if (this.anonymousTelemetry) {
+          captureEvent("TSClient", { operation: operationName });
+        }
         return result;
       } catch (error: unknown) {
-        captureEvent("TSClient", {
-          operation: operationName,
-          errorMessage:
-            error instanceof Error ? error.message : "Unknown error",
-        });
+        if (this.anonymousTelemetry) {
+          captureEvent("TSClient", {
+            operation: operationName,
+            errorMessage:
+              error instanceof Error ? error.message : "Unknown error",
+          });
+        }
         throw error;
       } finally {
-        if (isPostHogInitialized && !isBrowser(posthog)) {
+        if (isPostHogInitialized && !isBrowser(posthog) && telemetryEnabled) {
           // Flush events in Node.js environment
           await (posthog as PostHogNodeClient).shutdown();
         }
@@ -124,16 +134,20 @@ export function featureGenerator(operationName: string) {
         for await (const chunk of generator) {
           yield chunk;
         }
-        captureEvent("TSClient", { operation: operationName });
+        if (this.anonymousTelemetry) {
+          captureEvent("TSClient", { operation: operationName });
+        }
       } catch (error: unknown) {
-        captureEvent("TSClient", {
-          operation: operationName,
-          errorMessage:
-            error instanceof Error ? error.message : "Unknown error",
-        });
+        if (this.anonymousTelemetry) {
+          captureEvent("TSClient", {
+            operation: operationName,
+            errorMessage:
+              error instanceof Error ? error.message : "Unknown error",
+          });
+        }
         throw error;
       } finally {
-        if (isPostHogInitialized && !isBrowser(posthog)) {
+        if (isPostHogInitialized && !isBrowser(posthog) && telemetryEnabled) {
           // Flush events in Node.js environment
           await (posthog as PostHogNodeClient).shutdown();
         }
