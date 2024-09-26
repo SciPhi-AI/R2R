@@ -292,10 +292,7 @@ class EnrichGraphWorkflow:
 
                 result = results[0]
                 num_communities = result["num_communities"]
-
-                # pagination, summarize a max of 10 communities in one job.
-                # Run community summary workflows
-                parallel_communities = 10
+                parallel_communities = min(10, num_communities)
                 total_workflows = math.ceil(num_communities / parallel_communities)
                 workflows = []
                 for i, offset in enumerate(range(0, num_communities, parallel_communities)):
@@ -378,6 +375,7 @@ class KGCommunitySummaryWorkflow:
         generation_config = GenerationConfig(**input_data["generation_config"])
         max_summary_input_length = input_data["max_summary_input_length"]
         project_name = input_data["project_name"]
+
         await self.restructure_service.kg_community_summary(
             offset=offset,
             limit=limit,

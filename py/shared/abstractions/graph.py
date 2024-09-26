@@ -151,10 +151,10 @@ class Triple(BaseModel):
 class Community(BaseModel):
     """A protocol for a community in the system."""
 
-    id: str
+    id: int | None = None
     """The ID of the community."""
 
-    level: str = ""
+    level: int | None = None
     """Community level."""
 
     entity_ids: list[str] | None = None

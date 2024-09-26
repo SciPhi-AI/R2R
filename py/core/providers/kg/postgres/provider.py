@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any, Optional, Union, Tuple
 from contextlib import asynccontextmanager
-from core.base import KGConfig, KGProvider, Entity, Triple
+from core.base import KGConfig, KGProvider, Entity, Triple, Community
 from core import KGExtraction, KGEnrichmentSettings
 from core.base import EmbeddingProvider
 import asyncpg
@@ -165,6 +165,19 @@ class PostgresKGProvider(KGProvider):
             level INT NOT NULL,
             is_final_cluster BOOLEAN NOT NULL,
             triple_ids INT[] NOT NULL
+        );"""
+
+        result = await self.execute_query(query) 
+
+
+        # communities_summary table
+        query = f"""
+            CREATE TABLE IF NOT EXISTS {collection_name}.communities_description (
+            id SERIAL PRIMARY KEY,
+            community_id INT NOT NULL,
+            level INT NOT NULL,
+            description TEXT NOT NULL,
+            description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL
         );"""
 
         result = await self.execute_query(query) 
@@ -344,33 +357,33 @@ class PostgresKGProvider(KGProvider):
         search_type = kwargs.get("search_type", "__Entity__")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
+        project_name = kwargs.get("project_name", 'vecs')
+
         limit = kwargs.get("limit", 10)
 
-        property_names_arr = [
-            f"e.{property_name} as {property_name}"
-            for property_name in property_names
-        ]
-
-        property_names_str = ", ".join(property_names_arr)
-
-        SCHEMA_NAME = f"vecs_kg"
-        QUERY = """
-            SELECT * FROM $1.$2 WHERE description_embedding @@ to_tsvector($1)
-            """
-
+        table_name = ""
         if search_type == "__Entity__":
-            query = f"""
-                SELECT {property_names_str}, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
-                FROM $1.$2
-                WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
-                ORDER BY score DESC LIMIT toInteger($limit)
-                """
-        else: 
+            table_name = "entity_embeddings"
+        elif search_type == "__Relationship__":
+            table_name = "triples_raw"
+        elif search_type == "__Community__":
+            table_name = "communities_description"
+        else:
             raise ValueError(f"Invalid search type: {search_type}")
 
+        property_names_str = ", ".join(property_names)
+        QUERY = f"""
+                SELECT {property_names_str} FROM {project_name}.{table_name} ORDER BY {embedding_type} <=> $1 LIMIT $2;
+        """
 
-        results = await self.fetch_query(query, query_embedding)
-        return results
+        results = await self.fetch_query(QUERY, (str(query_embedding), limit))
+
+        # import pdb; pdb.set_trace()
+        for result in results:
+            yield {
+                property_name: result[property_name]
+                for property_name in property_names
+            }
 
 
     async def get_all_triples(self, project_name: str) -> list[Triple]:
@@ -386,8 +399,15 @@ class PostgresKGProvider(KGProvider):
             """
         await self.execute_many(QUERY, communities)
 
+    async def upsert_community_description(self, project_name: str, community: Community) -> None:
+        QUERY = f"""
+            INSERT INTO {project_name}.communities_description (community_id, level, description, description_embedding)
+            VALUES ($1, $2, $3, $4)
+            """
+        await self.execute_query(QUERY, (community.id, community.level, community.summary, str(community.summary_embedding)))
+
     async def perform_graph_clustering(self, project_name: str, leiden_params: dict) -> Tuple[int, int, set[tuple[int, Any]]]:
-        # TODO: implementing the clustering algorithm but now we will get communities at a document level and then we will get communities at a higher level. 
+    # TODO: implementing the clustering algorithm but now we will get communities at a document level and then we will get communities at a higher level. 
         # we will use the Leiden algorithm for this. 
         # but for now let's skip it and make other stuff work. 
         # we will need multiple tables for this to work. 
@@ -419,7 +439,7 @@ class PostgresKGProvider(KGProvider):
         result = await self.upsert_communities(project_name, inputs)
 
         num_communities = len(set([item.cluster for item in hierarchical_communities]))
-        # num_hierarchies = len(set([item.level for item in hierarchical_communities]))
+    # num_hierarchies = len(set([item.level for item in hierarchical_communities]))
         # intermediate_communities = set([(item.level, item.cluster) for item in hierarchical_communities])
 
         return num_communities
@@ -442,6 +462,59 @@ class PostgresKGProvider(KGProvider):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
+
+    async def get_community_details(self, project_name: str, community_id: int):
+
+        QUERY = f"""
+            SELECT level FROM {project_name}.communities WHERE cluster = $1
+            LIMIT 1
+        """
+        level = (await self.fetch_query(QUERY, [community_id]))[0]['level']
+
+        QUERY = f"""
+            WITH node_triple_ids AS (
+                SELECT node, triple_ids 
+                FROM {project_name}.communities 
+                WHERE cluster = $1
+            )
+            SELECT DISTINCT
+                e.id AS id,
+                e.name AS name,
+                e.description AS description
+            FROM node_triple_ids nti
+            JOIN {project_name}.entity_embeddings e ON e.name = nti.node;
+        """
+        entities = await self.fetch_query(QUERY, [community_id])
+
+        QUERY = f"""
+            WITH node_triple_ids AS (
+                SELECT node, triple_ids 
+                FROM {project_name}.communities 
+                WHERE cluster = $1
+            )
+            SELECT DISTINCT
+                t.id, t.subject, t.predicate, t.object, t.weight, t.description
+            FROM node_triple_ids nti
+            JOIN {project_name}.triples_raw t ON t.id = ANY(nti.triple_ids);
+        """
+        triples = await self.fetch_query(QUERY, [community_id])
+
+        return level, entities, triples
+
+    # async def vector_query(self, query: str, **kwargs: Any) -> Any:
+
+    #     query_embedding = kwargs.get("query_embedding", None)
+    #     search_type = kwargs.get("search_type", "__Entity__")
+    #     embedding_type = kwargs.get("embedding_type", "description_embedding")
+    #     property_names = kwargs.get("property_names", ["name", "description"])
+    #     limit = kwargs.get("limit", 10)
+
+    #     embedding = [str(self.embedding_provider.embed_text(query))]
+    #     property_names_str = ", ".join(property_names)
+    #     QUERY = f"""
+    #             SELECT {property_names_str} FROM {project_name}.{table_name} ORDER BY embedding <=> $1 LIMIT toInteger($2);
+    #         """
+    #     return await self.fetch_query(QUERY, [embedding, limit])
 
     async def client(self):
         return self.pool
@@ -480,6 +553,9 @@ class PostgresKGProvider(KGProvider):
     async def upsert_triples(self):
         pass
 
+
+    
+        
 
 
 

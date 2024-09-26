@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from typing import Any, AsyncGenerator, Optional
@@ -54,8 +55,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     def community_summary_prompt(
         self,
-        entities: list[Entity],
-        triples: list[Triple],
+        entities: list,
+        triples: list,
         max_summary_input_length: int,
     ):
         """
@@ -63,14 +64,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         entities_info = "\n".join(
             [
-                f"{entity.id}, {entity.name}, {entity.description}"
+                f"{entity['id']}, {entity['name']}, {entity['description']}"
                 for entity in entities
             ]
         )
 
         triples_info = "\n".join(
             [
-                f"{triple.id}, {triple.subject}, {triple.object}, {triple.predicate}, {triple.description}"
+                f"{triple['id']}, {triple['subject']}, {triple['object']}, {triple['predicate']}, {triple['description']}"
                 for triple in triples
             ]
         )
@@ -93,6 +94,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
+        project_name: str,
         community_id: str,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
@@ -101,8 +103,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
         """
 
-        entities, triples = (
-            self.kg_provider.get_community_entities_and_triples(  # type: ignore
+        level, entities, triples = (
+            await self.kg_provider.get_community_details(  
+                project_name=project_name,
                 community_id=community_id
             )
         )
@@ -139,15 +142,16 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
         community = Community(
-            id=str(community_id),
-            level=str(level),
+            id=community_id,
+            level=level,
             summary=description,
             summary_embedding=await self.embedding_provider.async_get_embedding(
                 description
             ),
         )
 
-        self.kg_provider.upsert_communities([community])  # type: ignore
+        result = await self.kg_provider.upsert_community_description(project_name, community)  # type: ignore
+        print(result)
 
         try:
             summary = json.loads(community.summary)
@@ -174,20 +178,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         project_name = input.message["project_name"]
 
-        communities = self.kg_provider.get_communities(offset=offset, limit=limit, project_name=project_name)
+        community_summary_jobs = []
+        for community_id in range(offset, limit):   
+            community_summary_jobs.append(self.process_community(
+                project_name=project_name,
+                community_id=community_id,
+                max_summary_input_length=max_summary_input_length,
+                generation_config=generation_config,
+            ))
 
-        for community in communities:   
-            try:
-                community_summary = await self.process_community(
-                    level=community.level,
-                    community_id=community.id,
-                    max_summary_input_length=max_summary_input_length,
-                    generation_config=generation_config,
-                )
-
-                yield community_summary
-                
-            except Exception as e:
-                error_message = f"Failed to process community {community.id} at level {community.level}: {e}"
-                logger.error(error_message)
-                raise ValueError(error_message)
+        for community_summary in asyncio.as_completed(community_summary_jobs):
+            yield await community_summary
