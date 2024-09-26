@@ -79,7 +79,8 @@ class R2RParsingProvider(ParsingProvider):
             )
         else:
             parser = self.parsers[document.type]
-            texts = await parser.ingest(file_content)
+
+            texts = parser.ingest(file_content)
             t0 = time.time()
 
             iteration = 0

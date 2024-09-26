@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def hatchet_ingestion_factory(
     orchestration_provider: OrchestrationProvider, service: IngestionService
-) -> list["Hatchet.Workflow"]:
+) -> dict[str, "Hatchet.Workflow"]:
     @orchestration_provider.workflow(
         name="ingest-file",
         timeout="60m",
@@ -285,4 +285,7 @@ def hatchet_ingestion_factory(
 
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
-    return [ingest_files_workflow, update_files_workflow]
+    return {
+        "ingest_files": ingest_files_workflow,
+        "update_files": update_files_workflow,
+    }

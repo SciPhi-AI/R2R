@@ -20,6 +20,7 @@ from core.base import (
     FileConfig,
     FileProvider,
     KGProvider,
+    OrchestrationConfig,
     ParsingConfig,
     ParsingProvider,
     PromptConfig,
@@ -131,15 +132,19 @@ class R2RProviderFactory:
             )
 
     @staticmethod
-    def create_orchestration_provider(*args, **kwargs):
-        from core.base.providers import OrchestrationConfig
-        from core.providers import HatchetOrchestrationProvider
+    def create_orchestration_provider(
+        config: OrchestrationConfig, *args, **kwargs
+    ):
+        if config.provider == "hatchet":
+            from core.providers import HatchetOrchestrationProvider
 
-        orchestration_provider = HatchetOrchestrationProvider(
-            OrchestrationConfig(provider="hatchet")
-        )
-        orchestration_provider.get_worker("r2r-worker")
-        return orchestration_provider
+            orchestration_provider = HatchetOrchestrationProvider(config)
+            orchestration_provider.get_worker("r2r-worker")
+            return orchestration_provider
+        elif config.provider == "simple":
+            from core.providers import SimpleOrchestrationProvider
+
+            return SimpleOrchestrationProvider(config)
 
     async def create_database_provider(
         self,
@@ -356,7 +361,7 @@ class R2RProviderFactory:
 
         orchestration_provider = (
             orchestration_provider_override
-            or self.create_orchestration_provider()
+            or self.create_orchestration_provider(self.config.orchestration)
         )
 
         return R2RProviders(

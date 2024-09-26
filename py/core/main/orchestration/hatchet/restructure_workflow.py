@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
 
 
-def hatchet_restructure_workflow(
+def hatchet_restructure_factory(
     orchestration_provider: OrchestrationProvider, service: RestructureService
 ) -> list["Hatchet.Workflow"]:
     @orchestration_provider.workflow(
@@ -368,9 +368,9 @@ def hatchet_restructure_workflow(
             )
             return {"result": None}
 
-    return [
-        KgExtractAndStoreWorkflow(service),
-        CreateGraphWorkflow(service),
-        EnrichGraphWorkflow(service),
-        KGCommunitySummaryWorkflow(service),
-    ]
+    return {
+        "extract-and-store": KgExtractAndStoreWorkflow(service),
+        "create-graph": CreateGraphWorkflow(service),
+        "enrich-graph": EnrichGraphWorkflow(service),
+        "kg-community-summary": KGCommunitySummaryWorkflow(service),
+    }

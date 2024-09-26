@@ -35,7 +35,20 @@ class IngestionRouter(BaseRouter):
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflows(
-            Workflow.INGESTION, self.service
+            Workflow.INGESTION,
+            self.service,
+            {
+                "ingest-file": (
+                    "Ingestion task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Ingestion task completed successfully."
+                ),
+                "update-files": (
+                    "Update task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Update task queued successfully."
+                ),
+            },
         )
 
     def _load_openapi_extras(self):
@@ -137,7 +150,7 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
 
-                task_id = self.orchestration_provider.run_workflow(
+                raw_message = self.orchestration_provider.run_workflow(
                     "ingest-file",
                     {"request": workflow_input},
                     options={
@@ -146,14 +159,9 @@ class IngestionRouter(BaseRouter):
                         }
                     },
                 )
+                raw_message["document_id"] = str(document_id)
+                messages.append(raw_message)
 
-                messages.append(
-                    {
-                        "message": "Ingestion task queued successfully.",
-                        "task_id": str(task_id),
-                        "document_id": str(document_id),
-                    }
-                )
             return messages
 
         update_files_extras = self.openapi_extras.get("update_files", {})
@@ -248,15 +256,12 @@ class IngestionRouter(BaseRouter):
                 "is_update": True,
             }
 
-            task_id = self.orchestration_provider.run_workflow(
+            raw_message = self.orchestration_provider.run_workflow(
                 "update-files", {"request": workflow_input}, {}
             )
-
-            return {
-                "message": "Update task queued successfully.",
-                "task_id": str(task_id),
-                "document_ids": workflow_input["document_ids"],
-            }
+            raw_message["message"] = "Update task queued successfully."
+            raw_message["document_ids"] = workflow_input["document_ids"]
+            return raw_message
 
     @staticmethod
     def _validate_chunking_config(chunking_config):

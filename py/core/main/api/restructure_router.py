@@ -39,7 +39,12 @@ class RestructureRouter(BaseRouter):
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflows(
-            Workflow.RESTRUCTURE, self.service
+            Workflow.RESTRUCTURE,
+            self.service,
+            {
+                "create-graph": "Graph creation task queued successfully.",
+                "enrich-graph": "Graph enrichment task queued successfully.",
+            },
         )
 
     def _setup_routes(self):
@@ -82,14 +87,9 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = self.orchestration_provider.run_workflow(
+            return self.orchestration_provider.run_workflow(
                 "create-graph", {"request": workflow_input}, {}
             )
-
-            return {
-                "message": f"Graph creation task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
-                "task_id": str(task_id),
-            }
 
         @self.router.post(
             "/enrich_graph",
@@ -137,11 +137,6 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = self.orchestration_provider.run_workflow(
+            return self.orchestration_provider.run_workflow(
                 "enrich-graph", {"request": workflow_input}, {}
             )
-
-            return {
-                "message": "Graph enrichment task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
-                "task_id": str(task_id),
-            }

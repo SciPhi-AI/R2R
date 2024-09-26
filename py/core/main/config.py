@@ -18,6 +18,7 @@ from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.file import FileConfig
 from ..base.providers.kg import KGConfig
 from ..base.providers.llm import CompletionConfig
+from ..base.providers.orchestration import OrchestrationConfig
 from ..base.providers.parsing import ParsingConfig
 from ..base.providers.prompt import PromptConfig
 
@@ -62,6 +63,7 @@ class R2RConfig:
         "database": ["provider"],
         "agent": ["generation_config"],
         "file": ["provider"],
+        "orchestration": ["provider"],
     }
     auth: AuthConfig
     chunking: ChunkingConfig
@@ -75,6 +77,7 @@ class R2RConfig:
     prompt: PromptConfig
     agent: AgentConfig
     file: FileConfig
+    orchestration: OrchestrationConfig
 
     def __init__(
         self, config_data: dict[str, Any], base_path: Optional[Path] = None
@@ -136,6 +139,7 @@ class R2RConfig:
         self.prompt = PromptConfig.create(**self.prompt)  # type: ignore
         self.agent = AgentConfig.create(**self.agent)  # type: ignore
         self.file = FileConfig.create(**self.file)  # type: ignore
+        self.orchestration = OrchestrationConfig.create(**self.orchestration)  # type: ignore
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list

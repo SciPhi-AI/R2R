@@ -132,8 +132,6 @@ class SupabaseAuthProvider(AuthProvider):
         # Use Supabase client to get user details from token
         user = self.supabase.auth.get_user(token).user
         if user:
-            # print('user = ', user)
-            # import pdb; pdb.set_trace()
             return UserResponse(
                 id=user.id,
                 email=user.email,

@@ -1,7 +1,10 @@
 import asyncio
+import logging
 from typing import Any, Callable, Optional
 
 from core.base import OrchestrationConfig, OrchestrationProvider, Workflow
+
+logger = logging.getLogger(__name__)
 
 
 class HatchetOrchestrationProvider(OrchestrationProvider):
@@ -15,7 +18,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             )
         self.orchestrator = Hatchet()
         self.config: OrchestrationConfig = config  # for type hinting
-        self.worker
+        self.messages = {}
 
     def workflow(self, *args, **kwargs) -> Callable:
         return self.orchestrator.workflow(*args, **kwargs)
@@ -48,15 +51,28 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         *args,
         **kwargs,
     ) -> Any:
-        self.orchestrator.admin.run_workflow(
+        task_id = self.orchestrator.admin.run_workflow(
             workflow_name,
             parameters,
             options=options,
             *args,
             **kwargs,
         )
+        return {
+            "task_id": str(task_id),
+            "message": self.messages.get(
+                workflow_name, "Workflow queued successfully."
+            ),  # Return message based on workflow name
+        }
 
-    def register_workflows(self, workflow: Workflow, service: Any) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
+        self.messages.update(messages)
+
+        logger.info(
+            f"Registering workflows for {workflow} with messages {messages}."
+        )
         if workflow == Workflow.INGESTION:
             from core.main.orchestration.hatchet.ingestion_workflow import (
                 hatchet_ingestion_factory,
@@ -64,15 +80,15 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
 
             workflows = hatchet_ingestion_factory(self, service)
             if self.worker:
-                for workflow in workflows:
+                for workflow in workflows.values():
                     self.worker.register_workflow(workflow)
 
         elif workflow == Workflow.RESTRUCTURE:
             from core.main.orchestration.hatchet.restructure_workflow import (
-                hatchet_restructure_workflow,
+                hatchet_restructure_factory,
             )
 
-            workflows = hatchet_restructure_workflow(self, service)
+            workflows = hatchet_restructure_factory(self, service)
             if self.worker:
-                for workflow in workflows:
+                for workflow in workflows.values():
                     self.worker.register_workflow(workflow)

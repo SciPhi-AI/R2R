@@ -93,9 +93,10 @@ class IngestionService(Service):
                 filter_user_ids=[user.id],
                 filter_document_ids=[document_id],
             )
-        )
-        if documents := existing_document_info.get("documents", []):
-            existing_doc = documents[0]
+        )["results"]
+
+        if len(existing_document_info) > 0:
+            existing_doc = existing_document_info[0]
             if is_update:
                 if (
                     existing_doc.version >= version

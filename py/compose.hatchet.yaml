@@ -138,7 +138,7 @@ services:
         aliases:
           - host.docker.internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7077/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8733/ready"]
       interval: 10s
       timeout: 5s
       retries: 5
