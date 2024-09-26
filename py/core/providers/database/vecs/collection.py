@@ -11,7 +11,7 @@ import math
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
 from flupy import flu
@@ -426,7 +426,7 @@ class Collection:
                     sess.execute(stmt)
         return None
 
-    def fetch(self, fragment_ids: Iterable[UUID]) -> List[Record]:
+    def fetch(self, fragment_ids: Iterable[UUID]) -> list[Record]:
         """
         Fetches vectors from the collection by their fragment identifiers.
 
@@ -434,7 +434,7 @@ class Collection:
             fragment_ids (Iterable[UUID]): An iterable of vector fragment identifiers.
 
         Returns:
-            List[Record]: A list of the fetched vectors.
+            list[Record]: A list of the fetched vectors.
 
         Raises:
             ArgError: If fragment_ids is not an iterable of UUIDs.
@@ -457,17 +457,17 @@ class Collection:
     def delete(
         self,
         fragment_ids: Optional[Iterable[UUID]] = None,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Dict[str, str]]:
+        filters: Optional[dict[str, Any]] = None,
+    ) -> dict[str, dict[str, str]]:
         """
         Deletes vectors from the collection by matching filters or fragment_ids.
 
         Args:
             fragment_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
-            filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
+            filters (Optional[dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            Dict[str, Dict[str, str]]: A dictionary of deleted records, where the key is the fragment_id
+            dict[str, dict[str, str]]: A dictionary of deleted records, where the key is the fragment_id
             and the value is a dictionary containing 'document_id', 'extraction_id', 'fragment_id', and 'text'.
 
         Raises:
@@ -556,7 +556,7 @@ class Collection:
         self,
         vector: list[float],
         search_settings: VectorSearchSettings,
-    ) -> Union[List[Record], List[str]]:
+    ) -> Union[list[Record], list[str]]:
         """
         Executes a similarity search in the collection.
 
@@ -567,7 +567,7 @@ class Collection:
             search_settings (VectorSearchSettings): The search settings to use.
 
         Returns:
-            Union[List[Record], List[str]]: The result of the similarity search.
+            Union[list[Record], list[str]]: The result of the similarity search.
         """
 
         try:
@@ -605,11 +605,11 @@ class Collection:
 
         stmt = select(*cols)
 
-        # if filters:
-        stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
-        stmt = stmt.order_by(distance_clause)
-        stmt = stmt.offset(search_settings.offset)
-        stmt = stmt.limit(search_settings.search_limit)
+        if search_settings.filters:
+            stmt = stmt.filter(self.build_filters(search_settings.filters))
+            stmt = stmt.order_by(distance_clause)
+            stmt = stmt.offset(search_settings.offset)
+            stmt = stmt.limit(search_settings.search_limit)
 
         with self.client.Session() as sess:
             with sess.begin():
@@ -632,11 +632,12 @@ class Collection:
                     )
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
-                return sess.execute(stmt).fetchall() or []
+                result = sess.execute(stmt).fetchall()
+                return result or []
 
     def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
-    ) -> List[VectorSearchResult]:
+    ) -> list[VectorSearchResult]:
         # Create a tsquery from the input query
         ts_query = func.websearch_to_tsquery("english", query_text)
 
@@ -683,15 +684,14 @@ class Collection:
             for r in results
         ]
 
-    def build_filters(self, filters: Dict):
+    def build_filters(self, filters: dict):
         """
         PUBLIC
 
         Builds filters for SQL query based on provided dictionary.
 
         Args:
-            table: The SQLAlchemy table object.
-            filters (Dict): The dictionary specifying filter conditions.
+            filters (dict): The dictionary specifying filter conditions.
 
         Raises:
             FilterError: If filter conditions are not correctly formatted.
@@ -709,6 +709,14 @@ class Collection:
                 column = getattr(self.table.c, key)
                 if isinstance(value, dict):
                     op, clause = next(iter(value.items()))
+
+                    # TODO: Test with removing this
+                    # **Convert strings back to UUIDs if necessary**
+                    # if op in {"$eq", "$ne"} and isinstance(clause, str):
+                    #     clause = UUID(clause)
+                    # elif isinstance(clause, list):
+                    #     clause = [UUID(item) if isinstance(item, str) else item for item in clause]
+
                     if op == "$eq":
                         return column == clause
                     elif op == "$ne":
@@ -734,12 +742,15 @@ class Collection:
                             f"Unsupported operator for column {key}: {op}"
                         )
                 else:
+                    # Handle direct equality
+                    if isinstance(value, str):
+                        value = UUID(value)
                     return column == value
             else:
                 # Handle JSON-based filters
                 json_col = self.table.c.metadata
                 if key.startswith("metadata."):
-                    key.split("metadata.")[1]
+                    key = key.split("metadata.")[1]
                 if isinstance(value, dict):
                     if len(value) > 1:
                         raise FilterError("only one operator permitted")
@@ -755,6 +766,13 @@ class Collection:
                         "$contains",
                     ):
                         raise FilterError("unknown operator")
+
+                    # TODO: Test with removing this
+                    # **Convert strings back to UUIDs if necessary**
+                    # if operator in {"$eq", "$ne"} and isinstance(clause, str):
+                    #     clause = UUID(clause)
+                    # elif isinstance(clause, list):
+                    #     clause = [UUID(item) if isinstance(item, str) else item for item in clause]
 
                     if operator == "$eq" and not hasattr(clause, "__len__"):
                         contains_value = cast({key: clause}, postgresql.JSONB)
@@ -814,7 +832,7 @@ class Collection:
         return parse_filter(filters)
 
     @classmethod
-    def _list_collections(cls, client: "Client") -> List["Collection"]:
+    def _list_collections(cls, client: "Client") -> list["Collection"]:
         """
         PRIVATE
 
@@ -824,7 +842,7 @@ class Collection:
             client (Client): The database client.
 
         Returns:
-            List[Collection]: A list of all existing collections.
+            list[Collection]: A list of all existing collections.
         """
 
         query = text(
