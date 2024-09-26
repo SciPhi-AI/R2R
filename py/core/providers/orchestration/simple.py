@@ -8,6 +8,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         self.config = config
+        self.messages = {}
 
     async def start_worker(self):
         pass
@@ -28,7 +29,8 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def register_workflows(
         self, workflow: Workflow, service: Any, messages: dict
     ) -> None:
-        self.messages = messages  # Store the messages dictionary
+        for key, msg in messages.items():
+            self.messages[key] = msg
 
         if workflow == Workflow.INGESTION:
             from core.main.orchestration import simple_ingestion_factory
@@ -46,6 +48,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
         self, workflow_name: str, input: dict, options: dict
     ) -> Any:
         if workflow_name in self.ingestion_workflows:
+            print('self.messages = ', self.messages)
             asyncio.run(self.ingestion_workflows[workflow_name](input.get("request")))
             return {"message": self.messages[workflow_name]}
         elif workflow_name in self.restructure_workflows:
