@@ -4,27 +4,24 @@ from uuid import UUID
 
 from core.base import (
     AsyncState,
-    ChunkingProvider,
     DocumentExtraction,
-    DocumentFragment,
+    IngestionProvider,
     PipeType,
-    R2RChunkingConfig,
     RunLoggingSingleton,
     generate_id_from_label,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers import R2RChunkingProvider
 
 logger = logging.getLogger(__name__)
 
 
-class ChunkingPipe(AsyncPipe[DocumentFragment]):
+class ChunkingPipe(AsyncPipe[DocumentExtraction]):
     class Input(AsyncPipe.Input):
         message: list[DocumentExtraction]
 
     def __init__(
         self,
-        chunking_provider: ChunkingProvider,
+        ingestion_provider: IngestionProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -38,9 +35,7 @@ class ChunkingPipe(AsyncPipe[DocumentFragment]):
             *args,
             **kwargs,
         )
-        self.default_chunking_provider = (
-            chunking_provider or R2RChunkingProvider(R2RChunkingConfig())
-        )
+        self.default_ingestion_provider = ingestion_provider
 
     async def _run_logic(  # type: ignore
         self,
@@ -49,17 +44,16 @@ class ChunkingPipe(AsyncPipe[DocumentFragment]):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[DocumentFragment, None]:
+    ) -> AsyncGenerator[DocumentExtraction, None]:
 
-        chunking_provider = (
-            kwargs.get("chunking_provider", None)
-            or self.default_chunking_provider
+        chunking_config = (
+            kwargs.get("chunking_config", None) or self.default_chunking_config
         )
 
         unstr_iteration = 0  # unstructured already chunks
         for item in input.message:
             iteration = 0
-            async for chunk in chunking_provider.chunk(item):  # type: ignore
+            async for chunk in ingestion_provider.chunk(item):  # type: ignore
                 if item.metadata.get("partitioned_by_unstructured", False):
                     item.metadata["chunk_order"] = unstr_iteration
                     unstr_iteration += 1
@@ -67,9 +61,8 @@ class ChunkingPipe(AsyncPipe[DocumentFragment]):
                     item.metadata["chunk_order"] = iteration
                     iteration += 1
 
-                yield DocumentFragment(
+                yield DocumentExtraction(
                     id=generate_id_from_label(f"{item.id}-{iteration}"),
-                    extraction_id=item.id,
                     document_id=item.document_id,
                     user_id=item.user_id,
                     collection_ids=item.collection_ids,

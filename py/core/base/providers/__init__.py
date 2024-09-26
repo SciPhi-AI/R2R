@@ -1,12 +1,5 @@
 from .auth import AuthConfig, AuthProvider
 from .base import Provider, ProviderConfig
-from .chunking import (
-    ChunkingConfig,
-    ChunkingProvider,
-    R2RChunkingConfig,
-    Strategy,
-    UnstructuredChunkingConfig,
-)
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     DatabaseConfig,
@@ -16,25 +9,23 @@ from .database import (
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
+from .ingestion import ChunkingMethod, IngestionConfig, IngestionProvider
 from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
-from .parsing import OverrideParser, ParsingConfig, ParsingProvider
 from .prompt import PromptConfig, PromptProvider
 
 __all__ = [
-    # Base provider classes
-    "Provider",
-    "ProviderConfig",
     # Auth provider
     "AuthConfig",
     "AuthProvider",
-    # Chunking provider
-    "UnstructuredChunkingConfig",
-    "ChunkingConfig",
-    "R2RChunkingConfig",
-    "ChunkingProvider",
-    "Strategy",
+    # Base provider classes
+    "Provider",
+    "ProviderConfig",
+    # Ingestion provider
+    "IngestionConfig",
+    "IngestionProvider",
+    "ChunkingMethod",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
@@ -56,10 +47,6 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
-    # Parsing provider
-    "ParsingConfig",
-    "ParsingProvider",
-    "OverrideParser",
     # Prompt provider
     "PromptConfig",
     "PromptProvider",

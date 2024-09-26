@@ -150,7 +150,7 @@ def document_chunks(ctx, document_id, offset, limit):
     for index, chunk in enumerate(chunks, 1):
         click.echo(f"\nChunk {index}:")
         if isinstance(chunk, dict):
-            click.echo(f"Fragment ID: {chunk.get('fragment_id', 'N/A')}")
+            click.echo(f"Extraction ID: {chunk.get('id', 'N/A')}")
             click.echo(f"Text: {chunk.get('text', '')[:100]}...")
             click.echo(f"Metadata: {chunk.get('metadata', {})}")
         else:

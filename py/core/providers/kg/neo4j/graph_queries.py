@@ -8,7 +8,7 @@ RETURN c
 
 PUT_CHUNKS_QUERY = """
 MERGE (c:__Chunk__ {id:value.id})
-SET c += value {.type, .data, .metadata, .document_id, .extraction_id}
+SET c += value {.type, .data, .metadata, .document_id, .id}
 MERGE (d:__Document__ {id:value.document_id})
 MERGE (n)-[:PART_OF_DOCUMENT]->(d)
 """

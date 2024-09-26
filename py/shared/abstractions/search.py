@@ -13,8 +13,7 @@ from .llm import GenerationConfig
 class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
-    fragment_id: UUID
-    extraction_id: UUID
+    id: UUID
     document_id: UUID
     user_id: Optional[UUID]
     collection_ids: list[UUID]
@@ -23,15 +22,14 @@ class VectorSearchResult(R2RSerializable):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"VectorSearchResult(fragment_id={self.fragment_id}, extraction_id={self.extraction_id}, document_id={self.document_id}, score={self.score})"
+        return f"VectorSearchResult(id={self.id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
         return self.__str__()
 
     def as_dict(self) -> dict:
         return {
-            "fragment_id": self.fragment_id,
-            "extraction_id": self.extraction_id,
+            "id": self.id,
             "document_id": self.document_id,
             "user_id": self.user_id,
             "collection_ids": self.collection_ids,
@@ -42,8 +40,7 @@ class VectorSearchResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-            "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
@@ -125,7 +122,7 @@ class KGSearchResult(R2RSerializable):
         KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
     ]
     result_type: Optional[KGSearchResultType] = None
-    fragment_ids: Optional[list[UUID]] = None
+    ids: Optional[list[UUID]] = None
     document_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
 
@@ -134,7 +131,7 @@ class KGSearchResult(R2RSerializable):
             "method": "local",
             "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
-            "fragment_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+            "ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "document_ids": ["3e157b3a-8469-51db-90d9-52e7d896b49b"],
             "metadata": {"associated_query": "What is the capital of France?"},
         }

@@ -17,11 +17,10 @@ from core.base import (
     Document,
     DocumentExtraction,
     DocumentType,
-    ParsingConfig,
-    ParsingProvider,
     generate_id_from_label,
 )
 from core.base.abstractions import R2RSerializable
+from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 
 logger = logging.getLogger(__name__)
 
@@ -31,27 +30,20 @@ class FallbackElement(R2RSerializable):
     metadata: dict[str, Any]
 
 
-class UnstructuredParsingProvider(ParsingProvider):
+class UnstructuredIngestionConfig(IngestionConfig):
+    pass
+
+
+class UnstructuredIngestionProvider(IngestionProvider):
 
     R2R_FALLBACK_PARSERS = {
-        # Commented filetypes go to unstructured, uncommented fallback to R2R parsers (LLM based)
-        # DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
-        # DocumentType.DOCX: [parsers.DOCXParser],
-        # DocumentType.HTML: [parsers.HTMLParser],
-        # DocumentType.HTM: [parsers.HTMLParser],
-        # DocumentType.JSON: [parsers.JSONParser],
-        # DocumentType.MD: [parsers.MDParser],
-        # DocumentType.PDF: [parsers.PDFParser, parsers.PDFParserUnstructured],
-        # DocumentType.PPTX: [parsers.PPTParser],
-        # DocumentType.TXT: [parsers.TextParser],
-        # DocumentType.XLSX: [parsers.XLSXParser, parsers.XLSXParserAdvanced],
         DocumentType.GIF: [parsers.ImageParser],
         DocumentType.JPEG: [parsers.ImageParser],
         DocumentType.JPG: [parsers.ImageParser],
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
-        # DocumentType.MP4: [parsers.MovieParser],
+        DocumentType.MP4: [parsers.MovieParser],
     }
 
     IMAGE_TYPES = {
@@ -62,10 +54,10 @@ class UnstructuredParsingProvider(ParsingProvider):
         DocumentType.SVG,
     }
 
-    def __init__(self, use_api: bool, config: ParsingConfig):
+    def __init__(self, use_api: bool, config: UnstructuredIngestionConfig):
         super().__init__(config)
-        self.config: ParsingConfig = config
-        if config.excluded_parsers:
+        self.config: UnstructuredIngestionConfig = config
+        if config.IngestionConfig:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
             )
@@ -118,11 +110,6 @@ class UnstructuredParsingProvider(ParsingProvider):
                     # will choose the first parser in the list
                     self.parsers[doc_type] = parser_info()
 
-        # Apply overrides if specified
-        for parser_override in self.config.override_parsers:
-            if parser_name := getattr(parsers, parser_override.parser):
-                self.parsers[parser_override.document_type] = parser_name()
-
     async def parse_fallback(
         self, file_content: bytes, document: Document, chunk_size: int
     ) -> AsyncGenerator[FallbackElement, None]:
@@ -139,7 +126,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 )
                 chunk_id += 1
 
-    async def parse(  # type: ignore
+    async def parse(
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
@@ -152,7 +139,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             async for element in self.parse_fallback(
                 file_content,
                 document,
-                chunk_size=self.config.chunking_config.extra_fields.get(
+                chunk_size=self.config.chunking_config.get(
                     "combine_under_n_chars", 128
                 ),
             ):
@@ -175,7 +162,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
                         files=files,
-                        **self.config.chunking_config.extra_fields,
+                        **self.config.chunking_config,
                     )
                 )
                 elements = self.client.general.partition(req)  # type: ignore
@@ -198,7 +185,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                     f"{self.local_unstructured_url}/partition",
                     json={
                         "file_content": encoded_content,  # Use encoded string
-                        "chunking_config": self.config.chunking_config.extra_fields,
+                        "chunking_config": self.config.chunking_config,
                     },
                     timeout=300,  # Adjust timeout as needed
                 )

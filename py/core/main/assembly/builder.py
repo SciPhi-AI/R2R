@@ -45,9 +45,9 @@ class ProviderOverrides:
     auth: Optional[AuthProvider] = None
     database: Optional[DatabaseProvider] = None
     embedding: Optional[EmbeddingProvider] = None
+    kg: Optional[KGProvider] = None
     llm: Optional[CompletionProvider] = None
     prompt: Optional[PromptProvider] = None
-    kg: Optional[KGProvider] = None
     crypto: Optional[CryptoProvider] = None
     orchestration: Optional[OrchestrationProvider] = None
 
@@ -56,10 +56,10 @@ class ProviderOverrides:
 class PipeOverrides:
     parsing: Optional[AsyncPipe] = None
     embedding: Optional[AsyncPipe] = None
-    vector_storage: Optional[AsyncPipe] = None
-    vector_search: Optional[AsyncPipe] = None
     rag: Optional[AsyncPipe] = None
     streaming_rag: Optional[AsyncPipe] = None
+    vector_storage: Optional[AsyncPipe] = None
+    vector_search: Optional[AsyncPipe] = None
     kg: Optional[AsyncPipe] = None
     kg_storage: Optional[AsyncPipe] = None
     kg_search: Optional[AsyncPipe] = None

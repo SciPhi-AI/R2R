@@ -53,7 +53,7 @@ def hatchet_ingestion_factory(
                 extractions.append(extraction)
 
             serializable_extractions = [
-                fragment.to_dict() for fragment in extractions
+                extraction.to_dict() for extraction in extractions
             ]
 
             return {
@@ -73,13 +73,13 @@ def hatchet_ingestion_factory(
             )
 
             extractions = context.step_output("parse")["extractions"]
-            chunking_config = context.workflow_input()["request"].get(
-                "chunking_config"
+            ingestion_config = context.workflow_input()["request"].get(
+                "ingestion_config"
             )
 
             chunk_generator = await self.ingestion_service.chunk_document(
                 extractions,
-                chunking_config,
+                ingestion_config,
             )
 
             chunks = []
@@ -203,7 +203,7 @@ def hatchet_ingestion_factory(
             user = parsed_data["user"]
             document_ids = parsed_data["document_ids"]
             metadatas = parsed_data["metadatas"]
-            chunking_config = parsed_data["chunking_config"]
+            ingestion_config = parsed_data["ingestion_config"]
             file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
 
             if not file_datas:
@@ -260,9 +260,9 @@ def hatchet_ingestion_factory(
                     "metadata": updated_metadata,
                     "document_id": str(doc_id),
                     "version": new_version,
-                    "chunking_config": (
-                        chunking_config.model_dump_json()
-                        if chunking_config
+                    "ingestion_config": (
+                        ingestion_config.model_dump_json()
+                        if ingestion_config
                         else None
                     ),
                     "size_in_bytes": file_size_in_bytes,

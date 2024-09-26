@@ -11,15 +11,14 @@ from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
 from ..base.logging.run_logger import LoggingConfig
 from ..base.providers.auth import AuthConfig
-from ..base.providers.chunking import ChunkingConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
 from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.file import FileConfig
+from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.kg import KGConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
-from ..base.providers.parsing import ParsingConfig
 from ..base.providers.prompt import PromptConfig
 
 logger = logging.getLogger(__name__)
@@ -41,6 +40,7 @@ class R2RConfig:
     CONFIG_OPTIONS["default"] = None
 
     REQUIRED_KEYS: dict[str, list] = {
+        "completion": ["provider"],
         "crypto": ["provider"],
         "auth": ["provider"],
         "embedding": [
@@ -50,14 +50,12 @@ class R2RConfig:
             "batch_size",
             "add_title_as_prefix",
         ],
+        "ingestion": ["provider"],
         "kg": [
             "provider",
             "batch_size",
             "kg_enrichment_settings",
         ],
-        "parsing": ["provider", "excluded_parsers"],
-        "chunking": ["provider"],
-        "completion": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "database": ["provider"],
@@ -65,15 +63,15 @@ class R2RConfig:
         "file": ["provider"],
         "orchestration": ["provider"],
     }
+
     auth: AuthConfig
-    chunking: ChunkingConfig
     completion: CompletionConfig
     crypto: CryptoConfig
     database: DatabaseConfig
     embedding: EmbeddingConfig
+    ingestion: IngestionConfig
     kg: KGConfig
     logging: LoggingConfig
-    parsing: ParsingConfig
     prompt: PromptConfig
     agent: AgentConfig
     file: FileConfig
@@ -127,15 +125,12 @@ class R2RConfig:
         )
 
         self.auth = AuthConfig.create(**self.auth)  # type: ignore
-        self.chunking = ChunkingConfig.create(**self.chunking)  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto)  # type: ignore
         self.database = DatabaseConfig.create(**self.database)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding)  # type: ignore
+        self.ingestion = IngestionConfig.create(**self.ingestion)  # type: ignore
         self.kg = KGConfig.create(**self.kg)  # type: ignore
         self.logging = LoggingConfig.create(**self.logging)  # type: ignore
-        if "chunking_config" not in self.parsing:  # type: ignore
-            self.parsing["chunking_config"] = self.chunking  # type: ignore
-        self.parsing = ParsingConfig.create(**self.parsing)  # type: ignore
         self.prompt = PromptConfig.create(**self.prompt)  # type: ignore
         self.agent = AgentConfig.create(**self.agent)  # type: ignore
         self.file = FileConfig.create(**self.file)  # type: ignore

@@ -179,15 +179,3 @@ class DocumentExtraction(R2RSerializable):
     user_id: UUID
     data: DataType
     metadata: dict
-
-
-class DocumentFragment(R2RSerializable):
-    """A fragment extracted from a document."""
-
-    id: UUID
-    extraction_id: UUID
-    document_id: UUID
-    user_id: UUID
-    collection_ids: list[UUID]
-    data: DataType
-    metadata: dict

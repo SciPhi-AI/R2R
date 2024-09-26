@@ -7,8 +7,6 @@ from core.base import (
     AsyncPipe,
     AuthConfig,
     AuthProvider,
-    ChunkingConfig,
-    ChunkingProvider,
     CompletionConfig,
     CompletionProvider,
     CryptoConfig,
@@ -19,10 +17,10 @@ from core.base import (
     EmbeddingProvider,
     FileConfig,
     FileProvider,
+    IngestionConfig,
+    IngestionProvider,
     KGProvider,
     OrchestrationConfig,
-    ParsingConfig,
-    ParsingProvider,
     PromptConfig,
     PromptProvider,
     RunLoggingSingleton,
@@ -81,54 +79,32 @@ class R2RProviderFactory:
             )
 
     @staticmethod
-    def create_parsing_provider(
-        parsing_config: ParsingConfig, *args, **kwargs
-    ) -> ParsingProvider:
-        if parsing_config.provider == "r2r":
-            from core.providers import R2RParsingProvider
+    def create_ingestion_provider(
+        ingestion_config: IngestionConfig, *args, **kwargs
+    ) -> IngestionProvider:
+        if ingestion_config.provider == "r2r":
+            from core.providers import R2RIngestionConfig, R2RIngestionProvider
 
-            return R2RParsingProvider(parsing_config)
-        elif parsing_config.provider in [
+            config_dict = ingestion_config.model_dump()
+            extra_args = config_dict.get("extra_args", {})
+            r2r_ingestion_config = R2RIngestionConfig(
+                **config_dict, **extra_args
+            )
+            print("r2r_ingestion_config = ", r2r_ingestion_config)
+            return R2RIngestionProvider(r2r_ingestion_config)
+        elif ingestion_config.provider in [
             "unstructured_local",
             "unstructured_api",
         ]:
-            from core.providers import UnstructuredParsingProvider
+            from core.providers import UnstructuredIngestionProvider
 
-            return UnstructuredParsingProvider(
-                parsing_config.provider == "unstructured_api", parsing_config
+            return UnstructuredIngestionProvider(
+                ingestion_config.provider == "unstructured_api",
+                ingestion_config,
             )
         else:
             raise ValueError(
-                f"Parsing provider {parsing_config.provider} not supported"
-            )
-
-    @staticmethod
-    def create_chunking_provider(
-        chunking_config: ChunkingConfig, *args, **kwargs
-    ) -> ChunkingProvider:
-        chunking_config.validate_config()
-        if chunking_config.provider == "r2r":
-            from core.base import R2RChunkingConfig
-            from core.providers import R2RChunkingProvider
-
-            chunking_config_r2r = R2RChunkingConfig(
-                **chunking_config.extra_fields
-            )
-            return R2RChunkingProvider(chunking_config_r2r)
-        elif chunking_config.provider in [
-            "unstructured_local",
-            "unstructured_api",
-        ]:
-            from core.base import UnstructuredChunkingConfig
-            from core.providers import UnstructuredChunkingProvider
-
-            chunking_config_unst = UnstructuredChunkingConfig(
-                **chunking_config.extra_fields
-            )
-            return UnstructuredChunkingProvider(chunking_config_unst)
-        else:
-            raise ValueError(
-                f"Chunking provider {chunking_config.provider} not supported"
+                f"Ingestion provider {ingestion_config.provider} not supported"
             )
 
     @staticmethod
@@ -284,16 +260,15 @@ class R2RProviderFactory:
 
     async def create_providers(
         self,
+        auth_provider_override: Optional[AuthProvider] = None,
+        crypto_provider_override: Optional[CryptoProvider] = None,
+        database_provider_override: Optional[DatabaseProvider] = None,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
+        file_provider_override: Optional[FileProvider] = None,
+        ingestion_provider_override: Optional[IngestionProvider] = None,
+        kg_provider_override: Optional[KGProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
-        kg_provider_override: Optional[KGProvider] = None,
-        crypto_provider_override: Optional[CryptoProvider] = None,
-        auth_provider_override: Optional[AuthProvider] = None,
-        database_provider_override: Optional[DatabaseProvider] = None,
-        parsing_provider_override: Optional[ParsingProvider] = None,
-        chunking_config: Optional[ChunkingProvider] = None,
-        file_provider_override: Optional[FileProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,
         **kwargs,
@@ -303,6 +278,13 @@ class R2RProviderFactory:
             embedding_provider_override
             or self.create_embedding_provider(
                 self.config.embedding, *args, **kwargs
+            )
+        )
+
+        ingestion_provider = (
+            ingestion_provider_override
+            or self.create_ingestion_provider(
+                self.config.ingestion, *args, **kwargs
             )
         )
 
@@ -344,17 +326,6 @@ class R2RProviderFactory:
             )
         )
 
-        parsing_provider = (
-            parsing_provider_override
-            or self.create_parsing_provider(
-                self.config.parsing, *args, **kwargs
-            )
-        )
-
-        chunking_provider = chunking_config or self.create_chunking_provider(
-            self.config.chunking, *args, **kwargs
-        )
-
         file_provider = file_provider_override or await self.create_file_provider(
             self.config.file, database_provider, *args, **kwargs  # type: ignore
         )
@@ -366,11 +337,10 @@ class R2RProviderFactory:
 
         return R2RProviders(
             auth=auth_provider,
-            chunking=chunking_provider,
             database=database_provider,
             embedding=embedding_provider,
+            ingestion=ingestion_provider,
             llm=llm_provider,
-            parsing=parsing_provider,
             prompt=prompt_provider,
             kg=kg_provider,
             orchestration=orchestration_provider,
@@ -405,8 +375,7 @@ class R2RPipeFactory:
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
-                self.config.parsing.excluded_parsers,
-                self.config.parsing.override_parsers,
+                self.config.ingestion.excluded_parsers,
                 *args,
                 **kwargs,
             ),
@@ -442,7 +411,7 @@ class R2RPipeFactory:
         from core.pipes import ParsingPipe
 
         return ParsingPipe(
-            parsing_provider=self.providers.parsing,
+            ingestion_provider=self.providers.ingestion,
             file_provider=self.providers.file,
             config=AsyncPipe.PipeConfig(name="parsing_pipe"),
         )
@@ -451,7 +420,7 @@ class R2RPipeFactory:
         from core.pipes import ChunkingPipe
 
         return ChunkingPipe(
-            chunking_provider=self.providers.chunking,
+            ingestion_provider=self.providers.ingestion,
             config=AsyncPipe.PipeConfig(name="chunking_pipe"),
         )
 
@@ -566,7 +535,6 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
-            chunking_provider=self.providers.chunking,
             config=AsyncPipe.PipeConfig(name="kg_extraction_pipe"),
         )
 

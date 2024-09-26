@@ -16,7 +16,7 @@ def simple_restructure_factory(service: RestructureService):
 
     async def kg_extract_and_store(input_data):
         document_id = uuid.UUID(input_data["document_id"])
-        fragment_merge_count = input_data["fragment_merge_count"]
+        extraction_merge_count = input_data["extraction_merge_count"]
         max_knowledge_triples = input_data["max_knowledge_triples"]
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
@@ -42,7 +42,7 @@ def simple_restructure_factory(service: RestructureService):
                 generation_config=GenerationConfig(
                     **input_data["generation_config"]
                 ),
-                fragment_merge_count=fragment_merge_count,
+                extraction_merge_count=extraction_merge_count,
                 max_knowledge_triples=max_knowledge_triples,
                 entity_types=entity_types,
                 relation_types=relation_types,
@@ -140,7 +140,7 @@ def simple_restructure_factory(service: RestructureService):
                 kg_extract_and_store(
                     {
                         "document_id": str(document_id),
-                        "fragment_merge_count": kg_creation_settings.fragment_merge_count,
+                        "extraction_merge_count": kg_creation_settings.extraction_merge_count,
                         "max_knowledge_triples": kg_creation_settings.max_knowledge_triples,
                         "generation_config": kg_creation_settings.generation_config.to_dict(),
                         "entity_types": kg_creation_settings.entity_types,

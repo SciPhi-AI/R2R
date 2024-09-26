@@ -10,7 +10,6 @@ from uuid import UUID
 from core.base import KGConfig, KGProvider, R2RException
 from core.base.abstractions import (
     Community,
-    DocumentFragment,
     Entity,
     KGExtraction,
     RelationshipType,
@@ -140,15 +139,13 @@ class Neo4jKGProvider(KGProvider):
             results.append(result)
         return results
 
-    def get_chunks(
-        self, chunk_ids: List[str] = None
-    ) -> List[DocumentFragment]:
+    def get_chunks(self, chunk_ids: List[str] = None) -> List[Any]:
         """
         Get chunks from the graph.
         """
         return self.structured_query(GET_CHUNKS_QUERY, chunk_ids)
 
-    def upsert_chunks(self, chunks: List[DocumentFragment]):
+    def upsert_chunks(self, chunks: List[Any]):
         """
         Upsert chunks into the graph.
         """

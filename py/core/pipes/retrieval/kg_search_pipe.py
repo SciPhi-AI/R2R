@@ -130,7 +130,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 property_names=[
                     "name",
                     "description",
-                    "fragment_ids",
+                    "extraction_ids",
                     "document_ids",
                 ],
             ):
@@ -141,7 +141,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    fragment_ids=search_result["fragment_ids"],
+                    extraction_ids=search_result["extraction_ids"],
                     document_ids=search_result["document_ids"],
                     metadata={"associated_query": message},
                 )
@@ -158,7 +158,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 property_names=[
                     "name",
                     "description",
-                    "fragment_ids",
+                    "extraction_ids",
                     "document_ids",
                 ],
             ):
@@ -169,7 +169,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.RELATIONSHIP,
-                    fragment_ids=search_result["fragment_ids"],
+                    extraction_ids=search_result["extraction_ids"],
                     document_ids=search_result["document_ids"],
                     metadata={"associated_query": message},
                 )
