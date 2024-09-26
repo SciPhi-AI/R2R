@@ -24,74 +24,85 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def failure(self, *args, **kwargs) -> Any:
         pass
 
+
     def register_workflows(
         self, workflow: Workflow, service: Any, messages: dict
     ) -> None:
+        self.messages = messages  # Store the messages dictionary
+
         if workflow == Workflow.INGESTION:
+            from core.main.orchestration import simple_ingestion_factory
 
-            def run_ingestion_workflow(input_data: dict):
-                asyncio.run(
-                    SimpleOrchestrationProvider.run_ingestion_workflow(
-                        service, input_data
-                    )
-                )
-                return {"message": messages["ingest-file"]}
+            self.ingestion_workflows = simple_ingestion_factory(service)
 
-            self.run_ingestion_workflow = run_ingestion_workflow
+        elif workflow == Workflow.RESTRUCTURE:
+            from core.main.orchestration.simple.restructure_workflow import (
+                simple_restructure_factory,
+            )
+
+            self.restructure_workflows = simple_restructure_factory(service)
 
     def run_workflow(
         self, workflow_name: str, input: dict, options: dict
     ) -> Any:
-        if workflow_name == "ingest-file":
-            return self.run_ingestion_workflow(input.get("request"))
+        if workflow_name in self.ingestion_workflows:
+            asyncio.run(self.ingestion_workflows[workflow_name](input.get("request")))
+            return {"message": self.messages[workflow_name]}
+        elif workflow_name in self.restructure_workflows:
+            asyncio.run(self.restructure_workflows[workflow_name](input.get("request")))
+            return {"message": self.messages[workflow_name]}
+        else:
+            raise ValueError(f"Workflow '{workflow_name}' not found.")
+        
+    # def register_workflows(
+    #     self, workflow: Workflow, service: Any, messages: dict
+    # ) -> None:
+    #     if workflow == Workflow.INGESTION:
+    #         from core.main.orchestration import simple_ingestion_factory
 
-    @staticmethod
-    async def run_ingestion_workflow(service, input_data: dict):
-        from core.base import IngestionStatus
-        from core.main import IngestionServiceAdapter
+    #         ingestion_workflows = simple_ingestion_factory(service)
 
-        parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
-            input_data
-        )
-        ingestion_result = await service.ingest_file_ingress(**parsed_data)
-        document_info = ingestion_result["info"]
+    #         def _run_ingest_files(input_data: dict):
+    #             asyncio.run(ingestion_workflows["ingest-file"](input_data))
+    #             return {"message": messages["ingest-file"]}
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.PARSING
-        )
-        extractions_generator = await service.parse_file(document_info)
-        extractions = [
-            extraction.model_dump()
-            async for extraction in extractions_generator
-        ]
+    #         def _run_update_files(input_data: dict):
+    #             asyncio.run(ingestion_workflows["update-files"](input_data))
+    #             return {"message": messages["update-file"]}
+            
+    #         self.ingest_files = _run_ingest_files
+    #         self.update_files = _run_update_files
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.CHUNKING
-        )
-        chunking_config = input_data.get("chunking_config")
-        chunk_generator = await service.chunk_document(
-            extractions, chunking_config
-        )
-        chunks = [chunk.model_dump() async for chunk in chunk_generator]
+    #     elif workflow == Workflow.RESTRUCTURE:
+    #         from core.main.orchestration.simple.restructure_workflow import simple_restructure_factory
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.EMBEDDING
-        )
-        embedding_generator = await service.embed_document(chunks)
-        embeddings = [
-            embedding.model_dump() async for embedding in embedding_generator
-        ]
+    #         restructure_workflows = simple_restructure_factory(service)
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.STORING
-        )
-        storage_generator = await service.store_embeddings(embeddings)
-        async for _ in storage_generator:
-            pass
+    #         def _run_kg_extract_and_store(input_data: dict):
+    #             asyncio.run(restructure_workflows["kg_extract_and_store"](input_data))
+    #             return {"message": messages["kg_extract_and_store"]}
+            
+    #         def _create_graph(input_data: dict):
+    #             asyncio.run(restructure_workflows["create_graph"](input_data))
+    #             return {"message": messages["create_graph"]}
+            
+    #         def _enrich_graph(input_data: dict):
+    #             asyncio.run(restructure_workflows["enrich_graph"](input_data))
+    #             return {"message": messages["enrich_graph"]}
+            
+    #         def _kg_community_summary(input_data: dict):
+    #             asyncio.run(restructure_workflows["kg_community_summary"](input_data))
+    #             return {"message": messages["kg_community_summary"]}
 
-        is_update = input_data.get("is_update")
-        await service.finalize_ingestion(document_info, is_update=is_update)
-
-        await service.update_document_status(
-            document_info, status=IngestionStatus.SUCCESS
-        )
+    #         self.kg_extract_and_store = _run_kg_extract_and_store
+    #         self.create_graph = _create_graph
+    #         self.enrich_graph = _enrich_graph
+    #         self.kg_community_summary = _kg_community_summary
+        
+    # def run_workflow(
+    #     self, workflow_name: str, input: dict, options: dict
+    # ) -> Any:
+    #     if workflow_name == "ingest-file":
+    #         return self.ingest_files(input.get("request"))
+    #     elif workflow_name == "update-file":
+    #         return self.update_files(input.get("request"))

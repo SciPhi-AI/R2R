@@ -74,15 +74,15 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
 
             workflows = hatchet_ingestion_factory(self, service)
             if self.worker:
-                for workflow in workflows:
+                for workflow in workflows.values():
                     self.worker.register_workflow(workflow)
 
         elif workflow == Workflow.RESTRUCTURE:
             from core.main.orchestration.hatchet.restructure_workflow import (
-                hatchet_restructure_workflow,
+                hatchet_restructure_factory,
             )
 
-            workflows = hatchet_restructure_workflow(self, service)
+            workflows = hatchet_restructure_factory(self, service)
             if self.worker:
-                for workflow in workflows:
+                for workflow in workflows.values():
                     self.worker.register_workflow(workflow)
