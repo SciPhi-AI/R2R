@@ -35,7 +35,20 @@ class IngestionRouter(BaseRouter):
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflows(
-            Workflow.INGESTION, self.service
+            Workflow.INGESTION,
+            self.service,
+            {
+                "ingest-file": (
+                    "Ingestion task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Ingestion task completed successfully."
+                ),
+                "update-files": (
+                    "Update task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Update task queued successfully."
+                ),
+            },
         )
 
     def _load_openapi_extras(self):
@@ -146,7 +159,6 @@ class IngestionRouter(BaseRouter):
                         }
                     },
                 )
-                raw_message["message"] = "Ingestion task queued successfully."
                 raw_message["document_id"] = str(document_id)
                 messages.append(raw_message)
 

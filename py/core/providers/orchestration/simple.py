@@ -24,7 +24,9 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def failure(self, *args, **kwargs) -> Any:
         pass
 
-    def register_workflows(self, workflow: Workflow, service: Any) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
         if workflow == Workflow.INGESTION:
 
             def run_ingestion_workflow(input_data: dict):
@@ -33,6 +35,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
                         service, input_data
                     )
                 )
+                return {"message": messages["ingest-file"]}
 
             self.run_ingestion_workflow = run_ingestion_workflow
 
@@ -40,7 +43,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
         self, workflow_name: str, input: dict, options: dict
     ) -> Any:
         if workflow_name == "ingest-file":
-            self.run_ingestion_workflow(input.get("request"))
+            return self.run_ingestion_workflow(input.get("request"))
 
     @staticmethod
     async def run_ingestion_workflow(service, input_data: dict):

@@ -57,9 +57,16 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         )
         return {
             "task_id": str(task_id),
+            "message": self.messages.get(
+                workflow_name, "Workflow queued successfully."
+            ),  # Return message based on workflow name
         }
 
-    def register_workflows(self, workflow: Workflow, service: Any) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
+        self.messages = messages  # Store the messages dictionary
+
         if workflow == Workflow.INGESTION:
             from core.main.orchestration.hatchet.ingestion_workflow import (
                 hatchet_ingestion_factory,
