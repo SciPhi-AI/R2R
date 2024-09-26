@@ -7,5 +7,5 @@ __all__ = [
     "hatchet_ingestion_factory",
     "hatchet_restructure_factory",
     "simple_ingestion_factory",
-    "simple_restructure_factory"
+    "simple_restructure_factory",
 ]

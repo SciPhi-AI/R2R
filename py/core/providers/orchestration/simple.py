@@ -25,7 +25,6 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def failure(self, *args, **kwargs) -> Any:
         pass
 
-
     def register_workflows(
         self, workflow: Workflow, service: Any, messages: dict
     ) -> None:
@@ -48,15 +47,18 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
         self, workflow_name: str, input: dict, options: dict
     ) -> Any:
         if workflow_name in self.ingestion_workflows:
-            print('self.messages = ', self.messages)
-            asyncio.run(self.ingestion_workflows[workflow_name](input.get("request")))
+            asyncio.run(
+                self.ingestion_workflows[workflow_name](input.get("request"))
+            )
             return {"message": self.messages[workflow_name]}
         elif workflow_name in self.restructure_workflows:
-            asyncio.run(self.restructure_workflows[workflow_name](input.get("request")))
+            asyncio.run(
+                self.restructure_workflows[workflow_name](input.get("request"))
+            )
             return {"message": self.messages[workflow_name]}
         else:
             raise ValueError(f"Workflow '{workflow_name}' not found.")
-        
+
     # def register_workflows(
     #     self, workflow: Workflow, service: Any, messages: dict
     # ) -> None:
@@ -72,7 +74,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     #         def _run_update_files(input_data: dict):
     #             asyncio.run(ingestion_workflows["update-files"](input_data))
     #             return {"message": messages["update-file"]}
-            
+
     #         self.ingest_files = _run_ingest_files
     #         self.update_files = _run_update_files
 
@@ -84,15 +86,15 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     #         def _run_kg_extract_and_store(input_data: dict):
     #             asyncio.run(restructure_workflows["kg_extract_and_store"](input_data))
     #             return {"message": messages["kg_extract_and_store"]}
-            
+
     #         def _create_graph(input_data: dict):
     #             asyncio.run(restructure_workflows["create_graph"](input_data))
     #             return {"message": messages["create_graph"]}
-            
+
     #         def _enrich_graph(input_data: dict):
     #             asyncio.run(restructure_workflows["enrich_graph"](input_data))
     #             return {"message": messages["enrich_graph"]}
-            
+
     #         def _kg_community_summary(input_data: dict):
     #             asyncio.run(restructure_workflows["kg_community_summary"](input_data))
     #             return {"message": messages["kg_community_summary"]}
@@ -101,7 +103,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     #         self.create_graph = _create_graph
     #         self.enrich_graph = _enrich_graph
     #         self.kg_community_summary = _kg_community_summary
-        
+
     # def run_workflow(
     #     self, workflow_name: str, input: dict, options: dict
     # ) -> Any:

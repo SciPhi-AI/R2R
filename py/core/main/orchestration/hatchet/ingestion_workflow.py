@@ -19,7 +19,7 @@ def hatchet_ingestion_factory(
     orchestration_provider: OrchestrationProvider, service: IngestionService
 ) -> dict[str, "Hatchet.Workflow"]:
     @orchestration_provider.workflow(
-        name="ingest-files",
+        name="ingest-file",
         timeout="60m",
     )
     class HatchetIngestFilesWorkflow:
@@ -272,7 +272,7 @@ def hatchet_ingestion_factory(
                 # Spawn ingest_file workflow as a child workflow
                 child_result = (
                     await context.aio.spawn_workflow(
-                        "ingest-files",
+                        "ingest-file",
                         {"request": ingest_input},
                         key=f"ingest_file_{doc_id}",
                     )

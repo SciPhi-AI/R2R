@@ -72,7 +72,6 @@ class R2RParsingProvider(ParsingProvider):
     ) -> AsyncGenerator[
         Union[DocumentExtraction, R2RDocumentProcessingError], None
     ]:
-        print("in r2r parse....")
         if document.type not in self.parsers:
             yield R2RDocumentProcessingError(
                 document_id=document.id,
@@ -80,7 +79,6 @@ class R2RParsingProvider(ParsingProvider):
             )
         else:
             parser = self.parsers[document.type]
-            print("getting texts...")
 
             texts = parser.ingest(file_content)
             t0 = time.time()
