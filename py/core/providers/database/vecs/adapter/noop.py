@@ -43,8 +43,7 @@ class NoOp(AdapterStep):
     ) -> Generator[Record, None, None]:
         for record in records:
             (
-                fragment_id,
-                extraction_id,
+                id,
                 document_id,
                 user_id,
                 collection_ids,
@@ -53,8 +52,7 @@ class NoOp(AdapterStep):
                 metadata,
             ) = record
             yield (
-                str(fragment_id),
-                str(extraction_id),
+                str(id),
                 str(document_id),
                 str(user_id),
                 [str(gid) for gid in collection_ids],

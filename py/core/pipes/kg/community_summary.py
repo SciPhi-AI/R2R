@@ -106,10 +106,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             f"Processing community {community_id} at level {level} with max summary input length {max_summary_input_length}."
         )
 
-        entities, triples = (
-            self.kg_provider.get_community_entities_and_triples(  # type: ignore
-                level=level, community_id=community_id
-            )
+        (
+            entities,
+            triples,
+        ) = self.kg_provider.get_community_entities_and_triples(  # type: ignore
+            level=level, community_id=community_id
         )
 
         if entities == [] or triples == []:

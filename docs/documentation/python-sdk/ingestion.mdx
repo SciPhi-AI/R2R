@@ -20,7 +20,7 @@ ingest_response = client.ingest_files(
     # optionally override chunking settings at runtime
     chunking_config={
         "strategy": "auto",
-        "chunking_strategy": "by_title",
+        "chunking_method": "by_title",
         "new_after_n_chars": 256, # soft maximum
         "max_characters": 512, # hard maximum
         "combine_under_n_chars": 64, # hard minimum
@@ -159,7 +159,7 @@ ingest_response = client.ingest_files(
       Strategy for processing. Options are "auto", "fast", or "hi_res".
     </ParamField>
 
-    <ParamField path="chunking_strategy" type="Optional[str]" default="by_title">
+    <ParamField path="chunking_method" type="Optional[str]" default="by_title">
       Strategy for chunking. Options are "by_title" or "basic".
     </ParamField>
 

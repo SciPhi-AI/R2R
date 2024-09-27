@@ -7,13 +7,13 @@ from core.base import (
     Document,
     DocumentExtraction,
     FileProvider,
-    ParsingProvider,
     PipeType,
     RunLoggingSingleton,
     generate_id_from_label,
 )
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
+from core.base.providers.ingestion import IngestionProvider
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class ParsingPipe(AsyncPipe):
 
     def __init__(
         self,
-        parsing_provider: ParsingProvider,
+        ingestion_provider: IngestionProvider,
         file_provider: FileProvider,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.INGESTOR,
@@ -39,7 +39,7 @@ class ParsingPipe(AsyncPipe):
             *args,
             **kwargs,
         )
-        self.parsing_provider = parsing_provider
+        self.ingestion_provider = ingestion_provider
         self.file_provider = file_provider
 
     async def _parse(
@@ -55,13 +55,11 @@ class ParsingPipe(AsyncPipe):
             with file_wrapper as file_content_stream:
                 file_content = file_content_stream.read()
 
-            async for extraction in self.parsing_provider.parse(  # type: ignore
+            async for extraction in self.ingestion_provider.parse(  # type: ignore
                 file_content, document
             ):
-                extraction_id = generate_id_from_label(
-                    f"{extraction.id}-{version}"
-                )
-                extraction.id = extraction_id
+                id = generate_id_from_label(f"{extraction.id}-{version}")
+                extraction.id = id
                 extraction.metadata["version"] = version
                 yield extraction
         except Exception as e:

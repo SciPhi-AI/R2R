@@ -10,7 +10,7 @@ import yaml
 from fastapi import Depends, File, Form, UploadFile
 from pydantic import Json
 
-from core.base import ChunkingConfig, R2RException, generate_user_document_id
+from core.base import R2RException, generate_user_document_id
 from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
@@ -83,9 +83,9 @@ class IngestionRouter(BaseRouter):
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
-            chunking_config: Optional[str] = Form(
+            ingestion_config: Optional[Json[dict]] = Form(
                 None,
-                description=ingest_files_descriptions.get("chunking_config"),
+                description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedIngestionResponse,
@@ -97,11 +97,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
-            if chunking_config:
-                chunking_config = (
-                    json.loads(chunking_config) if chunking_config else None
-                )
-            # self._validate_chunking_config(chunking_config)
+
             # Check if the user is a superuser
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
@@ -136,7 +132,7 @@ class IngestionRouter(BaseRouter):
                     "file_data": file_data,
                     "document_id": str(document_id),
                     "metadata": metadatas[it] if metadatas else None,
-                    "chunking_config": chunking_config,
+                    "ingestion_config": ingestion_config,
                     "user": auth_user.model_dump_json(),
                     "size_in_bytes": content_length,
                     "is_update": False,
@@ -184,9 +180,9 @@ class IngestionRouter(BaseRouter):
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
-            chunking_config: Optional[Json[ChunkingConfig]] = Form(
+            ingestion_config: Optional[Json[dict]] = Form(
                 None,
-                description=ingest_files_descriptions.get("chunking_config"),
+                description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedUpdateResponse,
@@ -198,7 +194,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive collection permissioning is under development.
             """
-            self._validate_chunking_config(chunking_config)
+            self._validate_ingestion_config(ingestion_config)
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and metadata["user_id"] != str(
@@ -247,11 +243,7 @@ class IngestionRouter(BaseRouter):
                     item["document_id"] for item in processed_data
                 ],
                 "metadatas": metadatas,
-                "chunking_config": (
-                    chunking_config.model_dump_json()
-                    if chunking_config
-                    else None
-                ),
+                "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
                 "is_update": True,
             }
@@ -264,12 +256,11 @@ class IngestionRouter(BaseRouter):
             return raw_message
 
     @staticmethod
-    def _validate_chunking_config(chunking_config):
+    def _validate_ingestion_config(ingestion_config):
         from ..assembly.factory import R2RProviderFactory
 
-        if chunking_config:
-            chunking_config.validate_config()
-            R2RProviderFactory.create_chunking_provider(chunking_config)
+        if ingestion_config:
+            R2RProviderFactory.create_ingestion_provider(ingestion_config)
         else:
             logger.info("No chunking config override provided. Using default.")
 

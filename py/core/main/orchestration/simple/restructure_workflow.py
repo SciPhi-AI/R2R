@@ -13,10 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def simple_restructure_factory(service: RestructureService):
-
     async def kg_extract_and_store(input_data):
         document_id = uuid.UUID(input_data["document_id"])
-        fragment_merge_count = input_data["fragment_merge_count"]
+        extraction_merge_count = input_data["extraction_merge_count"]
         max_knowledge_triples = input_data["max_knowledge_triples"]
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
@@ -25,8 +24,7 @@ def simple_restructure_factory(service: RestructureService):
             await service.providers.database.relational.get_documents_overview(
                 filter_document_ids=[document_id]
             )
-        )
-        document_overview = document_overview["results"][0]
+        )["results"]
 
         try:
             # Set restructure status to 'processing'
@@ -42,7 +40,7 @@ def simple_restructure_factory(service: RestructureService):
                 generation_config=GenerationConfig(
                     **input_data["generation_config"]
                 ),
-                fragment_merge_count=fragment_merge_count,
+                extraction_merge_count=extraction_merge_count,
                 max_knowledge_triples=max_knowledge_triples,
                 entity_types=entity_types,
                 relation_types=relation_types,
@@ -58,7 +56,7 @@ def simple_restructure_factory(service: RestructureService):
                 )
             else:
                 document_overview.restructuring_status = (
-                    RestructureStatus.FAILURE
+                    RestructureStatus.FAILED
                 )
                 await service.providers.database.relational.upsert_documents_overview(
                     document_overview
@@ -70,7 +68,7 @@ def simple_restructure_factory(service: RestructureService):
 
         except Exception as e:
             # Set restructure status to 'failure' if an error occurred
-            document_overview.restructuring_status = RestructureStatus.FAILURE
+            document_overview.restructuring_status = RestructureStatus.FAILED
             await service.providers.database.relational.upsert_documents_overview(
                 document_overview
             )
@@ -84,10 +82,10 @@ def simple_restructure_factory(service: RestructureService):
             **json.loads(input_data["kg_creation_settings"])
         )
 
+        # TODO - Documents overview is paginated, we need to handle this
         documents_overview = (
             await service.providers.database.relational.get_documents_overview()
-        )
-        documents_overview = documents_overview["results"]
+        )["results"]
 
         document_ids = [
             doc.id
@@ -101,8 +99,7 @@ def simple_restructure_factory(service: RestructureService):
             await service.providers.database.relational.get_documents_overview(
                 filter_document_ids=document_ids
             )
-        )
-        documents_overviews = documents_overviews["results"]
+        )["results"]
 
         # Only run if restructuring_status is pending or failure
         filtered_document_ids = []
@@ -110,7 +107,7 @@ def simple_restructure_factory(service: RestructureService):
             restructuring_status = document_overview.restructuring_status
             if restructuring_status in [
                 RestructureStatus.PENDING,
-                RestructureStatus.FAILURE,
+                RestructureStatus.FAILED,
                 RestructureStatus.ENRICHMENT_FAILURE,
             ]:
                 filtered_document_ids.append(document_overview.id)
@@ -140,7 +137,7 @@ def simple_restructure_factory(service: RestructureService):
                 kg_extract_and_store(
                     {
                         "document_id": str(document_id),
-                        "fragment_merge_count": kg_creation_settings.fragment_merge_count,
+                        "extraction_merge_count": kg_creation_settings.extraction_merge_count,
                         "max_knowledge_triples": kg_creation_settings.max_knowledge_triples,
                         "generation_config": kg_creation_settings.generation_config.to_dict(),
                         "entity_types": kg_creation_settings.entity_types,
@@ -174,8 +171,7 @@ def simple_restructure_factory(service: RestructureService):
 
         documents_overview = (
             await service.providers.database.relational.get_documents_overview()
-        )
-        documents_overview = documents_overview["results"]
+        )["results"]
 
         if not force_enrichment:
             if any(
@@ -245,8 +241,8 @@ def simple_restructure_factory(service: RestructureService):
             logger.error(f"Error in kg_clustering: {str(e)}", exc_info=True)
             documents_overview = (
                 await service.providers.database.relational.get_documents_overview()
-            )
-            documents_overview = documents_overview["results"]
+            )["results"]
+
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status
@@ -266,8 +262,8 @@ def simple_restructure_factory(service: RestructureService):
         finally:
             documents_overview = (
                 await service.providers.database.relational.get_documents_overview()
-            )
-            documents_overview = documents_overview["results"]
+            )["results"]
+
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status

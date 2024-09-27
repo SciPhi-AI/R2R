@@ -98,8 +98,7 @@ class DocumentOverviewResponse(BaseModel):
 
 
 class DocumentChunkResponse(BaseModel):
-    fragment_id: UUID
-    extraction_id: UUID
+    id: UUID
     document_id: UUID
     user_id: UUID
     collection_ids: list[UUID]
