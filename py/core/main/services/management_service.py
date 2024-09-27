@@ -310,9 +310,11 @@ class ManagementService(Service):
             ]
 
         try:
-            documents_overview = await self.providers.database.relational.get_documents_overview(
-                **relational_filters
-            )
+            documents_overview = (
+                await self.providers.database.relational.get_documents_overview(
+                    **relational_filters
+                )
+            )["results"]
         except Exception as e:
             logger.error(
                 f"Error fetching documents from relational database: {e}"
@@ -320,9 +322,7 @@ class ManagementService(Service):
             documents_overview = []
 
         if documents_overview:
-            document_ids_to_purge.update(
-                doc.id for doc in documents_overview["results"]
-            )
+            document_ids_to_purge.update(doc.id for doc in documents_overview)
 
         if not document_ids_to_purge:
             raise R2RException(
@@ -474,7 +474,6 @@ class ManagementService(Service):
     async def assign_document_to_collection(
         self, document_id: str, collection_id: UUID
     ):
-
         await self.providers.database.relational.assign_document_to_collection(
             document_id, collection_id
         )

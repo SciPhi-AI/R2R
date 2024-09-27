@@ -37,13 +37,15 @@ def hatchet_restructure_factory(
             entity_types = input_data["entity_types"]
             relation_types = input_data["relation_types"]
 
-            document_overview = await self.restructure_service.providers.database.relational.get_documents_overview(
-                filter_document_ids=[document_id]
-            )
-            document_overview = document_overview["results"][0]
+            document_overview = (
+                await self.restructure_service.providers.database.relational.get_documents_overview(
+                    filter_document_ids=[document_id]
+                )
+            )["results"]
+
+            document_overview = document_overview[0]
 
             try:
-
                 # Set restructure status to 'processing'
                 document_overview.restructuring_status = (
                     RestructureStatus.PROCESSING
@@ -72,9 +74,8 @@ def hatchet_restructure_factory(
                         document_overview
                     )
                 else:
-
                     document_overview.restructuring_status = (
-                        RestructureStatus.FAILURE
+                        RestructureStatus.FAILED
                     )
                     await self.restructure_service.providers.database.relational.upsert_documents_overview(
                         document_overview
@@ -87,7 +88,7 @@ def hatchet_restructure_factory(
             except Exception as e:
                 # Set restructure status to 'failure' if an error occurred
                 document_overview.restructuring_status = (
-                    RestructureStatus.FAILURE
+                    RestructureStatus.FAILED
                 )
                 await self.restructure_service.providers.database.relational.upsert_documents_overview(
                     document_overview
@@ -114,8 +115,7 @@ def hatchet_restructure_factory(
 
             documents_overview = (
                 await self.restructure_service.providers.database.relational.get_documents_overview()
-            )
-            documents_overview = documents_overview["results"]
+            )["results"]
 
             document_ids = [
                 doc.id
@@ -125,10 +125,11 @@ def hatchet_restructure_factory(
 
             document_ids = [str(doc_id) for doc_id in document_ids]
 
-            documents_overviews = await self.restructure_service.providers.database.relational.get_documents_overview(
-                filter_document_ids=document_ids
-            )
-            documents_overviews = documents_overviews["results"]
+            documents_overviews = (
+                await self.restructure_service.providers.database.relational.get_documents_overview(
+                    filter_document_ids=document_ids
+                )
+            )["results"]
 
             # Only run if restructuring_status is pending or failure
             filtered_document_ids = []
@@ -136,7 +137,7 @@ def hatchet_restructure_factory(
                 restructuring_status = document_overview.restructuring_status
                 if restructuring_status in [
                     RestructureStatus.PENDING,
-                    RestructureStatus.FAILURE,
+                    RestructureStatus.FAILED,
                     RestructureStatus.ENRICHMENT_FAILURE,
                 ]:
                     filtered_document_ids.append(document_overview.id)
@@ -225,8 +226,7 @@ def hatchet_restructure_factory(
 
             documents_overview = (
                 await self.restructure_service.providers.database.relational.get_documents_overview()
-            )
-            documents_overview = documents_overview["results"]
+            )["results"]
 
             if not force_enrichment:
                 if any(
@@ -306,8 +306,8 @@ def hatchet_restructure_factory(
                 )
                 documents_overview = (
                     await self.restructure_service.providers.database.relational.get_documents_overview()
-                )
-                documents_overview = documents_overview["results"]
+                )["results"]
+
                 for document_overview in documents_overview:
                     if (
                         document_overview.restructuring_status
@@ -325,11 +325,10 @@ def hatchet_restructure_factory(
                 raise e
 
             finally:
-
                 documents_overview = (
                     await self.restructure_service.providers.database.relational.get_documents_overview()
-                )
-                documents_overview = documents_overview["results"]
+                )["results"]
+
                 for document_overview in documents_overview:
                     if (
                         document_overview.restructuring_status

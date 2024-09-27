@@ -231,7 +231,6 @@ class KGTriplesExtractionPipe(
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
-
         logger.info("Running KG Extraction Pipe")
 
         document_id = input.message["document_id"]

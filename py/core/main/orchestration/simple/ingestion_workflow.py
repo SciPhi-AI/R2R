@@ -6,56 +6,59 @@ from ...services import IngestionService
 
 
 def simple_ingestion_factory(service: IngestionService):
-
     async def ingest_files(input_data):
-        from core.base import IngestionStatus
-        from core.main import IngestionServiceAdapter
+        document_info = None
+        try:
+            from core.base import IngestionStatus
+            from core.main import IngestionServiceAdapter
 
-        parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
-            input_data
-        )
-        ingestion_result = await service.ingest_file_ingress(**parsed_data)
-        document_info = ingestion_result["info"]
+            parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+                input_data
+            )
+            ingestion_result = await service.ingest_file_ingress(**parsed_data)
+            document_info = ingestion_result["info"]
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.PARSING
-        )
-        extractions_generator = await service.parse_file(document_info)
-        extractions = [
-            extraction.model_dump()
-            async for extraction in extractions_generator
-        ]
+            await service.update_document_status(
+                document_info, status=IngestionStatus.PARSING
+            )
+            extractions_generator = await service.parse_file(document_info)
+            extractions = [
+                extraction.model_dump()
+                async for extraction in extractions_generator
+            ]
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.CHUNKING
-        )
-        ingestion_config = input_data.get("ingestion_config")
-        chunk_generator = await service.chunk_document(
-            extractions, ingestion_config
-        )
-        chunks = [chunk.model_dump() async for chunk in chunk_generator]
+            await service.update_document_status(
+                document_info, status=IngestionStatus.EMBEDDING
+            )
+            embedding_generator = await service.embed_document(extractions)
+            embeddings = [
+                embedding.model_dump()
+                async for embedding in embedding_generator
+            ]
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.EMBEDDING
-        )
-        embedding_generator = await service.embed_document(chunks)
-        embeddings = [
-            embedding.model_dump() async for embedding in embedding_generator
-        ]
+            await service.update_document_status(
+                document_info, status=IngestionStatus.STORING
+            )
+            storage_generator = await service.store_embeddings(embeddings)
+            async for _ in storage_generator:
+                pass
 
-        await service.update_document_status(
-            document_info, status=IngestionStatus.STORING
-        )
-        storage_generator = await service.store_embeddings(embeddings)
-        async for _ in storage_generator:
-            pass
+            is_update = input_data.get("is_update")
+            await service.finalize_ingestion(
+                document_info, is_update=is_update
+            )
 
-        is_update = input_data.get("is_update")
-        await service.finalize_ingestion(document_info, is_update=is_update)
-
-        await service.update_document_status(
-            document_info, status=IngestionStatus.SUCCESS
-        )
+            await service.update_document_status(
+                document_info, status=IngestionStatus.SUCCESS
+            )
+        except Exception as e:
+            if document_info:
+                await service.update_document_status(
+                    document_info, status=IngestionStatus.FAILED
+                )
+            raise R2RException(
+                status_code=500, message=f"Error during ingestion: {str(e)}"
+            )
 
     async def update_files(input_data):
         from core.base import IngestionStatus
@@ -88,6 +91,7 @@ def simple_ingestion_factory(service: IngestionService):
                 filter_user_ids=None if user.is_superuser else [user.id],
             )
         )["results"]
+
         if len(documents_overview) != len(document_ids):
             raise R2RException(
                 status_code=404,

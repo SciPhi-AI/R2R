@@ -6,7 +6,6 @@ from uuid import UUID
 
 
 class IngestionMethods:
-
     @staticmethod
     async def ingest_files(
         client,
@@ -70,7 +69,6 @@ class IngestionMethods:
             if ingestion_config:
                 data["ingestion_config"] = json.dumps(ingestion_config)
 
-            print("data = ", data)
             return await client._make_request(
                 "POST", "ingest_files", data=data, files=files_tuples
             )

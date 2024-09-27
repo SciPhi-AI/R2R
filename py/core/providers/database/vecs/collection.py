@@ -193,7 +193,7 @@ class Collection:
     """
 
     COLUMN_VARS = [
-        "id",
+        "extraction_id",
         "document_id",
         "user_id",
         "collection_ids",
@@ -396,7 +396,7 @@ class Collection:
                     stmt = postgresql.insert(self.table).values(
                         [
                             {
-                                "id": record[0],
+                                "extraction_id": record[0],
                                 "document_id": record[1],
                                 "user_id": record[2],
                                 "collection_ids": record[3],
@@ -409,9 +409,8 @@ class Collection:
                         ]
                     )
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=[self.table.c.id],
+                        index_elements=[self.table.c.extraction_id],
                         set_=dict(
-                            id=stmt.excluded.id,
                             document_id=stmt.excluded.document_id,
                             user_id=stmt.excluded.user_id,
                             collection_ids=stmt.excluded.collection_ids,
@@ -446,7 +445,7 @@ class Collection:
             with sess.begin():
                 for id_chunk in flu(ids).chunk(chunk_size):
                     stmt = select(self.table).where(
-                        self.table.c.id.in_(id_chunk)
+                        self.table.c.extraction_id.in_(id_chunk)
                     )
                     chunk_records = sess.execute(stmt)
                     records.extend(chunk_records)
@@ -488,18 +487,18 @@ class Collection:
                     for id_chunk in flu(ids).chunk(12):
                         delete_stmt = (
                             delete(self.table)
-                            .where(self.table.c.id.in_(id_chunk))
+                            .where(self.table.c.extraction_id.in_(id_chunk))
                             .returning(
-                                self.table.c.id,
+                                self.table.c.extraction_id,
                                 self.table.c.document_id,
                                 self.table.c.text,
                             )
                         )
                         result = sess.execute(delete_stmt)
                         for row in result:
-                            id = str(row[0])
-                            deleted_records[id] = {
-                                "id": id,
+                            extraction_id = str(row[0])
+                            deleted_records[extraction_id] = {
+                                "extraction_id": extraction_id,
                                 "document_id": str(row[1]),
                                 "text": row[2],
                             }
@@ -510,18 +509,18 @@ class Collection:
                         delete(self.table)
                         .where(meta_filter)
                         .returning(
-                            self.table.c.id,
+                            self.table.c.extraction_id,
                             self.table.c.document_id,
                             self.table.c.text,
                         )
                     )
                     result = sess.execute(delete_stmt)
                     for row in result:
-                        id = str(row[0])
-                        deleted_records[id] = {
-                            "id": id,
+                        extraction_id = str(row[0])
+                        deleted_records[extraction_id] = {
+                            "extraction_id": extraction_id,
                             "document_id": str(row[1]),
-                            "text": row[3],
+                            "text": row[2],
                         }
         return deleted_records
 
@@ -582,7 +581,7 @@ class Collection:
         distance_clause = distance_lambda(self.table.c.vec)(vector)
 
         cols = [
-            self.table.c.id,
+            self.table.c.extraction_id,
             self.table.c.document_id,
             self.table.c.user_id,
             self.table.c.collection_ids,
@@ -639,7 +638,7 @@ class Collection:
         # Build the main query
         stmt = (
             select(
-                self.table.c.id,
+                self.table.c.extraction_id,
                 self.table.c.document_id,
                 self.table.c.user_id,
                 self.table.c.collection_ids,
@@ -661,7 +660,7 @@ class Collection:
         # Convert the results to VectorSearchResult objects
         return [
             VectorSearchResult(
-                id=str(r.id),
+                extraction_id=str(r.id),
                 document_id=str(r.document_id),
                 user_id=str(r.user_id),
                 collection_ids=r.collection_ids,
@@ -1026,7 +1025,7 @@ class Collection:
 
                 if method == IndexMethod.ivfflat:
                     if not index_arguments:
-                        n_records: int = sess.execute(func.count(self.table.c.id)).scalar()  # type: ignore
+                        n_records: int = sess.execute(func.count(self.table.c.extraction_id)).scalar()  # type: ignore
 
                         n_lists = (
                             int(max(n_records / 1000, 30))
@@ -1078,7 +1077,7 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
     table = Table(
         name,
         meta,
-        Column("id", postgresql.UUID, nullable=False),
+        Column("extraction_id", postgresql.UUID, primary_key=True),
         Column("document_id", postgresql.UUID, nullable=False),
         Column("user_id", postgresql.UUID, nullable=False),
         Column(

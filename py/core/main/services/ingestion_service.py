@@ -105,7 +105,7 @@ class IngestionService(Service):
                         status_code=409,
                         message=f"Must increment version number before attempting to overwrite document {document_id}.",
                     )
-            elif existing_doc.ingestion_status != IngestionStatus.FAILURE:
+            elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                 raise R2RException(
                     status_code=409,
                     message=f"Document {document_id} was already ingested and is not in a failed state.",

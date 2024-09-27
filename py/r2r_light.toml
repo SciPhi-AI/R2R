@@ -43,13 +43,11 @@ concurrent_request_limit = 256
 provider = "postgres"
 
 [ingestion]
-provider = "unstructured_local"
-strategy = "auto"
-chunking_method = "by_title"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 20
+provider = "r2r"
+chunking_method = "recursive"
+chunk_size = 256
+chunk_overlap = 50
+excluded_parsers = ["mp4"]
 
 [kg]
 provider = "neo4j"

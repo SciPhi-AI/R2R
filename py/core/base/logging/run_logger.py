@@ -33,7 +33,7 @@ class LoggingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["local", "postgres", "redis"]
+        return ["local", "postgres"]
 
 
 class RunLoggingProvider(Provider):

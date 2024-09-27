@@ -57,7 +57,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         vectors = await self.embed(extraction_batch)
         return [
             VectorEntry(
-                id=extraction.id,
+                extraction_id=extraction.id,
                 document_id=extraction.document_id,
                 user_id=extraction.user_id,
                 collection_ids=extraction.collection_ids,
@@ -78,7 +78,6 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
-
         if not isinstance(input, EmbeddingPipe.Input):
             raise ValueError(
                 f"Invalid input type for embedding pipe: {type(input)}"
@@ -148,7 +147,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             )
 
             return VectorEntry(
-                id=extraction.id,
+                extraction_id=extraction.id,
                 document_id=extraction.document_id,
                 user_id=extraction.user_id,
                 collection_ids=extraction.collection_ids,

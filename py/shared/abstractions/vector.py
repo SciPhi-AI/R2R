@@ -40,7 +40,7 @@ class Vector(R2RSerializable):
 class VectorEntry(R2RSerializable):
     """A vector entry that can be stored directly in supported vector databases."""
 
-    id: UUID
+    extraction_id: UUID
     document_id: UUID
     user_id: UUID
     collection_ids: list[UUID]
@@ -52,7 +52,7 @@ class VectorEntry(R2RSerializable):
         """Return a string representation of the VectorEntry."""
         return (
             f"VectorEntry("
-            f"id={self.id}, "
+            f"extraction_id={self.extraction_id}, "
             f"document_id={self.document_id}, "
             f"user_id={self.user_id}, "
             f"collection_ids={self.collection_ids}, "

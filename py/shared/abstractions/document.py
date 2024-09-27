@@ -116,7 +116,7 @@ class IngestionStatus(str, Enum):
     EMBEDDING = "embedding"
     STORING = "storing"
 
-    FAILURE = "failure"
+    FAILED = "failed"
     SUCCESS = "success"
 
 
@@ -126,7 +126,7 @@ class RestructureStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     ENRICHING = "enriching"
-    FAILURE = "failure"
+    FAILED = "failed"
     SUCCESS = "success"
     ENRICHED = "enriched"
     ENRICHMENT_FAILURE = "enrichment_failure"

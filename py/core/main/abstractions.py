@@ -33,7 +33,6 @@ class R2RProviders(BaseModel):
 
 class R2RPipes(BaseModel):
     parsing_pipe: AsyncPipe
-    chunking_pipe: AsyncPipe
     embedding_pipe: AsyncPipe
     kg_search_pipe: AsyncPipe
     kg_extraction_pipe: AsyncPipe

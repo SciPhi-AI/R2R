@@ -24,7 +24,7 @@ class IngestionProvider(Provider, ABC):
     pass
 
 
-class ChunkingMethod(Enum):
+class ChunkingMethod(str, Enum):
     RECURSIVE = "recursive"
     CHARACTER = "character"
     BASIC = "basic"

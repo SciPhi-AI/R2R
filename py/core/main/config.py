@@ -28,7 +28,7 @@ class R2RConfig:
     current_file_path = os.path.dirname(__file__)
     config_dir_root = os.path.join(current_file_path, "..", "configs")
     default_config_path = os.path.join(
-        current_file_path, "..", "..", "r2r.toml"
+        current_file_path, "..", "..", "r2r_light.toml"
     )
 
     CONFIG_OPTIONS: dict[str, Optional[str]] = {}
@@ -165,19 +165,6 @@ class R2RConfig:
             for section in R2RConfig.REQUIRED_KEYS.keys()
         }
         return toml.dumps(config_data)
-
-    def save_to_redis(self, redis_client: Any, key: str):
-        redis_client.set(f"R2RConfig:{key}", self.to_toml())
-
-    @classmethod
-    def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
-        config_data = redis_client.get(f"R2RConfig:{key}")
-        if config_data is None:
-            raise ValueError(
-                f"Configuration not found in Redis with key '{key}'"
-            )
-        config_data = toml.loads(config_data)
-        return cls(config_data)
 
     @classmethod
     def load_default_config(cls) -> dict:

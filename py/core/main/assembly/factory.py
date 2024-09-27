@@ -82,25 +82,31 @@ class R2RProviderFactory:
     def create_ingestion_provider(
         ingestion_config: IngestionConfig, *args, **kwargs
     ) -> IngestionProvider:
+        config_dict = ingestion_config.model_dump()
+        extra_fields = config_dict.pop("extra_fields", {})
+
         if ingestion_config.provider == "r2r":
             from core.providers import R2RIngestionConfig, R2RIngestionProvider
 
-            config_dict = ingestion_config.model_dump()
-            extra_args = config_dict.get("extra_args", {})
             r2r_ingestion_config = R2RIngestionConfig(
-                **config_dict, **extra_args
+                **config_dict, **extra_fields
             )
-            print("r2r_ingestion_config = ", r2r_ingestion_config)
             return R2RIngestionProvider(r2r_ingestion_config)
         elif ingestion_config.provider in [
             "unstructured_local",
             "unstructured_api",
         ]:
-            from core.providers import UnstructuredIngestionProvider
+            from core.providers import (
+                UnstructuredIngestionConfig,
+                UnstructuredIngestionProvider,
+            )
+
+            unstructured_ingestion_config = UnstructuredIngestionConfig(
+                **config_dict, **extra_fields
+            )
 
             return UnstructuredIngestionProvider(
-                ingestion_config.provider == "unstructured_api",
-                ingestion_config,
+                unstructured_ingestion_config,
             )
         else:
             raise ValueError(
@@ -273,7 +279,6 @@ class R2RProviderFactory:
         *args,
         **kwargs,
     ) -> R2RProviders:
-
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -368,7 +373,6 @@ class R2RPipeFactory:
         kg_node_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
         kg_community_summary_pipe: Optional[AsyncPipe] = None,
-        chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
@@ -403,8 +407,6 @@ class R2RPipeFactory:
             or self.create_kg_clustering_pipe(*args, **kwargs),
             kg_community_summary_pipe=kg_community_summary_pipe
             or self.create_kg_community_summary_pipe(*args, **kwargs),
-            chunking_pipe=chunking_pipe_override
-            or self.create_chunking_pipe(*args, **kwargs),
         )
 
     def create_parsing_pipe(self, *args, **kwargs) -> Any:
@@ -414,14 +416,6 @@ class R2RPipeFactory:
             ingestion_provider=self.providers.ingestion,
             file_provider=self.providers.file,
             config=AsyncPipe.PipeConfig(name="parsing_pipe"),
-        )
-
-    def create_chunking_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import ChunkingPipe
-
-        return ChunkingPipe(
-            ingestion_provider=self.providers.ingestion,
-            config=AsyncPipe.PipeConfig(name="chunking_pipe"),
         )
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:

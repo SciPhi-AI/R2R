@@ -63,40 +63,8 @@ def hatchet_ingestion_factory(
             }
 
         @orchestration_provider.step(parents=["parse"], timeout="60m")
-        async def chunk(self, context: Context) -> dict:
-            document_info_dict = context.step_output("parse")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
-
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.CHUNKING,
-            )
-
-            extractions = context.step_output("parse")["extractions"]
-            ingestion_config = context.workflow_input()["request"].get(
-                "ingestion_config"
-            )
-
-            chunk_generator = await self.ingestion_service.chunk_document(
-                extractions,
-                ingestion_config,
-            )
-
-            chunks = []
-            async for chunk in chunk_generator:
-                chunks.append(chunk)
-
-            serializable_chunks = [chunk.to_dict() for chunk in chunks]
-
-            return {
-                "status": "Successfully chunked data",
-                "chunks": serializable_chunks,
-                "document_info": document_info.to_dict(),
-            }
-
-        @orchestration_provider.step(parents=["chunk"], timeout="60m")
         async def embed(self, context: Context) -> dict:
-            document_info_dict = context.step_output("chunk")["document_info"]
+            document_info_dict = context.step_output("parse")["document_info"]
             document_info = DocumentInfo(**document_info_dict)
 
             await self.ingestion_service.update_document_status(
@@ -104,10 +72,10 @@ def hatchet_ingestion_factory(
                 status=IngestionStatus.EMBEDDING,
             )
 
-            chunks = context.step_output("chunk")["chunks"]
+            extractions = context.step_output("parse")["extractions"]
 
             embedding_generator = await self.ingestion_service.embed_document(
-                chunks
+                extractions
             )
 
             embeddings = []
@@ -163,9 +131,11 @@ def hatchet_ingestion_factory(
                 return
 
             try:
-                documents_overview = await self.ingestion_service.providers.database.relational.get_documents_overview(
-                    filter_document_ids=[document_id]
-                )
+                documents_overview = (
+                    await self.ingestion_service.providers.database.relational.get_documents_overview(
+                        filter_document_ids=[document_id]
+                    )
+                )["results"]
 
                 if not documents_overview:
                     logger.error(
@@ -175,10 +145,10 @@ def hatchet_ingestion_factory(
 
                 document_info = documents_overview[0]
 
-                # Update the document status to FAILURE
+                # Update the document status to FAILED
                 await self.ingestion_service.update_document_status(
                     document_info,
-                    status=IngestionStatus.FAILURE,
+                    status=IngestionStatus.FAILED,
                 )
 
             except Exception as e:
@@ -222,6 +192,7 @@ def hatchet_ingestion_factory(
                     filter_user_ids=None if user.is_superuser else [user.id],
                 )
             )["results"]
+
             if len(documents_overview) != len(document_ids):
                 raise R2RException(
                     status_code=404,

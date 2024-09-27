@@ -186,12 +186,10 @@ class KGSearchSearchPipe(GeneratorPipe):
                 query_embedding=query_embedding,
                 property_names=["title", "summary"],
             ):
-
                 summary = search_result["summary"]
 
                 # try loading it as a json
                 try:
-
                     if "```json" in summary:
                         summary = (
                             summary.strip()
@@ -336,7 +334,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGSearchResult, None]:
-
         kg_search_type = kg_search_settings.kg_search_type
 
         # runs local and/or global search
