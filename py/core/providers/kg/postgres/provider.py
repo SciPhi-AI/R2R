@@ -404,6 +404,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = self._get_table_name(self.project_name)
         query = QUERY.format(SCHEMA_NAME, table_name)
+        await self.execute_query(query, relationships)
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
