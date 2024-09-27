@@ -252,11 +252,18 @@ class R2RProviderFactory:
         return prompt_provider
 
     @staticmethod
-    def create_kg_provider(kg_config, *args, **kwargs):
-        if kg_config.provider == "neo4j":
-            from core.providers import Neo4jKGProvider
+    async def create_kg_provider(
+        kg_config, database_provider, embedding_provider, *args, **kwargs
+    ):
+        if kg_config.provider == "postgres":
+            from core.providers import PostgresKGProvider
 
-            return Neo4jKGProvider(kg_config)
+            provider = PostgresKGProvider(
+                kg_config, database_provider, embedding_provider
+            )
+            await provider.initialize()
+            return provider
+
         elif kg_config.provider is None:
             return None
         else:
@@ -296,11 +303,6 @@ class R2RProviderFactory:
         llm_provider = llm_provider_override or self.create_llm_provider(
             self.config.completion, *args, **kwargs
         )
-
-        kg_provider = kg_provider_override or self.create_kg_provider(
-            self.config.kg, *args, **kwargs
-        )
-
         crypto_provider = (
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
@@ -311,6 +313,14 @@ class R2RProviderFactory:
             or await self.create_database_provider(
                 self.config.database, crypto_provider, *args, **kwargs
             )
+        )
+
+        kg_provider = kg_provider_override or await self.create_kg_provider(
+            self.config.kg,
+            database_provider,
+            embedding_provider,
+            *args,
+            **kwargs,
         )
 
         auth_provider = (

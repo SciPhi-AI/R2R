@@ -42,7 +42,7 @@ from shared.api.models.management.responses import (
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
-from shared.api.models.restructure.responses import (
+from shared.api.models.kg.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
     WrappedKGCreationResponse,

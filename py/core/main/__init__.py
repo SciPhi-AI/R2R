@@ -19,7 +19,7 @@ __all__ = [
     "IngestionRouter",
     "ManagementRouter",
     "RetrievalRouter",
-    "RestructureRouter",
+    "KGRouter",
     ## R2R APP
     "R2RApp",
     ## R2R ASSEMBLY
@@ -37,5 +37,5 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "RestructureService",
+    "KgService",
 ]

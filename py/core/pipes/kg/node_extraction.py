@@ -22,17 +22,15 @@ logger = logging.getLogger(__name__)
 
 class KGNodeExtractionPipe(AsyncPipe):
     """
-    The pipe takes input a list of documents (optional) and extracts nodes and triples from them.
+    The pipe takes input a list of nodes and extracts description from them.
     """
 
     class Input(AsyncPipe.Input):
-        message: Any
+        message: dict[str, Any]
 
     def __init__(
         self,
         kg_provider: KGProvider,
-        llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
@@ -44,18 +42,16 @@ class KGNodeExtractionPipe(AsyncPipe):
             type=type,
             config=config,
         )
-        self.kg_provider = kg_provider
-        self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
 
     async def _run_logic(  # type: ignore
         self,
-        input: Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
+
         nodes = self.kg_provider.get_entity_map()  # type: ignore
 
         for _, node_info in nodes.items():
@@ -108,9 +104,10 @@ class KGNodeDescriptionPipe(AsyncPipe):
         summarization_content = """
             Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
 
-            Entity: {entity_info}
-            Description: {description}
-            Triples: {triples_txt}
+            Entity Info: 
+            {entity_info}
+            Triples: 
+            {triples_txt}
 
             Your summary should:
             1. Clearly define the entity's core concept or purpose
@@ -125,6 +122,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
         async def process_entity(
             entity, triples, max_description_input_length
         ):
+
             # if embedding is present in the entity, just return it
             # in the future disable this to override and recompute the descriptions for all entities
             if entity.description_embedding:
@@ -132,7 +130,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
             entity_info = f"{entity.name}, {entity.description}"
             triples_txt = [
-                f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}"
+                f"{i+1}: {triple['subject']}, {triple['object']}, {triple['predicate']} - Summary: {triple['description']}"
                 for i, triple in enumerate(triples)
             ]
 
@@ -148,79 +146,70 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 truncated_triples_txt += triple + "\n"
                 current_length += len(triple)
 
-            messages = [
-                {
-                    "role": "user",
-                    "content": summarization_content.format(
-                        entity_info=entity_info,
-                        description=entity.description,
-                        triples_txt=triples_txt,
-                    ),
-                }
-            ]
-
-            out_entity = self.kg_provider.retrieve_cache(
-                "entities_with_description", f"{entity.name}_{entity.category}"
-            )
-            if out_entity:
-                logger.info(f"Hit cache for entity {entity.name}")
-            else:
-                completion = await self.llm_provider.aget_completion(
-                    messages,
-                    self.kg_provider.config.kg_enrichment_settings.generation_config,
-                )
-                entity.description = completion.choices[0].message.content
-
-                # embedding
-                description_embedding = (
-                    await self.embedding_provider.async_get_embeddings(
-                        [entity.description]
+            out_entity = {"name": entities_info[0]["name"]}
+            out_entity["description"] = (
+                (
+                    await self.llm_provider.aget_completion(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": summarization_content.format(
+                                    entity_info=entity_info,
+                                    triples_txt=truncated_triples_txt,
+                                ),
+                            }
+                        ],
+                        generation_config=self.kg_provider.config.kg_enrichment_settings.generation_config,
                     )
                 )
-                entity.description_embedding = description_embedding[0]
+                .choices[0]
+                .message.content
+            )
 
-                # name embedding
-                # turned it off because we aren't using it for now
-                # name_embedding = (
-                #     await self.embedding_provider.async_get_embeddings(
-                #         [entity.name]
-                #     )
-                # )
-                # entity.name_embedding = name_embedding[0]
-
-                out_entity = entity
+            # will do more requests, but it is simpler
+            out_entity["description_embedding"] = (
+                await self.embedding_provider.async_get_embeddings(
+                    [out_entity["description"]]
+                )
+            )[0]
 
             return out_entity
 
         max_description_input_length = input.message[
             "max_description_input_length"
         ]
-        node_extractions = input.message["node_extractions"]
 
-        tasks = []
-        count = 0
-        async for entity, triples in node_extractions:
-            tasks.append(
-                asyncio.create_task(
-                    process_entity(
-                        entity, triples, max_description_input_length
-                    )
+        offset = input.message["offset"]
+        limit = input.message["limit"]
+        project_name = input.message["project_name"]
+        document_id = input.message["document_id"]
+        entity_map = await self.kg_provider.get_entity_map(
+            offset, limit, project_name, document_id
+        )
+
+        for entity_name, entity_info in entity_map.items():
+            try:
+                logger.info(f"Processing entity {entity_name}")
+                processed_entity = await process_entity(
+                    entity_info["entities"],
+                    entity_info["triples"],
+                    max_description_input_length,
                 )
-            )
-            count += 1
 
-        logger.info(f"KG Node Description pipe: Created {count} tasks")
-        # do gather because we need to wait for all descriptions before kicking off the next step
-        processed_entities = await asyncio.gather(*tasks)
+                await self.kg_provider.upsert_embeddings(
+                    [
+                        (
+                            processed_entity["name"],
+                            processed_entity["description"],
+                            str(processed_entity["description_embedding"]),
+                        )
+                    ],
+                    "entity_embeddings",
+                    project_name,
+                )
+                logger.info(f"Processed entity {entity_name}")
 
-        # upsert to the database
-        self.kg_provider.upsert_entities(
-            processed_entities, with_embeddings=True
-        )
-
-        logger.info(
-            "KG Node Description pipe: Upserted entities to the database"
-        )
-
-        for entity in processed_entities:
-            yield entity
+                yield entity_name
+            except Exception as e:
+                logger.error(f"Error processing entity {entity_name}: {e}")
+                # import pdb; pdb.set_trace()

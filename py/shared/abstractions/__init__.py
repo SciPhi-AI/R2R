@@ -7,7 +7,8 @@ from .document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    RestructureStatus,
+    KGCreationStatus,
+    KGEnrichmentStatus,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
@@ -28,7 +29,7 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
-from .restructure import KGCreationSettings, KGEnrichmentSettings
+from .kg import KGCreationSettings, KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
     HybridSearchSettings,
@@ -60,7 +61,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGCreationStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",

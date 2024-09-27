@@ -13,7 +13,7 @@ To configure the knowledge graph settings for your project:
 
 ```toml r2r.toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
@@ -37,7 +37,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
 Let's break down the knowledge graph configuration options:
 
-- `provider`: Specifies the knowledge graph provider. Currently, "neo4j" is supported.
+- `provider`: Specifies the knowledge graph provider. Currently, "postgres" is supported.
 - `batch_size`: Determines the number of entities or relationships to process in a single batch during import operations.
 - `kg_extraction_prompt`: Specifies the prompt template to use for extracting knowledge graph information from text.
 - `kg_creation_settings`: Configuration for the model used in knowledge graph creation.
@@ -64,11 +64,7 @@ And to set them directly in your config:
 
 ```toml r2r.toml
 [kg]
-provider = "neo4j"
-user = "your_neo4j_username"
-password = "your_neo4j_password"
-url = "bolt://your_neo4j_host:7687"
-database = "neo4j"
+provider = "postgres"
 ```
 
 <Note>

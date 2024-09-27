@@ -8,11 +8,11 @@ from shared.api.models.base import ResultsWrapper
 class KGCreationResponse(BaseModel):
     message: str = Field(
         ...,
-        description="A message describing the result of the restructure request.",
+        description="A message describing the result of the KG creation request.",
     )
     task_id: UUID = Field(
         ...,
-        description="The task ID of the restructure request.",
+        description="The task ID of the KG creation request.",
     )
 
     class Config:
@@ -27,11 +27,11 @@ class KGCreationResponse(BaseModel):
 class KGEnrichmentResponse(BaseModel):
     message: str = Field(
         ...,
-        description="A message describing the result of the restructure request.",
+        description="A message describing the result of the KG enrichment request.",
     )
     task_id: UUID = Field(
         ...,
-        description="The task ID of the restructure request.",
+        description="The task ID of the KG enrichment request.",
     )
 
     class Config:
