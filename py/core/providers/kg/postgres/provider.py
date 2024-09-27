@@ -69,7 +69,12 @@ class PostgresKGProvider(KGProvider):
 
     async def create_tables(self, project_name: str):
         # raw entities table
-
+        # create schema
+        query = f"""
+            CREATE SCHEMA IF NOT EXISTS {project_name};
+        """
+        await self.execute_query(query)
+        
         query = f"""
             CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
             id SERIAL PRIMARY KEY,  

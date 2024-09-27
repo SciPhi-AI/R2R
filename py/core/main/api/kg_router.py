@@ -19,7 +19,7 @@ from core.base.providers import OrchestrationProvider, Workflow
 #     KGCommunitySummaryWorkflow,
 #     KgExtractDescribeEmbedWorkflow,
 # )
-from ..services.kg_service import KGService
+from ..services.kg_service import KgService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -28,14 +28,14 @@ logger = logging.getLogger(__name__)
 class KGRouter(BaseRouter):
     def __init__(
         self,
-        service: KGService,
-        run_type: RunType = RunType.KG,
+        service: KgService,
         orchestration_provider: Optional[OrchestrationProvider] = None,
+        run_type: RunType = RunType.KG,
     ):
         if not orchestration_provider:
             raise ValueError("KGRouter requires an orchestration provider.")
-        super().__init__(service, run_type, orchestration_provider)
-        self.service: KGService = service
+        super().__init__(service, orchestration_provider, run_type)
+        self.service: KgService = service
 
     def _load_openapi_extras(self):
         yaml_path = Path(__file__).parent / "data" / "kg_router_openapi.yml"

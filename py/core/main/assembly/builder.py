@@ -27,7 +27,7 @@ from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
 from ..services.ingestion_service import IngestionService
-from ..services.kg_service import KGService
+from ..services.kg_service import KgService
 from ..services.management_service import ManagementService
 from ..services.retrieval_service import RetrievalService
 from .factory import (
@@ -83,7 +83,7 @@ class ServiceOverrides:
     ingestion: Optional["IngestionService"] = None
     management: Optional["ManagementService"] = None
     retrieval: Optional["RetrievalService"] = None
-    kg: Optional["KGService"] = None
+    kg: Optional["KgService"] = None
 
 
 class R2RBuilder:

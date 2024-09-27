@@ -7,12 +7,12 @@ from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import R2RDocumentProcessingError
 from core.base.abstractions import KGCreationStatus
 
-from ...services import KGService
+from ...services import KgService
 
 logger = logging.getLogger(__name__)
 
 
-def simple_restructure_factory(service: KGService):
+def simple_restructure_factory(service: KgService):
     async def kg_extract_and_store(input_data):
         document_id = uuid.UUID(input_data["document_id"])
         extraction_merge_count = input_data["extraction_merge_count"]

@@ -9,7 +9,7 @@ from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import OrchestrationProvider, R2RDocumentProcessingError
 from core.base.abstractions import KGCreationStatus
 
-from ...services import KGService
+from ...services import KgService
 
 logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
@@ -19,13 +19,13 @@ if TYPE_CHECKING:
 
 
 def hatchet_restructure_factory(
-    orchestration_provider: OrchestrationProvider, service: KGService
+    orchestration_provider: OrchestrationProvider, service: KgService
 ) -> list["Hatchet.Workflow"]:
     @orchestration_provider.workflow(
         name="kg-extract-and-store", timeout="60m"
     )
     class KgExtractAndStoreWorkflow:
-        def __init__(self, restructure_service: KGService):
+        def __init__(self, restructure_service: KgService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=3, timeout="60m")
@@ -102,7 +102,7 @@ def hatchet_restructure_factory(
 
     @orchestration_provider.workflow(name="create-graph", timeout="60m")
     class CreateGraphWorkflow:
-        def __init__(self, restructure_service: KGService):
+        def __init__(self, restructure_service: KgService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=1)
@@ -194,7 +194,7 @@ def hatchet_restructure_factory(
 
     @orchestration_provider.workflow(name="enrich-graph", timeout="60m")
     class EnrichGraphWorkflow:
-        def __init__(self, restructure_service: KGService):
+        def __init__(self, restructure_service: KgService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=3, timeout="60m")
@@ -347,7 +347,7 @@ def hatchet_restructure_factory(
         name="kg-community-summary", timeout="60m"
     )
     class KGCommunitySummaryWorkflow:
-        def __init__(self, restructure_service: KGService):
+        def __init__(self, restructure_service: KgService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=1, timeout="60m")
