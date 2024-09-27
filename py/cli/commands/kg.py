@@ -41,6 +41,11 @@ def create_graph(
 
 @cli.command()
 @click.option(
+    "--project-name",
+    required=True,
+    help="Project name to enrich graph for.",
+)
+@click.option(
     "--collection-id",
     required=True,
     help="Collection ID to enrich graph for.",
@@ -51,13 +56,19 @@ def create_graph(
     default=False,
     help="Force enrichment of the graph even if graph creation is still in progress for some documents.",
 )
+@click.option(
+    "--skip-clustering",
+    required=False,
+    default=False,
+    help="Perform leiden clustering on the graph to create communities.",
+)
 @pass_context
-def enrich_graph(ctx, collection_id):
+def enrich_graph(ctx, project_name, collection_id, force_enrichment, skip_clustering):
     """
     Enrich an existing graph.
     """
     client = ctx.obj
     with timer():
-        response = client.enrich_graph(collection_id)
+        response = client.enrich_graph(project_name, collection_id, force_enrichment, skip_clustering)
 
     click.echo(json.dumps(response, indent=2))

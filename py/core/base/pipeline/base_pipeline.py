@@ -54,18 +54,28 @@ class AsyncPipeline:
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager):
-            for pipe_num in range(len(self.pipes)):
-                config_name = self.pipes[pipe_num].config.name
-                self.futures[config_name] = asyncio.Future()
+            try:
+                for pipe_num in range(len(self.pipes)):
+                    config_name = self.pipes[pipe_num].config.name
+                    self.futures[config_name] = asyncio.Future()
 
-                current_input = self._run_pipe(
-                    pipe_num,
-                    current_input,
-                    run_manager,
-                    *args,
-                    **kwargs,
+                    current_input = self._run_pipe(
+                        pipe_num,
+                        current_input,
+                        run_manager,
+                        *args,
+                        **kwargs,
+                    )
+                    self.futures[config_name].set_result(current_input)
+
+            except Exception as error:
+                # TODO: improve error handling here
+                error_trace = traceback.format_exc()
+                logger.error(
+                    f"Pipeline failed with error: {error}\n\nStack trace:\n{error_trace}"
                 )
-                self.futures[config_name].set_result(current_input)
+                raise error
+
             return (
                 current_input
                 if stream
