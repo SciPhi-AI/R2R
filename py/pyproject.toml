@@ -62,7 +62,7 @@ vecs = { version = "^0.4.0", optional = true }
 # Core
 hatchet-sdk = { version = "^0.36.17", optional = true }
 
-# Light 
+# Light
 numpy = { version = ">=1.22.4,<1.29.0", optional = true }
 markdown = { version = "^3.6", optional = true }
 openpyxl = { version = "^3.1.2", optional = true }
@@ -106,7 +106,7 @@ light = [
     "openpyxl",
     "pypdf",
     "python-pptx",
-    "python-docx",    
+    "python-docx",
 ]
 
 [tool.poetry.group.dev.dependencies]
@@ -155,7 +155,7 @@ module = "yaml"
 ignore_missing_imports = true
 
 [tool.poetry.scripts]
-r2r = "cli.cli:main"
+r2r = "cli.main:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
