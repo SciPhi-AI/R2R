@@ -42,8 +42,8 @@ class KGService(Service):
             logging_connection,
         )
 
-    @telemetry_event("kg_extract_and_store")
-    async def kg_extract_and_store(
+    @telemetry_event("kg_extraction")
+    async def kg_extraction(
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
@@ -125,6 +125,7 @@ class KGService(Service):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         project_name: str,
+        collection_id: UUID,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
             input=self.pipes.kg_community_summary_pipe.Input(
@@ -134,6 +135,7 @@ class KGService(Service):
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
                     "project_name": project_name,
+                    "collection_id": collection_id,
                 }
             ),
             state=None,

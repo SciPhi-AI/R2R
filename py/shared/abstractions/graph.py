@@ -219,23 +219,23 @@ class Community(BaseModel):
 class CommunityReport(Named):
     """Defines an LLM-generated summary report of a community."""
 
-    community_id: str
+    community_id: int
     """The ID of the community this report is associated with."""
+
+    collection_id: uuid.UUID
+    """The ID of the collection this report is associated with."""
+
+    name: str = ""
+    """Name of the report."""
 
     summary: str = ""
     """Summary of the report."""
 
-    full_content: str = ""
-    """Full content of the report."""
+    findings: list[str] = []
+    """Findings of the report."""
 
-    rank: float | None = 1.0
-    """Rank of the report, used for sorting (optional). Higher means more important"""
-
-    summary_embedding: list[float] | None = None
-    """The semantic (i.e. text) embedding of the report summary (optional)."""
-
-    full_content_embedding: list[float] | None = None
-    """The semantic (i.e. text) embedding of the full report content (optional)."""
+    embedding: list[float] | None = None
+    """Embedding of summary and findings."""
 
     attributes: dict[str, Any] | None = None
     """A dictionary of additional attributes associated with the report (optional)."""
@@ -254,10 +254,10 @@ class CommunityReport(Named):
         community_id_key: str = "community_id",
         short_id_key: str = "short_id",
         summary_key: str = "summary",
-        full_content_key: str = "full_content",
+        findings_key: str = "findings",
         rank_key: str = "rank",
         summary_embedding_key: str = "summary_embedding",
-        full_content_embedding_key: str = "full_content_embedding",
+        embedding_key: str = "embedding",
         attributes_key: str = "attributes",
     ) -> "CommunityReport":
         """Create a new community report from the dict data."""
@@ -267,138 +267,12 @@ class CommunityReport(Named):
             community_id=d[community_id_key],
             short_id=d.get(short_id_key),
             summary=d[summary_key],
-            full_content=d[full_content_key],
+            findings=d[findings_key],
             rank=d[rank_key],
             summary_embedding=d.get(summary_embedding_key),
-            full_content_embedding=d.get(full_content_embedding_key),
+            embedding=d.get(embedding_key),
             attributes=d.get(attributes_key),
         )
-
-
-@dataclass
-class Covariate(Identified):
-    """
-    A protocol for a covariate in the system.
-
-    Covariates are metadata associated with a subject, e.g. entity claims.
-    Each subject (e.g. entity) may be associated with multiple types of covariates.
-    """
-
-    subject_id: str
-    """The subject id."""
-
-    subject_type: str = "entity"
-    """The subject type."""
-
-    covariate_type: str = "claim"
-    """The covariate type."""
-
-    fragment_ids: list[str] | None = None
-    """List of text unit IDs in which the covariate info appears (optional)."""
-
-    document_ids: list[str] | None = None
-    """List of document IDs in which the covariate info appears (optional)."""
-
-    attributes: dict[str, Any] | None = None
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
-
-    @classmethod
-    def from_dict(
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        subject_id_key: str = "subject_id",
-        subject_type_key: str = "subject_type",
-        covariate_type_key: str = "covariate_type",
-        short_id_key: str = "short_id",
-        fragment_ids_key: str = "fragment_ids",
-        document_ids_key: str = "document_ids",
-        attributes_key: str = "attributes",
-    ) -> "Covariate":
-        """Create a new covariate from the dict data."""
-        return Covariate(
-            id=d[id_key],
-            short_id=d.get(short_id_key),
-            subject_id=d[subject_id_key],
-            subject_type=d.get(subject_type_key, "entity"),
-            covariate_type=d.get(covariate_type_key, "claim"),
-            fragment_ids=d.get(fragment_ids_key),
-            document_ids=d.get(document_ids_key),
-            attributes=d.get(attributes_key),
-        )
-
-
-@dataclass
-class TextUnit(Identified):
-    """A protocol for a TextUnit item in a Document database."""
-
-    text: str
-    """The text of the unit."""
-
-    text_embedding: list[float] | None = None
-    """The text embedding for the text unit (optional)."""
-
-    entity_ids: list[str] | None = None
-    """List of entity IDs related to the text unit (optional)."""
-
-    relationship_ids: list[str] | None = None
-    """List of relationship IDs related to the text unit (optional)."""
-
-    covariate_ids: dict[str, list[str]] | None = None
-    "Dictionary of different types of covariates related to the text unit (optional)."
-
-    n_tokens: int | None = None
-    """The number of tokens in the text (optional)."""
-
-    document_ids: list[str] | None = None
-    """List of document IDs in which the text unit appears (optional)."""
-
-    attributes: dict[str, Any] | None = None
-    """A dictionary of additional attributes associated with the text unit (optional)."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
-        if isinstance(self.covariate_ids, str):
-            self.covariate_ids = json.loads(self.covariate_ids)
-
-    @classmethod
-    def from_dict(
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        short_id_key: str = "short_id",
-        text_key: str = "text",
-        text_embedding_key: str = "text_embedding",
-        entities_key: str = "entity_ids",
-        relationships_key: str = "relationship_ids",
-        covariates_key: str = "covariate_ids",
-        n_tokens_key: str = "n_tokens",
-        document_ids_key: str = "document_ids",
-        attributes_key: str = "attributes",
-    ) -> "TextUnit":
-        """Create a new text unit from the dict data."""
-        return TextUnit(
-            id=d[id_key],
-            short_id=d.get(short_id_key),
-            text=d[text_key],
-            text_embedding=d.get(text_embedding_key),
-            entity_ids=d.get(entities_key),
-            relationship_ids=d.get(relationships_key),
-            covariate_ids=d.get(covariates_key),
-            n_tokens=d.get(n_tokens_key),
-            document_ids=d.get(document_ids_key),
-            attributes=d.get(attributes_key),
-        )
-
-
-TextEmbedder = Callable[[str], list[float]]
-
 
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""

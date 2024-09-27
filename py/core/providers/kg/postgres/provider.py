@@ -10,6 +10,7 @@ from core.base import EmbeddingProvider
 import asyncpg
 from core.base import DatabaseProvider
 import json
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
@@ -63,41 +64,26 @@ class PostgresKGProvider(KGProvider):
     ) -> Any:
         return await self.db_provider.fetch_query(query, params)
 
-    async def create_table(self, collection_name: str):
-        # entities table 1
-
+    async def create_table(self, project_name: str):
+        
+        # raw entities table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.entities_raw (
-            id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
+            id SERIAL PRIMARY KEY,  
             entity_id uuid.uuid5(uuid.NAMESPACE_DNS, NAME),
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
             fragment_ids UUID[] NOT NULL,
-            document_ids UUID[] NOT NULL,
+            document_id UUID NOT NULL,
             attributes JSONB NOT NULL
         );
         """
+        await self.execute_query(query)
 
+        # raw triples table, also the final table. this will have embeddings.
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.entities_raw (
-            id SERIAL PRIMARY KEY,
-            category TEXT NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            fragment_ids UUID[] NOT NULL,
-            document_ids UUID[] NOT NULL,
-            attributes JSONB NOT NULL
-        );
-        """
-
-        result = await self.execute_query(query)
-        logger
-        print(result)
-
-        # triples table 1
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.triples_raw (
+            CREATE TABLE IF NOT EXISTS {project_name}.triple_raw (
             id SERIAL PRIMARY KEY,
             entity_id SERIAL NOT NULL,
             subject TEXT NOT NULL,
@@ -105,34 +91,33 @@ class PostgresKGProvider(KGProvider):
             object TEXT NOT NULL,
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
+            embedding vector({self.embedding_provider.config.base_dimension}),
             fragment_ids UUID[] NOT NULL,
-            document_ids UUID[] NOT NULL,
+            document_id UUID NOT NULL,
             attributes JSONB NOT NULL
         );
         """
         result = await self.execute_query(query)
-        print(result)
 
-        # entities table 2 # Entity summaries by document ID
+        # entity description table, unique by document_id, category, name
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.entities_description (
+            CREATE TABLE IF NOT EXISTS {project_name}.entity_description (
             id SERIAL PRIMARY KEY,
-            document_ids UUID[] NOT NULL,
+            document_id UUID NOT NULL,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
             description_embedding vector(1536),
             fragment_ids UUID[] NOT NULL,
             attributes JSONB NOT NULL,
-            UNIQUE (document_ids, category, name)
+            UNIQUE (document_id, category, name)
         );"""
 
         result = await self.execute_query(query)
-        print(result)
 
         # triples table 2 # Relationship summaries by document ID
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.triples_description (
+            CREATE TABLE IF NOT EXISTS {project_name}.triple_description (
             id SERIAL PRIMARY KEY,
             document_ids UUID[] NOT NULL,
             subject TEXT NOT NULL,
@@ -149,7 +134,7 @@ class PostgresKGProvider(KGProvider):
 
         # embeddings tables
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.entity_embeddings (
+            CREATE TABLE IF NOT EXISTS {project_name}.entity_embedding (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -160,8 +145,9 @@ class PostgresKGProvider(KGProvider):
 
         result = await self.execute_query(query)
 
+        # triples embeddings table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.triples_embeddings (
+            CREATE TABLE IF NOT EXISTS {project_name}.triple_embedding (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -173,9 +159,9 @@ class PostgresKGProvider(KGProvider):
 
         result = await self.execute_query(query)
 
-        # communities table
+        # communities table, result of the Leiden algorithm
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.communities (
+            CREATE TABLE IF NOT EXISTS {project_name}.community (
             id SERIAL PRIMARY KEY,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
@@ -187,14 +173,21 @@ class PostgresKGProvider(KGProvider):
 
         result = await self.execute_query(query)
 
-        # communities_summary table
+        # communities_report table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {collection_name}.communities_description (
+            CREATE TABLE IF NOT EXISTS {project_name}.community_reports (
             id SERIAL PRIMARY KEY,
             community_id INT NOT NULL,
+            collection_id UUID NOT NULL,
             level INT NOT NULL,
-            description TEXT NOT NULL,
-            description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL
+            name TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            findings TEXT[] NOT NULL,
+            rating FLOAT NOT NULL,
+            rating_explanation TEXT NOT NULL,
+            embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
+            attributes JSONB,
+            UNIQUE (community_id, level, collection_id)
         );"""
 
         result = await self.execute_query(query)
@@ -309,13 +302,14 @@ class PostgresKGProvider(KGProvider):
         return (total_entities, total_relationships)
 
     async def get_entity_map(
-        self, offset: int, limit: int, project_name: str
+        self, offset: int, limit: int, project_name: str, document_id: str
     ) -> dict[str, Any]:
 
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name 
                 FROM {project_name}.entities_raw 
+                WHERE document_id = $1
                 ORDER BY name ASC 
                 LIMIT {limit} OFFSET {offset}
             )
@@ -324,7 +318,7 @@ class PostgresKGProvider(KGProvider):
             JOIN entities_list el ON e.name = el.name
             ORDER BY e.name;"""
 
-        entities_list = await self.fetch_query(QUERY1)
+        entities_list = await self.fetch_query(QUERY1, [document_id])
         entities_list = [
             {
                 "name": entity["name"],
@@ -338,6 +332,7 @@ class PostgresKGProvider(KGProvider):
             WITH entities_list AS (
                 SELECT DISTINCT name 
                 FROM {project_name}.entities_raw 
+                WHERE document_id = $1
                 ORDER BY name ASC 
                 LIMIT {limit} OFFSET {offset}
             )
@@ -347,7 +342,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY t.subject, t.predicate, t.object;
         """
 
-        triples_list = await self.fetch_query(QUERY2)
+        triples_list = await self.fetch_query(QUERY2, [document_id])
         triples_list = [
             {
                 "subject": triple["subject"],
@@ -451,7 +446,7 @@ class PostgresKGProvider(KGProvider):
             """
         return await self.fetch_query(QUERY)
 
-    async def upsert_communities(
+    async def add_communities(
         self, project_name: str, communities: list[tuple[int, Any]]
     ) -> None:
         QUERY = f"""
@@ -460,12 +455,15 @@ class PostgresKGProvider(KGProvider):
             """
         await self.execute_many(QUERY, communities)
 
-    async def upsert_community_description(
-        self, project_name: str, community: Community
+    async def add_community_description(
+        self, project_name: str, community: Community, collection_id: UUID
     ) -> None:
         QUERY = f"""
-            INSERT INTO {project_name}.communities_description (community_id, level, description, description_embedding)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO {project_name}.communities_description (community_id, level, description, description_embedding, collection_id)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (community_id, level, collection_id) DO UPDATE SET
+                description = EXCLUDED.description,
+                description_embedding = EXCLUDED.description_embedding
             """
         await self.execute_query(
             QUERY,
@@ -474,6 +472,7 @@ class PostgresKGProvider(KGProvider):
                 community.level,
                 community.summary,
                 str(community.summary_embedding),
+                collection_id,
             ),
         )
 
@@ -523,7 +522,7 @@ class PostgresKGProvider(KGProvider):
             for item in hierarchical_communities
         ]
 
-        result = await self.upsert_communities(project_name, inputs)
+        result = await self.add_communities(project_name, inputs)
 
         num_communities = len(
             set([item.cluster for item in hierarchical_communities])
@@ -622,3 +621,10 @@ class PostgresKGProvider(KGProvider):
 
     async def upsert_triples(self):
         pass
+
+
+    async def get_entity_count(self, project_name: str, document_id: str) -> int:
+        QUERY = f"""
+            SELECT COUNT(*) FROM {project_name}.entities_raw WHERE document_id = $1
+        """
+        return (await self.fetch_query(QUERY, [document_id]))[0]["count"]

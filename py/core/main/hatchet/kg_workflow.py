@@ -17,13 +17,13 @@ from .base import r2r_hatchet
 logger = logging.getLogger(__name__)
 
 
-@r2r_hatchet.workflow(name="kg-esd", timeout="60m")
-class KgExtractStoreDescribeWorkflow:
+@r2r_hatchet.workflow(name="kg-ede", timeout="360m")
+class KgExtractDescribeEmbedWorkflow:
     def __init__(self, kg_service: KGService):
         self.kg_service = kg_service
 
-    @r2r_hatchet.step(retries=3, timeout="60m")
-    async def kg_extract_and_store(self, context: Context) -> dict:
+    @r2r_hatchet.step(name="kg_extract", parents=[], retries=3, timeout="360m")
+    async def kg_extract(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
         document_id = uuid.UUID(input_data["document_id"])
         fragment_merge_count = input_data["fragment_merge_count"]
@@ -31,55 +31,74 @@ class KgExtractStoreDescribeWorkflow:
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
 
-        try:
+        await self.kg_service.providers.database.relational.set_workflow_status(
+            id=document_id,
+            status_type="kg_creation",
+            status=KGCreationStatus.PROCESSING,
+        )
 
+        errors = await self.kg_service.kg_extract_and_store(
+            document_id=document_id,
+            generation_config=GenerationConfig(
+                **input_data["generation_config"]
+            ),
+            fragment_merge_count=fragment_merge_count,
+            max_knowledge_triples=max_knowledge_triples,
+            entity_types=entity_types,
+            relation_types=relation_types,
+        )
+
+        if len(errors) == 0:
             await self.kg_service.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_creation",
-                status=KGCreationStatus.PROCESSING,
+                status=KGCreationStatus.SUCCESS,
             )
-
-            errors = await self.kg_service.kg_extract_and_store(
-                document_id=document_id,
-                generation_config=GenerationConfig(
-                    **input_data["generation_config"]
-                ),
-                fragment_merge_count=fragment_merge_count,
-                max_knowledge_triples=max_knowledge_triples,
-                entity_types=entity_types,
-                relation_types=relation_types,
+        else:
+            raise ValueError(
+                f"Error in kg_extract_and_store: No Triples Extracted"
             )
+    
+    @r2r_hatchet.step(retries=3, timeout="360m")
+    async def kg_node_description(self, context: Context) -> dict:
+        input_data = context.workflow_input()["request"]
+        max_description_input_length = input_data[
+            "max_description_input_length"
+        ]
 
-            if len(errors) == 0:
-                await self.kg_service.providers.database.relational.set_workflow_status(
-                    id=document_id,
-                    status_type="kg_creation",
-                    status=KGCreationStatus.SUCCESS,
-                )
-            else:
-                raise ValueError(
-                    f"Error in kg_extract_and_store: No Triples Extracted"
-                )
+        entity_count = await self.kg_service.providers.kg.get_entity_count(
+            project_name=input_data["project_name"],
+            document_id=input_data["document_id"],
+        )
 
-        except Exception as e:
+        # process 50 entities at a time
+        num_batches = math.ceil(entity_count / 50)  
+        workflows = []
 
-            await self.kg_service.providers.database.relational.set_workflow_status(
-                id=document_id,
-                status_type="kg_creation",
-                status=KGCreationStatus.FAILURE,
+
+        for i in range(num_batches):
+            logger.info(f"Running kg_node_description for batch {i+1}/{num_batches} for document {input_data['document_id']}")
+            await self.kg_service.kg_node_description(
+                offset=i * 50,
+                limit=50,
+                document_id=input_data["document_id"],
+                max_description_input_length=max_description_input_length,
+                project_name=input_data["project_name"],
             )
-
-            raise R2RDocumentProcessingError(
-                error_message=e,
-                document_id=document_id,
-            ) from e
-
         return {"result": None}
 
-    # TODO: parallelize embedding and storing
+    # on failure step hatchet
+    @r2r_hatchet.on_failure_step()
+    async def on_failure(self, context: Context) -> dict:
+        input_data = context.workflow_input()["request"]
+        document_id = uuid.UUID(input_data["document_id"])
+        await self.kg_service.providers.database.relational.set_workflow_status(
+            id=document_id,
+            status_type="kg_creation",
+            status=KGCreationStatus.FAILURE,
+        )
 
-
-@r2r_hatchet.workflow(name="create-graph", timeout="60m")
+@r2r_hatchet.workflow(name="create-graph", timeout="360m")
 class CreateGraphWorkflow:
     def __init__(self, kg_service: KGService):
         self.kg_service = kg_service
@@ -92,19 +111,22 @@ class CreateGraphWorkflow:
             **json.loads(input_data["kg_creation_settings"])
         )
 
-        document_status_filter = [
-            KGCreationStatus.PENDING,
-            KGCreationStatus.FAILURE,
-        ]
-        if kg_creation_settings.force_kg_creation:
-            document_status_filter += [
-                KGCreationStatus.SUCCESS,
-                KGCreationStatus.PROCESSING,
-            ]
+        doucment_ids = input_data["document_ids"]
 
-        document_ids = await self.kg_service.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_creation", status=document_status_filter
-        )
+        if not doucment_ids:
+            document_status_filter = [
+                KGCreationStatus.PENDING,
+                KGCreationStatus.FAILURE,
+            ]
+            if kg_creation_settings.force_kg_creation:
+                document_status_filter += [
+                    KGCreationStatus.SUCCESS,
+                    KGCreationStatus.PROCESSING,
+                ]
+
+            document_ids = await self.kg_service.providers.database.relational.get_document_ids_by_status(
+                status_type="kg_creation", status=document_status_filter
+            )
 
         results = []
         for cnt, document_id in enumerate(document_ids):
@@ -114,7 +136,7 @@ class CreateGraphWorkflow:
             results.append(
                 (
                     context.aio.spawn_workflow(
-                        "kg-esd",
+                        "kg-ede",
                         {
                             "request": {
                                 "document_id": str(document_id),
@@ -159,16 +181,6 @@ class EnrichGraphWorkflow:
             **json.loads(input_data["kg_enrichment_settings"])
         )
 
-        # skip_clustering = input_data["skip_clustering"]
-        # force_enrichment = input_data["force_enrichment"]
-        # leiden_params = input_data["leiden_params"]
-        # max_summary_input_length = input_data["max_summary_input_length"]
-        # project_name = input_data["project_name"]
-        # generation_config = GenerationConfig(**input_data["generation_config"])
-
-        # todo: check if documets are already being clustered
-        # check if any documents are still being restructured, need to explicitly set the force_clustering flag to true to run clustering if documents are still being restructured
-
         collection_status = await self.kg_service.providers.database.relational.get_workflow_status(
             id=collection_id, status_type="kg_enrichment"
         )
@@ -177,10 +189,9 @@ class EnrichGraphWorkflow:
             KGEnrichmentStatus.PENDING,
             KGEnrichmentStatus.PROCESSING,
         ]:
-            logger.info(
-                f"Collection {collection_id} is still being enriched, skipping clustering"
-            )
-            return {"result": "skipped"}
+            log_msg = f"Collection {collection_id} is still being enriched, skipping clustering"
+            logger.info(log_msg)
+            return {"result": log_msg}
 
         else:
             await self.kg_service.providers.database.relational.set_workflow_status(
@@ -190,14 +201,17 @@ class EnrichGraphWorkflow:
             )
 
         try:
-            if not skip_clustering:
+            if not kg_enrichment_settings.skip_clustering:
                 results = await self.kg_service.kg_clustering(
-                    leiden_params, generation_config, project_name
+                    project_name,
+                    collection_id,
+                    kg_enrichment_settings.leiden_params,
+                    kg_enrichment_settings.generation_config,
                 )
 
                 result = results[0]
                 num_communities = result["num_communities"]
-                parallel_communities = min(10, num_communities)
+                parallel_communities = min(100, num_communities)
                 total_workflows = math.ceil(
                     num_communities / parallel_communities
                 )
@@ -212,9 +226,10 @@ class EnrichGraphWorkflow:
                                 "request": {
                                     "offset": offset,
                                     "limit": parallel_communities,
-                                    "generation_config": generation_config.to_dict(),
-                                    "max_summary_input_length": max_summary_input_length,
+                                    "generation_config": kg_enrichment_settings.generation_config.to_dict(),
+                                    "max_summary_input_length": kg_enrichment_settings.max_summary_input_length,
                                     "project_name": project_name,
+                                    "collection_id": collection_id,
                                 }
                             },
                             key=f"{i}/{total_workflows}_community_summary",
@@ -286,6 +301,7 @@ class KGCommunitySummaryWorkflow:
         generation_config = GenerationConfig(**input_data["generation_config"])
         max_summary_input_length = input_data["max_summary_input_length"]
         project_name = input_data["project_name"]
+        collection_id = input_data["collection_id"]
 
         await self.kg_service.kg_community_summary(
             offset=offset,
@@ -293,5 +309,6 @@ class KGCommunitySummaryWorkflow:
             max_summary_input_length=max_summary_input_length,
             generation_config=generation_config,
             project_name=project_name,
+            collection_id=collection_id,
         )
         return {"result": None}

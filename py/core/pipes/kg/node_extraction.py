@@ -178,9 +178,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
         offset = input.message["offset"]
         limit = input.message["limit"]
         project_name = input.message["project_name"]
-
+        document_id = input.message["document_id"]
         entity_map = await self.kg_provider.get_entity_map(
-            offset, limit, project_name
+            offset, limit, project_name, document_id
         )
 
         for entity_name, entity_info in entity_map.items():
