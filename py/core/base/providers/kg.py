@@ -58,11 +58,11 @@ class KGProvider(ABC):
     def validate_config(self) -> None:
         self.config.validate_config()
 
-    @property
-    @abstractmethod
-    def client(self) -> Any:
-        """Get client."""
-        pass
+    # @property
+    # @abstractmethod
+    # def client(self) -> Any:
+    #     """Get client."""
+    #     pass
 
     # @abstractmethod
     # def get_rel_map(
@@ -75,13 +75,20 @@ class KGProvider(ABC):
     #     pass
 
     @abstractmethod
-    def upsert_entities(self, entities: list[Entity], *args, **kwargs) -> None:
-        """Abstract method to add triplet."""
+    def add_entities(self, entities: list[Entity], *args, **kwargs) -> None:
+        """Abstract method to add entities."""
         pass
 
     @abstractmethod
-    def upsert_triples(self, triples: list[Triple]) -> None:
-        """Abstract method to add triplet."""
+    def add_triples(self, triples: list[Triple]) -> None:
+        """Abstract method to add triples."""
+        pass
+
+    @abstractmethod
+    def add_kg_extractions(
+        self, kg_extractions: list[KGExtraction]
+    ) -> Tuple[int, int]:
+        """Abstract method to add KG extractions."""
         pass
 
     @abstractmethod
@@ -99,15 +106,15 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def upsert_nodes_and_relationships(
+    async def add_kg_extractions(
         self, kg_extractions: list[KGExtraction]
     ) -> None:
-        """Abstract method to add triplet."""
+        """Abstract method to add KG extractions."""
         pass
 
     @abstractmethod
-    def delete(self, subj: str, rel: str, obj: str) -> None:
-        """Abstract method to delete triplet."""
+    def delete_triples(self, triple_ids: list[int]) -> None:
+        """Abstract method to delete triples."""
         pass
 
     @abstractmethod

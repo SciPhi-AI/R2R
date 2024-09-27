@@ -55,7 +55,7 @@ class Entity(R2RSerializable):
     graph_embedding: Optional[list[float]] = None
     community_ids: Optional[list[str]] = None
     fragment_ids: Optional[list[str]] = None
-    document_ids: Optional[list[str]] = None
+    document_id: Optional[str] = None
     rank: Optional[int] = 1
     attributes: Optional[Union[dict[str, Any], str]] = None
 
@@ -102,8 +102,8 @@ class Triple(BaseModel):
     fragment_ids: list[str] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
-    document_ids: list[str] = []
-    """List of document IDs in which the relationship appears (optional)."""
+    document_id: str | None = None
+    """Document ID in which the relationship appears (optional)."""
 
     attributes: dict[str, Any] | str = {}
     """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
@@ -128,7 +128,7 @@ class Triple(BaseModel):
         description_key: str = "description",
         weight_key: str = "weight",
         fragment_ids_key: str = "fragment_ids",
-        document_ids_key: str = "document_ids",
+        document_id_key: str = "document_id",
         attributes_key: str = "attributes",
     ) -> "Triple":
         """Create a new relationship from the dict data."""
@@ -142,7 +142,7 @@ class Triple(BaseModel):
             description=d.get(description_key),
             weight=d.get(weight_key, 1.0),
             fragment_ids=d.get(fragment_ids_key),
-            document_ids=d.get(document_ids_key),
+            document_id=d.get(document_id_key),
             attributes=d.get(attributes_key, {}),
         )
 
@@ -403,7 +403,7 @@ TextEmbedder = Callable[[str], list[float]]
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
+    document_id: uuid.UUID
     fragment_ids: list[uuid.UUID]
-    document_ids: list[uuid.UUID]
     entities: list[Entity]
     triples: list[Triple]
