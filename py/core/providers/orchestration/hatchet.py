@@ -83,7 +83,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
                 for workflow in workflows.values():
                     self.worker.register_workflow(workflow)
 
-        elif workflow == Workflow.RESTRUCTURE:
+        elif workflow == Workflow.KG:
             from core.main.orchestration.hatchet.restructure_workflow import (
                 hatchet_restructure_factory,
             )
