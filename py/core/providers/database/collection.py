@@ -137,23 +137,53 @@ class CollectionMixin(DatabaseMixin):
         )
 
     async def delete_collection(self, collection_id: UUID) -> None:
-        # Remove collection_id from users
-        user_update_query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET collection_ids = array_remove(collection_ids, $1)
-            WHERE $1 = ANY(collection_ids)
-        """
-        await self.execute_query(user_update_query, [collection_id])
+        async with self.pool.acquire() as conn:  # type: ignore
+            async with conn.transaction():
+                try:
+                    # Remove collection_id from users
+                    user_update_query = f"""
+                        UPDATE {self._get_table_name('users')}
+                        SET collection_ids = array_remove(collection_ids, $1)
+                        WHERE $1 = ANY(collection_ids)
+                    """
+                    await conn.execute(user_update_query, collection_id)
 
-        # Delete the collection
-        delete_query = f"""
-            DELETE FROM {self._get_table_name('collections')}
-            WHERE collection_id = $1
-        """
-        result = await self.execute_query(delete_query, [collection_id])
+                    # Remove collection_id from documents
+                    document_update_query = f"""
+                        WITH updated AS (
+                            UPDATE {self._get_table_name('document_info')}
+                            SET collection_ids = array_remove(collection_ids, $1)
+                            WHERE $1 = ANY(collection_ids)
+                            RETURNING 1
+                        )
+                        SELECT COUNT(*) AS affected_rows FROM updated
+                    """
+                    result = await conn.fetchrow(
+                        document_update_query, collection_id
+                    )
+                    affected_rows = result["affected_rows"]
 
-        if result == "DELETE 0":
-            raise R2RException(status_code=404, message="Collection not found")
+                    # Delete the collection
+                    delete_query = f"""
+                        DELETE FROM {self._get_table_name('collections')}
+                        WHERE collection_id = $1
+                        RETURNING collection_id
+                    """
+                    deleted = await conn.fetchrow(delete_query, collection_id)
+
+                    if not deleted:
+                        raise R2RException(
+                            status_code=404, message="Collection not found"
+                        )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error deleting collection {collection_id}: {str(e)}"
+                    )
+                    raise R2RException(
+                        status_code=500,
+                        message=f"An error occurred while deleting the collection: {str(e)}",
+                    )
 
     async def list_collections(
         self, offset: int = 0, limit: int = -1

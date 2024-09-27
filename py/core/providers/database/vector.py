@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
 from sqlalchemy import text
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from core.base import (
     DatabaseConfig,
@@ -430,42 +431,44 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.commit()
 
     def delete_collection(self, collection_id: str) -> None:
-        """
-        Remove the specified collection ID from all documents in the vector database.
-
-        Args:
-            collection_id (str): The ID of the collection to remove from all documents.
-
-        Raises:
-            ValueError: If the collection is not initialized.
-        """
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
         table_name = self.collection.table.name
+
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
-            SET collection_ids = array_remove(collection_ids, :collection_id)
-            WHERE :collection_id = ANY(collection_ids)
+            WITH updated AS (
+                UPDATE vecs."{table_name}"
+                SET collection_ids = array_remove(collection_ids, :collection_id)
+                WHERE :collection_id = ANY(collection_ids)
+                RETURNING 1
+            )
+            SELECT COUNT(*) AS affected_rows FROM updated
             """
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(
-                query, {"collection_id": collection_id}
-            ).fetchone()
-            sess.commit()
+            try:
+                result = sess.execute(query, {"collection_id": collection_id})
+                row = result.one()
+                affected_rows = row.affected_rows
+                sess.commit()
 
-        if not result:
-            raise ValueError(
-                f"Collection {collection_id} not found in any documents."
-            )
-
-        affected_rows = result.rowcount
-        logger.info(
-            f"Removed collection {collection_id} from {affected_rows} documents."
-        )
+                if affected_rows == 0:
+                    raise ValueError(
+                        f"Collection {collection_id} not found in any documents."
+                    )
+            except NoResultFound:
+                raise ValueError(
+                    f"Unexpected error: No result returned for collection {collection_id}"
+                )
+            except SQLAlchemyError as e:
+                sess.rollback()
+                logger.error(
+                    f"Error deleting collection {collection_id}: {str(e)}"
+                )
+                raise
 
     def get_document_chunks(
         self, document_id: str, offset: int = 0, limit: int = -1

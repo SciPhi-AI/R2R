@@ -13,7 +13,7 @@ if (typeof window === "undefined") {
   });
 }
 
-import { feature, featureGenerator, initializeTelemetry } from "./feature";
+import { feature, initializeTelemetry } from "./feature";
 import {
   LoginResponse,
   TokenInfo,
@@ -53,13 +53,24 @@ function handleRequestError(response: AxiosResponse): void {
 export class r2rClient {
   private axiosInstance: AxiosInstance;
   private baseUrl: string;
+  private anonymousTelemetry: boolean;
+
+  // Authorization tokens
   private accessToken: string | null;
   private refreshToken: string | null;
 
-  constructor(baseURL: string, prefix: string = "/v2") {
+  constructor(
+    baseURL: string,
+    prefix: string = "/v2",
+    anonymousTelemetry = true,
+  ) {
     this.baseUrl = `${baseURL}${prefix}`;
+    this.anonymousTelemetry = anonymousTelemetry;
+
     this.accessToken = null;
     this.refreshToken = null;
+
+    initializeTelemetry(this.anonymousTelemetry);
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -90,8 +101,11 @@ export class r2rClient {
         },
       ],
     });
+  }
 
-    initializeTelemetry();
+  setTokens(accessToken: string, refreshToken: string): void {
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
   }
 
   private async _makeRequest<T = any>(
@@ -264,6 +278,27 @@ export class r2rClient {
     }
 
     return response.results;
+  }
+
+  @feature("loginWithToken")
+  async loginWithToken(
+    accessToken: string,
+  ): Promise<{ access_token: TokenInfo }> {
+    this.accessToken = accessToken;
+
+    try {
+      await this._makeRequest("GET", "user");
+
+      return {
+        access_token: {
+          token: accessToken,
+          token_type: "access_token",
+        },
+      };
+    } catch (error) {
+      this.accessToken = null;
+      throw new Error("Invalid token provided");
+    }
   }
 
   /**
