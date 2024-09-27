@@ -216,7 +216,7 @@ class Community(BaseModel):
 
 
 @dataclass
-class CommunityReport(Named):
+class CommunityReport(BaseModel):
     """Defines an LLM-generated summary report of a community."""
 
     community_id: int

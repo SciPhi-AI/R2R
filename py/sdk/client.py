@@ -11,7 +11,7 @@ from .auth import AuthMethods
 from .ingestion import IngestionMethods
 from .management import ManagementMethods
 from .models import R2RException
-from .kg import RestructureMethods
+from .kg import KGMethods
 from .retrieval import RetrievalMethods
 from .server import ServerMethods
 
@@ -91,7 +91,7 @@ class R2RAsyncClient:
         self._auth = AuthMethods
         self._ingestion = IngestionMethods
         self._management = ManagementMethods
-        self._restructure = RestructureMethods
+        self._kg = KGMethods
         self._retrieval = RetrievalMethods
         self._server = ServerMethods
 
@@ -101,7 +101,7 @@ class R2RAsyncClient:
             self._auth,
             self._ingestion,
             self._management,
-            self._restructure,
+            self._kg,
             self._retrieval,
             self._server,
         ]:

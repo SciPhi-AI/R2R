@@ -1,10 +1,10 @@
 import sys
 
-from R2R.py.cli.commands import kg
 from cli.command_group import cli
 from cli.commands import (
     auth,
     ingestion,
+    kg,
     management,
     retrieval,
     server,

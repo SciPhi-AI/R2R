@@ -247,45 +247,47 @@ class EnrichGraphWorkflow:
 
         except Exception as e:
             logger.error(f"Error in kg_clustering: {str(e)}", exc_info=True)
-            documents_overview = (
-                await self.kg_service.providers.database.relational.get_documents_overview()
-            )
-            documents_overview = documents_overview["results"]
-            for document_overview in documents_overview:
-                if (
-                    document_overview.restructuring_status
-                    == RestructureStatus.ENRICHING
-                ):
-                    document_overview.restructuring_status = (
-                        RestructureStatus.ENRICHMENT_FAILURE
-                    )
-                    await self.kg_service.providers.database.relational.upsert_documents_overview(
-                        document_overview
-                    )
-                    logger.error(
-                        f"Error in kg_clustering for document {document_overview.id}: {str(e)}"
-                    )
-            raise e
+            # documents_overview = (
+            #     await self.kg_service.providers.database.relational.get_documents_overview()
+            # )
+            # documents_overview = documents_overview["results"]
+            # for document_overview in documents_overview:
+            #     if (
+            #         document_overview.restructuring_status
+            #         == .ENRICHING
+            #     ):
+            #         document_overview.restructuring_status = (
+            #             .ENRICHMENT_FAILURE
+            #         )
+            #         await self.kg_service.providers.database.relational.upsert_documents_overview(
+            #             document_overview
+            #         )
+            #         logger.error(
+            #             f"Error in kg_clustering for document {document_overview.id}: {str(e)}"
+            #         )
+            # raise e
 
         finally:
 
-            documents_overview = (
-                await self.kg_service.providers.database.relational.get_documents_overview()
-            )
-            documents_overview = documents_overview["results"]
-            for document_overview in documents_overview:
-                if (
-                    document_overview.restructuring_status
-                    == RestructureStatus.ENRICHING
-                ):
-                    document_overview.restructuring_status = (
-                        RestructureStatus.ENRICHED
-                    )
+            pass
 
-            await self.kg_service.providers.database.relational.upsert_documents_overview(
-                documents_overview
-            )
-            return {"result": None}
+            # documents_overview = (
+            #     await self.kg_service.providers.database.relational.get_documents_overview()
+            # )
+            # documents_overview = documents_overview["results"]
+            # for document_overview in documents_overview:
+            #     if (
+            #         document_overview.restructuring_status
+            #         == RestructureStatus.ENRICHING
+            #     ):
+            #         document_overview.restructuring_status = (
+            #             RestructureStatus.ENRICHED
+            #         )
+
+            # await self.kg_service.providers.database.relational.upsert_documents_overview(
+            #     documents_overview
+            # )
+            # return {"result": None}
 
 
 @r2r_hatchet.workflow(name="kg-community-summary", timeout="60m")

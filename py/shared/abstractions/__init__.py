@@ -8,7 +8,8 @@ from .document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    RestructureStatus,
+    KGCreationStatus,
+    KGEnrichmentStatus,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
@@ -62,7 +63,8 @@ __all__ = [
     "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGCreationStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
