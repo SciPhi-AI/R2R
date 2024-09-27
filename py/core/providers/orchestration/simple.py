@@ -37,11 +37,11 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
             self.ingestion_workflows = simple_ingestion_factory(service)
 
         elif workflow == Workflow.KG:
-            from core.main.orchestration.simple.restructure_workflow import (
-                simple_restructure_factory,
+            from core.main.orchestration.simple.kg_workflow import (
+                simple_kg_factory,
             )
 
-            self.restructure_workflows = simple_restructure_factory(service)
+            self.kg_workflows = simple_kg_factory(service)
 
     def run_workflow(
         self, workflow_name: str, input: dict, options: dict
@@ -51,9 +51,9 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
                 self.ingestion_workflows[workflow_name](input.get("request"))
             )
             return {"message": self.messages[workflow_name]}
-        elif workflow_name in self.restructure_workflows:
+        elif workflow_name in self.kg_workflows:
             asyncio.run(
-                self.restructure_workflows[workflow_name](input.get("request"))
+                self.kg_workflows[workflow_name](input.get("request"))
             )
             return {"message": self.messages[workflow_name]}
         else:
