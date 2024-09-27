@@ -597,9 +597,10 @@ class Collection:
 
         if search_settings.filters:
             stmt = stmt.filter(self.build_filters(search_settings.filters))
-            stmt = stmt.order_by(distance_clause)
-            stmt = stmt.offset(search_settings.offset)
-            stmt = stmt.limit(search_settings.search_limit)
+
+        stmt = stmt.order_by(distance_clause)
+        stmt = stmt.offset(search_settings.offset)
+        stmt = stmt.limit(search_settings.search_limit)
 
         with self.client.Session() as sess:
             with sess.begin():
@@ -661,7 +662,7 @@ class Collection:
         # Convert the results to VectorSearchResult objects
         return [
             VectorSearchResult(
-                extraction_id=str(r.id),
+                extraction_id=str(r.extraction_id),
                 document_id=str(r.document_id),
                 user_id=str(r.user_id),
                 collection_ids=r.collection_ids,

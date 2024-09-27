@@ -14,7 +14,7 @@ from unstructured_client.models import operations, shared
 from core import parsers
 from core.base import (
     AsyncParser,
-    ChunkingMethod,
+    ChunkingStrategy,
     Document,
     DocumentExtraction,
     DocumentType,
@@ -57,7 +57,7 @@ class UnstructuredIngestionConfig(IngestionConfig):
     split_pdf_page: Optional[bool] = None
     starting_page_number: Optional[int] = None
     strategy: Optional[str] = None
-    chunking_method: Optional[ChunkingMethod] = None
+    chunking_strategy: Optional[ChunkingStrategy] = None
     unique_element_ids: Optional[bool] = None
     xml_keep_tags: Optional[bool] = None
 
@@ -68,8 +68,6 @@ class UnstructuredIngestionConfig(IngestionConfig):
         x.pop("extra_fields", None)
         x.pop("provider", None)
         x.pop("excluded_parsers", None)
-        method = x.pop("chunking_method", "by_title")
-        x["method"] = method
 
         x = {k: v for k, v in x.items() if v is not None}
         return x
@@ -158,8 +156,20 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 chunk_id += 1
 
     async def parse(
-        self, file_content: bytes, document: Document
+        self,
+        file_content: bytes,
+        document: Document,
+        ingestion_config_override: dict,
     ) -> AsyncGenerator[DocumentExtraction, None]:
+
+        ingestion_config = {
+            **self.config.to_ingestion_request(),
+            **(ingestion_config_override or {}),
+        }
+        # cleanup extra fields
+        ingestion_config.pop("provider", None)
+        ingestion_config.pop("excluded_parsers", None)
+
         t0 = time.time()
         if document.type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(
@@ -190,7 +200,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
                         files=files,
-                        **self.config,
+                        **ingestion_config,
                     )
                 )
                 elements = self.client.general.partition(req)  # type: ignore
@@ -213,10 +223,11 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     f"{self.local_unstructured_url}/partition",
                     json={
                         "file_content": encoded_content,  # Use encoded string
-                        "ingestion_config": self.config.to_ingestion_request(),
+                        "ingestion_config": ingestion_config,
                     },
                     timeout=300,  # Adjust timeout as needed
                 )
+
                 if response.status_code != 200:
                     logger.error(f"Error partitioning file: {response.text}")
                     raise ValueError(

@@ -20,15 +20,15 @@ from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 
 from ..api.auth_router import AuthRouter
 from ..api.ingestion_router import IngestionRouter
-from ..api.management_router import ManagementRouter
 from ..api.kg_router import KGRouter
+from ..api.management_router import ManagementRouter
 from ..api.retrieval_router import RetrievalRouter
 from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
 from ..services.ingestion_service import IngestionService
-from ..services.management_service import ManagementService
 from ..services.kg_service import KgService
+from ..services.management_service import ManagementService
 from ..services.retrieval_service import RetrievalService
 from .factory import (
     R2RAgentFactory,

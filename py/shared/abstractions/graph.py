@@ -274,6 +274,7 @@ class CommunityReport(BaseModel):
             attributes=d.get(attributes_key),
         )
 
+
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 

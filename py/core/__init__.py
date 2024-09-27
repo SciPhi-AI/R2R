@@ -251,7 +251,7 @@ __all__ = [
     # Ingestion
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
-    "ChunkingMethod",
+    "ChunkingStrategy",
     # Prompts
     "R2RPromptProvider",
 ]

@@ -9,6 +9,7 @@ from core.base import (
     DocumentExtraction,
     DocumentInfo,
     DocumentType,
+    IngestionConfig,
     IngestionStatus,
     R2RException,
     RunLoggingSingleton,
@@ -105,11 +106,11 @@ class IngestionService(Service):
                         status_code=409,
                         message=f"Must increment version number before attempting to overwrite document {document_id}.",
                     )
-            elif existing_doc.ingestion_status != IngestionStatus.FAILED:
-                raise R2RException(
-                    status_code=409,
-                    message=f"Document {document_id} was already ingested and is not in a failed state.",
-                )
+                elif existing_doc.ingestion_status != IngestionStatus.FAILED:
+                    raise R2RException(
+                        status_code=409,
+                        message=f"Document {document_id} was already ingested and is not in a failed state.",
+                    )
 
         await self.providers.database.relational.upsert_documents_overview(
             document_info
@@ -153,8 +154,7 @@ class IngestionService(Service):
         )
 
     async def parse_file(
-        self,
-        document_info: DocumentInfo,
+        self, document_info: DocumentInfo, ingestion_config: dict
     ) -> AsyncGenerator[DocumentExtraction, None]:
         return await self.pipes.parsing_pipe.run(
             input=self.pipes.parsing_pipe.Input(
@@ -171,6 +171,7 @@ class IngestionService(Service):
             ),
             state=None,
             run_manager=self.run_manager,
+            ingestion_config=ingestion_config,
         )
 
     async def embed_document(
@@ -277,7 +278,7 @@ class IngestionServiceAdapter:
                 UUID(data["document_id"]) if data["document_id"] else None
             ),
             "version": data.get("version"),
-            "ingestion_config": data["ingestion_config"],
+            "ingestion_config": data["ingestion_config"] or {},
             "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],

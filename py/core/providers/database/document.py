@@ -31,6 +31,7 @@ from .base import DatabaseMixin
 
 logger = logging.getLogger(__name__)
 
+
 class DocumentMixin(DatabaseMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -219,7 +220,9 @@ class DocumentMixin(DatabaseMixin):
 
         await self.execute_query(query, params)
 
-    async def _get_status_from_table(self, ids: list[UUID], table_name: str, status_type: str):
+    async def _get_status_from_table(
+        self, ids: list[UUID], table_name: str, status_type: str
+    ):
         """
         Get the workflow status for a given document or list of documents.
 
@@ -234,11 +237,12 @@ class DocumentMixin(DatabaseMixin):
         query = f"""
             SELECT {status_type} FROM {self._get_table_name(table_name)}
             WHERE document_id = ANY($1)
-        """        
+        """
         return await self.fetch_query(query, [ids])
-    
 
-    async def _get_ids_from_table(self, status: list[str], table_name: str, status_type: str):
+    async def _get_ids_from_table(
+        self, status: list[str], table_name: str, status_type: str
+    ):
         """
         Get the IDs from a given table.
 
@@ -253,8 +257,9 @@ class DocumentMixin(DatabaseMixin):
         """
         return await self.fetch_query(query, [status])
 
-
-    async def _set_status_in_table(self, ids: list[UUID], status: str, table_name: str, status_type: str):
+    async def _set_status_in_table(
+        self, ids: list[UUID], status: str, table_name: str, status_type: str
+    ):
         """
         Set the workflow status for a given document or list of documents.
 
@@ -271,7 +276,6 @@ class DocumentMixin(DatabaseMixin):
         """
         await self.execute_query(query, [status, ids])
 
-
     def _get_status_model_and_table_name(self, status_type: str):
         """
         Get the status model and table name for a given status type.
@@ -282,18 +286,20 @@ class DocumentMixin(DatabaseMixin):
         Returns:
             The status model and table name for the given status type.
         """
-        match status_type:
-            case "ingestion":
-                return IngestionStatus, "document_info"
-            case "kg_creation":
-                return KGCreationStatus, "document_info"
-            case "kg_enrichment":
-                return KGEnrichmentStatus, "collection_info"
-            case _:
-                raise R2RException(status_code=400, message=f"Invalid status type: {status_type}")
-            
-            
-    async def get_workflow_status(self, id: Union[UUID, list[UUID]], status_type: str):
+        if status_type == "ingestion":
+            return IngestionStatus, "document_info"
+        elif status_type == "kg_creation":
+            return KGCreationStatus, "document_info"
+        elif status_type == "kg_enrichment":
+            return KGEnrichmentStatus, "collection_info"
+        else:
+            raise R2RException(
+                status_code=400, message=f"Invalid status type: {status_type}"
+            )
+
+    async def get_workflow_status(
+        self, id: Union[UUID, list[UUID]], status_type: str
+    ):
         """
         Get the workflow status for a given document or list of documents.
 
@@ -302,15 +308,21 @@ class DocumentMixin(DatabaseMixin):
             status_type (str): The type of status to retrieve.
 
         Returns:
-            The workflow status for the given document or list of documents.    
+            The workflow status for the given document or list of documents.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = self._get_status_model_and_table_name(status_type)
-        result = map((await self._get_status_from_table(ids, table_name, status_type)), out_model)
+        out_model, table_name = self._get_status_model_and_table_name(
+            status_type
+        )
+        result = map(
+            (await self._get_status_from_table(ids, table_name, status_type)),
+            out_model,
+        )
         return result[0] if isinstance(id, UUID) else result
-    
-    
-    async def set_workflow_status(self, id: Union[UUID, list[UUID]], status_type: str, status: str):
+
+    async def set_workflow_status(
+        self, id: Union[UUID, list[UUID]], status_type: str, status: str
+    ):
         """
         Set the workflow status for a given document or list of documents.
 
@@ -320,11 +332,16 @@ class DocumentMixin(DatabaseMixin):
             status (str): The status to set.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = self._get_status_model_and_table_name(status_type)
-        return await self._set_status_in_table(ids, status, table_name, status_type)
-    
+        out_model, table_name = self._get_status_model_and_table_name(
+            status_type
+        )
+        return await self._set_status_in_table(
+            ids, status, table_name, status_type
+        )
 
-    async def get_document_ids_by_status(self, status_type: str, status: Union[str, list[str]]):
+    async def get_document_ids_by_status(
+        self, status_type: str, status: Union[str, list[str]]
+    ):
         """
         Get the IDs for a given status.
 
@@ -336,9 +353,14 @@ class DocumentMixin(DatabaseMixin):
 
         if isinstance(status, str):
             status = [status]
-        
-        out_model, table_name = self._get_status_model_and_table_name(status_type)
-        result = map((await self._get_ids_from_table(status, table_name, status_type)), out_model)
+
+        out_model, table_name = self._get_status_model_and_table_name(
+            status_type
+        )
+        result = map(
+            (await self._get_ids_from_table(status, table_name, status_type)),
+            out_model,
+        )
         return result
 
     async def get_documents_overview(

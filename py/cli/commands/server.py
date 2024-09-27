@@ -181,17 +181,6 @@ def generate_report():
 @click.option("--port", default=7272, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
-    "--exclude-neo4j", default=False, help="Exclude Neo4j from Docker setup"
-)
-@click.option(
-    "--exclude-ollama", default=True, help="Exclude Ollama from Docker setup"
-)
-@click.option(
-    "--exclude-postgres",
-    default=False,
-    help="Exclude Postgres from Docker setup",
-)
-@click.option(
     "--exclude-hatchet",
     default=False,
     help="Exclude Hatchet from Docker setup",
@@ -227,9 +216,6 @@ async def serve(
     host,
     port,
     docker,
-    exclude_neo4j,
-    exclude_ollama,
-    exclude_postgres,
     exclude_hatchet,
     project_name,
     image,
@@ -311,9 +297,6 @@ async def serve(
         run_docker_serve(
             host,
             port,
-            exclude_neo4j,
-            exclude_ollama,
-            exclude_postgres,
             exclude_hatchet,
             project_name,
             image,

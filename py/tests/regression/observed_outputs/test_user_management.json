@@ -1,29 +1,123 @@
 {
   "register_user": {
-    "results": "Event loop is closed"
+    "results": {
+      "id": "763b61e9-906f-5d22-bc64-d6359bd03fa5",
+      "email": "test_4c8d38b7@example.com",
+      "is_active": true,
+      "is_superuser": false,
+      "created_at": "2024-09-27T18:10:40.666080Z",
+      "updated_at": "2024-09-27T18:10:40.666080Z",
+      "is_verified": false,
+      "collection_ids": [],
+      "hashed_password": "$2b$12$Hs4sNysr/D.9FCfTt5VgDe3uwOM38yrfQC4kXG6B/OnhQwkBV/uGu",
+      "verification_code_expiry": null,
+      "name": null,
+      "bio": null,
+      "profile_picture": null
+    }
   },
   "login_user": {
-    "results": "Event loop is closed"
+    "results": {
+      "access_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzRjOGQzOGI3QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI3NDY0MjQwLjk0MDY4MiwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.hgdGN36hMp-Seed4dXY3uhbATa2FyMG1ikPFe1FrS6U",
+        "token_type": "access"
+      },
+      "refresh_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzRjOGQzOGI3QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI4MDY1NDQwLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.3PiG-JsbdcwZzbmF6CnJ93GhDZT3EOjgso_xymAZzvk",
+        "token_type": "refresh"
+      }
+    }
   },
   "user_info": {
-    "results": "Event loop is closed"
+    "results": {
+      "id": "763b61e9-906f-5d22-bc64-d6359bd03fa5",
+      "email": "test_4c8d38b7@example.com",
+      "is_active": true,
+      "is_superuser": false,
+      "created_at": "2024-09-27T18:10:40.666080Z",
+      "updated_at": "2024-09-27T18:10:40.666080Z",
+      "is_verified": true,
+      "collection_ids": [],
+      "hashed_password": "$2b$12$Hs4sNysr/D.9FCfTt5VgDe3uwOM38yrfQC4kXG6B/OnhQwkBV/uGu",
+      "verification_code_expiry": null,
+      "name": null,
+      "bio": null,
+      "profile_picture": null
+    }
   },
   "change_password": {
-    "results": "Event loop is closed"
+    "results": {
+      "message": "Password changed successfully"
+    }
   },
   "update_profile": {
-    "results": "Event loop is closed"
+    "results": {
+      "id": "763b61e9-906f-5d22-bc64-d6359bd03fa5",
+      "email": "test_4c8d38b7@example.com",
+      "is_active": true,
+      "is_superuser": false,
+      "created_at": "2024-09-27T18:10:40.666080Z",
+      "updated_at": "2024-09-27T18:10:41.536066Z",
+      "is_verified": true,
+      "collection_ids": [],
+      "hashed_password": null,
+      "verification_code_expiry": null,
+      "name": "John Doe",
+      "bio": "R2R enthusiast",
+      "profile_picture": null
+    }
   },
   "refresh_token": {
-    "results": "Event loop is closed"
+    "results": {
+      "access_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzRjOGQzOGI3QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI3NDY0MjQxLjU1MjMwNywidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.jphB-DO_Ny2sm_AEI05kvrGkcJrI7rL_OX-JBdZ2kUs",
+        "token_type": "access"
+      },
+      "refresh_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzRjOGQzOGI3QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI4MDY1NDQxLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.QgucJVlZsP2MTVqvUrOma6wv-V2fmKq9FkVleKsVvMM",
+        "token_type": "refresh"
+      }
+    }
   },
   "superuser_test": {
-    "results": "Event loop is closed"
+    "results": [
+      {
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "email": "admin@example.com",
+        "is_superuser": true,
+        "is_active": true,
+        "is_verified": true,
+        "created_at": "2024-09-27T18:10:22.934012Z",
+        "updated_at": "2024-09-27T18:10:22.934012Z",
+        "collection_ids": [],
+        "num_files": 0,
+        "total_size_in_bytes": 0,
+        "document_ids": []
+      },
+      {
+        "user_id": "763b61e9-906f-5d22-bc64-d6359bd03fa5",
+        "email": "test_4c8d38b7@example.com",
+        "is_superuser": false,
+        "is_active": true,
+        "is_verified": true,
+        "created_at": "2024-09-27T18:10:40.666080Z",
+        "updated_at": "2024-09-27T18:10:41.536066Z",
+        "collection_ids": [],
+        "num_files": 0,
+        "total_size_in_bytes": 0,
+        "document_ids": []
+      }
+    ],
+    "total_entries": 2
   },
   "logout": {
-    "results": "Event loop is closed"
+    "results": {
+      "message": "Logged out successfully"
+    }
   },
   "delete_account": {
-    "results": "Event loop is closed"
+    "results": {
+      "message": "User account dd9da79c-d3c2-56d5-b26e-598db8c124c0 deleted successfully."
+    }
   }
 }

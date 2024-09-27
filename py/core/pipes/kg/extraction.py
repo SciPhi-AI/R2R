@@ -157,8 +157,7 @@ class KGTriplesExtractionPipe(
                                     str(extraction.id)
                                     for extraction in extractions
                                 ],
-                                attributes={
-                                },
+                                attributes={},
                             )
                         )
 
