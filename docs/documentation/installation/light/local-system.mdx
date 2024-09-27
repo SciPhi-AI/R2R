@@ -11,13 +11,17 @@ Before starting, ensure you have the following installed and/or available in the
 - Git
 - Postgres + pgvector
 
-## Install the R2R CLI & Python SDK
+## Install the R2R CLI and extra dependencies
 
-First, install the R2R CLI and Python SDK:
+First, install the R2R CLI with the additional `light` dependencies:
 
 ```bash
-pip install r2r
+pip install 'r2r[core,ingestion-bundle]'
 ```
+
+The `core` and `ingestion-bundle` dependencies, combined with a Postgres database, provide the necessary components to deploy a user-facing R2R application into production.
+
+If you need advanced features like orchestration or parsing with `Unstructured.io` then refer to the <a href="/documentation/installation/core/docker"> full installation </a>.
 
 ## Environment Setup
 
@@ -45,10 +49,25 @@ R2R requires connections to various services. Set up the following environment v
       export POSTGRES_PROJECT_NAME=$YOUR_PROJECT_NAME # see note below
     ```
     <Note>
-    The `POSTGRES_PROJECT_NAME` environment variable defines the collection within your Postgres database where R2R related tables reside. If the specified collection does not exist then it will be created by R2R during initialization.
+    The `POSTGRES_PROJECT_NAME` environment variable defines the tables within your Postgres database where the selected R2R project resides. If the specified tables do not exist then they will be created by R2R during initialization.
     </Note>
   </Accordion>
 </AccordionGroup>
+
+
+## Running R2R
+
+After setting up your environment, you can start R2R using the following command:
+
+```bash
+r2r serve
+```
+
+For local LLM usage:
+
+```bash
+r2r serve --config-name=light_local_llm
+```
 
 ## Python Development Mode
 
@@ -66,19 +85,10 @@ For those looking to develop R2R locally:
 3. Setup environment:
    Follow the steps listed in the Environment Setup section above. Additionally, you may introduce a local .env file to make development easier, and you can customize your local `r2r.toml` to suit your specific needs.
 
-## Running R2R
-
-After setting up your environment, you can start R2R using the following command:
-
-```bash
-r2r serve --config-name=light
-```
-
-For local LLM usage:
-
-```bash
-r2r serve --config-name=light_local_llm
-```
+4. Start your server:
+  ```bash
+  poetry run r2r serve
+  ```
 
 ## Next Steps
 

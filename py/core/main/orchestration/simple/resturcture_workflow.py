@@ -5,14 +5,14 @@ import uuid
 
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import R2RDocumentProcessingError
-from core.base.abstractions import RestructureStatus
+from core.base.abstractions import KGCreationStatus
 
-from ...services import RestructureService
+from ...services import KGService
 
 logger = logging.getLogger(__name__)
 
 
-def simple_restructure_factory(service: RestructureService):
+def simple_restructure_factory(service: KGService):
     async def kg_extract_and_store(input_data):
         document_id = uuid.UUID(input_data["document_id"])
         extraction_merge_count = input_data["extraction_merge_count"]
@@ -29,7 +29,7 @@ def simple_restructure_factory(service: RestructureService):
         try:
             # Set restructure status to 'processing'
             document_overview.restructuring_status = (
-                RestructureStatus.PROCESSING
+                KGCreationStatus.PROCESSING
             )
             await service.providers.database.relational.upsert_documents_overview(
                 document_overview
@@ -49,14 +49,14 @@ def simple_restructure_factory(service: RestructureService):
             # Set restructure status to 'success' if completed successfully
             if len(errors) == 0:
                 document_overview.restructuring_status = (
-                    RestructureStatus.SUCCESS
+                    KGCreationStatus.SUCCESS
                 )
                 await service.providers.database.relational.upsert_documents_overview(
                     document_overview
                 )
             else:
                 document_overview.restructuring_status = (
-                    RestructureStatus.FAILED
+                    KGCreationStatus.FAILED
                 )
                 await service.providers.database.relational.upsert_documents_overview(
                     document_overview
@@ -68,7 +68,7 @@ def simple_restructure_factory(service: RestructureService):
 
         except Exception as e:
             # Set restructure status to 'failure' if an error occurred
-            document_overview.restructuring_status = RestructureStatus.FAILED
+            document_overview.restructuring_status = KGCreationStatus.FAILED
             await service.providers.database.relational.upsert_documents_overview(
                 document_overview
             )
@@ -106,20 +106,20 @@ def simple_restructure_factory(service: RestructureService):
         for document_overview in documents_overviews:
             restructuring_status = document_overview.restructuring_status
             if restructuring_status in [
-                RestructureStatus.PENDING,
-                RestructureStatus.FAILED,
-                RestructureStatus.ENRICHMENT_FAILURE,
+                KGCreationStatus.PENDING,
+                KGCreationStatus.FAILED,
+                KGCreationStatus.ENRICHMENT_FAILURE,
             ]:
                 filtered_document_ids.append(document_overview.id)
-            elif restructuring_status == RestructureStatus.SUCCESS:
+            elif restructuring_status == KGCreationStatus.SUCCESS:
                 logger.warning(
                     f"Graph already created for document ID: {document_overview.id}"
                 )
-            elif restructuring_status == RestructureStatus.PROCESSING:
+            elif restructuring_status == KGCreationStatus.PROCESSING:
                 logger.warning(
                     f"Graph creation is already in progress for document ID: {document_overview.id}"
                 )
-            elif restructuring_status == RestructureStatus.ENRICHED:
+            elif restructuring_status == KGCreationStatus.ENRICHED:
                 logger.warning(
                     f"Graph is already enriched for document ID: {document_overview.id}"
                 )
@@ -176,7 +176,7 @@ def simple_restructure_factory(service: RestructureService):
         if not force_enrichment:
             if any(
                 document_overview.restructuring_status
-                == RestructureStatus.PROCESSING
+                == KGCreationStatus.PROCESSING
                 for document_overview in documents_overview
             ):
                 logger.error(
@@ -186,7 +186,7 @@ def simple_restructure_factory(service: RestructureService):
 
             if any(
                 document_overview.restructuring_status
-                == RestructureStatus.ENRICHING
+                == KGCreationStatus.ENRICHING
                 for document_overview in documents_overview
             ):
                 logger.error(
@@ -196,11 +196,11 @@ def simple_restructure_factory(service: RestructureService):
 
         for document_overview in documents_overview:
             if document_overview.restructuring_status in [
-                RestructureStatus.SUCCESS,
-                RestructureStatus.ENRICHMENT_FAILURE,
+                KGCreationStatus.SUCCESS,
+                KGCreationStatus.ENRICHMENT_FAILURE,
             ]:
                 document_overview.restructuring_status = (
-                    RestructureStatus.ENRICHING
+                    KGCreationStatus.ENRICHING
                 )
 
         await service.providers.database.relational.upsert_documents_overview(
@@ -246,10 +246,10 @@ def simple_restructure_factory(service: RestructureService):
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status
-                    == RestructureStatus.ENRICHING
+                    == KGCreationStatus.ENRICHING
                 ):
                     document_overview.restructuring_status = (
-                        RestructureStatus.ENRICHMENT_FAILURE
+                        KGCreationStatus.ENRICHMENT_FAILURE
                     )
                     await service.providers.database.relational.upsert_documents_overview(
                         document_overview
@@ -267,10 +267,10 @@ def simple_restructure_factory(service: RestructureService):
             for document_overview in documents_overview:
                 if (
                     document_overview.restructuring_status
-                    == RestructureStatus.ENRICHING
+                    == KGCreationStatus.ENRICHING
                 ):
                     document_overview.restructuring_status = (
-                        RestructureStatus.ENRICHED
+                        KGCreationStatus.ENRICHED
                     )
 
             await service.providers.database.relational.upsert_documents_overview(

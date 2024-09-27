@@ -44,7 +44,9 @@ class PostgresKGProvider(KGProvider):
         return f"{base_name}_kg"
 
     async def initialize(self):
-        logger.info(f"Initializing PostgresKGProvider for project {self.db_provider.project_name}")
+        logger.info(
+            f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
+        )
         await self.create_tables(project_name=self.db_provider.project_name)
 
     async def execute_query(
@@ -191,23 +193,24 @@ class PostgresKGProvider(KGProvider):
 
         result = await self.execute_query(query)
 
-    async def _add_objects(self, objects: list[Any], project_name: str, table_name: str) -> asyncpg.Record:
+    async def _add_objects(
+        self, objects: list[Any], project_name: str, table_name: str
+    ) -> asyncpg.Record:
         """
         Upsert objects into the specified table.
         """
         # Dynamically create the column names and placeholders
         columns = ", ".join(objects[0].__dict__.keys())
-        placeholders = ", ".join(f"${i+1}" for i in range(len(objects[0].__dict__)))
-        
+        placeholders = ", ".join(
+            f"${i+1}" for i in range(len(objects[0].__dict__))
+        )
+
         QUERY = f"""
             INSERT INTO {project_name}.{table_name} ({columns})
             VALUES ({placeholders})
         """
-        
-        params = [
-            tuple(obj.__dict__.values())
-            for obj in objects
-        ]
+
+        params = [tuple(obj.__dict__.values()) for obj in objects]
         return await self.execute_many(QUERY, params)
 
     async def add_entities(
@@ -249,28 +252,28 @@ class PostgresKGProvider(KGProvider):
         return await self._add_objects(triples, project_name, table_name)
 
     async def add_kg_extractions(
-        self, 
-        kg_extractions: list[KGExtraction], 
+        self,
+        kg_extractions: list[KGExtraction],
         project_name: str,
-        table_suffix: str = "_raw"
+        table_suffix: str = "_raw",
     ) -> Tuple[int, int]:
         """
-            Upsert entities and triples into the database. These are raw entities and triples extracted from the document fragments.
+        Upsert entities and triples into the database. These are raw entities and triples extracted from the document fragments.
 
-            Args:
-                kg_extractions: list[KGExtraction]: list of KG extractions to upsert
-                project_name: str: name of the project
-                table_suffix: str: suffix to add to the table names
+        Args:
+            kg_extractions: list[KGExtraction]: list of KG extractions to upsert
+            project_name: str: name of the project
+            table_suffix: str: suffix to add to the table names
 
-            Returns:
-                total_entities: int: total number of entities upserted
-                total_relationships: int: total number of relationships upserted
+        Returns:
+            total_entities: int: total number of entities upserted
+            total_relationships: int: total number of relationships upserted
         """
 
         total_entities, total_relationships = 0, 0
-        
+
         for extraction in kg_extractions:
-        
+
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
                 total_relationships + len(extraction.triples),
@@ -278,24 +281,28 @@ class PostgresKGProvider(KGProvider):
 
             if not extraction.entities[0].fragment_ids:
                 for i in range(len(extraction.entities)):
-                    extraction.entities[i].fragment_ids = extraction.fragment_ids
+                    extraction.entities[i].fragment_ids = (
+                        extraction.fragment_ids
+                    )
                     extraction.entities[i].document_id = extraction.document_id
 
             if not extraction.triples[0].fragment_ids:
                 for i in range(len(extraction.triples)):
-                    extraction.triples[i].fragment_ids = extraction.fragment_ids
+                    extraction.triples[i].fragment_ids = (
+                        extraction.fragment_ids
+                    )
                     extraction.triples[i].document_id = extraction.document_id
 
             await self.add_entities(
                 extraction.entities,
                 self.db_provider.project_name,
-                table_name = 'entities' + table_suffix
+                table_name="entities" + table_suffix,
             )
 
             await self.add_triples(
                 extraction.triples,
                 self.db_provider.project_name,
-                table_name = 'triples' + table_suffix
+                table_name="triples" + table_suffix,
             )
 
         return (total_entities, total_relationships)
@@ -603,7 +610,9 @@ class PostgresKGProvider(KGProvider):
         # somehow get the rds from the postgres db.
         pass
 
-    async def get_all_triples(self, ):
+    async def get_all_triples(
+        self,
+    ):
         pass
 
     async def get_entities(self, project_name: str, collection_id: str):
@@ -624,8 +633,9 @@ class PostgresKGProvider(KGProvider):
     async def upsert_triples(self):
         pass
 
-
-    async def get_entity_count(self, project_name: str, document_id: str) -> int:
+    async def get_entity_count(
+        self, project_name: str, document_id: str
+    ) -> int:
         QUERY = f"""
             SELECT COUNT(*) FROM {project_name}.entities_raw WHERE document_id = $1
         """

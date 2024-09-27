@@ -62,6 +62,7 @@ class VectorSearchPipe(SearchPipe):
             message,
             purpose=EmbeddingPurpose.QUERY,
         )
+
         search_results = (
             self.database_provider.vector.hybrid_search(
                 query_vector=query_vector,

@@ -13,15 +13,13 @@ from core.base.api.models import (
 )
 from core.base.providers import OrchestrationProvider, Workflow
 
-
-from ...main.hatchet import r2r_hatchet
-from ..hatchet import (
-    CreateGraphWorkflow,
-    EnrichGraphWorkflow,
-    KGCommunitySummaryWorkflow,
-    KgExtractDescribeEmbedWorkflow,
-)
-from ..services.kg_service import KgService
+# from ..hatchet import (
+#     CreateGraphWorkflow,
+#     EnrichGraphWorkflow,
+#     KGCommunitySummaryWorkflow,
+#     KgExtractDescribeEmbedWorkflow,
+# )
+from ..services.kg_service import KGService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -30,15 +28,14 @@ logger = logging.getLogger(__name__)
 class KGRouter(BaseRouter):
     def __init__(
         self,
-
-        service: KgService,
+        service: KGService,
         run_type: RunType = RunType.KG,
         orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         if not orchestration_provider:
             raise ValueError("KGRouter requires an orchestration provider.")
         super().__init__(service, run_type, orchestration_provider)
-        self.service: KgService = service
+        self.service: KGService = service
 
     def _load_openapi_extras(self):
         yaml_path = Path(__file__).parent / "data" / "kg_router_openapi.yml"
@@ -54,7 +51,6 @@ class KGRouter(BaseRouter):
                 "create-graph": "Graph creation task queued successfully.",
                 "enrich-graph": "Graph enrichment task queued successfully.",
             },
-
         )
 
     def _setup_routes(self):
@@ -101,7 +97,6 @@ class KGRouter(BaseRouter):
 
             return self.orchestration_provider.run_workflow(
                 "create-graph", {"request": workflow_input}, {}
-
             )
 
         @self.router.post(

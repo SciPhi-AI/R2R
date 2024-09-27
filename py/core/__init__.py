@@ -195,7 +195,7 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KgService",
+    "KGService",
     ## PARSERS
     # Media parsers
     "AudioParser",
@@ -251,7 +251,7 @@ __all__ = [
     # Ingestion
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
-    "ChunkingMethod",
+    "ChunkingStrategy",
     # Prompts
     "R2RPromptProvider",
 ]

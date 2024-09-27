@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Global scheduler
 scheduler = AsyncIOScheduler()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -59,19 +60,20 @@ async def create_r2r_app(
     builder = R2RBuilder(config=config)
     return await builder.build()
 
-logging.basicConfig(level=logging.INFO)	
 
-config_name = os.getenv("CONFIG_NAME", None)	
-config_path = os.getenv("CONFIG_PATH", None)	
-if not config_path and not config_name:	
-    config_name = "default"	
-host = os.getenv("HOST", "0.0.0.0")	
-port = int(os.getenv("PORT", "7272"))	
+logging.basicConfig(level=logging.INFO)
 
-logger.info(	
-    f"Environment CONFIG_NAME: {'None' if config_name is None else config_name}"	
-)	
-logger.info(	
+config_name = os.getenv("CONFIG_NAME", None)
+config_path = os.getenv("CONFIG_PATH", None)
+if not config_path and not config_name:
+    config_name = "default"
+host = os.getenv("HOST", "0.0.0.0")
+port = int(os.getenv("PORT", "7272"))
+
+logger.info(
+    f"Environment CONFIG_NAME: {'None' if config_name is None else config_name}"
+)
+logger.info(
     f"Environment CONFIG_PATH: {'None' if config_path is None else config_path}"
 )
 

@@ -115,7 +115,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             raise ValueError(
                 f"Community {community_id} has no entities or triples."
             )
-        
+
         for attempt in range(3):
 
             description = (
@@ -160,8 +160,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             rating=rating,
             rating_explanation=rating_explanation,
             findings=findings,
-            embedding= await self.embedding_provider.async_get_embedding(
-                "Summary:\n" + summary + "\n\nFindings:\n" + "\n".join(findings)
+            embedding=await self.embedding_provider.async_get_embedding(
+                "Summary:\n"
+                + summary
+                + "\n\nFindings:\n"
+                + "\n".join(findings)
             ),
         )
 

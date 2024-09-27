@@ -1,12 +1,12 @@
 # type: ignore
 import logging
 import time
-from typing import Any, AsyncGenerator, Union
+from typing import Any, AsyncGenerator, Optional, Union
 
 from core import parsers
 from core.base import (
     AsyncParser,
-    ChunkingMethod,
+    ChunkingStrategy,
     Document,
     DocumentExtraction,
     DocumentType,
@@ -23,11 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 class R2RIngestionConfig(IngestionConfig):
-    provider: str = "r2r"
     chunk_size: int = 1024
     chunk_overlap: int = 512
-    chunking_method: ChunkingMethod = ChunkingMethod.RECURSIVE
+    chunking_strategy: ChunkingStrategy = ChunkingStrategy.RECURSIVE
     extra_fields: dict[str, Any] = {}
+    separator: Optional[str] = None
 
 
 class R2RIngestionProvider(IngestionProvider):
@@ -62,7 +62,7 @@ class R2RIngestionProvider(IngestionProvider):
         super().__init__(config)
         self.config: R2RIngestionConfig = config  # for type hinting
         self.parsers: dict[DocumentType, AsyncParser] = {}
-        self.text_splitter = self._initialize_text_splitter()
+        self.text_splitter = self._build_text_splitter()
         self._initialize_parsers()
 
         logger.info(
@@ -79,58 +79,79 @@ class R2RIngestionProvider(IngestionProvider):
                     # will choose the first parser in the list
                     self.parsers[doc_type] = parser_info()
 
-    def _initialize_text_splitter(self) -> TextSplitter:
+    def _build_text_splitter(
+        self, ingestion_config_override: Optional[dict] = None
+    ) -> TextSplitter:
         logger.info(
-            f"Initializing text splitter with method: {self.config.chunking_method}"
+            f"Initializing text splitter with method: {self.config.chunking_strategy}"
         )  # Debug log
-        print("self.config.chunk_size=  ", self.config.chunk_size)
-        if self.config.chunking_method == ChunkingMethod.RECURSIVE:
+
+        if not ingestion_config_override:
+            ingestion_config_override = {}
+
+        chunking_strategy = (
+            ingestion_config_override.get("chunking_strategy", None)
+            or self.config.chunking_strategy
+        )
+
+        chunk_size = (
+            ingestion_config_override.get("chunk_size", None)
+            or self.config.chunk_size
+        )
+        chunk_overlap = (
+            ingestion_config_override.get("chunk_overlap", None)
+            or self.config.chunk_overlap
+        )
+
+        if chunking_strategy == ChunkingStrategy.RECURSIVE:
             return RecursiveCharacterTextSplitter(
-                chunk_size=self.config.chunk_size,
-                chunk_overlap=self.config.chunk_overlap,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
             )
-        elif self.config.chunking_method == ChunkingMethod.CHARACTER:
+        elif chunking_strategy == ChunkingStrategy.CHARACTER:
             from core.base.utils.splitter.text import CharacterTextSplitter
 
-            separator = CharacterTextSplitter.DEFAULT_SEPARATOR
-            if self.config.extra_fields:
-                separator = self.config.extra_fields.get(
-                    "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
-                )
+            separator = (
+                ingestion_config_override.get("separator", None)
+                or self.config.separator
+                or CharacterTextSplitter.DEFAULT_SEPARATOR
+            )
+
             return CharacterTextSplitter(
-                chunk_size=self.config.chunk_size,
-                chunk_overlap=self.config.chunk_overlap,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
                 separator=separator,
                 keep_separator=False,
                 strip_whitespace=True,
             )
-        elif self.config.chunking_method == ChunkingMethod.BASIC:
+        elif chunking_strategy == ChunkingStrategy.BASIC:
             raise NotImplementedError(
                 "Basic chunking method not implemented. Please use Recursive."
             )
-        elif self.config.chunking_method == ChunkingMethod.BY_TITLE:
+        elif chunking_strategy == ChunkingStrategy.BY_TITLE:
             raise NotImplementedError("By title method not implemented")
         else:
-            raise ValueError(
-                f"Unsupported method type: {self.config.chunking_method}"
-            )
+            raise ValueError(f"Unsupported method type: {chunking_strategy}")
 
     def validate_config(self) -> bool:
         return self.config.chunk_size > 0 and self.config.chunk_overlap >= 0
 
-    def update_config(self, config_override: dict):
-        if self.config != config_override:
-            self.config = config_override
-            self.text_splitter = self._initialize_text_splitter()
-
     def chunk(
-        self, parsed_document: Union[str, DocumentExtraction]
+        self,
+        parsed_document: Union[str, DocumentExtraction],
+        ingestion_config_override: dict,
     ) -> AsyncGenerator[Any, None]:
+
+        text_spliiter = self.text_splitter
+        if ingestion_config_override:
+            text_spliiter = self._build_text_splitter(
+                ingestion_config_override
+            )
         if isinstance(parsed_document, DocumentExtraction):
             parsed_document = parsed_document.data
 
         if isinstance(parsed_document, str):
-            chunks = self.text_splitter.create_documents([parsed_document])
+            chunks = text_spliiter.create_documents([parsed_document])
         else:
             # Assuming parsed_document is already a list of text chunks
             chunks = parsed_document
@@ -141,7 +162,10 @@ class R2RIngestionProvider(IngestionProvider):
             )
 
     async def parse(  # type: ignore
-        self, file_content: bytes, document: Document
+        self,
+        file_content: bytes,
+        document: Document,
+        ingestion_config_override: dict,
     ) -> AsyncGenerator[
         Union[DocumentExtraction, R2RDocumentProcessingError], None
     ]:
@@ -158,7 +182,7 @@ class R2RIngestionProvider(IngestionProvider):
                 contents += text + "\n"
 
             iteration = 0
-            chunks = self.chunk(contents)
+            chunks = self.chunk(contents, ingestion_config_override)
             for chunk in chunks:
                 extraction = DocumentExtraction(
                     id=generate_id_from_label(f"{document.id}-{iteration}"),

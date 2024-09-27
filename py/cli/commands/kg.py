@@ -39,6 +39,7 @@ def create_graph(
 
     click.echo(json.dumps(response, indent=2))
 
+
 @cli.command()
 @click.option(
     "--project-name",
@@ -63,12 +64,16 @@ def create_graph(
     help="Perform leiden clustering on the graph to create communities.",
 )
 @pass_context
-def enrich_graph(ctx, project_name, collection_id, force_enrichment, skip_clustering):
+def enrich_graph(
+    ctx, project_name, collection_id, force_enrichment, skip_clustering
+):
     """
     Enrich an existing graph.
     """
     client = ctx.obj
     with timer():
-        response = client.enrich_graph(project_name, collection_id, force_enrichment, skip_clustering)
+        response = client.enrich_graph(
+            project_name, collection_id, force_enrichment, skip_clustering
+        )
 
     click.echo(json.dumps(response, indent=2))

@@ -1,4 +1,4 @@
-[agent]
+py/r2r_core.toml[agent]
 system_instruction_name = "rag_agent"
 tool_names = ["search"]
 
@@ -52,9 +52,6 @@ batch_size = 256
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
     generation_config = { model = "ollama/llama3.1" }
-
-[orchestration]
-provider = "hatchet"
 
 [parsing]
 provider = "unstructured_local"
