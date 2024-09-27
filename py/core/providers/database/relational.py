@@ -21,7 +21,12 @@ class PostgresRelationalDBProvider(
     UserMixin,
 ):
     def __init__(
-        self, config, connection_string, crypto_provider, project_name
+        self,
+        config,
+        connection_string,
+        crypto_provider,
+        project_name,
+        postgres_configuration_settings,
     ):
         super().__init__(config)
         self.config = config
@@ -29,10 +34,14 @@ class PostgresRelationalDBProvider(
         self.crypto_provider = crypto_provider
         self.project_name = project_name
         self.pool = None
+        self.postgres_configuration_settings = postgres_configuration_settings
 
     async def initialize(self):
         try:
-            self.pool = await asyncpg.create_pool(self.connection_string)
+            self.pool = await asyncpg.create_pool(
+                self.connection_string,
+                max_size=self.postgres_configuration_settings.max_connections,
+            )
             logger.info(
                 "Successfully connected to Postgres database and created connection pool."
             )
