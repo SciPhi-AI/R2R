@@ -91,11 +91,11 @@
               ]
             },
             {
-              "group": "Core",
-              "icon": "server",
+              "group": "Full",
+              "icon": "gem",
               "pages": [
-                "documentation/installation/core/docker",
-                "documentation/installation/core/local-system"
+                "documentation/installation/full/docker",
+                "documentation/installation/full/local-system"
               ]
             }
 

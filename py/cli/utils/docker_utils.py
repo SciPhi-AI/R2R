@@ -111,9 +111,6 @@ async def run_local_serve(
 def run_docker_serve(
     host: str,
     port: int,
-    exclude_neo4j: bool,
-    exclude_ollama: bool,
-    exclude_postgres: bool,
     exclude_hatchet: bool,
     project_name: str,
     image: str,
@@ -121,7 +118,7 @@ def run_docker_serve(
     config_path: Optional[str] = None,
 ):
     check_docker_compose_version()
-    check_set_docker_env_vars(exclude_neo4j, exclude_ollama, exclude_postgres)
+    check_set_docker_env_vars()
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -139,9 +136,6 @@ def run_docker_serve(
         compose_files,
         host,
         port,
-        exclude_neo4j,
-        exclude_ollama,
-        exclude_postgres,
         exclude_hatchet,
         project_name,
         image,
@@ -234,35 +228,18 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             sys.exit(1)
 
 
-def check_set_docker_env_vars(
-    exclude_neo4j=False, exclude_ollama=True, exclude_postgres=False
-):
+def check_set_docker_env_vars():
     env_vars = []
-    if not exclude_neo4j:
-        neo4j_vars = [
-            "NEO4J_USER",
-            "NEO4J_PASSWORD",
-            "NEO4J_URL",
-            "NEO4J_DATABASE",
-        ]
-        env_vars.extend(neo4j_vars)
 
-    if not exclude_postgres:
-        postgres_vars = [
-            "POSTGRES_HOST",
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_PORT",
-            "POSTGRES_DBNAME",
-            # "POSTGRES_PROJECT_NAME", TODO - uncomment in next release
-        ]
-        env_vars.extend(postgres_vars)
-
-    if not exclude_ollama:
-        ollama_vars = [
-            "OLLAMA_API_BASE",
-        ]
-        env_vars.extend(ollama_vars)
+    postgres_vars = [
+        "POSTGRES_HOST",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_PORT",
+        "POSTGRES_DBNAME",
+        # "POSTGRES_PROJECT_NAME", TODO - uncomment in next release
+    ]
+    env_vars.extend(postgres_vars)
 
     is_test = (
         "pytest" in sys.modules
@@ -301,10 +278,8 @@ def get_compose_files():
     )
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),
-        "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
-        "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
-        "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
-        "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
+        # "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
+        # "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -336,9 +311,6 @@ def build_docker_command(
     compose_files,
     host,
     port,
-    exclude_neo4j,
-    exclude_ollama,
-    exclude_postgres,
     exclude_hatchet,
     project_name,
     image,
@@ -346,12 +318,6 @@ def build_docker_command(
     config_path,
 ):
     base_command = f"docker compose -f {compose_files['base']}"
-    if not exclude_neo4j:
-        base_command += f" -f {compose_files['neo4j']}"
-    if not exclude_ollama:
-        base_command += f" -f {compose_files['ollama']}"
-    if not exclude_postgres:
-        base_command += f" -f {compose_files['postgres']}"
     if not exclude_hatchet:
         base_command += f" -f {compose_files['hatchet']}"
 

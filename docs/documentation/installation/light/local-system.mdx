@@ -11,13 +11,17 @@ Before starting, ensure you have the following installed and/or available in the
 - Git
 - Postgres + pgvector
 
-## Install the R2R CLI & Python SDK
+## Install the R2R CLI and extra dependencies
 
-First, install the R2R with the additional `light` dependencies:
+First, install the R2R CLI with the additional `light` dependencies:
 
 ```bash
-pip install r2r[light]
+pip install 'r2r[core,ingestion-bundle]'
 ```
+
+The `core` and `ingestion-bundle` dependencies, combined with a Postgres database, provide the necessary components to deploy a user-facing R2R application into production.
+
+If you need advanced features like orchestration or parsing with `Unstructured.io` then refer to the <a href="/documentation/installation/core/docker"> full installation </a>.
 
 ## Environment Setup
 

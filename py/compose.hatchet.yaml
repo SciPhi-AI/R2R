@@ -23,7 +23,7 @@ services:
     networks:
       - r2r-network
   hatchet-create-db:
-    image: postgres:latest
+    image: pgvector/pgvector:pg16
     command: >
       sh -c "
         set -e
