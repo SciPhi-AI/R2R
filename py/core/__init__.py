@@ -195,7 +195,7 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KgService",
+    "KGService",
     ## PARSERS
     # Media parsers
     "AudioParser",

@@ -7,9 +7,9 @@ from hatchet_sdk import Context
 
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import OrchestrationProvider, R2RDocumentProcessingError
-from core.base.abstractions import RestructureStatus
+from core.base.abstractions import KGCreationStatus
 
-from ...services import RestructureService
+from ...services import KGService
 
 logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
@@ -19,13 +19,13 @@ if TYPE_CHECKING:
 
 
 def hatchet_restructure_factory(
-    orchestration_provider: OrchestrationProvider, service: RestructureService
+    orchestration_provider: OrchestrationProvider, service: KGService
 ) -> list["Hatchet.Workflow"]:
     @orchestration_provider.workflow(
         name="kg-extract-and-store", timeout="60m"
     )
     class KgExtractAndStoreWorkflow:
-        def __init__(self, restructure_service: RestructureService):
+        def __init__(self, restructure_service: KGService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=3, timeout="60m")
@@ -48,7 +48,7 @@ def hatchet_restructure_factory(
             try:
                 # Set restructure status to 'processing'
                 document_overview.restructuring_status = (
-                    RestructureStatus.PROCESSING
+                    KGCreationStatus.PROCESSING
                 )
 
                 await self.restructure_service.providers.database.relational.upsert_documents_overview(
@@ -68,14 +68,14 @@ def hatchet_restructure_factory(
                 # Set restructure status to 'success' if completed successfully
                 if len(errors) == 0:
                     document_overview.restructuring_status = (
-                        RestructureStatus.SUCCESS
+                        KGCreationStatus.SUCCESS
                     )
                     await self.restructure_service.providers.database.relational.upsert_documents_overview(
                         document_overview
                     )
                 else:
                     document_overview.restructuring_status = (
-                        RestructureStatus.FAILED
+                        KGCreationStatus.FAILED
                     )
                     await self.restructure_service.providers.database.relational.upsert_documents_overview(
                         document_overview
@@ -88,7 +88,7 @@ def hatchet_restructure_factory(
             except Exception as e:
                 # Set restructure status to 'failure' if an error occurred
                 document_overview.restructuring_status = (
-                    RestructureStatus.FAILED
+                    KGCreationStatus.FAILED
                 )
                 await self.restructure_service.providers.database.relational.upsert_documents_overview(
                     document_overview
@@ -102,7 +102,7 @@ def hatchet_restructure_factory(
 
     @orchestration_provider.workflow(name="create-graph", timeout="60m")
     class CreateGraphWorkflow:
-        def __init__(self, restructure_service: RestructureService):
+        def __init__(self, restructure_service: KGService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=1)
@@ -136,20 +136,20 @@ def hatchet_restructure_factory(
             for document_overview in documents_overviews:
                 restructuring_status = document_overview.restructuring_status
                 if restructuring_status in [
-                    RestructureStatus.PENDING,
-                    RestructureStatus.FAILED,
-                    RestructureStatus.ENRICHMENT_FAILURE,
+                    KGCreationStatus.PENDING,
+                    KGCreationStatus.FAILED,
+                    KGCreationStatus.ENRICHMENT_FAILURE,
                 ]:
                     filtered_document_ids.append(document_overview.id)
-                elif restructuring_status == RestructureStatus.SUCCESS:
+                elif restructuring_status == KGCreationStatus.SUCCESS:
                     logger.warning(
                         f"Graph already created for document ID: {document_overview.id}"
                     )
-                elif restructuring_status == RestructureStatus.PROCESSING:
+                elif restructuring_status == KGCreationStatus.PROCESSING:
                     logger.warning(
                         f"Graph creation is already in progress for document ID: {document_overview.id}"
                     )
-                elif restructuring_status == RestructureStatus.ENRICHED:
+                elif restructuring_status == KGCreationStatus.ENRICHED:
                     logger.warning(
                         f"Graph is already enriched for document ID: {document_overview.id}"
                     )
@@ -194,7 +194,7 @@ def hatchet_restructure_factory(
 
     @orchestration_provider.workflow(name="enrich-graph", timeout="60m")
     class EnrichGraphWorkflow:
-        def __init__(self, restructure_service: RestructureService):
+        def __init__(self, restructure_service: KGService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=3, timeout="60m")
@@ -231,7 +231,7 @@ def hatchet_restructure_factory(
             if not force_enrichment:
                 if any(
                     document_overview.restructuring_status
-                    == RestructureStatus.PROCESSING
+                    == KGCreationStatus.PROCESSING
                     for document_overview in documents_overview
                 ):
                     logger.error(
@@ -241,7 +241,7 @@ def hatchet_restructure_factory(
 
                 if any(
                     document_overview.restructuring_status
-                    == RestructureStatus.ENRICHING
+                    == KGCreationStatus.ENRICHING
                     for document_overview in documents_overview
                 ):
                     logger.error(
@@ -251,11 +251,11 @@ def hatchet_restructure_factory(
 
             for document_overview in documents_overview:
                 if document_overview.restructuring_status in [
-                    RestructureStatus.SUCCESS,
-                    RestructureStatus.ENRICHMENT_FAILURE,
+                    KGCreationStatus.SUCCESS,
+                    KGCreationStatus.ENRICHMENT_FAILURE,
                 ]:
                     document_overview.restructuring_status = (
-                        RestructureStatus.ENRICHING
+                        KGCreationStatus.ENRICHING
                     )
 
             await self.restructure_service.providers.database.relational.upsert_documents_overview(
@@ -311,10 +311,10 @@ def hatchet_restructure_factory(
                 for document_overview in documents_overview:
                     if (
                         document_overview.restructuring_status
-                        == RestructureStatus.ENRICHING
+                        == KGCreationStatus.ENRICHING
                     ):
                         document_overview.restructuring_status = (
-                            RestructureStatus.ENRICHMENT_FAILURE
+                            KGCreationStatus.ENRICHMENT_FAILURE
                         )
                         await self.restructure_service.providers.database.relational.upsert_documents_overview(
                             document_overview
@@ -332,10 +332,10 @@ def hatchet_restructure_factory(
                 for document_overview in documents_overview:
                     if (
                         document_overview.restructuring_status
-                        == RestructureStatus.ENRICHING
+                        == KGCreationStatus.ENRICHING
                     ):
                         document_overview.restructuring_status = (
-                            RestructureStatus.ENRICHED
+                            KGCreationStatus.ENRICHED
                         )
 
                 await self.restructure_service.providers.database.relational.upsert_documents_overview(
@@ -347,7 +347,7 @@ def hatchet_restructure_factory(
         name="kg-community-summary", timeout="60m"
     )
     class KGCommunitySummaryWorkflow:
-        def __init__(self, restructure_service: RestructureService):
+        def __init__(self, restructure_service: KGService):
             self.restructure_service = restructure_service
 
         @orchestration_provider.step(retries=1, timeout="60m")
