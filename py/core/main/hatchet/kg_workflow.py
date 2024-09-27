@@ -34,7 +34,9 @@ class KgExtractStoreDescribeWorkflow:
         try:
 
             await self.kg_service.providers.database.relational.set_workflow_status(
-                id=document_id, status_type="kg_creation", status=KGCreationStatus.PROCESSING
+                id=document_id,
+                status_type="kg_creation",
+                status=KGCreationStatus.PROCESSING,
             )
 
             errors = await self.kg_service.kg_extract_and_store(
@@ -50,15 +52,21 @@ class KgExtractStoreDescribeWorkflow:
 
             if len(errors) == 0:
                 await self.kg_service.providers.database.relational.set_workflow_status(
-                    id=document_id, status_type="kg_creation", status=KGCreationStatus.SUCCESS
+                    id=document_id,
+                    status_type="kg_creation",
+                    status=KGCreationStatus.SUCCESS,
                 )
             else:
-                raise ValueError(f"Error in kg_extract_and_store: No Triples Extracted")
+                raise ValueError(
+                    f"Error in kg_extract_and_store: No Triples Extracted"
+                )
 
         except Exception as e:
 
             await self.kg_service.providers.database.relational.set_workflow_status(
-                id=document_id, status_type="kg_creation", status=KGCreationStatus.FAILURE
+                id=document_id,
+                status_type="kg_creation",
+                status=KGCreationStatus.FAILURE,
             )
 
             raise R2RDocumentProcessingError(
@@ -67,7 +75,7 @@ class KgExtractStoreDescribeWorkflow:
             ) from e
 
         return {"result": None}
-    
+
     # TODO: parallelize embedding and storing
 
 
@@ -84,13 +92,18 @@ class CreateGraphWorkflow:
             **json.loads(input_data["kg_creation_settings"])
         )
 
-        document_status_filter = [KGCreationStatus.PENDING, KGCreationStatus.FAILURE]
+        document_status_filter = [
+            KGCreationStatus.PENDING,
+            KGCreationStatus.FAILURE,
+        ]
         if kg_creation_settings.force_kg_creation:
-            document_status_filter += [KGCreationStatus.SUCCESS, KGCreationStatus.PROCESSING]
+            document_status_filter += [
+                KGCreationStatus.SUCCESS,
+                KGCreationStatus.PROCESSING,
+            ]
 
         document_ids = await self.kg_service.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_creation",
-            status=document_status_filter
+            status_type="kg_creation", status=document_status_filter
         )
 
         results = []
@@ -125,7 +138,10 @@ class CreateGraphWorkflow:
 
         logger.info(f"Ran {len(results)} workflows for graph creation")
         results = await asyncio.gather(*results)
-        return {"result": f"successfully ran graph creation workflows for {len(results)} documents"}
+        return {
+            "result": f"successfully ran graph creation workflows for {len(results)} documents"
+        }
+
 
 @r2r_hatchet.workflow(name="enrich-graph", timeout="60m")
 class EnrichGraphWorkflow:
@@ -143,7 +159,6 @@ class EnrichGraphWorkflow:
             **json.loads(input_data["kg_enrichment_settings"])
         )
 
-
         # skip_clustering = input_data["skip_clustering"]
         # force_enrichment = input_data["force_enrichment"]
         # leiden_params = input_data["leiden_params"]
@@ -154,15 +169,24 @@ class EnrichGraphWorkflow:
         # todo: check if documets are already being clustered
         # check if any documents are still being restructured, need to explicitly set the force_clustering flag to true to run clustering if documents are still being restructured
 
-        collection_status = await self.kg_service.providers.database.relational.get_workflow_status(id=collection_id, status_type="kg_enrichment")
+        collection_status = await self.kg_service.providers.database.relational.get_workflow_status(
+            id=collection_id, status_type="kg_enrichment"
+        )
 
-        if collection_status in [KGEnrichmentStatus.PENDING, KGEnrichmentStatus.PROCESSING]:
-            logger.info(f"Collection {collection_id} is still being enriched, skipping clustering")
+        if collection_status in [
+            KGEnrichmentStatus.PENDING,
+            KGEnrichmentStatus.PROCESSING,
+        ]:
+            logger.info(
+                f"Collection {collection_id} is still being enriched, skipping clustering"
+            )
             return {"result": "skipped"}
-        
+
         else:
             await self.kg_service.providers.database.relational.set_workflow_status(
-                id=collection_id, status_type="kg_enrichment", status=KGEnrichmentStatus.PROCESSING
+                id=collection_id,
+                status_type="kg_enrichment",
+                status=KGEnrichmentStatus.PROCESSING,
             )
 
         try:
@@ -174,9 +198,13 @@ class EnrichGraphWorkflow:
                 result = results[0]
                 num_communities = result["num_communities"]
                 parallel_communities = min(10, num_communities)
-                total_workflows = math.ceil(num_communities / parallel_communities)
+                total_workflows = math.ceil(
+                    num_communities / parallel_communities
+                )
                 workflows = []
-                for i, offset in enumerate(range(0, num_communities, parallel_communities)):
+                for i, offset in enumerate(
+                    range(0, num_communities, parallel_communities)
+                ):
                     workflows.append(
                         context.aio.spawn_workflow(
                             "kg-community-summary",
@@ -193,7 +221,9 @@ class EnrichGraphWorkflow:
                         )
                     )
                 results = await asyncio.gather(*workflows)
-                return {"result": f"Finished {total_workflows} community summary workflows"}
+                return {
+                    "result": f"Finished {total_workflows} community summary workflows"
+                }
             else:
                 logger.info(
                     "Skipping Leiden clustering as skip_clustering is True, also skipping community summary workflows"

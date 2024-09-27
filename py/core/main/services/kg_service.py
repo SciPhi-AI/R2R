@@ -20,6 +20,7 @@ async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
         results.append(res.json() if hasattr(res, "json") else res)
     return results
 
+
 class KGService(Service):
     def __init__(
         self,
@@ -75,7 +76,13 @@ class KGService(Service):
         return await _collect_results(result_gen)
 
     @telemetry_event("kg_node_description")
-    async def kg_node_description(self, offset: int, limit: int, max_description_input_length: int, project_name: str):
+    async def kg_node_description(
+        self,
+        offset: int,
+        limit: int,
+        max_description_input_length: int,
+        project_name: str,
+    ):
         node_extractions = await self.pipes.kg_node_description_pipe.run(
             input=self.pipes.kg_node_description_pipe.Input(
                 message={
@@ -91,7 +98,12 @@ class KGService(Service):
         return await _collect_results(node_extractions)
 
     @telemetry_event("kg_clustering")
-    async def kg_clustering(self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings, project_name: str):
+    async def kg_clustering(
+        self,
+        collection_id: UUID,
+        kg_enrichment_settings: KGEnrichmentSettings,
+        project_name: str,
+    ):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={

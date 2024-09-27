@@ -58,5 +58,6 @@ def main():
         # Silently exit without printing the traceback
         pass
 
+
 if __name__ == "__main__":
     main()

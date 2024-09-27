@@ -64,20 +64,15 @@ class KGProvider(ABC):
         """Get client."""
         pass
 
-    @abstractmethod
-    def get(self, subj: str) -> list[list[str]]:
-        """Abstract method to get triplets."""
-        pass
-
-    @abstractmethod
-    def get_rel_map(
-        self,
-        subjs: Optional[list[str]] = None,
-        depth: int = 2,
-        limit: int = 30,
-    ) -> dict[str, list[list[str]]]:
-        """Abstract method to get depth-aware rel map."""
-        pass
+    # @abstractmethod
+    # def get_rel_map(
+    #     self,
+    #     subjs: Optional[list[str]] = None,
+    #     depth: int = 2,
+    #     limit: int = 30,
+    # ) -> dict[str, list[list[str]]]:
+    #     """Abstract method to get depth-aware rel map."""
+    #     pass
 
     @abstractmethod
     def upsert_entities(self, entities: list[Entity], *args, **kwargs) -> None:

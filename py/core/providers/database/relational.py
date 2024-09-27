@@ -58,13 +58,13 @@ class PostgresRelationalDBProvider(
                     return await conn.execute(query, *params)
                 else:
                     return await conn.execute(query)
-                
+
     async def execute_many(self, query, params=None, batch_size=1000):
         async with self.get_connection() as conn:
             async with conn.transaction():
                 if params:
                     for i in range(0, len(params), batch_size):
-                        param_batch = params[i:i+batch_size]
+                        param_batch = params[i : i + batch_size]
                         await conn.executemany(query, param_batch)
                 else:
                     await conn.executemany(query)
@@ -85,7 +85,7 @@ class PostgresRelationalDBProvider(
                     return await conn.fetchrow(query, *params)
                 else:
                     return await conn.fetchrow(query)
-                
+
     # async def copy_records_to_table(self, table_name, records):
     #     async with self.get_connection() as conn:
     #         async with conn.transaction():

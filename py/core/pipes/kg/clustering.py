@@ -14,6 +14,7 @@ from core.base import (
     RunLoggingSingleton,
 )
 from shared.abstractions import KGEnrichmentSettings
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,9 +59,12 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
         """
 
-        num_communities = (
-            await self.kg_provider.perform_graph_clustering(project_name, collection_id, kg_enrichment_settings, generation_config)  # type: ignore
-        )
+        num_communities = await self.kg_provider.perform_graph_clustering(
+            project_name,
+            collection_id,
+            kg_enrichment_settings,
+            generation_config,
+        )  # type: ignore
 
         return {
             "num_communities": num_communities,
@@ -85,12 +89,14 @@ class KGClusteringPipe(AsyncPipe):
         generation_config = input.message["generation_config"]
         if not generation_config:
             raise ValueError("Generation config not provided.")
-#
-#        base_dimension = self.embedding_provider.config.base_dimension
-#        vector_index_fn = self.kg_provider.create_vector_index
-#        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
-#        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
-#        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
-#        vector_index_fn("__Community__", "summary_embedding", base_dimension)
+        #
+        #        base_dimension = self.embedding_provider.config.base_dimension
+        #        vector_index_fn = self.kg_provider.create_vector_index
+        #        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
+        #        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
+        #        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
+        #        vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
-        yield await self.cluster_kg(project_name, leiden_params, generation_config)
+        yield await self.cluster_kg(
+            project_name, leiden_params, generation_config
+        )

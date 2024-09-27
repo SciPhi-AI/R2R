@@ -99,14 +99,13 @@ class KGRouter(BaseRouter):
                         "kg_creation_settings": kg_creation_settings.json(),
                         "user": auth_user.json(),
                     }
-                }
+                },
             )
 
             return {
                 "message": f"Graph creation task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
                 "task_id": str(task_id),
             }
-
 
         @self.router.post(
             "/enrich_graph",

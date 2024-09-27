@@ -104,9 +104,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
 
         level, entities, triples = (
-            await self.kg_provider.get_community_details(  
-                project_name=project_name,
-                community_id=community_id
+            await self.kg_provider.get_community_details(
+                project_name=project_name, community_id=community_id
             )
         )
 
@@ -171,7 +170,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         Executes the KG community summary pipe: summarizing communities.
         """
-        
+
         offset = input.message["offset"]
         limit = input.message["limit"]
         generation_config = input.message["generation_config"]
@@ -179,13 +178,15 @@ class KGCommunitySummaryPipe(AsyncPipe):
         project_name = input.message["project_name"]
 
         community_summary_jobs = []
-        for community_id in range(offset, limit):   
-            community_summary_jobs.append(self.process_community(
-                project_name=project_name,
-                community_id=community_id,
-                max_summary_input_length=max_summary_input_length,
-                generation_config=generation_config,
-            ))
+        for community_id in range(offset, limit):
+            community_summary_jobs.append(
+                self.process_community(
+                    project_name=project_name,
+                    community_id=community_id,
+                    max_summary_input_length=max_summary_input_length,
+                    generation_config=generation_config,
+                )
+            )
 
         for community_summary in asyncio.as_completed(community_summary_jobs):
             yield await community_summary

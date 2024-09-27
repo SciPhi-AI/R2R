@@ -55,7 +55,7 @@ class KGNodeExtractionPipe(AsyncPipe):
         pass
         """
         pass
-    
+
 
 class KGNodeDescriptionPipe(AsyncPipe):
     """
@@ -116,7 +116,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
         """
 
         async def process_entity(
-            entities_info: list[dict[str, Any]], triples: list[dict[str, Any]], max_description_input_length: int
+            entities_info: list[dict[str, Any]],
+            triples: list[dict[str, Any]],
+            max_description_input_length: int,
         ):
 
             entity_info = [
@@ -140,27 +142,33 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 truncated_triples_txt += triple + "\n"
                 current_length += len(triple)
 
-            out_entity = { 'name': entities_info[0]['name'] }
-            out_entity['description'] = (await self.llm_provider.aget_completion(
-                messages = [
-                    {
-                        "role": "user",
-                        "content": summarization_content.format(
-                            entity_info=entity_info,
-                            triples_txt=truncated_triples_txt,
-                        ),
-                    }
-                ],
-                generation_config=self.kg_provider.config.kg_enrichment_settings.generation_config,
-            )).choices[0].message.content
-            
+            out_entity = {"name": entities_info[0]["name"]}
+            out_entity["description"] = (
+                (
+                    await self.llm_provider.aget_completion(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": summarization_content.format(
+                                    entity_info=entity_info,
+                                    triples_txt=truncated_triples_txt,
+                                ),
+                            }
+                        ],
+                        generation_config=self.kg_provider.config.kg_enrichment_settings.generation_config,
+                    )
+                )
+                .choices[0]
+                .message.content
+            )
+
             # will do more requests, but it is simpler
-            out_entity['description_embedding'] = (
+            out_entity["description_embedding"] = (
                 await self.embedding_provider.async_get_embeddings(
-                    [out_entity['description']]
+                    [out_entity["description"]]
                 )
             )[0]
-            
+
             return out_entity
 
         max_description_input_length = input.message[
@@ -171,19 +179,29 @@ class KGNodeDescriptionPipe(AsyncPipe):
         limit = input.message["limit"]
         project_name = input.message["project_name"]
 
-        entity_map = await self.kg_provider.get_entity_map(offset, limit, project_name)
+        entity_map = await self.kg_provider.get_entity_map(
+            offset, limit, project_name
+        )
 
         for entity_name, entity_info in entity_map.items():
             try:
                 logger.info(f"Processing entity {entity_name}")
-                processed_entity = await(
-                    process_entity(
-                        entity_info['entities'], entity_info['triples'], max_description_input_length
-                    )
+                processed_entity = await process_entity(
+                    entity_info["entities"],
+                    entity_info["triples"],
+                    max_description_input_length,
                 )
 
                 await self.kg_provider.upsert_embeddings(
-                    [(processed_entity['name'], processed_entity['description'], str(processed_entity['description_embedding']))], "entity_embeddings", project_name
+                    [
+                        (
+                            processed_entity["name"],
+                            processed_entity["description"],
+                            str(processed_entity["description_embedding"]),
+                        )
+                    ],
+                    "entity_embeddings",
+                    project_name,
                 )
                 logger.info(f"Processed entity {entity_name}")
 

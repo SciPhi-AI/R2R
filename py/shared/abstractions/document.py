@@ -122,17 +122,21 @@ class IngestionStatus(str, Enum):
 
 class KGCreationStatus(str, Enum):
     """Status of KG Creation per document."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILURE = "failure"
 
+
 class KGEnrichmentStatus(str, Enum):
     """Status of KG Enrichment per collection."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILURE = "failure"
+
 
 class DocumentInfo(R2RSerializable):
     """Base class for document information handling."""

@@ -40,6 +40,7 @@ scheduler = AsyncIOScheduler()
 #     # # Shutdown
 #     scheduler.shutdown()
 
+
 async def create_r2r_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
@@ -63,6 +64,7 @@ async def create_r2r_app(
 app = FastAPI()
 
 worker_task = None
+
 
 @app.on_event("startup")
 async def start_scheduler():
@@ -99,12 +101,13 @@ async def start_scheduler():
     # Copy middleware and exception handlers
     app.middleware = r2r_app.app.middleware  # type: ignore
     app.exception_handlers = r2r_app.app.exception_handlers
-    
+
     print("Starting worker_task")
     app.state.worker_task = await r2r_app.orchestration_provider.start_worker()
     # print("Starting worker_task", app.state.worker_task)
     # Start the scheduler
     scheduler.start()
+
 
 @app.on_event("shutdown")
 async def stop_scheduler():
@@ -114,6 +117,7 @@ async def stop_scheduler():
     scheduler.shutdown()
 
     # app.state.worker_task.cancel()
+
 
 # Add CORS middleware
 app.add_middleware(

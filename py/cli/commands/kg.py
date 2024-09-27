@@ -6,6 +6,7 @@ from asyncclick import pass_context
 from cli.command_group import cli
 from cli.utils.timer import timer
 
+
 @cli.command()
 @click.option(
     "--collection-id",
@@ -31,7 +32,9 @@ from cli.utils.timer import timer
     help="Perform leiden clustering on the graph to create communities.",
 )
 @pass_context
-def create_graph(ctx, collection_id, document_ids, force_enrichment, skip_clustering):
+def create_graph(
+    ctx, collection_id, document_ids, force_enrichment, skip_clustering
+):
     """
     Create a new graph.
     """
@@ -41,6 +44,8 @@ def create_graph(ctx, collection_id, document_ids, force_enrichment, skip_cluste
             document_ids = []
         else:
             document_ids = document_ids.split(",")
-        response = client.create_graph(collection_id, document_ids, force_enrichment, skip_clustering)
+        response = client.create_graph(
+            collection_id, document_ids, force_enrichment, skip_clustering
+        )
 
     click.echo(json.dumps(response, indent=2))

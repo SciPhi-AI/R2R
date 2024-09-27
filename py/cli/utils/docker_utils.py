@@ -107,7 +107,10 @@ async def run_local_serve(
     await r2r_instance.orchestration_provider.start_worker()
 
     import uvicorn
-    uvicorn.run("core.main.app_entry:app", host=host, port=available_port, reload=False)
+
+    uvicorn.run(
+        "core.main.app_entry:app", host=host, port=available_port, reload=False
+    )
 
     # r2r_instance.serve(host, available_port)
 
