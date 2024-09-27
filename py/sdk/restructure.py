@@ -10,7 +10,6 @@ from .models import (
 
 
 class RestructureMethods:
-
     @staticmethod
     async def create_graph(
         client,

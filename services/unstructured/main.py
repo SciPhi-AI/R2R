@@ -16,7 +16,7 @@ app = FastAPI()
 
 class PartitionRequestModel(BaseModel):
     file_content: bytes
-    chunking_config: Dict
+    ingestion_config: Dict
 
 
 class PartitionResponseModel(BaseModel):
@@ -28,10 +28,10 @@ executor = concurrent.futures.ThreadPoolExecutor(
 )
 
 
-def run_partition(file_content: str, chunking_config: Dict) -> List[Dict]:
+def run_partition(file_content: str, ingestion_config: Dict) -> List[Dict]:
     file_content_bytes = base64.b64decode(file_content)
     file_io = BytesIO(file_content_bytes)
-    elements = partition(file=file_io, **chunking_config)
+    elements = partition(file=file_io, **ingestion_config)
     return [element.to_dict() for element in elements]
 
 
@@ -49,7 +49,7 @@ async def partition_endpoint(request: PartitionRequestModel):
             executor,
             run_partition,
             request.file_content,
-            request.chunking_config,
+            request.ingestion_config,
         )
         logger.info(f"Partitioning completed")
         return PartitionResponseModel(elements=elements)

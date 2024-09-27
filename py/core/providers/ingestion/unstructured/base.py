@@ -5,7 +5,7 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 
 import httpx
 from unstructured_client import UnstructuredClient
@@ -14,14 +14,14 @@ from unstructured_client.models import operations, shared
 from core import parsers
 from core.base import (
     AsyncParser,
+    ChunkingMethod,
     Document,
     DocumentExtraction,
     DocumentType,
-    ParsingConfig,
-    ParsingProvider,
     generate_id_from_label,
 )
 from core.base.abstractions import R2RSerializable
+from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 
 logger = logging.getLogger(__name__)
 
@@ -31,27 +31,58 @@ class FallbackElement(R2RSerializable):
     metadata: dict[str, Any]
 
 
-class UnstructuredParsingProvider(ParsingProvider):
+class UnstructuredIngestionConfig(IngestionConfig):
+    combine_under_n_chars: Optional[int] = 128
+    max_characters: Optional[int] = 500
+    coordinates: Optional[bool] = None
+    encoding: Optional[str] = None  # utf-8
+    extract_image_block_types: Optional[list[str]] = None
+    gz_uncompressed_content_type: Optional[str] = None
+    hi_res_model_name: Optional[str] = None
+    include_orig_elements: Optional[bool] = None
+    include_page_breaks: Optional[bool] = None
 
+    languages: Optional[list[str]] = None
+    multipage_sections: Optional[bool] = None
+    new_after_n_chars: Optional[int] = 1500
+    ocr_languages: Optional[list[str]] = None
+    # output_format: Optional[str] = "application/json"
+    overlap: Optional[int] = None
+    overlap_all: Optional[bool] = None
+    pdf_infer_table_structure: Optional[bool] = None
+
+    similarity_threshold: Optional[float] = None
+    skip_infer_table_types: Optional[list[str]] = None
+    split_pdf_concurrency_level: Optional[int] = None
+    split_pdf_page: Optional[bool] = None
+    starting_page_number: Optional[int] = None
+    strategy: Optional[str] = None
+    chunking_method: Optional[ChunkingMethod] = None
+    unique_element_ids: Optional[bool] = None
+    xml_keep_tags: Optional[bool] = None
+
+    def to_ingestion_request(self):
+        import json
+
+        x = json.loads(self.json())
+        x.pop("extra_fields", None)
+        x.pop("provider", None)
+        x.pop("excluded_parsers", None)
+        method = x.pop("chunking_method", "by_title")
+        x["method"] = method
+
+        x = {k: v for k, v in x.items() if v is not None}
+        return x
+
+
+class UnstructuredIngestionProvider(IngestionProvider):
     R2R_FALLBACK_PARSERS = {
-        # Commented filetypes go to unstructured, uncommented fallback to R2R parsers (LLM based)
-        # DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
-        # DocumentType.DOCX: [parsers.DOCXParser],
-        # DocumentType.HTML: [parsers.HTMLParser],
-        # DocumentType.HTM: [parsers.HTMLParser],
-        # DocumentType.JSON: [parsers.JSONParser],
-        # DocumentType.MD: [parsers.MDParser],
-        # DocumentType.PDF: [parsers.PDFParser, parsers.PDFParserUnstructured],
-        # DocumentType.PPTX: [parsers.PPTParser],
-        # DocumentType.TXT: [parsers.TextParser],
-        # DocumentType.XLSX: [parsers.XLSXParser, parsers.XLSXParserAdvanced],
         DocumentType.GIF: [parsers.ImageParser],
         DocumentType.JPEG: [parsers.ImageParser],
         DocumentType.JPG: [parsers.ImageParser],
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
-        # DocumentType.MP4: [parsers.MovieParser],
     }
 
     IMAGE_TYPES = {
@@ -62,16 +93,10 @@ class UnstructuredParsingProvider(ParsingProvider):
         DocumentType.SVG,
     }
 
-    def __init__(self, use_api: bool, config: ParsingConfig):
+    def __init__(self, config: UnstructuredIngestionConfig):
         super().__init__(config)
-        self.config: ParsingConfig = config
-        if config.excluded_parsers:
-            logger.warning(
-                "Excluded parsers are not supported by the unstructured parsing provider."
-            )
-
-        self.use_api = use_api
-        if self.use_api:
+        self.config: UnstructuredIngestionConfig = config
+        if config.provider == "unstructured_api":
             try:
                 self.unstructured_api_auth = os.environ["UNSTRUCTURED_API_KEY"]
             except KeyError as e:
@@ -92,7 +117,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             self.operations = operations
 
         else:
-
             try:
                 self.local_unstructured_url = os.environ[
                     "UNSTRUCTURED_LOCAL_URL"
@@ -118,15 +142,9 @@ class UnstructuredParsingProvider(ParsingProvider):
                     # will choose the first parser in the list
                     self.parsers[doc_type] = parser_info()
 
-        # Apply overrides if specified
-        for parser_override in self.config.override_parsers:
-            if parser_name := getattr(parsers, parser_override.parser):
-                self.parsers[parser_override.document_type] = parser_name()
-
     async def parse_fallback(
         self, file_content: bytes, document: Document, chunk_size: int
     ) -> AsyncGenerator[FallbackElement, None]:
-
         texts = self.parsers[document.type].ingest(  # type: ignore
             file_content, chunk_size=chunk_size
         )
@@ -139,10 +157,9 @@ class UnstructuredParsingProvider(ParsingProvider):
                 )
                 chunk_id += 1
 
-    async def parse(  # type: ignore
+    async def parse(
         self, file_content: bytes, document: Document
     ) -> AsyncGenerator[DocumentExtraction, None]:
-
         t0 = time.time()
         if document.type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(
@@ -152,9 +169,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             async for element in self.parse_fallback(
                 file_content,
                 document,
-                chunk_size=self.config.chunking_config.extra_fields.get(
-                    "combine_under_n_chars", 128
-                ),
+                chunk_size=self.config.combine_under_n_chars,
             ):
                 elements.append(element)
         else:
@@ -165,7 +180,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 file_content = BytesIO(file_content)  # type: ignore
 
             # TODO - Include check on excluded parsers here.
-            if self.use_api:
+            if self.config.provider == "unstructured_api":
                 logger.info(f"Using API to parse document {document.id}")
                 files = self.shared.Files(
                     content=file_content.read(),  # type: ignore
@@ -175,7 +190,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
                         files=files,
-                        **self.config.chunking_config.extra_fields,
+                        **self.config,
                     )
                 )
                 elements = self.client.general.partition(req)  # type: ignore
@@ -198,11 +213,15 @@ class UnstructuredParsingProvider(ParsingProvider):
                     f"{self.local_unstructured_url}/partition",
                     json={
                         "file_content": encoded_content,  # Use encoded string
-                        "chunking_config": self.config.chunking_config.extra_fields,
+                        "ingestion_config": self.config.to_ingestion_request(),
                     },
                     timeout=300,  # Adjust timeout as needed
                 )
-
+                if response.status_code != 200:
+                    logger.error(f"Error partitioning file: {response.text}")
+                    raise ValueError(
+                        f"Error partitioning file: {response.text}"
+                    )
                 elements = response.json().get("elements", [])
 
         iteration = 0  # if there are no chunks

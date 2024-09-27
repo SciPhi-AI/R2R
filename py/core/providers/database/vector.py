@@ -5,8 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError, NoResultFound
-
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from core.base import (
     DatabaseConfig,
@@ -79,7 +78,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection.upsert(
             records=[
                 (
-                    entry.fragment_id,
                     entry.extraction_id,
                     entry.document_id,
                     entry.user_id,
@@ -96,11 +94,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."
             )
-
         self.collection.upsert(
             records=[
                 (
-                    entry.fragment_id,
                     entry.extraction_id,
                     entry.document_id,
                     entry.user_id,
@@ -125,14 +121,13 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         return [
             VectorSearchResult(
-                fragment_id=result[0],  # type: ignore
-                extraction_id=result[1],  # type: ignore
-                document_id=result[2],  # type: ignore
-                user_id=result[3],  # type: ignore
-                collection_ids=result[4],  # type: ignore
-                text=result[5],  # type: ignore
-                score=1 - float(result[6]),  # type: ignore
-                metadata=result[7],  # type: ignore
+                extraction_id=result[0],  # type: ignore
+                document_id=result[1],  # type: ignore
+                user_id=result[2],  # type: ignore
+                collection_ids=result[3],  # type: ignore
+                text=result[4],  # type: ignore
+                score=1 - float(result[5]),  # type: ignore
+                metadata=result[6],  # type: ignore
             )
             for result in results
         ]
@@ -205,7 +200,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         # Combine results using RRF
         combined_results = {
-            result.fragment_id: {
+            result.extraction_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
@@ -226,7 +221,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         rrf_k = search_settings.hybrid_search_settings.rrf_k
         # Combine results using RRF
         combined_results = {
-            result.fragment_id: {
+            result.extraction_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
@@ -235,10 +230,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
         }
 
         for rank, result in enumerate(full_text_results, 1):
-            if result.fragment_id in combined_results:
-                combined_results[result.fragment_id]["full_text_rank"] = rank
+            if result.extraction_id in combined_results:
+                combined_results[result.extraction_id]["full_text_rank"] = rank
             else:
-                combined_results[result.fragment_id] = {
+                combined_results[result.extraction_id] = {
                     "semantic_rank": semantic_limit,
                     "full_text_rank": rank,
                     "data": result,
@@ -274,7 +269,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         return [
             VectorSearchResult(
-                fragment_id=result["data"].fragment_id,  # type: ignore
                 extraction_id=result["data"].extraction_id,  # type: ignore
                 document_id=result["data"].document_id,  # type: ignore
                 user_id=result["data"].user_id,  # type: ignore
@@ -486,7 +480,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
+            SELECT extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
             FROM vecs."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
@@ -505,16 +499,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
         total = 0
 
         if results:
-            total = results[0][7]
+            total = results[0][6]
             chunks = [
                 {
-                    "fragment_id": result[0],
-                    "extraction_id": result[1],
-                    "document_id": result[2],
-                    "user_id": result[3],
-                    "collection_ids": result[4],
-                    "text": result[5],
-                    "metadata": result[6],
+                    "extraction_id": result[0],
+                    "document_id": result[1],
+                    "user_id": result[2],
+                    "collection_ids": result[3],
+                    "text": result[4],
+                    "metadata": result[5],
                 }
                 for result in results
             ]

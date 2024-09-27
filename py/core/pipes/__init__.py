@@ -1,6 +1,5 @@
 from .abstractions.generator_pipe import GeneratorPipe
 from .abstractions.search_pipe import SearchPipe
-from .ingestion.chunking_pipe import ChunkingPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
@@ -26,7 +25,6 @@ __all__ = [
     "KGSearchSearchPipe",
     "KGNodeDescriptionPipe",
     "ParsingPipe",
-    "ChunkingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
     "StreamingSearchRAGPipe",

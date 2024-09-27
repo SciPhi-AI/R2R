@@ -56,7 +56,6 @@ class KGNodeExtractionPipe(AsyncPipe):
         *args,
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
-
         nodes = self.kg_provider.get_entity_map()  # type: ignore
 
         for _, node_info in nodes.items():
@@ -126,7 +125,6 @@ class KGNodeDescriptionPipe(AsyncPipe):
         async def process_entity(
             entity, triples, max_description_input_length
         ):
-
             # if embedding is present in the entity, just return it
             # in the future disable this to override and recompute the descriptions for all entities
             if entity.description_embedding:

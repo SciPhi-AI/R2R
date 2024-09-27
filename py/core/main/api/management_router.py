@@ -41,10 +41,10 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self,
         service: ManagementService,
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.MANAGEMENT,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(service, run_type, orchestration_provider)
+        super().__init__(service, orchestration_provider, run_type)
         self.service: ManagementService = service  # for type hinting
         self.start_time = datetime.now(timezone.utc)
 
