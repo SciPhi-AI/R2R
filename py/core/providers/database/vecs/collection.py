@@ -710,13 +710,6 @@ class Collection:
                 if isinstance(value, dict):
                     op, clause = next(iter(value.items()))
 
-                    # TODO: Test with removing this
-                    # **Convert strings back to UUIDs if necessary**
-                    # if op in {"$eq", "$ne"} and isinstance(clause, str):
-                    #     clause = UUID(clause)
-                    # elif isinstance(clause, list):
-                    #     clause = [UUID(item) if isinstance(item, str) else item for item in clause]
-
                     if op == "$eq":
                         return column == clause
                     elif op == "$ne":
@@ -766,13 +759,6 @@ class Collection:
                         "$contains",
                     ):
                         raise FilterError("unknown operator")
-
-                    # TODO: Test with removing this
-                    # **Convert strings back to UUIDs if necessary**
-                    # if operator in {"$eq", "$ne"} and isinstance(clause, str):
-                    #     clause = UUID(clause)
-                    # elif isinstance(clause, list):
-                    #     clause = [UUID(item) if isinstance(item, str) else item for item in clause]
 
                     if operator == "$eq" and not hasattr(clause, "__len__"):
                         contains_value = cast({key: clause}, postgresql.JSONB)
