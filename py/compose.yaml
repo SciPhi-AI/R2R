@@ -101,7 +101,8 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
+    image: r2r/test
     build:
       context: .
       args:
@@ -125,6 +126,7 @@ services:
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-${CONFIG_NAME:-vecs}}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-}
 
       # Neo4j
       - NEO4J_USER=${NEO4J_USER:-neo4j}

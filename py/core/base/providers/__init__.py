@@ -13,6 +13,7 @@ from .database import (
     DatabaseProvider,
     RelationalDBProvider,
     VectorDBProvider,
+    PostgresConfigurationSettings,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
@@ -40,6 +41,7 @@ __all__ = [
     "CryptoProvider",
     # Database providers
     "DatabaseConfig",
+    "PostgresConfigurationSettings",
     "DatabaseProvider",
     "RelationalDBProvider",
     "VectorDBProvider",

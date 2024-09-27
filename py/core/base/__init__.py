@@ -121,6 +121,7 @@ __all__ = [
     "DatabaseProvider",
     "RelationalDBProvider",
     "VectorDBProvider",
+    "PostgresConfigurationSettings",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
