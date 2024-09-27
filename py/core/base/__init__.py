@@ -23,7 +23,7 @@ __all__ = [
     "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -48,7 +48,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
     # User abstractions

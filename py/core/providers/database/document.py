@@ -25,10 +25,10 @@ from core.base import (
     RestructureStatus,
 )
 
+
 from .base import DatabaseMixin
 
 logger = logging.getLogger(__name__)
-
 
 class DocumentMixin(DatabaseMixin):
     def __init__(self, *args, **kwargs):

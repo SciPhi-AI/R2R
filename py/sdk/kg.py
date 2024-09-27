@@ -9,7 +9,7 @@ from .models import (
 )
 
 
-class RestructureMethods:
+class KGMethods:
 
     @staticmethod
     async def create_graph(

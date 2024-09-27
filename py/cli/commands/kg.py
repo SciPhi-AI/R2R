@@ -6,31 +6,18 @@ from asyncclick import pass_context
 from cli.command_group import cli
 from cli.utils.timer import timer
 
-
 @cli.command()
+@click.option(
+    "--collection-id",
+    required=True,
+    help="Collection ID to create graph for.",
+)
 @click.option(
     "--document-ids",
     required=False,
     default=None,
     help="Document IDs to create graph for (comma-separated)",
 )
-@pass_context
-def create_graph(ctx, document_ids):
-    """
-    Create a new graph.
-    """
-    client = ctx.obj
-    with timer():
-        if document_ids is None:
-            document_ids = []
-        else:
-            document_ids = document_ids.split(",")
-        response = client.create_graph(document_ids)
-
-    click.echo(json.dumps(response, indent=2))
-
-
-@cli.command()
 @click.option(
     "--force-enrichment",
     required=False,
@@ -44,12 +31,16 @@ def create_graph(ctx, document_ids):
     help="Perform leiden clustering on the graph to create communities.",
 )
 @pass_context
-def enrich_graph(ctx, force_enrichment, skip_clustering):
+def create_graph(ctx, collection_id, document_ids, force_enrichment, skip_clustering):
     """
-    Perform graph enrichment over the entire graph.
+    Create a new graph.
     """
     client = ctx.obj
     with timer():
-        response = client.enrich_graph(force_enrichment, skip_clustering)
+        if document_ids is None:
+            document_ids = []
+        else:
+            document_ids = document_ids.split(",")
+        response = client.create_graph(collection_id, document_ids, force_enrichment, skip_clustering)
 
     click.echo(json.dumps(response, indent=2))

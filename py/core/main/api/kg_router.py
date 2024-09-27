@@ -20,38 +20,31 @@ from ..hatchet import (
     KGCommunitySummaryWorkflow,
     KgExtractAndStoreWorkflow,
 )
-from ..services.restructure_service import RestructureService
+from ..services.kg_service import KGService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
 
 
-class RestructureRouter(BaseRouter):
+class KGRouter(BaseRouter):
     def __init__(
         self,
-        service: RestructureService,
-        run_type: RunType = RunType.RESTRUCTURE,
+        service: KGService,
+        run_type: RunType = RunType.KG,
         orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         if not orchestration_provider:
-            raise ValueError(
-                "RestructureRouter requires an orchestration provider."
-            )
+            raise ValueError("KGRouter requires an orchestration provider.")
         super().__init__(service, run_type, orchestration_provider)
-        self.service: RestructureService = service
+        self.service: KGService = service
 
     def _load_openapi_extras(self):
-        yaml_path = (
-            Path(__file__).parent / "data" / "restructure_router_openapi.yml"
-        )
+        yaml_path = Path(__file__).parent / "data" / "kg_router_openapi.yml"
         with open(yaml_path, "r") as yaml_file:
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
 
     def _register_workflows(self):
-        self.orchestration_provider.register_workflow(
-            EnrichGraphWorkflow(self.service)
-        )
         self.orchestration_provider.register_workflow(
             KgExtractAndStoreWorkflow(self.service)
         )
@@ -68,9 +61,11 @@ class RestructureRouter(BaseRouter):
         )
         @self.base_endpoint
         async def create_graph(
-            document_ids: Optional[list[str]] = Body(
-                default=None,
-                description="List of document IDs to create the graph on.",
+            project_name: str = Body(
+                description="Project name to create graph for.",
+            ),
+            collection_id: str = Body(
+                description="Collection ID to create graph for.",
             ),
             kg_creation_settings: Optional[Json[KGCreationSettings]] = Body(
                 default=None,
@@ -86,24 +81,25 @@ class RestructureRouter(BaseRouter):
 
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
-            # Check if the user is a superuser
+
             if not auth_user.is_superuser:
-                # Add any necessary permission checks here
-                pass
+                logger.warning("Implement permission checks here.")
 
             if kg_creation_settings is None:
                 kg_creation_settings = (
                     self.service.providers.kg.config.kg_creation_settings
                 )
 
-            workflow_input = {
-                "document_ids": document_ids,
-                "kg_creation_settings": kg_creation_settings.json(),
-                "user": auth_user.json(),
-            }
-
             task_id = r2r_hatchet.admin.run_workflow(
-                "create-graph", {"request": workflow_input}
+                "create-graph",
+                {
+                    "request": {
+                        "project_name": project_name,
+                        "collection_id": collection_id,
+                        "kg_creation_settings": kg_creation_settings.json(),
+                        "user": auth_user.json(),
+                    }
+                }
             )
 
             return {
@@ -111,18 +107,17 @@ class RestructureRouter(BaseRouter):
                 "task_id": str(task_id),
             }
 
+
         @self.router.post(
             "/enrich_graph",
         )
         @self.base_endpoint
         async def enrich_graph(
-            skip_clustering: bool = Body(
-                default=False,
-                description="Whether to skip leiden clustering on the graph or not.",
+            project_name: str = Body(
+                description="Project name to enrich graph for.",
             ),
-            force_enrichment: bool = Body(
-                default=False,
-                description="Force Enrichment step even if graph creation is still in progress for some documents.",
+            collection_id: str = Body(
+                description="Collection name to enrich graph for.",
             ),
             kg_enrichment_settings: Optional[
                 Json[KGEnrichmentSettings]
@@ -136,10 +131,9 @@ class RestructureRouter(BaseRouter):
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
-            # Check if the user is a superuser
+
             if not auth_user.is_superuser:
-                # Add any necessary permission checks here
-                pass
+                logger.warning("Implement permission checks here.")
 
             if kg_enrichment_settings is None:
                 kg_enrichment_settings = (
@@ -147,13 +141,9 @@ class RestructureRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "skip_clustering": skip_clustering,
-                "force_enrichment": force_enrichment,
-                "generation_config": kg_enrichment_settings.generation_config.to_dict(),
-                "project_name": kg_enrichment_settings.postgres_project_name,
-                "max_description_input_length": kg_enrichment_settings.max_description_input_length,
-                "max_summary_input_length": kg_enrichment_settings.max_summary_input_length,
-                "leiden_params": kg_enrichment_settings.leiden_params,
+                "project_name": project_name,
+                "collection_id": collection_id,
+                "kg_enrichment_settings": kg_enrichment_settings.json(),
                 "user": auth_user.json(),
             }
 

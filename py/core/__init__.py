@@ -53,7 +53,7 @@ __all__ = [
     "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -203,13 +203,13 @@ __all__ = [
     "IngestionRouter",
     "ManagementRouter",
     "RetrievalRouter",
-    "RestructureRouter",
+    "KGRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "RestructureService",
+    "KGService",
     ## PARSERS
     # Media parsers
     "AudioParser",

@@ -8,7 +8,8 @@ from shared.abstractions.document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    RestructureStatus,
+    KGCreationStatus,
+    KGEnrichmentStatus,
 )
 from shared.abstractions.embedding import (
     EmbeddingPurpose,
@@ -35,7 +36,7 @@ from shared.abstractions.llm import (
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt
-from shared.abstractions.restructure import (
+from R2R.py.shared.abstractions.kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
 )
@@ -76,7 +77,8 @@ __all__ = [
     "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGCreationStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",

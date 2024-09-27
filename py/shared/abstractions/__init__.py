@@ -29,7 +29,7 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
-from .restructure import KGCreationSettings, KGEnrichmentSettings
+from .kg import KGCreationSettings, KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
     HybridSearchSettings,

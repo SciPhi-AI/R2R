@@ -11,7 +11,7 @@ from .auth import AuthMethods
 from .ingestion import IngestionMethods
 from .management import ManagementMethods
 from .models import R2RException
-from .restructure import RestructureMethods
+from .kg import RestructureMethods
 from .retrieval import RetrievalMethods
 from .server import ServerMethods
 

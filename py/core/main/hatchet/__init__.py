@@ -1,6 +1,6 @@
 from .base import r2r_hatchet
 from .ingestion_workflow import IngestFilesWorkflow, UpdateFilesWorkflow
-from .restructure_workflow import (
+from .kg_workflow import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
     KGCommunitySummaryWorkflow,

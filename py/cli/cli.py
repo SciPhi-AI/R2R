@@ -1,11 +1,11 @@
 import sys
 
+from R2R.py.cli.commands import kg
 from cli.command_group import cli
 from cli.commands import (
     auth,
     ingestion,
     management,
-    restructure,
     retrieval,
     server,
     templates,
@@ -29,9 +29,9 @@ cli.add_command(management.documents_overview)
 cli.add_command(management.document_chunks)
 cli.add_command(management.inspect_knowledge_graph)
 
-# Restructure
-cli.add_command(restructure.create_graph)
-cli.add_command(restructure.enrich_graph)
+# KG
+cli.add_command(kg.create_graph)
+cli.add_command(kg.enrich_graph)
 
 # Retrieval
 cli.add_command(retrieval.search)
