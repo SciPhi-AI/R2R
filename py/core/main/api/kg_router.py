@@ -11,8 +11,9 @@ from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
-from core.base.providers import OrchestrationProvider
+from core.base.providers import OrchestrationProvider, Workflow
 
+<<<<<<< HEAD:py/core/main/api/kg_router.py
 from ...main.hatchet import r2r_hatchet
 from ..hatchet import (
     CreateGraphWorkflow,
@@ -21,6 +22,9 @@ from ..hatchet import (
     KgExtractDescribeEmbedWorkflow,
 )
 from ..services.kg_service import KgService
+=======
+from ..services.restructure_service import RestructureService
+>>>>>>> origin/dev:py/core/main/api/restructure_router.py
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -29,6 +33,7 @@ logger = logging.getLogger(__name__)
 class KGRouter(BaseRouter):
     def __init__(
         self,
+<<<<<<< HEAD:py/core/main/api/kg_router.py
         service: KgService,
         run_type: RunType = RunType.KG,
         orchestration_provider: Optional[OrchestrationProvider] = None,
@@ -37,6 +42,14 @@ class KGRouter(BaseRouter):
             raise ValueError("KGRouter requires an orchestration provider.")
         super().__init__(service, run_type, orchestration_provider)
         self.service: KgService = service
+=======
+        service: RestructureService,
+        orchestration_provider: OrchestrationProvider,
+        run_type: RunType = RunType.RESTRUCTURE,
+    ):
+        super().__init__(service, orchestration_provider, run_type)
+        self.service: RestructureService = service
+>>>>>>> origin/dev:py/core/main/api/restructure_router.py
 
     def _load_openapi_extras(self):
         yaml_path = Path(__file__).parent / "data" / "kg_router_openapi.yml"
@@ -45,6 +58,7 @@ class KGRouter(BaseRouter):
         return yaml_content
 
     def _register_workflows(self):
+<<<<<<< HEAD:py/core/main/api/kg_router.py
         self.orchestration_provider.register_workflow(
             KgExtractDescribeEmbedWorkflow(self.service)
         )
@@ -53,6 +67,15 @@ class KGRouter(BaseRouter):
         )
         self.orchestration_provider.register_workflow(
             KGCommunitySummaryWorkflow(self.service)
+=======
+        self.orchestration_provider.register_workflows(
+            Workflow.RESTRUCTURE,
+            self.service,
+            {
+                "create-graph": "Graph creation task queued successfully.",
+                "enrich-graph": "Graph enrichment task queued successfully.",
+            },
+>>>>>>> origin/dev:py/core/main/api/restructure_router.py
         )
 
     def _setup_routes(self):
@@ -90,6 +113,7 @@ class KGRouter(BaseRouter):
                     self.service.providers.kg.config.kg_creation_settings
                 )
 
+<<<<<<< HEAD:py/core/main/api/kg_router.py
             task_id = r2r_hatchet.admin.run_workflow(
                 "create-graph",
                 {
@@ -100,12 +124,17 @@ class KGRouter(BaseRouter):
                         "user": auth_user.json(),
                     }
                 },
-            )
-
-            return {
-                "message": f"Graph creation task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
-                "task_id": str(task_id),
+=======
+            workflow_input = {
+                "document_ids": document_ids,
+                "kg_creation_settings": kg_creation_settings.json(),
+                "user": auth_user.json(),
             }
+
+            return self.orchestration_provider.run_workflow(
+                "create-graph", {"request": workflow_input}, {}
+>>>>>>> origin/dev:py/core/main/api/restructure_router.py
+            )
 
         @self.router.post(
             "/enrich_graph",
@@ -146,11 +175,6 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.admin.run_workflow(
-                "enrich-graph", {"request": workflow_input}
+            return self.orchestration_provider.run_workflow(
+                "enrich-graph", {"request": workflow_input}, {}
             )
-
-            return {
-                "message": "Graph enrichment task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
-                "task_id": str(task_id),
-            }

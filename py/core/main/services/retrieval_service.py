@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from core import R2RStreamingRAGAgent
 from core.base import (
     CompletionRecord,
     GenerationConfig,
@@ -286,9 +287,13 @@ class RetrievalService(Service):
 
                     async def stream_response():
                         async with manage_run(self.run_manager, "rag_agent"):
-                            async for (
-                                chunk
-                            ) in self.agents.streaming_rag_agent.arun(
+                            agent = R2RStreamingRAGAgent(
+                                llm_provider=self.providers.llm,
+                                prompt_provider=self.providers.prompt,
+                                config=self.config.agent,
+                                search_pipeline=self.pipelines.search_pipeline,
+                            )
+                            async for chunk in agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,

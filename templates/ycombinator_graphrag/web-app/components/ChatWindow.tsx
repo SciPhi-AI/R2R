@@ -163,9 +163,8 @@ export const ChatWindow: FC<ChatWindowProps> = ({
           }
 
           buffer += decoder.decode(value, { stream: true });
-
-          if (buffer.includes(FUNCTION_END_TOKEN)) {
-            const [results, rest] = buffer.split(FUNCTION_END_TOKEN);
+          if (buffer.includes("</kg_search>")) {
+            const [results, rest] = buffer.split("</kg_search>");
 
             console.log('results = ', results);
             const vectorSearchSources = results.includes('<search>')

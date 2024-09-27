@@ -19,8 +19,8 @@ class BaseRouter:
     def __init__(
         self,
         service: "Service",
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.UNSPECIFIED,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         self.service = service
         self.run_type = run_type

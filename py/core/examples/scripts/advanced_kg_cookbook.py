@@ -85,7 +85,6 @@ def main(
     local_mode=True,
     base_url="http://localhost:7272",
 ):
-
     # Specify the entity types for the KG extraction prompt
     entity_types = [
         "COMPANY",

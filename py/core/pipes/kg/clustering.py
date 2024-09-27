@@ -66,6 +66,10 @@ class KGClusteringPipe(AsyncPipe):
             generation_config,
         )  # type: ignore
 
+        logger.info(
+            f"Clustering completed. Generated {num_communities} communities."
+        )
+
         return {
             "num_communities": num_communities,
         }

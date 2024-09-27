@@ -82,8 +82,23 @@
           "icon": "bars-progress",
           "pages" : [
             "documentation/installation/overview",
-            "documentation/installation/docker",
-            "documentation/installation/local-system"
+            {
+              "group": "Light",
+              "icon": "feather",
+              "pages": [
+                "documentation/installation/light/local-system",
+                "documentation/installation/light/docker"
+              ]
+            },
+            {
+              "group": "Core",
+              "icon": "server",
+              "pages": [
+                "documentation/installation/core/docker",
+                "documentation/installation/core/local-system"
+              ]
+            }
+
           ]
         },
         "documentation/quickstart",

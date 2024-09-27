@@ -130,6 +130,8 @@ class KGSearchSearchPipe(GeneratorPipe):
                 property_names=[
                     "name",
                     "description",
+                    "extraction_ids",
+                    "document_ids",
                 ],
             ):
                 yield KGSearchResult(
@@ -139,38 +141,38 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    # fragment_ids=search_result["fragment_ids"],
-                    # document_ids=search_result["document_ids"],
+                    extraction_ids=search_result["extraction_ids"],
+                    document_ids=search_result["document_ids"],
                     metadata={"associated_query": message},
                 )
 
             # relationship search
-            # search_type = "__Relationship__"
-            # async for search_result in self.kg_provider.vector_query(  # type: ignore
-            #     input,
-            #     search_type=search_type,
-            #     search_type_limits=kg_search_settings.local_search_limits[
-            #         search_type
-            #     ],
-            #     query_embedding=query_embedding,
-            #     property_names=[
-            #         "name",
-            #         "description",
-            #         "fragment_ids",
-            #         "document_ids",
-            #     ],
-            # ):
-            #     yield KGSearchResult(
-            #         content=KGRelationshipResult(
-            #             name=search_result["name"],
-            #             description=search_result["description"],
-            #         ),
-            #         method=KGSearchMethod.LOCAL,
-            #         result_type=KGSearchResultType.RELATIONSHIP,
-            #         fragment_ids=search_result["fragment_ids"],
-            #         document_ids=search_result["document_ids"],
-            #         metadata={"associated_query": message},
-            #     )
+            search_type = "__Relationship__"
+            async for search_result in self.kg_provider.vector_query(  # type: ignore
+                input,
+                search_type=search_type,
+                search_type_limits=kg_search_settings.local_search_limits[
+                    search_type
+                ],
+                query_embedding=query_embedding,
+                property_names=[
+                    "name",
+                    "description",
+                    "extraction_ids",
+                    "document_ids",
+                ],
+            ):
+                yield KGSearchResult(
+                    content=KGRelationshipResult(
+                        name=search_result["name"],
+                        description=search_result["description"],
+                    ),
+                    method=KGSearchMethod.LOCAL,
+                    result_type=KGSearchResultType.RELATIONSHIP,
+                    extraction_ids=search_result["extraction_ids"],
+                    document_ids=search_result["document_ids"],
+                    metadata={"associated_query": message},
+                )
 
             # community search
             search_type = "__Community__"
@@ -189,7 +191,6 @@ class KGSearchSearchPipe(GeneratorPipe):
 
                 # try loading it as a json
                 try:
-
                     if "```json" in summary:
                         summary = (
                             summary.strip()
@@ -334,7 +335,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGSearchResult, None]:
-
         kg_search_type = kg_search_settings.kg_search_type
 
         # runs local and/or global search

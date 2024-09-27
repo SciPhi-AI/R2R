@@ -35,7 +35,6 @@ class R2RApp:
         self._apply_cors()
 
     def _setup_routes(self):
-
         # Include routers in the app
         self.app.include_router(self.ingestion_router, prefix="/v2")
         self.app.include_router(self.management_router, prefix="/v2")

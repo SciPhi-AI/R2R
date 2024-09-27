@@ -277,7 +277,7 @@ class CommunityReport(BaseModel):
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
+    extraction_ids: list[uuid.UUID]
     document_id: uuid.UUID
-    fragment_ids: list[uuid.UUID]
     entities: list[Entity]
     triples: list[Triple]

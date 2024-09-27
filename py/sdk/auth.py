@@ -170,3 +170,33 @@ class AuthMethods:
         """
         data = {"reset_token": reset_token, "new_password": new_password}
         return await client._make_request("POST", "reset_password", json=data)
+
+    @staticmethod
+    async def login_with_token(
+        client,
+        access_token: str,
+    ) -> dict[str, Token]:
+        """
+        Logs in a user using existing access and refresh tokens.
+
+        Args:
+            access_token (str): The existing access token.
+            refresh_token (str): The existing refresh token.
+
+        Returns:
+            dict[str, Token]: The access and refresh tokens from the server.
+        """
+        client.access_token = access_token
+        # Verify the tokens by making a request to the user endpoint
+        try:
+            await client._make_request("GET", "user")
+            return {
+                "access_token": Token(
+                    token=access_token, token_type="access_token"
+                ),
+            }
+        except Exception:
+            # If the request fails, clear the tokens and raise an exception
+            client.access_token = None
+            client._refresh_token = None
+            raise ValueError("Invalid tokens provided")

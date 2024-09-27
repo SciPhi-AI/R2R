@@ -7,6 +7,12 @@ settings:
 importers:
   .:
     dependencies:
+      "@jest/globals":
+        specifier: ^29.7.0
+        version: 29.7.0
+      "@rrweb/types":
+        specifier: 2.0.0-alpha.17
+        version: 2.0.0-alpha.17
       axios:
         specifier: ^1.7.4
         version: 1.7.4
@@ -19,13 +25,16 @@ importers:
       posthog-node:
         specifier: ^4.1.0
         version: 4.1.0
+      rrweb-snapshot:
+        specifier: 2.0.0-alpha.4
+        version: 2.0.0-alpha.4
       uuid:
         specifier: ^10.0.0
         version: 10.0.0
     devDependencies:
       "@types/jest":
-        specifier: ^29.5.12
-        version: 29.5.12
+        specifier: ^29.5.13
+        version: 29.5.13
       "@types/node":
         specifier: ^20.14.15
         version: 20.14.15
@@ -501,6 +510,12 @@ packages:
         integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==,
       }
 
+  "@rrweb/types@2.0.0-alpha.17":
+    resolution:
+      {
+        integrity: sha512-AfDTVUuCyCaIG0lTSqYtrZqJX39ZEYzs4fYKnexhQ+id+kbZIpIJtaut5cto6dWZbB3SEe4fW0o90Po3LvTmfg==,
+      }
+
   "@sinclair/typebox@0.27.8":
     resolution:
       {
@@ -591,10 +606,10 @@ packages:
         integrity: sha512-pk2B1NWalF9toCRu6gjBzR69syFjP4Od8WRAX+0mmf9lAjCRicLOWc+ZrxZHx/0XRjotgkF9t6iaMJ+aXcOdZQ==,
       }
 
-  "@types/jest@29.5.12":
+  "@types/jest@29.5.13":
     resolution:
       {
-        integrity: sha512-eDC8bTvT/QhYdxJAulQikueigY5AsdBRH2yDKW3yveW7svY3+DzN84/2NUgkw10RTiJbWqZrTtoGVdYlvFJdLw==,
+        integrity: sha512-wd+MVEZCHt23V0/L642O5APvspWply/rGY5BcW4SUETo2UzPU3Z26qr8jC2qxpimI2jjx9h7+2cj2FwIr01bXg==,
       }
 
   "@types/node@20.14.15":
@@ -1730,6 +1745,14 @@ packages:
         integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==,
       }
 
+  nanoid@3.3.7:
+    resolution:
+      {
+        integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==,
+      }
+    engines: { node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1 }
+    hasBin: true
+
   natural-compare@1.4.0:
     resolution:
       {
@@ -1843,6 +1866,12 @@ packages:
         integrity: sha512-anP1Z8qwhkbmu7MFP5iTt+wQKXgwzf7zTyGlcdzabySa9vd0Xt392U0rVmz9poOaBj0uHJKyyo9/upk0HrEQew==,
       }
 
+  picocolors@1.1.0:
+    resolution:
+      {
+        integrity: sha512-TQ92mBOW0l3LeMeyLV6mzy/kWr8lkd/hp3mTg7wYK7zJhuBStmGMBG0BdeDZS/dZx1IukaX6Bk11zcln25o1Aw==,
+      }
+
   picomatch@2.3.1:
     resolution:
       {
@@ -1863,6 +1892,13 @@ packages:
         integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==,
       }
     engines: { node: ">=8" }
+
+  postcss@8.4.47:
+    resolution:
+      {
+        integrity: sha512-56rxCq7G/XfB4EkXq9Egn5GCqugWvDFjafDOThIdMBsI15iqPqR5r15TfSr1YPYeEI19YeaXMCbY6u88Y76GLQ==,
+      }
+    engines: { node: ^10 || ^12 || >=14 }
 
   posthog-js@1.155.4:
     resolution:
@@ -1958,6 +1994,18 @@ packages:
       }
     hasBin: true
 
+  rrweb-snapshot@2.0.0-alpha.17:
+    resolution:
+      {
+        integrity: sha512-GBg5pV8LHOTbeVmH2VHLEFR0mc2QpQMzAvcoxEGfPNWgWHc8UvKCyq7pqN1vA+fDZ+yXXbixeO0kB2pzVvFCBw==,
+      }
+
+  rrweb-snapshot@2.0.0-alpha.4:
+    resolution:
+      {
+        integrity: sha512-KQ2OtPpXO5jLYqg1OnXS/Hf+EzqnZyP5A+XPqBCjYpj3XIje/Od4gdUwjbFo3cVuWq5Cw5Y1d3/xwgIS7/XpQQ==,
+      }
+
   rusha@0.8.14:
     resolution:
       {
@@ -2011,6 +2059,13 @@ packages:
         integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==,
       }
     engines: { node: ">=8" }
+
+  source-map-js@1.2.1:
+    resolution:
+      {
+        integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==,
+      }
+    engines: { node: ">=0.10.0" }
 
   source-map-support@0.5.13:
     resolution:
@@ -2722,6 +2777,10 @@ snapshots:
       "@jridgewell/resolve-uri": 3.1.2
       "@jridgewell/sourcemap-codec": 1.5.0
 
+  "@rrweb/types@2.0.0-alpha.17":
+    dependencies:
+      rrweb-snapshot: 2.0.0-alpha.17
+
   "@sinclair/typebox@0.27.8": {}
 
   "@sinonjs/commons@3.0.1":
@@ -2775,7 +2834,7 @@ snapshots:
     dependencies:
       "@types/istanbul-lib-report": 3.0.3
 
-  "@types/jest@29.5.12":
+  "@types/jest@29.5.13":
     dependencies:
       expect: 29.7.0
       pretty-format: 29.7.0
@@ -3584,6 +3643,8 @@ snapshots:
 
   ms@2.1.2: {}
 
+  nanoid@3.3.7: {}
+
   natural-compare@1.4.0: {}
 
   node-int64@0.4.0: {}
@@ -3635,6 +3696,8 @@ snapshots:
 
   picocolors@1.0.1: {}
 
+  picocolors@1.1.0: {}
+
   picomatch@2.3.1: {}
 
   pirates@4.0.6: {}
@@ -3642,6 +3705,12 @@ snapshots:
   pkg-dir@4.2.0:
     dependencies:
       find-up: 4.1.0
+
+  postcss@8.4.47:
+    dependencies:
+      nanoid: 3.3.7
+      picocolors: 1.1.0
+      source-map-js: 1.2.1
 
   posthog-js@1.155.4:
     dependencies:
@@ -3693,6 +3762,12 @@ snapshots:
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
 
+  rrweb-snapshot@2.0.0-alpha.17:
+    dependencies:
+      postcss: 8.4.47
+
+  rrweb-snapshot@2.0.0-alpha.4: {}
+
   rusha@0.8.14: {}
 
   semver@6.3.1: {}
@@ -3710,6 +3785,8 @@ snapshots:
   sisteransi@1.0.5: {}
 
   slash@3.0.0: {}
+
+  source-map-js@1.2.1: {}
 
   source-map-support@0.5.13:
     dependencies:

@@ -1,10 +1,10 @@
 import yaml
+import argparse
+import os
 import time
 import uuid
-import os
-from r2r import R2RClient
+
 from datasets import load_dataset
-import argparse
 
 args = argparse.ArgumentParser()
 args.add_argument("--dataset_name", type=str, default="shreyaspimpalgaonkar/ycombinator_s24")
@@ -59,10 +59,10 @@ def wait_till_ready(status_var, status_value):
             break
         else:
             # if at least one says failed, exit
-            if "failure" in status_counts or "enrichment_failure" in status_counts:
+            if "failed" in status_counts or "enrichment_failure" in status_counts:
                 print(f"At least one document has failed {status_var} => {status_value}")
                 for document in documents_overview:
-                    if document.get(status_var) == "failure":
+                    if document.get(status_var) == "failed":
                         print(document.get("id"), document.get("status"))
                 exit(1)
         time.sleep(10)
@@ -81,7 +81,7 @@ def create_graph():
     print("Creating graph...")
     entity_types = ["ORGANIZATION", "GEO", "PERSON", "INDUSTRY_SECTOR", "PRODUCT", "COMPETITOR", "TECHNOLOGY", "ACQUISITION", "INVESTOR", ]
     documents_overview = client.documents_overview(limit=1000)['results']
-    document_ids = [document.get("id") for document in documents_overview if document.get("restructuring_status") in ["pending", "failure", "enrichment_failure"]]
+    document_ids = [document.get("id") for document in documents_overview if document.get("restructuring_status") in ["pending", "failed", "enrichment_failure"]]
     client.create_graph(document_ids = document_ids)
     wait_till_ready("restructuring_status", "success")
 

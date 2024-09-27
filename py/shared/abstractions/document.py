@@ -116,7 +116,7 @@ class IngestionStatus(str, Enum):
     EMBEDDING = "embedding"
     STORING = "storing"
 
-    FAILURE = "failure"
+    FAILED = "failed"
     SUCCESS = "success"
 
 
@@ -183,17 +183,5 @@ class DocumentExtraction(R2RSerializable):
     document_id: UUID
     collection_ids: list[UUID]
     user_id: UUID
-    data: DataType
-    metadata: dict
-
-
-class DocumentFragment(R2RSerializable):
-    """A fragment extracted from a document."""
-
-    id: UUID
-    extraction_id: UUID
-    document_id: UUID
-    user_id: UUID
-    collection_ids: list[UUID]
     data: DataType
     metadata: dict

@@ -51,10 +51,14 @@ class KGNodeExtractionPipe(AsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
-        """
-        pass
-        """
-        pass
+
+        nodes = self.kg_provider.get_entity_map()  # type: ignore
+
+        for _, node_info in nodes.items():
+            for entity in node_info["entities"]:
+                yield entity, node_info[
+                    "triples"
+                ]  # the entity and its associated triples
 
 
 class KGNodeDescriptionPipe(AsyncPipe):
@@ -116,15 +120,15 @@ class KGNodeDescriptionPipe(AsyncPipe):
         """
 
         async def process_entity(
-            entities_info: list[dict[str, Any]],
-            triples: list[dict[str, Any]],
-            max_description_input_length: int,
+            entity, triples, max_description_input_length
         ):
 
-            entity_info = [
-                f"{entity['name']}, {entity['category']}, {entity['description']}"
-                for entity in entities_info
-            ]
+            # if embedding is present in the entity, just return it
+            # in the future disable this to override and recompute the descriptions for all entities
+            if entity.description_embedding:
+                return entity
+
+            entity_info = f"{entity.name}, {entity.description}"
             triples_txt = [
                 f"{i+1}: {triple['subject']}, {triple['object']}, {triple['predicate']} - Summary: {triple['description']}"
                 for i, triple in enumerate(triples)

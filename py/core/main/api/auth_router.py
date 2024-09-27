@@ -22,12 +22,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class AuthRouter(BaseRouter):
     def __init__(
         self,
-        auth_service: AuthService,
-        run_type: RunType = RunType.INGESTION,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
+        service: AuthService,
+        orchestration_provider: OrchestrationProvider,
+        run_type: RunType = RunType.UNSPECIFIED,
     ):
-        super().__init__(auth_service, run_type, orchestration_provider)
-        self.service: AuthService = auth_service  # for type hinting
+        super().__init__(service, orchestration_provider, run_type)
+        self.service: AuthService = service  # for type hinting
 
     def _register_workflows(self):
         pass
@@ -228,7 +228,7 @@ class AuthRouter(BaseRouter):
             This endpoint allows users to delete their own account or, for superusers,
             to delete any user account.
             """
-            if auth_user.id != user_id and not auth_user.is_superuser:
+            if str(auth_user.id) != user_id and not auth_user.is_superuser:
                 raise Exception("User ID does not match authenticated user")
             if not auth_user.is_superuser and not password:
                 raise Exception("Password is required for non-superusers")

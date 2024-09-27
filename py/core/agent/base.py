@@ -9,7 +9,7 @@ from core.base.abstractions import (
     Message,
     syncable,
 )
-from core.base.agent import Agent
+from core.base.agent import Agent, Conversation
 
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):
@@ -40,7 +40,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
     def _reset(self):
         self._completed = False
-        self.conversation = []
+        self.conversation = Conversation()
 
     @syncable
     async def arun(
@@ -49,29 +49,24 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
-    ) -> list[Message]:
+    ) -> list[dict]:
         self._reset()
-
-        if system_instruction or not self.conversation:
-            self._setup(system_instruction)
+        await self._setup(system_instruction)
 
         if messages:
-            self.conversation.extend(messages)
+            for message in messages:
+                await self.conversation.add_message(message)
 
         while not self._completed:
-            generation_config = self.get_generation_config(
-                self.conversation[-1]
-            )
+            messages_list = await self.conversation.get_messages()
+            generation_config = self.get_generation_config(messages_list[-1])
             response = await self.llm_provider.aget_completion(
-                [
-                    ele.model_dump(exclude_none=True)
-                    for ele in self.conversation
-                ],
+                messages_list,
                 generation_config,
             )
             await self.process_llm_response(response, *args, **kwargs)
 
-        return self.conversation
+        return await self.conversation.get_messages()
 
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
@@ -94,13 +89,13 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                         **kwargs,
                     )
             else:
-                self.conversation.append(
+                await self.conversation.add_message(
                     Message(role="assistant", content=message.content)
                 )
                 self._completed = True
 
 
-class R2RStreamingAgent(Agent):
+class R2RStreamingAgent(R2RAgent):
     async def arun(  # type: ignore
         self,
         system_instruction: Optional[str] = None,
@@ -108,31 +103,27 @@ class R2RStreamingAgent(Agent):
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        try:
-            if system_instruction or not self.conversation:
-                self._setup(system_instruction)
+        self._reset()
+        await self._setup(system_instruction)
 
-            if messages:
-                self.conversation.extend(messages)
+        if messages:
+            for message in messages:
+                await self.conversation.add_message(message)
 
-            while not self._completed:
-                generation_config = self.get_generation_config(
-                    self.conversation[-1], stream=True
-                )
-                stream = self.llm_provider.get_completion_stream(
-                    [
-                        ele.model_dump(exclude_none=True)
-                        for ele in self.conversation
-                    ],
-                    generation_config,
-                )
-                async for chunk in self.process_llm_response(
-                    stream, *args, **kwargs
-                ):
-                    yield chunk
-        finally:
-            self._completed = False
-            self.conversation = []
+        while not self._completed:
+            messages_list = await self.conversation.get_messages()
+
+            generation_config = self.get_generation_config(
+                messages_list[-1], stream=True
+            )
+            stream = self.llm_provider.get_completion_stream(
+                messages_list,
+                generation_config,
+            )
+            async for chunk in self.process_llm_response(
+                stream, *args, **kwargs
+            ):
+                yield chunk
 
     def run(
         self, system_instruction, messages, *args, **kwargs
@@ -219,7 +210,7 @@ class R2RStreamingAgent(Agent):
 
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
-                    self.conversation.append(
+                    await self.conversation.add_message(
                         Message(role="assistant", content=content_buffer)
                     )
                 self._completed = True

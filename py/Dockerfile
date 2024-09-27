@@ -31,7 +31,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Expose the port and set environment variables
 ARG PORT=8000 HOST=0.0.0.0
-ENV PORT=$PORT HOST=$HOST TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
+ENV PORT=$PORT HOST=$HOST
 EXPOSE $PORT
 
 COPY . /app

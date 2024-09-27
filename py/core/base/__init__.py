@@ -20,7 +20,6 @@ __all__ = [
     "DataType",
     "Document",
     "DocumentExtraction",
-    "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
     "KGCreationStatus",
@@ -108,12 +107,6 @@ __all__ = [
     # Auth provider
     "AuthConfig",
     "AuthProvider",
-    # Chunking provider
-    "R2RChunkingConfig",
-    "UnstructuredChunkingConfig",
-    "ChunkingConfig",
-    "ChunkingProvider",
-    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
@@ -122,22 +115,23 @@ __all__ = [
     "DatabaseProvider",
     "RelationalDBProvider",
     "VectorDBProvider",
+    "PostgresConfigurationSettings",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
     # File provider
     "FileConfig",
     "FileProvider",
+    # Ingestion provider
+    "IngestionConfig",
+    "IngestionProvider",
+    "ChunkingMethod",
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Parsing provider
-    "ParsingConfig",
-    "ParsingProvider",
-    "OverrideParser",
     # Prompt provider
     "PromptConfig",
     "PromptProvider",

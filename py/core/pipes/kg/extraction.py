@@ -7,10 +7,9 @@ from typing import Any, AsyncGenerator, Optional, Union
 
 from core.base import (
     AsyncState,
-    ChunkingProvider,
     CompletionProvider,
     DatabaseProvider,
-    DocumentFragment,
+    DocumentExtraction,
     Entity,
     GenerationConfig,
     KGExtraction,
@@ -52,7 +51,6 @@ class KGTriplesExtractionPipe(
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
-        chunking_provider: ChunkingProvider,
         config: AsyncPipe.PipeConfig,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
@@ -72,7 +70,6 @@ class KGTriplesExtractionPipe(
         self.prompt_provider = prompt_provider
         self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.chunking_provider = chunking_provider
         self.kg_batch_size = kg_batch_size
         self.id_prefix = id_prefix
         self.pipe_run_info = None
@@ -80,7 +77,7 @@ class KGTriplesExtractionPipe(
 
     async def extract_kg(
         self,
-        fragments: list[DocumentFragment],
+        extractions: list[DocumentExtraction],
         generation_config: GenerationConfig,
         max_knowledge_triples: int,
         entity_types: list[str],
@@ -89,16 +86,16 @@ class KGTriplesExtractionPipe(
         delay: int = 2,
     ) -> KGExtraction:
         """
-        Extracts NER triples from a fragment with retries.
+        Extracts NER triples from a extraction with retries.
         """
 
-        # combine all fragments into a single string
-        combined_fragment: str = " ".join([fragment.data for fragment in fragments])  # type: ignore
+        # combine all extractions into a single string
+        combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_extraction_prompt,
             task_inputs={
-                "input": combined_fragment,
+                "input": combined_extraction,
                 "max_knowledge_triples": max_knowledge_triples,
                 "entity_types": "\n".join(entity_types),
                 "relation_types": "\n".join(relation_types),
@@ -155,12 +152,12 @@ class KGTriplesExtractionPipe(
                                 category=entity_category,
                                 description=entity_description,
                                 name=entity_value,
-                                document_ids=[str(fragments[0].document_id)],
-                                fragment_ids=[
-                                    str(fragment.id) for fragment in fragments
+                                document_ids=[str(extractions[0].document_id)],
+                                extraction_ids=[
+                                    str(extraction.id)
+                                    for extraction in extractions
                                 ],
                                 attributes={
-                                    # "fragment_text": combined_fragment
                                 },
                             )
                         )
@@ -181,12 +178,13 @@ class KGTriplesExtractionPipe(
                                 object=object,
                                 description=description,
                                 weight=weight,
-                                document_ids=[str(fragments[0].document_id)],
-                                fragment_ids=[
-                                    str(fragment.id) for fragment in fragments
+                                document_ids=[str(extractions[0].document_id)],
+                                extraction_ids=[
+                                    str(extraction.id)
+                                    for extraction in extractions
                                 ],
                                 attributes={
-                                    # "fragment_text": combined_fragment
+                                    "extraction_text": combined_extraction
                                 },
                             )
                         )
@@ -195,8 +193,10 @@ class KGTriplesExtractionPipe(
 
                 entities, triples = parse_fn(kg_extraction)
                 return KGExtraction(
-                    fragment_ids=[fragment.id for fragment in fragments],
-                    document_ids=[fragments[0].document_id],
+                    extraction_ids=[
+                        extraction.id for extraction in extractions
+                    ],
+                    document_id=extractions[0].document_id,
                     entities=entities,
                     triples=triples,
                 )
@@ -212,14 +212,14 @@ class KGTriplesExtractionPipe(
                     await asyncio.sleep(delay)
                 else:
                     logger.error(
-                        f"Failed after retries with for fragment {fragments[0].id} of document {fragments[0].document_id}: {e}"
+                        f"Failed after retries with for extraction {extractions[0].id} of document {extractions[0].document_id}: {e}"
                     )
                     # raise e # you should raise an error.
         # add metadata to entities and triples
 
         return KGExtraction(
-            fragment_ids=[fragment.id for fragment in fragments],
-            document_ids=[fragments[0].document_id],
+            extraction_ids=[extraction.id for extraction in extractions],
+            document_id=extractions[0].document_id,
             entities={},
             triples=[],
         )
@@ -232,20 +232,18 @@ class KGTriplesExtractionPipe(
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
-
         logger.info("Running KG Extraction Pipe")
 
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
-        fragment_merge_count = input.message["fragment_merge_count"]
+        extraction_merge_count = input.message["extraction_merge_count"]
         max_knowledge_triples = input.message["max_knowledge_triples"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
 
-        fragments = [
-            DocumentFragment(
-                id=extraction["fragment_id"],
-                extraction_id=extraction["extraction_id"],
+        extractions = [
+            DocumentExtraction(
+                id=extraction["id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
                 collection_ids=extraction["collection_ids"],
@@ -259,30 +257,32 @@ class KGTriplesExtractionPipe(
             ]
         ]
 
-        # sort the fragments accroding to chunk_order field in metadata in ascending order
-        fragments = sorted(fragments, key=lambda x: x.metadata["chunk_order"])
+        # sort the extractions accroding to chunk_order field in metadata in ascending order
+        extractions = sorted(
+            extractions, key=lambda x: x.metadata["chunk_order"]
+        )
 
-        # group these extractions into groups of fragment_merge_count
-        fragments_groups = [
-            fragments[i : i + fragment_merge_count]
-            for i in range(0, len(fragments), fragment_merge_count)
+        # group these extractions into groups of extraction_merge_count
+        extractions_groups = [
+            extractions[i : i + extraction_merge_count]
+            for i in range(0, len(extractions), extraction_merge_count)
         ]
 
         logger.info(
-            f"Extracting KG Triples from {len(fragments_groups)} fragment groups from originally {len(fragments)} fragments for document {document_id}"
+            f"Extracting KG Triples from {len(extractions_groups)} extraction groups from originally {len(extractions)} extractions for document {document_id}"
         )
 
         tasks = [
             asyncio.create_task(
                 self.extract_kg(
-                    fragments=fragments_group,
+                    extractions=extractions_group,
                     generation_config=generation_config,
                     max_knowledge_triples=max_knowledge_triples,
                     entity_types=entity_types,
                     relation_types=relation_types,
                 )
             )
-            for fragments_group in fragments_groups
+            for extractions_group in extractions_groups
         ]
 
         for completed_task in asyncio.as_completed(tasks):

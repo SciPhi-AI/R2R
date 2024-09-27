@@ -4,7 +4,6 @@ import logging
 # corresponding flake8 error codes are F403, F405
 from .agent import *
 from .base import *
-from .integrations import *
 from .main import *
 from .parsers import *
 from .pipelines import *
@@ -50,7 +49,6 @@ __all__ = [
     "DataType",
     "Document",
     "DocumentExtraction",
-    "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
     "KGCreationStatus",
@@ -134,12 +132,6 @@ __all__ = [
     # Auth provider
     "AuthConfig",
     "AuthProvider",
-    # Chunking provider
-    "UnstructuredChunkingConfig",
-    "R2RChunkingConfig",
-    "ChunkingConfig",
-    "ChunkingProvider",
-    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
@@ -157,10 +149,6 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Parsing provider
-    "ParsingConfig",
-    "ParsingProvider",
-    "OverrideParser",
     # Prompt provider
     "PromptConfig",
     "PromptProvider",
@@ -176,9 +164,6 @@ __all__ = [
     "RelationshipType",
     "format_entity_types",
     "format_relations",
-    ## INTEGRATIONS
-    # Serper
-    "SerperClient",
     ## MAIN
     ## R2R ABSTRACTIONS
     "R2RProviders",
@@ -216,7 +201,6 @@ __all__ = [
     "AudioParser",
     "DOCXParser",
     "ImageParser",
-    "MovieParser",
     "PDFParser",
     "PDFParserUnstructured",
     "PDFParserMarker",
@@ -239,7 +223,6 @@ __all__ = [
     "EmbeddingPipe",
     "KGTriplesExtractionPipe",
     "ParsingPipe",
-    "ChunkingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
     "StreamingSearchRAGPipe",
@@ -249,10 +232,8 @@ __all__ = [
     "MultiSearchPipe",
     ## PROVIDERS
     # Auth
+    "SupabaseAuthProvider",
     "R2RAuthProvider",
-    # Chunking
-    "R2RChunkingProvider",
-    "UnstructuredChunkingProvider",
     # Crypto
     "BCryptProvider",
     "BCryptConfig",
@@ -267,9 +248,10 @@ __all__ = [
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",
-    # Parsing
-    "R2RParsingProvider",
-    "UnstructuredParsingProvider",
+    # Ingestion
+    "UnstructuredIngestionProvider",
+    "R2RIngestionProvider",
+    "ChunkingMethod",
     # Prompts
     "R2RPromptProvider",
 ]

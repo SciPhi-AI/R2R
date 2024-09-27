@@ -76,7 +76,6 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
                 [[cell.value for cell in row] for row in ws.iter_rows()]
             )
             for table in self.connected_components(ws_data):
-
                 # parse like a csv parser, assumes that the first row has column names
                 if len(table) <= 1:
                     continue

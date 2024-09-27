@@ -22,9 +22,9 @@ class KGCreationSettings(R2RSerializable):
         description="The types of relations to extract.",
     )
 
-    fragment_merge_count: int = Field(
+    extraction_merge_count: int = Field(
         default=4,
-        description="The number of fragments to merge into a single KG extraction.",
+        description="The number of extractions to merge into a single KG extraction.",
     )
 
     max_knowledge_triples: int = Field(

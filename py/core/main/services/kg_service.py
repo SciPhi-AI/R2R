@@ -47,7 +47,7 @@ class KgService(Service):
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
-        fragment_merge_count: int,
+        extraction_merge_count: int,
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
@@ -57,7 +57,7 @@ class KgService(Service):
                 message={
                     "document_id": document_id,
                     "generation_config": generation_config,
-                    "fragment_merge_count": fragment_merge_count,
+                    "extraction_merge_count": extraction_merge_count,
                     "max_knowledge_triples": max_knowledge_triples,
                     "entity_types": entity_types,
                     "relation_types": relation_types,

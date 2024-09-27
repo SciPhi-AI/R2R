@@ -40,7 +40,6 @@ class AuthService(Service):
     async def verify_email(
         self, email: str, verification_code: str
     ) -> dict[str, str]:
-
         if not self.config.auth.require_email_verification:
             raise R2RException(
                 status_code=400, message="Email verification is not required"

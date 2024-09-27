@@ -13,7 +13,7 @@ if (typeof window === "undefined") {
   });
 }
 
-import { feature, featureGenerator, initializeTelemetry } from "./feature";
+import { feature, initializeTelemetry } from "./feature";
 import {
   LoginResponse,
   TokenInfo,
@@ -53,13 +53,24 @@ function handleRequestError(response: AxiosResponse): void {
 export class r2rClient {
   private axiosInstance: AxiosInstance;
   private baseUrl: string;
+  private anonymousTelemetry: boolean;
+
+  // Authorization tokens
   private accessToken: string | null;
   private refreshToken: string | null;
 
-  constructor(baseURL: string, prefix: string = "/v2") {
+  constructor(
+    baseURL: string,
+    prefix: string = "/v2",
+    anonymousTelemetry = true,
+  ) {
     this.baseUrl = `${baseURL}${prefix}`;
+    this.anonymousTelemetry = anonymousTelemetry;
+
     this.accessToken = null;
     this.refreshToken = null;
+
+    initializeTelemetry(this.anonymousTelemetry);
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -90,8 +101,11 @@ export class r2rClient {
         },
       ],
     });
+  }
 
-    initializeTelemetry();
+  setTokens(accessToken: string, refreshToken: string): void {
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
   }
 
   private async _makeRequest<T = any>(
@@ -202,10 +216,6 @@ export class r2rClient {
     // }
   }
 
-  async health(): Promise<any> {
-    return await this._makeRequest("GET", "health");
-  }
-
   // -----------------------------------------------------------------------------
   //
   // Auth
@@ -270,6 +280,27 @@ export class r2rClient {
     return response.results;
   }
 
+  @feature("loginWithToken")
+  async loginWithToken(
+    accessToken: string,
+  ): Promise<{ access_token: TokenInfo }> {
+    this.accessToken = accessToken;
+
+    try {
+      await this._makeRequest("GET", "user");
+
+      return {
+        access_token: {
+          token: accessToken,
+          token_type: "access_token",
+        },
+      };
+    } catch (error) {
+      this.accessToken = null;
+      throw new Error("Invalid token provided");
+    }
+  }
+
   /**
    * Logs out the currently authenticated user.
    * @returns A promise that resolves to the response from the server.
@@ -332,7 +363,12 @@ export class r2rClient {
     const response = await this._makeRequest<RefreshTokenResponse>(
       "POST",
       "refresh_access_token",
-      { data: { refresh_token: this.refreshToken } },
+      {
+        data: this.refreshToken,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
     );
 
     if (response && response.results) {
@@ -403,14 +439,9 @@ export class r2rClient {
   @feature("deleteUser")
   async deleteUser(userId: string, password?: string): Promise<any> {
     this._ensureAuthenticated();
-
-    const data: Record<string, any> = { user_id: userId };
-
-    if (password) {
-      data.password = password;
-    }
-
-    return await this._makeRequest("DELETE", "user", { data });
+    return await this._makeRequest("DELETE", `user/${userId}`, {
+      data: { password },
+    });
   }
 
   // -----------------------------------------------------------------------------
@@ -605,6 +636,14 @@ export class r2rClient {
   // Management
   //
   // -----------------------------------------------------------------------------
+
+  /**
+   * Check the health of the R2R deployment.
+   * @returns A promise that resolves to the response from the server.
+   */
+  async health(): Promise<any> {
+    return await this._makeRequest("GET", "health");
+  }
 
   /**
    * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
