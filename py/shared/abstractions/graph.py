@@ -54,7 +54,7 @@ class Entity(R2RSerializable):
     name_embedding: Optional[list[float]] = None
     graph_embedding: Optional[list[float]] = None
     community_ids: Optional[list[str]] = None
-    fragment_ids: Optional[list[str]] = None
+    extraction_ids: Optional[list[str]] = None
     document_id: Optional[str] = None
     rank: Optional[int] = 1
     attributes: Optional[Union[dict[str, Any], str]] = None
@@ -99,7 +99,7 @@ class Triple(BaseModel):
     predicate_embedding: list[float] = []
     """The semantic embedding for the relationship description (optional)."""
 
-    fragment_ids: list[str] = []
+    extraction_ids: list[str] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
     document_id: str | None = None

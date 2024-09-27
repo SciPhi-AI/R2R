@@ -126,7 +126,7 @@ class KGCreationStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
-    FAILURE = "failure"
+    FAILED = "failed"
 
 
 class KGEnrichmentStatus(str, Enum):
@@ -135,7 +135,7 @@ class KGEnrichmentStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
-    FAILURE = "failure"
+    FAILED = "failed"
 
 
 class DocumentInfo(R2RSerializable):
