@@ -47,7 +47,7 @@ class DocumentMixin(DatabaseMixin):
             Column("version", String),
             Column("size_in_bytes", Integer),
             Column("ingestion_status", String),
-            Column("restructuring_status", String),
+            Column("kg_creation_status", String),
             Column("created_at", DateTime),
             Column("updated_at", DateTime),
             Column("ingestion_attempt_number", Integer, default=0),
@@ -65,7 +65,7 @@ class DocumentMixin(DatabaseMixin):
             version TEXT,
             size_in_bytes INT,
             ingestion_status TEXT DEFAULT 'pending',
-            restructuring_status TEXT DEFAULT 'pending',
+            kg_creation_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
             ingestion_attempt_number INT DEFAULT 0
