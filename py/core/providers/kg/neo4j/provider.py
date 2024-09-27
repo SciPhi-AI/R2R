@@ -10,7 +10,6 @@ from uuid import UUID
 from core.base import KGConfig, KGProvider, R2RException
 from core.base.abstractions import (
     Community,
-    DocumentFragment,
     Entity,
     KGExtraction,
     RelationshipType,
@@ -35,9 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class Neo4jKGProvider(KGProvider):
-
     def __init__(self, config: KGConfig, *args: Any, **kwargs: Any) -> None:
-
         try:
             import neo4j
         except ImportError:
@@ -140,15 +137,13 @@ class Neo4jKGProvider(KGProvider):
             results.append(result)
         return results
 
-    def get_chunks(
-        self, chunk_ids: List[str] = None
-    ) -> List[DocumentFragment]:
+    def get_chunks(self, chunk_ids: List[str] = None) -> List[Any]:
         """
         Get chunks from the graph.
         """
         return self.structured_query(GET_CHUNKS_QUERY, chunk_ids)
 
-    def upsert_chunks(self, chunks: List[DocumentFragment]):
+    def upsert_chunks(self, chunks: List[Any]):
         """
         Upsert chunks into the graph.
         """
@@ -196,7 +191,6 @@ class Neo4jKGProvider(KGProvider):
     def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
     ) -> Tuple[int, int]:
-
         all_entities = []
         all_relationships = []
         for extraction in kg_extractions:
@@ -366,7 +360,6 @@ class Neo4jKGProvider(KGProvider):
     def create_vector_index(
         self, node_type: str, node_property: str, dimension: int
     ) -> None:
-
         query = f"""
         CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS
 
@@ -384,7 +377,6 @@ class Neo4jKGProvider(KGProvider):
     async def vector_query(
         self, query, **kwargs: Any
     ) -> AsyncGenerator[dict[str, Any], None]:
-
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "__Entity__")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
@@ -483,7 +475,6 @@ class Neo4jKGProvider(KGProvider):
         """
 
         if graph_exists:
-
             logger.info(f"Graph exists, dropping it")
             GRAPH_DROP_QUERY = (
                 "CALL gds.graph.drop('kg_graph') YIELD graphName;"

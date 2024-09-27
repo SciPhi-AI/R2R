@@ -403,7 +403,7 @@ TextEmbedder = Callable[[str], list[float]]
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
-    fragment_ids: list[uuid.UUID]
+    extraction_ids: list[uuid.UUID]
     document_id: uuid.UUID
     entities: dict[str, Entity]
     triples: list[Triple]

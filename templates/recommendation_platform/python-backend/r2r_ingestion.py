@@ -33,7 +33,7 @@ with open(input_csv_path, "r") as csvfile:
 
         # Ingest the temporary file using the R2R client with a custom chunk size
         client.ingest_files(
-            [temp_filename], chunking_config={"chunk_size": 4096}
+            [temp_filename], ingestion_config={"provider": "r2r", "chunk_size": 4096}
         )
 
         os.remove(temp_filename)

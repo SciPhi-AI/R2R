@@ -6,7 +6,6 @@ from tests.regression.test_cases.base import BaseTest
 
 
 class TestDocumentManagement(BaseTest):
-
     CHUNKS_FILE_ID = "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
     UPDATE_FILE_ID = "db02076e-989a-59cd-98d5-e24e15a0bd27"
     DELETE_FILE_ID = "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"

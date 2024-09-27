@@ -193,7 +193,6 @@ class Collection:
     """
 
     COLUMN_VARS = [
-        "fragment_id",
         "extraction_id",
         "document_id",
         "user_id",
@@ -397,23 +396,21 @@ class Collection:
                     stmt = postgresql.insert(self.table).values(
                         [
                             {
-                                "fragment_id": record[0],
-                                "extraction_id": record[1],
-                                "document_id": record[2],
-                                "user_id": record[3],
-                                "collection_ids": record[4],
-                                "vec": record[5],
-                                "text": record[6],
-                                "metadata": record[7],
-                                "fts": func.to_tsvector(record[6]),
+                                "extraction_id": record[0],
+                                "document_id": record[1],
+                                "user_id": record[2],
+                                "collection_ids": record[3],
+                                "vec": record[4],
+                                "text": record[5],
+                                "metadata": record[6],
+                                "fts": func.to_tsvector(record[5]),
                             }
                             for record in chunk
                         ]
                     )
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=[self.table.c.fragment_id],
+                        index_elements=[self.table.c.extraction_id],
                         set_=dict(
-                            extraction_id=stmt.excluded.extraction_id,
                             document_id=stmt.excluded.document_id,
                             user_id=stmt.excluded.user_id,
                             collection_ids=stmt.excluded.collection_ids,
@@ -426,29 +423,29 @@ class Collection:
                     sess.execute(stmt)
         return None
 
-    def fetch(self, fragment_ids: Iterable[UUID]) -> list[Record]:
+    def fetch(self, ids: Iterable[UUID]) -> list[Record]:
         """
-        Fetches vectors from the collection by their fragment identifiers.
+        Fetches vectors from the collection by their identifiers.
 
         Args:
-            fragment_ids (Iterable[UUID]): An iterable of vector fragment identifiers.
+            ids (Iterable[UUID]): An iterable of vector identifiers.
 
         Returns:
             list[Record]: A list of the fetched vectors.
 
         Raises:
-            ArgError: If fragment_ids is not an iterable of UUIDs.
+            ArgError: If ids is not an iterable of UUIDs.
         """
-        if isinstance(fragment_ids, (str, UUID)):
-            raise ArgError("fragment_ids must be an iterable of UUIDs")
+        if isinstance(ids, (str, UUID)):
+            raise ArgError("ids must be an iterable of UUIDs")
 
         chunk_size = 12
         records = []
         with self.client.Session() as sess:
             with sess.begin():
-                for id_chunk in flu(fragment_ids).chunk(chunk_size):
+                for id_chunk in flu(ids).chunk(chunk_size):
                     stmt = select(self.table).where(
-                        self.table.c.fragment_id.in_(id_chunk)
+                        self.table.c.extraction_id.in_(id_chunk)
                     )
                     chunk_records = sess.execute(stmt)
                     records.extend(chunk_records)
@@ -456,11 +453,11 @@ class Collection:
 
     def delete(
         self,
-        fragment_ids: Optional[Iterable[UUID]] = None,
+        ids: Optional[Iterable[UUID]] = None,
         filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, dict[str, str]]:
         """
-        Deletes vectors from the collection by matching filters or fragment_ids.
+        Deletes vectors from the collection by matching filters or ids.
 
         Args:
             fragment_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
@@ -471,43 +468,39 @@ class Collection:
             and the value is a dictionary containing 'document_id', 'extraction_id', 'fragment_id', and 'text'.
 
         Raises:
-            ArgError: If neither fragment_ids nor filters are provided, or if both are provided.
+            ArgError: If neither ids nor filters are provided, or if both are provided.
         """
-        if fragment_ids is None and filters is None:
-            raise ArgError("Either fragment_ids or filters must be provided.")
+        if ids is None and filters is None:
+            raise ArgError("Either ids or filters must be provided.")
 
-        if fragment_ids is not None and filters is not None:
-            raise ArgError(
-                "Either fragment_ids or filters must be provided, not both."
-            )
+        if ids is not None and filters is not None:
+            raise ArgError("Either ids or filters must be provided, not both.")
 
-        if isinstance(fragment_ids, (str, UUID)):
-            raise ArgError("fragment_ids must be an iterable of UUIDs")
+        if isinstance(ids, (str, UUID)):
+            raise ArgError("ids must be an iterable of UUIDs")
 
         deleted_records = {}
 
         with self.client.Session() as sess:
             with sess.begin():
-                if fragment_ids:
-                    for id_chunk in flu(fragment_ids).chunk(12):
+                if ids:
+                    for id_chunk in flu(ids).chunk(12):
                         delete_stmt = (
                             delete(self.table)
-                            .where(self.table.c.fragment_id.in_(id_chunk))
+                            .where(self.table.c.extraction_id.in_(id_chunk))
                             .returning(
-                                self.table.c.fragment_id,
-                                self.table.c.document_id,
                                 self.table.c.extraction_id,
+                                self.table.c.document_id,
                                 self.table.c.text,
                             )
                         )
                         result = sess.execute(delete_stmt)
                         for row in result:
-                            fragment_id = str(row[0])
-                            deleted_records[fragment_id] = {
-                                "fragment_id": fragment_id,
+                            extraction_id = str(row[0])
+                            deleted_records[extraction_id] = {
+                                "extraction_id": extraction_id,
                                 "document_id": str(row[1]),
-                                "extraction_id": str(row[2]),
-                                "text": row[3],
+                                "text": row[2],
                             }
 
                 if filters:
@@ -516,20 +509,18 @@ class Collection:
                         delete(self.table)
                         .where(meta_filter)
                         .returning(
-                            self.table.c.fragment_id,
-                            self.table.c.document_id,
                             self.table.c.extraction_id,
+                            self.table.c.document_id,
                             self.table.c.text,
                         )
                     )
                     result = sess.execute(delete_stmt)
                     for row in result:
-                        fragment_id = str(row[0])
-                        deleted_records[fragment_id] = {
-                            "fragment_id": fragment_id,
+                        extraction_id = str(row[0])
+                        deleted_records[extraction_id] = {
+                            "extraction_id": extraction_id,
                             "document_id": str(row[1]),
-                            "extraction_id": str(row[2]),
-                            "text": row[3],
+                            "text": row[2],
                         }
         return deleted_records
 
@@ -590,7 +581,6 @@ class Collection:
         distance_clause = distance_lambda(self.table.c.vec)(vector)
 
         cols = [
-            self.table.c.fragment_id,
             self.table.c.extraction_id,
             self.table.c.document_id,
             self.table.c.user_id,
@@ -649,7 +639,6 @@ class Collection:
         # Build the main query
         stmt = (
             select(
-                self.table.c.fragment_id,
                 self.table.c.extraction_id,
                 self.table.c.document_id,
                 self.table.c.user_id,
@@ -672,8 +661,7 @@ class Collection:
         # Convert the results to VectorSearchResult objects
         return [
             VectorSearchResult(
-                fragment_id=str(r.fragment_id),
-                extraction_id=str(r.extraction_id),
+                extraction_id=str(r.id),
                 document_id=str(r.document_id),
                 user_id=str(r.user_id),
                 collection_ids=r.collection_ids,
@@ -1041,7 +1029,7 @@ class Collection:
 
                 if method == IndexMethod.ivfflat:
                     if not index_arguments:
-                        n_records: int = sess.execute(func.count(self.table.c.id)).scalar()  # type: ignore
+                        n_records: int = sess.execute(func.count(self.table.c.extraction_id)).scalar()  # type: ignore
 
                         n_lists = (
                             int(max(n_records / 1000, 30))
@@ -1093,8 +1081,7 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
     table = Table(
         name,
         meta,
-        Column("fragment_id", postgresql.UUID, primary_key=True),
-        Column("extraction_id", postgresql.UUID, nullable=False),
+        Column("extraction_id", postgresql.UUID, primary_key=True),
         Column("document_id", postgresql.UUID, nullable=False),
         Column("user_id", postgresql.UUID, nullable=False),
         Column(

@@ -204,7 +204,6 @@ def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
 
 
 def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
-
     try:
         response = requests.get(ollama_url, timeout=5)
         if response.status_code == 200:

@@ -1,33 +1,33 @@
+<Warning>This installation guide is for R2R Core. For solo developers or teams prototyping, we highly recommend starting with <a href="/documentation/installation/light/local-system">R2R Light</a>.</Warning>
 # R2R Local System Installation
 
 This guide will walk you through installing and running R2R on your local system without using Docker. This method allows for more customization and control over individual components.
 
-<Warning>
-  Local installation of R2R is challenging due to the numerous services it integrates. We strongly recommend using Docker to get started quickly.
+
+<Tip>
+  Local installation of R2R Core is challenging due to the numerous services it integrates. We strongly recommend using Docker to get started quickly.
 
   If you choose to proceed with a local installation, be prepared to set up and configure the following services:
 
   1. **Postgres with pgvector**: A relational database with vector storage capabilities.
   2. **Unstructured.io**: A complex system for file ingestion.
-  3. **Neo4j**: A graph database system.
   4. **Hatchet**: A RabbitMQ-based orchestration system.
 
   Alternatively, you can use cloud versions of these services, but you'll be responsible for enrolling in them and providing the necessary environment variables.
 
   Each of these components has its own requirements, potential compatibility issues, and configuration complexities. Debugging issues in a local setup can be significantly more challenging than using a pre-configured Docker environment.
 
-</Warning>
+</Tip>
 
   Unless you have a specific need for a local installation and are comfortable with advanced system configuration, we highly recommend using the Docker setup method for a smoother experience.
 ## Prerequisites
 
 Before starting, ensure you have the following installed and/or available in the cloud:
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip (Python package manager)
 - Git
-- Postgres
+- Postgres + pgvector
 - Unstructured file ingestion
-- Neo4j
 - Hatchet workflow orchestration
 
 ## Install the R2R CLI & Python SDK
@@ -68,22 +68,11 @@ R2R requires connections to various services. Set up the following environment v
       export POSTGRES_HOST=$YOUR_POSTGRES_HOST
       export POSTGRES_PORT=$YOUR_POSTGRES_PORT
       export POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME
-      export POSTGRES_PROJECT_NAME=$YOUR_VECS_COLLECTION # see note below
+      export POSTGRES_PROJECT_NAME=$YOUR_PROJECT_NAME # see note below
     ```
     <Note>
     The `POSTGRES_PROJECT_NAME` environment variable defines the collection within your Postgres database where R2R related tables reside. If the specified collection does not exist then it will be created by R2R during initialization.
     </Note>
-  </Accordion>
-  <Accordion title="Neo4j" icon="chart-simple">
-     Use your own local instance of Neo4j.
-     ```bash
-      # Set Neo4j settings
-      export NEO4J_USER=$YOUR_NEO4J_USER
-      export NEO4J_PASSWORD=$YOUR_NEO4J_PASSWORD
-      export NEO4J_URL=$YOUR_NEO4J_URL
-      export NEO4J_DATABASE=$YOUR_NEO4J_DATABASE
-    ```
-    Refer [here for basic setup help](/other/neo4j-setup).
   </Accordion>
 <Accordion title="Unstructured" icon="puzzle">
   By default, R2R uses [unstructured.io](https://docs.unstructured.io/welcome) to handle file ingestion. Unstructured can be:
@@ -123,8 +112,8 @@ For those looking to develop R2R locally:
 After setting up your environment, you can start R2R using the following command:
 
 ```bash
-# requires full unstructured installation
-r2r serve --config-name=default
+# requires services for unstructured, hatchet, postgres
+r2r serve --config-name=core
 ```
 
 For local LLM usage:

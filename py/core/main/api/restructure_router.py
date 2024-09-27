@@ -11,15 +11,8 @@ from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
-from core.base.providers import OrchestrationProvider
+from core.base.providers import OrchestrationProvider, Workflow
 
-from ...main.hatchet import r2r_hatchet
-from ..hatchet import (
-    CreateGraphWorkflow,
-    EnrichGraphWorkflow,
-    KGCommunitySummaryWorkflow,
-    KgExtractAndStoreWorkflow,
-)
 from ..services.restructure_service import RestructureService
 from .base_router import BaseRouter, RunType
 
@@ -30,14 +23,10 @@ class RestructureRouter(BaseRouter):
     def __init__(
         self,
         service: RestructureService,
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.RESTRUCTURE,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        if not orchestration_provider:
-            raise ValueError(
-                "RestructureRouter requires an orchestration provider."
-            )
-        super().__init__(service, run_type, orchestration_provider)
+        super().__init__(service, orchestration_provider, run_type)
         self.service: RestructureService = service
 
     def _load_openapi_extras(self):
@@ -49,17 +38,13 @@ class RestructureRouter(BaseRouter):
         return yaml_content
 
     def _register_workflows(self):
-        self.orchestration_provider.register_workflow(
-            EnrichGraphWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            KgExtractAndStoreWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            CreateGraphWorkflow(self.service)
-        )
-        self.orchestration_provider.register_workflow(
-            KGCommunitySummaryWorkflow(self.service)
+        self.orchestration_provider.register_workflows(
+            Workflow.RESTRUCTURE,
+            self.service,
+            {
+                "create-graph": "Graph creation task queued successfully.",
+                "enrich-graph": "Graph enrichment task queued successfully.",
+            },
         )
 
     def _setup_routes(self):
@@ -102,14 +87,9 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.admin.run_workflow(
-                "create-graph", {"request": workflow_input}
+            return self.orchestration_provider.run_workflow(
+                "create-graph", {"request": workflow_input}, {}
             )
-
-            return {
-                "message": f"Graph creation task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
-                "task_id": str(task_id),
-            }
 
         @self.router.post(
             "/enrich_graph",
@@ -157,11 +137,6 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.admin.run_workflow(
-                "enrich-graph", {"request": workflow_input}
+            return self.orchestration_provider.run_workflow(
+                "enrich-graph", {"request": workflow_input}, {}
             )
-
-            return {
-                "message": "Graph enrichment task queued successfully. Please check http://<your-hatchet-gui-url> for completion status.",
-                "task_id": str(task_id),
-            }
