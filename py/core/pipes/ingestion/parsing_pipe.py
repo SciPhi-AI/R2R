@@ -7,6 +7,7 @@ from core.base import (
     Document,
     DocumentExtraction,
     FileProvider,
+    IngestionConfig,
     PipeType,
     RunLoggingSingleton,
     generate_id_from_label,
@@ -47,8 +48,19 @@ class ParsingPipe(AsyncPipe):
         document: Document,
         run_id: UUID,
         version: str,
+        ingestion_config_override: Optional[dict],
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
+            ingestion_config_override = ingestion_config_override or {}
+            override_provider = ingestion_config_override.pop("provider", None)
+            if (
+                override_provider
+                and override_provider
+                != self.ingestion_provider.config.provider
+            ):
+                raise ValueError(
+                    f"Provider '{override_provider}' does not match ingestion provider '{self.ingestion_provider.config.provider}'."
+                )
             if result := await self.file_provider.retrieve_file(document.id):
                 file_name, file_wrapper, file_size = result
 
@@ -56,7 +68,7 @@ class ParsingPipe(AsyncPipe):
                 file_content = file_content_stream.read()
 
             async for extraction in self.ingestion_provider.parse(  # type: ignore
-                file_content, document
+                file_content, document, ingestion_config_override
             ):
                 id = generate_id_from_label(f"{extraction.id}-{version}")
                 extraction.id = id
@@ -76,7 +88,12 @@ class ParsingPipe(AsyncPipe):
         *args,
         **kwargs,
     ) -> AsyncGenerator[DocumentExtraction, None]:
+        ingestion_config = kwargs.get("ingestion_config")
+
         async for result in self._parse(
-            input.message, run_id, input.message.metadata.get("version", "v0")
+            input.message,
+            run_id,
+            input.message.metadata.get("version", "v0"),
+            ingestion_config_override=ingestion_config,
         ):
             yield result

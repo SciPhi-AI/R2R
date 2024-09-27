@@ -44,8 +44,9 @@ def hatchet_ingestion_factory(
                 status=IngestionStatus.PARSING,
             )
 
+            ingestion_config = parsed_data["ingestion_config"] or {}
             extractions_generator = await self.ingestion_service.parse_file(
-                document_info
+                document_info, ingestion_config
             )
 
             extractions = []
@@ -146,10 +147,14 @@ def hatchet_ingestion_factory(
                 document_info = documents_overview[0]
 
                 # Update the document status to FAILED
-                await self.ingestion_service.update_document_status(
-                    document_info,
-                    status=IngestionStatus.FAILED,
-                )
+                if (
+                    not document_info.ingestion_status
+                    == IngestionStatus.SUCCESS
+                ):
+                    await self.ingestion_service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.FAILED,
+                    )
 
             except Exception as e:
                 logger.error(

@@ -70,7 +70,7 @@ jobs:
         r2r version
 
         echo "R2R Serve --docker"
-        r2r serve --docker --exclude-neo4j=true --exclude-ollama=true  --image=ragtoriches/dev:latest
+        r2r serve --docker --exclude-ollama=true  --image=ragtoriches/dev:latest
 
         echo "Waiting for services to start..."
         sleep 30

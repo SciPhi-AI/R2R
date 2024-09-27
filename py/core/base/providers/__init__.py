@@ -9,7 +9,7 @@ from .database import (
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
-from .ingestion import ChunkingMethod, IngestionConfig, IngestionProvider
+from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
 from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
@@ -25,7 +25,7 @@ __all__ = [
     # Ingestion provider
     "IngestionConfig",
     "IngestionProvider",
-    "ChunkingMethod",
+    "ChunkingStrategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",

@@ -123,7 +123,7 @@ __all__ = [
     # Ingestion provider
     "IngestionConfig",
     "IngestionProvider",
-    "ChunkingMethod",
+    "ChunkingStrategy",
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",

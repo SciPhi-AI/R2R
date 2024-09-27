@@ -374,9 +374,11 @@ class ManagementRouter(BaseRouter):
         ):
             document_uuid = UUID(document_id)
 
-            document_chunks_result = await self.service.document_chunks(
+            document_chunks = await self.service.document_chunks(
                 document_uuid, offset, limit
             )
+
+            document_chunks_result = document_chunks["results"]
 
             if not document_chunks_result:
                 raise R2RException(
@@ -395,7 +397,7 @@ class ManagementRouter(BaseRouter):
                 )
 
             return document_chunks_result["results"], {
-                "total_entries": document_chunks_result["total_entries"]
+                "total_entries": document_chunks["total_entries"]
             }
 
         @self.router.get("/inspect_knowledge_graph")

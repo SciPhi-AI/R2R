@@ -53,6 +53,9 @@ batch_size = 256
     reduce_system_prompt = "graphrag_reduce_system_prompt"
     generation_config = { model = "ollama/llama3.1" }
 
+[orchestration]
+provider = "hatchet"
+
 [parsing]
 provider = "unstructured_local"
 excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]

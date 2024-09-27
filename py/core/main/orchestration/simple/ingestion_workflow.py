@@ -21,7 +21,11 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.PARSING
             )
-            extractions_generator = await service.parse_file(document_info)
+
+            ingestion_config = parsed_data["ingestion_config"]
+            extractions_generator = await service.parse_file(
+                document_info, ingestion_config
+            )
             extractions = [
                 extraction.model_dump()
                 async for extraction in extractions_generator
