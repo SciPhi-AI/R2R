@@ -13,7 +13,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
-
+from shared.abstractions import KGEnrichmentSettings
 logger = logging.getLogger(__name__)
 
 
@@ -50,7 +50,8 @@ class KGClusteringPipe(AsyncPipe):
     async def cluster_kg(
         self,
         project_name: str,
-        leiden_params: dict,
+        collection_id: UUID,
+        kg_enrichment_settings: KGEnrichmentSettings,
         generation_config: GenerationConfig,
     ):
         """
@@ -58,9 +59,8 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         num_communities = (
-            await self.kg_provider.perform_graph_clustering(project_name, leiden_params)  # type: ignore
+            await self.kg_provider.perform_graph_clustering(project_name, collection_id, kg_enrichment_settings, generation_config)  # type: ignore
         )
-
 
         return {
             "num_communities": num_communities,

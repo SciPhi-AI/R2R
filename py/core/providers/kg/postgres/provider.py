@@ -188,12 +188,6 @@ class PostgresKGProvider(KGProvider):
         QUERY = f"""
             INSERT INTO {collection_name}.{TABLE_NAME} (category, name, description, fragment_ids, document_ids, attributes)
             VALUES ($1, $2, $3, $4, $5, $6)"""
-            # ON CONFLICT (name, category, document_ids, fragment_ids) DO UPDATE SET
-            #     description = EXCLUDED.description,
-            #     fragment_ids = EXCLUDED.fragment_ids,
-            #     document_ids = EXCLUDED.document_ids,
-            #     attributes = EXCLUDED.attributes
-            # """
         params = [
             (entity.category, entity.name, entity.description, entity.fragment_ids, entity.document_ids, json.dumps(entity.attributes))
             for entity in entities
@@ -211,13 +205,6 @@ class PostgresKGProvider(KGProvider):
             INSERT INTO {collection_name}.{TABLE_NAME} 
             (subject, predicate, object, weight, description, attributes, fragment_ids, document_ids)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"""
-            # ON CONFLICT (subject, predicate, object, document_ids, fragment_ids) DO UPDATE SET
-            #     weight = EXCLUDED.weight,
-            #     description = concat({TABLE_NAME}.description, ' ', EXCLUDED.description),
-            #     attributes = {TABLE_NAME}.attributes || EXCLUDED.attributes,
-            #     fragment_ids = array_cat({TABLE_NAME}.fragment_ids, EXCLUDED.fragment_ids),
-            #     document_ids = array_cat({TABLE_NAME}.document_ids, EXCLUDED.document_ids)
-            # """
         params = [
             (triple.subject, triple.predicate, triple.object, triple.weight, triple.description, 
              json.dumps(triple.attributes), fragment_ids, document_ids)
@@ -242,20 +229,6 @@ class PostgresKGProvider(KGProvider):
         return (total_entities, total_relationships)
 
     async def get_entity_map(self, offset: int, limit: int, project_name: str) -> dict[str, Any]:
-        # QUERY = f"""
-        #     WITH entities_list AS (
-        #         SELECT distinct (name) FROM {project_name}.entities_raw order by name ASC LIMIT $3 OFFSET $4
-        #     )
-        #     SELECT name, description FROM {project_name}.entities_raw WHERE name IN (SELECT name FROM entities_list)
-        #     """
-
-        # try:    
-        #     result = await self.fetch_query(QUERY, (limit, offset))
-        #     import pdb; pdb.set_trace()
-        #     return result
-        # except Exception as e:
-        #     print(e)
-        #     import pdb; pdb.set_trace()
 
         QUERY1=  f"""
             WITH entities_list AS (
@@ -501,21 +474,6 @@ class PostgresKGProvider(KGProvider):
 
         return level, entities, triples
 
-    # async def vector_query(self, query: str, **kwargs: Any) -> Any:
-
-    #     query_embedding = kwargs.get("query_embedding", None)
-    #     search_type = kwargs.get("search_type", "__Entity__")
-    #     embedding_type = kwargs.get("embedding_type", "description_embedding")
-    #     property_names = kwargs.get("property_names", ["name", "description"])
-    #     limit = kwargs.get("limit", 10)
-
-    #     embedding = [str(self.embedding_provider.embed_text(query))]
-    #     property_names_str = ", ".join(property_names)
-    #     QUERY = f"""
-    #             SELECT {property_names_str} FROM {project_name}.{table_name} ORDER BY embedding <=> $1 LIMIT toInteger($2);
-    #         """
-    #     return await self.fetch_query(QUERY, [embedding, limit])
-
     async def client(self):
         return self.pool
 
@@ -552,14 +510,3 @@ class PostgresKGProvider(KGProvider):
 
     async def upsert_triples(self):
         pass
-
-
-    
-        
-
-
-
-
-
-
-

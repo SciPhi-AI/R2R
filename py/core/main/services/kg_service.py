@@ -8,6 +8,7 @@ from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
+from shared.abstractions import KGEnrichmentSettings
 from .base import Service
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,6 @@ async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
     async for res in result_gen:
         results.append(res.json() if hasattr(res, "json") else res)
     return results
-
 
 class KGService(Service):
     def __init__(
@@ -91,13 +91,13 @@ class KGService(Service):
         return await _collect_results(node_extractions)
 
     @telemetry_event("kg_clustering")
-    async def kg_clustering(self, leiden_params, generation_config, project_name):
+    async def kg_clustering(self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings, project_name: str):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
-                    "leiden_params": leiden_params,
-                    "generation_config": generation_config,
                     "project_name": project_name,
+                    "collection_id": collection_id,
+                    "kg_enrichment_settings": kg_enrichment_settings,
                 }
             ),
             state=None,

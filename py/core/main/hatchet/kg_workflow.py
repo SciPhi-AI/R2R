@@ -9,6 +9,7 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import R2RDocumentProcessingError
 from core.base.abstractions import KGCreationStatus, KGEnrichmentStatus
+from core.base import KGCreationSettings, KGEnrichmentSettings
 
 from ..services import KGService
 from .base import r2r_hatchet
@@ -16,8 +17,8 @@ from .base import r2r_hatchet
 logger = logging.getLogger(__name__)
 
 
-@r2r_hatchet.workflow(name="kg-create", timeout="60m")
-class KgExtractAndStoreWorkflow:
+@r2r_hatchet.workflow(name="kg-esd", timeout="60m")
+class KgExtractStoreDescribeWorkflow:
     def __init__(self, kg_service: KGService):
         self.kg_service = kg_service
 
@@ -30,20 +31,10 @@ class KgExtractAndStoreWorkflow:
         entity_types = input_data["entity_types"]
         relation_types = input_data["relation_types"]
 
-        document_overview = await self.kg_service.providers.database.relational.get_documents_overview(
-            filter_document_ids=[document_id]
-        )
-        document_overview = document_overview["results"][0]
-
         try:
 
-            # Set restructure status to 'processing'
-            document_overview.restructuring_status = (
-                KGCreationStatus.PROCESSING
-            )
-
-            await self.kg_service.providers.database.relational.upsert_documents_overview(
-                document_overview
+            await self.kg_service.providers.database.relational.set_workflow_status(
+                id=document_id, status_type="kg_creation", status=KGCreationStatus.PROCESSING
             )
 
             errors = await self.kg_service.kg_extract_and_store(
@@ -56,40 +47,28 @@ class KgExtractAndStoreWorkflow:
                 entity_types=entity_types,
                 relation_types=relation_types,
             )
-            # Set restructure status to 'success' if completed successfully
+
             if len(errors) == 0:
-                document_overview.restructuring_status = (
-                    KGCreationStatus.SUCCESS
-                )
-                await self.kg_service.providers.database.relational.upsert_documents_overview(
-                    document_overview
+                await self.kg_service.providers.database.relational.set_workflow_status(
+                    id=document_id, status_type="kg_creation", status=KGCreationStatus.SUCCESS
                 )
             else:
-
-                document_overview.restructuring_status = (
-                    KGCreationStatus.FAILURE
-                )
-                await self.kg_service.providers.database.relational.upsert_documents_overview(
-                    document_overview
-                )
-                raise R2RDocumentProcessingError(
-                    error_message=f"Error in kg_extract_and_store, list of errors: {errors}",
-                    document_id=document_id,
-                )
+                raise ValueError(f"Error in kg_extract_and_store: No Triples Extracted")
 
         except Exception as e:
 
-            # Set restructure status to 'failure' if an error occurred
-            document_overview.restructuring_status = KGCreationStatus.FAILURE
-            await self.kg_service.providers.database.relational.upsert_documents_overview(
-                document_overview
+            await self.kg_service.providers.database.relational.set_workflow_status(
+                id=document_id, status_type="kg_creation", status=KGCreationStatus.FAILURE
             )
+
             raise R2RDocumentProcessingError(
                 error_message=e,
                 document_id=document_id,
-            )
+            ) from e
 
         return {"result": None}
+    
+    # TODO: parallelize embedding and storing
 
 
 @r2r_hatchet.workflow(name="create-graph", timeout="60m")
@@ -105,62 +84,24 @@ class CreateGraphWorkflow:
             **json.loads(input_data["kg_creation_settings"])
         )
 
-        documents_overview = (
-            await self.kg_service.providers.database.relational.get_documents_overview()
+        document_status_filter = [KGCreationStatus.PENDING, KGCreationStatus.FAILURE]
+        if kg_creation_settings.force_kg_creation:
+            document_status_filter += [KGCreationStatus.SUCCESS, KGCreationStatus.PROCESSING]
+
+        document_ids = await self.kg_service.providers.database.relational.get_document_ids_by_status(
+            status_type="kg_creation",
+            status=document_status_filter
         )
-        documents_overview = documents_overview["results"]
-
-        document_ids = [
-            doc.id
-            for doc in documents_overview
-            if doc.restructuring_status != IngestionStatus.SUCCESS
-        ]
-
-        document_ids = [str(doc_id) for doc_id in document_ids]
-
-        documents_overviews = await self.kg_service.providers.database.relational.get_documents_overview(
-            filter_document_ids=document_ids
-        )
-        documents_overviews = documents_overviews["results"]
-
-        # Only run if restructuring_status is pending or failure
-        filtered_document_ids = []
-        for document_overview in documents_overviews:
-            filtered_document_ids.append(document_overview.id)
-            continue
-            restructuring_status = document_overview.restructuring_status
-            if restructuring_status in [
-                RestructureStatus.PENDING,
-                RestructureStatus.FAILURE,
-                RestructureStatus.ENRICHMENT_FAILURE,
-            ]:
-                filtered_document_ids.append(document_overview.id)
-            elif restructuring_status == RestructureStatus.SUCCESS:
-                logger.warning(
-                    f"Graph already created for document ID: {document_overview.id}"
-                )
-            elif restructuring_status == RestructureStatus.PROCESSING:
-                logger.warning(
-                    f"Graph creation is already in progress for document ID: {document_overview.id}"
-                )
-            elif restructuring_status == RestructureStatus.ENRICHED:
-                logger.warning(
-                    f"Graph is already enriched for document ID: {document_overview.id}"
-                )
-            else:
-                logger.warning(
-                    f"Unknown restructuring status for document ID: {document_overview.id}"
-                )
 
         results = []
-        for cnt, document_id in enumerate(filtered_document_ids):
+        for cnt, document_id in enumerate(document_ids):
             logger.info(
                 f"Running Graph Creation Workflow for document ID: {document_id}"
             )
             results.append(
                 (
                     context.aio.spawn_workflow(
-                        "kg-create",
+                        "kg-esd",
                         {
                             "request": {
                                 "document_id": str(document_id),
@@ -171,119 +112,58 @@ class CreateGraphWorkflow:
                                 "relation_types": kg_creation_settings.relation_types,
                             }
                         },
-                        key=f"kg-create-{cnt}/{len(filtered_document_ids)}",
+                        key=f"kg-csd-{cnt}/{len(document_ids)}",
                     )
                 )
             )
 
-        if not filtered_document_ids:
+        if not document_ids:
             logger.info(
                 "No documents to process, either all graphs were created or in progress, or no documents were provided. Skipping graph creation."
             )
-            return {"result": "success"}
+            return {"result": "No documents to process"}
 
         logger.info(f"Ran {len(results)} workflows for graph creation")
         results = await asyncio.gather(*results)
-        return {"result": "success"}
-
-
-# @r2r_hatchet.workflow(name="kg-node-description", timeout="60m")
-# class KGNodeDescriptionWorkflow:
-#     def __init__(self, kg_service: RestructureService):
-#         self.kg_service = kg_service
-
-#     @r2r_hatchet.step(retries=3, timeout="60m")
-#     async def kg_node_description(self, context: Context) -> dict:
-#         input_data = context.workflow_input()["request"]
-#         max_description_input_length = input_data["max_description_input_length"]
-#         collection_name = input_data["collection_name"]
-#         result = await self.kg_service.kg_node_description(
-#             offset=0,
-#             limit=1000,
-#             max_description_input_length=max_description_input_length,
-#             collection_name=collection_name,
-#         )
-#         return {"result": "success"}
+        return {"result": f"successfully ran graph creation workflows for {len(results)} documents"}
 
 @r2r_hatchet.workflow(name="enrich-graph", timeout="60m")
 class EnrichGraphWorkflow:
     def __init__(self, kg_service: KGService):
         self.kg_service = kg_service
 
-    # @r2r_hatchet.step(retries=3, timeout="60m")
-    # async def kg_node_creation(self, context: Context) -> dict:
-    #     input_data = context.workflow_input()["request"]
-    #     max_description_input_length = input_data[
-    #         "max_description_input_length"
-    #     ]
-    #     await self.kg_service.kg_node_creation(
-    #         max_description_input_length=max_description_input_length
-    #     )
-    #     return {"result": "success"}
-
-    # @r2r_hatchet.step(retries=3, timeout="60m")
-    # async def kg_node_description(self, context: Context) -> dict:
-    #     input_data = context.workflow_input()["request"]
-    #     max_description_input_length = input_data["max_description_input_length"]
-    #     project_name = input_data["project_name"]
-    #     result = await self.kg_service.kg_node_description(
-    #         max_description_input_length=max_description_input_length, 
-    #         offset=0,
-    #         limit=1000,
-    #         project_name=project_name,
-    #     )
-    #     import pdb; pdb.set_trace()
-    #     return {"result": "success"}
-
     @r2r_hatchet.step(retries=3, parents=[], timeout="60m")
     async def kg_clustering(self, context: Context) -> dict:
         input_data = context.workflow_input()["request"]
-        skip_clustering = input_data["skip_clustering"]
-        force_enrichment = input_data["force_enrichment"]
-        leiden_params = input_data["leiden_params"]
-        max_summary_input_length = input_data["max_summary_input_length"]
+
         project_name = input_data["project_name"]
-        generation_config = GenerationConfig(**input_data["generation_config"])
+        collection_id = input_data["collection_id"]
+
+        kg_enrichment_settings = KGEnrichmentSettings(
+            **json.loads(input_data["kg_enrichment_settings"])
+        )
+
+
+        # skip_clustering = input_data["skip_clustering"]
+        # force_enrichment = input_data["force_enrichment"]
+        # leiden_params = input_data["leiden_params"]
+        # max_summary_input_length = input_data["max_summary_input_length"]
+        # project_name = input_data["project_name"]
+        # generation_config = GenerationConfig(**input_data["generation_config"])
 
         # todo: check if documets are already being clustered
         # check if any documents are still being restructured, need to explicitly set the force_clustering flag to true to run clustering if documents are still being restructured
 
-        documents_overview = (
-            await self.kg_service.providers.database.relational.get_documents_overview()
-        )
-        documents_overview = documents_overview["results"]
+        collection_status = await self.kg_service.providers.database.relational.get_workflow_status(id=collection_id, status_type="kg_enrichment")
 
-        if not force_enrichment:
-            if any(
-                document_overview.restructuring_status
-                == RestructureStatus.PROCESSING
-                for document_overview in documents_overview
-            ):
-                raise ValueError(
-                    "Graph creation is still in progress for some documents, skipping enrichment, please set force_enrichment to true if you want to run enrichment anyway"
-                )
-
-            if any(
-                document_overview.restructuring_status
-                == RestructureStatus.ENRICHING
-                for document_overview in documents_overview
-            ):
-                raise ValueError(
-                    "Graph enrichment is still in progress for some documents, skipping enrichment, please set force_enrichment to true if you want to run enrichment anyway"
-                )
-
-        for document_overview in documents_overview:
-            if document_overview.restructuring_status in [
-                RestructureStatus.SUCCESS,
-                RestructureStatus.ENRICHMENT_FAILURE,
-            ]:
-                document_overview.restructuring_status = (
-                    RestructureStatus.ENRICHING
-                )
-
-        await self.kg_service.providers.database.relational.upsert_documents_overview(
-            documents_overview
-        )
+        if collection_status in [KGEnrichmentStatus.PENDING, KGEnrichmentStatus.PROCESSING]:
+            logger.info(f"Collection {collection_id} is still being enriched, skipping clustering")
+            return {"result": "skipped"}
+        
+        else:
+            await self.kg_service.providers.database.relational.set_workflow_status(
+                id=collection_id, status_type="kg_enrichment", status=KGEnrichmentStatus.PROCESSING
+            )
 
         try:
             if not skip_clustering:
