@@ -262,11 +262,7 @@ class R2RProviderFactory:
     async def create_kg_provider(
         kg_config, database_provider, embedding_provider, *args, **kwargs
     ):
-        if kg_config.provider == "neo4j":
-            from core.providers import Neo4jKGProvider
-
-            return Neo4jKGProvider(kg_config)
-        elif kg_config.provider == "postgres":
+        if kg_config.provider == "postgres":
             from core.providers import PostgresKGProvider
 
             provider = PostgresKGProvider(

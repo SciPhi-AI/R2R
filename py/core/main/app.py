@@ -7,7 +7,7 @@ from core.base.providers import OrchestrationProvider
 from .api.auth_router import AuthRouter
 from .api.ingestion_router import IngestionRouter
 from .api.management_router import ManagementRouter
-from .api.restructure_router import RestructureRouter
+from .api.kg_router import KGRouter
 from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
 
@@ -20,15 +20,15 @@ class R2RApp:
         auth_router: AuthRouter,
         ingestion_router: IngestionRouter,
         management_router: ManagementRouter,
-        retrieval_router: RestructureRouter,
-        restructure_router: RetrievalRouter,
+        retrieval_router: RetrievalRouter,
+        kg_router: KGRouter,
     ):
         self.config = config
         self.ingestion_router = ingestion_router
         self.management_router = management_router
         self.retrieval_router = retrieval_router
         self.auth_router = auth_router
-        self.restructure_router = restructure_router
+        self.kg_router = kg_router
         self.orchestration_provider = orchestration_provider
         self.app = FastAPI()
         self._setup_routes()
@@ -41,7 +41,7 @@ class R2RApp:
         self.app.include_router(self.management_router, prefix="/v2")
         self.app.include_router(self.retrieval_router, prefix="/v2")
         self.app.include_router(self.auth_router, prefix="/v2")
-        self.app.include_router(self.restructure_router, prefix="/v2")
+        self.app.include_router(self.kg_router, prefix="/v2")
 
         @self.app.get("/v2/openapi_spec")
         async def openapi_spec():

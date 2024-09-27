@@ -18,9 +18,9 @@ from ..hatchet import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
     KGCommunitySummaryWorkflow,
-    KgExtractAndStoreWorkflow,
+    KgExtractDescribeEmbedWorkflow,
 )
-from ..services.kg_service import KGService
+from ..services.kg_service import KgService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -29,14 +29,14 @@ logger = logging.getLogger(__name__)
 class KGRouter(BaseRouter):
     def __init__(
         self,
-        service: KGService,
+        service: KgService,
         run_type: RunType = RunType.KG,
         orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         if not orchestration_provider:
             raise ValueError("KGRouter requires an orchestration provider.")
         super().__init__(service, run_type, orchestration_provider)
-        self.service: KGService = service
+        self.service: KgService = service
 
     def _load_openapi_extras(self):
         yaml_path = Path(__file__).parent / "data" / "kg_router_openapi.yml"
@@ -46,7 +46,7 @@ class KGRouter(BaseRouter):
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
-            KgExtractAndStoreWorkflow(self.service)
+            KgExtractDescribeEmbedWorkflow(self.service)
         )
         self.orchestration_provider.register_workflow(
             CreateGraphWorkflow(self.service)

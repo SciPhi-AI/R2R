@@ -35,16 +35,17 @@ class PostgresKGProvider(KGProvider):
             import networkx as nx
 
             self.nx = nx
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "NetworkX is not installed. Please install it to use this module."
-            )
+            ) from exc
 
     def _get_table_name(self, base_name: str) -> str:
         return f"{base_name}_kg"
 
     async def initialize(self):
-        await self.create_table(collection_name=self.db_provider.project_name)
+        logger.info(f"Initializing PostgresKGProvider for project {self.db_provider.project_name}")
+        await self.create_tables(project_name=self.db_provider.project_name)
 
     async def execute_query(
         self, query: str, params: Optional[list[tuple[Any]]] = None
@@ -64,13 +65,12 @@ class PostgresKGProvider(KGProvider):
     ) -> Any:
         return await self.db_provider.fetch_query(query, params)
 
-    async def create_table(self, project_name: str):
-        
+    async def create_tables(self, project_name: str):
         # raw entities table
+
         query = f"""
             CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
             id SERIAL PRIMARY KEY,  
-            entity_id uuid.uuid5(uuid.NAMESPACE_DNS, NAME),
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -85,7 +85,6 @@ class PostgresKGProvider(KGProvider):
         query = f"""
             CREATE TABLE IF NOT EXISTS {project_name}.triple_raw (
             id SERIAL PRIMARY KEY,
-            entity_id SERIAL NOT NULL,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
             object TEXT NOT NULL,
@@ -608,6 +607,9 @@ class PostgresKGProvider(KGProvider):
         pass
 
     async def get_entities(self, project_name: str, collection_id: str):
+        pass
+
+    async def get_triples(self, project_name: str, collection_id: str):
         pass
 
     async def structured_query(self):

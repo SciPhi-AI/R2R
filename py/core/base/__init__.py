@@ -23,7 +23,8 @@ __all__ = [
     "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "KGStatus",
+    "KGCreationStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",

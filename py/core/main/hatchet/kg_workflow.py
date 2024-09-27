@@ -11,7 +11,7 @@ from core.base import R2RDocumentProcessingError
 from core.base.abstractions import KGCreationStatus, KGEnrichmentStatus
 from core.base import KGCreationSettings, KGEnrichmentSettings
 
-from ..services import KGService
+from ..services import KgService
 from .base import r2r_hatchet
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 @r2r_hatchet.workflow(name="kg-ede", timeout="360m")
 class KgExtractDescribeEmbedWorkflow:
-    def __init__(self, kg_service: KGService):
+    def __init__(self, kg_service: KgService):
         self.kg_service = kg_service
 
     @r2r_hatchet.step(name="kg_extract", parents=[], retries=3, timeout="360m")
@@ -100,7 +100,7 @@ class KgExtractDescribeEmbedWorkflow:
 
 @r2r_hatchet.workflow(name="create-graph", timeout="360m")
 class CreateGraphWorkflow:
-    def __init__(self, kg_service: KGService):
+    def __init__(self, kg_service: KgService):
         self.kg_service = kg_service
 
     @r2r_hatchet.step(retries=1)
@@ -167,7 +167,7 @@ class CreateGraphWorkflow:
 
 @r2r_hatchet.workflow(name="enrich-graph", timeout="60m")
 class EnrichGraphWorkflow:
-    def __init__(self, kg_service: KGService):
+    def __init__(self, kg_service: KgService):
         self.kg_service = kg_service
 
     @r2r_hatchet.step(retries=3, parents=[], timeout="60m")
@@ -292,7 +292,7 @@ class EnrichGraphWorkflow:
 
 @r2r_hatchet.workflow(name="kg-community-summary", timeout="60m")
 class KGCommunitySummaryWorkflow:
-    def __init__(self, kg_service: KGService):
+    def __init__(self, kg_service: KgService):
         self.kg_service = kg_service
 
     @r2r_hatchet.step(retries=1, timeout="60m")

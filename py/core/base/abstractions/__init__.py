@@ -36,7 +36,7 @@ from shared.abstractions.llm import (
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt
-from R2R.py.shared.abstractions.kg import (
+from shared.abstractions.kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
 )

@@ -28,7 +28,7 @@ from ..config import R2RConfig
 from ..services.auth_service import AuthService
 from ..services.ingestion_service import IngestionService
 from ..services.management_service import ManagementService
-from ..services.kg_service import KGService
+from ..services.kg_service import KgService
 from ..services.retrieval_service import RetrievalService
 from .factory import (
     R2RAgentFactory,
@@ -83,7 +83,7 @@ class ServiceOverrides:
     ingestion: Optional["IngestionService"] = None
     management: Optional["ManagementService"] = None
     retrieval: Optional["RetrievalService"] = None
-    kg: Optional["KGService"] = None
+    kg: Optional["KgService"] = None
 
 
 class R2RBuilder:
@@ -183,6 +183,7 @@ class R2RBuilder:
     ) -> Dict[str, Any]:
         services = {}
         for service_type, override in vars(self.service_overrides).items():
+            logger.info(f"Creating {service_type} service")
             service_class = globals()[f"{service_type.capitalize()}Service"]
             services[service_type] = override or service_class(
                 **service_params

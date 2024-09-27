@@ -40,7 +40,7 @@ class KGConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["neo4j", "local", "postgres"]
+        return ["local", "postgres"]
 
 
 class KGProvider(ABC):

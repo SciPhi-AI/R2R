@@ -11,7 +11,7 @@ from .embeddings import (
     OpenAIEmbeddingProvider,
 )
 from .file import PostgresFileProvider
-from .kg import Neo4jKGProvider, PostgresKGProvider
+from .kg import PostgresKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .orchestration import HatchetOrchestrationProvider
 from .parsing import R2RParsingProvider, UnstructuredParsingProvider
@@ -35,7 +35,6 @@ __all__ = [
     # File
     "PostgresFileProvider",
     # KG
-    "Neo4jKGProvider",
     "PostgresKGProvider",
     # Orchestration
     "HatchetOrchestrationProvider",

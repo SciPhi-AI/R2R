@@ -4,7 +4,7 @@ from .kg_workflow import (
     CreateGraphWorkflow,
     EnrichGraphWorkflow,
     KGCommunitySummaryWorkflow,
-    KgExtractAndStoreWorkflow,
+    KgExtractDescribeEmbedWorkflow,
 )
 
 __all__ = [
@@ -13,6 +13,6 @@ __all__ = [
     "UpdateFilesWorkflow",
     "EnrichGraphWorkflow",
     "CreateGraphWorkflow",
-    "KgExtractAndStoreWorkflow",
+    "KgExtractDescribeEmbedWorkflow",
     "KGCommunitySummaryWorkflow",
 ]

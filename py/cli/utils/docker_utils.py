@@ -81,10 +81,10 @@ async def run_local_serve(
         from r2r import R2RBuilder, R2RConfig
     except ImportError as e:
         click.echo(
-            f"Error: {e}\n\nNote, you must install the `r2r core` package to run the R2R server locally."
+            f"Error: You must install the `r2r core` package to run the R2R server locally."
         )
-        sys.exit(1)
-
+        raise e
+        
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
     if not config_path and not config_name:
@@ -106,13 +106,13 @@ async def run_local_serve(
 
     await r2r_instance.orchestration_provider.start_worker()
 
-    import uvicorn
+    # TODO: make this work with autoreload, currently due to hatchet, it causes a reload error
+    # import uvicorn
+    # uvicorn.run(
+    #     "core.main.app_entry:app", host=host, port=available_port, reload=False
+    # )
 
-    uvicorn.run(
-        "core.main.app_entry:app", host=host, port=available_port, reload=False
-    )
-
-    # r2r_instance.serve(host, available_port)
+    r2r_instance.serve(host, available_port)
 
 
 def run_docker_serve(

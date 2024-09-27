@@ -53,7 +53,8 @@ __all__ = [
     "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "KGStatus",
+    "KGCreationStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -209,7 +210,7 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KGService",
+    "KgService",
     ## PARSERS
     # Media parsers
     "AudioParser",
@@ -262,7 +263,7 @@ __all__ = [
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     # KG
-    "Neo4jKGProvider",
+    "PostgresKGProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",

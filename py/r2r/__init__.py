@@ -22,9 +22,9 @@ try:
     from core import *
 
     __all__ += core.__all__
-except ImportError:
+except ImportError as e:
     # Core dependencies not installed
-    pass
+    raise e
 
 
 # Add a function to get the version

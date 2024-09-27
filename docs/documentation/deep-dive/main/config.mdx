@@ -175,7 +175,7 @@ Refer to the [`KGProvider`](documentation/deep-dive/providers/knowledge-graph) t
 
 ```toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 1
 
 [kg.kg_extraction_config]
@@ -187,7 +187,7 @@ stream = false
 add_generation_kwargs = { }
 ```
 
-- `provider`: Specifies the backend used for storing and querying the knowledge graph. Options include "neo4j" and "None".
+- `provider`: Specifies the backend used for storing and querying the knowledge graph. Options include "postgres" and "None".
 - `batch_size`: Determines how many text chunks are processed at once for knowledge extraction.
 - `kg_extraction_config`: Configures the language model used for extracting knowledge from text chunks.
 

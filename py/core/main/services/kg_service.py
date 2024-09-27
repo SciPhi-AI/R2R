@@ -21,7 +21,7 @@ async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
     return results
 
 
-class KGService(Service):
+class KgService(Service):
     def __init__(
         self,
         config: R2RConfig,
