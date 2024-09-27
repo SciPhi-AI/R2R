@@ -21,14 +21,14 @@ from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 from ..api.auth_router import AuthRouter
 from ..api.ingestion_router import IngestionRouter
 from ..api.management_router import ManagementRouter
-from ..api.restructure_router import RestructureRouter
+from ..api.kg_router import KGRouter
 from ..api.retrieval_router import RetrievalRouter
 from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
 from ..services.ingestion_service import IngestionService
 from ..services.management_service import ManagementService
-from ..services.restructure_service import RestructureService
+from ..services.kg_service import KgService
 from ..services.retrieval_service import RetrievalService
 from .factory import (
     R2RAgentFactory,
@@ -83,7 +83,7 @@ class ServiceOverrides:
     ingestion: Optional["IngestionService"] = None
     management: Optional["ManagementService"] = None
     retrieval: Optional["RetrievalService"] = None
-    restructure: Optional["RestructureService"] = None
+    kg: Optional["KgService"] = None
 
 
 class R2RBuilder:
@@ -183,6 +183,7 @@ class R2RBuilder:
     ) -> Dict[str, Any]:
         services = {}
         for service_type, override in vars(self.service_overrides).items():
+            logger.info(f"Creating {service_type} service")
             service_class = globals()[f"{service_type.capitalize()}Service"]
             services[service_type] = override or service_class(
                 **service_params
@@ -248,8 +249,8 @@ class R2RBuilder:
                 services["retrieval"],
                 orchestration_provider=orchestration_provider,
             ).get_router(),
-            "restructure_router": RestructureRouter(
-                services["restructure"],
+            "kg_router": KGRouter(
+                services["kg"],
                 orchestration_provider=orchestration_provider,
             ).get_router(),
         }

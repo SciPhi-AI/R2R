@@ -27,12 +27,8 @@ These are located in the `r2r.toml` file, under the `[kg]` section.
 
 ```toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
-user = "your_neo4j_user"
-password = "your_neo4j_password"
-url = "your_neo4j_url"
-database = "your_neo4j_database"
 
   [kg.kg_creation_settings]
     kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"

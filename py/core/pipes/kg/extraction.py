@@ -142,23 +142,24 @@ class KGTriplesExtractionPipe(
                         relationship_pattern, response_str
                     )
 
-                    entities_dict = {}
+                    entities_arr = []
                     for entity in entities:
                         entity_value = entity[0]
                         entity_category = entity[1]
                         entity_description = entity[2]
-                        entities_dict[entity_value] = Entity(
-                            category=entity_category,
-                            description=entity_description,
-                            name=entity_value,
-                            document_ids=[str(extractions[0].document_id)],
-                            text_unit_ids=[
-                                str(extraction.id)
-                                for extraction in extractions
-                            ],
-                            attributes={
-                                "extraction_text": combined_extraction
-                            },
+                        entities_arr.append(
+                            Entity(
+                                category=entity_category,
+                                description=entity_description,
+                                name=entity_value,
+                                document_ids=[str(extractions[0].document_id)],
+                                extraction_ids=[
+                                    str(extraction.id)
+                                    for extraction in extractions
+                                ],
+                                attributes={
+                                },
+                            )
                         )
 
                     relations_arr = []
@@ -178,7 +179,7 @@ class KGTriplesExtractionPipe(
                                 description=description,
                                 weight=weight,
                                 document_ids=[str(extractions[0].document_id)],
-                                text_unit_ids=[
+                                extraction_ids=[
                                     str(extraction.id)
                                     for extraction in extractions
                                 ],
@@ -188,7 +189,7 @@ class KGTriplesExtractionPipe(
                             )
                         )
 
-                    return entities_dict, relations_arr
+                    return entities_arr, relations_arr
 
                 entities, triples = parse_fn(kg_extraction)
                 return KGExtraction(

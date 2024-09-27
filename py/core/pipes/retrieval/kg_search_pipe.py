@@ -182,11 +182,12 @@ class KGSearchSearchPipe(GeneratorPipe):
                 search_type_limits=kg_search_settings.local_search_limits[
                     search_type
                 ],
-                embedding_type="summary_embedding",
+                embedding_type="description_embedding",
                 query_embedding=query_embedding,
-                property_names=["title", "summary"],
+                property_names=["id", "description"],
             ):
-                summary = search_result["summary"]
+
+                summary = search_result["description"]
 
                 # try loading it as a json
                 try:

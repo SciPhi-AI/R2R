@@ -7,13 +7,16 @@ from .embeddings import (
     OpenAIEmbeddingProvider,
 )
 from .file import PostgresFileProvider
+
+from .kg import PostgresKGProvider
+
 from .ingestion import (  # type: ignore
     R2RIngestionConfig,
     R2RIngestionProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
-from .kg import Neo4jKGProvider
+
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .orchestration import (
     HatchetOrchestrationProvider,
@@ -42,7 +45,7 @@ __all__ = [
     # File
     "PostgresFileProvider",
     # KG
-    "Neo4jKGProvider",
+    "PostgresKGProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",

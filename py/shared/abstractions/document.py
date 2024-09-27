@@ -120,16 +120,22 @@ class IngestionStatus(str, Enum):
     SUCCESS = "success"
 
 
-class RestructureStatus(str, Enum):
-    """Status of document processing."""
+class KGCreationStatus(str, Enum):
+    """Status of KG Creation per document."""
 
     PENDING = "pending"
     PROCESSING = "processing"
-    ENRICHING = "enriching"
-    FAILED = "failed"
     SUCCESS = "success"
-    ENRICHED = "enriched"
-    ENRICHMENT_FAILURE = "enrichment_failure"
+    FAILED = "failed"
+
+
+class KGEnrichmentStatus(str, Enum):
+    """Status of KG Enrichment per collection."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class DocumentInfo(R2RSerializable):
@@ -144,7 +150,7 @@ class DocumentInfo(R2RSerializable):
     version: str
     size_in_bytes: int
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    restructuring_status: RestructureStatus = RestructureStatus.PENDING
+    kg_creation_status: KGCreationStatus = KGCreationStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None

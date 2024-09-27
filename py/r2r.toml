@@ -52,7 +52,7 @@ combine_under_n_chars = 128
 overlap = 20
 
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
 
   [kg.kg_creation_settings]

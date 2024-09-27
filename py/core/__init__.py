@@ -51,7 +51,8 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGCreationStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -188,13 +189,13 @@ __all__ = [
     "IngestionRouter",
     "ManagementRouter",
     "RetrievalRouter",
-    "RestructureRouter",
+    "KGRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "RestructureService",
+    "KgService",
     ## PARSERS
     # Media parsers
     "AudioParser",
@@ -243,7 +244,7 @@ __all__ = [
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     # KG
-    "Neo4jKGProvider",
+    "PostgresKGProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",

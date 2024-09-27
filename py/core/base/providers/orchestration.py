@@ -7,7 +7,7 @@ from .base import Provider, ProviderConfig
 
 class Workflow(Enum):
     INGESTION = "ingestion"
-    RESTRUCTURE = "restructure"
+    KG = "kg"
 
 
 class OrchestrationConfig(ProviderConfig):

@@ -9,7 +9,7 @@ graphrag_community_reports_prompt:
 
       The report should include the following sections:
 
-      - TITLE: The community's name that represents its key startups - the title should be short but specific. When possible, include representative startup names in the title.
+      - NAME: The community's name that represents its key startups - the name should be short but specific. When possible, include representative startup names in the name.
       - SUMMARY: An executive summary of the community's overall structure, how its startups are related to each other, and significant information associated with its startups.
       - IMPACT SEVERITY RATING: A float score between 0-10 that represents the severity of IMPACT posed by startups within the community. IMPACT is the scored importance of the community.
       - RATING EXPLANATION: Provide a single sentence explanation of the IMPACT severity rating.
@@ -18,7 +18,7 @@ graphrag_community_reports_prompt:
       Return output as a well-formed JSON-formatted string with the following format:
       ```json
       {{
-          "title": <report_title>,
+          "name": <report_name>,
           "summary": <executive_summary>,
           "rating": <impact_severity_rating>,
           "rating_explanation": <rating_explanation>,
@@ -70,15 +70,15 @@ graphrag_community_reports_prompt:
 
       Output:
       {{
-          "title": "OpenAI, Stripe, and Airbnb Community",
-          "summary": "The community comprises key startups like OpenAI, Stripe, and Airbnb, which are interconnected through strategic partnerships and investments. These relationships highlight a robust network focused on advancing AI technologies, payment infrastructure, and online marketplaces.",
+          "name": "OpenAI, Stripe, and Airbnb",
+          "summary": "The comprises key startups like OpenAI, Stripe, and Airbnb, which are interconnected through strategic partnerships and investments. These relationships highlight a robust network focused on advancing AI technologies, payment infrastructure, and online marketplaces.",
           "rating": 7.5,
           "rating_explanation": "The impact severity rating is high due to the significant influence these startups have on technology, finance, and the global economy.",
           "findings": [
-              "OpenAI stands out as a leader in artificial intelligence research and deployment within the Y Combinator community. Its partnerships with companies like Stripe and Airbnb demonstrate its integral role in integrating AI solutions across various industries. OpenAI's influence is further amplified by its involvement in key projects that drive innovation and efficiency. [Data: Entities (101), Relationships (201, 203, 204, +more)]",
+              "OpenAI stands out as a leader in artificial intelligence research and deployment within YCombinator. Its partnerships with companies like Stripe and Airbnb demonstrate its integral role in integrating AI solutions across various industries. OpenAI's influence is further amplified by its involvement in key projects that drive innovation and efficiency. [Data: Entities (101), Relationships (201, 203, 204, +more)]",
               "Stripe serves as a critical financial infrastructure provider, facilitating payment processing for startups like Airbnb and partnering with OpenAI to enhance payment solutions. Its strategic investments and collaborations underscore its importance in the Y Combinator ecosystem, enabling seamless financial transactions and supporting startup growth. [Data: Entities (102), Relationships (201, 202, 204, 205, +more)]",
               "Airbnb leverages OpenAI's artificial intelligence tools to enhance its customer service capabilities, showcasing the practical application of AI in improving user experience. This integration highlights Airbnb's commitment to innovation and efficiency, positioning it as a forward-thinking leader within the community. [Data: Entities (103), Relationships (203, 205, +more)]",
-              "Stripe's investment in OpenAI's latest funding round illustrates the strategic financial moves that drive growth and innovation within the Y Combinator community. Such investments not only strengthen partnerships but also foster an environment of collaboration and shared success among startups. [Data: Relationships (204)]",
+              "Stripe's investment in OpenAI's latest funding round illustrates the strategic financial moves that drive growth and innovation. Such investments not only strengthen partnerships but also foster an environment of collaboration and shared success among startups. [Data: Relationships (204)]",
               "The collaboration between Airbnb and Stripe to expand global payment options demonstrates a commitment to scalability and accessibility in the Y Combinator ecosystem. This initiative is pivotal in enabling startups to reach a broader international market, thereby increasing their impact and revenue potential. [Data: Relationships (205)]"
           ]
       }}
