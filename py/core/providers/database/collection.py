@@ -418,8 +418,7 @@ class CollectionMixin(DatabaseMixin):
     async def assign_document_to_collection(
         self,
         document_id: UUID,
-        collection_id: Optional[UUID] = None,
-        user_id: Optional[UUID] = None,
+        collection_id: UUID,
     ) -> UUID:
         """
         Assign a document to a collection.
@@ -433,14 +432,6 @@ class CollectionMixin(DatabaseMixin):
                         or if there's a database error.
         """
         try:
-            if not collection_id:
-                if user_id is None:
-                    raise R2RException(
-                        status_code=400,
-                        message="Either a collection_id or a user_id must be provided to assign a document",
-                    )
-                collection_id = generate_id_from_label(str(user_id))
-
             if not await self.collection_exists(collection_id):
                 raise R2RException(
                     status_code=404, message="Collection not found"

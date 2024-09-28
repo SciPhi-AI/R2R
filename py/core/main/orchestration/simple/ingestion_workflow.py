@@ -1,6 +1,6 @@
 import asyncio
 
-from core.base import R2RException, increment_version
+from core.base import R2RException, increment_version, generate_id_from_label
 
 from ...services import IngestionService
 import logging
@@ -57,7 +57,10 @@ def simple_ingestion_factory(service: IngestionService):
 
             try:
                 collection_id = await service.providers.database.relational.assign_document_to_collection(
-                    document_id=document_info.id, user_id=document_info.user_id
+                    document_id=document_info.id,
+                    collection_id=generate_id_from_label(
+                        str(document_info.user_id)
+                    ),
                 )
                 service.providers.database.vector.assign_document_to_collection(
                     document_id=document_info.id, collection_id=collection_id
