@@ -131,10 +131,15 @@ class R2RAuthProvider(AuthProvider):
         return current_user
 
     async def register(self, email: str, password: str) -> Dict[str, str]:
-        # Create new user
+        # Create new user and give them a default collection
         new_user = await self.db_provider.relational.create_user(
             email, password
         )
+        await self.db_provider.relational.create_default_collection(
+            new_user.id
+        )
+        # TODO: assign user to collection here, but refactor to make it cleaner
+
         if self.config.require_email_verification:
             # Generate verification code and send email
             verification_code = (
