@@ -169,7 +169,7 @@ class DocumentInfo(R2RSerializable):
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "ingestion_status": self.ingestion_status.value,
-            "restructuring_status": self.restructuring_status.value,
+            "kg_creation_status": self.kg_creation_status.value,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,

@@ -54,7 +54,7 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def run_workflow(
+    async def run_workflow(
         self,
         workflow_name: str,
         parameters: dict,

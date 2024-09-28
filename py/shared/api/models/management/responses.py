@@ -91,7 +91,7 @@ class DocumentOverviewResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     ingestion_status: str
-    restructuring_status: str
+    kg_creation_status: str
     version: str
     collection_ids: list[UUID]
     metadata: dict[str, Any]

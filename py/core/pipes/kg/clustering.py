@@ -56,7 +56,7 @@ class KGClusteringPipe(AsyncPipe):
         generation_config: GenerationConfig,
     ):
         """
-        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses neo4j's graph data science library.
+        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
         num_communities = await self.kg_provider.perform_graph_clustering(

@@ -1,6 +1,6 @@
 from .auth_service import AuthService
 from .ingestion_service import IngestionService, IngestionServiceAdapter
-from .kg_service import KGService
+from .kg_service import KgService
 from .management_service import ManagementService
 from .retrieval_service import RetrievalService
 
@@ -9,6 +9,6 @@ __all__ = [
     "IngestionService",
     "IngestionServiceAdapter",
     "ManagementService",
-    "KGService",
+    "KgService",
     "RetrievalService",
 ]

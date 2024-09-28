@@ -73,18 +73,16 @@ If the R2R API is timing out:
 
 ### 4.2 Database Connection Timeouts
 
-For Postgres or Neo4j connection issues:
+For Postgres connection issues:
 
 1. Verify database service is running:
    ```bash
    docker-compose ps postgres
-   docker-compose ps neo4j
    ```
 
 2. Check database logs:
    ```bash
    docker-compose logs postgres
-   docker-compose logs neo4j
    ```
 
 3. Ensure correct connection strings in R2R configuration.

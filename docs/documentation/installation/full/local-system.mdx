@@ -35,7 +35,7 @@ Before starting, ensure you have the following installed and/or available in the
 First, install the R2R CLI and Python SDK:
 
 ```bash
-pip install r2r
+pip install 'r2r[core ingestion-bundle hatchet]'
 ```
 
 ## Environment Setup
@@ -116,7 +116,7 @@ For those looking to develop R2R locally:
    ```bash
    git clone git@github.com:SciPhi-AI/R2R.git
    cd R2R/py
-   poetry install -E core
+   poetry install -E "core ingestion-bundle hatchet"
    ```
 
 3. Setup environment:

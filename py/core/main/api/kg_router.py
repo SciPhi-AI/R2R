@@ -19,7 +19,7 @@ from core.base.providers import OrchestrationProvider, Workflow
 #     KGCommunitySummaryWorkflow,
 #     KgExtractDescribeEmbedWorkflow,
 # )
-from ..services.kg_service import KGService
+from ..services.kg_service import KgService
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -28,14 +28,14 @@ logger = logging.getLogger(__name__)
 class KGRouter(BaseRouter):
     def __init__(
         self,
-        service: KGService,
-        run_type: RunType = RunType.KG,
+        service: KgService,
         orchestration_provider: Optional[OrchestrationProvider] = None,
+        run_type: RunType = RunType.KG,
     ):
         if not orchestration_provider:
             raise ValueError("KGRouter requires an orchestration provider.")
-        super().__init__(service, run_type, orchestration_provider)
-        self.service: KGService = service
+        super().__init__(service, orchestration_provider, run_type)
+        self.service: KgService = service
 
     def _load_openapi_extras(self):
         yaml_path = Path(__file__).parent / "data" / "kg_router_openapi.yml"
@@ -75,7 +75,7 @@ class KGRouter(BaseRouter):
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
-            This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information. You can view the graph through the neo4j browser.
+            This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
 
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
@@ -95,7 +95,7 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            return self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(
                 "create-graph", {"request": workflow_input}, {}
             )
 
@@ -138,6 +138,6 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            return self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(
                 "enrich-graph", {"request": workflow_input}, {}
             )

@@ -43,7 +43,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
 
         asyncio.create_task(self.worker.async_start())
 
-    def run_workflow(
+    async def run_workflow(
         self,
         workflow_name: str,
         parameters: dict,
@@ -51,7 +51,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         *args,
         **kwargs,
     ) -> Any:
-        task_id = self.orchestrator.admin.run_workflow(
+        task_id = await self.orchestrator.admin.run_workflow(
             workflow_name,
             parameters,
             options=options,
@@ -83,12 +83,12 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
                 for workflow in workflows.values():
                     self.worker.register_workflow(workflow)
 
-        elif workflow == Workflow.RESTRUCTURE:
-            from core.main.orchestration.hatchet.restructure_workflow import (
-                hatchet_restructure_factory,
+        elif workflow == Workflow.KG:
+            from core.main.orchestration.hatchet.kg_workflow import (
+                hatchet_kg_factory,
             )
 
-            workflows = hatchet_restructure_factory(self, service)
+            workflows = hatchet_kg_factory(self, service)
             if self.worker:
                 for workflow in workflows.values():
                     self.worker.register_workflow(workflow)

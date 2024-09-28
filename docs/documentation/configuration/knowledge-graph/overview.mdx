@@ -4,7 +4,7 @@ description: 'Configure your R2R knowledge graph provider.'
 ---
 ## Knowledge Graph Provider
 
-R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R uses [Neo4j](https://neo4j.com/) as the knowledge graph provider. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [GraphRAG Cookbook](/cookbooks/graphrag).
+R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R creates the graph by clustering with `graspologic` and saving the output triples and relationships into Postgres. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [GraphRAG Cookbook](/cookbooks/graphrag).
 
 
 To configure the knowledge graph settings for your project:
@@ -28,7 +28,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "gpt-4o-mini" } # and other generation params below
-    leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    leiden_params = { max_levels = 10 }
 
   [kg.kg_search_settings]
     generation_config = { model = "gpt-4o-mini" }
@@ -49,16 +49,6 @@ Let's break down the knowledge graph configuration options:
   - `leiden_params`: Parameters for the Leiden algorithm.
 - `kg_search_settings`: Similar configuration for the model used in knowledge graph search operations.
 
-### Neo4j Configuration
-
-When using Neo4j as the knowledge graph provider, you need to set up the following environment variables or provide them in the `r2r.toml` file. To set them as environment variables:
-
-```bash
-export NEO4J_USER=your_neo4j_username
-export NEO4J_PASSWORD=your_neo4j_password
-export NEO4J_URL=bolt://your_neo4j_host:7687
-export NEO4J_DATABASE=neo4j
-```
 
 And to set them directly in your config:
 
@@ -73,8 +63,6 @@ Setting configuration values in the `r2r.toml` will override environment variabl
 
 
 ### Knowledge Graph Operations
-
-The Neo4jKGProvider supports various operations:
 
 1. **Entity Management**: Add, update, and retrieve entities in the knowledge graph.
 2. **Relationship Management**: Create and query relationships between entities.

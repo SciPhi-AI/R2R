@@ -69,6 +69,11 @@ class PostgresKGProvider(KGProvider):
 
     async def create_tables(self, project_name: str):
         # raw entities table
+        # create schema
+        query = f"""
+            CREATE SCHEMA IF NOT EXISTS {project_name};
+        """
+        await self.execute_query(query)
 
         query = f"""
             CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
@@ -411,6 +416,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = self._get_table_name(self.project_name)
         query = QUERY.format(SCHEMA_NAME, table_name)
+        await self.execute_query(query, relationships)
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 

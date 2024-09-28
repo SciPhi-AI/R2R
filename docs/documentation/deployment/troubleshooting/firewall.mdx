@@ -26,9 +26,6 @@ aws ec2 authorize-security-group-ingress --group-name R2R-SecurityGroup --protoc
 
 # Allow access to Hatchet Dashboard
 aws ec2 authorize-security-group-ingress --group-name R2R-SecurityGroup --protocol tcp --port 8002 --cidr 0.0.0.0/0
-
-# If using Neo4j browser interface
-aws ec2 authorize-security-group-ingress --group-name R2R-SecurityGroup --protocol tcp --port 7474 --cidr 0.0.0.0/0
 ```
 
 ### Azure Network Security Groups
@@ -92,9 +89,6 @@ sudo ufw allow 8001/tcp
 # Allow Hatchet Dashboard
 sudo ufw allow 8002/tcp
 
-# If using Neo4j browser interface
-sudo ufw allow 7474/tcp
-
 # Enable the firewall
 sudo ufw enable
 ```
@@ -114,9 +108,6 @@ sudo firewall-cmd --permanent --add-port=8001/tcp
 # Allow Hatchet Dashboard
 sudo firewall-cmd --permanent --add-port=8002/tcp
 
-# If using Neo4j browser interface
-sudo firewall-cmd --permanent --add-port=7474/tcp
-
 # Reload firewall
 sudo firewall-cmd --reload
 ```
@@ -126,7 +117,7 @@ sudo firewall-cmd --reload
 1. Open Windows Defender Firewall with Advanced Security
 2. Click on "Inbound Rules" and then "New Rule"
 3. Choose "Port" and click "Next"
-4. Select "TCP" and enter the specific ports (22, 7272, 8001, 8002, 7474 if using Neo4j browser)
+4. Select "TCP" and enter the specific ports (22, 7272, 8001, 8002)
 5. Choose "Allow the connection" and click "Next"
 6. Apply the rule to all profiles (Domain, Private, Public)
 7. Give the rule a name (e.g., "R2R Ports") and click "Finish"
