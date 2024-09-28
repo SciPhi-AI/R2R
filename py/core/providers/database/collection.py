@@ -2,9 +2,9 @@ import json
 import logging
 from datetime import datetime
 from typing import Optional, Union
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from core.base import R2RException
+from core.base import R2RException, generate_id_from_label
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
 
@@ -26,25 +26,54 @@ class CollectionMixin(DatabaseMixin):
         """
         await self.execute_query(query)
 
+    async def create_default_collection(
+        self, user_id: Optional[UUID] = None
+    ) -> None:
+        """Create a default collection if it doesn't exist."""
+        config = self.get_config()
+
+        default_collection_uuid = generate_id_from_label(
+            f"{user_id}"
+            if user_id is not None
+            else config.default_collection_name
+        )
+
+        if not await self.collection_exists(default_collection_uuid):
+            logger.info("Initializing a new default collection...")
+            await self.create_collection(
+                name=config.default_collection_name,
+                description=config.default_collection_description,
+                collection_id=default_collection_uuid,
+            )
+
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
         """
-        result = await self.execute_query(query, [collection_id])
-        return bool(result)
+        result = await self.fetchrow_query(query, [collection_id])
+        return result is not None
 
     async def create_collection(
-        self, name: str, description: str = ""
+        self,
+        name: str,
+        description: str = "",
+        collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
         current_time = datetime.utcnow()
         query = f"""
-            INSERT INTO {self._get_table_name('collections')} (name, description, created_at, updated_at)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO {self._get_table_name('collections')} (collection_id, name, description, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING collection_id, name, description, created_at, updated_at
         """
-        params = [name, description, current_time, current_time]
+        params = [
+            collection_id or uuid4(),
+            name,
+            description,
+            current_time,
+            current_time,
+        ]
 
         try:
             async with self.pool.acquire() as conn:  # type: ignore
@@ -387,8 +416,11 @@ class CollectionMixin(DatabaseMixin):
         return {"results": collections, "total_entries": total_entries}
 
     async def assign_document_to_collection(
-        self, document_id: UUID, collection_id: UUID
-    ) -> None:
+        self,
+        document_id: UUID,
+        collection_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+    ) -> UUID:
         """
         Assign a document to a collection.
 
@@ -401,6 +433,14 @@ class CollectionMixin(DatabaseMixin):
                         or if there's a database error.
         """
         try:
+            if not collection_id:
+                if user_id is None:
+                    raise R2RException(
+                        status_code=400,
+                        message="Either a collection_id or a user_id must be provided to assign a document",
+                    )
+                collection_id = generate_id_from_label(str(user_id))
+
             if not await self.collection_exists(collection_id):
                 raise R2RException(
                     status_code=404, message="Collection not found"
@@ -437,6 +477,8 @@ class CollectionMixin(DatabaseMixin):
                     status_code=409,
                     message="Document is already assigned to the collection",
                 )
+
+            return collection_id
 
         except R2RException:
             # Re-raise R2RExceptions as they are already handled

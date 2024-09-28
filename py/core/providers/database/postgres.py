@@ -110,6 +110,10 @@ class PostgresDBProvider(DatabaseProvider):
         self.postgres_configuration_settings: PostgresConfigurationSettings = (
             self._get_postgres_configuration_settings(config)
         )
+        self.default_collection_name = config.default_collection_name
+        self.default_collection_description = (
+            config.default_collection_description
+        )
 
     async def initialize(self):
         self.vector = self._initialize_vector_db()

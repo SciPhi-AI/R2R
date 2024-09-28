@@ -114,6 +114,13 @@ def hatchet_ingestion_factory(
                 status=IngestionStatus.SUCCESS,
             )
 
+            collection_id = await service.providers.database.relational.assign_document_to_collection(
+                document_id=document_info.id, user_id=document_info.user_id
+            )
+            service.providers.database.vector.assign_document_to_collection(
+                document_id=document_info.id, collection_id=collection_id
+            )
+
             return {
                 "status": "Successfully finalized ingestion",
                 "document_info": document_info.to_dict(),
