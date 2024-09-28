@@ -43,7 +43,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
 
         asyncio.create_task(self.worker.async_start())
 
-    def run_workflow(
+    async def run_workflow(
         self,
         workflow_name: str,
         parameters: dict,
@@ -51,7 +51,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         *args,
         **kwargs,
     ) -> Any:
-        task_id = self.orchestrator.admin.run_workflow(
+        task_id = await self.orchestrator.admin.run_workflow(
             workflow_name,
             parameters,
             options=options,

@@ -75,7 +75,7 @@ class KGRouter(BaseRouter):
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
-            This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information. You can view the graph through the neo4j browser.
+            This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
 
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
@@ -95,7 +95,7 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            return self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(
                 "create-graph", {"request": workflow_input}, {}
             )
 
@@ -138,6 +138,6 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            return self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(
                 "enrich-graph", {"request": workflow_input}, {}
             )

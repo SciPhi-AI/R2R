@@ -45,7 +45,7 @@ batch_size = 256
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    leiden_params = { max_levels = 10 }
 
   [kg.kg_search_settings]
     generation_config = { model = "gpt-4o-mini" }
@@ -109,7 +109,7 @@ provider = "postgres"
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    leiden_params = { max_levels = 10 }
 
   [kg.kg_search_settings]
     generation_config = { model = "ollama/llama3.1" }
@@ -175,10 +175,7 @@ r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
 [{'message': 'Graph creation task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
 ```
 
-This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
-
-
-1. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
+This step will create a knowledge graph with nodes and relationships. Below is a visualization of the graph which we produced with Neo4j:
 
 ```
 MATCH (a)

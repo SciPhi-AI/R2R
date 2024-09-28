@@ -1,6 +1,6 @@
 # Troubleshooting Guide: Database Connection Failures in R2R
 
-Database connection issues can significantly impact the functionality of your R2R deployment. This guide will help you diagnose and resolve common database connection problems for both Postgres and Neo4j.
+Database connection issues can significantly impact the functionality of your R2R deployment. This guide will help you diagnose and resolve common database connection problems for both Postgres.
 
 ## 1. General Troubleshooting Steps
 
@@ -9,20 +9,17 @@ Before diving into database-specific issues, try these general troubleshooting s
 1. **Check Database Service Status**: Ensure the database service is running.
    ```bash
    docker ps | grep postgres
-   docker ps | grep neo4j
    ```
 
 2. **Verify Network Connectivity**: Ensure the R2R service can reach the database.
    ```bash
    docker exec r2r-container ping postgres
-   docker exec r2r-container ping neo4j
    ```
 
 3. **Check Logs**: Examine R2R and database container logs for error messages.
    ```bash
    docker logs r2r-container
    docker logs postgres-container
-   docker logs neo4j-container
    ```
 
 4. **Verify Environment Variables**: Ensure all necessary environment variables are correctly set in your Docker Compose file or deployment configuration.
@@ -67,45 +64,9 @@ Before diving into database-specific issues, try these general troubleshooting s
 - Recreate the Postgres user or database if they're missing.
 - Modify Postgres network settings to allow connections from R2R.
 
-## 3. Neo4j Connection Issues
+## 3. Advanced Troubleshooting
 
-### 3.1 Common Neo4j Error Messages
-
-- "Unable to connect to Neo4j at `neo4j://neo4j:7687`"
-- "Authentication failure"
-- "Connection refused"
-
-### 3.2 Troubleshooting Steps for Neo4j
-
-1. **Check Neo4j Connection Settings**:
-   - Verify the `NEO4J_*` environment variables in your R2R configuration.
-   - Ensure the bolt URL, username, and password are correct.
-
-2. **Test Neo4j Connection**:
-   ```bash
-   docker exec neo4j-container cypher-shell -u neo4j -p your_password "RETURN 1;"
-   ```
-
-3. **Check Neo4j Logs**:
-   ```bash
-   docker logs neo4j-container
-   ```
-
-4. **Verify Neo4j Authentication**:
-   - Ensure the Neo4j password is correctly set and matches the R2R configuration.
-
-5. **Check Neo4j Network Settings**:
-   - Verify that Neo4j is configured to accept connections on the correct interfaces.
-
-### 3.3 Common Solutions for Neo4j Issues
-
-- Update the Neo4j connection settings in R2R configuration.
-- Reset the Neo4j password if authentication is failing.
-- Modify Neo4j configuration to allow connections from R2R container.
-
-## 4. Advanced Troubleshooting
-
-### 4.1 Database Container Health Checks
+### 3.1 Database Container Health Checks
 
 Ensure your Docker Compose file includes proper health checks for database services:
 
@@ -117,7 +78,7 @@ healthcheck:
   retries: 5
 ```
 
-### 4.2 Network Debugging
+### 3.2 Network Debugging
 
 If network issues persist:
 
@@ -132,14 +93,13 @@ If network issues persist:
    docker exec postgres-container netstat -tuln
    ```
 
-### 4.3 Volume Permissions
+### 3.3 Volume Permissions
 
 Check if volume permissions are causing issues:
 
 1. Inspect volume permissions:
    ```bash
    docker exec postgres-container ls -l /var/lib/postgresql/data
-   docker exec neo4j-container ls -l /data
    ```
 
 2. Adjust permissions if necessary:
@@ -147,7 +107,7 @@ Check if volume permissions are causing issues:
    docker exec postgres-container chown -R postgres:postgres /var/lib/postgresql/data
    ```
 
-## 5. Preventive Measures
+## 4. Preventive Measures
 
 To avoid future database connection issues:
 
@@ -156,7 +116,7 @@ To avoid future database connection issues:
 3. Set up monitoring and alerting for database health and connectivity.
 4. Regularly backup your database and test restoration procedures.
 
-## 6. Seeking Further Help
+## 5. Seeking Further Help
 
 If you're still experiencing issues:
 

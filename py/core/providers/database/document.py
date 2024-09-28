@@ -21,11 +21,10 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    R2RException,
     KGCreationStatus,
     KGEnrichmentStatus,
+    R2RException,
 )
-
 
 from .base import DatabaseMixin
 
@@ -146,7 +145,7 @@ class DocumentMixin(DatabaseMixin):
                                 UPDATE {self._get_table_name('document_info')}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                                    restructuring_status = $9, updated_at = $10, ingestion_attempt_number = $11
+                                    kg_creation_status = $9, updated_at = $10, ingestion_attempt_number = $11
                                 WHERE document_id = $12
                                 """
                                 await conn.execute(
@@ -159,7 +158,7 @@ class DocumentMixin(DatabaseMixin):
                                     db_entry["version"],
                                     db_entry["size_in_bytes"],
                                     db_entry["ingestion_status"],
-                                    db_entry["restructuring_status"],
+                                    db_entry["kg_creation_status"],
                                     db_entry["updated_at"],
                                     new_attempt_number,
                                     document_info.id,
@@ -168,7 +167,7 @@ class DocumentMixin(DatabaseMixin):
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name('document_info')}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
-                                size_in_bytes, ingestion_status, restructuring_status, created_at,
+                                size_in_bytes, ingestion_status, kg_creation_status, created_at,
                                 updated_at, ingestion_attempt_number)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                                 """
@@ -183,7 +182,7 @@ class DocumentMixin(DatabaseMixin):
                                     db_entry["version"],
                                     db_entry["size_in_bytes"],
                                     db_entry["ingestion_status"],
-                                    db_entry["restructuring_status"],
+                                    db_entry["kg_creation_status"],
                                     db_entry["created_at"],
                                     db_entry["updated_at"],
                                     db_entry["ingestion_attempt_number"],

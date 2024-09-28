@@ -146,7 +146,7 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
 
-                raw_message = self.orchestration_provider.run_workflow(
+                raw_message = await self.orchestration_provider.run_workflow(
                     "ingest-file",
                     {"request": workflow_input},
                     options={
@@ -248,7 +248,7 @@ class IngestionRouter(BaseRouter):
                 "is_update": True,
             }
 
-            raw_message = self.orchestration_provider.run_workflow(
+            raw_message = await self.orchestration_provider.run_workflow(
                 "update-files", {"request": workflow_input}, {}
             )
             raw_message["message"] = "Update task queued successfully."

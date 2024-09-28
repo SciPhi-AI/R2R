@@ -15,7 +15,7 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']}"
+    docker_command = f"docker compose -f {compose_files['base']}  -f {compose_files['hatchet']}  -f {compose_files['unstructured']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:

@@ -74,7 +74,7 @@ class PostgresKGProvider(KGProvider):
             CREATE SCHEMA IF NOT EXISTS {project_name};
         """
         await self.execute_query(query)
-        
+
         query = f"""
             CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
             id SERIAL PRIMARY KEY,  

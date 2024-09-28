@@ -241,7 +241,6 @@
               "pages": [
                 "documentation/deployment/troubleshooting/vector_store_issues",
                 "documentation/deployment/troubleshooting/connection_strings",
-                "documentation/deployment/troubleshooting/graph_db",
                 "documentation/deployment/troubleshooting/workflows"
               ]
             },
