@@ -78,21 +78,21 @@ class DocumentMixin(DatabaseMixin):
 
         # TODO - Remove this after the next release
         # Additional query to check and add the column if it doesn't exist
-        add_column_query = f"""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_name = '{self._get_table_name("document_info")}'
-                AND column_name = 'ingestion_attempt_number'
-            ) THEN
-                ALTER TABLE {self._get_table_name("document_info")}
-                ADD COLUMN ingestion_attempt_number INT DEFAULT 0;
-            END IF;
-        END $$;
-        """
-        await self.execute_query(add_column_query)
+        # add_column_query = f"""
+        # DO $$
+        # BEGIN
+        #     IF NOT EXISTS (
+        #         SELECT 1
+        #         FROM information_schema.columns
+        #         WHERE table_name = '{self._get_table_name("document_info")}'
+        #         AND column_name = 'ingestion_attempt_number'
+        #     ) THEN
+        #         ALTER TABLE {self._get_table_name("document_info")}
+        #         ADD COLUMN ingestion_attempt_number INT DEFAULT 0;
+        #     END IF;
+        # END $$;
+        # """
+        # await self.execute_query(add_column_query)
 
     async def upsert_documents_overview(
         self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
@@ -241,7 +241,12 @@ class DocumentMixin(DatabaseMixin):
         return await self.fetch_query(query, [ids])
 
     async def _get_ids_from_table(
-        self, status: list[str], table_name: str, status_type: str
+        self, 
+        status: list[str], 
+        table_name: str, 
+        status_type: str,
+        project_name: str = None,
+        collection_id: UUID = None,
     ):
         """
         Get the IDs from a given table.
@@ -340,7 +345,11 @@ class DocumentMixin(DatabaseMixin):
         )
 
     async def get_document_ids_by_status(
-        self, status_type: str, status: Union[str, list[str]]
+        self, 
+        status_type: str, 
+        status: Union[str, list[str]], 
+        project_name: str = None,
+        collection_id: UUID = None, 
     ):
         """
         Get the IDs for a given status.
@@ -358,7 +367,7 @@ class DocumentMixin(DatabaseMixin):
             status_type
         )
         result = map(
-            (await self._get_ids_from_table(status, table_name, status_type)),
+            (await self._get_ids_from_table(status, table_name, status_type, project_name, collection_id)),
             out_model,
         )
         return result

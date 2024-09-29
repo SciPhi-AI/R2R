@@ -88,6 +88,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
+        self.project_name = os.getenv("PROJECT_NAME", "default")
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
@@ -109,7 +110,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         self.conn = await self.aiosqlite.connect(self.logging_path)
         await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.log_table} (
+            CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_table} (
                 timestamp DATETIME,
                 run_id TEXT,
                 key TEXT,
@@ -119,7 +120,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         )
         await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.log_info_table} (
+            CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_info_table} (
                 timestamp DATETIME,
                 run_id TEXT UNIQUE,
                 run_type TEXT,
@@ -339,6 +340,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.config = config
+        self.project_name = os.getenv("PROJECT_NAME", "default")
         self.pool = None
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
@@ -373,7 +375,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         async with self.pool.acquire() as conn:
             await conn.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.log_table} (
+                CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_table} (
                     timestamp TIMESTAMPTZ,
                     run_id UUID,
                     key TEXT,
@@ -383,7 +385,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
             )
             await conn.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.log_info_table} (
+                CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_info_table} (
                     timestamp TIMESTAMPTZ,
                     run_id UUID UNIQUE,
                     run_type TEXT,

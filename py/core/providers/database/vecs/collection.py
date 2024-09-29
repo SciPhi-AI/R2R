@@ -222,7 +222,7 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
-        self.table = _build_table(name, client.meta, dimension)
+        self.table = _build_table(client.project_name, name, client.meta, dimension)
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
 
@@ -288,7 +288,7 @@ class Collection:
             join pg_attribute pa
                 on pc.oid = pa.attrelid
         where
-            pc.relnamespace = 'vecs'::regnamespace
+            pc.relnamespace = '{self.client.project_name}'::regnamespace
             and pc.relkind = 'r'
             and pa.attname = 'vec'
             and not pc.relname ^@ '_'
@@ -346,7 +346,7 @@ class Collection:
                 text(
                     f"""
                     create index ix_meta_{unique_string}
-                      on vecs."{self.table.name}"
+                      on {self.client.project_name}."{self.table.name}"
                       using gin ( metadata jsonb_path_ops )
                     """
                 )
@@ -357,7 +357,7 @@ class Collection:
                 text(
                     f"""
                 CREATE TRIGGER tsvector_update_{unique_string} BEFORE INSERT OR UPDATE
-                ON vecs."{self.table.name}" FOR EACH ROW EXECUTE FUNCTION
+                ON {self.client.project_name}."{self.table.name}" FOR EACH ROW EXECUTE FUNCTION
                 tsvector_update_trigger(fts, 'pg_catalog.english', text);
             """
                 )
@@ -830,7 +830,7 @@ class Collection:
             join pg_attribute pa
                 on pc.oid = pa.attrelid
         where
-            pc.relnamespace = 'vecs'::regnamespace
+            pc.relnamespace = '{client.project_name}'::regnamespace
             and pc.relkind = 'r'
             and pa.attname = 'vec'
             and not pc.relname ^@ '_'
@@ -881,13 +881,13 @@ class Collection:
 
         if self._index is None:
             query = text(
-                """
+                f"""
             select
                 relname as table_name
             from
                 pg_class pc
             where
-                pc.relnamespace = 'vecs'::regnamespace
+                pc.relnamespace = '{self.client.project_name}'::regnamespace
                 and relname ilike 'ix_vector%'
                 and pc.relkind = 'i'
             """
@@ -1021,7 +1021,7 @@ class Collection:
             with sess.begin():
                 if self.index is not None:
                     if replace:
-                        sess.execute(text(f'drop index vecs."{self.index}";'))
+                        sess.execute(text(f'drop index {self.client.project_name}."{self.index}";'))
                         self._index = None
                     else:
                         raise ArgError(
@@ -1050,7 +1050,7 @@ class Collection:
                         text(
                             f"""
                             create index ix_{ops}_ivfflat_nl{n_lists}_{unique_string}
-                              on vecs."{self.table.name}"
+                              on {self.client.project_name}."{self.table.name}"
                               using ivfflat (vec {ops}) with (lists={n_lists})
                             """
                         )
@@ -1069,7 +1069,7 @@ class Collection:
                         text(
                             f"""
                             create index ix_{ops}_hnsw_m{m}_efc{ef_construction}_{unique_string}
-                              on vecs."{self.table.name}"
+                              on {self.client.project_name}."{self.table.name}"
                               using hnsw (vec {ops}) WITH (m={m}, ef_construction={ef_construction});
                             """
                         )
@@ -1078,7 +1078,7 @@ class Collection:
         return None
 
 
-def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
+def _build_table(project_name: str, name: str, meta: MetaData, dimension: int) -> Table:
     table = Table(
         name,
         meta,

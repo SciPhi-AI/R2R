@@ -1,5 +1,5 @@
 import json
-
+import os
 import asyncclick as click
 from asyncclick import pass_context
 
@@ -8,11 +8,13 @@ from cli.utils.timer import timer
 
 
 @cli.command()
-@click.option(
-    "--project-name",
-    required=True,
-    help="Project name to create graph for.",
-)
+# TODO - add this once we fully implement project names
+# @click.option(
+#     "--project-name",
+#     required=True,
+#     default=os.environ["POSTGRES_PROJECT_NAME"],
+#     help="Project name to create graph for.",
+# )
 @click.option(
     "--collection-id",
     required=True,
@@ -26,7 +28,7 @@ from cli.utils.timer import timer
 )
 @pass_context
 def create_graph(
-    ctx, project_name, collection_id, force_enrichment, skip_clustering
+    ctx, collection_id, force_enrichment, skip_clustering
 ):
     """
     Create a new graph.
@@ -34,18 +36,13 @@ def create_graph(
     client = ctx.obj
     with timer():
         response = client.create_graph(
-            project_name, collection_id, force_enrichment, skip_clustering
+            collection_id, force_enrichment, skip_clustering
         )
 
     click.echo(json.dumps(response, indent=2))
 
 
 @cli.command()
-@click.option(
-    "--project-name",
-    required=True,
-    help="Project name to enrich graph for.",
-)
 @click.option(
     "--collection-id",
     required=True,
@@ -65,7 +62,7 @@ def create_graph(
 )
 @pass_context
 def enrich_graph(
-    ctx, project_name, collection_id, force_enrichment, skip_clustering
+    ctx, collection_id, force_enrichment, skip_clustering
 ):
     """
     Enrich an existing graph.
@@ -73,7 +70,7 @@ def enrich_graph(
     client = ctx.obj
     with timer():
         response = client.enrich_graph(
-            project_name, collection_id, force_enrichment, skip_clustering
+            collection_id, force_enrichment, skip_clustering
         )
 
     click.echo(json.dumps(response, indent=2))

@@ -17,7 +17,7 @@ provider = "litellm"
 concurrent_request_limit = 16
 
   [completion.generation_config]
-  model = "openai/gpt-4o"
+  model = "azure/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
@@ -32,7 +32,7 @@ provider = "postgres"
 
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "azure/text-embedding-3-small"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false

@@ -15,14 +15,11 @@ logger = logging.getLogger(__name__)
 
 def simple_kg_factory(service: KgService):
     
-    async def kg_extract(input_data) -> dict:
-        await service.kg_extract_and_store(**input_data)
-        return await service.kg_node_description(**input_data)
-
     async def create_graph(input_data):
         document_ids = await service.get_document_ids_for_create_graph(**input_data)
         for cnt, document_id in enumerate(document_ids):
             await service.kg_extract_and_store(document_id=document_id, **input_data)
+            await service.kg_node_description(**input_data)
 
     async def enrich_graph(input_data):
         num_clusters = await service.kg_clustering(**input_data)
@@ -55,7 +52,6 @@ def simple_kg_factory(service: KgService):
 
 
     return {
-        "kg-extract": kg_extract,
         "create-graph": create_graph,
         "enrich-graph": enrich_graph,
         "kg-community-summary": kg_community_summary,

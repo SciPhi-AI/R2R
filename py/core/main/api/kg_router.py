@@ -59,9 +59,6 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def create_graph(
-            project_name: str = Body(
-                description="Project name to create graph for.",
-            ),
             collection_id: str = Body(
                 description="Collection ID to create graph for.",
             ),
@@ -89,7 +86,6 @@ class KGRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "project_name": project_name,
                 "collection_id": collection_id,
                 "kg_creation_settings": kg_creation_settings.json(),
                 "user": auth_user.json(),
@@ -104,9 +100,6 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def enrich_graph(
-            project_name: str = Body(
-                description="Project name to enrich graph for.",
-            ),
             collection_id: str = Body(
                 description="Collection name to enrich graph for.",
             ),
@@ -132,7 +125,6 @@ class KGRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "project_name": project_name,
                 "collection_id": collection_id,
                 "kg_enrichment_settings": kg_enrichment_settings.json(),
                 "user": auth_user.json(),

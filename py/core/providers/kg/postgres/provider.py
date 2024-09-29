@@ -40,9 +40,6 @@ class PostgresKGProvider(KGProvider):
                 "NetworkX is not installed. Please install it to use this module."
             ) from exc
 
-    def _get_table_name(self, base_name: str) -> str:
-        return f"{base_name}_kg"
-
     async def initialize(self):
         logger.info(
             f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
@@ -67,16 +64,15 @@ class PostgresKGProvider(KGProvider):
     ) -> Any:
         return await self.db_provider.fetch_query(query, params)
 
+    def _get_table_name(self, base_name: str) -> str:
+        return self.db_provider._get_table_name(base_name)
+
     async def create_tables(self, project_name: str):
         # raw entities table
         # create schema
-        query = f"""
-            CREATE SCHEMA IF NOT EXISTS {project_name};
-        """
-        await self.execute_query(query)
         
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_raw")} (
             id SERIAL PRIMARY KEY,  
             category TEXT NOT NULL,
             name TEXT NOT NULL,
@@ -90,7 +86,7 @@ class PostgresKGProvider(KGProvider):
 
         # raw triples table, also the final table. this will have embeddings.
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.triple_raw (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_raw")} (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -107,7 +103,7 @@ class PostgresKGProvider(KGProvider):
 
         # entity description table, unique by document_id, category, name
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.entity_description (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_description")} (
             id SERIAL PRIMARY KEY,
             document_id UUID NOT NULL,
             category TEXT NOT NULL,
@@ -123,7 +119,7 @@ class PostgresKGProvider(KGProvider):
 
         # triples table 2 # Relationship summaries by document ID
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.triple_description (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_description")} (
             id SERIAL PRIMARY KEY,
             document_ids UUID[] NOT NULL,
             subject TEXT NOT NULL,
@@ -140,7 +136,7 @@ class PostgresKGProvider(KGProvider):
 
         # embeddings tables
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.entity_embedding (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -153,7 +149,7 @@ class PostgresKGProvider(KGProvider):
 
         # triples embeddings table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.triple_embedding (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_embedding")} (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -167,7 +163,7 @@ class PostgresKGProvider(KGProvider):
 
         # communities table, result of the Leiden algorithm
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.community (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
             id SERIAL PRIMARY KEY,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
@@ -181,7 +177,7 @@ class PostgresKGProvider(KGProvider):
 
         # communities_report table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.community_reports (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community_reports")} (
             id SERIAL PRIMARY KEY,
             community_id INT NOT NULL,
             collection_id UUID NOT NULL,

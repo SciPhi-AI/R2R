@@ -107,10 +107,10 @@ async def run_local_serve(
     await r2r_instance.orchestration_provider.start_worker()
 
     # TODO: make this work with autoreload, currently due to hatchet, it causes a reload error
-    # import uvicorn
-    # uvicorn.run(
-    #     "core.main.app_entry:app", host=host, port=available_port, reload=False
-    # )
+    import uvicorn
+    uvicorn.run(
+        "core.main.app_entry:app", host=host, port=available_port, reload=True
+    )
 
     r2r_instance.serve(host, available_port)
 

@@ -111,6 +111,9 @@ class PostgresDBProvider(DatabaseProvider):
             self._get_postgres_configuration_settings(config)
         )
 
+    def _get_table_name(self, base_name: str) -> str:
+        return f"{self.project_name}.{base_name}"
+
     async def initialize(self):
         self.vector = self._initialize_vector_db()
         self.relational = await self._initialize_relational_db()

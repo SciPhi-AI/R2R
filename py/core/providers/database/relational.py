@@ -53,7 +53,7 @@ class PostgresRelationalDBProvider(
         await self._initialize_relational_db()
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{base_name}_{self.project_name}"
+        return f"{self.project_name}.{base_name}"
 
     @asynccontextmanager
     async def get_connection(self):
@@ -102,7 +102,7 @@ class PostgresRelationalDBProvider(
 
     async def _initialize_relational_db(self):
         async with self.get_connection() as conn:
-            await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+            await conn.execute(f'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
 
             # Call create_table for each mixin
             for base_class in self.__class__.__bases__:

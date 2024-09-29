@@ -107,24 +107,24 @@ class KgService(Service):
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
         self,
-        document_ids: list[UUID],
+        collection_id: UUID,
         kg_creation_settings: KGCreationSettings,
     ):
-
-        if not document_ids:
-            document_status_filter = [
-                KGCreationStatus.PENDING,
-                KGCreationStatus.FAILED,
+    
+        document_status_filter = [
+            KGCreationStatus.PENDING,
+            KGCreationStatus.FAILED,
+        ]
+        if kg_creation_settings.force_kg_creation:
+            document_status_filter += [
+                KGCreationStatus.SUCCESS,
+                KGCreationStatus.PROCESSING,
             ]
-            if kg_creation_settings.force_kg_creation:
-                document_status_filter += [
-                    KGCreationStatus.SUCCESS,
-                    KGCreationStatus.PROCESSING,
-                ]
 
-            document_ids = await self.providers.database.relational.get_document_ids_by_status(
-                status_type="kg_creation", status=document_status_filter
-            )
+        document_ids = await self.providers.database.relational.get_document_ids_by_status(
+            status_type="kg_creation", status=document_status_filter, 
+            collection_id=collection_id,
+        )
 
         return document_ids
 
