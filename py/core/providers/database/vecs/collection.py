@@ -460,12 +460,12 @@ class Collection:
         Deletes vectors from the collection by matching filters or ids.
 
         Args:
-            fragment_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
+            extraction_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
             filters (Optional[dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            dict[str, dict[str, str]]: A dictionary of deleted records, where the key is the fragment_id
-            and the value is a dictionary containing 'document_id', 'extraction_id', 'fragment_id', and 'text'.
+            dict[str, dict[str, str]]: A dictionary of deleted records, where the key is the extraction_id
+            and the value is a dictionary containing 'document_id', 'extraction_id', and 'text'.
 
         Raises:
             ArgError: If neither ids nor filters are provided, or if both are provided.

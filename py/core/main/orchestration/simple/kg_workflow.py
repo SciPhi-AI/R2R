@@ -19,6 +19,7 @@ def simple_kg_factory(service: KgService):
         for key, value in input_data.items():
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
+                input_data[key]['generation_config'] = GenerationConfig(**input_data[key]['generation_config'])
         return input_data
 
     async def create_graph(input_data):

@@ -127,7 +127,7 @@ class Triple(BaseModel):
         predicate_key: str = "predicate",
         description_key: str = "description",
         weight_key: str = "weight",
-        fragment_ids_key: str = "fragment_ids",
+        extraction_ids_key: str = "extraction_ids",
         document_id_key: str = "document_id",
         attributes_key: str = "attributes",
     ) -> "Triple":
@@ -141,7 +141,7 @@ class Triple(BaseModel):
             predicate=d.get(predicate_key),
             description=d.get(description_key),
             weight=d.get(weight_key, 1.0),
-            fragment_ids=d.get(fragment_ids_key),
+            extraction_ids=d.get(extraction_ids_key),
             document_id=d.get(document_id_key),
             attributes=d.get(attributes_key, {}),
         )
