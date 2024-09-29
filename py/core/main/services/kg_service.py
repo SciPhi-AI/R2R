@@ -55,7 +55,7 @@ class KgService(Service):
         **kwargs,
     ):
         try:
-            
+
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_creation",
@@ -135,26 +135,26 @@ class KgService(Service):
         document_id: UUID,
         max_description_input_length: int,
     ):
-        
-        entity_count = await self.providers.kg.get_entity_count(
-            **input_data
-        )
+
+        entity_count = await self.providers.kg.get_entity_count(**input_data)
 
         # process 50 entities at a time
-        num_batches = math.ceil(entity_count / 50)  
+        num_batches = math.ceil(entity_count / 50)
         workflows = []
 
         for i in range(num_batches):
-            logger.info(f"Running kg_node_description for batch {i+1}/{num_batches} for document {input_data['document_id']}")
+            logger.info(
+                f"Running kg_node_description for batch {i+1}/{num_batches} for document {input_data['document_id']}"
+            )
             await self.kg_service.kg_node_description(
                 offset=i * 50,
                 limit=50,
                 document_id=input_data["document_id"],
-                max_description_input_length=input_data["max_description_input_length"],
+                max_description_input_length=input_data[
+                    "max_description_input_length"
+                ],
                 project_name=input_data["project_name"],
             )
-
-
 
         node_extractions = await self.pipes.kg_node_description_pipe.run(
             input=self.pipes.kg_node_description_pipe.Input(

@@ -22,10 +22,8 @@ if TYPE_CHECKING:
 def hatchet_kg_factory(
     orchestration_provider: OrchestrationProvider, service: KgService
 ) -> list["Hatchet.Workflow"]:
-    
-    @orchestration_provider.workflow(
-        name="kg-extract", timeout="360m"
-    )
+
+    @orchestration_provider.workflow(name="kg-extract", timeout="360m")
     class KGExtractDescribeEmbedWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
@@ -48,15 +46,21 @@ def hatchet_kg_factory(
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=1)
-        async def get_document_ids_for_create_graph(self, context: Context) -> dict:
+        async def get_document_ids_for_create_graph(
+            self, context: Context
+        ) -> dict:
             return await self.kg_service.get_document_ids_for_create_graph(
                 **context.workflow_input()["request"]
             )
 
-        @orchestration_provider.step(retries=1, parents=["get_document_ids_for_create_graph"])
+        @orchestration_provider.step(
+            retries=1, parents=["get_document_ids_for_create_graph"]
+        )
         async def kg_extraction_ingress(self, context: Context) -> dict:
-            
-            document_ids = context.step_output("get_document_ids_for_create_graph")
+
+            document_ids = context.step_output(
+                "get_document_ids_for_create_graph"
+            )
             results = []
             for cnt, document_id in enumerate(document_ids):
                 context.logger.info(
@@ -69,7 +73,11 @@ def hatchet_kg_factory(
                             {
                                 "request": {
                                     "document_id": str(document_id),
-                                    "kg_creation_settings": context.workflow_input()["request"]["kg_creation_settings"],
+                                    "kg_creation_settings": context.workflow_input()[
+                                        "request"
+                                    ][
+                                        "kg_creation_settings"
+                                    ],
                                 }
                             },
                             key=f"kg-extract-{cnt}/{len(document_ids)}",
@@ -85,7 +93,9 @@ def hatchet_kg_factory(
 
             logger.info(f"Ran {len(results)} workflows for graph creation")
             results = await asyncio.gather(*results)
-            return {"result": f"successfully ran graph creation workflows for {len(results)} documents"}
+            return {
+                "result": f"successfully ran graph creation workflows for {len(results)} documents"
+            }
 
     @orchestration_provider.workflow(name="enrich-graph", timeout="60m")
     class EnrichGraphWorkflow:
@@ -102,12 +112,12 @@ def hatchet_kg_factory(
         async def kg_community_summary(self, context: Context) -> dict:
 
             input_data = context.workflow_input()["request"]
-            num_communities = context.step_output("kg_clustering")[0]["num_communities"]
+            num_communities = context.step_output("kg_clustering")[0][
+                "num_communities"
+            ]
 
             parallel_communities = min(100, num_communities)
-            total_workflows = math.ceil(
-                num_communities / parallel_communities
-            )
+            total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
             for i, offset in enumerate(
                 range(0, num_communities, parallel_communities)
@@ -126,9 +136,13 @@ def hatchet_kg_factory(
                     )
                 )
             await asyncio.gather(*workflows)
-            return {"result": "successfully ran kg community summary workflows"}
+            return {
+                "result": "successfully ran kg community summary workflows"
+            }
 
-    @orchestration_provider.workflow(name="kg-community-summary", timeout="60m")
+    @orchestration_provider.workflow(
+        name="kg-community-summary", timeout="60m"
+    )
     class KGCommunitySummaryWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service

@@ -4,7 +4,12 @@ from typing import TYPE_CHECKING
 
 from hatchet_sdk import Context
 
-from core.base import IngestionStatus, OrchestrationProvider, increment_version
+from core.base import (
+    IngestionStatus,
+    OrchestrationProvider,
+    increment_version,
+    generate_id_from_label,
+)
 from core.base.abstractions import DocumentInfo, R2RException
 
 from ...services import IngestionService, IngestionServiceAdapter
@@ -113,6 +118,16 @@ def hatchet_ingestion_factory(
             await self.ingestion_service.update_document_status(
                 document_info,
                 status=IngestionStatus.SUCCESS,
+            )
+
+            collection_id = await service.providers.database.relational.assign_document_to_collection(
+                document_id=document_info.id,
+                collection_id=generate_id_from_label(
+                    str(document_info.user_id)
+                ),
+            )
+            service.providers.database.vector.assign_document_to_collection(
+                document_id=document_info.id, collection_id=collection_id
             )
 
             return {

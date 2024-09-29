@@ -53,12 +53,10 @@ pip install r2r
 </AccordionGroup>
 
 <Note>
-Hatchet (RabbitMQ based orchestration), Neo4j, and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either Neo4j or Postgres, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
-
-Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`.
+Postgres comes bundled into the R2R Docker by default.
 </Note>
 
-The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Hatchet`, `Neo4j`, and `Postgres+pgvector`.
+The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Postgres+pgvector`.
 
 The end result is a live server at http://localhost:7272 serving the [R2R API](/api-reference/introduction).
 

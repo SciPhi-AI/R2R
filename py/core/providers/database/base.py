@@ -76,6 +76,11 @@ class QueryBuilder:
 
 
 class DatabaseMixin:
+    def get_config(self):
+        if hasattr(self, "config"):
+            return self.config
+        raise AttributeError("Config not set in the provider class")
+
     def _get_table_name(self, base_name: str) -> str:
         raise NotImplementedError("Subclasses must implement this method")
 

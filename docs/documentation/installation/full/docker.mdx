@@ -28,14 +28,14 @@ pip install r2r
       # Set cloud LLM settings
       export OPENAI_API_KEY=sk-...
 
-      r2r serve --docker --config-name=core
+      r2r serve --docker --full --config-name=core
       ```
   [Refer here](/documentation/configuration/llm) for more information on how to configure various LLM providers.
   </Accordion>
   <Accordion title="Local LLMs" icon="house" defaultOpen={false}>
       To start R2R with your local computer as the default LLM inference provider:
       ```bash
-      r2r serve --docker --config-name=local_llm
+      r2r serve --docker --full --config-name=local_llm
       ```
     Then, in a separate terminal you will need to run Ollama to provide completions:
     ```bash
@@ -56,12 +56,10 @@ pip install r2r
 </AccordionGroup>
 
 <Note>
-Hatchet (RabbitMQ based orchestration), Neo4j, and Postgres come bundled into the R2R Docker by default. If you prefer to use your own deployments of either Neo4j or Postgres, you may optionally include the flags `--exclude-neo4j` and/or `--exclude-postgres`.
-
-Excluding postgres requires that a valid configuration be selected, such as `core/configs/neo4j_kg_no_vector_postgres.toml`.
+Hatchet (RabbitMQ based orchestration), and Postgres come bundled into the R2R Docker by default.
 </Note>
 
-The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Hatchet`, `Neo4j`, and `Postgres+pgvector`.
+The above command will automatically pull the necessary Docker images and start all the required containers, including `R2R`, `Hatchet`, and `Postgres+pgvector`.
 
 The end result is a live server at http://localhost:7272 serving the [R2R API](/api-reference/introduction).
 

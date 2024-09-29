@@ -21,11 +21,10 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    R2RException,
     KGCreationStatus,
     KGEnrichmentStatus,
+    R2RException,
 )
-
 
 from .base import DatabaseMixin
 

@@ -46,7 +46,7 @@ class RelationshipType(R2RSerializable):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    id: Optional[int] = None  # given by neo4j
+    id: Optional[int] = None
     category: str
     name: str
     description: Optional[str] = None
@@ -79,7 +79,7 @@ class Entity(R2RSerializable):
 class Triple(BaseModel):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: Optional[int] = None  # given by neo4j
+    id: Optional[int] = None
 
     subject: str | None = None
     """The source entity name."""

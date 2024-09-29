@@ -25,5 +25,14 @@ batch_size = 128
 add_title_as_prefix = true
 concurrent_request_limit = 2
 
+[ingestion]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_method = "by_title"
+new_after_n_chars = 512
+max_characters = 1_024
+combine_under_n_chars = 128
+overlap = 20
+
 [orchestration]
-provider = "simple"
+provider = "hatchet"

@@ -110,6 +110,10 @@ class PostgresDBProvider(DatabaseProvider):
         self.postgres_configuration_settings: PostgresConfigurationSettings = (
             self._get_postgres_configuration_settings(config)
         )
+        self.default_collection_name = config.default_collection_name
+        self.default_collection_description = (
+            config.default_collection_description
+        )
 
     def _get_table_name(self, base_name: str) -> str:
         return f"{self.project_name}.{base_name}"

@@ -51,6 +51,7 @@ R2R requires connections to various services. Set up the following environment v
     <Note>
     The `POSTGRES_PROJECT_NAME` environment variable defines the tables within your Postgres database where the selected R2R project resides. If the specified tables do not exist then they will be created by R2R during initialization.
     </Note>
+    If you are unfamiliar with Postgres then <a href="https://supabase.com/docs"> Supabase's free cloud offering </a> is a good place to start.
   </Accordion>
 </AccordionGroup>
 
@@ -79,7 +80,7 @@ For those looking to develop R2R locally:
    ```bash
    git clone git@github.com:SciPhi-AI/R2R.git
    cd R2R/py
-   poetry install -E light
+   poetry install -E "core ingestion-bundle"
    ```
 
 3. Setup environment:

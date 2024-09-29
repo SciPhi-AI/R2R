@@ -8,6 +8,7 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     Community,
+    CommunityReport,
     CompletionProvider,
     EmbeddingProvider,
     Entity,
@@ -17,7 +18,6 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
     Triple,
-    CommunityReport,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         collection_id: UUID,
     ) -> dict:
         """
-        Process a community by summarizing it and creating a summary embedding and storing it to a neo4j database.
+        Process a community by summarizing it and creating a summary embedding and storing it to a database.
         """
 
         community_level, entities, triples = (
