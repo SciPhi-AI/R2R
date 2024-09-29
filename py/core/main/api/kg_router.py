@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import yaml
 from fastapi import Body, Depends
@@ -63,7 +63,7 @@ class KGRouter(BaseRouter):
             collection_id: str = Body(
                 description="Collection ID to create graph for.",
             ),
-            kg_creation_settings: Optional[Json[KGCreationSettings]] = Body(
+            kg_creation_settings: Optional[dict] = Body(
                 default='{}',
                 description="Settings for the graph creation process.",
             ),
@@ -84,7 +84,7 @@ class KGRouter(BaseRouter):
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
-            for key, value in json.loads(kg_creation_settings).items():
+            for key, value in kg_creation_settings.items():
                 if value is not None:
                     setattr(server_kg_creation_settings, key, value)
 

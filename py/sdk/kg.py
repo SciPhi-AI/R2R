@@ -20,14 +20,15 @@ class KGMethods:
         """
         Create a graph from the given settings.
         """
+        data = {
+            "collection_id": collection_id,
+            "kg_creation_settings": kg_creation_settings or {}
+        }
 
-        data = {}
-        data["collection_id"] = collection_id
-
-        if kg_creation_settings:
-            if isinstance(kg_creation_settings, KGCreationSettings):
-                kg_creation_settings = kg_creation_settings.dict()
-            data["kg_creation_settings"] = kg_creation_settings  # type: ignore
+        if isinstance(kg_creation_settings, KGCreationSettings):
+            data["kg_creation_settings"] = kg_creation_settings.model_dump()
+        elif isinstance(kg_creation_settings, dict):
+            data["kg_creation_settings"] = kg_creation_settings
 
         response = await client._make_request(
             "POST", "create_graph", json=data
@@ -66,6 +67,6 @@ class KGMethods:
             data["kg_enrichment_settings"] = kg_enrichment_settings  # type: ignore
 
         response = await client._make_request(
-            "POST", "enrich_graph", json=data
+            "POST", "enrich_graph", json=json.dumps(data)
         )
         return response

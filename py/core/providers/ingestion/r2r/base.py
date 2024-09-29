@@ -190,7 +190,7 @@ class R2RIngestionProvider(IngestionProvider):
                     user_id=document.user_id,
                     collection_ids=document.collection_ids,
                     data=chunk,
-                    metadata=document.metadata,
+                    metadata={**document.metadata, "chunk_order": iteration},
                 )
                 iteration += 1
                 yield extraction
