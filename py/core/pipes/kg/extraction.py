@@ -239,10 +239,9 @@ class KGTriplesExtractionPipe(
         max_knowledge_triples = input.message["max_knowledge_triples"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
-
         extractions = [
             DocumentExtraction(
-                id=extraction["id"],
+                id=extraction["extraction_id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
                 collection_ids=extraction["collection_ids"],

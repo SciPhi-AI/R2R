@@ -15,20 +15,30 @@ logger = logging.getLogger(__name__)
 
 def simple_kg_factory(service: KgService):
 
-    async def kg_extract(input_data) -> dict:
-        await service.kg_extract_and_store(**input_data)
-        return await service.kg_node_description(**input_data)
+    def get_input_data_dict(input_data):
+        for key, value in input_data.items():
+            if key == "kg_creation_settings":
+                input_data[key] = json.loads(value)
+        return input_data
 
     async def create_graph(input_data):
+
+        input_data = get_input_data_dict(input_data)
+
         document_ids = await service.get_document_ids_for_create_graph(
-            **input_data
+            collection_id=input_data["collection_id"],
+            **input_data["kg_creation_settings"],
         )
         for cnt, document_id in enumerate(document_ids):
-            await service.kg_extract_and_store(
-                document_id=document_id, **input_data
+            await service.kg_extraction(
+                document_id=document_id,
+                **input_data["kg_creation_settings"],
             )
 
     async def enrich_graph(input_data):
+
+        input_data = get_input_data_dict(input_data)
+
         num_clusters = await service.kg_clustering(**input_data)
         parallel_communities = min(100, num_clusters)
         workflows = []
@@ -58,7 +68,6 @@ def simple_kg_factory(service: KgService):
         )
 
     return {
-        "kg-extract": kg_extract,
         "create-graph": create_graph,
         "enrich-graph": enrich_graph,
         "kg-community-summary": kg_community_summary,

@@ -15,7 +15,6 @@ class KGMethods:
     async def create_graph(
         client,
         collection_id: str,
-        project_name: str,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
     ) -> KGCreationResponse:
         """
@@ -23,7 +22,6 @@ class KGMethods:
         """
 
         data = {}
-        data["project_name"] = project_name
         data["collection_id"] = collection_id
 
         if kg_creation_settings:

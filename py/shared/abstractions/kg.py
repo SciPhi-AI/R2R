@@ -12,6 +12,11 @@ class KGCreationSettings(R2RSerializable):
         description="The prompt to use for knowledge graph extraction.",
     )
 
+    force_kg_creation: bool = Field(
+        default=False,
+        description="Force run the KG creation step even if the graph is already created.",
+    )
+
     entity_types: list[str] = Field(
         default=[],
         description="The types of entities to extract.",

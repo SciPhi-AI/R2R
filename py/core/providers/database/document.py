@@ -244,7 +244,6 @@ class DocumentMixin(DatabaseMixin):
         status: list[str], 
         table_name: str, 
         status_type: str,
-        project_name: str = None,
         collection_id: UUID = None,
     ):
         """
@@ -257,10 +256,12 @@ class DocumentMixin(DatabaseMixin):
         """
         query = f"""
             SELECT document_id FROM {self._get_table_name(table_name)}
-            WHERE {status_type} = ANY($1)
+            WHERE {status_type} = ANY($1) and $2 = ANY(collection_ids)
         """
-        return await self.fetch_query(query, [status])
-
+        records = await self.fetch_query(query, [status, collection_id])
+        document_ids = [record["document_id"] for record in records]
+        return document_ids
+    
     async def _set_status_in_table(
         self, ids: list[UUID], status: str, table_name: str, status_type: str
     ):
@@ -292,9 +293,9 @@ class DocumentMixin(DatabaseMixin):
         """
         if status_type == "ingestion":
             return IngestionStatus, "document_info"
-        elif status_type == "kg_creation":
+        elif status_type == "kg_creation_status":
             return KGCreationStatus, "document_info"
-        elif status_type == "kg_enrichment":
+        elif status_type == "kg_enrichment_status":
             return KGEnrichmentStatus, "collection_info"
         else:
             raise R2RException(
@@ -346,8 +347,7 @@ class DocumentMixin(DatabaseMixin):
     async def get_document_ids_by_status(
         self, 
         status_type: str, 
-        status: Union[str, list[str]], 
-        project_name: str = None,
+        status: Union[str, list[str]],      
         collection_id: UUID = None, 
     ):
         """
@@ -365,10 +365,7 @@ class DocumentMixin(DatabaseMixin):
         out_model, table_name = self._get_status_model_and_table_name(
             status_type
         )
-        result = map(
-            (await self._get_ids_from_table(status, table_name, status_type, project_name, collection_id)),
-            out_model,
-        )
+        result = await self._get_ids_from_table(status, table_name, status_type, collection_id)
         return result
 
     async def get_documents_overview(

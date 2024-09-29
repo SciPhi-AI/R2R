@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Optional
@@ -63,7 +64,7 @@ class KGRouter(BaseRouter):
                 description="Collection ID to create graph for.",
             ),
             kg_creation_settings: Optional[Json[KGCreationSettings]] = Body(
-                default=None,
+                default='{}',
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -80,14 +81,16 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            if kg_creation_settings is None:
-                kg_creation_settings = (
-                    self.service.providers.kg.config.kg_creation_settings
-                )
+            server_kg_creation_settings = (
+                self.service.providers.kg.config.kg_creation_settings
+            )
+            for key, value in json.loads(kg_creation_settings).items():
+                if value is not None:
+                    setattr(server_kg_creation_settings, key, value)
 
             workflow_input = {
                 "collection_id": collection_id,
-                "kg_creation_settings": kg_creation_settings.json(),
+                "kg_creation_settings": server_kg_creation_settings.json(),
                 "user": auth_user.json(),
             }
 

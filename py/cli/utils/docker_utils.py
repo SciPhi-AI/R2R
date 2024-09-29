@@ -104,9 +104,9 @@ async def run_local_serve(
     click.echo("R2R now runs on port 7272 by default!")
     available_port = find_available_port(port)
 
-    await r2r_instance.orchestration_provider.start_worker()
+    # await r2r_instance.orchestration_provider.start_worker()
 
-    # TODO: make this work with autoreload, currently due to hatchet, it causes a reload error
+    # TODO: make this worak with autoreload, currently due to hatchet, it causes a reload error
     import uvicorn
     uvicorn.run(
         "core.main.app_entry:app", host=host, port=available_port, reload=True

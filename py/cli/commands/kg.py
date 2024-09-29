@@ -20,24 +20,16 @@ from cli.utils.timer import timer
     required=True,
     help="Collection ID to create graph for.",
 )
-@click.option(
-    "--skip-clustering",
-    required=False,
-    default=False,
-    help="Perform leiden clustering on the graph to create communities.",
-)
 @pass_context
 def create_graph(
-    ctx, collection_id, force_enrichment, skip_clustering
+    ctx, collection_id
 ):
     """
     Create a new graph.
     """
     client = ctx.obj
     with timer():
-        response = client.create_graph(
-            collection_id, force_enrichment, skip_clustering
-        )
+        response = client.create_graph(collection_id)
 
     click.echo(json.dumps(response, indent=2))
 

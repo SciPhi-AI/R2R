@@ -53,12 +53,11 @@ class KgService(Service):
         entity_types: list[str],
         relation_types: list[str],
         **kwargs,
-    ):
+    ):        
         try:
-
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
-                status_type="kg_creation",
+                status_type="kg_creation_status",
                 status=KGCreationStatus.PROCESSING,
             )
 
@@ -83,22 +82,17 @@ class KgService(Service):
                 run_manager=self.run_manager,
             )
 
-            if len(triples) == 0:
-                await self.providers.database.relational.set_workflow_status(
-                    id=document_id,
-                    status_type="kg_creation",
-                    status=KGCreationStatus.SUCCESS,
-                )
-            else:
-                raise ValueError(
-                    f"Error in kg_extract_and_store: No Triples Extracted"
-                )
+            await self.providers.database.relational.set_workflow_status(
+                id=document_id,
+                status_type="kg_creation_status",
+                status=KGCreationStatus.SUCCESS,
+            )
 
         except Exception as e:
             logger.error(f"Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
-                status_type="kg_creation",
+                status_type="kg_creation_status",
                 status=KGCreationStatus.FAILED,
             )
 
@@ -108,21 +102,23 @@ class KgService(Service):
     async def get_document_ids_for_create_graph(
         self,
         collection_id: UUID,
-        kg_creation_settings: KGCreationSettings,
+        force_kg_creation: bool,
+        **kwargs,
     ):
-    
+
         document_status_filter = [
             KGCreationStatus.PENDING,
             KGCreationStatus.FAILED,
         ]
-        if kg_creation_settings.force_kg_creation:
+        if force_kg_creation:
             document_status_filter += [
                 KGCreationStatus.SUCCESS,
                 KGCreationStatus.PROCESSING,
             ]
 
+
         document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_creation", status=document_status_filter, 
+            status_type="kg_creation_status", status=document_status_filter, 
             collection_id=collection_id,
         )
 

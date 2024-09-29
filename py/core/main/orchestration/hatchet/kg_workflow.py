@@ -30,7 +30,7 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=3, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
-            return await self.kg_service.kg_extract_and_store(
+            return await self.kg_service.kg_extraction(
                 **context.workflow_input()["request"]
             )
 
