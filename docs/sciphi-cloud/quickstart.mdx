@@ -109,7 +109,7 @@ r2r --base-url=$SCIPHI_CLOUD_URL rag --query="who was aristotle?" --stream --use
 rag_results = client.rag(
     query="Who is John?",
     vector_search_settings={"use_hybrid_search": True},
-    rag_generation_config=GenerationConfig(model="gpt-4o-mini", temperature=0.0, stream=True)
+    rag_generation_config=GenerationConfig(model="openai/gpt-4o-mini", temperature=0.0, stream=True)
 )
 
 for chunk in rag_results:

@@ -17,7 +17,7 @@ provider = "litellm"
 concurrent_request_limit = 16
 
   [completion.generation_config]
-  model = "azure/gpt-4o"
+  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
@@ -32,7 +32,7 @@ provider = "postgres"
 
 [embedding]
 provider = "litellm"
-base_model = "azure/text-embedding-3-small"
+base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
@@ -59,18 +59,18 @@ batch_size = 256
     relation_types = [] # if empty, all relations are extracted
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     max_knowledge_triples = 100
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for triplet extraction
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports_prompt"
     max_description_input_length = 65536
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = { max_levels = 10 }
 
   [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 [logging]
 provider = "local"
