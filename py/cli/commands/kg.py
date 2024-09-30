@@ -41,20 +41,13 @@ def create_graph(
     help="Collection ID to enrich graph for.",
 )
 @click.option(
-    "--force-enrichment",
+    "--kg-enrichment-settings",
     required=False,
-    default=False,
-    help="Force enrichment of the graph even if graph creation is still in progress for some documents.",
-)
-@click.option(
-    "--skip-clustering",
-    required=False,
-    default=False,
-    help="Perform leiden clustering on the graph to create communities.",
+    help="Settings for the graph enrichment process.",
 )
 @pass_context
 def enrich_graph(
-    ctx, collection_id, force_enrichment, skip_clustering
+    ctx, collection_id, kg_enrichment_settings
 ):
     """
     Enrich an existing graph.
@@ -62,7 +55,7 @@ def enrich_graph(
     client = ctx.obj
     with timer():
         response = client.enrich_graph(
-            collection_id, force_enrichment, skip_clustering
+            collection_id, kg_enrichment_settings
         )
 
     click.echo(json.dumps(response, indent=2))

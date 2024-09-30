@@ -152,7 +152,7 @@ class KGTriplesExtractionPipe(
                                 category=entity_category,
                                 description=entity_description,
                                 name=entity_value,
-                                document_ids=[str(extractions[0].document_id)],
+                                document_id=str(extractions[0].document_id),
                                 extraction_ids=[
                                     str(extraction.id)
                                     for extraction in extractions
@@ -177,7 +177,7 @@ class KGTriplesExtractionPipe(
                                 object=object,
                                 description=description,
                                 weight=weight,
-                                document_ids=[str(extractions[0].document_id)],
+                                document_id=str(extractions[0].document_id),
                                 extraction_ids=[
                                     str(extraction.id)
                                     for extraction in extractions

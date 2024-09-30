@@ -20,15 +20,14 @@ class KGMethods:
         """
         Create a graph from the given settings.
         """
-        data = {
-            "collection_id": collection_id,
-            "kg_creation_settings": kg_creation_settings or {}
-        }
 
         if isinstance(kg_creation_settings, KGCreationSettings):
-            data["kg_creation_settings"] = kg_creation_settings.model_dump()
-        elif isinstance(kg_creation_settings, dict):
-            data["kg_creation_settings"] = kg_creation_settings
+            kg_creation_settings = kg_creation_settings.model_dump()
+
+        data = {
+            "collection_id": collection_id,
+            "kg_creation_settings": json.dumps(kg_creation_settings or {})
+        }
 
         response = await client._make_request(
             "POST", "create_graph", json=data
@@ -38,35 +37,27 @@ class KGMethods:
     @staticmethod
     async def enrich_graph(
         client,
-        skip_clustering: bool = False,
-        force_enrichment: bool = False,
-        kg_enrichment_settings: Optional[
-            Union[dict, KGEnrichmentSettings]
-        ] = None,
+        collection_id: str,
+        kg_enrichment_settings: Optional[Union[dict, KGEnrichmentSettings]] = None,
     ) -> KGEnrichmentResponse:
         """
         Perform graph enrichment over the entire graph.
 
         Args:
-            skip_clustering (bool): Whether to skip leiden clustering on the graph or not.
-            force_enrichment (bool): Force Enrichment step even if graph creation is still in progress for some documents.
-            kg_enrichment_settings (KGEnrichmentSettings): Settings for the graph enrichment process.
+            collection_id (str): The ID of the collection to enrich.
+            kg_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
-
-        data = {}
-
-        if skip_clustering:
-            data["skip_clustering"] = skip_clustering
-        if force_enrichment:
-            data["force_enrichment"] = force_enrichment
-        if kg_enrichment_settings:
-            if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
-                kg_enrichment_settings = kg_enrichment_settings.dict()
-            data["kg_enrichment_settings"] = kg_enrichment_settings  # type: ignore
+        if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
+            kg_enrichment_settings = kg_enrichment_settings.model_dump()
+        
+        data = {
+            "collection_id": collection_id,
+            "kg_enrichment_settings": json.dumps(kg_enrichment_settings or {})
+        }
 
         response = await client._make_request(
-            "POST", "enrich_graph", json=json.dumps(data)
+            "POST", "enrich_graph", json=data
         )
         return response

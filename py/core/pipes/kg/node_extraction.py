@@ -119,34 +119,33 @@ class KGNodeDescriptionPipe(AsyncPipe):
             Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
         """
 
+        def truncate_info(info_list, max_length):
+            random.shuffle(info_list)
+            truncated_info = ""
+            current_length = 0
+            for info in info_list:
+                if current_length + len(info) > max_length:
+                    break
+                truncated_info += info + "\n"
+                current_length += len(info)
+
+            return truncated_info
+        
         async def process_entity(
-            entity, triples, max_description_input_length
+            entities, triples, max_description_input_length
         ):
 
-            # if embedding is present in the entity, just return it
-            # in the future disable this to override and recompute the descriptions for all entities
-            if entity.description_embedding:
-                return entity
+            entity_info = [
+                f"{entity['name']}, {entity['description']}"
+                for entity in entities
+            ]
 
-            entity_info = f"{entity.name}, {entity.description}"
             triples_txt = [
                 f"{i+1}: {triple['subject']}, {triple['object']}, {triple['predicate']} - Summary: {triple['description']}"
                 for i, triple in enumerate(triples)
             ]
 
-            # truncate the descriptions to the max_description_input_length
-            # randomly shuffle the triples
-            # randomly select elements from the triples_txt until the length is less than max_description_input_length
-            random.shuffle(triples_txt)
-            truncated_triples_txt = ""
-            current_length = 0
-            for triple in triples_txt:
-                if current_length + len(triple) > max_description_input_length:
-                    break
-                truncated_triples_txt += triple + "\n"
-                current_length += len(triple)
-
-            out_entity = {"name": entities_info[0]["name"]}
+            out_entity = {"name": entities[0]["name"]}
             out_entity["description"] = (
                 (
                     await self.llm_provider.aget_completion(
@@ -154,8 +153,8 @@ class KGNodeDescriptionPipe(AsyncPipe):
                             {
                                 "role": "user",
                                 "content": summarization_content.format(
-                                    entity_info=entity_info,
-                                    triples_txt=truncated_triples_txt,
+                                    entity_info=truncate_info(entity_info, max_description_input_length),
+                                    triples_txt=truncate_info(triples_txt, max_description_input_length),
                                 ),
                             }
                         ],
@@ -175,16 +174,11 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
             return out_entity
 
-        max_description_input_length = input.message[
-            "max_description_input_length"
-        ]
-
         offset = input.message["offset"]
         limit = input.message["limit"]
-        project_name = input.message["project_name"]
         document_id = input.message["document_id"]
         entity_map = await self.kg_provider.get_entity_map(
-            offset, limit, project_name, document_id
+            offset, limit, document_id
         )
 
         for entity_name, entity_info in entity_map.items():
@@ -193,7 +187,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 processed_entity = await process_entity(
                     entity_info["entities"],
                     entity_info["triples"],
-                    max_description_input_length,
+                    input.message["max_description_input_length"],
                 )
 
                 await self.kg_provider.upsert_embeddings(
@@ -204,8 +198,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                             str(processed_entity["description_embedding"]),
                         )
                     ],
-                    "entity_embeddings",
-                    project_name,
+                    "entity_embedding",
                 )
                 logger.info(f"Processed entity {entity_name}")
 

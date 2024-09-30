@@ -95,7 +95,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        project_name: str,
         community_id: str,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
@@ -107,7 +106,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         community_level, entities, triples = (
             await self.kg_provider.get_community_details(
-                project_name=project_name, community_id=community_id
+                community_id=community_id
             )
         )
 
@@ -188,13 +187,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
         limit = input.message["limit"]
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
-        project_name = input.message["project_name"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
         for community_id in range(offset, limit):
             community_summary_jobs.append(
                 self.process_community(
-                    project_name=project_name,
                     community_id=community_id,
                     max_summary_input_length=max_summary_input_length,
                     generation_config=generation_config,

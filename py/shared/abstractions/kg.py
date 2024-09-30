@@ -37,11 +37,15 @@ class KGCreationSettings(R2RSerializable):
         description="The maximum number of knowledge triples to extract from each chunk.",
     )
 
+    max_description_input_length: int = Field(
+        default=65536,
+        description="The maximum length of the description for a node in the graph.",
+    )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph enrichment.",
     )
-
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
@@ -59,11 +63,6 @@ class KGEnrichmentSettings(R2RSerializable):
     community_reports_prompt: str = Field(
         default="graphrag_community_reports_prompt",
         description="The prompt to use for knowledge graph enrichment.",
-    )
-
-    max_description_input_length: int = Field(
-        default=65536,
-        description="The maximum length of the description for a node in the graph.",
     )
 
     max_summary_input_length: int = Field(

@@ -56,7 +56,7 @@ class Entity(R2RSerializable):
     community_ids: Optional[list[str]] = None
     extraction_ids: Optional[list[str]] = None
     document_id: Optional[str] = None
-    rank: Optional[int] = 1
+    rank: Optional[int] = None
     attributes: Optional[Union[dict[str, Any], str]] = None
 
     def __str__(self):
@@ -96,7 +96,7 @@ class Triple(BaseModel):
     description: str | None = None
     """A description of the relationship (optional)."""
 
-    predicate_embedding: list[float] = []
+    predicate_embedding: list[float] | None = None
     """The semantic embedding for the relationship description (optional)."""
 
     extraction_ids: list[str] = []

@@ -109,7 +109,7 @@ async def run_local_serve(
     # TODO: make this worak with autoreload, currently due to hatchet, it causes a reload error
     import uvicorn
     uvicorn.run(
-        "core.main.app_entry:app", host=host, port=available_port, reload=True
+        "core.main.app_entry:app", host=host, port=available_port, reload=False
     )
 
     r2r_instance.serve(host, available_port)

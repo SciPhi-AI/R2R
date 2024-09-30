@@ -19,7 +19,14 @@ def simple_kg_factory(service: KgService):
         for key, value in input_data.items():
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
-                input_data[key]['generation_config'] = GenerationConfig(**input_data[key]['generation_config'])
+                input_data[key]['generation_config'] = GenerationConfig(
+                    **input_data[key]['generation_config']
+                )
+            if key == "kg_enrichment_settings":
+                input_data[key] = json.loads(value)
+                input_data[key]["generation_config"] = GenerationConfig(
+                    **input_data[key]["generation_config"]
+                )
         return input_data
 
     async def create_graph(input_data):
@@ -30,8 +37,16 @@ def simple_kg_factory(service: KgService):
             collection_id=input_data["collection_id"],
             **input_data["kg_creation_settings"],
         )
+
+        logger.info(f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}")
+
         for cnt, document_id in enumerate(document_ids):
             await service.kg_extraction(
+                document_id=document_id,
+                **input_data["kg_creation_settings"],
+            )
+
+            await service.kg_node_description(
                 document_id=document_id,
                 **input_data["kg_creation_settings"],
             )
@@ -40,32 +55,39 @@ def simple_kg_factory(service: KgService):
 
         input_data = get_input_data_dict(input_data)
 
-        num_clusters = await service.kg_clustering(**input_data)
-        parallel_communities = min(100, num_clusters)
+        num_communities = await service.kg_clustering(
+            collection_id=input_data["collection_id"],
+            **input_data["kg_enrichment_settings"],
+        )
+        num_communities = num_communities[0]["num_communities"]
+        parallel_communities = min(100, num_communities)
         workflows = []
-        for i, offset in enumerate(
-            range(0, num_clusters, parallel_communities)
-        ):
-            workflows.append(
-                kg_community_summary(
-                    offset=offset,
-                    limit=parallel_communities,
-                    **input_data,
-                )
+        total_workflows = math.ceil(num_communities / parallel_communities)
+        for i in range(total_workflows):
+            input_data_copy = input_data.copy()
+            input_data_copy["offset"] = i * parallel_communities
+            input_data_copy["limit"] = min(
+                parallel_communities, num_communities - i * parallel_communities
             )
-        await asyncio.gather(*workflows)
+            # running i'th workflow out of total_workflows
+            logger.info(
+                f"Running kg community summary for {i+1}'th workflow out of total {total_workflows} workflows"
+            )
+            await kg_community_summary(
+                input_data=input_data_copy,
+            )
+
         return {"result": "successfully ran kg community summary workflows"}
 
     async def kg_community_summary(input_data):
-        community_id = input_data["community_id"]
-        level = input_data["level"]
-        generation_config = GenerationConfig(**input_data["generation_config"])
-        max_summary_input_length = input_data["max_summary_input_length"]
+
+        logger.info(f"Running kg community summary for offset: {input_data['offset']}, limit: {input_data['limit']}")
+
         await service.kg_community_summary(
-            community_id=community_id,
-            level=level,
-            max_summary_input_length=max_summary_input_length,
-            generation_config=generation_config,
+            offset=input_data["offset"],
+            limit=input_data["limit"],
+            collection_id=input_data["collection_id"],
+            **input_data["kg_enrichment_settings"],
         )
 
     return {

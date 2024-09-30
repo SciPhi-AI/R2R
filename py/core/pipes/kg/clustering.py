@@ -50,20 +50,16 @@ class KGClusteringPipe(AsyncPipe):
 
     async def cluster_kg(
         self,
-        project_name: str,
         collection_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings,
-        generation_config: GenerationConfig,
+        leiden_params: dict,
     ):
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
         num_communities = await self.kg_provider.perform_graph_clustering(
-            project_name,
             collection_id,
-            kg_enrichment_settings,
-            generation_config,
+            leiden_params,
         )  # type: ignore
 
         logger.info(
@@ -86,21 +82,9 @@ class KGClusteringPipe(AsyncPipe):
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
 
+        collection_id = input.message["collection_id"]
         leiden_params = input.message["leiden_params"]
-        project_name = input.message["project_name"]
-        if not leiden_params:
-            raise ValueError("Leiden parameters not provided.")
-        generation_config = input.message["generation_config"]
-        if not generation_config:
-            raise ValueError("Generation config not provided.")
-        #
-        #        base_dimension = self.embedding_provider.config.base_dimension
-        #        vector_index_fn = self.kg_provider.create_vector_index
-        #        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
-        #        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
-        #        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
-        #        vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
         yield await self.cluster_kg(
-            project_name, leiden_params, generation_config
+            collection_id, leiden_params
         )
