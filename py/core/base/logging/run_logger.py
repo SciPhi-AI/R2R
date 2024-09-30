@@ -88,7 +88,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
-        self.project_name = os.getenv("PROJECT_NAME", "default")
+        self.project_name = os.getenv("POSTGRES_PROJECT_NAME", "default")
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
@@ -340,7 +340,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.config = config
-        self.project_name = os.getenv("PROJECT_NAME", "default")
+        self.project_name = os.getenv("POSTGRES_PROJECT_NAME", "default")
         self.pool = None
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
