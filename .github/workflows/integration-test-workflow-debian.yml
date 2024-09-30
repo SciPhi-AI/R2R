@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       working-directory: ./py
       run: |
-        poetry install -E core ingestion-bundle
+        poetry install -E core -E ingestion-bundle
 
     - name: Start R2R server
       working-directory: ./py
