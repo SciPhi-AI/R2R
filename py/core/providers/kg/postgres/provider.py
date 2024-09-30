@@ -77,7 +77,7 @@ class PostgresKGProvider(KGProvider):
 
         query = f"""
             CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
-            id SERIAL PRIMARY KEY,  
+            id SERIAL PRIMARY KEY,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -318,10 +318,10 @@ class PostgresKGProvider(KGProvider):
 
         QUERY1 = f"""
             WITH entities_list AS (
-                SELECT DISTINCT name 
-                FROM {project_name}.entities_raw 
+                SELECT DISTINCT name
+                FROM {project_name}.entities_raw
                 WHERE document_id = $1
-                ORDER BY name ASC 
+                ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT DISTINCT e.name, e.description, e.category
@@ -341,13 +341,13 @@ class PostgresKGProvider(KGProvider):
 
         QUERY2 = f"""
             WITH entities_list AS (
-                SELECT DISTINCT name 
-                FROM {project_name}.entities_raw 
+                SELECT DISTINCT name
+                FROM {project_name}.entities_raw
                 WHERE document_id = $1
-                ORDER BY name ASC 
+                ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
-            SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description 
+            SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description
             FROM {project_name}.triples_raw t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
@@ -572,8 +572,8 @@ class PostgresKGProvider(KGProvider):
 
         QUERY = f"""
             WITH node_triple_ids AS (
-                SELECT node, triple_ids 
-                FROM {project_name}.communities 
+                SELECT node, triple_ids
+                FROM {project_name}.communities
                 WHERE cluster = $1
             )
             SELECT DISTINCT
@@ -587,8 +587,8 @@ class PostgresKGProvider(KGProvider):
 
         QUERY = f"""
             WITH node_triple_ids AS (
-                SELECT node, triple_ids 
-                FROM {project_name}.communities 
+                SELECT node, triple_ids
+                FROM {project_name}.communities
                 WHERE cluster = $1
             )
             SELECT DISTINCT

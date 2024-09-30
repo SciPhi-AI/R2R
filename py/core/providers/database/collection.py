@@ -28,7 +28,7 @@ class CollectionMixin(DatabaseMixin):
 
     async def create_default_collection(
         self, user_id: Optional[UUID] = None
-    ) -> None:
+    ) -> CollectionResponse:
         """Create a default collection if it doesn't exist."""
         config = self.get_config()
 
@@ -40,11 +40,13 @@ class CollectionMixin(DatabaseMixin):
 
         if not await self.collection_exists(default_collection_uuid):
             logger.info("Initializing a new default collection...")
-            await self.create_collection(
+            return await self.create_collection(
                 name=config.default_collection_name,
                 description=config.default_collection_description,
                 collection_id=default_collection_uuid,
             )
+
+        return await self.get_collection(default_collection_uuid)
 
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
