@@ -15,13 +15,11 @@ def simple_ingestion_factory(service: IngestionService):
             parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
                 input_data
             )
-            print("parsed data = ", parsed_data)
             is_update = parsed_data["is_update"]
 
             ingestion_result = await service.ingest_file_ingress(**parsed_data)
             document_info = ingestion_result["info"]
 
-            print(" document_info = ", document_info)
             await service.update_document_status(
                 document_info, status=IngestionStatus.PARSING
             )

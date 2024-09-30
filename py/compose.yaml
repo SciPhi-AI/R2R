@@ -122,8 +122,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      hatchet-engine:
-        condition: ${HATCHET_ENABLED:-false}
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
