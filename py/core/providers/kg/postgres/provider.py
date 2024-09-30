@@ -72,6 +72,7 @@ class PostgresKGProvider(KGProvider):
         # create schema
         
         query = f"""
+
             CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_raw")} (
             id SERIAL PRIMARY KEY,  
             category TEXT NOT NULL,
@@ -317,10 +318,11 @@ class PostgresKGProvider(KGProvider):
 
         QUERY1 = f"""
             WITH entities_list AS (
+
                 SELECT DISTINCT name 
                 FROM {self._get_table_name("entity_raw")} 
                 WHERE document_id = $1
-                ORDER BY name ASC 
+                ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT DISTINCT e.name, e.description, e.category
@@ -340,12 +342,14 @@ class PostgresKGProvider(KGProvider):
 
         QUERY2 = f"""
             WITH entities_list AS (
+
                 SELECT DISTINCT name 
                 FROM {self._get_table_name("entity_raw")} 
                 WHERE document_id = $1
-                ORDER BY name ASC 
+                ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
+
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description 
             FROM {self._get_table_name("triple_raw")} t
             JOIN entities_list el ON t.subject = el.name
@@ -561,6 +565,7 @@ class PostgresKGProvider(KGProvider):
 
         QUERY = f"""
             WITH node_triple_ids AS (
+
                 SELECT node, triple_ids 
                 FROM {self._get_table_name("community")} 
                 WHERE cluster = $1
@@ -576,6 +581,7 @@ class PostgresKGProvider(KGProvider):
 
         QUERY = f"""
             WITH node_triple_ids AS (
+
                 SELECT node, triple_ids 
                 FROM {self._get_table_name("community")} 
                 WHERE cluster = $1
