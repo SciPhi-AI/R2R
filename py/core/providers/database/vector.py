@@ -31,12 +31,13 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
         self.collection: Optional[Collection] = None
+        self.project_name = kwargs.get("project_name", None)
         connection_string = kwargs.get("connection_string", None)
         if not connection_string:
             raise ValueError(
                 "Please provide a valid `connection_string` to the `PostgresVectorDBProvider`."
             )
-        self.vx: Client = create_client(connection_string=connection_string)
+        self.vx: Client = create_client(connection_string=connection_string, project_name=self.project_name)
         if not self.vx:
             raise ValueError(
                 "Error occurred while attempting to connect to the pgvector provider."
@@ -60,8 +61,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def _initialize_vector_db(self, dimension: int) -> None:
         # Create extension for trigram similarity
         with self.vx.Session() as sess:
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin;"))
+            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS btree_gin;"))
             sess.commit()
 
         self.collection = self.vx.get_or_create_vector_table(
@@ -337,7 +338,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET collection_ids = array_append(collection_ids, :collection_id)
             WHERE document_id = :document_id AND NOT (:collection_id = ANY(collection_ids))
             RETURNING document_id
@@ -377,7 +378,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET collection_ids = array_remove(collection_ids, :collection_id)
             WHERE document_id = :document_id AND :collection_id = ANY(collection_ids)
             RETURNING document_id
@@ -403,7 +404,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET collection_ids = array_remove(collection_ids, :collection_id)
             WHERE :collection_id = ANY(collection_ids)
             """
@@ -420,7 +421,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET user_id = NULL
             WHERE user_id = :user_id
             """
@@ -439,7 +440,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         query = text(
             f"""
             WITH updated AS (
-                UPDATE vecs."{table_name}"
+                UPDATE {self.project_name}."{table_name}"
                 SET collection_ids = array_remove(collection_ids, :collection_id)
                 WHERE :collection_id = ANY(collection_ids)
                 RETURNING 1
@@ -481,7 +482,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         query = text(
             f"""
             SELECT extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
-            FROM vecs."{table_name}"
+            FROM {self.project_name}."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
             {limit_clause} OFFSET :offset

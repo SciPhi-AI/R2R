@@ -95,7 +95,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        project_name: str,
         community_id: str,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
@@ -107,7 +106,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         community_level, entities, triples = (
             await self.kg_provider.get_community_details(
-                project_name=project_name, community_id=community_id
+                community_id=community_id
             )
         )
 
@@ -139,12 +138,15 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
             try:
-                summary = json.loads(description)
-                name = summary["name"]
-                summary = summary["summary"]
-                findings = summary["findings"]
-                rating = summary["rating"]
-                rating_explanation = summary["rating_explanation"]
+                if description.startswith("```json"):
+                    description = description.strip("```json").strip("```").strip()
+
+                description = json.loads(description)
+                name = description["name"]
+                summary = description["summary"]
+                findings = description["findings"]
+                rating = description["rating"]
+                rating_explanation = description["rating_explanation"]
                 break
             except Exception as e:
                 if attempt == 2:
@@ -155,6 +157,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community = CommunityReport(
             community_id=community_id,
             collection_id=collection_id,
+            level=community_level,
             name=name,
             summary=summary,
             rating=rating,
@@ -168,9 +171,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.kg_provider.add_community_report(project_name, community, collection_id)  # type: ignore
+        await self.kg_provider.add_community_report(community, collection_id)  # type: ignore
 
-        return {"id": community.id, "name": community.name}
+        return {"community_id": community.community_id, "name": community.name}
 
     async def _run_logic(  # type: ignore
         self,
@@ -188,13 +191,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
         limit = input.message["limit"]
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
-        project_name = input.message["project_name"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
         for community_id in range(offset, limit):
             community_summary_jobs.append(
                 self.process_community(
-                    project_name=project_name,
                     community_id=community_id,
                     max_summary_input_length=max_summary_input_length,
                     generation_config=generation_config,

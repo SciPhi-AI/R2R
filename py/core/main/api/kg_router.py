@@ -1,6 +1,7 @@
+import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import yaml
 from fastapi import Body, Depends
@@ -59,14 +60,11 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def create_graph(
-            project_name: str = Body(
-                description="Project name to create graph for.",
-            ),
             collection_id: str = Body(
                 description="Collection ID to create graph for.",
             ),
-            kg_creation_settings: Optional[Json[KGCreationSettings]] = Body(
-                default=None,
+            kg_creation_settings: Optional[dict] = Body(
+                default='{}',
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -83,15 +81,16 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            if kg_creation_settings is None:
-                kg_creation_settings = (
-                    self.service.providers.kg.config.kg_creation_settings
-                )
+            server_kg_creation_settings = (
+                self.service.providers.kg.config.kg_creation_settings
+            )
+            for key, value in kg_creation_settings.items():
+                if value is not None:
+                    setattr(server_kg_creation_settings, key, value)
 
             workflow_input = {
-                "project_name": project_name,
                 "collection_id": collection_id,
-                "kg_creation_settings": kg_creation_settings.json(),
+                "kg_creation_settings": server_kg_creation_settings.json(),
                 "user": auth_user.json(),
             }
 
@@ -104,9 +103,6 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def enrich_graph(
-            project_name: str = Body(
-                description="Project name to enrich graph for.",
-            ),
             collection_id: str = Body(
                 description="Collection name to enrich graph for.",
             ),
@@ -132,7 +128,6 @@ class KGRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "project_name": project_name,
                 "collection_id": collection_id,
                 "kg_enrichment_settings": kg_enrichment_settings.json(),
                 "user": auth_user.json(),

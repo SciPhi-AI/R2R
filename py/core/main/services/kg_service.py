@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import AsyncGenerator
 from uuid import UUID
 
@@ -53,12 +54,14 @@ class KgService(Service):
         entity_types: list[str],
         relation_types: list[str],
         **kwargs,
-    ):
+    ):        
         try:
+
+            logger.info(f"Processing document {document_id} for KG extraction")
 
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
-                status_type="kg_creation",
+                status_type="kg_creation_status",
                 status=KGCreationStatus.PROCESSING,
             )
 
@@ -83,22 +86,17 @@ class KgService(Service):
                 run_manager=self.run_manager,
             )
 
-            if len(triples) == 0:
-                await self.providers.database.relational.set_workflow_status(
-                    id=document_id,
-                    status_type="kg_creation",
-                    status=KGCreationStatus.SUCCESS,
-                )
-            else:
-                raise ValueError(
-                    f"Error in kg_extract_and_store: No Triples Extracted"
-                )
+            await self.providers.database.relational.set_workflow_status(
+                id=document_id,
+                status_type="kg_creation_status",
+                status=KGCreationStatus.SUCCESS,
+            )
 
         except Exception as e:
             logger.error(f"Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
-                status_type="kg_creation",
+                status_type="kg_creation_status",
                 status=KGCreationStatus.FAILED,
             )
 
@@ -107,36 +105,38 @@ class KgService(Service):
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
         self,
-        document_ids: list[UUID],
-        kg_creation_settings: KGCreationSettings,
+        collection_id: UUID,
+        force_kg_creation: bool,
+        **kwargs,
     ):
 
-        if not document_ids:
-            document_status_filter = [
-                KGCreationStatus.PENDING,
-                KGCreationStatus.FAILED,
+        document_status_filter = [
+            KGCreationStatus.PENDING,
+            KGCreationStatus.FAILED,
+        ]
+        if force_kg_creation:
+            document_status_filter += [
+                KGCreationStatus.SUCCESS,
+                KGCreationStatus.PROCESSING,
             ]
-            if kg_creation_settings.force_kg_creation:
-                document_status_filter += [
-                    KGCreationStatus.SUCCESS,
-                    KGCreationStatus.PROCESSING,
-                ]
 
-            document_ids = await self.providers.database.relational.get_document_ids_by_status(
-                status_type="kg_creation", status=document_status_filter
-            )
+
+        document_ids = await self.providers.database.relational.get_document_ids_by_status(
+            status_type="kg_creation_status", status=document_status_filter, 
+            collection_id=collection_id,
+        )
 
         return document_ids
 
     @telemetry_event("kg_node_description")
     async def kg_node_description(
         self,
-        project_name: str,
         document_id: UUID,
         max_description_input_length: int,
+        **kwargs,
     ):
 
-        entity_count = await self.providers.kg.get_entity_count(**input_data)
+        entity_count = await self.providers.kg.get_entity_count(document_id)
 
         # process 50 entities at a time
         num_batches = math.ceil(entity_count / 50)
@@ -144,45 +144,43 @@ class KgService(Service):
 
         for i in range(num_batches):
             logger.info(
-                f"Running kg_node_description for batch {i+1}/{num_batches} for document {input_data['document_id']}"
+                f"Running kg_node_description for batch {i+1}/{num_batches} for document {document_id}"
             )
-            await self.kg_service.kg_node_description(
-                offset=i * 50,
-                limit=50,
-                document_id=input_data["document_id"],
-                max_description_input_length=input_data[
-                    "max_description_input_length"
-                ],
-                project_name=input_data["project_name"],
-            )
+            # await self.kg_service.kg_node_description(
+            #     offset=i * 50,
+            #     limit=50,
+            #     document_id=document_id,
+            #     max_description_input_length=max_description_input_length,
+            # )
 
-        node_extractions = await self.pipes.kg_node_description_pipe.run(
-            input=self.pipes.kg_node_description_pipe.Input(
-                message={
-                    "offset": offset,
-                    "limit": limit,
-                    "max_description_input_length": max_description_input_length,
-                    "project_name": project_name,
-                }
-            ),
-            state=None,
-            run_manager=self.run_manager,
-        )
-        return await _collect_results(node_extractions)
+            node_extractions = await self.pipes.kg_node_description_pipe.run(
+                input=self.pipes.kg_node_description_pipe.Input(
+                    message={
+                        "offset": i * 50,
+                        "limit": 50,
+                        "max_description_input_length": max_description_input_length,
+                        "document_id": document_id,
+                    }
+                ),
+                state=None,
+                run_manager=self.run_manager,
+            )
+            return await _collect_results(node_extractions)
 
     @telemetry_event("kg_clustering")
     async def kg_clustering(
         self,
         collection_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings,
-        project_name: str,
+        generation_config: GenerationConfig,
+        leiden_params: dict,
+        **kwargs,
     ):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
-                    "project_name": project_name,
                     "collection_id": collection_id,
-                    "kg_enrichment_settings": kg_enrichment_settings,
+                    "generation_config": generation_config,
+                    "leiden_params": leiden_params,
                 }
             ),
             state=None,
@@ -197,7 +195,6 @@ class KgService(Service):
         limit: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
-        project_name: str,
         collection_id: UUID,
         **kwargs,
     ):
@@ -208,7 +205,6 @@ class KgService(Service):
                     "limit": limit,
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
-                    "project_name": project_name,
                     "collection_id": collection_id,
                 }
             ),
