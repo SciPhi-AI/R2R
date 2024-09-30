@@ -133,6 +133,8 @@ services:
       POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-13421772800}"
+      HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}"
       DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
       DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
@@ -306,6 +308,17 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
 
+  unstructured:
+    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
+    ports:
+      - "7275:7275"
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
     build:
@@ -327,10 +340,6 @@ services:
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-${CONFIG_NAME:-vecs}}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
-      - NEO4J_USER=${NEO4J_USER:-neo4j}
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
-      - NEO4J_URL=${NEO4J_URL:-bolt://neo4j:7687}
-      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_API_BASE=${OPENAI_API_BASE:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -390,6 +399,8 @@ services:
       setup-token:
         condition: service_completed_successfully
       postgres:
+        condition: service_healthy
+      unstructured:
         condition: service_healthy
 
   r2r-dashboard:
