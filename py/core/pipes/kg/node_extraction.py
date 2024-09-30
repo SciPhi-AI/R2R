@@ -181,9 +181,10 @@ class KGNodeDescriptionPipe(AsyncPipe):
             offset, limit, document_id
         )
 
-        for entity_name, entity_info in entity_map.items():
+        total_entities = len(entity_map)
+
+        for i, (entity_name, entity_info) in enumerate(entity_map.items()):
             try:
-                logger.info(f"Processing entity {entity_name}")
                 processed_entity = await process_entity(
                     entity_info["entities"],
                     entity_info["triples"],
@@ -200,8 +201,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                     ],
                     "entity_embedding",
                 )
-                logger.info(f"Processed entity {entity_name}")
-
+                logger.info(f"Processed {i+1}/{total_entities} entities: {entity_name}")
                 yield entity_name
             except Exception as e:
                 logger.error(f"Error processing entity {entity_name}: {e}")

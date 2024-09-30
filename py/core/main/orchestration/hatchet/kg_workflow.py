@@ -23,6 +23,21 @@ def hatchet_kg_factory(
     orchestration_provider: OrchestrationProvider, service: KgService
 ) -> list["Hatchet.Workflow"]:
 
+    def get_input_data_dict(input_data):
+        for key, value in input_data.items():
+            if key == "kg_creation_settings":
+                input_data[key] = json.loads(value)
+                input_data[key]['generation_config'] = GenerationConfig(
+                    **input_data[key]['generation_config']
+                )
+            if key == "kg_enrichment_settings":
+                input_data[key] = json.loads(value)
+                input_data[key]["generation_config"] = GenerationConfig(
+                    **input_data[key]["generation_config"]
+                )
+        return input_data
+
+
     @orchestration_provider.workflow(name="kg-extract", timeout="360m")
     class KGExtractDescribeEmbedWorkflow:
         def __init__(self, kg_service: KgService):
@@ -30,14 +45,24 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=3, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
+
+            input_data = get_input_data_dict(context.workflow_input()["request"])
+            collection_id = input_data["collection_id"]
+
             return await self.kg_service.kg_extraction(
-                **context.workflow_input()["request"]
+                collection_id=collection_id,
+                **input_data["kg_creation_settings"]
             )
 
         @orchestration_provider.step(retries=3, timeout="360m")
         async def kg_node_description(self, context: Context) -> dict:
+
+            input_data = get_input_data_dict(context.workflow_input()["request"])
+            collection_id = input_data["collection_id"]
+
             return await self.kg_service.kg_node_description(
-                **context.workflow_input()["request"]
+                collection_id=collection_id,
+                **input_data["kg_creation_settings"]
             )
 
     @orchestration_provider.workflow(name="create-graph", timeout="60m")
@@ -49,8 +74,13 @@ def hatchet_kg_factory(
         async def get_document_ids_for_create_graph(
             self, context: Context
         ) -> dict:
+
+            input_data = get_input_data_dict(context.workflow_input()["request"])
+            collection_id = input_data["collection_id"]
+
             return await self.kg_service.get_document_ids_for_create_graph(
-                **context.workflow_input()["request"]
+                collection_id=collection_id,
+                **input_data["kg_creation_settings"]
             )
 
         @orchestration_provider.step(
@@ -104,14 +134,20 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=1, parents=[], timeout="360m")
         async def kg_clustering(self, context: Context) -> dict:
+
+            input_data = get_input_data_dict(context.workflow_input()["request"])
+            collection_id = input_data["collection_id"]
+
             return await self.kg_service.kg_clustering(
-                **context.workflow_input()["request"]
+                collection_id=collection_id,
+                **input_data["kg_enrichment_settings"]
             )
 
         @orchestration_provider.step(retries=1, parents=["kg_clustering"])
         async def kg_community_summary(self, context: Context) -> dict:
 
-            input_data = context.workflow_input()["request"]
+            input_data = get_input_data_dict(context.workflow_input()["request"])
+            collection_id = input_data["collection_id"]
             num_communities = context.step_output("kg_clustering")[0][
                 "num_communities"
             ]
@@ -129,7 +165,8 @@ def hatchet_kg_factory(
                             "request": {
                                 "offset": offset,
                                 "limit": parallel_communities,
-                                **input_data,
+                                "collection_id": collection_id,
+                                **input_data["kg_enrichment_settings"]
                             }
                         },
                         key=f"{i}/{total_workflows}_community_summary",
@@ -149,8 +186,13 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=1, timeout="60m")
         async def kg_community_summary(self, context: Context) -> dict:
+            input_data = get_input_data_dict(context.workflow_input()["request"])
+
             return await self.kg_service.kg_community_summary(
-                **context.workflow_input()["request"]
+                offset=input_data["offset"],
+                limit=input_data["limit"],
+                collection_id=input_data["collection_id"],
+                **input_data["kg_enrichment_settings"]
             )
 
     return {
