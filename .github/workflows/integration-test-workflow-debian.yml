@@ -25,6 +25,10 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+
     - name: Install dependencies
       working-directory: ./py
       run: |
@@ -42,7 +46,7 @@ jobs:
       run: |
         echo "R2R Version"
         poetry run r2r version
-
+    
     - name: Walkthrough
       working-directory: ./py
       run: |
@@ -91,13 +95,13 @@ jobs:
 
         echo "Users Overview"
         poetry run r2r users-overview
-
+        
         echo "Logging"
         poetry run r2r logs
-
+        
         echo "Analytics"
         poetry run r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
-
+    
     - name: GraphRAG
       working-directory: ./py
       run: |
