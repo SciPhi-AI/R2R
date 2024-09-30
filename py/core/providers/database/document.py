@@ -77,21 +77,21 @@ class DocumentMixin(DatabaseMixin):
 
         # TODO - Remove this after the next release
         # Additional query to check and add the column if it doesn't exist
-        add_column_query = f"""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_name = '{self._get_table_name("document_info")}'
-                AND column_name = 'ingestion_attempt_number'
-            ) THEN
-                ALTER TABLE {self._get_table_name("document_info")}
-                ADD COLUMN ingestion_attempt_number INT DEFAULT 0;
-            END IF;
-        END $$;
-        """
-        await self.execute_query(add_column_query)
+        # add_column_query = f"""
+        # DO $$
+        # BEGIN
+        #     IF NOT EXISTS (
+        #         SELECT 1
+        #         FROM information_schema.columns
+        #         WHERE table_name = '{self._get_table_name("document_info")}'
+        #         AND column_name = 'ingestion_attempt_number'
+        #     ) THEN
+        #         ALTER TABLE {self._get_table_name("document_info")}
+        #         ADD COLUMN ingestion_attempt_number INT DEFAULT 0;
+        #     END IF;
+        # END $$;
+        # """
+        # await self.execute_query(add_column_query)
 
     async def upsert_documents_overview(
         self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
@@ -240,7 +240,11 @@ class DocumentMixin(DatabaseMixin):
         return await self.fetch_query(query, [ids])
 
     async def _get_ids_from_table(
-        self, status: list[str], table_name: str, status_type: str
+        self, 
+        status: list[str], 
+        table_name: str, 
+        status_type: str,
+        collection_id: UUID = None,
     ):
         """
         Get the IDs from a given table.
@@ -252,10 +256,12 @@ class DocumentMixin(DatabaseMixin):
         """
         query = f"""
             SELECT document_id FROM {self._get_table_name(table_name)}
-            WHERE {status_type} = ANY($1)
+            WHERE {status_type} = ANY($1) and $2 = ANY(collection_ids)
         """
-        return await self.fetch_query(query, [status])
-
+        records = await self.fetch_query(query, [status, collection_id])
+        document_ids = [record["document_id"] for record in records]
+        return document_ids
+    
     async def _set_status_in_table(
         self, ids: list[UUID], status: str, table_name: str, status_type: str
     ):
@@ -287,9 +293,9 @@ class DocumentMixin(DatabaseMixin):
         """
         if status_type == "ingestion":
             return IngestionStatus, "document_info"
-        elif status_type == "kg_creation":
+        elif status_type == "kg_creation_status":
             return KGCreationStatus, "document_info"
-        elif status_type == "kg_enrichment":
+        elif status_type == "kg_enrichment_status":
             return KGEnrichmentStatus, "collection_info"
         else:
             raise R2RException(
@@ -339,7 +345,10 @@ class DocumentMixin(DatabaseMixin):
         )
 
     async def get_document_ids_by_status(
-        self, status_type: str, status: Union[str, list[str]]
+        self, 
+        status_type: str, 
+        status: Union[str, list[str]],      
+        collection_id: UUID = None, 
     ):
         """
         Get the IDs for a given status.
@@ -356,10 +365,7 @@ class DocumentMixin(DatabaseMixin):
         out_model, table_name = self._get_status_model_and_table_name(
             status_type
         )
-        result = map(
-            (await self._get_ids_from_table(status, table_name, status_type)),
-            out_model,
-        )
+        result = await self._get_ids_from_table(status, table_name, status_type, collection_id)
         return result
 
     async def get_documents_overview(

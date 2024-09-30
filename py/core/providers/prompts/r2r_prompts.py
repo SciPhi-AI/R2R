@@ -53,7 +53,7 @@ class R2RPromptProvider(PromptProvider):
             raise
 
     def _get_table_name(self, base_name: str) -> str:
-        return base_name
+        return self.db_provider._get_table_name(base_name)
 
     async def create_table(self):
         query = f"""
@@ -100,9 +100,9 @@ class R2RPromptProvider(PromptProvider):
     # FIXME: We really should be taking advantage of Pydantic models here
     # so that we don't have to json.dumps/loads all the time
     async def _load_prompts_from_database(self):
-        query = """
+        query = f"""
         SELECT prompt_id, name, template, input_types, created_at, updated_at
-        FROM prompts
+        FROM {self._get_table_name("prompts")}
         """
         try:
             results = await self.fetch_query(query)

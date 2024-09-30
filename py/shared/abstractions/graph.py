@@ -56,7 +56,7 @@ class Entity(R2RSerializable):
     community_ids: Optional[list[str]] = None
     extraction_ids: Optional[list[str]] = None
     document_id: Optional[str] = None
-    rank: Optional[int] = 1
+    rank: Optional[int] = None
     attributes: Optional[Union[dict[str, Any], str]] = None
 
     def __str__(self):
@@ -96,7 +96,7 @@ class Triple(BaseModel):
     description: str | None = None
     """A description of the relationship (optional)."""
 
-    predicate_embedding: list[float] = []
+    predicate_embedding: list[float] | None = None
     """The semantic embedding for the relationship description (optional)."""
 
     extraction_ids: list[str] = []
@@ -127,7 +127,7 @@ class Triple(BaseModel):
         predicate_key: str = "predicate",
         description_key: str = "description",
         weight_key: str = "weight",
-        fragment_ids_key: str = "fragment_ids",
+        extraction_ids_key: str = "extraction_ids",
         document_id_key: str = "document_id",
         attributes_key: str = "attributes",
     ) -> "Triple":
@@ -141,7 +141,7 @@ class Triple(BaseModel):
             predicate=d.get(predicate_key),
             description=d.get(description_key),
             weight=d.get(weight_key, 1.0),
-            fragment_ids=d.get(fragment_ids_key),
+            extraction_ids=d.get(extraction_ids_key),
             document_id=d.get(document_id_key),
             attributes=d.get(attributes_key, {}),
         )
@@ -222,6 +222,9 @@ class CommunityReport(BaseModel):
     community_id: int
     """The ID of the community this report is associated with."""
 
+    level: int
+    """The level of the community this report is associated with."""
+
     collection_id: uuid.UUID
     """The ID of the collection this report is associated with."""
 
@@ -233,6 +236,12 @@ class CommunityReport(BaseModel):
 
     findings: list[str] = []
     """Findings of the report."""
+
+    rating: float | None = None
+    """Rating of the report."""
+
+    rating_explanation: str | None = None
+    """Explanation of the rating."""
 
     embedding: list[float] | None = None
     """Embedding of summary and findings."""

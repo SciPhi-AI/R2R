@@ -40,9 +40,6 @@ class PostgresKGProvider(KGProvider):
                 "NetworkX is not installed. Please install it to use this module."
             ) from exc
 
-    def _get_table_name(self, base_name: str) -> str:
-        return f"{base_name}_kg"
-
     async def initialize(self):
         logger.info(
             f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
@@ -67,30 +64,30 @@ class PostgresKGProvider(KGProvider):
     ) -> Any:
         return await self.db_provider.fetch_query(query, params)
 
+    def _get_table_name(self, base_name: str) -> str:
+        return self.db_provider._get_table_name(base_name)
+
     async def create_tables(self, project_name: str):
         # raw entities table
         # create schema
+        
         query = f"""
-            CREATE SCHEMA IF NOT EXISTS {project_name};
-        """
-        await self.execute_query(query)
 
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.entity_raw (
-            id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_raw")} (
+            id SERIAL PRIMARY KEY,  
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
-            fragment_ids UUID[] NOT NULL,
+            extraction_ids UUID[] NOT NULL,
             document_id UUID NOT NULL,
-            attributes JSONB NOT NULL
+            attributes JSONB
         );
         """
         await self.execute_query(query)
 
         # raw triples table, also the final table. this will have embeddings.
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.triple_raw (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_raw")} (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -98,7 +95,7 @@ class PostgresKGProvider(KGProvider):
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
             embedding vector({self.embedding_provider.config.base_dimension}),
-            fragment_ids UUID[] NOT NULL,
+            extraction_ids UUID[] NOT NULL,
             document_id UUID NOT NULL,
             attributes JSONB NOT NULL
         );
@@ -107,14 +104,14 @@ class PostgresKGProvider(KGProvider):
 
         # entity description table, unique by document_id, category, name
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.entity_description (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_description")} (
             id SERIAL PRIMARY KEY,
             document_id UUID NOT NULL,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
             description_embedding vector(1536),
-            fragment_ids UUID[] NOT NULL,
+            extraction_ids UUID[] NOT NULL,
             attributes JSONB NOT NULL,
             UNIQUE (document_id, category, name)
         );"""
@@ -123,7 +120,7 @@ class PostgresKGProvider(KGProvider):
 
         # triples table 2 # Relationship summaries by document ID
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.triple_description (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_description")} (
             id SERIAL PRIMARY KEY,
             document_ids UUID[] NOT NULL,
             subject TEXT NOT NULL,
@@ -131,7 +128,7 @@ class PostgresKGProvider(KGProvider):
             object TEXT NOT NULL,
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
-            fragment_ids UUID[] NOT NULL,
+            extraction_ids UUID[] NOT NULL,
             attributes JSONB NOT NULL,
             UNIQUE (document_ids, subject, predicate, object)
         );"""
@@ -140,7 +137,7 @@ class PostgresKGProvider(KGProvider):
 
         # embeddings tables
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.entity_embedding (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -153,7 +150,7 @@ class PostgresKGProvider(KGProvider):
 
         # triples embeddings table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.triple_embedding (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_embedding")} (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -167,7 +164,7 @@ class PostgresKGProvider(KGProvider):
 
         # communities table, result of the Leiden algorithm
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.community (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
             id SERIAL PRIMARY KEY,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
@@ -181,7 +178,7 @@ class PostgresKGProvider(KGProvider):
 
         # communities_report table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {project_name}.community_reports (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community_report")} (
             id SERIAL PRIMARY KEY,
             community_id INT NOT NULL,
             collection_id UUID NOT NULL,
@@ -198,30 +195,38 @@ class PostgresKGProvider(KGProvider):
 
         result = await self.execute_query(query)
 
+
     async def _add_objects(
-        self, objects: list[Any], project_name: str, table_name: str
+        self, objects: list[Any], table_name: str
     ) -> asyncpg.Record:
         """
         Upsert objects into the specified table.
         """
-        # Dynamically create the column names and placeholders
-        columns = ", ".join(objects[0].__dict__.keys())
+        # Get non-null attributes from the first object
+        non_null_attrs = {k: v for k, v in objects[0].__dict__.items() if v is not None}
+        columns = ", ".join(non_null_attrs.keys())
+
         placeholders = ", ".join(
-            f"${i+1}" for i in range(len(objects[0].__dict__))
+            f"${i+1}" for i in range(len(non_null_attrs))
         )
 
+        print(f"Inseriting {len(objects)} objects into {table_name} with columns: {columns} in table {self._get_table_name(table_name)}")
+
         QUERY = f"""
-            INSERT INTO {project_name}.{table_name} ({columns})
+            INSERT INTO {self._get_table_name(table_name)} ({columns})
             VALUES ({placeholders})
         """
 
-        params = [tuple(obj.__dict__.values()) for obj in objects]
+        # Filter out null values for each object
+        params = [
+            tuple(json.dumps(v) if isinstance(v, dict) else v for v in obj.__dict__.values() if v is not None)
+            for obj in objects
+        ]
         return await self.execute_many(QUERY, params)
 
     async def add_entities(
         self,
         entities: list[Entity],
-        project_name: str,
         table_name: str,
     ) -> asyncpg.Record:
         """
@@ -229,37 +234,33 @@ class PostgresKGProvider(KGProvider):
 
         Args:
             entities: list[Entity]: list of entities to upsert
-            project_name: str: name of the project
             collection_name: str: name of the collection
 
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        return await self._add_objects(entities, project_name, table_name)
+        return await self._add_objects(entities, table_name)
 
     async def add_triples(
         self,
         triples: list[Triple],
-        project_name: str,
         table_name: str,
     ) -> asyncpg.Record:
         """
-        Upsert triples into the triples_raw table. These are raw triples extracted from the document.
+        Upsert triples into the triple_raw table. These are raw triples extracted from the document.
 
         Args:
             triples: list[Triple]: list of triples to upsert
-            project_name: str: name of the project
             table_name: str: name of the table to upsert into
 
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        return await self._add_objects(triples, project_name, table_name)
+        return await self._add_objects(triples, table_name)
 
     async def add_kg_extractions(
         self,
         kg_extractions: list[KGExtraction],
-        project_name: str,
         table_suffix: str = "_raw",
     ) -> Tuple[int, int]:
         """
@@ -267,7 +268,6 @@ class PostgresKGProvider(KGProvider):
 
         Args:
             kg_extractions: list[KGExtraction]: list of KG extractions to upsert
-            project_name: str: name of the project
             table_suffix: str: suffix to add to the table names
 
         Returns:
@@ -284,48 +284,51 @@ class PostgresKGProvider(KGProvider):
                 total_relationships + len(extraction.triples),
             )
 
-            if not extraction.entities[0].fragment_ids:
-                for i in range(len(extraction.entities)):
-                    extraction.entities[i].fragment_ids = (
-                        extraction.fragment_ids
-                    )
-                    extraction.entities[i].document_id = extraction.document_id
+            if extraction.entities:
+                if not extraction.entities[0].extraction_ids:
+                    for i in range(len(extraction.entities)):
+                        extraction.entities[i].extraction_ids = (
+                            extraction.extraction_ids
+                        )
+                        extraction.entities[i].document_id = extraction.document_id
 
-            if not extraction.triples[0].fragment_ids:
-                for i in range(len(extraction.triples)):
-                    extraction.triples[i].fragment_ids = (
-                        extraction.fragment_ids
+                await self.add_entities(
+                    extraction.entities,
+                    table_name="entity" + table_suffix,
+                )
+
+            if extraction.triples:
+                if not extraction.triples[0].extraction_ids:
+                    for i in range(len(extraction.triples)):
+                        extraction.triples[i].extraction_ids = (
+                            extraction.extraction_ids
                     )
                     extraction.triples[i].document_id = extraction.document_id
 
-            await self.add_entities(
-                extraction.entities,
-                self.db_provider.project_name,
-                table_name="entities" + table_suffix,
-            )
+                await self.add_triples(
+                    extraction.triples,
+                    table_name="triple" + table_suffix,
+                )
 
-            await self.add_triples(
-                extraction.triples,
-                self.db_provider.project_name,
-                table_name="triples" + table_suffix,
-            )
+        logger.info(f"Upserted {total_entities} entities and {total_relationships} relationships into the database.")
 
         return (total_entities, total_relationships)
 
     async def get_entity_map(
-        self, offset: int, limit: int, project_name: str, document_id: str
+        self, offset: int, limit: int, document_id: str
     ) -> dict[str, Any]:
 
         QUERY1 = f"""
             WITH entities_list AS (
-                SELECT DISTINCT name
-                FROM {project_name}.entities_raw
+
+                SELECT DISTINCT name 
+                FROM {self._get_table_name("entity_raw")} 
                 WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT DISTINCT e.name, e.description, e.category
-            FROM {project_name}.entities_raw e
+            FROM {self._get_table_name("entity_raw")} e
             JOIN entities_list el ON e.name = el.name
             ORDER BY e.name;"""
 
@@ -341,14 +344,16 @@ class PostgresKGProvider(KGProvider):
 
         QUERY2 = f"""
             WITH entities_list AS (
-                SELECT DISTINCT name
-                FROM {project_name}.entities_raw
+
+                SELECT DISTINCT name 
+                FROM {self._get_table_name("entity_raw")} 
                 WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
-            SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description
-            FROM {project_name}.triples_raw t
+
+            SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description 
+            FROM {self._get_table_name("triple_raw")} t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
         """
@@ -383,10 +388,9 @@ class PostgresKGProvider(KGProvider):
         self,
         data: list[dict[str, Any]],
         table_name: str,
-        project_name: str = "vecs",
     ) -> None:
         QUERY = f"""
-            INSERT INTO {project_name}.{table_name} (name, description, description_embedding)
+            INSERT INTO {self._get_table_name(table_name)} (name, description, description_embedding)
             VALUES ($1, $2, $3)
             ON CONFLICT (name) DO UPDATE SET
                 description = EXCLUDED.description,
@@ -395,27 +399,23 @@ class PostgresKGProvider(KGProvider):
         return await self.execute_many(QUERY, data)
 
     async def upsert_entities(self, entities: list[Entity]) -> None:
-        SCHEMA_NAME = f"vecs_kg"
-        TABLE_NAME = f"entities"
         QUERY = """
-            INSERT INTO $1.$2 (category, name, description, description_embedding, fragment_ids, document_ids, attributes)
+            INSERT INTO $1.$2 (category, name, description, description_embedding, extraction_ids, document_id, attributes)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             """
 
-        table_name = self._get_table_name(self.project_name)
-        query = QUERY.format(SCHEMA_NAME, table_name)
+        table_name = self._get_table_name("entities")
+        query = QUERY.format(table_name)
         await self.execute_query(query, entities)
 
     async def upsert_relationships(self, relationships: list[Triple]) -> None:
-        SCHEMA_NAME = f"vecs_kg"
-        TABLE_NAME = f"relationships"
         QUERY = """
             INSERT INTO $1.$2 (source, target, relationship)
             VALUES ($1, $2, $3)
             """
 
-        table_name = self._get_table_name(self.project_name)
-        query = QUERY.format(SCHEMA_NAME, table_name)
+        table_name = self._get_table_name("triples")
+        query = QUERY.format(table_name)
         await self.execute_query(query, relationships)
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
@@ -424,72 +424,67 @@ class PostgresKGProvider(KGProvider):
         search_type = kwargs.get("search_type", "__Entity__")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
-        project_name = kwargs.get("project_name", "vecs")
-
         limit = kwargs.get("limit", 10)
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_embeddings"
+            table_name = "entity_embedding"
         elif search_type == "__Relationship__":
-            table_name = "triples_raw"
+            table_name = "triple_raw"
         elif search_type == "__Community__":
-            table_name = "communities_description"
+            table_name = "community_report"
         else:
             raise ValueError(f"Invalid search type: {search_type}")
 
         property_names_str = ", ".join(property_names)
         QUERY = f"""
-                SELECT {property_names_str} FROM {project_name}.{table_name} ORDER BY {embedding_type} <=> $1 LIMIT $2;
+                SELECT {property_names_str} FROM {self._get_table_name(table_name)} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
 
         results = await self.fetch_query(QUERY, (str(query_embedding), limit))
 
-        # import pdb; pdb.set_trace()
         for result in results:
             yield {
                 property_name: result[property_name]
                 for property_name in property_names
             }
 
-    async def get_all_triples(self, project_name: str) -> list[Triple]:
+    async def get_all_triples(self, collection_id: UUID) -> list[Triple]:
+
+        # getting all documents for a collection
         QUERY = f"""
-            SELECT id, subject, predicate, weight, object FROM {project_name}.triples_raw
-            """
-        return await self.fetch_query(QUERY)
+            select distinct document_id from {self._get_table_name("document_info")} where $1 = ANY(collection_ids)
+        """
+        document_ids = await self.fetch_query(QUERY, [collection_id])
+        document_ids = [doc_id["document_id"] for doc_id in document_ids]
+
+        QUERY = f"""
+            SELECT id, subject, predicate, weight, object FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1)
+        """
+        triples = await self.fetch_query(QUERY, [document_ids])
+        return triples
 
     async def add_communities(
-        self, project_name: str, communities: list[tuple[int, Any]]
+        self, communities: list[tuple[int, Any]]
     ) -> None:
         QUERY = f"""
-            INSERT INTO {project_name}.communities (node, cluster, parent_cluster, level, is_final_cluster, triple_ids)
+            INSERT INTO {self._get_table_name("community")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids)
             VALUES ($1, $2, $3, $4, $5, $6)
             """
         await self.execute_many(QUERY, communities)
 
-    async def add_community_description(
-        self, project_name: str, community: Community, collection_id: UUID
+    async def add_community_report(
+        self, community: Community, collection_id: UUID
     ) -> None:
-        QUERY = f"""
-            INSERT INTO {project_name}.communities_description (community_id, level, description, description_embedding, collection_id)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (community_id, level, collection_id) DO UPDATE SET
-                description = EXCLUDED.description,
-                description_embedding = EXCLUDED.description_embedding
-            """
-        await self.execute_query(
-            QUERY,
-            (
-                community.id,
-                community.level,
-                community.summary,
-                str(community.summary_embedding),
-                collection_id,
-            ),
-        )
+
+        community.embedding = str(community.embedding)
+
+        await self._add_objects([community], "community_report")
+
+        # await self.execute_query(
 
     async def perform_graph_clustering(
-        self, project_name: str, leiden_params: dict
+        self, collection_id: UUID, leiden_params: dict
     ) -> Tuple[int, int, set[tuple[int, Any]]]:
         # TODO: implementing the clustering algorithm but now we will get communities at a document level and then we will get communities at a higher level.
         # we will use the Leiden algorithm for this.
@@ -497,7 +492,7 @@ class PostgresKGProvider(KGProvider):
         # we will need multiple tables for this to work.
 
         settings = {}
-        triples = await self.get_all_triples(project_name)
+        triples = await self.get_all_triples(collection_id)
 
         logger.info(f"Clustering with settings: {str(settings)}")
 
@@ -534,7 +529,7 @@ class PostgresKGProvider(KGProvider):
             for item in hierarchical_communities
         ]
 
-        result = await self.add_communities(project_name, inputs)
+        result = await self.add_communities(inputs)
 
         num_communities = len(
             set([item.cluster for item in hierarchical_communities])
@@ -561,19 +556,20 @@ class PostgresKGProvider(KGProvider):
             raise ImportError("Please install the graspologic package.") from e
 
     async def get_community_details(
-        self, project_name: str, community_id: int
+        self, community_id: int
     ):
 
         QUERY = f"""
-            SELECT level FROM {project_name}.communities WHERE cluster = $1
+            SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1
             LIMIT 1
         """
         level = (await self.fetch_query(QUERY, [community_id]))[0]["level"]
 
         QUERY = f"""
             WITH node_triple_ids AS (
-                SELECT node, triple_ids
-                FROM {project_name}.communities
+
+                SELECT node, triple_ids 
+                FROM {self._get_table_name("community")} 
                 WHERE cluster = $1
             )
             SELECT DISTINCT
@@ -581,20 +577,21 @@ class PostgresKGProvider(KGProvider):
                 e.name AS name,
                 e.description AS description
             FROM node_triple_ids nti
-            JOIN {project_name}.entity_embeddings e ON e.name = nti.node;
+            JOIN {self._get_table_name("entity_embedding")} e ON e.name = nti.node;
         """
         entities = await self.fetch_query(QUERY, [community_id])
 
         QUERY = f"""
             WITH node_triple_ids AS (
-                SELECT node, triple_ids
-                FROM {project_name}.communities
+
+                SELECT node, triple_ids 
+                FROM {self._get_table_name("community")} 
                 WHERE cluster = $1
             )
             SELECT DISTINCT
                 t.id, t.subject, t.predicate, t.object, t.weight, t.description
             FROM node_triple_ids nti
-            JOIN {project_name}.triples_raw t ON t.id = ANY(nti.triple_ids);
+            JOIN {self._get_table_name("triple_raw")} t ON t.id = ANY(nti.triple_ids);
         """
         triples = await self.fetch_query(QUERY, [community_id])
 
@@ -616,15 +613,10 @@ class PostgresKGProvider(KGProvider):
         # somehow get the rds from the postgres db.
         pass
 
-    async def get_all_triples(
-        self,
-    ):
+    async def get_entities(self, collection_id: str):
         pass
 
-    async def get_entities(self, project_name: str, collection_id: str):
-        pass
-
-    async def get_triples(self, project_name: str, collection_id: str):
+    async def get_triples(self, collection_id: str):
         pass
 
     async def structured_query(self):
@@ -640,9 +632,9 @@ class PostgresKGProvider(KGProvider):
         pass
 
     async def get_entity_count(
-        self, project_name: str, document_id: str
+        self, document_id: str
     ) -> int:
         QUERY = f"""
-            SELECT COUNT(*) FROM {project_name}.entities_raw WHERE document_id = $1
+            SELECT COUNT(*) FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
         """
         return (await self.fetch_query(QUERY, [document_id]))[0]["count"]

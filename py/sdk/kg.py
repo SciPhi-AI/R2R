@@ -14,21 +14,20 @@ class KGMethods:
     @staticmethod
     async def create_graph(
         client,
-        document_ids: Optional[list[str]] = None,
+        collection_id: str,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
     ) -> KGCreationResponse:
         """
         Create a graph from the given settings.
         """
 
-        data = {}
+        if isinstance(kg_creation_settings, KGCreationSettings):
+            kg_creation_settings = kg_creation_settings.model_dump()
 
-        if document_ids:
-            data["document_ids"] = document_ids
-        if kg_creation_settings:
-            if isinstance(kg_creation_settings, KGCreationSettings):
-                kg_creation_settings = kg_creation_settings.dict()
-            data["kg_creation_settings"] = kg_creation_settings  # type: ignore
+        data = {
+            "collection_id": collection_id,
+            "kg_creation_settings": kg_creation_settings or {}
+        }
 
         response = await client._make_request(
             "POST", "create_graph", json=data
@@ -38,33 +37,25 @@ class KGMethods:
     @staticmethod
     async def enrich_graph(
         client,
-        skip_clustering: bool = False,
-        force_enrichment: bool = False,
-        kg_enrichment_settings: Optional[
-            Union[dict, KGEnrichmentSettings]
-        ] = None,
+        collection_id: str,
+        kg_enrichment_settings: Optional[Union[dict, KGEnrichmentSettings]] = None,
     ) -> KGEnrichmentResponse:
         """
         Perform graph enrichment over the entire graph.
 
         Args:
-            skip_clustering (bool): Whether to skip leiden clustering on the graph or not.
-            force_enrichment (bool): Force Enrichment step even if graph creation is still in progress for some documents.
-            kg_enrichment_settings (KGEnrichmentSettings): Settings for the graph enrichment process.
+            collection_id (str): The ID of the collection to enrich.
+            kg_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
-
-        data = {}
-
-        if skip_clustering:
-            data["skip_clustering"] = skip_clustering
-        if force_enrichment:
-            data["force_enrichment"] = force_enrichment
-        if kg_enrichment_settings:
-            if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
-                kg_enrichment_settings = kg_enrichment_settings.dict()
-            data["kg_enrichment_settings"] = kg_enrichment_settings  # type: ignore
+        if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
+            kg_enrichment_settings = kg_enrichment_settings.model_dump()
+        
+        data = {
+            "collection_id": collection_id,
+            "kg_enrichment_settings": kg_enrichment_settings or {}
+        }
 
         response = await client._make_request(
             "POST", "enrich_graph", json=data
