@@ -222,6 +222,9 @@ class CommunityReport(BaseModel):
     community_id: int
     """The ID of the community this report is associated with."""
 
+    level: int
+    """The level of the community this report is associated with."""
+
     collection_id: uuid.UUID
     """The ID of the collection this report is associated with."""
 
@@ -233,6 +236,12 @@ class CommunityReport(BaseModel):
 
     findings: list[str] = []
     """Findings of the report."""
+
+    rating: float | None = None
+    """Rating of the report."""
+
+    rating_explanation: str | None = None
+    """Explanation of the rating."""
 
     embedding: list[float] | None = None
     """Embedding of summary and findings."""

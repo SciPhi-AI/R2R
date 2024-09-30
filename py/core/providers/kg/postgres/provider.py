@@ -439,7 +439,6 @@ class PostgresKGProvider(KGProvider):
 
         results = await self.fetch_query(QUERY, (str(query_embedding), limit))
 
-        # import pdb; pdb.set_trace()
         for result in results:
             yield {
                 property_name: result[property_name]
@@ -470,26 +469,15 @@ class PostgresKGProvider(KGProvider):
             """
         await self.execute_many(QUERY, communities)
 
-    async def add_community_description(
+    async def add_community_report(
         self, community: Community, collection_id: UUID
     ) -> None:
-        QUERY = f"""
-            INSERT INTO {self._get_table_name("community_report")} (community_id, level, description, description_embedding, collection_id)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (community_id, level, collection_id) DO UPDATE SET
-                description = EXCLUDED.description,
-                description_embedding = EXCLUDED.description_embedding
-            """
-        await self.execute_query(
-            QUERY,
-            (
-                community.id,
-                community.level,
-                community.summary,
-                str(community.summary_embedding),
-                collection_id,
-            ),
-        )
+
+        community.embedding = str(community.embedding)
+
+        await self._add_objects([community], "community_report")
+
+        # await self.execute_query(
 
     async def perform_graph_clustering(
         self, collection_id: UUID, leiden_params: dict

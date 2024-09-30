@@ -92,13 +92,19 @@ class KGRelationshipResult(R2RSerializable):
 
 class KGCommunityResult(R2RSerializable):
     name: str
-    description: str
+    summary: str
+    rating: float
+    rating_explanation: str
+    findings: list[str]
     metadata: Optional[dict[str, Any]] = None
 
     class Config:
         json_schema_extra = {
             "name": "Community Name",
-            "description": "Community Description",
+            "summary": "Community Summary",
+            "rating": 9,
+            "rating_explanation": "Rating Explanation",
+            "findings": ["Finding 1", "Finding 2"],
             "metadata": {},
         }
 

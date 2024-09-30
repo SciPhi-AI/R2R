@@ -138,12 +138,15 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
             try:
-                summary = json.loads(description)
-                name = summary["name"]
-                summary = summary["summary"]
-                findings = summary["findings"]
-                rating = summary["rating"]
-                rating_explanation = summary["rating_explanation"]
+                if description.startswith("```json"):
+                    description = description.strip("```json").strip("```").strip()
+
+                description = json.loads(description)
+                name = description["name"]
+                summary = description["summary"]
+                findings = description["findings"]
+                rating = description["rating"]
+                rating_explanation = description["rating_explanation"]
                 break
             except Exception as e:
                 if attempt == 2:
@@ -154,6 +157,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community = CommunityReport(
             community_id=community_id,
             collection_id=collection_id,
+            level=community_level,
             name=name,
             summary=summary,
             rating=rating,
@@ -167,9 +171,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.kg_provider.add_community_report(project_name, community, collection_id)  # type: ignore
+        await self.kg_provider.add_community_report(community, collection_id)  # type: ignore
 
-        return {"id": community.id, "name": community.name}
+        return {"community_id": community.community_id, "name": community.name}
 
     async def _run_logic(  # type: ignore
         self,
