@@ -69,7 +69,7 @@ add_title_as_prefix = true
 concurrent_request_limit = 32
 
 [ingestion]
-excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+excluded_parsers = [ "mp4" ]
 ```
 
 This configuration uses `ollama` and the model `mxbai-embed-large` to run embeddings. We have excluded media file parsers as they are not yet supported locally.

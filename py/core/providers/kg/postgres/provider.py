@@ -210,6 +210,8 @@ class PostgresKGProvider(KGProvider):
             f"${i+1}" for i in range(len(non_null_attrs))
         )
 
+        print(f"Inseriting {len(objects)} objects into {table_name} with columns: {columns} in table {self._get_table_name(table_name)}")
+
         QUERY = f"""
             INSERT INTO {self._get_table_name(table_name)} ({columns})
             VALUES ({placeholders})

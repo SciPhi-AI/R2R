@@ -181,9 +181,9 @@ def generate_report():
 @click.option("--port", default=7272, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
-    "--exclude-hatchet",
-    default=False,
-    help="Exclude Hatchet from Docker setup",
+    "--full",
+    is_flag=True,
+    help="Run the full R2R compose? This includes Hatchet and Unstructured.",
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option("--image", help="Docker image to use")
@@ -216,7 +216,7 @@ async def serve(
     host,
     port,
     docker,
-    exclude_hatchet,
+    full,
     project_name,
     image,
     config_name,
@@ -297,7 +297,7 @@ async def serve(
         run_docker_serve(
             host,
             port,
-            exclude_hatchet,
+            full,
             project_name,
             image,
             config_name,

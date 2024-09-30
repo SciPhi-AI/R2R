@@ -15,7 +15,7 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']}  -f {compose_files['hatchet']}  -f {compose_files['unstructured']}"
+    docker_command = f"docker compose -f {compose_files['base']}  -f {compose_files['full']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -118,7 +118,7 @@ async def run_local_serve(
 def run_docker_serve(
     host: str,
     port: int,
-    exclude_hatchet: bool,
+    full: bool,
     project_name: str,
     image: str,
     config_name: Optional[str] = None,
@@ -143,7 +143,7 @@ def run_docker_serve(
         compose_files,
         host,
         port,
-        exclude_hatchet,
+        full,
         project_name,
         image,
         config_name,
@@ -285,8 +285,7 @@ def get_compose_files():
     )
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),
-        # "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
-        # "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
+        "full": os.path.join(package_dir, "compose.full.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -318,15 +317,16 @@ def build_docker_command(
     compose_files,
     host,
     port,
-    exclude_hatchet,
+    full,
     project_name,
     image,
     config_name,
     config_path,
 ):
-    base_command = f"docker compose -f {compose_files['base']}"
-    if not exclude_hatchet:
-        base_command += f" -f {compose_files['hatchet']}"
+    if not full:
+        base_command = f"docker compose -f {compose_files['base']}"
+    else:
+        base_command = f"docker compose -f {compose_files['full']}"
 
     base_command += f" --project-name {project_name}"
 
@@ -349,6 +349,8 @@ def build_docker_command(
 
     pull_command = f"{base_command} pull"
     up_command = f"{base_command} up -d"
+
+    print("base_command = ", base_command)
 
     return pull_command, up_command
 

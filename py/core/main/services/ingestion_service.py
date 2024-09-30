@@ -96,7 +96,7 @@ class IngestionService(Service):
 
         if len(existing_document_info) > 0:
             existing_doc = existing_document_info[0]
-            if is_update:
+            if not is_update:
                 if (
                     existing_doc.version >= version
                     and existing_doc.ingestion_status
@@ -104,7 +104,7 @@ class IngestionService(Service):
                 ):
                     raise R2RException(
                         status_code=409,
-                        message=f"Must increment version number before attempting to overwrite document {document_id}.",
+                        message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
                     )
                 elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                     raise R2RException(

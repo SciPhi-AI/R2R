@@ -17,7 +17,7 @@ provider = "litellm"
 concurrent_request_limit = 16
 
   [completion.generation_config]
-  model = "azure/gpt-4o"
+  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
@@ -34,7 +34,7 @@ default_collection_description = "Your default collection."
 
 [embedding]
 provider = "litellm"
-base_model = "azure/text-embedding-3-small"
+base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
@@ -72,7 +72,7 @@ batch_size = 256
   [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 [logging]
 provider = "local"
