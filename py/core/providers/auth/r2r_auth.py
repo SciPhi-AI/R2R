@@ -135,10 +135,15 @@ class R2RAuthProvider(AuthProvider):
         new_user = await self.db_provider.relational.create_user(
             email, password
         )
-        await self.db_provider.relational.create_default_collection(
-            new_user.id
+        default_collection = (
+            await self.db_provider.relational.create_default_collection(
+                new_user.id,
+            )
         )
-        # TODO: assign user to collection here, but refactor to make it cleaner
+
+        await self.db_provider.relational.add_user_to_collection(
+            new_user.id, default_collection.collection_id
+        )
 
         if self.config.require_email_verification:
             # Generate verification code and send email
