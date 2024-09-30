@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 class BaseTelemetryEvent:
@@ -15,45 +15,100 @@ class DailyActiveUserEvent(BaseTelemetryEvent):
 
 
 class FeatureUsageEvent(BaseTelemetryEvent):
-    def __init__(self, user_id: str, feature: str):
+    def __init__(
+        self,
+        user_id: str,
+        feature: str,
+        properties: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
-            "FeatureUsage", {"user_id": user_id, "feature": feature}
+            "FeatureUsage",
+            {
+                "user_id": user_id,
+                "feature": feature,
+                "properties": properties or {},
+            },
         )
 
 
 class ErrorEvent(BaseTelemetryEvent):
-    def __init__(self, user_id: str, endpoint: str, error_message: str):
+    def __init__(
+        self,
+        user_id: str,
+        endpoint: str,
+        error_message: str,
+        properties: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             "Error",
             {
                 "user_id": user_id,
                 "endpoint": endpoint,
                 "error_message": error_message,
+                "properties": properties or {},
             },
         )
 
 
 class RequestLatencyEvent(BaseTelemetryEvent):
-    def __init__(self, endpoint: str, latency: float):
+    def __init__(
+        self,
+        endpoint: str,
+        latency: float,
+        properties: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
-            "RequestLatency", {"endpoint": endpoint, "latency": latency}
+            "RequestLatency",
+            {
+                "endpoint": endpoint,
+                "latency": latency,
+                "properties": properties or {},
+            },
         )
 
 
 class GeographicDistributionEvent(BaseTelemetryEvent):
-    def __init__(self, user_id: str, country: str):
+    def __init__(
+        self,
+        user_id: str,
+        country: str,
+        properties: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
-            "GeographicDistribution", {"user_id": user_id, "country": country}
+            "GeographicDistribution",
+            {
+                "user_id": user_id,
+                "country": country,
+                "properties": properties or {},
+            },
         )
 
 
 class SessionDurationEvent(BaseTelemetryEvent):
-    def __init__(self, user_id: str, duration: float):
+    def __init__(
+        self,
+        user_id: str,
+        duration: float,
+        properties: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
-            "SessionDuration", {"user_id": user_id, "duration": duration}
+            "SessionDuration",
+            {
+                "user_id": user_id,
+                "duration": duration,
+                "properties": properties or {},
+            },
         )
 
 
 class UserPathEvent(BaseTelemetryEvent):
-    def __init__(self, user_id: str, path: str):
-        super().__init__("UserPath", {"user_id": user_id, "path": path})
+    def __init__(
+        self,
+        user_id: str,
+        path: str,
+        properties: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            "UserPath",
+            {"user_id": user_id, "path": path, "properties": properties or {}},
+        )

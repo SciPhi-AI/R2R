@@ -5,16 +5,17 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
+    CompletionRecord,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
 )
-from core.base.abstractions.llm import GenerationConfig
+from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
 
 
 class GeneratorPipe(AsyncPipe):
-    class Config(AsyncPipe.PipeConfig):
+    class PipeConfig(AsyncPipe.PipeConfig):
         name: str
         task_prompt: str
         system_prompt: str = "default_system"
@@ -23,16 +24,16 @@ class GeneratorPipe(AsyncPipe):
         self,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
-        config: Optional[Config] = None,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            type=type,
-            config=config or self.Config(),
-            pipe_logger=pipe_logger,
+            config,
+            type,
+            pipe_logger,
             *args,
             **kwargs,
         )
@@ -46,6 +47,7 @@ class GeneratorPipe(AsyncPipe):
         state: AsyncState,
         run_id: UUID,
         rag_generation_config: GenerationConfig,
+        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:

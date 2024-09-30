@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
 from core.agent import R2RRAGAgent
@@ -67,7 +67,6 @@ class PipeOverrides:
     kg_node_description: Optional[AsyncPipe] = None
     kg_clustering: Optional[AsyncPipe] = None
     kg_community_summary: Optional[AsyncPipe] = None
-    kg_search: Optional[AsyncPipe] = None
 
 
 @dataclass
@@ -93,8 +92,10 @@ class R2RBuilder:
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
             None
         )
-        self.pipe_factory_override: Optional[R2RPipeFactory] = None
-        self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
+        self.pipe_factory_override: Optional[Type[R2RPipeFactory]] = None
+        self.pipeline_factory_override: Optional[Type[R2RPipelineFactory]] = (
+            None
+        )
         self.provider_overrides = ProviderOverrides()
         self.pipe_overrides = PipeOverrides()
         self.pipeline_overrides = PipelineOverrides()
@@ -106,11 +107,11 @@ class R2RBuilder:
         self.provider_factory_override = factory
         return self
 
-    def with_pipe_factory(self, factory: R2RPipeFactory):
+    def with_pipe_factory(self, factory: type[R2RPipeFactory]):
         self.pipe_factory_override = factory
         return self
 
-    def with_pipeline_factory(self, factory: R2RPipelineFactory):
+    def with_pipeline_factory(self, factory: type[R2RPipelineFactory]):
         self.pipeline_factory_override = factory
         return self
 
@@ -134,7 +135,7 @@ class R2RBuilder:
         setattr(self.service_overrides, service_type, service)
         return self
 
-    def _create_providers(
+    async def _create_providers(
         self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
     ) -> Any:
         overrides = {
@@ -142,12 +143,16 @@ class R2RBuilder:
             for k, v in vars(self.provider_overrides).items()
             if v is not None
         }
-        return provider_factory(self.config).create_providers(
-            *args, **kwargs, **overrides
-        )
+        kwargs = {**kwargs, **overrides}
+        factory = provider_factory(self.config)
+        return await factory.create_providers(*args, **kwargs)
 
     def _create_pipes(
-        self, pipe_factory: R2RPipeFactory, providers: Any, *args, **kwargs
+        self,
+        pipe_factory: type[R2RPipeFactory],
+        providers: Any,
+        *args,
+        **kwargs,
     ) -> Any:
         overrides = {
             k: v for k, v in vars(self.pipe_overrides).items() if v is not None
@@ -157,19 +162,11 @@ class R2RBuilder:
         )
 
     def _create_pipelines(
-        self, pipeline_factory: R2RPipelineFactory, pipes: Any, *args, **kwargs
-    ) -> Any:
-        overrides = {
-            k: v
-            for k, v in vars(self.pipeline_overrides).items()
-            if v is not None
-        }
-        return pipeline_factory(self.config, pipes).create_pipelines(
-            overrides=overrides, *args, **kwargs
-        )
-
-    def _create_pipelines(
-        self, pipeline_factory: R2RPipelineFactory, pipes: Any, *args, **kwargs
+        self,
+        pipeline_factory: type[R2RPipelineFactory],
+        pipes: Any,
+        *args,
+        **kwargs,
     ) -> Any:
         override_dict = {
             f"{k}_pipeline": v
@@ -192,13 +189,13 @@ class R2RBuilder:
             )
         return services
 
-    def build(self, *args, **kwargs) -> R2RApp:
+    async def build(self, *args, **kwargs) -> R2RApp:
         provider_factory = self.provider_factory_override or R2RProviderFactory
         pipe_factory = self.pipe_factory_override or R2RPipeFactory
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
 
         try:
-            providers = self._create_providers(
+            providers = await self._create_providers(
                 provider_factory, *args, **kwargs
             )
             pipes = self._create_pipes(

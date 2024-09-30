@@ -1,5 +1,6 @@
 export interface TokenInfo {
   token: string;
+  token_type: string;
 }
 
 export interface LoginResponse {
@@ -40,7 +41,8 @@ export interface VectorSearchSettings {
   use_hybrid_search?: boolean;
   filters?: Record<string, any>;
   search_limit?: number;
-  selected_group_ids?: string[];
+  offset?: number;
+  selected_collection_ids?: string[];
   index_measure: IndexMeasure;
   include_values?: boolean;
   include_metadatas?: boolean;
@@ -54,7 +56,7 @@ export interface KGSearchSettings {
   use_kg_search?: boolean;
   kg_search_type?: "global" | "local";
   kg_search_level?: number | null;
-  kg_search_generation_config?: GenerationConfig;
+  generation_config?: GenerationConfig;
   entity_types?: any[];
   relationships?: any[];
   max_community_description_length?: number;
@@ -78,8 +80,6 @@ export interface KGSearchResult {
   local_result?: KGLocalSearchResult;
   global_result?: KGGlobalSearchResult;
 }
-
-
 
 export interface Message {
   role: string;

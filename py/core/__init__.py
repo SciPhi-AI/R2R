@@ -74,8 +74,6 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGLocalSearchResult",
-    "KGGlobalSearchResult",
     "KGSearchResult",
     "KGSearchSettings",
     "VectorSearchResult",
@@ -114,8 +112,6 @@ __all__ = [
     "LoggingConfig",
     "PostgresLoggingConfig",
     "PostgresRunLoggingProvider",
-    "RedisLoggingConfig",
-    "RedisRunLoggingProvider",
     "RunLoggingSingleton",
     # Run Manager
     "RunManager",
@@ -142,7 +138,7 @@ __all__ = [
     "R2RChunkingConfig",
     "ChunkingConfig",
     "ChunkingProvider",
-    "Method",
+    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
@@ -248,11 +244,11 @@ __all__ = [
     "StreamingSearchRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "WebSearchPipe",
     "KGStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS
     # Auth
+    "SupabaseAuthProvider",
     "R2RAuthProvider",
     # Chunking
     "R2RChunkingProvider",

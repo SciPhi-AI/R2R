@@ -4,9 +4,12 @@
 *.gguf
 logs/
 workspace/
+py/workspace/
 uploads/
 env/
 **/__pycache__
+**/.mypy_cache
+**/.pytest_cache
 dump/*
 .next
 node_modules
@@ -19,6 +22,7 @@ coverage.xml
 
 node_modules/
 dist/
+**/.data/*
 
 *.exe
 *.exe~

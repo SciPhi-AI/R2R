@@ -1,14 +1,13 @@
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import yaml
 from fastapi import Body, Depends
 from pydantic import Json
 
 from core.base import KGCreationSettings, KGEnrichmentSettings
-from core.base.abstractions.document import RestructureStatus
-from core.base.api.models.restructure.responses import (
+from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
@@ -41,15 +40,13 @@ class RestructureRouter(BaseRouter):
         super().__init__(service, run_type, orchestration_provider)
         self.service: RestructureService = service
 
-        def _load_openapi_extras(self):
-            yaml_path = (
-                Path(__file__).parent
-                / "data"
-                / "restructure_router_openapi.yml"
-            )
-            with open(yaml_path, "r") as yaml_file:
-                yaml_content = yaml.safe_load(yaml_file)
-            return yaml_content
+    def _load_openapi_extras(self):
+        yaml_path = (
+            Path(__file__).parent / "data" / "restructure_router_openapi.yml"
+        )
+        with open(yaml_path, "r") as yaml_file:
+            yaml_content = yaml.safe_load(yaml_file)
+        return yaml_content
 
     def _register_workflows(self):
         self.orchestration_provider.register_workflow(
@@ -80,7 +77,8 @@ class RestructureRouter(BaseRouter):
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
+            response_model=WrappedKGCreationResponse,
+        ):
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
 
@@ -89,9 +87,7 @@ class RestructureRouter(BaseRouter):
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
             # Check if the user is a superuser
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 # Add any necessary permission checks here
                 pass
 
@@ -106,7 +102,7 @@ class RestructureRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = r2r_hatchet.admin.run_workflow(
                 "create-graph", {"request": workflow_input}
             )
 
@@ -135,14 +131,13 @@ class RestructureRouter(BaseRouter):
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
+            response_model=WrappedKGEnrichmentResponse,
+        ):
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
             # Check if the user is a superuser
-            is_superuser = auth_user and auth_user.is_superuser
-
-            if not is_superuser:
+            if not auth_user.is_superuser:
                 # Add any necessary permission checks here
                 pass
 
@@ -155,12 +150,14 @@ class RestructureRouter(BaseRouter):
                 "skip_clustering": skip_clustering,
                 "force_enrichment": force_enrichment,
                 "generation_config": kg_enrichment_settings.generation_config.to_dict(),
+                "max_description_input_length": kg_enrichment_settings.max_description_input_length,
                 "max_summary_input_length": kg_enrichment_settings.max_summary_input_length,
+                "max_description_input_length": kg_enrichment_settings.max_description_input_length,
                 "leiden_params": kg_enrichment_settings.leiden_params,
                 "user": auth_user.json(),
             }
 
-            task_id = r2r_hatchet.client.admin.run_workflow(
+            task_id = r2r_hatchet.admin.run_workflow(
                 "enrich-graph", {"request": workflow_input}
             )
 

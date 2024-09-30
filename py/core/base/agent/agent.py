@@ -1,3 +1,4 @@
+import asyncio
 import json
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type, Union
@@ -7,16 +8,18 @@ from pydantic import BaseModel
 from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
+    Message,
     MessageType,
 )
 from core.base.providers import CompletionProvider, PromptProvider
 
-from .base import Message, Tool, ToolResult
+from .base import Tool, ToolResult
 
 
 class Conversation:
     def __init__(self):
         self.messages: List[Message] = []
+        self._lock = asyncio.Lock()
 
     def create_and_add_message(
         self,
@@ -35,14 +38,16 @@ class Conversation:
         )
         self.add_message(message)
 
-    def add_message(self, message):
-        self.messages.append(message)
+    async def add_message(self, message):
+        async with self._lock:
+            self.messages.append(message)
 
-    def get_messages(self) -> List[Dict[str, Any]]:
-        return [
-            {**msg.model_dump(exclude_none=True), "role": str(msg.role)}
-            for msg in self.messages
-        ]
+    async def get_messages(self) -> List[Dict[str, Any]]:
+        async with self._lock:
+            return [
+                {**msg.model_dump(exclude_none=True), "role": str(msg.role)}
+                for msg in self.messages
+            ]
 
 
 # TODO - Move agents to provider pattern
@@ -73,17 +78,17 @@ class Agent(ABC):
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.config = config
-        self.conversation = []
+        self.conversation = Conversation()
         self._completed = False
-        self._tools = []
+        self._tools: list[Tool] = []
         self._register_tools()
 
     @abstractmethod
     def _register_tools(self):
         pass
 
-    def _setup(self, system_instruction: Optional[str] = None):
-        self.conversation = [
+    async def _setup(self, system_instruction: Optional[str] = None):
+        await self.conversation.add_message(
             Message(
                 role="system",
                 content=system_instruction
@@ -91,7 +96,7 @@ class Agent(ABC):
                     self.config.system_instruction_name
                 ),
             )
-        ]
+        )
 
     @property
     def tools(self) -> list[Tool]:
@@ -116,24 +121,24 @@ class Agent(ABC):
     @abstractmethod
     async def process_llm_response(
         self,
-        response: Union[Dict[str, Any], AsyncGenerator[Dict[str, Any], None]],
+        response: Any,
         *args,
         **kwargs,
-    ) -> Union[str, AsyncGenerator[str, None]]:
+    ) -> Union[None, AsyncGenerator[str, None]]:
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:
         if tool := next((t for t in self.tools if t.name == tool_name), None):
-            return await tool.function(*args, **kwargs)
+            return await tool.results_function(*args, **kwargs)
         else:
             return f"Error: Tool {tool_name} not found."
 
     def get_generation_config(
-        self, last_message: Message, stream: bool = False
+        self, last_message: dict, stream: bool = False
     ) -> GenerationConfig:
         if (
-            last_message.role in ["tool", "function"]
-            and last_message.content != ""
+            last_message["role"] in ["tool", "function"]
+            and last_message["content"] != ""
         ):
             return GenerationConfig(
                 **self.config.generation_config.model_dump(
@@ -176,30 +181,34 @@ class Agent(ABC):
         tool_id: Optional[str] = None,
         *args,
         **kwargs,
-    ) -> Union[str, AsyncGenerator[str, None]]:
+    ) -> ToolResult:
         (
-            self.conversation.append(
-                Message(
-                    role="assistant",
-                    tool_calls=[
-                        {
-                            "id": tool_id,
-                            "function": {
-                                "name": function_name,
-                                "arguments": function_arguments,
-                            },
-                        }
-                    ],
+            (
+                await self.conversation.add_message(
+                    Message(
+                        role="assistant",
+                        tool_calls=[
+                            {
+                                "id": tool_id,
+                                "function": {
+                                    "name": function_name,
+                                    "arguments": function_arguments,
+                                },
+                            }
+                        ],
+                    )
                 )
             )
             if tool_id
-            else self.conversation.append(
-                Message(
-                    role="assistant",
-                    function_call={
-                        "name": function_name,
-                        "arguments": function_arguments,
-                    },
+            else (
+                await self.conversation.add_message(
+                    Message(
+                        role="assistant",
+                        function_call={
+                            "name": function_name,
+                            "arguments": function_arguments,
+                        },
+                    )
                 )
             )
         )
@@ -209,9 +218,9 @@ class Agent(ABC):
         if tool := next(
             (t for t in self.tools if t.name == function_name), None
         ):
-            raw_result = await tool.results_function(
-                *args, **kwargs, **json.loads(function_arguments)
-            )
+            merged_kwargs = {**kwargs, **json.loads(function_arguments)}
+
+            raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
 
             tool_result = ToolResult(
@@ -223,20 +232,23 @@ class Agent(ABC):
                 tool_result.stream_result = tool.stream_function(raw_result)
 
             (
-                self.conversation.append(
-                    Message(
-                        tool_call_id=tool_id,
-                        role="tool",
-                        content=str(tool_result.llm_formatted_result),
-                        name=function_name,
+                (
+                    await self.conversation.add_message(
+                        Message(
+                            role="tool",
+                            content=str(tool_result.llm_formatted_result),
+                            name=function_name,
+                        )
                     )
                 )
                 if tool_id
-                else self.conversation.append(
-                    Message(
-                        role="function",
-                        content=str(tool_result.llm_formatted_result),
-                        name=function_name,
+                else (
+                    await self.conversation.add_message(
+                        Message(
+                            role="function",
+                            content=str(tool_result.llm_formatted_result),
+                            name=function_name,
+                        )
                     )
                 )
             )

@@ -10,11 +10,11 @@
 <h3 align="center">
 The Elasticsearch for RAG.
 
-Build, scale, and deploy production-ready Retrieval-Augmented Generation applications.
+Build, scale, and deploy state of the art Retrieval-Augmented Generation applications.
 </h3>
 
 # About
-R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. Built around a containerized [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), R2R offers multimodal ingestion support, hybrid search, GraphRAG capabilities, user management, and observability features.
+R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying state of the art Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. Built around a containerized [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), R2R offers multimodal ingestion support, hybrid search, GraphRAG capabilities, user management, and observability features.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
@@ -87,7 +87,7 @@ r2r --config-name=default serve
 - Auth & Admin Features
   - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
   - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Authenticating users
-  - [Group Permissions](https://r2r-docs.sciphi.ai/cookbooks/groups): Group permissions
+  - [Collections](https://r2r-docs.sciphi.ai/cookbooks/collections): Document collections
   - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): End-to-end logging and analytics
   - [Web Application](https://r2r-docs.sciphi.ai/cookbooks/application): Connecting with the R2R Application
 

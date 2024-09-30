@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 
 from .base import Provider, ProviderConfig
 
@@ -17,20 +17,21 @@ class DatabaseConfig(ProviderConfig):
     port: Optional[int] = None
     db_name: Optional[str] = None
     vecs_collection: Optional[str] = None
+    project_name: Optional[str] = None
 
     def __post_init__(self):
-        self.validate()
+        self.validate_config()
         # Capture additional fields
         for key, value in self.extra_fields.items():
             setattr(self, key, value)
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["postgres", None]
+        return ["postgres"]
 
 
 class VectorDBProvider(Provider, ABC):
@@ -41,12 +42,11 @@ class VectorDBProvider(Provider, ABC):
 
 class RelationalDBProvider(Provider, ABC):
     @abstractmethod
-    def _initialize_relational_db(self) -> None:
+    async def _initialize_relational_db(self) -> None:
         pass
 
 
 class DatabaseProvider(Provider):
-
     def __init__(self, config: DatabaseConfig):
         if not isinstance(config, DatabaseConfig):
             raise ValueError(
@@ -54,15 +54,15 @@ class DatabaseProvider(Provider):
             )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
-        self.vector: VectorDBProvider = self._initialize_vector_db()
-        self.relational: RelationalDBProvider = (
-            self._initialize_relational_db()
-        )
+
+        # remove later to re-introduce typing...
+        self.vector: Any = None
+        self.relational: Any = None
 
     @abstractmethod
     def _initialize_vector_db(self) -> VectorDBProvider:
         pass
 
     @abstractmethod
-    def _initialize_relational_db(self) -> RelationalDBProvider:
+    async def _initialize_relational_db(self) -> RelationalDBProvider:
         pass

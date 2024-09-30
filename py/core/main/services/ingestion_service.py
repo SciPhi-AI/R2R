@@ -1,8 +1,7 @@
-import functools
 import json
 import logging
 from datetime import datetime
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, AsyncGenerator, Optional, Sequence, Union
 from uuid import UUID
 
 from core.base import (
@@ -12,18 +11,16 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    R2RDocumentProcessingError,
     R2RException,
     RunLoggingSingleton,
     RunManager,
     VectorEntry,
     decrement_version,
-    generate_user_document_id,
 )
+from core.base.api.models import UserResponse
 from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ...base.api.models.auth.responses import UserResponse
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
@@ -33,36 +30,6 @@ MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100
 OVERVIEW_FETCH_PAGE_SIZE = 1_000
-
-
-def ingestion_step(step_name: str) -> Callable[..., Any]:
-    def decorator(func: Callable[..., Coroutine[Any, Any, Any]]) -> Any:
-        @functools.wraps(func)
-        async def wrapper(self, document_info: DocumentInfo, *args, **kwargs):
-            document_info.ingestion_status = getattr(
-                IngestionStatus, step_name.upper()
-            )
-            self.providers.database.relational.upsert_documents_overview(
-                document_info
-            )
-
-            try:
-                result_gen = await func(self, document_info, *args, **kwargs)
-                return await self._collect_results(result_gen)
-            except R2RDocumentProcessingError as e:
-                await self.mark_document_as_failed(document_info, e)
-                raise
-            except Exception as e:
-                error = R2RDocumentProcessingError(
-                    document_id=document_info.id,
-                    error_message=f"Error in {step_name} step: {str(e)}",
-                )
-                await self.mark_document_as_failed(document_info, error)
-                raise error
-
-        return wrapper
-
-    return decorator
 
 
 class IngestionService(Service):
@@ -91,11 +58,11 @@ class IngestionService(Service):
         self,
         file_data: dict,
         user: UserResponse,
+        document_id: UUID,
+        size_in_bytes,
         metadata: Optional[dict] = None,
-        document_id: Optional[UUID] = None,
         version: Optional[str] = None,
         is_update: bool = False,
-        size_in_bytes: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -121,27 +88,31 @@ class IngestionService(Service):
             size_in_bytes,
         )
 
-        if existing_document_info := self.providers.database.relational.get_documents_overview(
-            filter_user_ids=[user.id],
-            filter_document_ids=[document_id],
-        ):
-            existing_doc = existing_document_info[0]
+        existing_document_info = (
+            await self.providers.database.relational.get_documents_overview(
+                filter_user_ids=[user.id],
+                filter_document_ids=[document_id],
+            )
+        )
+        if documents := existing_document_info.get("documents", []):
+            existing_doc = documents[0]
             if is_update:
                 if (
                     existing_doc.version >= version
-                    and existing_doc.ingestion_status == "success"
+                    and existing_doc.ingestion_status
+                    == IngestionStatus.SUCCESS
                 ):
                     raise R2RException(
                         status_code=409,
                         message=f"Must increment version number before attempting to overwrite document {document_id}.",
                     )
-            elif existing_doc.ingestion_status != "failure":
+            elif existing_doc.ingestion_status != IngestionStatus.FAILURE:
                 raise R2RException(
                     status_code=409,
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
 
-        self.providers.database.relational.upsert_documents_overview(
+        await self.providers.database.relational.upsert_documents_overview(
             document_info
         )
 
@@ -171,50 +142,43 @@ class IngestionService(Service):
         return DocumentInfo(
             id=document_id,
             user_id=user.id,
-            group_ids=metadata.get("group_ids", []),
+            collection_ids=metadata.get("collection_ids", []),
             type=DocumentType[file_extension.upper()],
             title=metadata.get("title", file_name.split("/")[-1]),
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,
-            ingestion_status="pending",
+            ingestion_status=IngestionStatus.PENDING,
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
 
-    @ingestion_step("parsing")
     async def parse_file(
         self,
         document_info: DocumentInfo,
-    ) -> list[DocumentFragment]:
-        file_name, file_wrapper, size_in_bytes = (
-            self.providers.file.retrieve_file(document_info.id)
+    ) -> AsyncGenerator[DocumentFragment, None]:
+        return await self.pipes.parsing_pipe.run(
+            input=self.pipes.parsing_pipe.Input(
+                message=Document(
+                    id=document_info.id,
+                    collection_ids=document_info.collection_ids,
+                    user_id=document_info.user_id,
+                    type=document_info.type,
+                    metadata={
+                        "document_type": document_info.type.value,
+                        **document_info.metadata,
+                    },
+                )
+            ),
+            state=None,
+            run_manager=self.run_manager,
         )
 
-        with file_wrapper as file_content_stream:
-            return await self.pipes.parsing_pipe.run(
-                input=self.pipes.parsing_pipe.Input(
-                    message=Document(
-                        id=document_info.id,
-                        group_ids=document_info.group_ids,
-                        user_id=document_info.user_id,
-                        type=document_info.type,
-                        metadata={
-                            "document_type": document_info.type.value,
-                            **document_info.metadata,
-                        },
-                    )
-                ),
-                run_manager=self.run_manager,
-            )
-
-    @ingestion_step("chunking")
     async def chunk_document(
         self,
-        document_info: DocumentInfo,
         parsed_documents: list[dict],
-        chunking_config: Optional[ChunkingConfig] = None,
-    ) -> list[DocumentFragment]:
+        chunking_config: ChunkingConfig,
+    ) -> AsyncGenerator[DocumentFragment, None]:
 
         return await self.pipes.chunking_pipe.run(
             input=self.pipes.chunking_pipe.Input(
@@ -223,16 +187,15 @@ class IngestionService(Service):
                     for chunk in parsed_documents
                 ]
             ),
+            state=None,
             run_manager=self.run_manager,
             chunking_config=chunking_config,
         )
 
-    @ingestion_step("embedding")
     async def embed_document(
         self,
-        document_info: DocumentInfo,
         chunked_documents: list[dict],
-    ) -> list[str]:
+    ) -> AsyncGenerator[VectorEntry, None]:
         return await self.pipes.embedding_pipe.run(
             input=self.pipes.embedding_pipe.Input(
                 message=[
@@ -240,26 +203,29 @@ class IngestionService(Service):
                     for chunk in chunked_documents
                 ]
             ),
+            state=None,
             run_manager=self.run_manager,
         )
 
-    @ingestion_step("storing")
     async def store_embeddings(
         self,
-        document_info: DocumentInfo,
-        embeddings: list[dict],
-    ) -> list[str]:
+        embeddings: Sequence[Union[dict, VectorEntry]],
+    ) -> AsyncGenerator[str, None]:
+        vector_entries = [
+            (
+                embedding
+                if isinstance(embedding, VectorEntry)
+                else VectorEntry.from_dict(embedding)
+            )
+            for embedding in embeddings
+        ]
+
         return await self.pipes.vector_storage_pipe.run(
-            input=self.pipes.vector_storage_pipe.Input(
-                message=[
-                    VectorEntry.from_dict(embedding)
-                    for embedding in embeddings
-                ]
-            ),
+            input=self.pipes.vector_storage_pipe.Input(message=vector_entries),
+            state=None,
             run_manager=self.run_manager,
         )
 
-    @ingestion_step("success")
     async def finalize_ingestion(
         self,
         document_info: DocumentInfo,
@@ -284,16 +250,23 @@ class IngestionService(Service):
 
         return empty_generator()
 
-    async def mark_document_as_failed(
+    async def update_document_status(
         self,
         document_info: DocumentInfo,
-        error: R2RDocumentProcessingError,
+        status: IngestionStatus,
     ) -> None:
-        document_info.ingestion_status = "failure"
-        document_info.metadata["error"] = error.message
-        self.providers.database.relational.upsert_documents_overview(
-            document_info
-        )
+        document_info.ingestion_status = status
+        await self._update_document_status_in_db(document_info)
+
+    async def _update_document_status_in_db(self, document_info: DocumentInfo):
+        try:
+            await self.providers.database.relational.upsert_documents_overview(
+                document_info
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to update document status: {document_info.id}. Error: {str(e)}"
+            )
 
     async def _collect_results(self, result_gen: Any) -> list[dict]:
         results = []
@@ -316,6 +289,7 @@ class IngestionServiceAdapter:
 
     @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
+        print('data["chunking_config"] = ', data["chunking_config"])
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadata": data["metadata"],

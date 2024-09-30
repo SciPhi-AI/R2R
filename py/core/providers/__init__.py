@@ -1,5 +1,8 @@
-from .auth import R2RAuthProvider
-from .chunking import R2RChunkingProvider, UnstructuredChunkingProvider
+from .auth import R2RAuthProvider, SupabaseAuthProvider
+from .chunking import (  # type: ignore
+    R2RChunkingProvider,
+    UnstructuredChunkingProvider,
+)
 from .crypto import BCryptConfig, BCryptProvider
 from .database import PostgresDBProvider
 from .embeddings import (
@@ -18,9 +21,10 @@ from .prompts import R2RPromptProvider
 __all__ = [
     # Auth
     "R2RAuthProvider",
+    "SupabaseAuthProvider",
     # Chunking
-    "R2RChunkingProvider",
-    "UnstructuredChunkingProvider",
+    "R2RChunkingProvider",  # type: ignore
+    "UnstructuredChunkingProvider",  # type: ignore
     # Crypto
     "BCryptProvider",
     "BCryptConfig",

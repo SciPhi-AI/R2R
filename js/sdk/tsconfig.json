@@ -13,8 +13,9 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": ["es2017", "dom"],
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node", "jest", "@types/jest"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "exclude": ["node_modules", "**/__tests__/*", "**/*.spec.ts"]
 }

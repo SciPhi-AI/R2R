@@ -1,8 +1,9 @@
+# type: ignore
 import logging
 from typing import AsyncGenerator, Union
 
-from core.base import ChunkingProvider, Method, UnstructuredChunkingConfig
-from core.base.abstractions.document import DocumentExtraction
+from core.base import ChunkingProvider, Strategy, UnstructuredChunkingConfig
+from core.base.abstractions import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +37,15 @@ class UnstructuredChunkingProvider(ChunkingProvider):
         else:
 
             try:
-                if self.config.method == Method.BY_TITLE:
+                if self.config.strategy == Strategy.BY_TITLE:
                     chunks = self.chunk_by_title(
                         [self.Text(text=parsed_document.data)],
-                        max_characters=self.config.chunk_size,
-                        new_after_n_chars=self.config.max_chunk_size
-                        or self.config.chunk_size,
-                        overlap=self.config.chunk_overlap,
+                        max_characters=self.config.extra_fields["chunk_size"],
+                        new_after_n_chars=self.config.extra_fields[
+                            "max_chunk_size"
+                        ]
+                        or self.config.extra_fields["chunk_size"],
+                        overlap=self.config.extra_fields["chunk_overlap"],
                     )
                 else:
                     chunks = self.chunk_elements(

@@ -11,8 +11,6 @@ from .run_logger import (
     LoggingConfig,
     PostgresLoggingConfig,
     PostgresRunLoggingProvider,
-    RedisLoggingConfig,
-    RedisRunLoggingProvider,
     RunLoggingSingleton,
 )
 from .run_manager import RunManager, manage_run
@@ -30,8 +28,6 @@ __all__ = [
     "LoggingConfig",
     "PostgresLoggingConfig",
     "PostgresRunLoggingProvider",
-    "RedisLoggingConfig",
-    "RedisRunLoggingProvider",
     "RunLoggingSingleton",
     # Run Manager
     "RunManager",

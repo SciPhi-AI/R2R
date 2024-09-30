@@ -1,14 +1,15 @@
+# type: ignore
 import logging
 from typing import Any, AsyncGenerator, Union
 
 from core.base import (
     ChunkingProvider,
-    Method,
     R2RChunkingConfig,
     RecursiveCharacterTextSplitter,
+    Strategy,
     TextSplitter,
 )
-from core.base.abstractions.document import DocumentExtraction
+from core.base.abstractions import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,12 @@ class R2RChunkingProvider(ChunkingProvider):
         logger.info(
             f"Initializing text splitter with method: {self.config.method}"
         )  # Debug log
-        if self.config.method == Method.RECURSIVE:
+        if self.config.method == Strategy.RECURSIVE:
             return RecursiveCharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,
             )
-        elif self.config.method == Method.CHARACTER:
+        elif self.config.method == Strategy.CHARACTER:
             from core.base.utils.splitter.text import CharacterTextSplitter
 
             separator = CharacterTextSplitter.DEFAULT_SEPARATOR
@@ -38,6 +39,7 @@ class R2RChunkingProvider(ChunkingProvider):
                 separator = self.config.extra_fields.get(
                     "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
                 )
+            print("self.config = ", self.config)
             return CharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,
@@ -45,16 +47,16 @@ class R2RChunkingProvider(ChunkingProvider):
                 keep_separator=False,
                 strip_whitespace=True,
             )
-        elif self.config.method == Method.BASIC:
+        elif self.config.method == Strategy.BASIC:
             raise NotImplementedError(
                 "Basic chunking method not implemented. Please use Recursive."
             )
-        elif self.config.method == Method.BY_TITLE:
+        elif self.config.method == Strategy.BY_TITLE:
             raise NotImplementedError("By title method not implemented")
         else:
             raise ValueError(f"Unsupported method type: {self.config.method}")
 
-    def validate(self) -> bool:
+    def validate_config(self) -> bool:
         return self.config.chunk_size > 0 and self.config.chunk_overlap >= 0
 
     def update_config(self, config_override: R2RChunkingConfig):

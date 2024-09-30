@@ -17,7 +17,7 @@ from core.base.pipes.base_pipe import AsyncPipe
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipe(AsyncPipe):
+class EmbeddingPipe(AsyncPipe[VectorEntry]):
     """
     Embeds fragments using a specified embedding model.
     """
@@ -28,25 +28,24 @@ class EmbeddingPipe(AsyncPipe):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
+        config: AsyncPipe.PipeConfig,
         embedding_batch_size: int = 1,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config
-            or AsyncPipe.PipeConfig(name="default_embedding_pipe"),
+            config,
+            type,
+            pipe_logger,
         )
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
     async def embed(self, fragments: list[DocumentFragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
-            [fragment.data for fragment in fragments],
+            [fragment.data for fragment in fragments],  # type: ignore
             EmbeddingProvider.PipeStage.BASE,
         )
 
@@ -60,9 +59,9 @@ class EmbeddingPipe(AsyncPipe):
                 extraction_id=fragment.extraction_id,
                 document_id=fragment.document_id,
                 user_id=fragment.user_id,
-                group_ids=fragment.group_ids,
+                collection_ids=fragment.collection_ids,
                 vector=Vector(data=raw_vector),
-                text=fragment.data,
+                text=fragment.data,  # type: ignore
                 metadata={
                     **fragment.metadata,
                 },
@@ -70,14 +69,19 @@ class EmbeddingPipe(AsyncPipe):
             for raw_vector, fragment in zip(vectors, fragment_batch)
         ]
 
-    async def _run_logic(
+    async def _run_logic(  # type: ignore
         self,
-        input: Input,
-        state: Optional[AsyncState],
+        input: AsyncPipe.Input,
+        state: AsyncState,
         run_id: Any,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
+
+        if not isinstance(input, EmbeddingPipe.Input):
+            raise ValueError(
+                f"Invalid input type for embedding pipe: {type(input)}"
+            )
         fragment_batch = []
         batch_size = self.embedding_batch_size
         concurrent_limit = (
@@ -109,8 +113,8 @@ class EmbeddingPipe(AsyncPipe):
             if fragment_batch:
                 tasks.add(asyncio.create_task(process_batch(fragment_batch)))
 
-            for task in asyncio.as_completed(tasks):
-                for vector_entry in await task:
+            for future_task in asyncio.as_completed(tasks):
+                for vector_entry in await future_task:
                     yield vector_entry
         finally:
             # Ensure all tasks are completed
@@ -132,16 +136,22 @@ class EmbeddingPipe(AsyncPipe):
         self, fragment: DocumentFragment
     ) -> Union[VectorEntry, R2RDocumentProcessingError]:
         try:
+            if isinstance(fragment.data, bytes):
+                raise ValueError(
+                    "Fragment data is in bytes format, which is not supported by the embedding provider."
+                )
+
             vectors = await self.embedding_provider.async_get_embeddings(
                 [fragment.data],
                 EmbeddingProvider.PipeStage.BASE,
             )
+
             return VectorEntry(
                 fragment_id=fragment.id,
                 extraction_id=fragment.extraction_id,
                 document_id=fragment.document_id,
                 user_id=fragment.user_id,
-                group_ids=fragment.group_ids,
+                collection_ids=fragment.collection_ids,
                 vector=Vector(data=vectors[0]),
                 text=fragment.data,
                 metadata={**fragment.metadata},

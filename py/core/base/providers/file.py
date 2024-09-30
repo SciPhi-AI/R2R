@@ -7,18 +7,18 @@ from .base import Provider, ProviderConfig
 
 
 class FileConfig(ProviderConfig):
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["postgres", None]
+        return ["postgres"]
 
 
 class FileProvider(Provider, ABC):
     @abstractmethod
-    def store_file(
+    async def store_file(
         self,
         document_id: UUID,
         file_name: str,
@@ -28,17 +28,17 @@ class FileProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def retrieve_file(
+    async def retrieve_file(
         self, document_id: UUID
     ) -> Optional[tuple[str, BinaryIO, int]]:
         pass
 
     @abstractmethod
-    def delete_file(self, document_id: UUID) -> bool:
+    async def delete_file(self, document_id: UUID) -> bool:
         pass
 
     @abstractmethod
-    def get_files_overview(
+    async def get_files_overview(
         self,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_file_names: Optional[list[str]] = None,

@@ -9,7 +9,7 @@ kg_search_settings = {
     "use_kg_search": True,
     "kg_search_type": "global",
     "kg_search_level": None,
-    "kg_search_generation_config": {
+    "generation_config": {
         "model": "gpt-4",
         "temperature": 0.1
     },
@@ -28,7 +28,7 @@ response = client.search("query", kg_search_settings=kg_search_settings)
 1. `use_kg_search` (bool): Whether to use knowledge graph search
 2. `kg_search_type` (str): Type of knowledge graph search ('global' or 'local')
 3. `kg_search_level` (Optional[str]): Level of knowledge graph search
-4. `kg_search_generation_config` (Optional[GenerationConfig]): Configuration for knowledge graph search generation
+4. `generation_config` (Optional[GenerationConfig]): Configuration for knowledge graph search generation
 5. `entity_types` (list): Types of entities to search for
 6. `relationships` (list): Types of relationships to search for
 7. `max_community_description_length` (int): Maximum length of community descriptions (default: 65536)

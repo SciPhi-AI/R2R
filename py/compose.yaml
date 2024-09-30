@@ -22,7 +22,6 @@ networks:
     labels:
       - "com.docker.compose.recreate=always"
 
-
 services:
 
   setup-token:
@@ -87,13 +86,13 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
       POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
-      POSTGRES_DBNAME: "${POSTGRES_DBNAME:-postgres}"
-      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
+      POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
       DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
       DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
-      DATABASE_POSTGRES_DB_NAME: "${POSTGRES_DBNAME:-postgres}"
+      DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
@@ -104,7 +103,7 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:main-unstructured}
+    image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
     build:
       context: .
       args:
@@ -126,7 +125,9 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
+      - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-${CONFIG_NAME:-vecs}}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
+
       # Neo4j
       - NEO4J_USER=${NEO4J_USER:-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
@@ -176,6 +177,8 @@ services:
       # Unstructured
       - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
       - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
+      - UNSTRUCTURED_LOCAL_URL=${UNSTRUCTURED_LOCAL_URL:-http://unstructured:7275}
+      - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
 
       # Hatchet
       - HATCHET_CLIENT_TLS_STRATEGY=none
@@ -185,7 +188,9 @@ services:
         HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}
     command: >
       sh -c '
-        export HATCHET_CLIENT_TOKEN=$$(cat /hatchet_api_key/api_key.txt) &&
+        if [ -z "$${HATCHET_CLIENT_TOKEN}" ]; then
+          export HATCHET_CLIENT_TOKEN=$$(cat /hatchet_api_key/api_key.txt)
+        fi
         exec uvicorn core.main.app_entry:app --host $${HOST} --port $${PORT}
       '
     networks:
@@ -220,6 +225,8 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
+      unstructured:
+        condition: service_healthy
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
@@ -232,6 +239,7 @@ services:
       - "traefik.http.routers.r2r-dashboard.rule=PathPrefix(`/`)"
       - "traefik.http.services.r2r-dashboard.loadbalancer.server.port=3000"
       - "traefik.http.routers.r2r-dashboard.entrypoints=r2r"
+
   traefik:
     image: traefik:v2.9
     command:
@@ -250,6 +258,22 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
+    labels:
+      - "traefik.http.middlewares.no-cache-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store, must-revalidate"
+      - "traefik.http.routers.hatchet-api.middlewares=no-cache-headers"
+
+  unstructured:
+    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
+    ports:
+      - "7275:7275"
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   hatchet_certs:
   hatchet_config:

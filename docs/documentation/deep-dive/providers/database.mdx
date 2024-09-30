@@ -6,7 +6,7 @@ description: 'Learn how to configure and use the database provider in R2R'
 
 R2R's `DatabaseProvider` offers a unified interface for both relational and vector database operations. R2R only provides database support through Postgres with the pgvector extension.
 
-Postgres was selected to power R2R because it is free, open source, and widely considered be a stable production-ready database. Further, the Postgres community has implemented pgvector for efficient storage and retrieval of vector embeddings alongside traditional relational data.
+Postgres was selected to power R2R because it is free, open source, and widely considered be a stable state of the art database. Further, the Postgres community has implemented pgvector for efficient storage and retrieval of vector embeddings alongside traditional relational data.
 
 ## Architecture Overview
 
@@ -29,7 +29,7 @@ password = "your_postgres_password"
 host = "your_postgres_host"
 port = "your_postgres_port"
 db_name = "your_database_name"
-vecs_collection = "your_collection_name"
+your_project_name = "your_project_name"
 ```
 
 Alternatively, you can set these values using environment variables:
@@ -40,7 +40,7 @@ export POSTGRES_PASSWORD=your_postgres_password
 export POSTGRES_HOST=your_postgres_host
 export POSTGRES_PORT=your_postgres_port
 export POSTGRES_DBNAME=your_database_name
-export POSTGRES_VECS_COLLECTION=your_collection_name
+export POSTGRES_PROJECT_NAME=your_project_name
 ```
 Environment variables take precedence over the config settings in case of conflicts. The R2R Docker includes configuration options that facilitate integration with a combined Postgres+pgvector database setup.
 

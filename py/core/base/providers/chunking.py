@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import AsyncGenerator, Optional, Union
 
-from ..abstractions.document import DocumentExtraction
+from ..abstractions import DocumentExtraction
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
 
-class Method(str, Enum):
+class Strategy(str, Enum):
     # Unstructured methods
     BY_TITLE = "by_title"
     BASIC = "basic"
@@ -19,27 +19,24 @@ class Method(str, Enum):
 
 
 class ChunkingConfig(ProviderConfig):
-    provider: str = "r2r"
+    provider: str = "unstructured_local"
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
     class Config:
         json_schema_extra = {
             "type": "object",
             "properties": {
                 "provider": {"type": "string"},
-                "method": {"type": "string"},
             },
-            "required": ["provider", "method"],
             "example": {
                 "provider": "unstructured_local",
-                "method": "by_title",
                 "strategy": "auto",
                 "chunking_strategy": "by_title",
                 "new_after_n_chars": 512,
@@ -50,14 +47,14 @@ class ChunkingConfig(ProviderConfig):
         }
 
 
-class R2RChunkingConfig(ProviderConfig):
+class R2RChunkingConfig(ChunkingConfig):
     provider: str = "r2r"
-    method: Method = Method.RECURSIVE
+    method: Strategy = Strategy.RECURSIVE
     chunk_size: int = 512
     chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None
 
-    def validate(self) -> None:
+    def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
         if self.chunk_size <= 0:
@@ -67,7 +64,7 @@ class R2RChunkingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api", None]
+        return ["r2r", "unstructured_local", "unstructured_api"]
 
     class Config:
         json_schema_extra = {
@@ -118,12 +115,12 @@ class UnstructuredChunkingConfig(ChunkingConfig):
     split_pdf_page: bool = True
     starting_page_number: Optional[int] = None
     strategy: str = "auto"
-    chunking_strategy: Method = Method.BY_TITLE
+    chunking_strategy: Strategy = Strategy.BY_TITLE
     unique_element_ids: bool = False
     xml_keep_tags: bool = False
 
-    def validate(self) -> None:
-        super().validate()
+    def validate_config(self) -> None:
+        super().validate_config()
         if self.strategy not in ["auto", "fast", "hi_res"]:
             raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
 
@@ -139,3 +136,53 @@ class ChunkingProvider(Provider, ABC):
     ) -> AsyncGenerator[str, None]:
         """Chunk the parsed document using the configured chunking strategy."""
         pass
+
+    multipage_sections: bool = True
+    new_after_n_chars: Optional[int] = 1500
+    ocr_languages: Optional[list[str]] = None
+    output_format: str = "application/json"
+    overlap: int = 0
+    overlap_all: bool = False
+    pdf_infer_table_structure: bool = True
+
+    similarity_threshold: Optional[float] = None
+    skip_infer_table_types: Optional[list[str]] = None
+    split_pdf_concurrency_level: int = 5
+    split_pdf_page: bool = True
+    starting_page_number: Optional[int] = None
+    strategy: str = "auto"
+    chunking_strategy: Strategy = Strategy.BY_TITLE
+    unique_element_ids: bool = False
+    xml_keep_tags: bool = False
+
+    def validate_config(self) -> None:
+        if self.strategy not in ["auto", "fast", "hi_res"]:
+            raise ValueError("strategy must be 'auto', 'fast', or 'hi_res'")
+
+
+__all__ = [
+    "GenerationConfig",
+    "KGSearchSettings",
+    "MessageType",
+    "Message",
+    "ChunkingConfig",
+    "KGSearchResultType",
+    "KGSearchMethod",
+    "KGEntityResult",
+    "KGRelationshipResult",
+    "KGCommunityResult",
+    "KGGlobalResult",
+    "KGSearchResult",
+    "R2RException",
+    "Token",
+    "HybridSearchSettings",
+    "VectorSearchSettings",
+    "KGCreationSettings",
+    "KGEnrichmentSettings",
+    "KGCreationResponse",
+    "KGEnrichmentResponse",
+    "UserResponse",
+    "VectorSearchResult",
+    "SearchResponse",
+    "RAGResponse",
+]

@@ -3,7 +3,7 @@ import os
 
 import posthog
 
-from core.telemetry.events import BaseTelemetryEvent
+from core.telemetry.events import BaseTelemetryEvent  # type: ignore
 
 logger = logging.getLogger(__name__)
 

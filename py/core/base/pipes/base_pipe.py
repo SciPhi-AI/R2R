@@ -2,11 +2,12 @@ import asyncio
 import logging
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Generic, Optional, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel
 
+from core.base.logging import RunType
 from core.base.logging.run_logger import RunLoggingSingleton
 from core.base.logging.run_manager import RunManager, manage_run
 
@@ -62,7 +63,10 @@ class AsyncState:
                 del self.data[outer_key][inner_key]
 
 
-class AsyncPipe:
+T = TypeVar("T")
+
+
+class AsyncPipe(Generic[T]):
     """An asynchronous pipe for processing data with logging capabilities."""
 
     class PipeConfig(BaseModel):
@@ -86,15 +90,15 @@ class AsyncPipe:
 
     def __init__(
         self,
+        config: PipeConfig,
         type: PipeType = PipeType.OTHER,
-        config: Optional[PipeConfig] = None,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         self._config = config or self.PipeConfig()
         self._type = type
         self.pipe_logger = pipe_logger or RunLoggingSingleton()
-        self.log_queue = asyncio.Queue()
+        self.log_queue: asyncio.Queue = asyncio.Queue()
         self.log_worker_task = None
         self._run_manager = run_manager or RunManager(self.pipe_logger)
 
@@ -124,23 +128,24 @@ class AsyncPipe:
     async def run(
         self,
         input: Input,
-        state: Optional[AsyncState] = None,
+        state: Optional[AsyncState],
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[T, None]:
         """Run the pipe with logging capabilities."""
 
         run_manager = run_manager or self._run_manager
+        state = state or AsyncState()
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
-            async with manage_run(run_manager, self.config.name) as run_id:
-                self.log_worker_task = asyncio.create_task(
+            async with manage_run(run_manager, RunType.UNSPECIFIED) as run_id:
+                self.log_worker_task = asyncio.create_task(  # type: ignore
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
                 try:
-                    async for result in self._run_logic(
-                        input, state=state, run_id=run_id, *args, **kwargs
+                    async for result in self._run_logic(  # type: ignore
+                        input, state, run_id, *args, **kwargs
                     ):
                         yield result
                 finally:
@@ -166,8 +171,9 @@ class AsyncPipe:
     async def _run_logic(
         self,
         input: Input,
+        state: AsyncState,
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[T, None]:
         pass

@@ -68,7 +68,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
-            print("bad texts = ", texts)
 
             raise R2RException(error_msg, 400)
 
@@ -174,10 +173,3 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         limit: int = 10,
     ):
         return results[:limit]
-
-    def tokenize_string(
-        self, text: str, model: str, stage: EmbeddingProvider.PipeStage
-    ) -> list[int]:
-        raise NotImplementedError(
-            "Tokenization is not supported by LiteLLMEmbeddingProvider."
-        )
