@@ -74,7 +74,6 @@ if os.getenv("TELEMETRY_ENABLED", "true").lower() in ("true", "1"):
     telemetry_thread_pool = ThreadPoolExecutor(max_workers=2)
 else:
     telemetry_thread_pool = None
-    print("Telemetry is disabled")
 
 
 def telemetry_event(event_name):

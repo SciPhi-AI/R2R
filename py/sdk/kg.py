@@ -26,7 +26,7 @@ class KGMethods:
 
         data = {
             "collection_id": collection_id,
-            "kg_creation_settings": json.dumps(kg_creation_settings or {})
+            "kg_creation_settings": kg_creation_settings or {}
         }
 
         response = await client._make_request(
@@ -54,7 +54,7 @@ class KGMethods:
         
         data = {
             "collection_id": collection_id,
-            "kg_enrichment_settings": json.dumps(kg_enrichment_settings or {})
+            "kg_enrichment_settings": kg_enrichment_settings or {}
         }
 
         response = await client._make_request(
