@@ -104,9 +104,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
         summarization_content = """
             Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
 
-            Entity Info: 
+            Entity Info:
             {entity_info}
-            Triples: 
+            Triples:
             {triples_txt}
 
             Your summary should:
