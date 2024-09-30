@@ -51,7 +51,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         *args,
         **kwargs,
     ) -> Any:
-        task_id = await self.orchestrator.admin.run_workflow(
+        task_id = self.orchestrator.admin.run_workflow(
             workflow_name,
             parameters,
             options=options,

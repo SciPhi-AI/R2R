@@ -386,9 +386,9 @@ class ManagementRouter(BaseRouter):
                     404,
                 )
 
-            is_owner = str(
-                document_chunks_result["results"][0].get("user_id")
-            ) == str(auth_user.id)
+            is_owner = str(document_chunks_result[0].get("user_id")) == str(
+                auth_user.id
+            )
 
             if not is_owner and not auth_user.is_superuser:
                 raise R2RException(
@@ -396,7 +396,7 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            return document_chunks_result["results"], {
+            return document_chunks_result, {
                 "total_entries": document_chunks["total_entries"]
             }
 

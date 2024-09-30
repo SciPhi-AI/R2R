@@ -18,6 +18,8 @@ def simple_ingestion_factory(service: IngestionService):
             parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
                 input_data
             )
+            is_update = parsed_data["is_update"]
+
             ingestion_result = await service.ingest_file_ingress(**parsed_data)
             document_info = ingestion_result["info"]
 
@@ -50,7 +52,6 @@ def simple_ingestion_factory(service: IngestionService):
             async for _ in storage_generator:
                 pass
 
-            is_update = input_data.get("is_update")
             await service.finalize_ingestion(
                 document_info, is_update=is_update
             )
