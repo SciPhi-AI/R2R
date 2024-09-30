@@ -49,6 +49,8 @@ class DatabaseConfig(ProviderConfig):
     postgres_configuration_settings: Optional[
         PostgresConfigurationSettings
     ] = None
+    default_collection_name: str = "Default"
+    default_collection_description: str = "Your default collection."
 
     def __post_init__(self):
         self.validate_config()
