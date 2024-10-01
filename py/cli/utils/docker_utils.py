@@ -180,7 +180,7 @@ def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
             "env_vars": [
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
-                "AWS_REGION_NAME",
+               "AWS_REGION_NAME",
             ]
         },
         "groq": {"env_vars": ["GROQ_API_KEY"]},
@@ -236,17 +236,16 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 
 
 def check_set_docker_env_vars():
-    env_vars = []
 
-    postgres_vars = [
-        "POSTGRES_HOST",
-        "POSTGRES_USER",
-        "POSTGRES_PASSWORD",
-        "POSTGRES_PORT",
-        "POSTGRES_DBNAME",
-        # "POSTGRES_PROJECT_NAME", TODO - uncomment in next release
-    ]
-    env_vars.extend(postgres_vars)
+    env_vars = {
+        "POSTGRES_PROJECT_NAME": "r2r",
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DBNAME": "postgres",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "postgres",
+    }
+
 
     is_test = (
         "pytest" in sys.modules
@@ -258,6 +257,10 @@ def check_set_docker_env_vars():
         for var in env_vars:
             if value := os.environ.get(var):
                 warning_text = click.style("Warning:", fg="red", bold=True)
+
+                if value == env_vars[var]:
+                    continue
+
                 prompt = (
                     f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"

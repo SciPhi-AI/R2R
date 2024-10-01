@@ -172,7 +172,19 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 )
             )[0]
 
-            return out_entity
+            # upsert the entity and its embedding
+            await self.kg_provider.upsert_embeddings(
+                [
+                    (
+                        out_entity["name"],
+                        out_entity["description"],
+                        str(out_entity["description_embedding"]),
+                    )
+                ],
+                "entity_embedding",
+            )
+
+            return out_entity['name']
 
         offset = input.message["offset"]
         limit = input.message["limit"]
@@ -183,26 +195,16 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
         total_entities = len(entity_map)
 
+        workflows = []
         for i, (entity_name, entity_info) in enumerate(entity_map.items()):
             try:
-                processed_entity = await process_entity(
+                workflows.append(process_entity(
                     entity_info["entities"],
                     entity_info["triples"],
                     input.message["max_description_input_length"],
-                )
-
-                await self.kg_provider.upsert_embeddings(
-                    [
-                        (
-                            processed_entity["name"],
-                            processed_entity["description"],
-                            str(processed_entity["description_embedding"]),
-                        )
-                    ],
-                    "entity_embedding",
-                )
-                logger.info(f"Processed {i+1}/{total_entities} entities: {entity_name}")
-                yield entity_name
+                ))
             except Exception as e:
                 logger.error(f"Error processing entity {entity_name}: {e}")
-                # import pdb; pdb.set_trace()
+
+        for result in asyncio.as_completed(workflows):
+            yield await result
