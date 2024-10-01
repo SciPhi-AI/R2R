@@ -18,8 +18,10 @@ from core.base import (
     Document,
     DocumentExtraction,
     DocumentType,
-    generate_id_from_label,
 )
+
+from core.utils import generate_extraction_id
+
 from core.base.abstractions import R2RSerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 
@@ -265,7 +267,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
             metadata["chunk_order"] = iteration
             # creating the text extraction
             yield DocumentExtraction(
-                id=generate_id_from_label(f"{document.id}-{iteration}"),
+                id=generate_extraction_id(document.id, iteration),
                 document_id=document.id,
                 user_id=document.user_id,
                 collection_ids=document.collection_ids,

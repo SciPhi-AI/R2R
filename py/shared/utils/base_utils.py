@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from datetime import datetime
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
@@ -70,19 +71,52 @@ if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
 
 
-def generate_run_id() -> UUID:
-    return uuid5(NAMESPACE_DNS, str(uuid4()))
 
-
-def generate_id_from_label(label: str) -> UUID:
+def _generate_id_from_label(label: str) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
+def generate_run_id() -> UUID:
+    """
+    Generates a unique run id
+    """
+    return _generate_id_from_label(str(uuid4()))
 
-def generate_user_document_id(filename: str, user_id: UUID) -> UUID:
+def generate_document_id(filename: str, user_id: UUID) -> UUID:
     """
     Generates a unique document id from a given filename and user id
     """
-    return generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
+    return _generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
+
+
+def generate_extraction_id(document_id: UUID, iteration: int, version: str) -> UUID:
+    """
+    Generates a unique extraction id from a given document id and iteration
+    """
+    return _generate_id_from_label(f"{str(document_id)}-{iteration}")
+
+def generate_default_collection_id(user_id: UUID) -> UUID:
+    """
+    Generates a unique collection id from a given user id
+    """
+    return _generate_id_from_label(str(user_id))
+
+def generate_collection_id(collection_name: str) -> UUID:
+    """
+    Generates a unique collection id from a given collection name
+    """
+    return _generate_id_from_label(collection_name)
+
+def generate_user_id(email: str) -> UUID:
+    """
+    Generates a unique user id from a given email
+    """
+    return _generate_id_from_label(email)
+
+def generate_message_id(query: str, completion_start_time: datetime) -> UUID:
+    """
+    Generates a unique message id from a given query and completion start time
+    """
+    return _generate_id_from_label(f"{query}-{completion_start_time.isoformat()}")
 
 
 async def to_async_generator(
@@ -125,3 +159,4 @@ def format_entity_types(entity_types: list[EntityType]) -> str:
 def format_relations(predicates: list[RelationshipType]) -> str:
     lines = [predicate.name for predicate in predicates]
     return "\n".join(lines)
+

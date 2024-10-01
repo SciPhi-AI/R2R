@@ -92,12 +92,6 @@ class KgService(Service):
                 run_manager=self.run_manager,
             )
 
-            await self.providers.database.relational.set_workflow_status(
-                id=document_id,
-                status_type="kg_creation_status",
-                status=KGCreationStatus.SUCCESS,
-            )
-
         except Exception as e:
             logger.error(f"Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
@@ -166,6 +160,12 @@ class KgService(Service):
             )
 
             all_results.append(await _collect_results(node_extractions))
+
+        await self.providers.database.relational.set_workflow_status(
+            id=document_id,
+            status_type="kg_creation_status",
+            status=KGCreationStatus.SUCCESS,
+        )
 
         return all_results
 

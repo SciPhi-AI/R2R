@@ -497,10 +497,6 @@ class PostgresKGProvider(KGProvider):
     async def perform_graph_clustering(
         self, collection_id: UUID, leiden_params: dict
     ) -> Tuple[int, int, set[tuple[int, Any]]]:
-        # TODO: implementing the clustering algorithm but now we will get communities at a document level and then we will get communities at a higher level.
-        # we will use the Leiden algorithm for this.
-        # but for now let's skip it and make other stuff work.
-        # we will need multiple tables for this to work.
 
         settings = {}
         triples = await self.get_all_triples(collection_id)
@@ -545,8 +541,6 @@ class PostgresKGProvider(KGProvider):
         num_communities = len(
             set([item.cluster for item in hierarchical_communities])
         )
-        # num_hierarchies = len(set([item.level for item in hierarchical_communities]))
-        # intermediate_communities = set([(item.level, item.cluster) for item in hierarchical_communities])
 
         return num_communities
 
@@ -558,6 +552,9 @@ class PostgresKGProvider(KGProvider):
         """Compute Leiden communities."""
         try:
             from graspologic.partition import hierarchical_leiden
+
+            if "random_seed" not in leiden_params:
+                leiden_params["random_seed"] = 7272  # add seed to control randomness
 
             community_mapping = hierarchical_leiden(graph, **leiden_params)
 
@@ -608,6 +605,17 @@ class PostgresKGProvider(KGProvider):
 
     # async def client(self):
     #     return None
+
+    async def check_community_reports_exist(
+        self, collection_id: UUID, offset: int, limit: int
+    ) -> list[int]:
+        QUERY = f"""
+            SELECT distinct community_id FROM {self._get_table_name("community_report")} WHERE collection_id = $1 AND community_id >= $2 AND community_id < $3
+        """
+        community_ids = await self.fetch_query(
+            QUERY, [collection_id, offset, offset + limit]
+        )
+        return [item["community_id"] for item in community_ids]
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.

@@ -204,16 +204,18 @@ def hatchet_kg_factory(
             parallel_communities = min(100, num_communities)
             total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
-            for i, offset in enumerate(
-                range(0, num_communities, parallel_communities)
-            ):
+            for i in range(total_workflows):
+                offset = i * parallel_communities
                 workflows.append(
                     context.aio.spawn_workflow(
                         "kg-community-summary",
                         {
                             "request": {
                                 "offset": offset,
-                                "limit": parallel_communities,
+                                "limit": min(
+                                    parallel_communities,
+                                    num_communities - offset,
+                                ),
                                 "collection_id": collection_id,
                                 **input_data["kg_enrichment_settings"],
                             }

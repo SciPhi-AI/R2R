@@ -110,7 +110,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
         )
 
-        if entities == [] or triples == []:
+        if entities == [] and triples == []:
             raise ValueError(
                 f"Community {community_id} has no entities or triples."
             )
@@ -195,15 +195,22 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
-        for community_id in range(offset, limit):
-            community_summary_jobs.append(
-                self.process_community(
-                    community_id=community_id,
-                    max_summary_input_length=max_summary_input_length,
-                    generation_config=generation_config,
-                    collection_id=collection_id,
+
+        # check which community summaries exist and don't run them again
+        community_ids_exist = await self.kg_provider.check_community_reports_exist(
+            collection_id=collection_id, offset=offset, limit=limit
+        )
+
+        for community_id in range(offset, offset + limit):
+            if community_id not in community_ids_exist:
+                community_summary_jobs.append(
+                    self.process_community(
+                        community_id=community_id,
+                        max_summary_input_length=max_summary_input_length,
+                        generation_config=generation_config,
+                        collection_id=collection_id,
+                        )
                 )
-            )
 
         for community_summary in asyncio.as_completed(community_summary_jobs):
             yield await community_summary
