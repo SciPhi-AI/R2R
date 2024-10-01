@@ -7,6 +7,7 @@ import uuid
 from typing import Optional
 
 import asyncclick as click
+from importlib.metadata import version
 from posthog import Posthog
 
 TELEMETRY_DISABLED = (
@@ -63,6 +64,7 @@ def telemetry(command):
                         "status": "success",
                         "args": command_args,
                         "params": command_params,
+                        "version": version("r2r"),
                     },
                 )
 
@@ -79,6 +81,7 @@ def telemetry(command):
                         "error_message": str(e),
                         "args": command_args,
                         "params": command_params,
+                        "version": version("r2r"),
                     },
                 )
                 raise
@@ -115,6 +118,7 @@ def telemetry(command):
                             "status": "success",
                             "args": command_args,
                             "params": command_params,
+                            "version": version("r2r"),
                         },
                     ),
                     daemon=True,
@@ -136,6 +140,7 @@ def telemetry(command):
                             "error_message": str(e),
                             "args": command_args,
                             "params": command_params,
+                            "version": version("r2r"),
                         },
                     ),
                     daemon=True,
