@@ -3,8 +3,12 @@ import math
 from typing import AsyncGenerator
 from uuid import UUID
 
-from core.base import KGCreationStatus, KGCreationSettings
-from core.base import RunLoggingSingleton, RunManager
+from core.base import (
+    KGCreationSettings,
+    KGCreationStatus,
+    RunLoggingSingleton,
+    RunManager,
+)
 from core.base.abstractions import GenerationConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.abstractions import KGEnrichmentSettings
@@ -54,7 +58,7 @@ class KgService(Service):
         entity_types: list[str],
         relation_types: list[str],
         **kwargs,
-    ):        
+    ):
         try:
 
             logger.info(f"Processing document {document_id} for KG extraction")
@@ -120,9 +124,9 @@ class KgService(Service):
                 KGCreationStatus.PROCESSING,
             ]
 
-
         document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_creation_status", status=document_status_filter, 
+            status_type="kg_creation_status",
+            status=document_status_filter,
             collection_id=collection_id,
         )
 

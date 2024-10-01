@@ -139,7 +139,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
             try:
                 if description.startswith("```json"):
-                    description = description.strip("```json").strip("```").strip()
+                    description = (
+                        description.strip("```json").strip("```").strip()
+                    )
 
                 description = json.loads(description)
                 name = description["name"]

@@ -21,6 +21,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DBNAME:-postgres}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-1024}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -33,6 +34,11 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
+    command: >
+      bash -c "
+        echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf &&
+        docker-entrypoint.sh postgres
+      "
 
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}

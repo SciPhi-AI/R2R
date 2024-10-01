@@ -58,9 +58,7 @@ class KGStoragePipe(AsyncPipe):
         Stores a batch of knowledge graph extractions in the graph database.
         """
         try:
-            return await self.kg_provider.add_kg_extractions(
-                kg_extractions
-            )
+            return await self.kg_provider.add_kg_extractions(kg_extractions)
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)

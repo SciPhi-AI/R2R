@@ -8,9 +8,9 @@ from core.base import (
     CryptoProvider,
     DatabaseConfig,
     DatabaseProvider,
+    PostgresConfigurationSettings,
     RelationalDBProvider,
     VectorDBProvider,
-    PostgresConfigurationSettings,
 )
 
 from .relational import PostgresRelationalDBProvider

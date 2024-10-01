@@ -240,9 +240,9 @@ class DocumentMixin(DatabaseMixin):
         return await self.fetch_query(query, [ids])
 
     async def _get_ids_from_table(
-        self, 
-        status: list[str], 
-        table_name: str, 
+        self,
+        status: list[str],
+        table_name: str,
         status_type: str,
         collection_id: UUID = None,
     ):
@@ -261,7 +261,7 @@ class DocumentMixin(DatabaseMixin):
         records = await self.fetch_query(query, [status, collection_id])
         document_ids = [record["document_id"] for record in records]
         return document_ids
-    
+
     async def _set_status_in_table(
         self, ids: list[UUID], status: str, table_name: str, status_type: str
     ):
@@ -345,10 +345,10 @@ class DocumentMixin(DatabaseMixin):
         )
 
     async def get_document_ids_by_status(
-        self, 
-        status_type: str, 
-        status: Union[str, list[str]],      
-        collection_id: UUID = None, 
+        self,
+        status_type: str,
+        status: Union[str, list[str]],
+        collection_id: UUID = None,
     ):
         """
         Get the IDs for a given status.
@@ -365,7 +365,9 @@ class DocumentMixin(DatabaseMixin):
         out_model, table_name = self._get_status_model_and_table_name(
             status_type
         )
-        result = await self._get_ids_from_table(status, table_name, status_type, collection_id)
+        result = await self._get_ids_from_table(
+            status, table_name, status_type, collection_id
+        )
         return result
 
     async def get_documents_overview(

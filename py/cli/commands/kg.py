@@ -1,5 +1,6 @@
 import json
 import os
+
 import asyncclick as click
 from asyncclick import pass_context
 
@@ -21,9 +22,7 @@ from cli.utils.timer import timer
     help="Collection ID to create graph for.",
 )
 @pass_context
-def create_graph(
-    ctx, collection_id
-):
+def create_graph(ctx, collection_id):
     """
     Create a new graph.
     """
@@ -46,16 +45,12 @@ def create_graph(
     help="Settings for the graph enrichment process.",
 )
 @pass_context
-def enrich_graph(
-    ctx, collection_id, kg_enrichment_settings
-):
+def enrich_graph(ctx, collection_id, kg_enrichment_settings):
     """
     Enrich an existing graph.
     """
     client = ctx.obj
     with timer():
-        response = client.enrich_graph(
-            collection_id, kg_enrichment_settings
-        )
+        response = client.enrich_graph(collection_id, kg_enrichment_settings)
 
     click.echo(json.dumps(response, indent=2))

@@ -64,7 +64,7 @@ class KGRouter(BaseRouter):
                 description="Collection ID to create graph for.",
             ),
             kg_creation_settings: Optional[dict] = Body(
-                default='{}',
+                default="{}",
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
