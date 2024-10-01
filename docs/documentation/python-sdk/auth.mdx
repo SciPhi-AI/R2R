@@ -257,7 +257,8 @@ update_result = client.update_user(name="John Doe", bio="R2R enthusiast")
 Delete the user's account:
 
 ```python
-delete_result = client.delete_user("password123")
+user_id = register_response["results"]["id"] # input unique id here
+delete_result = client.delete_user(user_id, "password123")
 ```
 
 <AccordionGroup>

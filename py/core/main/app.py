@@ -6,8 +6,8 @@ from core.base.providers import OrchestrationProvider
 
 from .api.auth_router import AuthRouter
 from .api.ingestion_router import IngestionRouter
-from .api.management_router import ManagementRouter
 from .api.kg_router import KGRouter
+from .api.management_router import ManagementRouter
 from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
 

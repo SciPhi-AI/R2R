@@ -1,9 +1,9 @@
 import asyncio
+import logging
 
-from core.base import R2RException, increment_version, generate_id_from_label
+from core.base import R2RException, generate_id_from_label, increment_version
 
 from ...services import IngestionService
-import logging
 
 logger = logging.getLogger(__name__)
 

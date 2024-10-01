@@ -18,7 +18,8 @@ ingest_response = client.ingest_files(
     file_paths=file_paths,
     metadatas=metadatas,
     # optionally override chunking settings at runtime
-    chunking_config={
+    ingestion_config={
+        "provider": "unstructured_local",
         "strategy": "auto",
         "chunking_method": "by_title",
         "new_after_n_chars": 256, # soft maximum
@@ -27,7 +28,6 @@ ingest_response = client.ingest_files(
         "overlap": 100,
     }
 )
-
 ```
 <AccordionGroup>
   <Accordion title="Response">
@@ -56,7 +56,7 @@ ingest_response = client.ingest_files(
   An optional list of version strings for the ingested files. If provided, the length should match the number of files being ingested.
 </ParamField>
 
-<ParamField path="chunking_config" type="Optional[Union[dict, ChunkingConfig]]">
+<ParamField path="ingestion_config" type="Optional[Union[dict, ChunkingConfig]]">
   The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
   <Expandable title="properties">
     <ParamField path="provider" type="str" default="unstructured_local">
@@ -179,7 +179,7 @@ Update existing documents:
 
 ```python
 file_paths = ["/path/to/r2r/examples/data/aristotle_v2.txt"]
-document_ids = ["93123a68-d668-51de-8291-92162730dc87"]
+document_ids = ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]
 update_response = client.update_files(
   file_paths=file_paths,
   document_ids=document_ids,
@@ -226,7 +226,7 @@ documents_overview = client.documents_overview()
       ```bash
       [
         {
-          'document_id': '93123a68-d668-51de-8291-92162730dc87',
+          'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
           'version': 'v0',
           'collection_ids': [],
           'ingestion_status': 'success',
@@ -253,7 +253,7 @@ documents_overview = client.documents_overview()
 Fetch chunks for a particular document:
 
 ```python
-document_id = "db02076e-989a-59cd-98d5-e24e15a0bd27"
+document_id = "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
 chunks = client.document_chunks(document_id)
 ```
 
@@ -265,7 +265,7 @@ chunks = client.document_chunks(document_id)
       [{
         'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
         'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-        'document_id': 'db02076e-989a-59cd-98d5-e24e15a0bd27',
+        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
         'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
         'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3'
         'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'chunk_order': 0, 'document_type': 'txt', 'unstructured_filetype': 'text/plain', 'unstructured_languages': ['eng'], 'unstructured_parent_id': '971399f6ba2ec9768d2b5b92ab9d17d6', 'partitioned_by_unstructured': True}
@@ -289,7 +289,7 @@ Delete a document by its ID:
 delete_response = client.delete(
   {
     "document_id":
-      {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}
+      {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}
   }
 )
 ```
@@ -306,5 +306,5 @@ delete_response = client.delete(
 </AccordionGroup>
 
 <ParamField path="filters" type="list[dict]" required>
-  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
+  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
 </ParamField>

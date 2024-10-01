@@ -184,7 +184,14 @@ class KGSearchSearchPipe(GeneratorPipe):
                 ],
                 embedding_type="embedding",
                 query_embedding=query_embedding,
-                property_names=["community_id", "name", "findings", "rating", "rating_explanation", "summary"],
+                property_names=[
+                    "community_id",
+                    "name",
+                    "findings",
+                    "rating",
+                    "rating_explanation",
+                    "summary",
+                ],
             ):
                 yield KGSearchResult(
                     content=KGCommunityResult(

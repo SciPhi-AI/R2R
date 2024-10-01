@@ -26,7 +26,7 @@ class KGMethods:
 
         data = {
             "collection_id": collection_id,
-            "kg_creation_settings": kg_creation_settings or {}
+            "kg_creation_settings": kg_creation_settings or {},
         }
 
         response = await client._make_request(
@@ -38,7 +38,9 @@ class KGMethods:
     async def enrich_graph(
         client,
         collection_id: str,
-        kg_enrichment_settings: Optional[Union[dict, KGEnrichmentSettings]] = None,
+        kg_enrichment_settings: Optional[
+            Union[dict, KGEnrichmentSettings]
+        ] = None,
     ) -> KGEnrichmentResponse:
         """
         Perform graph enrichment over the entire graph.
@@ -51,10 +53,10 @@ class KGMethods:
         """
         if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
             kg_enrichment_settings = kg_enrichment_settings.model_dump()
-        
+
         data = {
             "collection_id": collection_id,
-            "kg_enrichment_settings": kg_enrichment_settings or {}
+            "kg_enrichment_settings": kg_enrichment_settings or {},
         }
 
         response = await client._make_request(

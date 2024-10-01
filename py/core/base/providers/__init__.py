@@ -4,9 +4,9 @@ from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     DatabaseConfig,
     DatabaseProvider,
+    PostgresConfigurationSettings,
     RelationalDBProvider,
     VectorDBProvider,
-    PostgresConfigurationSettings,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider

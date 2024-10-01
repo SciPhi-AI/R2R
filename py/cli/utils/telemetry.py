@@ -4,10 +4,10 @@ import inspect
 import os
 import threading
 import uuid
+from importlib.metadata import version
 from typing import Optional
 
 import asyncclick as click
-from importlib.metadata import version
 from posthog import Posthog
 
 TELEMETRY_DISABLED = (

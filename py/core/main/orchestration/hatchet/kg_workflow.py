@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import uuid
 import math
+import uuid
 
 from hatchet_sdk import Context
 
@@ -49,7 +49,7 @@ def hatchet_kg_factory(
             context.log(f"Running KG Extraction for input: {context.workflow_input()['request']}")
 
             input_data = get_input_data_dict(context.workflow_input()["request"])
-            
+
             # context.log(f"Running KG Extraction for collection ID: {input_data['collection_id']}")
             document_id = input_data["document_id"]
 

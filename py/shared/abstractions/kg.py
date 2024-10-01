@@ -47,6 +47,7 @@ class KGCreationSettings(R2RSerializable):
         description="Configuration for text generation during graph enrichment.",
     )
 
+
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 

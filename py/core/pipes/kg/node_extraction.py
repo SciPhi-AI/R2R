@@ -130,7 +130,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 current_length += len(info)
 
             return truncated_info
-        
+
         async def process_entity(
             entities, triples, max_description_input_length
         ):

@@ -28,14 +28,14 @@ pip install r2r
       # Set cloud LLM settings
       export OPENAI_API_KEY=sk-...
 
-      r2r serve --docker --full --config-name=core
+      r2r serve --docker --full
       ```
   [Refer here](/documentation/configuration/llm) for more information on how to configure various LLM providers.
   </Accordion>
   <Accordion title="Local LLMs" icon="house" defaultOpen={false}>
       To start R2R with your local computer as the default LLM inference provider:
       ```bash
-      r2r serve --docker --full --config-name=local_llm
+      r2r serve --docker --full --config-name=full_local_llm
       ```
     Then, in a separate terminal you will need to run Ollama to provide completions:
     ```bash

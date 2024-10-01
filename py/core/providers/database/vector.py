@@ -37,7 +37,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please provide a valid `connection_string` to the `PostgresVectorDBProvider`."
             )
-        self.vx: Client = create_client(connection_string=connection_string, project_name=self.project_name)
+        self.vx: Client = create_client(
+            connection_string=connection_string, project_name=self.project_name
+        )
         if not self.vx:
             raise ValueError(
                 "Error occurred while attempting to connect to the pgvector provider."

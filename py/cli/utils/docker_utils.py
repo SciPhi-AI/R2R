@@ -246,7 +246,6 @@ def check_set_docker_env_vars():
         "POSTGRES_PASSWORD": "postgres",
     }
 
-
     is_test = (
         "pytest" in sys.modules
         or "unittest" in sys.modules

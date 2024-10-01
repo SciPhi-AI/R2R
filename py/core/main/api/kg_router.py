@@ -66,7 +66,7 @@ class KGRouter(BaseRouter):
             kg_creation_settings: Optional[
                 Union[dict, KGCreationSettings]
             ] = Body(
-                default='{}',
+                default="{}",
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -111,7 +111,7 @@ class KGRouter(BaseRouter):
             kg_enrichment_settings: Optional[
                 Union[dict, KGEnrichmentSettings]
             ] = Body(
-                default='{}',
+                default="{}",
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
