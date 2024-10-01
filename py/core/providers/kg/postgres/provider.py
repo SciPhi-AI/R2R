@@ -559,7 +559,7 @@ class PostgresKGProvider(KGProvider):
         try:
             from graspologic.partition import hierarchical_leiden
 
-            community_mapping = hierarchical_leiden(graph)
+            community_mapping = hierarchical_leiden(graph, **leiden_params)
 
             return community_mapping
 
