@@ -27,6 +27,7 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
+from shared.abstractions.kg import KGCreationSettings, KGEnrichmentSettings
 from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -35,10 +36,6 @@ from shared.abstractions.llm import (
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt
-from shared.abstractions.kg import (
-    KGCreationSettings,
-    KGEnrichmentSettings,
-)
 from shared.abstractions.search import (
     AggregateSearchResult,
     HybridSearchSettings,

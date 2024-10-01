@@ -464,7 +464,7 @@ export class r2rClient {
       metadatas?: Record<string, any>[];
       document_ids?: string[];
       user_ids?: (string | null)[];
-      chunking_config?: Record<string, any>;
+      ingestion_config?: Record<string, any>;
     } = {},
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -527,8 +527,8 @@ export class r2rClient {
         ? JSON.stringify(options.document_ids)
         : undefined,
       user_ids: options.user_ids ? JSON.stringify(options.user_ids) : undefined,
-      chunking_config: options.chunking_config
-        ? JSON.stringify(options.chunking_config)
+      ingestion_config: options.ingestion_config
+        ? JSON.stringify(options.ingestion_config)
         : undefined,
     };
 
@@ -566,7 +566,7 @@ export class r2rClient {
     options: {
       document_ids: string[];
       metadatas?: Record<string, any>[];
-      chunking_config?: Record<string, any>;
+      ingestion_config?: Record<string, any>;
     },
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -604,8 +604,8 @@ export class r2rClient {
       metadatas: options.metadatas
         ? JSON.stringify(options.metadatas)
         : undefined,
-      chunking_config: options.chunking_config
-        ? JSON.stringify(options.chunking_config)
+      ingestion_config: options.ingestion_config
+        ? JSON.stringify(options.ingestion_config)
         : undefined,
     };
 

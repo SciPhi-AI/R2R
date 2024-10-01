@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
+
 from pydantic import BaseModel
 
 from .base import Provider, ProviderConfig
@@ -98,4 +99,8 @@ class DatabaseProvider(Provider):
 
     @abstractmethod
     async def _initialize_relational_db(self) -> RelationalDBProvider:
+        pass
+
+    @abstractmethod
+    def _get_table_name(self, base_name: str) -> str:
         pass

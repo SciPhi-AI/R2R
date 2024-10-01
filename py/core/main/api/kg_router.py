@@ -66,7 +66,7 @@ class KGRouter(BaseRouter):
             kg_creation_settings: Optional[
                 Union[dict, KGCreationSettings]
             ] = Body(
-                default='{}',
+                default="{}",
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -83,16 +83,19 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
+            if isinstance(kg_creation_settings, str):
+                kg_creation_settings = json.loads(kg_creation_settings)
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
-            for key, value in kg_creation_settings.items():
-                if value is not None:
-                    setattr(server_kg_creation_settings, key, value)
+            if kg_creation_settings:
+                for key, value in kg_creation_settings.items():
+                    if value is not None:
+                        setattr(server_kg_creation_settings, key, value)
 
             workflow_input = {
                 "collection_id": collection_id,
-                "kg_creation_settings": server_kg_creation_settings.json(),
+                "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
 
@@ -111,7 +114,7 @@ class KGRouter(BaseRouter):
             kg_enrichment_settings: Optional[
                 Union[dict, KGEnrichmentSettings]
             ] = Body(
-                default='{}',
+                default="{}",
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -134,7 +137,7 @@ class KGRouter(BaseRouter):
 
             workflow_input = {
                 "collection_id": collection_id,
-                "kg_enrichment_settings": server_kg_enrichment_settings.json(),
+                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
 

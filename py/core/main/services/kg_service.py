@@ -3,8 +3,12 @@ import math
 from typing import AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import KGCreationStatus, KGCreationSettings
-from core.base import RunLoggingSingleton, RunManager
+from core.base import (
+    KGCreationSettings,
+    KGCreationStatus,
+    RunLoggingSingleton,
+    RunManager,
+)
 from core.base.abstractions import GenerationConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.abstractions import KGEnrichmentSettings
@@ -55,7 +59,7 @@ class KgService(Service):
         relation_types: list[str],
         hatchet_logger: Optional = None,
         **kwargs,
-    ):        
+    ):
         try:
 
             logger.info(f"Processing document {document_id} for KG extraction")
@@ -122,9 +126,9 @@ class KgService(Service):
                 KGCreationStatus.PROCESSING,
             ]
 
-
         document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_creation_status", status=document_status_filter, 
+            status_type="kg_creation_status",
+            status=document_status_filter,
             collection_id=collection_id,
         )
 
@@ -149,18 +153,18 @@ class KgService(Service):
             )
 
             node_extractions = await self.pipes.kg_node_description_pipe.run(
-                    input=self.pipes.kg_node_description_pipe.Input(
-                        message={
-                            "offset": i * 50,
-                            "limit": 50,
-                            "max_description_input_length": max_description_input_length,
-                            "document_id": document_id,
-                        }
-                    ),
-                    state=None,
-                    run_manager=self.run_manager,
-                )
-            
+                input=self.pipes.kg_node_description_pipe.Input(
+                    message={
+                        "offset": i * 50,
+                        "limit": 50,
+                        "max_description_input_length": max_description_input_length,
+                        "document_id": document_id,
+                    }
+                ),
+                state=None,
+                run_manager=self.run_manager,
+            )
+
             all_results.append(await _collect_results(node_extractions))
 
         return all_results

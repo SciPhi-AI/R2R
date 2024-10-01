@@ -9,9 +9,9 @@ from fastapi.testclient import TestClient
 
 from .auth import AuthMethods
 from .ingestion import IngestionMethods
+from .kg import KGMethods
 from .management import ManagementMethods
 from .models import R2RException
-from .kg import KGMethods
 from .retrieval import RetrievalMethods
 from .server import ServerMethods
 

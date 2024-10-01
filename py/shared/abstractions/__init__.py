@@ -21,6 +21,7 @@ from .graph import (
     RelationshipType,
     Triple,
 )
+from .kg import KGCreationSettings, KGEnrichmentSettings
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -29,7 +30,6 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
-from .kg import KGCreationSettings, KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
     HybridSearchSettings,

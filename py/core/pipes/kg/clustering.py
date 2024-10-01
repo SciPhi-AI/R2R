@@ -85,6 +85,4 @@ class KGClusteringPipe(AsyncPipe):
         collection_id = input.message["collection_id"]
         leiden_params = input.message["leiden_params"]
 
-        yield await self.cluster_kg(
-            collection_id, leiden_params
-        )
+        yield await self.cluster_kg(collection_id, leiden_params)

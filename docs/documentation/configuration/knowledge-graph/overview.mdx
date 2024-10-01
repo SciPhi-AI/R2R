@@ -7,9 +7,7 @@ description: 'Configure your R2R knowledge graph provider.'
 R2R supports knowledge graph functionality to enhance document understanding and retrieval. By default, R2R creates the graph by clustering with `graspologic` and saving the output triples and relationships into Postgres. We are actively working to integrate with [Memgraph](https://memgraph.com/docs). You can find out more about creating knowledge graphs in the [GraphRAG Cookbook](/cookbooks/graphrag).
 
 
-To configure the knowledge graph settings for your project:
-
-1. Edit the `kg` section in your `r2r.toml` file:
+To configure the knowledge graph settings for your project, edit the `kg` section in your `r2r.toml` file:
 
 ```toml r2r.toml
 [kg]
@@ -50,12 +48,6 @@ Let's break down the knowledge graph configuration options:
 - `kg_search_settings`: Similar configuration for the model used in knowledge graph search operations.
 
 
-And to set them directly in your config:
-
-```toml r2r.toml
-[kg]
-provider = "postgres"
-```
 
 <Note>
 Setting configuration values in the `r2r.toml` will override environment variables by default.

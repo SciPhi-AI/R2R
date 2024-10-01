@@ -86,16 +86,10 @@ The `collection.py` file includes methods for building complex SQL queries that 
 
 ### GIN Indexing
 
-R2R uses GIN (Generalized Inverted Index) indexing to optimize both full-text and JSON searches:
+R2R uses GIN (Generalized Inverted Index) indexing to optimize full-text searches:
 
 ```python
-Index(
-    f"idx_{name}_fts_trgm",
-    table.c.fts,
-    table.c.text,
-    postgresql_using="gin",
-    postgresql_ops={"text": "gin_trgm_ops"},
-)
+Index(f"idx_{name}_fts", "fts", postgresql_using="gin"),
 ```
 
 This indexing strategy allows for efficient full-text search and trigram similarity matching.

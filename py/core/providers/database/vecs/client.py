@@ -100,7 +100,9 @@ class Client:
 
     def _create_schema(self, sess):
         try:
-            sess.execute(text(f"CREATE SCHEMA IF NOT EXISTS {self.project_name};"))
+            sess.execute(
+                text(f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";')
+            )
         except Exception as e:
             logger.warning(f"Failed to create schema: {str(e)}")
 
@@ -108,7 +110,9 @@ class Client:
         try:
             sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS vector;"))
             sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
-            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;"))
+            sess.execute(
+                text(f"CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
+            )
         except Exception as e:
             logger.warning(f"Failed to create extension: {str(e)}")
 
@@ -200,7 +204,7 @@ class Client:
         """
         from core.providers.database.vecs.collection import Collection
 
-        return Collection(name, dimension, self)._create() 
+        return Collection(name, dimension, self)._create()
 
     @deprecated("use Client.get_or_create_vector_table")
     def get_collection(self, name: str) -> Collection:

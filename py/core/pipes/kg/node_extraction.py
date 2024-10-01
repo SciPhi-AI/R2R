@@ -130,7 +130,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 current_length += len(info)
 
             return truncated_info
-        
+
         async def process_entity(
             entities, triples, max_description_input_length
         ):
@@ -153,8 +153,14 @@ class KGNodeDescriptionPipe(AsyncPipe):
                             {
                                 "role": "user",
                                 "content": summarization_content.format(
-                                    entity_info=truncate_info(entity_info, max_description_input_length),
-                                    triples_txt=truncate_info(triples_txt, max_description_input_length),
+                                    entity_info=truncate_info(
+                                        entity_info,
+                                        max_description_input_length,
+                                    ),
+                                    triples_txt=truncate_info(
+                                        triples_txt,
+                                        max_description_input_length,
+                                    ),
                                 ),
                             }
                         ],
@@ -184,7 +190,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 "entity_embedding",
             )
 
-            return out_entity['name']
+            return out_entity["name"]
 
         offset = input.message["offset"]
         limit = input.message["limit"]
@@ -198,11 +204,13 @@ class KGNodeDescriptionPipe(AsyncPipe):
         workflows = []
         for i, (entity_name, entity_info) in enumerate(entity_map.items()):
             try:
-                workflows.append(process_entity(
-                    entity_info["entities"],
-                    entity_info["triples"],
-                    input.message["max_description_input_length"],
-                ))
+                workflows.append(
+                    process_entity(
+                        entity_info["entities"],
+                        entity_info["triples"],
+                        input.message["max_description_input_length"],
+                    )
+                )
             except Exception as e:
                 logger.error(f"Error processing entity {entity_name}: {e}")
 
