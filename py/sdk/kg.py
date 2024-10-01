@@ -23,16 +23,15 @@ class KGMethods:
 
         if isinstance(kg_creation_settings, KGCreationSettings):
             kg_creation_settings = kg_creation_settings.model_dump()
+        elif kg_creation_settings is None:
+            kg_creation_settings = {}
 
         data = {
             "collection_id": collection_id,
-            "kg_creation_settings": kg_creation_settings or {},
+            "kg_creation_settings": json.dumps(kg_creation_settings),
         }
 
-        response = await client._make_request(
-            "POST", "create_graph", json=data
-        )
-        return response
+        return await client._make_request("POST", "create_graph", json=data)
 
     @staticmethod
     async def enrich_graph(
@@ -53,13 +52,12 @@ class KGMethods:
         """
         if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
             kg_enrichment_settings = kg_enrichment_settings.model_dump()
+        elif kg_enrichment_settings is None:
+            kg_enrichment_settings = {}
 
         data = {
             "collection_id": collection_id,
-            "kg_enrichment_settings": kg_enrichment_settings or {},
+            "kg_enrichment_settings": json.dumps(kg_enrichment_settings),
         }
 
-        response = await client._make_request(
-            "POST", "enrich_graph", json=data
-        )
-        return response
+        return await client._make_request("POST", "enrich_graph", json=data)
