@@ -46,7 +46,7 @@ provider = "postgres"
 
 [ingestion]
 provider = "r2r"
-chunking_method = "recursive"
+chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
