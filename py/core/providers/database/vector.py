@@ -301,11 +301,21 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 m=16, ef_construction=64
             )  # Default HNSW parameters
 
+        index_name = f"ix_{self.project_name}_{self.collection.name}_hnsw"
+
+        sql = f"""
+        CREATE INDEX {index_name}
+        ON "{self.project_name}"."{self.collection.name}"
+        USING hnsw (vec {measure})
+        WITH (m={index_options.m}, ef_construction={index_options.ef_construction});
+        """
+
         self.collection.create_index(
             method=index_type,
             measure=measure,
             index_arguments=index_options,
             replace=True,
+            sql=sql,
         )
 
     def delete(

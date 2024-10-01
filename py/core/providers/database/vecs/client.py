@@ -232,7 +232,7 @@ class Client:
             join pg_attribute pa
                 on pc.oid = pa.attrelid
         where
-            pc.relnamespace = '{self.project_name}'::regnamespace
+            pc.relnamespace = "{self.project_name}"::regnamespace
             and pc.relkind = 'r'
             and pa.attname = 'vec'
             and not pc.relname ^@ '_'
