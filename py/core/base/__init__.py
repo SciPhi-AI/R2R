@@ -144,6 +144,7 @@ __all__ = [
     "format_search_results_for_stream",
     "generate_run_id",
     "generate_id_from_label",
+    "generate_default_user_collection_id",
     "increment_version",
     "EntityType",
     "RelationshipType",

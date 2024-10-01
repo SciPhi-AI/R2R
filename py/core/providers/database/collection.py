@@ -4,7 +4,11 @@ from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from core.base import R2RException, generate_id_from_label
+from core.base import (
+    R2RException,
+    generate_id_from_label,
+    generate_default_user_collection_id,
+)
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
 
@@ -32,11 +36,14 @@ class CollectionMixin(DatabaseMixin):
         """Create a default collection if it doesn't exist."""
         config = self.get_config()
 
-        default_collection_uuid = generate_id_from_label(
-            f"{user_id}"
-            if user_id is not None
-            else config.default_collection_name
-        )
+        if user_id:
+            default_collection_uuid = generate_default_user_collection_id(
+                user_id
+            )
+        else:
+            default_collection_uuid = generate_id_from_label(
+                config.default_collection_name
+            )
 
         if not await self.collection_exists(default_collection_uuid):
             logger.info("Initializing a new default collection...")

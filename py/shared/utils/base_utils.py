@@ -78,6 +78,11 @@ def generate_id_from_label(label: str) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
 
+def generate_default_user_collection_id(user_id: UUID) -> UUID:
+    """Generate the default collection ID for a user."""
+    return generate_id_from_label(f"{user_id}")
+
+
 def generate_user_document_id(filename: str, user_id: UUID) -> UUID:
     """
     Generates a unique document id from a given filename and user id
