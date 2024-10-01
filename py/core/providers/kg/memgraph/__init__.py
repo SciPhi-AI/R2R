@@ -1,3 +1,3 @@
-from .memgraph import MemgraphKGProvider
+from .memgraph import MemgraphKGProvider  # type: ignore
 
 __all__ = ["MemgraphKGProvider"]

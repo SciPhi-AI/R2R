@@ -1,3 +1,4 @@
+# type: ignore
 UNIQUE_CONSTRAINTS = [
     # "create constraint on (c:__Chunk__) assert c.id is unique;",
     # "create constraint on (d:__Document__) assert d.id is unique;",

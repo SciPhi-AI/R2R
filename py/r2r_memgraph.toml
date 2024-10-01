@@ -1,3 +1,7 @@
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
 [auth]
 provider = "r2r"
 access_token_lifetime_in_minutes = 60
@@ -8,7 +12,7 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [chunking]
-provider = "unstructured_local"
+provider = "unstructured_api"
 strategy = "auto"
 chunking_strategy = "by_title"
 new_after_n_chars = 512
@@ -39,8 +43,9 @@ provider = "postgres"
     host = "localhost"
     port = "5432"
     db_name = "postgres"
-    vecs_collection="vecs"
 
+[file]
+provider = "postgres"
 
 [embedding]
 provider = "litellm"
@@ -58,37 +63,39 @@ password="memgraph"
 url="bolt://localhost:7687"
 database="memgraph"
 batch_size = 256
-kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
-  [kg.kg_extraction_config]
-    model = "gpt-4o-mini"
+  [kg.kg_creation_settings]
+    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    entity_types = [] # if empty, all entities are extracted
+    relation_types = [] # if empty, all relations are extracted
+    fragment_merge_count = 4 # number of fragments to merge into a single extraction
+    max_knowledge_triples = 100
+    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
-    max_knowledge_triples = 100
-    generation_config = { model = "gpt-4o-mini" } # and other params
-    leiden_params = { max_cluster_size = 1000 } # more params in graspologic/partition/leiden.py
+    community_reports_prompt = "graphrag_community_reports_prompt"
+    max_description_input_length = 65536
+    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_levels = 10 } 
+  
+  [kg.kg_search_settings]
+    map_system_prompt = "graphrag_map_system_prompt"
+    reduce_system_prompt = "graphrag_reduce_system_prompt"
+    generation_config = { model = "gpt-4o-mini" }
 
-  [kg.kg_search_config]
-    model = "gpt-4o-mini"
 
 [logging]
 provider = "local"
 log_table = "logs"
 log_info_table = "log_info"
 
+[orchestration]
+provider = "hatchet"
+
 [parsing]
-provider = "unstructured_local"
-excluded_parsers = ["mp4"]
+provider = "unstructured_api"
+# excluded_parsers = ["mp4"]
 
 [prompt]
 provider = "r2r"
 
-[agent]
-system_instruction_name = "rag_agent"
-tool_names = ["search"]
-
-[file]
-provider = "postgres"
-
-[orchestration]
-provider = "hatchet"

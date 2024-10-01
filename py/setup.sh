@@ -36,7 +36,7 @@ docker run -d \
   -e MEMGRAPH_PASSWORD=memgraph \
   -v memgraph_data:/var/lib/memgraph \
   -v memgraph_logs:/var/log/memgraph \
-  memgraph/memgraph-mage:latest --log-level=TRACE --also-log-to-stderr
+  memgraph/memgraph-mage:1.20-memgraph-2.20-no-ml --log-level=TRACE --also-log-to-stderr
 
 
 # Start PostgreSQL
@@ -69,4 +69,6 @@ export POSTGRES_PORT=5432
 export POSTGRES_DBNAME=postgres
 export POSTGRES_VECS_COLLECTION=vecs
 
-ollama start
+
+export UNSTRUCTURED_API_URL=https://api.unstructured.io/general/v0/general
+# ollama start

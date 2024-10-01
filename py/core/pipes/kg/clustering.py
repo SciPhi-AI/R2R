@@ -90,10 +90,10 @@ class KGClusteringPipe(AsyncPipe):
             raise ValueError("Generation config not provided.")
 
         base_dimension = self.embedding_provider.config.base_dimension
-        vector_index_fn = self.kg_provider.create_vector_index
-        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
-        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
-        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
-        vector_index_fn("__Community__", "summary_embedding", base_dimension)
+        # vector_index_fn = self.kg_provider.create_vector_index
+        # vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
+        # vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
+        # vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
+        # vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
         yield await self.cluster_kg(leiden_params, generation_config)

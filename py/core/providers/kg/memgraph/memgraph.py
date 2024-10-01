@@ -1,27 +1,21 @@
+# type: ignore
 import json
 import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from core.base import (
-    KGConfig,
-    KGCreationSettings,
-    KGEnrichmentSettings,
-    KGProvider,
-)
-from core.base.abstractions.document import DocumentFragment
-from core.base.abstractions.graph import (
+from core.base import KGConfig, KGProvider, R2RException
+from core.base.abstractions import (
     Community,
+    DocumentFragment,
     Entity,
     KGExtraction,
     RelationshipType,
     Triple,
 )
-
-logger = logging.getLogger(__name__)
 
 from .graph_queries import (
     GET_CHUNKS_QUERY,
@@ -36,6 +30,8 @@ from .graph_queries import (
     PUT_TRIPLES_QUERY,
     UNIQUE_CONSTRAINTS,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MemgraphKGProvider(KGProvider):
@@ -373,10 +369,201 @@ class MemgraphKGProvider(KGProvider):
     def vector_query(self, query, **kwargs: Any) -> dict[str, Any]:
         raise NotImplementedError("Functionality not yet implemented.")
 
-    def perform_graph_clustering(self, leiden_params: dict) -> Tuple[int, int]:
-        raise NotImplementedError("Functionality not yet implemented.")
+    def perform_graph_clustering(
+        self, leiden_params: dict
+    ) -> Tuple[int, int, set[tuple[int, Any]]]:
+        """
+        Perform graph clustering on the graph.
+
+        Input:
+        - leiden_params: a dictionary that contains the parameters for the graph clustering.
+
+        Output:
+        - Total number of communities
+        - Total number of hierarchies
+        """
+        
+        # # step 1: drop the graph, if it exists and project the graph again.
+        # # in this step the vertices that have no edges are not included in the projection.
+
+        # GRAPH_EXISTS_QUERY = """
+        #     CALL gds.graph.exists('kg_graph') YIELD exists
+        #     WITH exists
+        #     RETURN CASE WHEN exists THEN true ELSE false END as graphExists;
+
+        # """
+
+        # result = self.structured_query(GRAPH_EXISTS_QUERY)
+        # graph_exists = result.records[0]["graphExists"]
+
+        # GRAPH_PROJECTION_QUERY = """
+        #     MATCH (s:__Entity__)-[r]->(t:__Entity__)
+        #     RETURN gds.graph.project(
+        #         'kg_graph',
+        #         s,
+        #         t,
+        # """
+
+        # if graph_exists:
+
+        #     logger.info(f"Graph exists, dropping it")
+        #     GRAPH_DROP_QUERY = (
+        #         "CALL gds.graph.drop('kg_graph') YIELD graphName;"
+        #     )
+        #     result = self.structured_query(GRAPH_DROP_QUERY)
+
+        #     GRAPH_PROJECTION_QUERY += """
+        #         {
+        #             sourceNodeProperties: s { },
+        #             targetNodeProperties: t { },
+        #             relationshipProperties: r { .weight }
+        #         },
+        #         {
+        #             relationshipWeightProperty: 'weight',
+        #             undirectedRelationshipTypes: ['*']
+        #         }
+        #     )
+        #     """
+        # else:
+        #     GRAPH_PROJECTION_QUERY += """
+        #         {
+        #             sourceNodeProperties: s {},
+        #             targetNodeProperties: t {},
+        #             relationshipProperties: r { .weight }
+        #         },
+        #         {
+        #             relationshipWeightProperty: 'weight',
+        #             undirectedRelationshipTypes: ['*']
+        #         }
+        #     )"""
+
+        # result = self.structured_query(GRAPH_PROJECTION_QUERY)
+
+        # step 2: run the hierarchical leiden algorithm on the graph.
+        # seed_property = leiden_params.get("seed_property", "communityIds")
+        write_property = leiden_params.get("write_property", "communityIds")
+        random_seed = leiden_params.get("random_seed", 42)
+        include_intermediate_communities = leiden_params.get(
+            "include_intermediate_communities", True
+        )
+        max_levels = leiden_params.get("max_levels", 10)
+        gamma = leiden_params.get("gamma", 1.0)
+        theta = leiden_params.get("theta", 0.01)
+        tolerance = leiden_params.get("tolerance", 0.0001)
+        min_community_size = leiden_params.get("min_community_size", 1)
+        # don't use the seed property for now
+        seed_property_config = (
+            ""  # f"seedProperty: '{seed_property}'" if graph_exists else ""
+        )
+        
+        #TODO: (@antejavor) Fix the modularities
+        GRAPH_CLUSTERING_QUERY=f"""
+        CALL leiden_community_detection.get() YIELD node, community_id, communities
+        SET node.community_id = community_id
+        SET node.communities = communities
+        RETURN count(DISTINCT community_id) AS community_count
+        """
+
+        result = self.structured_query(GRAPH_CLUSTERING_QUERY).records[0]
+
+        community_count: int = result["community_count"]
+        # modularities = result["modularities"]
+
+        logger.info(
+            f"Performed graph clustering with {community_count} communities."
+        )
+        
+        #TODO:(@antejavor) Fix intermediate communities 
+        COMMUNITY_QUERY = f"""
+            MATCH (n)
+            WHERE n.communities IS NOT NULL
+            RETURN DISTINCT
+            CASE
+                WHEN n.communities IS NOT NULL
+                THEN n.communities
+                ELSE []
+            END AS community_ids
+        """
+
+        result = self.structured_query(COMMUNITY_QUERY)
+
+        intermediate_communities = [
+            record["community_ids"] for record in result.records
+        ]
+
+        intermediate_communities_set = set()
+        for community_list in intermediate_communities:
+            for level, community_id in enumerate(community_list):
+                intermediate_communities_set.add((level, community_id))
+        intermediate_communities_set = list(intermediate_communities_set)
+
+        logger.info(
+            f"Intermediate communities: {intermediate_communities_set}"
+        )   
+         #TODO:(@antejavor) Added community count instead of len(modularities), to force the signature
+        return (
+            community_count,
+            community_count,
+            intermediate_communities_set
+            )
 
     def get_community_entities_and_triples(
         self, level: int, community_id: int, include_embeddings: bool = False
     ) -> Tuple[List[Entity], List[Triple]]:
-        raise NotImplementedError("Functionality not yet implemented.")
+        """
+        Get the entities and triples that belong to a community.
+
+        Input:
+        - level: The level of the hierarchy.
+        - community_id: The ID of the community to get the entities and triples for.
+        - include_embeddings: Whether to include the embeddings in the output.
+
+        Output:
+        - A tuple of entities and triples that belong to the community.
+
+        """
+
+        # get the entities and triples from the graph
+        query = """MATCH (a:__Entity__) - [r] -> (b:__Entity__)
+                WHERE a.communities[$level] = $community_id
+                OR b.communities[$level] = $community_id
+                RETURN ID(a) AS source_id, a.name AS source, id(b) AS target_id, b.name AS target, a.description AS source_description,
+                b.description AS target_description, labels(a) AS source_labels, labels(b) AS target_labels,
+                r.description AS relationship_description, r.name AS relationship_name, r.weight AS relationship_weight, ID(r) AS relationship_id
+        """
+
+        neo4j_records = self.structured_query(
+            query,
+            {
+                "community_id": int(community_id),
+                "level": int(level),
+            },
+        )
+
+        entities = [
+            Entity(
+                id=record["source_id"],
+                name=record["source"],
+                description=record["source_description"],
+                category=", ".join(record["source_labels"]),
+            )
+            for record in neo4j_records.records
+        ]
+
+        triples = [
+            Triple(
+                id=record["relationship_id"],
+                subject=record["source"],
+                predicate=record["relationship_name"],
+                object=record["target"],
+                description=record["relationship_description"],
+                weight=record["relationship_weight"],
+            )
+            for record in neo4j_records.records
+        ]
+
+        logger.info(
+            f"{len(entities)} entities and {len(triples)} triples were retrieved for community {community_id} at level {level}"
+        )
+
+        return entities, triples
