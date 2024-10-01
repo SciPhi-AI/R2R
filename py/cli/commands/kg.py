@@ -11,7 +11,8 @@ from cli.utils.timer import timer
 @cli.command()
 @click.option(
     "--collection-id",
-    required=True,
+    required=False,
+    default="",
     help="Collection ID to create graph for.",
 )
 @click.option(
@@ -44,7 +45,8 @@ def create_graph(ctx, collection_id, kg_creation_settings):
 @cli.command()
 @click.option(
     "--collection-id",
-    required=True,
+    required=False,
+    default="",
     help="Collection ID to enrich graph for.",
 )
 @click.option(

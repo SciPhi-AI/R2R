@@ -13,13 +13,7 @@ from core.base.api.models import (
     WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
-
-# from ..hatchet import (
-#     CreateGraphWorkflow,
-#     EnrichGraphWorkflow,
-#     KGCommunitySummaryWorkflow,
-#     KgExtractDescribeEmbedWorkflow,
-# )
+from core.utils import generate_id_from_label
 from ..services.kg_service import KgService
 from .base_router import BaseRouter, RunType
 
@@ -83,6 +77,9 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
+            if not collection_id:
+                collection_id = generate_id_from_label(str(auth_user.id))
+
             if isinstance(kg_creation_settings, str):
                 kg_creation_settings = json.loads(kg_creation_settings)
             server_kg_creation_settings = (
@@ -126,6 +123,9 @@ class KGRouter(BaseRouter):
 
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
+
+            if not collection_id:
+                collection_id = generate_id_from_label(str(auth_user.id))
 
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings

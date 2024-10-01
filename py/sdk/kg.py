@@ -14,7 +14,7 @@ class KGMethods:
     @staticmethod
     async def create_graph(
         client,
-        collection_id: str,
+        collection_id: str = "",
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
     ) -> KGCreationResponse:
         """

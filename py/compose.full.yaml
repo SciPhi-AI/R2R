@@ -47,6 +47,10 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
+    command: >
+      bash -c "
+        docker-entrypoint.sh postgres
+      "
 
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"

@@ -182,7 +182,7 @@ def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
             "env_vars": [
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
-               "AWS_REGION_NAME",
+                "AWS_REGION_NAME",
             ]
         },
         "groq": {"env_vars": ["GROQ_API_KEY"]},
