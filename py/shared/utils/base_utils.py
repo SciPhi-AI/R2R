@@ -5,37 +5,69 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
-from ..abstractions.search import AggregateSearchResult
+from ..abstractions.search import (
+    AggregateSearchResult,
+    KGCommunityResult,
+    KGEntityResult,
+    KGRelationshipResult,
+    KGGlobalResult,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def format_search_results_for_llm(
-    results: AggregateSearchResult,
-) -> str:
-    formatted_results = ""
-    i = 0
+def format_search_results_for_llm(results: AggregateSearchResult) -> str:
+    formatted_results = []
+    source_counter = 1
+
     if results.vector_search_results:
-        formatted_results += "Vector Search Results:\n"
-        for i, result in enumerate(results.vector_search_results):
-            text = result.text
-            formatted_results += f"Source [{i+1}]:\n{text}\n"
+        formatted_results.append("Vector Search Results:")
+        for result in results.vector_search_results:
+            formatted_results.extend(
+                (f"Source [{source_counter}]:", f"{result.text}")
+            )
+            source_counter += 1
 
-        i = len(results.vector_search_results)
     if results.kg_search_results:
-        formatted_results += "KG Local Results:\n"
-        for j, kg_result in enumerate(results.kg_search_results):
-            formatted_results += (
-                f"Source [{j+i+1}]: Name - {kg_result.content.name}\n"
+        formatted_results.append("KG Search Results:")
+        for kg_result in results.kg_search_results:
+            formatted_results.extend(
+                (
+                    f"Source [{source_counter}]:",
+                    f"Name: {kg_result.content.name}",
+                )
             )
-            formatted_results += (
-                f"Description - {kg_result.content.description}\n"
-            )
-            findings = kg_result.metadata.get("findings", None)
-            if findings:
-                formatted_results += f"Supporting Findings: {findings}\n"
 
-    return formatted_results
+            if isinstance(kg_result.content, KGCommunityResult):
+                formatted_results.extend(
+                    (
+                        f"Summary: {kg_result.content.summary}",
+                        f"Rating: {kg_result.content.rating}",
+                        f"Rating Explanation: {kg_result.content.rating_explanation}",
+                        "Findings:",
+                    )
+                )
+                formatted_results.extend(
+                    f"- {finding}" for finding in kg_result.content.findings
+                )
+            elif isinstance(
+                kg_result.content,
+                (KGEntityResult, KGRelationshipResult, KGGlobalResult),
+            ):
+                formatted_results.append(
+                    f"Description: {kg_result.content.description}"
+                )
+
+            if kg_result.metadata:
+                formatted_results.append("Metadata:")
+                formatted_results.extend(
+                    f"- {key}: {value}"
+                    for key, value in kg_result.metadata.items()
+                )
+
+            source_counter += 1
+
+    return "\n".join(formatted_results)
 
 
 def format_search_results_for_stream(
