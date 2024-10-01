@@ -47,11 +47,6 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
-    command: >
-      bash -c "
-        echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf &&
-        docker-entrypoint.sh postgres
-      "
 
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"

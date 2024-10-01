@@ -225,7 +225,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                         "file_content": encoded_content,  # Use encoded string
                         "ingestion_config": ingestion_config,
                     },
-                    timeout=300,  # Adjust timeout as needed
+                    timeout=3600,  # Adjust timeout as needed
                 )
 
                 if response.status_code != 200:
@@ -262,7 +262,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline
             metadata["partitioned_by_unstructured"] = True
-
+            metadata["chunk_order"] = iteration
             # creating the text extraction
             yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),

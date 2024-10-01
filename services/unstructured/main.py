@@ -32,7 +32,6 @@ executor = concurrent.futures.ThreadPoolExecutor(
 def run_partition(file_content: str, ingestion_config: Dict) -> List[Dict]:
     file_content_bytes = base64.b64decode(file_content)
     file_io = BytesIO(file_content_bytes)
-    print('input ingestion_config = ', ingestion_config)
     elements = partition(file=file_io, **ingestion_config)
     return [element.to_dict() for element in elements]
 

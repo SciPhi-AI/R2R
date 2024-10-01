@@ -68,7 +68,7 @@ R2R uses chunking to break down parsed documents into smaller, manageable pieces
 [chunking]
 provider = "unstructured_local"
 strategy = "auto"
-chunking_method = "by_title"
+chunking_strategy = "by_title"
 new_after_n_chars = 512
 max_characters = 1_024
 combine_under_n_chars = 128
@@ -80,14 +80,14 @@ Key chunking configuration options:
 - `provider`: The chunking provider (defaults to "r2r").
 
 **For R2R:**
-- `chunking_method`: The chunking method ("recursive").
+- `chunking_strategy`: The chunking method ("recursive").
 - `chunk_size`: The target size for each chunk.
 - `chunk_overlap`: The number of characters to overlap between chunks.
 - `excluded_parsers`: List of parsers to exclude (e.g., ["mp4"]).
 
 **For Unstructured:**
 - `strategy`: The overall chunking strategy ("auto", "fast", or "hi_res").
-- `chunking_method`: The specific chunking method ("by_title" or "basic").
+- `chunking_strategy`: The specific chunking method ("by_title" or "basic").
 - `new_after_n_chars`: Soft maximum size for a chunk.
 - `max_characters`: Hard maximum size for a chunk.
 - `combine_under_n_chars`: Minimum size for combining small sections.
@@ -143,7 +143,7 @@ When using the Unstructured chunking provider, you can specify additional parame
 [ingestion]
 provider = "unstructured_local"
 strategy = "auto"  # "auto", "fast", or "hi_res"
-chunking_method = "by_title"  # "by_title" or "basic"
+chunking_strategy = "by_title"  # "by_title" or "basic"
 
 # Core chunking parameters
 combine_under_n_chars = 128
@@ -191,7 +191,7 @@ response = client.ingest_files(
     file_paths=["document.pdf"],
     ingestion_config={
         "provider": "unstructured_local",
-        "chunking_method": "by_title",
+        "chunking_strategy": "by_title",
         "max_characters": 1000
     },
     embedding_config={...},
