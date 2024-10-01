@@ -119,7 +119,6 @@ class IngestionStatus(str, Enum):
     FAILED = "failed"
     SUCCESS = "success"
 
-
 class KGCreationStatus(str, Enum):
     """Status of KG Creation per document."""
 

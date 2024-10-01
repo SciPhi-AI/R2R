@@ -71,7 +71,6 @@ if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
 
 
-
 def _generate_id_from_label(label: str) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
@@ -93,7 +92,7 @@ def generate_extraction_id(document_id: UUID, iteration: int, version: str) -> U
     """
     return _generate_id_from_label(f"{str(document_id)}-{iteration}")
 
-def generate_default_collection_id(user_id: UUID) -> UUID:
+def generate_default_user_collection_id(user_id: UUID) -> UUID:
     """
     Generates a unique collection id from a given user id
     """

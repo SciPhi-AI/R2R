@@ -21,7 +21,7 @@ from .graph import (
     RelationshipType,
     Triple,
 )
-from .kg import KGCreationSettings, KGEnrichmentSettings
+from .kg import KGCreationSettings, KGEnrichmentSettings, KGRunType, KGEstimationResponse, KGEnrichmentEstimationResponse
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,

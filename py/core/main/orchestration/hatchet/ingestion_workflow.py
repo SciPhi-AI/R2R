@@ -7,13 +7,12 @@ from hatchet_sdk import Context
 from core.base import (
     IngestionStatus,
     OrchestrationProvider,
-    generate_id_from_label,
     increment_version,
 )
 from core.base.abstractions import DocumentInfo, R2RException
 
 from ...services import IngestionService, IngestionServiceAdapter
-from core.utils import generate_default_collection_id
+from core.utils import generate_default_user_collection_id
 
 if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
@@ -123,7 +122,7 @@ def hatchet_ingestion_factory(
 
             collection_id = await service.providers.database.relational.assign_document_to_collection(
                 document_id=document_info.id,
-                collection_id=generate_default_collection_id(
+                collection_id=generate_default_user_collection_id(
                     document_info.user_id
                 ),
             )

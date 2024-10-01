@@ -138,8 +138,8 @@ class KgService(Service):
 
         entity_count = await self.providers.kg.get_entity_count(document_id)
 
-        # process 50 entities at a time
-        num_batches = math.ceil(entity_count / 50)
+        # process 512 entities at a time
+        num_batches = math.ceil(entity_count / 512)
         all_results = []
         for i in range(num_batches):
             logger.info(
@@ -149,8 +149,8 @@ class KgService(Service):
             node_extractions = await self.pipes.kg_node_description_pipe.run(
                 input=self.pipes.kg_node_description_pipe.Input(
                     message={
-                        "offset": i * 50,
-                        "limit": 50,
+                        "offset": i * 512,
+                        "limit": 512,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
                     }
@@ -214,3 +214,41 @@ class KgService(Service):
             run_manager=self.run_manager,
         )
         return await _collect_results(summary_results)
+
+
+    @telemetry_event("delete_graph_for_documents")
+    async def delete_graph_for_documents(
+        self,
+        document_ids: list[UUID],
+        **kwargs,
+    ):
+        # TODO: Implement this, as it needs some checks.
+        raise NotImplementedError
+    
+
+    @telemetry_event("delete_graph_for_collection")
+    async def delete_graph_for_collection(
+        self,
+        collection_id: UUID,
+        cascade: bool,
+        **kwargs,
+    ):
+        return await self.providers.kg.delete_graph_for_collection(collection_id, cascade)
+    
+
+    @telemetry_event("get_creation_estimate")
+    async def get_creation_estimate(
+        self,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_creation_estimate(collection_id)
+    
+
+    @telemetry_event("get_enrichment_estimate")
+    async def get_enrichment_estimate(
+        self,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_enrichment_estimate(collection_id)

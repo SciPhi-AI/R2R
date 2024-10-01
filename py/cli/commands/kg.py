@@ -16,12 +16,17 @@ from cli.utils.timer import timer
     help="Collection ID to create graph for.",
 )
 @click.option(
+    "--run",
+    is_flag=True,
+    help="Run the graph creation process.",
+)
+@click.option(
     "--kg-creation-settings",
     required=False,
     help="Settings for the graph creation process.",
 )
 @pass_context
-def create_graph(ctx, collection_id, kg_creation_settings):
+def create_graph(ctx, collection_id, run, kg_creation_settings):
     """
     Create a new graph.
     """
@@ -36,8 +41,13 @@ def create_graph(ctx, collection_id, kg_creation_settings):
             )
             return
 
+    if not run:
+        run_type = "estimate"
+    else:
+        run_type = "run"
+
     with timer():
-        response = client.create_graph(collection_id, kg_creation_settings)
+        response = client.create_graph(collection_id, run_type, kg_creation_settings)
 
     click.echo(json.dumps(response, indent=2))
 

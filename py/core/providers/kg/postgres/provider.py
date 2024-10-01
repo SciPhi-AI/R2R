@@ -9,7 +9,7 @@ from uuid import UUID
 
 import asyncpg
 
-from core import KGEnrichmentSettings, KGExtraction
+from core import KGEnrichmentSettings, KGExtraction, KGCreationEstimationResponse, KGEnrichmentEstimationResponse
 from core.base import (
     Community,
     DatabaseProvider,
@@ -18,6 +18,7 @@ from core.base import (
     KGConfig,
     KGProvider,
     Triple,
+    KGCreationStatus
 )
 
 logger = logging.getLogger(__name__)
@@ -616,6 +617,98 @@ class PostgresKGProvider(KGProvider):
             QUERY, [collection_id, offset, offset + limit]
         )
         return [item["community_id"] for item in community_ids]
+    
+
+    async def delete_graph_for_collection(self, collection_id: UUID, cascade: bool = False) -> None:
+
+        # don't delete if status is PROCESSING. 
+        QUERY = f"""
+            SELECT kg_enrichment_status FROM {self._get_table_name("collections")} WHERE collection_id = $1
+        """
+        status = (await self.fetch_query(QUERY, [collection_id]))[0]["kg_enrichment_status"]
+        if status == KGCreationStatus.PROCESSING.value:
+            return
+
+        # remove all triples for these documents.
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("community")} WHERE collection_id = $1;
+            DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;
+        """
+
+        document_ids = await self.db_provider.documents_in_collection(collection_id)
+
+        if cascade:
+            QUERY += f"""
+                DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+            """
+            
+        await self.execute_query(QUERY, [document_ids])
+
+        # set status to PENDING for this collection. 
+        QUERY = f"""
+            UPDATE {self._get_table_name("collections")} SET kg_enrichment_status = $1 WHERE collection_id = $2
+        """
+        await self.execute_query(QUERY, [KGCreationStatus.PENDING, collection_id])
+
+
+    async def get_creation_estimate(self, collection_id: UUID) -> KGCreationEstimateResponse:
+
+        document_ids = await self.db_provider.documents_in_collection(collection_id)
+        
+        query = f"""
+            SELECT document_id, COUNT(*) as chunk_count
+            FROM {self._get_table_name("document_chunks")}
+            WHERE document_id = ANY($1)
+            GROUP BY document_id
+        """
+        
+        chunk_counts = await self.fetch_query(query, [document_ids])
+        
+        total_chunks = sum(doc['chunk_count'] for doc in chunk_counts) / 4 # 4 chunks per llm call
+        estimated_entities = (total_chunks) * 25  # 25 entities per 4 chunks
+        estimated_triples = estimated_entities * 25  # Assuming 25 triples per entity on average
+
+        estimated_llm_calls = total_chunks * 2 + estimated_entities
+
+        total_in_out_tokens = 5000 * estimated_llm_calls / 1000000 # in millions
+
+        total_time =  total_in_out_tokens * 1/60 # 1 minute per million tokens
+
+        return {
+            "estimated_entities": estimated_entities,
+            "estimated_triples": estimated_triples,
+            "total_chunks": total_chunks,
+            "document_count": len(chunk_counts),
+            "max_time_estimate (hours)": total_time,
+            "estimated_llm_calls": estimated_llm_calls,
+            "total_in_out_tokens (millions)": total_in_out_tokens,
+            "total_time_estimate (hours)": total_time,
+            "number_of_jobs_created": len(document_ids),
+        }
+
+    async def get_enrichment_estimate(self, collection_id: UUID) -> KGEnrichmentEstimateResponse:        
+        # number of entities and triples in the graph. Assume 1000 LLM calls per entity
+        
+        document_ids = await self.db_provider.documents_in_collection(collection_id)
+
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+        """
+        entity_count = (await self.fetch_query(QUERY, [document_ids]))[0]["count"]
+        estimated_llm_calls = entity_count * 1000
+        total_in_out_tokens = 5000 * estimated_llm_calls / 1000000 # in millions
+        total_time =  total_in_out_tokens * 1/60 # 1 minute per million tokens
+
+        return {
+            "estimated_entities": entity_count,
+            "estimated_triples": entity_count * 1000,
+            "estimated_llm_calls": estimated_llm_calls,
+            "total_in_out_tokens (millions)": total_in_out_tokens,
+            "total_time_estimate (hours)": total_time,
+        }
+
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.

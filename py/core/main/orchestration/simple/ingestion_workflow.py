@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from core.base import R2RException, increment_version
-from core.utils import generate_default_collection_id
+from core.utils import generate_default_user_collection_id
 
 from ...services import IngestionService
 
@@ -64,7 +64,7 @@ def simple_ingestion_factory(service: IngestionService):
             try:
                 collection_id = await service.providers.database.relational.assign_document_to_collection(
                     document_id=document_info.id,
-                    collection_id=generate_default_collection_id(
+                    collection_id=generate_default_user_collection_id(
                         document_info.user_id
                     ),
                 )

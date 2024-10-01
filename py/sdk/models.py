@@ -21,6 +21,7 @@ from shared.abstractions import (
     Token,
     VectorSearchResult,
     VectorSearchSettings,
+    KGRunType,
 )
 from shared.api.models import (
     KGCreationResponse,

@@ -168,8 +168,7 @@ Knowledge graph creation is done in two steps:
 
 
 ```bash
-# collection ID is required.
-# You always have the default collection of all documents. 
+# collection ID is optional. If you don't specify one, the default collection will be used.
 r2r create-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
 ```
 
@@ -232,6 +231,7 @@ Now we have a graph, but this graph is not searchable yet. We need to perform th
 The graph enrichment step adds node and relationship descriptions, performs hierarchical leiden clustering to create communities, and embeds the descriptions. These embeddings will be used later in the local search stage of the pipeline. If you are more interested in the algorithm, please refer to the blog post [here](https://www.sciphi.ai/blog/graphrag).
 
 ```bash
+# collection ID is optional. If you don't specify one, the default collection will be used.
 r2r enrich-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
 ```
 

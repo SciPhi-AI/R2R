@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from core.base import R2RException
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
-from core.utils import generate_collection_id, generate_default_collection_id
+from core.utils import generate_collection_id, generate_default_user_collection_id
 from .base import DatabaseMixin
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ class CollectionMixin(DatabaseMixin):
             collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
+            kg_enrichment_status TEXT DEFAULT 'PENDING',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -33,7 +34,7 @@ class CollectionMixin(DatabaseMixin):
         config = self.get_config()
 
         if user_id:
-            default_collection_uuid = generate_default_collection_id(
+            default_collection_uuid = generate_default_user_collection_id(
                 user_id
             )
         else:

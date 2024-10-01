@@ -1,11 +1,71 @@
+from enum import Enum
+
 from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
 
+class KGRunType(Enum):
+    """Type of KG run."""
+
+    ESTIMATE = "estimate"
+    RUN = "run"
+
+class KGEstimationResponse(R2RSerializable):
+    """Response for knowledge graph estimation."""
+
+    estimated_entities: int = Field(
+        description="The estimated number of entities in the graph.",
+    )
+
+    estimated_triples: int = Field(
+        description="The estimated number of triples in the graph.",
+    )
+
+    estimated_llm_calls: int = Field(
+        description="The estimated number of LLM calls.",
+    )
+
+    total_in_out_tokens: float = Field(
+        description="The estimated total number of input and output tokens.",
+    )
+
+    total_time_estimate: float = Field(
+        description="The estimated total time to run the graph creation process.",
+    )
+
+
+class KGEnrichmentEstimationResponse(R2RSerializable):
+    """Response for knowledge graph enrichment estimation."""
+
+    estimated_entities: int = Field(
+        description="The estimated number of entities in the graph.",
+    )   
+
+    estimated_triples: int = Field(
+        description="The estimated number of triples in the graph.",
+    )
+
+    estimated_llm_calls: int = Field(
+        description="The estimated number of LLM calls.",
+    )   
+
+    total_in_out_tokens: float = Field(
+        description="The estimated total number of input and output tokens.",
+    )
+
+    total_time_estimate: float = Field(
+        description="The estimated total time to run the graph enrichment process.",
+    )   
+
 
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
+
+    run_mode: str = Field(
+        default="estimate", # or run
+        description="Run an estimate for the full graph creation process.",
+    )
 
     kg_extraction_prompt: str = Field(
         default="graphrag_triplet_extraction_zero_shot",
@@ -50,6 +110,11 @@ class KGCreationSettings(R2RSerializable):
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
+
+    run_mode: str = Field(
+        default="estimate", # or run
+        description="Run an estimate for the full graph enrichment process.",
+    )
 
     skip_clustering: bool = Field(
         default=False,

@@ -2,6 +2,7 @@ import json
 from typing import Optional, Union
 
 from .models import (
+    KGRunType,
     KGCreationResponse,
     KGCreationSettings,
     KGEnrichmentResponse,
@@ -15,6 +16,7 @@ class KGMethods:
     async def create_graph(
         client,
         collection_id: str = "",
+        run_type: KGRunType = KGRunType.ESTIMATE,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
     ) -> KGCreationResponse:
         """
@@ -35,6 +37,7 @@ class KGMethods:
         data = {
             "collection_id": collection_id,
             "kg_creation_settings": kg_creation_settings,
+            "run_type": run_type.value,
         }
 
         return await client._make_request("POST", "create_graph", json=data)
@@ -43,6 +46,7 @@ class KGMethods:
     async def enrich_graph(
         client,
         collection_id: str,
+        run_type: KGRunType = KGRunType.ESTIMATE,
         kg_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
@@ -71,6 +75,7 @@ class KGMethods:
         data = {
             "collection_id": collection_id,
             "kg_enrichment_settings": kg_enrichment_settings,
+            "run_type": run_type.value,
         }
 
         return await client._make_request("POST", "enrich_graph", json=data)
