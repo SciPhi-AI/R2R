@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from core.base import R2RException
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
-from core.utils import generate_collection_id
+from core.utils import generate_collection_id, generate_default_collection_id
 from .base import DatabaseMixin
 
 logger = logging.getLogger(__name__)
@@ -32,11 +32,14 @@ class CollectionMixin(DatabaseMixin):
         """Create a default collection if it doesn't exist."""
         config = self.get_config()
 
-        default_collection_uuid = generate_collection_id(
-            f"{user_id}"
-            if user_id is not None
-            else config.default_collection_name
-        )
+        if user_id:
+            default_collection_uuid = generate_default_collection_id(
+                user_id
+            )
+        else:
+            default_collection_uuid = generate_collection_id(
+                config.default_collection_name
+            )
 
         if not await self.collection_exists(default_collection_uuid):
             logger.info("Initializing a new default collection...")

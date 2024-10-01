@@ -87,7 +87,6 @@ def generate_document_id(filename: str, user_id: UUID) -> UUID:
     """
     return _generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
 
-
 def generate_extraction_id(document_id: UUID, iteration: int, version: str) -> UUID:
     """
     Generates a unique extraction id from a given document id and iteration
