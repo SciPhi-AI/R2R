@@ -264,6 +264,7 @@ __all__ = [
     "OpenAIEmbeddingProvider",
     # KG
     "Neo4jKGProvider",
+    "MemgraphKGProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",

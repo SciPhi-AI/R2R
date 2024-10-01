@@ -184,6 +184,11 @@ def generate_report():
     "--exclude-neo4j", default=False, help="Exclude Neo4j from Docker setup"
 )
 @click.option(
+    "--exclude-memgraph",
+    default=False,
+    help="Exclude Memgraph from Docker setup",
+)
+@click.option(
     "--exclude-ollama", default=True, help="Exclude Ollama from Docker setup"
 )
 @click.option(
@@ -228,6 +233,7 @@ async def serve(
     port,
     docker,
     exclude_neo4j,
+    exclude_memgraph,
     exclude_ollama,
     exclude_postgres,
     exclude_hatchet,
@@ -312,6 +318,7 @@ async def serve(
             host,
             port,
             exclude_neo4j,
+            exclude_memgraph,
             exclude_ollama,
             exclude_postgres,
             exclude_hatchet,

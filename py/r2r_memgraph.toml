@@ -37,6 +37,15 @@ provider = "bcrypt"
 
 [database]
 provider = "postgres"
+  [database.extra_fields]
+    user = "postgres"
+    password = "postgres"
+    host = "localhost"
+    port = "5432"
+    db_name = "postgres"
+
+[file]
+provider = "postgres"
 
 [embedding]
 provider = "litellm"
@@ -47,11 +56,12 @@ add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
 
-[file]
-provider = "postgres"
-
 [kg]
-provider = "neo4j"
+provider = "memgraph"
+user="memgraph"
+password="memgraph"
+url="bolt://localhost:7687"
+database="memgraph"
 batch_size = 256
 
   [kg.kg_creation_settings]
@@ -66,12 +76,13 @@ batch_size = 256
     community_reports_prompt = "graphrag_community_reports_prompt"
     max_description_input_length = 65536
     generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
-
+    leiden_params = { max_levels = 10 } 
+  
   [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
     generation_config = { model = "gpt-4o-mini" }
+
 
 [logging]
 provider = "local"
@@ -83,7 +94,8 @@ provider = "hatchet"
 
 [parsing]
 provider = "unstructured_api"
-excluded_parsers = ["mp4"]
+# excluded_parsers = ["mp4"]
 
 [prompt]
 provider = "r2r"
+

@@ -15,7 +15,9 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']}"
+
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f{compose_files['memgraph']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']} "
+
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -112,6 +114,7 @@ def run_docker_serve(
     host: str,
     port: int,
     exclude_neo4j: bool,
+    exclude_memgraph: bool,
     exclude_ollama: bool,
     exclude_postgres: bool,
     exclude_hatchet: bool,
@@ -120,8 +123,9 @@ def run_docker_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
+
     check_docker_compose_version()
-    check_set_docker_env_vars(exclude_neo4j, exclude_ollama, exclude_postgres)
+    check_set_docker_env_vars(exclude_neo4j, exclude_memgraph, exclude_ollama, exclude_postgres)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -140,6 +144,7 @@ def run_docker_serve(
         host,
         port,
         exclude_neo4j,
+        exclude_memgraph,
         exclude_ollama,
         exclude_postgres,
         exclude_hatchet,
@@ -236,7 +241,9 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 
 
 def check_set_docker_env_vars(
-    exclude_neo4j=False, exclude_ollama=True, exclude_postgres=False
+
+    exclude_neo4j=False, exclude_memgraph=False, exclude_ollama=True, exclude_postgres=False
+
 ):
     env_vars = []
     if not exclude_neo4j:
@@ -247,6 +254,15 @@ def check_set_docker_env_vars(
             "NEO4J_DATABASE",
         ]
         env_vars.extend(neo4j_vars)
+
+    if not exclude_memgraph:
+        memgraph_vars = [
+            "MEMGRAPH_USER",
+            "MEMGRAPH_PASSWORD",
+            "MEMGRAPH_URL",
+            "MEMGRAPH_DATABASE",
+        ]
+        env_vars.extend(memgraph_vars)
 
     if not exclude_postgres:
         postgres_vars = [
@@ -303,6 +319,7 @@ def get_compose_files():
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),
         "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
+        "memgraph": os.path.join(package_dir, "compose.memgraph.yaml"),
         "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
         "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
         "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
@@ -338,6 +355,7 @@ def build_docker_command(
     host,
     port,
     exclude_neo4j,
+    exclude_memgraph,
     exclude_ollama,
     exclude_postgres,
     exclude_hatchet,
@@ -349,6 +367,8 @@ def build_docker_command(
     base_command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
         base_command += f" -f {compose_files['neo4j']}"
+    if not exclude_memgraph:
+        base_command += f" -f {compose_files['memgraph']}"
     if not exclude_ollama:
         base_command += f" -f {compose_files['ollama']}"
     if not exclude_postgres:

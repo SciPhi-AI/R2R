@@ -1,0 +1,34 @@
+networks:
+  r2r-network:
+    name: r2r-network
+
+services:
+  r2r:
+    depends_on:
+      memgraph:
+        condition: service_healthy
+
+  memgraph:
+    image: memgraph/memgraph-mage:1.19-memgraph-2.19
+    ports:
+      - "7688:7687" #
+    environment:
+      - MEMGRAPH_USER=${MEMGRAPH_USER:-memgraph}
+      - MEMGRAPH_PASSWORD=${MEMGRAPH_PASSWORD:-memgraph}
+    entrypoint: [ "/usr/lib/memgraph/memgraph" ]
+    command: [ "--log-level=TRACE", "--also-log-to-stderr=TRUE" ]
+
+    volumes:
+      - memgraph_data:/var/lib/memgraph
+      - memgraph_logs:/var/log/memgraph
+    networks:
+      - r2r-network
+    healthcheck:
+      test: [ "CMD-SHELL", "echo 'RETURN 0;' | mgconsole --username=$$MEMGRAPH_USER --password=$$MEMGRAPH_PASSWORD || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  memgraph_data:
+  memgraph_logs:
