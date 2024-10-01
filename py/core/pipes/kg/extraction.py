@@ -182,9 +182,7 @@ class KGTriplesExtractionPipe(
                                     str(extraction.id)
                                     for extraction in extractions
                                 ],
-                                attributes={
-                                    "extraction_text": combined_extraction
-                                },
+                                attributes={},
                             )
                         )
 

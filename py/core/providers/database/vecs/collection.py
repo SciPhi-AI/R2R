@@ -222,7 +222,9 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
-        self.table = _build_table(client.project_name, name, client.meta, dimension)
+        self.table = _build_table(
+            client.project_name, name, client.meta, dimension
+        )
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
 
@@ -1021,7 +1023,11 @@ class Collection:
             with sess.begin():
                 if self.index is not None:
                     if replace:
-                        sess.execute(text(f'drop index {self.client.project_name}."{self.index}";'))
+                        sess.execute(
+                            text(
+                                f'drop index {self.client.project_name}."{self.index}";'
+                            )
+                        )
                         self._index = None
                     else:
                         raise ArgError(
@@ -1078,7 +1084,9 @@ class Collection:
         return None
 
 
-def _build_table(project_name: str, name: str, meta: MetaData, dimension: int) -> Table:
+def _build_table(
+    project_name: str, name: str, meta: MetaData, dimension: int
+) -> Table:
     table = Table(
         name,
         meta,

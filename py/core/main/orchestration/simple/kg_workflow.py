@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import uuid
 import math
+import uuid
 
 from core import GenerationConfig, IngestionStatus, KGCreationSettings
 from core.base import R2RDocumentProcessingError
@@ -19,8 +19,8 @@ def simple_kg_factory(service: KgService):
         for key, value in input_data.items():
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
-                input_data[key]['generation_config'] = GenerationConfig(
-                    **input_data[key]['generation_config']
+                input_data[key]["generation_config"] = GenerationConfig(
+                    **input_data[key]["generation_config"]
                 )
             if key == "kg_enrichment_settings":
                 input_data[key] = json.loads(value)
@@ -38,7 +38,9 @@ def simple_kg_factory(service: KgService):
             **input_data["kg_creation_settings"],
         )
 
-        logger.info(f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}")
+        logger.info(
+            f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}"
+        )
 
         for cnt, document_id in enumerate(document_ids):
             await service.kg_extraction(
@@ -67,7 +69,8 @@ def simple_kg_factory(service: KgService):
             input_data_copy = input_data.copy()
             input_data_copy["offset"] = i * parallel_communities
             input_data_copy["limit"] = min(
-                parallel_communities, num_communities - i * parallel_communities
+                parallel_communities,
+                num_communities - i * parallel_communities,
             )
             # running i'th workflow out of total_workflows
             logger.info(
@@ -81,7 +84,9 @@ def simple_kg_factory(service: KgService):
 
     async def kg_community_summary(input_data):
 
-        logger.info(f"Running kg community summary for offset: {input_data['offset']}, limit: {input_data['limit']}")
+        logger.info(
+            f"Running kg community summary for offset: {input_data['offset']}, limit: {input_data['limit']}"
+        )
 
         await service.kg_community_summary(
             offset=input_data["offset"],

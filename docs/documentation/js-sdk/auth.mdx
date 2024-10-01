@@ -258,7 +258,8 @@ const updateResult = client.updateUser(undefined, "John Doe", "R2R enthusiast");
 Delete the user's account:
 
 ```javascript
-const delete_result = client.delete_user("password123")
+const user_id = register_response["results"]["id"] # input unique id here
+const delete_result = client.delete_user(user_id, "password123")
 ```
 
 <AccordionGroup>

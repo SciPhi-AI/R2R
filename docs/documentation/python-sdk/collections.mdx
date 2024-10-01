@@ -21,6 +21,7 @@ Create a new collection with a name and optional description:
 
 ```python
 create_collection_response = client.create_collection("Marketing Team", "Collection for marketing department")
+collection_id = create_collection_response["results"]["collection_id] # '123e4567-e89b-12d3-a456-426614174000'
 ```
 
 <AccordionGroup>
@@ -46,7 +47,7 @@ create_collection_response = client.create_collection("Marketing Team", "Collect
 Retrieve details about a specific collection:
 
 ```python
-collection_details = client.get_collection('123e4567-e89b-12d3-a456-426614174000')
+collection_details = client.get_collection(collection_id)
 ```
 
 <AccordionGroup>
@@ -72,9 +73,11 @@ collection_details = client.get_collection('123e4567-e89b-12d3-a456-426614174000
 Update a collection's name or description:
 
 ```python
-update_result = client.update_collection('123e4567-e89b-12d3-a456-426614174000',
-                                    name="Updated Marketing Team",
-                                    description="New description for marketing team")
+update_result = client.update_collection(
+  collection_id,
+  name="Updated Marketing Team",
+  description="New description for marketing team"
+)
 ```
 
 <AccordionGroup>
@@ -131,7 +134,9 @@ collections_list = client.list_collections()
 Add a user to a collection:
 
 ```python
-add_user_result = client.add_user_to_collection('456e789f-g01h-34i5-j678-901234567890', '123e4567-e89b-12d3-a456-426614174000')
+
+user_id = '456e789f-g01h-34i5-j678-901234567890'  # This should be a valid user ID
+add_user_result = client.add_user_to_collection(user_id, collection_id)
 ```
 
 <AccordionGroup>
@@ -153,7 +158,7 @@ add_user_result = client.add_user_to_collection('456e789f-g01h-34i5-j678-9012345
 Remove a user from a collection:
 
 ```python
-remove_user_result = client.remove_user_from_collection('456e789f-g01h-34i5-j678-901234567890', '123e4567-e89b-12d3-a456-426614174000')
+remove_user_result = client.remove_user_from_collection(user_id, collection_id)
 ```
 
 <AccordionGroup>
@@ -175,7 +180,7 @@ remove_user_result = client.remove_user_from_collection('456e789f-g01h-34i5-j678
 Get a list of all users in a specific collection:
 
 ```python
-users_in_collection = client.get_users_in_collection('123e4567-e89b-12d3-a456-426614174000')
+users_in_collection = client.get_users_in_collection(collection_id)
 ```
 
 <AccordionGroup>
@@ -203,7 +208,7 @@ users_in_collection = client.get_users_in_collection('123e4567-e89b-12d3-a456-42
 Get all collections that a user is a member of:
 
 ```python
-user_collections = client.user_collections('456e789f-g01h-34i5-j678-901234567890')
+user_collections = client.user_collections(user_id)
 ```
 
 <AccordionGroup>
@@ -232,7 +237,8 @@ user_collections = client.user_collections('456e789f-g01h-34i5-j678-901234567890
 Assign a document to a collection:
 
 ```python
-assign_doc_result = client.assign_document_to_collection('789g012j-k34l-56m7-n890-123456789012', '123e4567-e89b-12d3-a456-426614174000')
+document_id = '789g012j-k34l-56m7-n890-123456789012' # must be a valid document id
+assign_doc_result = client.assign_document_to_collection(document_id, collection_id)
 ```
 
 <AccordionGroup>
@@ -254,7 +260,7 @@ assign_doc_result = client.assign_document_to_collection('789g012j-k34l-56m7-n89
 Remove a document from a collection:
 
 ```python
-remove_doc_result = client.remove_document_from_collection('789g012j-k34l-56m7-n890-123456789012', '123e4567-e89b-12d3-a456-426614174000')
+remove_doc_result = client.remove_document_from_collection(document_id, collection_id)
 ```
 
 <AccordionGroup>
@@ -276,7 +282,7 @@ remove_doc_result = client.remove_document_from_collection('789g012j-k34l-56m7-n
 Get a list of all documents in a specific collection:
 
 ```python
-docs_in_collection = client.documents_in_collection('123e4567-e89b-12d3-a456-426614174000')
+docs_in_collection = client.documents_in_collection(collection_id)
 ```
 
 <AccordionGroup>
@@ -303,7 +309,7 @@ docs_in_collection = client.documents_in_collection('123e4567-e89b-12d3-a456-426
 Get all collections that a document is assigned to:
 
 ```python
-document_collections = client.document_collections('789g012j-k34l-56m7-n890-123456789012')
+document_collections = client.document_collections(document_id)
 ```
 
 <AccordionGroup>
@@ -363,7 +369,7 @@ collections_overview = client.collections_overview()
 Delete a collection:
 
 ```python
-delete_result = client.delete_collection('123e4567-e89b-12d3-a456-426614174000')
+delete_result = client.delete_collection(collection_id)
 ```
 
 <AccordionGroup>
@@ -372,7 +378,7 @@ delete_result = client.delete_collection('123e4567-e89b-12d3-a456-426614174000')
       ```python
       {
         'results': {
-          'message': 'Group successfully deleted'
+          'message': 'Collection successfully deleted'
         }
       }
       ```
@@ -389,10 +395,10 @@ Many collection-related methods support pagination and filtering:
 paginated_collection = client.list_collections(offset=10, limit=20)
 
 # Get users in a collection with pagination
-paginated_users = client.get_users_in_collection('123e4567-e89b-12d3-a456-426614174000', offset=5, limit=10)
+paginated_users = client.get_users_in_collection(collection_id, offset=5, limit=10)
 
 # Get documents in a collection with pagination
-paginated_docs = client.documents_in_collection('123e4567-e89b-12d3-a456-426614174000', offset=0, limit=50)
+paginated_docs = client.documents_in_collection(collection_id, offset=0, limit=50)
 
 # Get collections overview with specific collection IDs
 specific_collections_overview = client.collections_overview(collection_ids=['id1', 'id2', 'id3'])

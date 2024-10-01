@@ -7,8 +7,8 @@ from hatchet_sdk import Context
 from core.base import (
     IngestionStatus,
     OrchestrationProvider,
-    increment_version,
     generate_id_from_label,
+    increment_version,
 )
 from core.base.abstractions import DocumentInfo, R2RException
 

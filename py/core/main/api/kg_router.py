@@ -63,8 +63,10 @@ class KGRouter(BaseRouter):
             collection_id: str = Body(
                 description="Collection ID to create graph for.",
             ),
-            kg_creation_settings: Optional[dict] = Body(
-                default='{}',
+            kg_creation_settings: Optional[
+                Union[dict, KGCreationSettings]
+            ] = Body(
+                default="{}",
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -107,9 +109,9 @@ class KGRouter(BaseRouter):
                 description="Collection name to enrich graph for.",
             ),
             kg_enrichment_settings: Optional[
-                Json[KGEnrichmentSettings]
+                Union[dict, KGEnrichmentSettings]
             ] = Body(
-                default=None,
+                default="{}",
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -122,14 +124,17 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            if kg_enrichment_settings is None:
-                kg_enrichment_settings = (
-                    self.service.providers.kg.config.kg_enrichment_settings
-                )
+            server_kg_enrichment_settings = (
+                self.service.providers.kg.config.kg_enrichment_settings
+            )
+
+            for key, value in kg_enrichment_settings.items():
+                if value is not None:
+                    setattr(server_kg_enrichment_settings, key, value)
 
             workflow_input = {
                 "collection_id": collection_id,
-                "kg_enrichment_settings": kg_enrichment_settings.json(),
+                "kg_enrichment_settings": server_kg_enrichment_settings.json(),
                 "user": auth_user.json(),
             }
 
