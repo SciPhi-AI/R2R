@@ -87,14 +87,30 @@ def logs(ctx, run_type_filter, offset, limit):
 def docker_down(volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
     result = bring_down_docker_compose(project_name, volumes, remove_orphans)
+
     remove_r2r_network()
 
     if result != 0:
         click.echo(
-            "An error occurred while bringing down the Docker Compose setup. Attempting to remove the network..."
+            f"An error occurred while bringing down the {project_name} Docker Compose setup. Attempting to remove the network..."
         )
     else:
-        click.echo("Docker Compose setup has been successfully brought down.")
+        click.echo(
+            f"{project_name} Docker Compose setup has been successfully brought down."
+        )
+
+    result = bring_down_docker_compose("r2r_full", volumes, remove_orphans)
+
+    # TODO - Clean up the way we do this r2r-down
+    click.echo(f"Also attempting to bring down the full deployment")
+    if result != 0:
+        click.echo(
+            f"An error occurred while bringing down the r2r_full Docker Compose setup. Attempting to remove the network..."
+        )
+    else:
+        click.echo(
+            f"r2r_full Docker Compose setup has been successfully brought down."
+        )
 
 
 @cli.command()
@@ -185,8 +201,9 @@ def generate_report():
     is_flag=True,
     help="Run the full R2R compose? This includes Hatchet and Unstructured.",
 )
-@click.option("--project-name", default="r2r", help="Project name for Docker")
-@click.option("--image", help="Docker image to use")
+@click.option(
+    "--project-name", default="r2r", help="Project name for Docker deployment"
+)
 @click.option(
     "--config-name", default=None, help="Name of the R2R configuration to use"
 )
@@ -201,12 +218,7 @@ def generate_report():
     default=False,
     help="Run in debug mode. Only for development.",
 )
-@click.option(
-    "--dev",
-    is_flag=True,
-    default=False,
-    help="Run in development mode",
-)
+@click.option("--image", help="Docker image to use")
 @click.option(
     "--image-env",
     default="prod",
@@ -218,15 +230,35 @@ async def serve(
     docker,
     full,
     project_name,
-    image,
     config_name,
     config_path,
     build,
-    dev,
+    image,
     image_env,
 ):
     """Start the R2R server."""
     load_dotenv()
+    click.echo("Spinning up an R2R deployment...")
+
+    click.echo(f"Running on {host}:{port}, with docker={docker}")
+
+    if full:
+        click.echo(
+            "Running the full R2R compose which includes `Hatchet` and `Unstructured.io`."
+        )
+        if project_name == "r2r":  # overwrite project name if full compose
+            project_name = "r2r_full"
+    else:
+        click.echo("Running the lightweight R2R compose.")
+
+    if config_path and config_name:
+        raise click.UsageError(
+            "Both `config-path` and `config-name` were provided. Please provide only one."
+        )
+    if build:
+        click.echo(
+            "`build` flag detected. Building Docker image from local repository..."
+        )
     if image and image_env:
         click.echo(
             "WARNING: Both `image` and `image_env` were provided. Using `image`."
@@ -277,7 +309,7 @@ async def serve(
                 "-t",
                 image,
                 "-f",
-                f"Dockerfile{'.dev' if dev else ''}",
+                f"Dockerfile",
                 ".",
             ],
             check=True,

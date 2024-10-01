@@ -26,7 +26,7 @@ def bring_down_docker_compose(project_name, volumes, remove_orphans):
 
     docker_command += " down"
 
-    click.echo("Bringing down Docker Compose setup...")
+    click.echo(f"Bringing down {project_name} Docker Compose setup...")
     return os.system(docker_command)
 
 
@@ -152,9 +152,11 @@ def run_docker_serve(
 
     click.secho("R2R now runs on port 7272 by default!", fg="yellow")
     click.echo("Pulling Docker images...")
+    click.echo(f"Calling `{pull_command}`")
     os.system(pull_command)
 
     click.echo("Starting Docker Compose setup...")
+    click.echo(f"Calling `{up_command}`")
     os.system(up_command)
 
 
@@ -239,7 +241,7 @@ def check_set_docker_env_vars():
 
     env_vars = {
         "POSTGRES_PROJECT_NAME": "r2r",
-        "POSTGRES_HOST": "localhost",
+        "POSTGRES_HOST": "postgres",
         "POSTGRES_PORT": "5432",
         "POSTGRES_DBNAME": "postgres",
         "POSTGRES_USER": "postgres",
@@ -351,8 +353,6 @@ def build_docker_command(
 
     pull_command = f"{base_command} pull"
     up_command = f"{base_command} up -d"
-
-    print("base_command = ", base_command)
 
     return pull_command, up_command
 

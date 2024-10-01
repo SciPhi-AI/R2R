@@ -9,13 +9,6 @@ from cli.utils.timer import timer
 
 
 @cli.command()
-# TODO - add this once we fully implement project names
-# @click.option(
-#     "--project-name",
-#     required=True,
-#     default=os.environ["POSTGRES_PROJECT_NAME"],
-#     help="Project name to create graph for.",
-# )
 @click.option(
     "--collection-id",
     required=True,
