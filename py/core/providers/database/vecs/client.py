@@ -101,7 +101,7 @@ class Client:
     def _create_schema(self, sess):
         try:
             sess.execute(
-                text(f"CREATE SCHEMA IF NOT EXISTS {self.project_name};")
+                text(f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";')
             )
         except Exception as e:
             logger.warning(f"Failed to create schema: {str(e)}")
