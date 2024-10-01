@@ -374,6 +374,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
             statement_cache_size=0,  # Disable statement caching
         )
         async with self.pool.acquire() as conn:
+
             await conn.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_table} (

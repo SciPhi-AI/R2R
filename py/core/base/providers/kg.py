@@ -75,24 +75,26 @@ class KGProvider(ABC):
     #     pass
 
     @abstractmethod
-    def add_entities(self, entities: list[Entity], *args, **kwargs) -> None:
+    async def add_entities(
+        self, entities: list[Entity], *args, **kwargs
+    ) -> None:
         """Abstract method to add entities."""
         pass
 
     @abstractmethod
-    def add_triples(self, triples: list[Triple]) -> None:
+    async def add_triples(self, triples: list[Triple]) -> None:
         """Abstract method to add triples."""
         pass
 
     @abstractmethod
-    def add_kg_extractions(
+    async def add_kg_extractions(
         self, kg_extractions: list[KGExtraction]
     ) -> Tuple[int, int]:
         """Abstract method to add KG extractions."""
         pass
 
     @abstractmethod
-    def get_entities(
+    async def get_entities(
         self,
         entity_ids: list[str] | None = None,
         with_description: bool = False,
@@ -101,7 +103,9 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
+    async def get_triples(
+        self, triple_ids: list[str] | None = None
+    ) -> list[Triple]:
         """Abstract method to get triples."""
         pass
 
@@ -113,17 +117,17 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def delete_triples(self, triple_ids: list[int]) -> None:
+    async def delete_triples(self, triple_ids: list[int]) -> None:
         """Abstract method to delete triples."""
         pass
 
     @abstractmethod
-    def get_schema(self, refresh: bool = False) -> str:
+    async def get_schema(self, refresh: bool = False) -> str:
         """Abstract method to get the schema of the graph store."""
         pass
 
     @abstractmethod
-    def structured_query(
+    async def structured_query(
         self, query: str, param_map: Optional[dict[str, Any]] = None
     ) -> Any:
         """Abstract method to query the graph store with statement and parameters."""
@@ -138,7 +142,7 @@ class KGProvider(ABC):
 
     # TODO - Type this method.
     @abstractmethod
-    def update_extraction_prompt(
+    async def update_extraction_prompt(
         self,
         prompt_provider: Any,
         entity_types: list[Any],
@@ -149,7 +153,7 @@ class KGProvider(ABC):
 
     # TODO - Type this method.
     @abstractmethod
-    def update_kg_search_prompt(
+    async def update_kg_search_prompt(
         self,
         prompt_provider: Any,
         entity_types: list[Any],
@@ -159,7 +163,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def create_vector_index(
+    async def create_vector_index(
         self, node_type: str, node_property: str, dimension: int
     ) -> None:
         """Abstract method to create a vector index."""

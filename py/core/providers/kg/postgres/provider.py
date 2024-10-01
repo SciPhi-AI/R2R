@@ -498,8 +498,6 @@ class PostgresKGProvider(KGProvider):
 
         await self._add_objects([community], "community_report")
 
-        # await self.execute_query(
-
     async def perform_graph_clustering(
         self, collection_id: UUID, leiden_params: dict
     ) -> Tuple[int, int, set[tuple[int, Any]]]:

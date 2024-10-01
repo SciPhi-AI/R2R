@@ -11,9 +11,6 @@ from .base import DatabaseMixin, QueryBuilder
 
 class UserMixin(DatabaseMixin):
 
-    def _get_table_name(self, base_name: str) -> str:
-        return f"{self.project_name}.{base_name}"
-
     async def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('users')} (

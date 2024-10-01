@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import (
@@ -57,6 +57,7 @@ class KgService(Service):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
+        hatchet_logger: Optional = None,
         **kwargs,
     ):
         try:
@@ -78,6 +79,7 @@ class KgService(Service):
                         "max_knowledge_triples": max_knowledge_triples,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
+                        "hatchet_logger": hatchet_logger,
                     }
                 ),
                 state=None,
@@ -144,18 +146,11 @@ class KgService(Service):
 
         # process 50 entities at a time
         num_batches = math.ceil(entity_count / 50)
-        workflows = []
-
+        all_results = []
         for i in range(num_batches):
             logger.info(
                 f"Running kg_node_description for batch {i+1}/{num_batches} for document {document_id}"
             )
-            # await self.kg_service.kg_node_description(
-            #     offset=i * 50,
-            #     limit=50,
-            #     document_id=document_id,
-            #     max_description_input_length=max_description_input_length,
-            # )
 
             node_extractions = await self.pipes.kg_node_description_pipe.run(
                 input=self.pipes.kg_node_description_pipe.Input(
@@ -169,7 +164,10 @@ class KgService(Service):
                 state=None,
                 run_manager=self.run_manager,
             )
-            return await _collect_results(node_extractions)
+
+            all_results.append(await _collect_results(node_extractions))
+
+        return all_results
 
     @telemetry_event("kg_clustering")
     async def kg_clustering(

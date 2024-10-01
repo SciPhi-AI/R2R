@@ -244,7 +244,7 @@ class DocumentMixin(DatabaseMixin):
         status: list[str],
         table_name: str,
         status_type: str,
-        collection_id: UUID = None,
+        collection_id: Optional[UUID] = None,
     ):
         """
         Get the IDs from a given table.
