@@ -480,7 +480,27 @@ class PostgresKGProvider(KGProvider):
 
         community.embedding = str(community.embedding)
 
-        await self._add_objects([community], "community_report")
+        non_null_attrs = {
+            k: v for k, v in community.__dict__.items() if v is not None
+        }
+        columns = ", ".join(non_null_attrs.keys())
+        placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
+
+        conflict_columns = ", ".join(
+            [
+                f"{k} = EXCLUDED.{k}"
+                for k in non_null_attrs.keys()
+            ]
+        )
+
+        QUERY = f"""
+            INSERT INTO {self._get_table_name("community_report")} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT (community_number, level, collection_id) DO UPDATE SET
+                {conflict_columns}
+            """
+        
+        await self.execute_many(QUERY, [tuple(non_null_attrs.values())])
 
     async def perform_graph_clustering(
         self,
