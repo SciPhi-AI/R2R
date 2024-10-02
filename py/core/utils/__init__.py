@@ -7,14 +7,16 @@ from shared.utils.base_utils import (
     generate_run_id,
     generate_document_id,
     generate_extraction_id,
-    generate_message_id,
-    generate_collection_id,
+    generate_default_user_collection_id,
+    generate_collection_id_from_name,
     generate_user_id,
+    generate_message_id,
     increment_version,
     run_pipeline,
     to_async_generator,
     generate_default_user_collection_id,
 )
+
 from shared.utils.splitter.text import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
@@ -29,7 +31,7 @@ __all__ = [
     "generate_document_id",
     "generate_extraction_id",
     "generate_message_id",
-    "generate_collection_id",
+    "generate_collection_id_from_name",
     "generate_user_id",
     "increment_version",
     "decrement_version",
