@@ -4,6 +4,7 @@ from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import KGCreationStatus, RunLoggingSingleton, RunManager
+from core.base.abstractions import KGCreationSettings, KGEnrichmentSettings
 from core.base.abstractions import GenerationConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -236,14 +237,20 @@ class KgService(Service):
     async def get_creation_estimate(
         self,
         collection_id: UUID,
+        kg_creation_settings: KGCreationSettings,
         **kwargs,
     ):
-        return await self.providers.kg.get_creation_estimate(collection_id)
+        return await self.providers.kg.get_creation_estimate(
+            collection_id, kg_creation_settings
+        )
 
     @telemetry_event("get_enrichment_estimate")
     async def get_enrichment_estimate(
         self,
         collection_id: UUID,
+        kg_enrichment_settings: KGEnrichmentSettings,
         **kwargs,
     ):
-        return await self.providers.kg.get_enrichment_estimate(collection_id)
+        return await self.providers.kg.get_enrichment_estimate(
+            collection_id, kg_enrichment_settings
+        )

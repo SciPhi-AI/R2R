@@ -21,7 +21,11 @@ from shared.abstractions import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
     KGEnrichmentSettings,
+    KGCreationSettings,
 )
+
+from shared.utils import llm_cost_per_million_tokens
+
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +144,9 @@ class PostgresKGProvider(KGProvider):
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
+            collection_id UUID NOT NULL,
             attributes JSONB NOT NULL,
-            UNIQUE (document_ids, subject, predicate, object)
+            UNIQUE (document_ids, subject, predicate, object, collection_id)
         );"""
 
         await self.execute_query(query)
@@ -151,9 +156,10 @@ class PostgresKGProvider(KGProvider):
             CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
+            collection_id UUID NOT NULL,
             description TEXT NOT NULL,
             description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
-            UNIQUE (name)
+            UNIQUE (name, collection_id)
             );
         """
 
@@ -166,8 +172,9 @@ class PostgresKGProvider(KGProvider):
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
             object TEXT NOT NULL,
+            collection_id UUID NOT NULL,
             description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
-            UNIQUE (subject, predicate, object)
+            UNIQUE (subject, predicate, object, collection_id)
             );
         """
 
@@ -702,98 +709,134 @@ class PostgresKGProvider(KGProvider):
             QUERY, [KGCreationStatus.PENDING, collection_id]
         )
 
+
+    def _get_str_estimation_output(self, x: tuple[Any, Any]) -> str:
+        if isinstance(x[0], int) and isinstance(x[1], int):
+            return " - ".join(map(str, x))
+        else:
+            return " - ".join(f"{round(a, 2)}" for a in x)
+
     async def get_creation_estimate(
-        self, collection_id: UUID
+        self, collection_id: UUID, kg_creation_settings: KGCreationSettings
     ) -> KGCreationEstimationResponse:
 
-        # document_ids = await self.db_provider.documents_in_collection(
-        #     collection_id
-        # )
+        # todo: harmonize the document_id and id fields: postgres table contains document_id, but other places use id.
+        document_ids = [
+            doc.id
+            for doc in (
+                await self.db_provider.documents_in_collection(collection_id)
+            )["results"]
+        ]
 
-        # schema_name = self._get_table_name("document_chunks").split(".")[0]
+        # TODO: Vecs schema naming got messed up somewhere.
+        schema_name = self._get_table_name("document_chunks").split(".")[0]
 
-        # query = f"""
-        #     SELECT document_id, COUNT(*) as chunk_count
-        #     FROM {schema_name}.{schema_name}
-        #     WHERE document_id = ANY($1)
-        #     GROUP BY document_id
-        # """
+        query = f"""
+            SELECT document_id, COUNT(*) as chunk_count
+            FROM {schema_name}.{schema_name}
+            WHERE document_id = ANY($1)
+            GROUP BY document_id
+        """
 
-        # chunk_counts = await self.fetch_query(query, [document_ids])
+        chunk_counts = await self.fetch_query(query, [document_ids])
 
-        # total_chunks = (
-        #     sum(doc["chunk_count"] for doc in chunk_counts) / 4
-        # )  # 4 chunks per llm call
-        # estimated_entities = (total_chunks) * 25  # 25 entities per 4 chunks
-        # estimated_triples = (
-        #     estimated_entities * 25
-        # )  # Assuming 25 triples per entity on average
+        total_chunks = (
+            sum(doc["chunk_count"] for doc in chunk_counts)
+            // kg_creation_settings.extraction_merge_count
+        )  # 4 chunks per llm
+        estimated_entities = (
+            (total_chunks * 25, total_chunks * 50)
+        )  # 25 entities per 4 chunks
+        estimated_triples = (
+            int(estimated_entities[0] * 1.25),
+            int(estimated_entities[1] * 1.5),
+        )  # Assuming 1.25 triples per entity on average
 
-        # estimated_llm_calls = total_chunks * 2 + estimated_entities
+        estimated_llm_calls = (
+            total_chunks * 2 + estimated_entities[0],
+            total_chunks * 2 + estimated_entities[1],
+        )
 
-        # total_in_out_tokens = (
-        #     5000 * estimated_llm_calls / 1000000
-        # )  # in millions
+        total_in_out_tokens = (
+            5000 * estimated_llm_calls[0] // 1000000,
+            5000 * estimated_llm_calls[1] // 1000000,
+        )  # in millions
 
-        # total_time = (
-        #     total_in_out_tokens * 1 / 60
-        # )  # 1 minute per million tokens
+        estimated_cost = (
+            total_in_out_tokens[0] * llm_cost_per_million_tokens(kg_creation_settings.generation_config.model),
+            total_in_out_tokens[1] * llm_cost_per_million_tokens(kg_creation_settings.generation_config.model),
+        )
 
-        # return KGCreationEstimationResponse(
-        #     estimated_entities=estimated_entities,
-        #     estimated_triples=estimated_triples,
-        #     total_chunks=total_chunks,
-        #     document_count=len(chunk_counts),
-        #     max_time_estimate=total_time,
-        #     estimated_llm_calls=estimated_llm_calls,
-        #     total_in_out_tokens=total_in_out_tokens,
-        #     total_time_estimate=total_time,
-        #     number_of_jobs_created=len(document_ids),
-        # )
+        total_time_in_minutes = (
+            total_in_out_tokens[0] * 1 / 60,
+            total_in_out_tokens[1] * 1 / 60,
+        )  # 1 minute per million tokens
+
 
         return KGCreationEstimationResponse(
-            estimated_entities=0,
-            estimated_triples=0,
-            total_chunks=0,
-            document_count=0,
-            max_time_estimate=0,
-            estimated_llm_calls=0,
-            total_in_out_tokens=0,
-            number_of_jobs_created=0,
+            message="These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode=\"run\"` in the client.",
+            document_count=len(document_ids),
+            number_of_jobs_created=len(document_ids) + 1,
+            total_chunks=total_chunks,
+            estimated_entities=self._get_str_estimation_output(estimated_entities),
+            estimated_triples=self._get_str_estimation_output(estimated_triples),
+            estimated_llm_calls=self._get_str_estimation_output(estimated_llm_calls),
+            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(total_in_out_tokens),
+            estimated_cost_in_usd=self._get_str_estimation_output(estimated_cost),
+            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + self._get_str_estimation_output(total_time_in_minutes),
         )
 
     async def get_enrichment_estimate(
-        self, collection_id: UUID
+        self, collection_id: UUID,
+        kg_enrichment_settings: KGEnrichmentSettings
     ) -> KGEnrichmentEstimationResponse:
-        # number of entities and triples in the graph. Assume 1000 LLM calls per entity
 
         document_ids = await self.db_provider.documents_in_collection(
             collection_id
         )
 
-        # QUERY = f"""
-        #     SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
-        # """
-        # entity_count = (await self.fetch_query(QUERY, [document_ids]))[0][
-        #     "count"
-        # ]
-        # estimated_llm_calls = entity_count * 1000
-        # total_in_out_tokens = (
-        #     5000 * estimated_llm_calls / 1000000
-        # )  # in millions
-        # total_time = (
-        #     total_in_out_tokens * 1 / 60
-        # )  # 1 minute per million tokens
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+        """
+        entity_count = (await self.fetch_query(QUERY, [document_ids]))[0][
+            "count"
+        ]
 
-        # return KGEnrichmentEstimationResponse(
-        #     estimated_entities=entity_count,
-        #     estimated_triples=entity_count * 1000,
-        #     estimated_llm_calls=estimated_llm_calls,
-        #     total_in_out_tokens=total_in_out_tokens,
-        #     total_time_estimate=total_time,
-        # )
+        if not entity_count:
+            raise ValueError("No entities found in the graph. Please run `create-graph` first.")
 
-        return KGEnrichmentEstimationResponse()
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
+        """
+        triple_count = (await self.fetch_query(QUERY, [document_ids]))[0][
+            "count"
+        ]
+
+        estimated_llm_calls = (entity_count / 10, entity_count / 5)
+        estimated_total_in_out_tokens = (
+            2000 * estimated_llm_calls[0] // 1000000,
+            2000 * estimated_llm_calls[1] // 1000000,
+        )
+        cost_per_million_tokens = llm_cost_per_million_tokens(kg_enrichment_settings.generation_config.model)
+        estimated_cost = (
+            estimated_total_in_out_tokens[0] * cost_per_million_tokens,
+            estimated_total_in_out_tokens[1] * cost_per_million_tokens,
+        )
+        
+        estimated_total_time = (
+            estimated_total_in_out_tokens[0] * 1 / 60,
+            estimated_total_in_out_tokens[1] * 1 / 60,
+        )
+
+        return KGEnrichmentEstimationResponse(
+            message="These are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_mode=\"run\"` in the client.",
+            total_entities=entity_count,
+            total_triples=triple_count,
+            estimated_llm_calls=self._get_str_estimation_output(estimated_llm_calls),
+            estimated_total_in_out_tokens=self._get_str_estimation_output(estimated_total_in_out_tokens),
+            estimated_cost_in_usd=self._get_str_estimation_output(estimated_cost),
+            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + self._get_str_estimation_output(estimated_total_time),
+        )
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.

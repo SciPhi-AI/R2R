@@ -95,7 +95,9 @@ class KGRouter(BaseRouter):
                         setattr(server_kg_creation_settings, key, value)
 
             if run_type is KGRunType.ESTIMATE:
-                return await self.service.get_creation_estimate(collection_id)
+                return await self.service.get_creation_estimate(
+                    collection_id, server_kg_creation_settings
+                )
 
             workflow_input = {
                 "collection_id": collection_id,
@@ -142,7 +144,7 @@ class KGRouter(BaseRouter):
                 collection_id = generate_default_user_collection_id(auth_user.id)
 
             if run_type is KGRunType.ESTIMATE:
-                return await self.service.get_enrichment_estimate(collection_id)
+                return await self.service.get_enrichment_estimate(collection_id, server_kg_enrichment_settings)
 
             if kg_enrichment_settings:
                 for key, value in kg_enrichment_settings.items():
