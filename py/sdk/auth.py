@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, Union
+from uuid import UUID
 
 from .models import Token, UserResponse
 
@@ -78,7 +79,9 @@ class AuthMethods:
     @staticmethod
     async def update_user(
         client,
+        user_id: Union[str, UUID],
         email: Optional[str] = None,
+        is_superuser: Optional[bool] = None,
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
@@ -87,7 +90,9 @@ class AuthMethods:
         Updates the profile information for the currently authenticated user.
 
         Args:
+            user_id (Union[str, UUID]): The ID of the user to update.
             email (str, optional): The updated email for the user.
+            is_superuser (bool, optional): The updated superuser status for the user.
             name (str, optional): The updated name for the user.
             bio (str, optional): The updated bio for the user.
             profile_picture (str, optional): The updated profile picture URL for the user.
@@ -96,7 +101,9 @@ class AuthMethods:
             UserResponse: The response from the server.
         """
         data = {
+            "user_id": user_id,
             "email": email,
+            "is_superuser": is_superuser,
             "name": name,
             "bio": bio,
             "profile_picture": profile_picture,
