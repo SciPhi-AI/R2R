@@ -227,7 +227,7 @@ queries = [
 
 for _ in range(1000):
     query = random.choice(queries)
-    app.rag(query, GenerationConfig(model="gpt-4o-mini"))
+    app.rag(query, GenerationConfig(model="openai/gpt-4o-mini"))
 
 print("Preloading complete. You can now run analytics on this data.")
 ```

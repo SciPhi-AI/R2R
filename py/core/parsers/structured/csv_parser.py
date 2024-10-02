@@ -39,7 +39,6 @@ class CSVParserAdvanced(AsyncParser[DataType]):
     def get_delimiter(
         self, file_path: Optional[str] = None, file: Optional[IO[bytes]] = None
     ):
-
         sniffer = self.csv.Sniffer()
         num_bytes = 65536
 

@@ -33,7 +33,7 @@ class LoggingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["local", "postgres", "redis"]
+        return ["local", "postgres"]
 
 
 class RunLoggingProvider(Provider):
@@ -88,6 +88,10 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
+        # TODO - Should we re-consider this naming convention?
+        # e.g. it is confusing to have `POSTGRES_PROJECT_NAME` refer
+        # to a global project name that is used in non-Postgres contexts
+        self.project_name = os.getenv("POSTGRES_PROJECT_NAME", "default")
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
@@ -107,9 +111,10 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
     async def _init(self):
         self.conn = await self.aiosqlite.connect(self.logging_path)
+
         await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.log_table} (
+            CREATE TABLE IF NOT EXISTS {self.project_name}_{self.log_table} (
                 timestamp DATETIME,
                 run_id TEXT,
                 key TEXT,
@@ -119,7 +124,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         )
         await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.log_info_table} (
+            CREATE TABLE IF NOT EXISTS {self.project_name}_{self.log_info_table} (
                 timestamp DATETIME,
                 run_id TEXT UNIQUE,
                 run_type TEXT,
@@ -155,7 +160,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
         await self.conn.execute(
             f"""
-            INSERT INTO {self.log_table} (timestamp, run_id, key, value)
+            INSERT INTO {self.project_name}_{self.log_table} (timestamp, run_id, key, value)
             VALUES (datetime('now'), ?, ?, ?)
             """,
             (str(run_id), key, value),
@@ -175,7 +180,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
         await self.conn.execute(
             f"""
-            INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id)
+            INSERT INTO {self.project_name}_{self.log_info_table} (timestamp, run_id, run_type, user_id)
             VALUES (datetime('now'), ?, ?, ?)
             ON CONFLICT(run_id) DO UPDATE SET
             timestamp = datetime('now'),
@@ -200,7 +205,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
         cursor = await self.conn.cursor()
         query = "SELECT run_id, run_type, timestamp, user_id"
-        query += f" FROM {self.log_info_table}"
+        query += f" FROM {self.project_name}_{self.log_info_table}"
         conditions = []
         params = []
         if run_type_filter:
@@ -241,7 +246,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         placeholders = ",".join(["?" for _ in run_ids])
         query = f"""
         SELECT run_id, key, value, timestamp
-        FROM {self.log_table}
+        FROM {self.project_name}_{self.log_table}
         WHERE run_id IN ({placeholders})
         ORDER BY timestamp DESC
         """
@@ -276,7 +281,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         cursor = await self.conn.cursor()
 
         await cursor.execute(
-            f"SELECT value FROM {self.log_table} WHERE run_id = ? AND key = 'completion_record'",
+            f"SELECT value FROM {self.project_name}_{self.log_table} WHERE run_id = ? AND key = 'completion_record'",
             (str(run_id),),
         )
         row = await cursor.fetchone()
@@ -302,7 +307,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                     ]
 
                 await cursor.execute(
-                    f"UPDATE {self.log_table} SET value = ? WHERE run_id = ? AND key = 'completion_record'",
+                    f"UPDATE {self.project_name}_{self.log_table} SET value = ? WHERE run_id = ? AND key = 'completion_record'",
                     (json.dumps(completion_record), str(run_id)),
                 )
 
@@ -339,6 +344,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.config = config
+        self.project_name = os.getenv("POSTGRES_PROJECT_NAME", "default")
         self.pool = None
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
@@ -371,9 +377,10 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
             statement_cache_size=0,  # Disable statement caching
         )
         async with self.pool.acquire() as conn:
+
             await conn.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.log_table} (
+                CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_table} (
                     timestamp TIMESTAMPTZ,
                     run_id UUID,
                     key TEXT,
@@ -383,7 +390,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
             )
             await conn.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.log_info_table} (
+                CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_info_table} (
                     timestamp TIMESTAMPTZ,
                     run_id UUID UNIQUE,
                     run_type TEXT,
@@ -418,7 +425,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
 
         async with self.pool.acquire() as conn:
             await conn.execute(
-                f"INSERT INTO {self.log_table} (timestamp, run_id, key, value) VALUES (NOW(), $1, $2, $3)",
+                f"INSERT INTO {self.project_name}.{self.log_table} (timestamp, run_id, key, value) VALUES (NOW(), $1, $2, $3)",
                 run_id,
                 key,
                 value,
@@ -437,7 +444,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
 
         async with self.pool.acquire() as conn:
             await conn.execute(
-                f"INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id) VALUES (NOW(), $1, $2, $3)",
+                f"INSERT INTO {self.project_name}.{self.log_info_table} (timestamp, run_id, run_type, user_id) VALUES (NOW(), $1, $2, $3)",
                 run_id,
                 run_type,
                 user_id,
@@ -455,7 +462,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
                 "Initialize the connection pool before attempting to log."
             )
 
-        query = f"SELECT run_id, run_type, timestamp, user_id FROM {self.log_info_table}"
+        query = f"SELECT run_id, run_type, timestamp, user_id FROM {self.project_name}.{self.log_info_table}"
         conditions = []
         params = []
         param_count = 1
@@ -502,7 +509,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         query = f"""
         SELECT * FROM (
             SELECT *, ROW_NUMBER() OVER (PARTITION BY run_id ORDER BY timestamp DESC) as rn
-            FROM {self.log_table}
+            FROM {self.project_name}.{self.log_table}
             WHERE run_id::text IN ({placeholders})
         ) sub
         WHERE sub.rn <= ${len(run_ids) + 1}
@@ -523,7 +530,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
 
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
-                f"SELECT value FROM {self.log_table} WHERE run_id = $1 AND key = 'completion_record'",
+                f"SELECT value FROM {self.project_name}.{self.log_table} WHERE run_id = $1 AND key = 'completion_record'",
                 run_id,
             )
 
@@ -550,7 +557,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
                         ]
 
                     await conn.execute(
-                        f"UPDATE {self.log_table} SET value = $1 WHERE run_id = $2 AND key = 'completion_record'",
+                        f"UPDATE {self.project_name}.{self.log_table} SET value = $1 WHERE run_id = $2 AND key = 'completion_record'",
                         json.dumps(completion_record),
                         run_id,
                     )

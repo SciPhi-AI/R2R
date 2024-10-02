@@ -15,7 +15,7 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']}"
+    docker_command = f"docker compose -f {compose_files['base']}  -f {compose_files['full']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -26,7 +26,7 @@ def bring_down_docker_compose(project_name, volumes, remove_orphans):
 
     docker_command += " down"
 
-    click.echo("Bringing down Docker Compose setup...")
+    click.echo(f"Bringing down {project_name} Docker Compose setup...")
     return os.system(docker_command)
 
 
@@ -76,19 +76,20 @@ async def run_local_serve(
     port: int,
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
+    full: bool = False,
 ) -> None:
     try:
         from r2r import R2RBuilder, R2RConfig
     except ImportError as e:
         click.echo(
-            f"Error: {e}\n\nNote, you must install the `r2r core` package to run the R2R server locally."
+            f"Error: You must install the `r2r core` package to run the R2R server locally."
         )
-        sys.exit(1)
+        raise e
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
     if not config_path and not config_name:
-        config_name = "default"
+        config_name = "default" if not full else "full"
 
     r2r_instance = await R2RBuilder(
         config=R2RConfig.load(config_name, config_path)
@@ -105,23 +106,27 @@ async def run_local_serve(
     available_port = find_available_port(port)
 
     await r2r_instance.orchestration_provider.start_worker()
+
+    # TODO: make this work with autoreload, currently due to hatchet, it causes a reload error
+    # import uvicorn
+    # uvicorn.run(
+    #     "core.main.app_entry:app", host=host, port=available_port, reload=False
+    # )
+
     r2r_instance.serve(host, available_port)
 
 
 def run_docker_serve(
     host: str,
     port: int,
-    exclude_neo4j: bool,
-    exclude_ollama: bool,
-    exclude_postgres: bool,
-    exclude_hatchet: bool,
+    full: bool,
     project_name: str,
     image: str,
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
     check_docker_compose_version()
-    check_set_docker_env_vars(exclude_neo4j, exclude_ollama, exclude_postgres)
+    check_set_docker_env_vars()
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -139,10 +144,7 @@ def run_docker_serve(
         compose_files,
         host,
         port,
-        exclude_neo4j,
-        exclude_ollama,
-        exclude_postgres,
-        exclude_hatchet,
+        full,
         project_name,
         image,
         config_name,
@@ -151,9 +153,11 @@ def run_docker_serve(
 
     click.secho("R2R now runs on port 7272 by default!", fg="yellow")
     click.echo("Pulling Docker images...")
+    click.echo(f"Calling `{pull_command}`")
     os.system(pull_command)
 
     click.echo("Starting Docker Compose setup...")
+    click.echo(f"Calling `{up_command}`")
     os.system(up_command)
 
 
@@ -204,7 +208,6 @@ def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
 
 
 def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
-
     try:
         response = requests.get(ollama_url, timeout=5)
         if response.status_code == 200:
@@ -235,35 +238,16 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             sys.exit(1)
 
 
-def check_set_docker_env_vars(
-    exclude_neo4j=False, exclude_ollama=True, exclude_postgres=False
-):
-    env_vars = []
-    if not exclude_neo4j:
-        neo4j_vars = [
-            "NEO4J_USER",
-            "NEO4J_PASSWORD",
-            "NEO4J_URL",
-            "NEO4J_DATABASE",
-        ]
-        env_vars.extend(neo4j_vars)
+def check_set_docker_env_vars():
 
-    if not exclude_postgres:
-        postgres_vars = [
-            "POSTGRES_HOST",
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_PORT",
-            "POSTGRES_DBNAME",
-            # "POSTGRES_PROJECT_NAME", TODO - uncomment in next release
-        ]
-        env_vars.extend(postgres_vars)
-
-    if not exclude_ollama:
-        ollama_vars = [
-            "OLLAMA_API_BASE",
-        ]
-        env_vars.extend(ollama_vars)
+    env_vars = {
+        "POSTGRES_PROJECT_NAME": "r2r",
+        "POSTGRES_HOST": "postgres",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DBNAME": "postgres",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "postgres",
+    }
 
     is_test = (
         "pytest" in sys.modules
@@ -275,6 +259,10 @@ def check_set_docker_env_vars(
         for var in env_vars:
             if value := os.environ.get(var):
                 warning_text = click.style("Warning:", fg="red", bold=True)
+
+                if value == env_vars[var]:
+                    continue
+
                 prompt = (
                     f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"
@@ -286,14 +274,6 @@ def check_set_docker_env_vars(
                     click.echo(f"Kept {var}")
 
 
-def set_config_env_vars(obj):
-    if config_path := obj.get("config_path"):
-        os.environ["CONFIG_PATH"] = f'"{config_path}"'
-    else:
-        config_name = obj.get("config_name") or "default"
-        os.environ["CONFIG_NAME"] = f'"{config_name}"'
-
-
 def get_compose_files():
     package_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -302,10 +282,7 @@ def get_compose_files():
     )
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),
-        "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
-        "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
-        "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
-        "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
+        "full": os.path.join(package_dir, "compose.full.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -337,24 +314,16 @@ def build_docker_command(
     compose_files,
     host,
     port,
-    exclude_neo4j,
-    exclude_ollama,
-    exclude_postgres,
-    exclude_hatchet,
+    full,
     project_name,
     image,
     config_name,
     config_path,
 ):
-    base_command = f"docker compose -f {compose_files['base']}"
-    if not exclude_neo4j:
-        base_command += f" -f {compose_files['neo4j']}"
-    if not exclude_ollama:
-        base_command += f" -f {compose_files['ollama']}"
-    if not exclude_postgres:
-        base_command += f" -f {compose_files['postgres']}"
-    if not exclude_hatchet:
-        base_command += f" -f {compose_files['hatchet']}"
+    if not full:
+        base_command = f"docker compose -f {compose_files['base']}"
+    else:
+        base_command = f"docker compose -f {compose_files['full']}"
 
     base_command += f" --project-name {project_name}"
 
@@ -374,6 +343,8 @@ def build_docker_command(
         os.environ["CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
+    elif full:
+        os.environ["CONFIG_NAME"] = "full"
 
     pull_command = f"{base_command} pull"
     up_command = f"{base_command} up -d"

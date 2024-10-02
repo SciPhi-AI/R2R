@@ -310,9 +310,11 @@ class ManagementService(Service):
             ]
 
         try:
-            documents_overview = await self.providers.database.relational.get_documents_overview(
-                **relational_filters
-            )
+            documents_overview = (
+                await self.providers.database.relational.get_documents_overview(
+                    **relational_filters
+                )
+            )["results"]
         except Exception as e:
             logger.error(
                 f"Error fetching documents from relational database: {e}"
@@ -320,9 +322,7 @@ class ManagementService(Service):
             documents_overview = []
 
         if documents_overview:
-            document_ids_to_purge.update(
-                doc.id for doc in documents_overview["results"]
-            )
+            document_ids_to_purge.update(doc.id for doc in documents_overview)
 
         if not document_ids_to_purge:
             raise R2RException(
@@ -384,97 +384,10 @@ class ManagementService(Service):
             document_id, offset=offset, limit=limit
         )
 
-    @telemetry_event("InspectKnowledgeGraph")
-    async def inspect_knowledge_graph(
-        self,
-        offset: int = 0,
-        limit=1000,
-        print_descriptions: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        if self.providers.kg is None:
-            raise R2RException(
-                status_code=404, message="Knowledge Graph provider not found."
-            )
-
-        rel_query = f"""
-        MATCH (n1)-[r]->(n2)
-        return n1.name AS subject, n1.description AS subject_description, n2.name AS object, n2.description AS object_description, type(r) AS relation, r.description AS relation_description
-        SKIP {offset}
-        LIMIT {limit}
-        """
-
-        try:
-            neo4j_results = self.providers.kg.structured_query(
-                rel_query
-            ).records
-
-            relationships_raw = [
-                {
-                    "subject": {
-                        "name": record["subject"],
-                        "description": record["subject_description"],
-                    },
-                    "relation": {
-                        "name": record["relation"],
-                        "description": record["relation_description"],
-                    },
-                    "object": {
-                        "name": record["object"],
-                        "description": record["object_description"],
-                    },
-                }
-                for record in neo4j_results
-            ]
-
-            descriptions_dict = {}
-            relationships = []
-
-            for relationship in relationships_raw:
-                if print_descriptions:
-                    descriptions_dict[relationship["subject"]["name"]] = (
-                        relationship["subject"]["description"]
-                    )
-                    descriptions_dict[relationship["object"]["name"]] = (
-                        relationship["object"]["description"]
-                    )
-
-                relationships.append(
-                    (
-                        relationship["subject"]["name"],
-                        relationship["relation"]["name"],
-                        relationship["object"]["name"],
-                    )
-                )
-
-            # Create graph representation and group relationships
-            graph, grouped_relationships = self._process_relationships(
-                relationships
-            )
-
-            # Generate output
-            output = self.generate_output(
-                grouped_relationships,
-                graph,
-                descriptions_dict,
-                print_descriptions,
-            )
-
-            return "\n".join(output)
-
-        except Exception as e:
-            logger.error("Error printing relationships", exc_info=True)
-            raise R2RException(
-                status_code=500,
-                message=f"An error occurred while fetching relationships: {str(e)}",
-            )
-
     @telemetry_event("AssignDocumentToCollection")
     async def assign_document_to_collection(
         self, document_id: str, collection_id: UUID
     ):
-
         await self.providers.database.relational.assign_document_to_collection(
             document_id, collection_id
         )

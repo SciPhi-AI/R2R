@@ -1,14 +1,13 @@
 from .abstractions.generator_pipe import GeneratorPipe
 from .abstractions.search_pipe import SearchPipe
-from .ingestion.chunking_pipe import ChunkingPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .kg.clustering import KGClusteringPipe
 from .kg.community_summary import KGCommunitySummaryPipe
-from .kg.extraction import KGTriplesExtractionPipe
-from .kg.node_extraction import KGNodeDescriptionPipe, KGNodeExtractionPipe
+from .kg.entity_description import KGEntityDescriptionPipe
 from .kg.storage import KGStoragePipe
+from .kg.triples_extraction import KGTriplesExtractionPipe
 from .retrieval.kg_search_pipe import KGSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe
@@ -22,11 +21,9 @@ __all__ = [
     "GeneratorPipe",
     "EmbeddingPipe",
     "KGTriplesExtractionPipe",
-    "KGNodeExtractionPipe",
     "KGSearchSearchPipe",
-    "KGNodeDescriptionPipe",
+    "KGEntityDescriptionPipe",
     "ParsingPipe",
-    "ChunkingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
     "StreamingSearchRAGPipe",

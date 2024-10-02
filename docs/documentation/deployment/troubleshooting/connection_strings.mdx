@@ -48,15 +48,6 @@ DATABASE_URL=postgres://user:password@correcthost:5432/dbname
 1. Verify username and password are correct
 2. Ensure the user has the required permissions on the database
 
-Example fix for Neo4j:
-```
-# Before
-NEO4J_AUTH=neo4j/wrongpassword
-
-# After
-NEO4J_AUTH=neo4j/correctpassword
-```
-
 ### 2.3 Invalid Connection String Format
 
 **Symptom:** Errors mentioning "invalid connection string" or specific syntax errors
@@ -150,7 +141,6 @@ For cloud deployments:
 1. **Test the connection independently:**
    Use command-line tools to test the connection outside of R2R:
    - For PostgreSQL: `psql -h <host> -U <username> -d <dbname>`
-   - For Neo4j: `cypher-shell -a <host>:<port> -u <username> -p <password>`
 
 2. **Check service logs:**
    Examine logs of the service you're trying to connect to for any error messages or access attempts.

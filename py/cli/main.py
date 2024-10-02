@@ -2,8 +2,8 @@ from cli.command_group import cli
 from cli.commands import (
     auth,
     ingestion,
+    kg,
     management,
-    restructure,
     retrieval,
     server,
     templates,
@@ -31,11 +31,10 @@ add_command_with_telemetry(management.app_settings)
 add_command_with_telemetry(management.users_overview)
 add_command_with_telemetry(management.documents_overview)
 add_command_with_telemetry(management.document_chunks)
-add_command_with_telemetry(management.inspect_knowledge_graph)
 
 # Restructure
-add_command_with_telemetry(restructure.create_graph)
-add_command_with_telemetry(restructure.enrich_graph)
+add_command_with_telemetry(kg.create_graph)
+add_command_with_telemetry(kg.enrich_graph)
 
 # Retrieval
 add_command_with_telemetry(retrieval.search)

@@ -19,8 +19,8 @@ class BaseRouter:
     def __init__(
         self,
         service: "Service",
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.UNSPECIFIED,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
         self.service = service
         self.run_type = run_type
@@ -59,6 +59,7 @@ class BaseRouter:
                     if isinstance(results, StreamingResponse):
                         return results
                     return {"results": results, **outer_kwargs}
+
                 except R2RException as re:
                     raise HTTPException(
                         status_code=re.status_code,
@@ -67,16 +68,20 @@ class BaseRouter:
                             "error_type": type(re).__name__,
                         },
                     )
+
                 except Exception as e:
+
                     await self.service.logging_connection.log(
                         run_id=run_id,
                         key="error",
                         value=str(e),
                     )
+
                     logger.error(
                         f"Error in base endpoint {func.__name__}() - \n\n{str(e)}",
                         exc_info=True,
                     )
+
                     raise HTTPException(
                         status_code=500,
                         detail={
@@ -96,10 +101,8 @@ class BaseRouter:
     def _setup_routes(self):
         pass
 
-    @abstractmethod
     def _register_workflows(self):
         pass
 
-    @abstractmethod
     def _load_openapi_extras(self):
-        pass
+        return {}

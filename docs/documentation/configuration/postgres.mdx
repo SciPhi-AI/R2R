@@ -29,7 +29,7 @@ To customize the database settings, you can modify the `database` section in you
 [database]
 provider = "postgres" # currently only `postgres` is supported
 
-# optional parameters which can be set by environment instead
+# optional parameters which are typically set in the environment instead:
 user = "your_postgres_user"
 password = "your_postgres_password"
 host = "your_postgres_host"
@@ -86,16 +86,10 @@ The `collection.py` file includes methods for building complex SQL queries that 
 
 ### GIN Indexing
 
-R2R uses GIN (Generalized Inverted Index) indexing to optimize both full-text and JSON searches:
+R2R uses GIN (Generalized Inverted Index) indexing to optimize full-text searches:
 
 ```python
-Index(
-    f"idx_{name}_fts_trgm",
-    table.c.fts,
-    table.c.text,
-    postgresql_using="gin",
-    postgresql_ops={"text": "gin_trgm_ops"},
-)
+Index(f"idx_{name}_fts", "fts", postgresql_using="gin"),
 ```
 
 This indexing strategy allows for efficient full-text search and trigram similarity matching.

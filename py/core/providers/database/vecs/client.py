@@ -59,6 +59,7 @@ class Client:
         pool_size: int = 1,
         max_retries: int = 3,
         retry_delay: int = 1,
+        project_name: str = "vecs",
     ):
         self.engine = create_engine(
             connection_string,
@@ -66,10 +67,11 @@ class Client:
             poolclass=QueuePool,
             pool_recycle=300,  # Recycle connections after 5 min
         )
-        self.meta = MetaData(schema="vecs")
+        self.meta = MetaData(schema=project_name)
         self.Session = sessionmaker(self.engine)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.project_name = project_name
         self.vector_version: Optional[str] = None
         self._initialize_database()
 
@@ -98,15 +100,19 @@ class Client:
 
     def _create_schema(self, sess):
         try:
-            sess.execute(text("CREATE SCHEMA IF NOT EXISTS vecs;"))
+            sess.execute(
+                text(f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";')
+            )
         except Exception as e:
             logger.warning(f"Failed to create schema: {str(e)}")
 
     def _create_extension(self, sess):
         try:
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;"))
+            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS vector;"))
+            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            sess.execute(
+                text(f"CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
+            )
         except Exception as e:
             logger.warning(f"Failed to create extension: {str(e)}")
 
@@ -217,7 +223,7 @@ class Client:
         from core.providers.database.vecs.collection import Collection
 
         query = text(
-            """
+            f"""
         select
             relname as table_name,
             atttypmod as embedding_dim
@@ -226,7 +232,7 @@ class Client:
             join pg_attribute pa
                 on pc.oid = pa.attrelid
         where
-            pc.relnamespace = 'vecs'::regnamespace
+            pc.relnamespace = "{self.project_name}"::regnamespace
             and pc.relkind = 'r'
             and pa.attname = 'vec'
             and not pc.relname ^@ '_'

@@ -10,6 +10,7 @@ from .base import DatabaseMixin, QueryBuilder
 
 
 class UserMixin(DatabaseMixin):
+
     async def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('users')} (

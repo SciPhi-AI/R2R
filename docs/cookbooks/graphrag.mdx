@@ -30,25 +30,25 @@ r2r serve
 <Accordion icon="gear" title="Configuration: r2r.toml">
 ``` toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     max_knowledge_triples = 100
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = {}
 
   [kg.kg_search_settings]
-    generation_config = { model = "gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 ```
 </Accordion>
 </Tab>
@@ -92,13 +92,13 @@ batch_size = 32
 add_title_as_prefix = true
 
 [parsing]
-excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+excluded_parsers = [ "mp4" ]
 
 [kg]
-provider = "neo4j"
+provider = "postgres"
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     max_knowledge_triples = 100
@@ -109,7 +109,7 @@ provider = "neo4j"
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    leiden_params = {}
 
   [kg.kg_search_settings]
     generation_config = { model = "ollama/llama3.1" }
@@ -175,10 +175,7 @@ r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
 [{'message': 'Graph creation task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
 ```
 
-This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
-
-
-1. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
+This step will create a knowledge graph with nodes and relationships. Below is a visualization of the graph which we produced with Neo4j:
 
 ```
 MATCH (a)

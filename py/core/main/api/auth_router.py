@@ -22,18 +22,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class AuthRouter(BaseRouter):
     def __init__(
         self,
-        auth_service: AuthService,
-        run_type: RunType = RunType.INGESTION,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
+        service: AuthService,
+        orchestration_provider: OrchestrationProvider,
+        run_type: RunType = RunType.UNSPECIFIED,
     ):
-        super().__init__(auth_service, run_type, orchestration_provider)
-        self.service: AuthService = auth_service  # for type hinting
-
-    def _register_workflows(self):
-        pass
-
-    def _load_openapi_extras(self):
-        return {}
+        super().__init__(service, orchestration_provider, run_type)
+        self.service: AuthService = service  # for type hinting
 
     def _setup_routes(self):
         @self.router.post("/register", response_model=WrappedUserResponse)

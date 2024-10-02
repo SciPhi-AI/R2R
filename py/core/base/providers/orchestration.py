@@ -1,7 +1,13 @@
 from abc import abstractmethod
-from typing import Any, Callable
+from enum import Enum
+from typing import Any
 
 from .base import Provider, ProviderConfig
+
+
+class Workflow(Enum):
+    INGESTION = "ingestion"
+    KG = "kg"
 
 
 class OrchestrationConfig(ProviderConfig):
@@ -14,7 +20,7 @@ class OrchestrationConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["hatchet"]
+        return ["hatchet", "simple"]
 
 
 class OrchestrationProvider(Provider):
@@ -24,7 +30,7 @@ class OrchestrationProvider(Provider):
         self.worker = None
 
     @abstractmethod
-    def register_workflow(self, workflow: Any) -> None:
+    async def start_worker(self):
         pass
 
     @abstractmethod
@@ -32,13 +38,28 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def workflow(self, *args, **kwargs) -> Callable:
+    def step(self, *args, **kwargs) -> Any:
         pass
 
     @abstractmethod
-    def step(self, *args, **kwargs) -> Callable:
+    def workflow(self, *args, **kwargs) -> Any:
         pass
 
     @abstractmethod
-    def start_worker(self):
+    def failure(self, *args, **kwargs) -> Any:
+        pass
+
+    @abstractmethod
+    def register_workflows(self, workflow: Workflow, service: Any) -> None:
+        pass
+
+    @abstractmethod
+    async def run_workflow(
+        self,
+        workflow_name: str,
+        parameters: dict,
+        options: dict,
+        *args,
+        **kwargs,
+    ) -> dict[str, str]:
         pass

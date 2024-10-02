@@ -4,6 +4,7 @@ import inspect
 import os
 import threading
 import uuid
+from importlib.metadata import version
 from typing import Optional
 
 import asyncclick as click
@@ -63,6 +64,7 @@ def telemetry(command):
                         "status": "success",
                         "args": command_args,
                         "params": command_params,
+                        "version": version("r2r"),
                     },
                 )
 
@@ -79,6 +81,7 @@ def telemetry(command):
                         "error_message": str(e),
                         "args": command_args,
                         "params": command_params,
+                        "version": version("r2r"),
                     },
                 )
                 raise
@@ -115,6 +118,7 @@ def telemetry(command):
                             "status": "success",
                             "args": command_args,
                             "params": command_params,
+                            "version": version("r2r"),
                         },
                     ),
                     daemon=True,
@@ -136,6 +140,7 @@ def telemetry(command):
                             "error_message": str(e),
                             "args": command_args,
                             "params": command_params,
+                            "version": version("r2r"),
                         },
                     ),
                     daemon=True,

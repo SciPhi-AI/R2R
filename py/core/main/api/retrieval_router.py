@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import yaml
 from fastapi import Body, Depends
@@ -29,10 +29,10 @@ class RetrievalRouter(BaseRouter):
     def __init__(
         self,
         service: RetrievalService,
+        orchestration_provider: OrchestrationProvider,
         run_type: RunType = RunType.RETRIEVAL,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
     ):
-        super().__init__(service, run_type, orchestration_provider)
+        super().__init__(service, orchestration_provider, run_type)
         self.service: RetrievalService = service  # for type hinting
 
     def _load_openapi_extras(self):
@@ -45,6 +45,48 @@ class RetrievalRouter(BaseRouter):
 
     def _register_workflows(self):
         pass
+
+    def _select_filters(
+        self, auth_user: Any, vector_search_settings: VectorSearchSettings
+    ) -> dict[str, Any]:
+        selected_collections = {
+            str(cid)
+            for cid in set(vector_search_settings.selected_collection_ids)
+        }
+
+        if auth_user.is_superuser:
+            if selected_collections:
+                # For superusers, we only filter by selected collections
+                filters = {
+                    "collection_ids": {"$overlap": list(selected_collections)}
+                }
+            else:
+                filters = {}
+        else:
+            user_collections = set(auth_user.collection_ids)
+
+            if selected_collections:
+                allowed_collections = user_collections.intersection(
+                    selected_collections
+                )
+            else:
+                allowed_collections = user_collections
+            # for non-superusers, we filter by user_id and selected & allowed collections
+            filters = {
+                "$or": [
+                    {"user_id": {"$eq": auth_user.id}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
+                ]  # type: ignore
+            }
+
+        if vector_search_settings.filters != {}:
+            filters = {"$and": [filters, vector_search_settings.filters]}  # type: ignore
+
+        return filters
 
     def _setup_routes(self):
         search_extras = self.openapi_extras.get("search", {})
@@ -78,35 +120,12 @@ class RetrievalRouter(BaseRouter):
 
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
-
             """
-            user_collections = set(auth_user.collection_ids)
-            selected_collections = set(
-                vector_search_settings.selected_collection_ids
-            )
-            allowed_collections = user_collections.intersection(
-                selected_collections
-            )
-            if selected_collections - allowed_collections != set():
-                raise ValueError(
-                    "User does not have access to the specified collection(s): "
-                    f"{selected_collections - allowed_collections}"
-                )
 
-            filters = {
-                "$or": [
-                    {"user_id": {"$eq": str(auth_user.id)}},
-                    {
-                        "collection_ids": {
-                            "$overlap": list(allowed_collections)
-                        }
-                    },
-                ]
-            }
-            if vector_search_settings.filters != {}:
-                filters = {"$and": [filters, vector_search_settings.filters]}
+            vector_search_settings.filters = self._select_filters(
+                auth_user, vector_search_settings
+            )
 
-            vector_search_settings.filters = filters
             results = await self.service.search(
                 query=query,
                 vector_search_settings=vector_search_settings,
@@ -155,21 +174,10 @@ class RetrievalRouter(BaseRouter):
 
             The generation process can be customized using the rag_generation_config parameter.
             """
-            allowed_collections = set(auth_user.collection_ids)
-            filters = {
-                "$or": [
-                    {"user_id": str(auth_user.id)},
-                    {
-                        "collection_ids": {
-                            "$overlap": list(allowed_collections)
-                        }
-                    },
-                ]
-            }
-            if vector_search_settings.filters != {}:
-                filters = {"$and": [filters, vector_search_settings.filters]}
 
-            vector_search_settings.filters = filters
+            vector_search_settings.filters = self._select_filters(
+                auth_user, vector_search_settings
+            )
 
             response = await self.service.rag(
                 query=query,
@@ -240,23 +248,10 @@ class RetrievalRouter(BaseRouter):
             The agent's behavior can be customized using the rag_generation_config and
             task_prompt_override parameters.
             """
-            # TODO - Don't just copy paste the same code, refactor this
-            user = auth_user
-            allowed_collections = set(user.collection_ids)
-            filters = {
-                "$or": [
-                    {"user_id": str(user.id)},
-                    {
-                        "collection_ids": {
-                            "$overlap": list(allowed_collections)
-                        }
-                    },
-                ]
-            }
-            if vector_search_settings.filters != {}:
-                filters = {"$and": [filters, vector_search_settings.filters]}
 
-            vector_search_settings.filters = filters
+            vector_search_settings.filters = self._select_filters(
+                auth_user, vector_search_settings
+            )
 
             try:
                 response = await self.service.agent(

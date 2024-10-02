@@ -45,7 +45,7 @@ class PostgresFileProvider(FileProvider):
         await self.create_table()
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{base_name}"
+        return self.db_provider._get_table_name(base_name)
 
     async def create_table(self):
         query = f"""

@@ -1,8 +1,4 @@
 from .auth import R2RAuthProvider, SupabaseAuthProvider
-from .chunking import (  # type: ignore
-    R2RChunkingProvider,
-    UnstructuredChunkingProvider,
-)
 from .crypto import BCryptConfig, BCryptProvider
 from .database import PostgresDBProvider
 from .embeddings import (
@@ -11,19 +7,29 @@ from .embeddings import (
     OpenAIEmbeddingProvider,
 )
 from .file import PostgresFileProvider
-from .kg import Neo4jKGProvider
+from .ingestion import (  # type: ignore
+    R2RIngestionConfig,
+    R2RIngestionProvider,
+    UnstructuredIngestionConfig,
+    UnstructuredIngestionProvider,
+)
+from .kg import PostgresKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
-from .orchestration import HatchetOrchestrationProvider
-from .parsing import R2RParsingProvider, UnstructuredParsingProvider
+from .orchestration import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 from .prompts import R2RPromptProvider
 
 __all__ = [
     # Auth
     "R2RAuthProvider",
     "SupabaseAuthProvider",
-    # Chunking
-    "R2RChunkingProvider",  # type: ignore
-    "UnstructuredChunkingProvider",  # type: ignore
+    # Ingestion
+    "R2RIngestionProvider",
+    "R2RIngestionConfig",
+    "UnstructuredIngestionProvider",
+    "UnstructuredIngestionConfig",
     # Crypto
     "BCryptProvider",
     "BCryptConfig",
@@ -36,15 +42,13 @@ __all__ = [
     # File
     "PostgresFileProvider",
     # KG
-    "Neo4jKGProvider",
+    "PostgresKGProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
+    "SimpleOrchestrationProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",
-    # Parsing
-    "R2RParsingProvider",
-    "UnstructuredParsingProvider",
     # Prompts
     "R2RPromptProvider",
 ]

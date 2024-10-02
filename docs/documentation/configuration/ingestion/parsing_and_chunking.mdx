@@ -13,8 +13,8 @@ provider = "unstructured_local" # | rag | unstructured_api
 excluded_parsers = ["mp4"]
 ```
 Available providers:
-- `r2r`: Liteweight parser provided by R2R
-- `unstructured_local`: Default offering, makes use of open source Unstructured package.
+- `r2r`: Default offering for `light` installations, a simple and lightweight parser included in R2R.
+- `unstructured_local`: Default offering for `full` installations, makes use of open source Unstructured package.
 - `unstructured_api`: Cloud offering of Unstructured
 
 ### Supported File Types
@@ -77,7 +77,15 @@ overlap = 20
 
 Key chunking configuration options:
 
-- `provider`: The chunking provider (defaults to "unstructured_local").
+- `provider`: The chunking provider (defaults to "r2r").
+
+**For R2R:**
+- `chunking_strategy`: The chunking method ("recursive").
+- `chunk_size`: The target size for each chunk.
+- `chunk_overlap`: The number of characters to overlap between chunks.
+- `excluded_parsers`: List of parsers to exclude (e.g., ["mp4"]).
+
+**For Unstructured:**
 - `strategy`: The overall chunking strategy ("auto", "fast", or "hi_res").
 - `chunking_strategy`: The specific chunking method ("by_title" or "basic").
 - `new_after_n_chars`: Soft maximum size for a chunk.
@@ -90,18 +98,14 @@ Key chunking configuration options:
 <Tabs>
   <Tab title="Unstructured Local">
     ```python
-    # No additional setup required
-    # Ensure unstructured is installed: pip install unstructured
+    # Ensure unstructured is installed
+    # Refer to the full installation docs here - [https://r2r-docs.sciphi.ai/introduction/documentation/installation/full/docker]
 
-
-    # Set 'provider = "unstructured_local"' for `[parsing]` and `[chunking]` in `my_r2r.toml`
+    # Set 'provider = "unstructured_local"' for `ingestion` in `my_r2r.toml`.
     r2r serve --config-path=my_r2r.toml
     ```
-    Supported chunking strategies:
-    - by_title
-    - basic
 
-    This is the default provider, using the open-source Unstructured library for local processing.
+    This is the default `full` provider, using the open-source Unstructured library for local processing.
   </Tab>
 
   <Tab title="Unstructured API">
@@ -111,12 +115,9 @@ Key chunking configuration options:
     # .. set other environment variables
 
     # Optional - Update default provider
-    # Set 'provider = "unstructured_api"' for `[parsing]` and `[chunking]` in `my_r2r.toml`
+    # Set 'provider = "unstructured_api"' for `ingestion` in `my_r2r.toml`.
     r2r serve --config-path=my_r2r.toml
     ```
-    Supported chunking strategies:
-    - by_title
-    - basic
 
     Uses the Unstructured platform API for chunking, which may offer additional features or performance benefits.
   </Tab>
@@ -126,13 +127,11 @@ Key chunking configuration options:
     # No additional setup required
 
     # Optional - Update default provider
-    # Set 'provider = "r2r"' for `[parsing]` and `[chunking]` in `my_r2r.toml`
+    # Set 'provider = "r2r"' for `ingestion` in `my_r2r.toml`.
     r2r serve --config-path=my_r2r.toml
     ```
-    Supported chunking strategies:
-    - recursive
+    This is the default `light` provider, using the open-source R2R library for local processing.
 
-    A lightweight chunking method provided by R2R, suitable for basic chunking needs.
   </Tab>
 </Tabs>
 
@@ -141,8 +140,8 @@ Key chunking configuration options:
 When using the Unstructured chunking provider, you can specify additional parameters in the configuration file:
 
 ```toml
-[chunking]
-provider = "unstructured_local"  # or "unstructured_api"
+[ingestion]
+provider = "unstructured_local"
 strategy = "auto"  # "auto", "fast", or "hi_res"
 chunking_strategy = "by_title"  # "by_title" or "basic"
 
@@ -190,7 +189,7 @@ Chunking is a crucial part of the document processing pipeline in R2R. It works 
 ```python
 response = client.ingest_files(
     file_paths=["document.pdf"],
-    chunking_config={
+    ingestion_config={
         "provider": "unstructured_local",
         "chunking_strategy": "by_title",
         "max_characters": 1000

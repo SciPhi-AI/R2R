@@ -47,7 +47,6 @@ def sample_entries(dimension, num_entries):
         vector_data = [random.random() for _ in range(dimension)]
         metadata = {"key": f"value_id_{id_value}", "raw_key": id_value}
         return VectorEntry(
-            fragment_id=generate_id_from_label(f"id_{id_value}"),
             extraction_id=uuid.uuid4(),
             document_id=uuid.uuid4(),
             user_id=uuid.uuid4(),

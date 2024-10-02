@@ -17,9 +17,6 @@ concurrent_request_limit = 1
   stream = false
   add_generation_kwargs = { }
 
-[database]
-provider = "postgres"
-
 [embedding]
 provider = "ollama"
 base_model = "mxbai-embed-large"
@@ -28,31 +25,5 @@ batch_size = 128
 add_title_as_prefix = true
 concurrent_request_limit = 2
 
-
-[kg]
-provider = "neo4j" # set this to "None" if you don't want to use a knowledge graph
-batch_size = 256
-
-  [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
-    entity_types = [] # if empty, all entities are extracted
-    relation_types = [] # if empty, all relations are extracted
-    fragment_merge_count = 4 # number of fragments to merge into a single extraction
-    max_knowledge_triples = 100
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
-
-  [kg.kg_enrichment_settings]
-    community_reports_prompt = "graphrag_community_reports_prompt"
-    max_description_input_length = 8192
-    max_summary_input_length = 65536
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params in https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
-
-  [kg.kg_search_settings]
-    map_system_prompt = "graphrag_map_system_prompt"
-    reduce_system_prompt = "graphrag_reduce_system_prompt"
-    generation_config = { model = "ollama/llama3.1" }
-
-[parsing]
-provider = "unstructured_local"
-excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+[orchestration]
+provider = "simple"
