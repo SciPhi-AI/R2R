@@ -1,10 +1,11 @@
-import uuid
+from uuid import UUID
 from typing import Optional
 
 from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
+from core.base import R2RException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
@@ -108,8 +109,12 @@ class AuthRouter(BaseRouter):
         @self.router.put("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def put_user_app(
+            user_id: str = Body(None, description="ID of the user to update"),
             email: EmailStr | None = Body(
                 None, description="Updated email address"
+            ),
+            is_superuser: bool | None = Body(
+                None, description="Updated superuser status"
             ),
             name: str | None = Body(None, description="Updated user name"),
             bio: str | None = Body(None, description="Updated user bio"),
@@ -123,9 +128,23 @@ class AuthRouter(BaseRouter):
 
             This endpoint allows the authenticated user to update their profile information.
             """
+            if is_superuser is not None and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can update the superuser status of a user",
+                    403,
+                )
+
+            try:
+                user_uuid = UUID(user_id)
+            except ValueError:
+                raise R2RException(
+                    status_code=400, message="Invalid document ID format."
+                )
+
             return await self.service.update_user(
-                user_id=auth_user.id,
+                user_id=user_uuid,
                 email=email,
+                is_superuser=is_superuser,
                 name=name,
                 bio=bio,
                 profile_picture=profile_picture,
@@ -226,7 +245,7 @@ class AuthRouter(BaseRouter):
                 raise Exception("User ID does not match authenticated user")
             if not auth_user.is_superuser and not password:
                 raise Exception("Password is required for non-superusers")
-            user_uuid = uuid.UUID(user_id)
+            user_uuid = UUID(user_id)
             result = await self.service.delete_user(
                 user_uuid, password, delete_vector_data
             )

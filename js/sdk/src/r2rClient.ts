@@ -335,20 +335,33 @@ export class r2rClient {
    */
   @feature("updateUser")
   async updateUser(
+    userId: string,
     email?: string,
+    isSuperuser?: boolean,
     name?: string,
     bio?: string,
     profilePicture?: string,
   ): Promise<any> {
     this._ensureAuthenticated();
-    return await this._makeRequest("PUT", "user", {
-      data: {
-        email,
-        name,
-        bio,
-        profile_picture: profilePicture,
-      },
-    });
+
+    let data: Record<string, any> = { user_id: userId };
+    if (email !== undefined) {
+      data.email = email;
+    }
+    if (isSuperuser !== undefined) {
+      data.is_superuser = isSuperuser;
+    }
+    if (name !== undefined) {
+      data.name = name;
+    }
+    if (bio !== undefined) {
+      data.bio = bio;
+    }
+    if (profilePicture !== undefined) {
+      data.profile_picture = profilePicture;
+    }
+
+    return await this._makeRequest("PUT", "user", { data });
   }
 
   /**

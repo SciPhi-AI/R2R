@@ -88,24 +88,29 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
-  // test("User", async () => {
-  //   const asdf = await client.user();
-  //   console.log(asdf);
+  test("User", async () => {
+    const asdf = await client.user();
 
-  //   await expect(client.user()).resolves.not.toThrow();
+    await expect(client.user()).resolves.not.toThrow();
+  });
 
-  // });
+  test("Update user profile", async () => {
+    const userId = "2bf8fd84-91ec-5048-9eb8-cf2ee9d66b64";
+    const email = "newemail@example.com";
+    const name = "New Name";
+    const bio = "Updated bio";
+    const profilePicture = "http://example.com/new-profile-pic.jpg";
 
-  //   test("Update user profile", async () => {
-  //   const email = "newemail@example.com";
-  //   const name = "New Name";
-  //   const bio = "Updated bio";
-  //   const profilePicture = "http://example.com/new-profile-pic.jpg";
+    await expect(
+      client.updateUser(userId, email, undefined, name, bio, profilePicture),
+    ).resolves.not.toThrow();
+  });
 
-  //   await expect(
-  //     client.updateUser(email, name, bio, profilePicture)
-  //   ).resolves.not.toThrow();
-  // });
+  test("Login", async () => {
+    await expect(
+      client.login("newemail@example.com", "password"),
+    ).resolves.not.toThrow();
+  });
 
   test("Ingest file", async () => {
     const files = [
@@ -189,8 +194,7 @@ describe("r2rClient Integration Tests", () => {
 
   test("Login after logout", async () => {
     await expect(
-      client.login("test@gmail.com", "password"),
-      // client.login("newemail@example.com", "password"),
+      client.login("newemail@example.com", "password"),
     ).resolves.not.toThrow();
   });
 
