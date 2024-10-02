@@ -17,7 +17,6 @@ from core.base import (
     TextSplitter,
     generate_id_from_label,
 )
-from core.base.abstractions import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 

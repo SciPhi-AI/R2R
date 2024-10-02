@@ -7,13 +7,11 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     EmbeddingProvider,
-    GenerationConfig,
     KGProvider,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
 )
-from shared.abstractions import KGEnrichmentSettings
 
 logger = logging.getLogger(__name__)
 

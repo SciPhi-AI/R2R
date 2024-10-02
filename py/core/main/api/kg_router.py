@@ -1,25 +1,17 @@
-import json
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import yaml
 from fastapi import Body, Depends
 from pydantic import Json
 
-from core.base import KGCreationSettings, KGEnrichmentSettings
 from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 
-# from ..hatchet import (
-#     CreateGraphWorkflow,
-#     EnrichGraphWorkflow,
-#     KGCommunitySummaryWorkflow,
-#     KgExtractDescribeEmbedWorkflow,
-# )
 from ..services.kg_service import KgService
 from .base_router import BaseRouter, RunType
 
@@ -63,10 +55,8 @@ class KGRouter(BaseRouter):
             collection_id: str = Body(
                 description="Collection ID to create graph for.",
             ),
-            kg_creation_settings: Optional[
-                Union[dict, KGCreationSettings]
-            ] = Body(
-                default="{}",
+            kg_creation_settings: Optional[Json[dict]] = Body(
+                default=None,
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -111,10 +101,8 @@ class KGRouter(BaseRouter):
             collection_id: str = Body(
                 description="Collection name to enrich graph for.",
             ),
-            kg_enrichment_settings: Optional[
-                Union[dict, KGEnrichmentSettings]
-            ] = Body(
-                default="{}",
+            kg_enrichment_settings: Optional[Json[dict]] = Body(
+                default=None,
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -131,9 +119,10 @@ class KGRouter(BaseRouter):
                 self.service.providers.kg.config.kg_enrichment_settings
             )
 
-            for key, value in kg_enrichment_settings.items():
-                if value is not None:
-                    setattr(server_kg_enrichment_settings, key, value)
+            if kg_enrichment_settings:
+                for key, value in kg_enrichment_settings.items():
+                    if value is not None:
+                        setattr(server_kg_enrichment_settings, key, value)
 
             workflow_input = {
                 "collection_id": collection_id,

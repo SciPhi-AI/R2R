@@ -76,6 +76,7 @@ async def run_local_serve(
     port: int,
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
+    full: bool = False,
 ) -> None:
     try:
         from r2r import R2RBuilder, R2RConfig
@@ -88,7 +89,7 @@ async def run_local_serve(
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
     if not config_path and not config_name:
-        config_name = "default"
+        config_name = "default" if not full else "full"
 
     r2r_instance = await R2RBuilder(
         config=R2RConfig.load(config_name, config_path)
@@ -273,14 +274,6 @@ def check_set_docker_env_vars():
                     click.echo(f"Kept {var}")
 
 
-def set_config_env_vars(obj):
-    if config_path := obj.get("config_path"):
-        os.environ["CONFIG_PATH"] = f'"{config_path}"'
-    else:
-        config_name = obj.get("config_name") or "default"
-        os.environ["CONFIG_NAME"] = f'"{config_name}"'
-
-
 def get_compose_files():
     package_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -350,6 +343,8 @@ def build_docker_command(
         os.environ["CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
+    elif full:
+        os.environ["CONFIG_NAME"] = "full"
 
     pull_command = f"{base_command} pull"
     up_command = f"{base_command} up -d"

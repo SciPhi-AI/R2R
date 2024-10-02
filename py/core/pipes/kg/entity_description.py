@@ -12,7 +12,6 @@ from core.base import (
     EmbeddingProvider,
     KGProvider,
     PipeType,
-    PromptProvider,
     RunLoggingSingleton,
 )
 from core.base.pipes.base_pipe import AsyncPipe
@@ -20,48 +19,7 @@ from core.base.pipes.base_pipe import AsyncPipe
 logger = logging.getLogger(__name__)
 
 
-class KGNodeExtractionPipe(AsyncPipe):
-    """
-    The pipe takes input a list of nodes and extracts description from them.
-    """
-
-    class Input(AsyncPipe.Input):
-        message: dict[str, Any]
-
-    def __init__(
-        self,
-        kg_provider: KGProvider,
-        config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
-        type: PipeType = PipeType.OTHER,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
-        )
-
-    async def _run_logic(  # type: ignore
-        self,
-        input: AsyncPipe.Input,
-        state: AsyncState,
-        run_id: UUID,
-        *args: Any,
-        **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
-
-        nodes = self.kg_provider.get_entity_map()  # type: ignore
-
-        for _, node_info in nodes.items():
-            for entity in node_info["entities"]:
-                yield entity, node_info[
-                    "triples"
-                ]  # the entity and its associated triples
-
-
-class KGNodeDescriptionPipe(AsyncPipe):
+class KGEntityDescriptionPipe(AsyncPipe):
     """
     The pipe takes input a list of nodes and extracts description from them.
     """
@@ -101,6 +59,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
         Extracts description from the input.
         """
 
+        # TODO - Move this to a .yaml file and load it as we do in triples extraction
         summarization_content = """
             Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
 
@@ -200,6 +159,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
         )
 
         total_entities = len(entity_map)
+        logger.info(
+            f"Processing {total_entities} entities for document {document_id}"
+        )
 
         workflows = []
         for i, (entity_name, entity_info) in enumerate(entity_map.items()):

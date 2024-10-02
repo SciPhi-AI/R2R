@@ -99,17 +99,17 @@ def docker_down(volumes, remove_orphans, project_name):
             f"{project_name} Docker Compose setup has been successfully brought down."
         )
 
-    result = bring_down_docker_compose("r2r_full", volumes, remove_orphans)
+    result = bring_down_docker_compose("r2r-full", volumes, remove_orphans)
 
     # TODO - Clean up the way we do this r2r-down
     click.echo(f"Also attempting to bring down the full deployment")
     if result != 0:
         click.echo(
-            f"An error occurred while bringing down the r2r_full Docker Compose setup. Attempting to remove the network..."
+            f"An error occurred while bringing down the r2r-full Docker Compose setup. Attempting to remove the network..."
         )
     else:
         click.echo(
-            f"r2r_full Docker Compose setup has been successfully brought down."
+            f"r2r-full Docker Compose setup has been successfully brought down."
         )
 
 
@@ -247,7 +247,7 @@ async def serve(
             "Running the full R2R compose which includes `Hatchet` and `Unstructured.io`."
         )
         if project_name == "r2r":  # overwrite project name if full compose
-            project_name = "r2r_full"
+            project_name = "r2r-full"
     else:
         click.echo("Running the lightweight R2R compose.")
 
@@ -359,7 +359,7 @@ async def serve(
             click.secho(f"Navigating to R2R application at {url}.", fg="blue")
             webbrowser.open(url)
     else:
-        await run_local_serve(host, port, config_name, config_path)
+        await run_local_serve(host, port, config_name, config_path, full)
 
 
 @cli.command()

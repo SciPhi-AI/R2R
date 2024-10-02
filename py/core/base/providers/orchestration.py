@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 from .base import Provider, ProviderConfig
 
@@ -61,5 +61,5 @@ class OrchestrationProvider(Provider):
         options: dict,
         *args,
         **kwargs,
-    ) -> Any:
+    ) -> dict[str, str]:
         pass

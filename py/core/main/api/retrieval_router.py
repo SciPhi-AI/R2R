@@ -46,7 +46,7 @@ class RetrievalRouter(BaseRouter):
     def _register_workflows(self):
         pass
 
-    def select_filters(
+    def _select_filters(
         self, auth_user: Any, vector_search_settings: VectorSearchSettings
     ) -> dict[str, Any]:
         selected_collections = {
@@ -56,6 +56,7 @@ class RetrievalRouter(BaseRouter):
 
         if auth_user.is_superuser:
             if selected_collections:
+                # For superusers, we only filter by selected collections
                 filters = {
                     "collection_ids": {"$overlap": list(selected_collections)}
                 }
@@ -70,7 +71,7 @@ class RetrievalRouter(BaseRouter):
                 )
             else:
                 allowed_collections = user_collections
-
+            # for non-superusers, we filter by user_id and selected & allowed collections
             filters = {
                 "$or": [
                     {"user_id": {"$eq": auth_user.id}},
@@ -121,7 +122,7 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
-            vector_search_settings.filters = self.select_filters(
+            vector_search_settings.filters = self._select_filters(
                 auth_user, vector_search_settings
             )
 
@@ -174,7 +175,7 @@ class RetrievalRouter(BaseRouter):
             The generation process can be customized using the rag_generation_config parameter.
             """
 
-            vector_search_settings.filters = self.select_filters(
+            vector_search_settings.filters = self._select_filters(
                 auth_user, vector_search_settings
             )
 
@@ -248,7 +249,7 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override parameters.
             """
 
-            vector_search_settings.filters = self.select_filters(
+            vector_search_settings.filters = self._select_filters(
                 auth_user, vector_search_settings
             )
 

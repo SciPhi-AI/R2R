@@ -47,7 +47,7 @@ class DocumentMixin(DatabaseMixin):
             Column("version", String),
             Column("size_in_bytes", Integer),
             Column("ingestion_status", String),
-            Column("kg_creation_status", String),
+            Column("kg_extraction_status", String),
             Column("created_at", DateTime),
             Column("updated_at", DateTime),
             Column("ingestion_attempt_number", Integer, default=0),
@@ -65,7 +65,7 @@ class DocumentMixin(DatabaseMixin):
             version TEXT,
             size_in_bytes INT,
             ingestion_status TEXT DEFAULT 'pending',
-            kg_creation_status TEXT DEFAULT 'pending',
+            kg_extraction_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
             ingestion_attempt_number INT DEFAULT 0
@@ -145,7 +145,7 @@ class DocumentMixin(DatabaseMixin):
                                 UPDATE {self._get_table_name('document_info')}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                                    kg_creation_status = $9, updated_at = $10, ingestion_attempt_number = $11
+                                    kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11
                                 WHERE document_id = $12
                                 """
                                 await conn.execute(
@@ -158,7 +158,7 @@ class DocumentMixin(DatabaseMixin):
                                     db_entry["version"],
                                     db_entry["size_in_bytes"],
                                     db_entry["ingestion_status"],
-                                    db_entry["kg_creation_status"],
+                                    db_entry["kg_extraction_status"],
                                     db_entry["updated_at"],
                                     new_attempt_number,
                                     document_info.id,
@@ -167,7 +167,7 @@ class DocumentMixin(DatabaseMixin):
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name('document_info')}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
-                                size_in_bytes, ingestion_status, kg_creation_status, created_at,
+                                size_in_bytes, ingestion_status, kg_extraction_status, created_at,
                                 updated_at, ingestion_attempt_number)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                                 """
@@ -182,7 +182,7 @@ class DocumentMixin(DatabaseMixin):
                                     db_entry["version"],
                                     db_entry["size_in_bytes"],
                                     db_entry["ingestion_status"],
-                                    db_entry["kg_creation_status"],
+                                    db_entry["kg_extraction_status"],
                                     db_entry["created_at"],
                                     db_entry["updated_at"],
                                     db_entry["ingestion_attempt_number"],
@@ -293,7 +293,7 @@ class DocumentMixin(DatabaseMixin):
         """
         if status_type == "ingestion":
             return IngestionStatus, "document_info"
-        elif status_type == "kg_creation_status":
+        elif status_type == "kg_extraction_status":
             return KGCreationStatus, "document_info"
         elif status_type == "kg_enrichment_status":
             return KGEnrichmentStatus, "collection_info"
@@ -406,7 +406,7 @@ class DocumentMixin(DatabaseMixin):
 
         query = f"""
             SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                size_in_bytes, ingestion_status, created_at, updated_at, kg_creation_status,
+                size_in_bytes, ingestion_status, created_at, updated_at, kg_extraction_status,
                 COUNT(*) OVER() AS total_entries
             {base_query}
             ORDER BY created_at DESC
@@ -437,8 +437,8 @@ class DocumentMixin(DatabaseMixin):
                     ingestion_status=IngestionStatus(row["ingestion_status"]),
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
-                    kg_creation_status=KGCreationStatus(
-                        row["kg_creation_status"]
+                    kg_extraction_status=KGCreationStatus(
+                        row["kg_extraction_status"]
                     ),
                 )
                 for row in results

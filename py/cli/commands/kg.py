@@ -1,5 +1,4 @@
 import json
-import os
 
 import asyncclick as click
 from asyncclick import pass_context

@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import re
-import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
 from core.base import (
@@ -35,13 +34,12 @@ class ClientError(Exception):
     pass
 
 
-class KGTriplesExtractionPipe(
-    AsyncPipe[Union[KGExtraction, R2RDocumentProcessingError]]
-):
+class KGTriplesExtractionPipe(AsyncPipe[dict]):
     """
     Extracts knowledge graph information from document extractions.
     """
 
+    # TODO - Apply correct type hints to storage messages
     class Input(AsyncPipe.Input):
         message: dict
 
@@ -64,7 +62,7 @@ class KGTriplesExtractionPipe(
             pipe_logger=pipe_logger,
             type=type,
             config=config
-            or AsyncPipe.PipeConfig(name="default_kg_extraction_pipe"),
+            or AsyncPipe.PipeConfig(name="default_kg_triples_extraction_pipe"),
         )
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
@@ -93,7 +91,7 @@ class KGTriplesExtractionPipe(
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
         messages = self.prompt_provider._get_message_payload(
-            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_extraction_prompt,
+            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_triples_extraction_prompt,
             task_inputs={
                 "input": combined_extraction,
                 "max_knowledge_triples": max_knowledge_triples,
@@ -134,9 +132,6 @@ class KGTriplesExtractionPipe(
                             f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
                             400,
                         )
-                        # logger.warning(
-                        #     f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
-                        # )
 
                     relationships = re.findall(
                         relationship_pattern, response_str
@@ -217,7 +212,7 @@ class KGTriplesExtractionPipe(
         return KGExtraction(
             extraction_ids=[extraction.id for extraction in extractions],
             document_id=extractions[0].document_id,
-            entities={},
+            entities=[],
             triples=[],
         )
 
@@ -264,10 +259,6 @@ class KGTriplesExtractionPipe(
             for i in range(0, len(extractions), extraction_merge_count)
         ]
 
-        logger.info(
-            f"Extracting KG Triples from {len(extractions_groups)} extraction groups from originally {len(extractions)} extractions for document {document_id}"
-        )
-
         tasks = [
             asyncio.create_task(
                 self.extract_kg(
@@ -281,9 +272,16 @@ class KGTriplesExtractionPipe(
             for extractions_group in extractions_groups
         ]
 
+        completed_tasks = 0
+        total_tasks = len(tasks)
+
         for completed_task in asyncio.as_completed(tasks):
             try:
                 yield await completed_task
+                completed_tasks += 1
+                logger.info(
+                    f"Completed {completed_tasks}/{total_tasks} KG extraction tasks for document {document_id}"
+                )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Triples: {e}")
                 yield R2RDocumentProcessingError(

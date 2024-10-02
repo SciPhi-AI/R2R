@@ -294,30 +294,6 @@ class ManagementMethods:
             )
 
     @staticmethod
-    async def inspect_knowledge_graph(
-        client,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> dict:
-        """
-        Inspect the knowledge graph associated with your R2R deployment.
-
-        Args:
-            limit (Optional[int]): The maximum number of nodes to return. Defaults to 100.
-
-        Returns:
-            dict: The knowledge graph inspection results.
-        """
-        params = {}
-        if offset is not None:
-            params["offset"] = offset
-        if limit is not None:
-            params["limit"] = limit
-        return await client._make_request(
-            "GET", "inspect_knowledge_graph", params=params
-        )
-
-    @staticmethod
     async def collections_overview(
         client,
         collection_ids: Optional[list[str]] = None,

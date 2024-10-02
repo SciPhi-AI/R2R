@@ -35,10 +35,9 @@ class R2RPipes(BaseModel):
     parsing_pipe: AsyncPipe
     embedding_pipe: AsyncPipe
     kg_search_pipe: AsyncPipe
-    kg_extraction_pipe: AsyncPipe
+    kg_triples_extraction_pipe: AsyncPipe
     kg_storage_pipe: AsyncPipe
-    kg_node_extraction_pipe: AsyncPipe
-    kg_node_description_pipe: AsyncPipe
+    kg_entity_description_pipe: AsyncPipe
     kg_clustering_pipe: AsyncPipe
     kg_community_summary_pipe: AsyncPipe
     rag_pipe: AsyncPipe

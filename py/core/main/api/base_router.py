@@ -101,10 +101,8 @@ class BaseRouter:
     def _setup_routes(self):
         pass
 
-    @abstractmethod
     def _register_workflows(self):
         pass
 
-    @abstractmethod
     def _load_openapi_extras(self):
-        pass
+        return {}

@@ -13,7 +13,7 @@ To configure the knowledge graph settings for your project, edit the `kg` sectio
 [kg]
 provider = "postgres"
 batch_size = 256
-kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
 
   [kg.kg_creation_settings]
     entity_types = [] # if empty, all entities are extracted
@@ -26,7 +26,7 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "openai/gpt-4o-mini" } # and other generation params below
-    leiden_params = { max_levels = 10 }
+    leiden_params = {}
 
   [kg.kg_search_settings]
     generation_config = { model = "openai/gpt-4o-mini" }
@@ -37,7 +37,7 @@ Let's break down the knowledge graph configuration options:
 
 - `provider`: Specifies the knowledge graph provider. Currently, "postgres" is supported.
 - `batch_size`: Determines the number of entities or relationships to process in a single batch during import operations.
-- `kg_extraction_prompt`: Specifies the prompt template to use for extracting knowledge graph information from text.
+- `kg_triples_extraction_prompt`: Specifies the prompt template to use for extracting knowledge graph information from text.
 - `kg_creation_settings`: Configuration for the model used in knowledge graph creation.
   - `max_knowledge_triples`: The maximum number of knowledge triples to extract for each document chunk.
   - `fragment_merge_count`: The number of fragments to merge into a single extraction.
@@ -64,7 +64,7 @@ Setting configuration values in the `r2r.toml` will override environment variabl
 
 ### Customization
 
-You can customize the knowledge graph extraction and search processes by modifying the `kg_extraction_prompt` and adjusting the model configurations in `kg_extraction_settings` and `kg_search_settings`. Moreover, you can customize the LLM models used in various parts of the knowledge graph creation process. All of these options can be selected at runtime, with the only exception being the specified database provider. For more details, refer to the knowledge graph settings in the [search API](/api-reference/endpoint/search).
+You can customize the knowledge graph extraction and search processes by modifying the `kg_triples_extraction_prompt` and adjusting the model configurations in `kg_extraction_settings` and `kg_search_settings`. Moreover, you can customize the LLM models used in various parts of the knowledge graph creation process. All of these options can be selected at runtime, with the only exception being the specified database provider. For more details, refer to the knowledge graph settings in the [search API](/api-reference/endpoint/search).
 
 By leveraging the knowledge graph capabilities, you can enhance R2R's understanding of document relationships and improve the quality of search and retrieval operations.
 
