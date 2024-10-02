@@ -643,6 +643,12 @@ class PostgresKGProvider(KGProvider):
     # async def client(self):
     #     return None
 
+    async def get_community_reports(self, collection_id: UUID) -> List[CommunityReport]:
+        QUERY = f"""
+            SELECT * FROM {self._get_table_name("community_report")} WHERE collection_id = $1
+        """
+        return await self.fetch_query(QUERY, [collection_id])
+
     async def check_community_reports_exist(
         self, collection_id: UUID, offset: int, limit: int
     ) -> List[int]:

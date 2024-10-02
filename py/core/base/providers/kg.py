@@ -177,12 +177,6 @@ class KGProvider(ABC):
         """Abstract method to get the entity count."""
         pass
 
-    @abstractmethod
-    async def delete_frga(
-        self, document_id: UUID, offset: int, limit: int
-    ) -> list[str]:
-        """Abstract method to get the entity descriptions."""
-        pass
 
     @abstractmethod
     async def delete_graph_for_collection(self, collection_id: UUID) -> None:
@@ -207,7 +201,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_community_reports(self) -> list[CommunityReport]:
+    async def get_community_reports(self, collection_id: UUID) -> list[CommunityReport]:
         """Abstract method to get community reports."""
         pass
 
