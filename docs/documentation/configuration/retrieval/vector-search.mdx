@@ -10,7 +10,7 @@ Example using the Python SDK:
 ```python
 vector_search_settings = {
     "use_vector_search": True,
-    "filters": {"metadata.document_type": "article"},
+    "filters": {"document_type": "article"},
     "search_limit": 20,
     "use_hybrid_search": True,
     "selected_collection_ids": ["c3291abf-8a4e-5d9d-80fd-232ef6fd8526"]
@@ -55,9 +55,9 @@ Example of advanced filtering:
 ```python
 filters = {
     "$and": [
-        {"metadata.publication_date": {"$gte": "2023-01-01"}},
-        {"metadata.author": {"$in": ["John Doe", "Jane Smith"]}},
-        {"metadata.category": {"$ilike": "%technology%"}}
+        {"publication_date": {"$gte": "2023-01-01"}},
+        {"author": {"$in": ["John Doe", "Jane Smith"]}},
+        {"category": {"$ilike": "%technology%"}}
     ]
 }
 vector_search_settings["filters"] = filters

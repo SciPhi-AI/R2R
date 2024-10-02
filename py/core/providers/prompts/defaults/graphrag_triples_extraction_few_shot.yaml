@@ -1,4 +1,4 @@
-graphrag_triplet_extraction_zero_shot:
+graphrag_triples_extraction_few_shot:
   template: >
     -Goal-
     Given a text document, identify all entities and their entity types from the text and all relationships among the identified entities.

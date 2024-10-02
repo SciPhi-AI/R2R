@@ -48,12 +48,6 @@ class ManagementRouter(BaseRouter):
         self.service: ManagementService = service  # for type hinting
         self.start_time = datetime.now(timezone.utc)
 
-    def _register_workflows(self):
-        pass
-
-    def _load_openapi_extras(self):
-        return {}
-
     # TODO: remove this from the management route, it should be at the base of the server
     def _setup_routes(self):
         @self.router.get("/health")
@@ -399,26 +393,6 @@ class ManagementRouter(BaseRouter):
             return document_chunks_result, {
                 "total_entries": document_chunks["total_entries"]
             }
-
-        @self.router.get("/inspect_knowledge_graph")
-        @self.base_endpoint
-        async def inspect_knowledge_graph(
-            offset: int = 0,
-            limit: int = 100,
-            print_descriptions: bool = False,
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedKnowledgeGraphResponse,
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can call the `inspect_knowledge_graph` endpoint.",
-                    403,
-                )
-            return await self.service.inspect_knowledge_graph(
-                offset=offset,
-                limit=limit,
-                print_descriptions=print_descriptions,
-            )
 
         @self.router.get("/collections_overview")
         @self.base_endpoint

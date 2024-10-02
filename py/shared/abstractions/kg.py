@@ -7,8 +7,8 @@ from .llm import GenerationConfig
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    kg_extraction_prompt: str = Field(
-        default="graphrag_triplet_extraction_zero_shot",
+    kg_triples_extraction_prompt: str = Field(
+        default="graphrag_triples_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",
     )
 

@@ -1,15 +1,11 @@
-# okay let's roll it.
-import asyncio
 import json
 import logging
-import os
-from contextlib import asynccontextmanager
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
 
-from core import KGEnrichmentSettings, KGExtraction
+from core import KGExtraction
 from core.base import (
     Community,
     DatabaseProvider,
@@ -21,8 +17,6 @@ from core.base import (
 )
 
 logger = logging.getLogger(__name__)
-
-from typing import Optional
 
 
 class PostgresKGProvider(KGProvider):
@@ -108,7 +102,7 @@ class PostgresKGProvider(KGProvider):
             attributes JSONB NOT NULL
         );
         """
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
         # entity description table, unique by document_id, category, name
         query = f"""
@@ -124,7 +118,7 @@ class PostgresKGProvider(KGProvider):
             UNIQUE (document_id, category, name)
         );"""
 
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
         # triples table 2 # Relationship summaries by document ID
         query = f"""
@@ -141,7 +135,7 @@ class PostgresKGProvider(KGProvider):
             UNIQUE (document_ids, subject, predicate, object)
         );"""
 
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
         # embeddings tables
         query = f"""
@@ -154,7 +148,7 @@ class PostgresKGProvider(KGProvider):
             );
         """
 
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
         # triples embeddings table
         query = f"""
@@ -168,7 +162,7 @@ class PostgresKGProvider(KGProvider):
             );
         """
 
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
         # communities table, result of the Leiden algorithm
         query = f"""
@@ -182,13 +176,13 @@ class PostgresKGProvider(KGProvider):
             triple_ids INT[] NOT NULL
         );"""
 
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
         # communities_report table
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community_report")} (
             id SERIAL PRIMARY KEY,
-            community_id INT NOT NULL,
+            community_number INT NOT NULL,
             collection_id UUID NOT NULL,
             level INT NOT NULL,
             name TEXT NOT NULL,
@@ -198,10 +192,10 @@ class PostgresKGProvider(KGProvider):
             rating_explanation TEXT NOT NULL,
             embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
             attributes JSONB,
-            UNIQUE (community_id, level, collection_id)
+            UNIQUE (community_number, level, collection_id)
         );"""
 
-        result = await self.execute_query(query)
+        await self.execute_query(query)
 
     async def _add_objects(
         self, objects: list[Any], table_name: str
@@ -320,10 +314,6 @@ class PostgresKGProvider(KGProvider):
                     extraction.triples,
                     table_name="triple" + table_suffix,
                 )
-
-        logger.info(
-            f"Upserted {total_entities} entities and {total_relationships} relationships into the database."
-        )
 
         return (total_entities, total_relationships)
 
@@ -486,22 +476,37 @@ class PostgresKGProvider(KGProvider):
             """
         await self.execute_many(QUERY, communities)
 
-    async def add_community_report(
-        self, community: Community, collection_id: UUID
-    ) -> None:
+    async def add_community_report(self, community: Community) -> None:
 
         community.embedding = str(community.embedding)
 
         await self._add_objects([community], "community_report")
 
     async def perform_graph_clustering(
-        self, collection_id: UUID, leiden_params: dict
+        self,
+        collection_id: UUID,
+        leiden_params: dict,  # TODO - Add typing for leiden_params
     ) -> Tuple[int, int, set[tuple[int, Any]]]:
         # TODO: implementing the clustering algorithm but now we will get communities at a document level and then we will get communities at a higher level.
         # we will use the Leiden algorithm for this.
         # but for now let's skip it and make other stuff work.
         # we will need multiple tables for this to work.
+        """
+        Leiden clustering algorithm to cluster the knowledge graph triples into communities.
 
+        Available parameters and defaults:
+            max_cluster_size: int = 1000,
+            starting_communities: Optional[Dict[str, int]] = None,
+            extra_forced_iterations: int = 0,
+            resolution: Union[int, float] = 1.0,
+            randomness: Union[int, float] = 0.001,
+            use_modularity: bool = True,
+            random_seed: Optional[int] = None,
+            weight_attribute: str = "weight",
+            is_weighted: Optional[bool] = None,
+            weight_default: Union[int, float] = 1.0,
+            check_directed: bool = True,
+        """
         settings = {}
         triples = await self.get_all_triples(collection_id)
 
@@ -520,7 +525,7 @@ class PostgresKGProvider(KGProvider):
             G, leiden_params
         )
 
-        async def triple_ids(node: int) -> list[int]:
+        def triple_ids(node: int) -> list[int]:
             return [
                 triple["id"]
                 for triple in triples
@@ -535,44 +540,42 @@ class PostgresKGProvider(KGProvider):
                 item.parent_cluster,
                 item.level,
                 item.is_final_cluster,
-                (await triple_ids(item.node)),
+                triple_ids(item.node),
             )
             for item in hierarchical_communities
         ]
 
-        result = await self.add_communities(inputs)
+        await self.add_communities(inputs)
 
         num_communities = len(
             set([item.cluster for item in hierarchical_communities])
         )
-        # num_hierarchies = len(set([item.level for item in hierarchical_communities]))
-        # intermediate_communities = set([(item.level, item.cluster) for item in hierarchical_communities])
 
         return num_communities
 
     async def _compute_leiden_communities(
         self,
         graph: Any,
-        leiden_params: dict,
+        leiden_params: dict,  # TODO - make serve-side and run-time configuration paradigm
     ) -> dict[int, dict[str, int]]:
         """Compute Leiden communities."""
         try:
             from graspologic.partition import hierarchical_leiden
 
-            community_mapping = hierarchical_leiden(graph)
+            community_mapping = hierarchical_leiden(graph, **leiden_params)
 
             return community_mapping
 
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def get_community_details(self, community_id: int):
+    async def get_community_details(self, community_number: int):
 
         QUERY = f"""
             SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1
             LIMIT 1
         """
-        level = (await self.fetch_query(QUERY, [community_id]))[0]["level"]
+        level = (await self.fetch_query(QUERY, [community_number]))[0]["level"]
 
         QUERY = f"""
             WITH node_triple_ids AS (
@@ -588,7 +591,7 @@ class PostgresKGProvider(KGProvider):
             FROM node_triple_ids nti
             JOIN {self._get_table_name("entity_embedding")} e ON e.name = nti.node;
         """
-        entities = await self.fetch_query(QUERY, [community_id])
+        entities = await self.fetch_query(QUERY, [community_number])
 
         QUERY = f"""
             WITH node_triple_ids AS (
@@ -602,43 +605,44 @@ class PostgresKGProvider(KGProvider):
             FROM node_triple_ids nti
             JOIN {self._get_table_name("triple_raw")} t ON t.id = ANY(nti.triple_ids);
         """
-        triples = await self.fetch_query(QUERY, [community_id])
+        triples = await self.fetch_query(QUERY, [community_number])
 
         return level, entities, triples
-
-    # async def client(self):
-    #     return None
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.
         # this needs to be run periodically for every collection.
-        pass
+        raise NotImplementedError
 
     async def delete_triples(self, triple_ids: list[int]):
         # need to implement this.
-        pass
+        raise NotImplementedError
 
     async def get_schema(self):
         # somehow get the rds from the postgres db.
-        pass
+        raise NotImplementedError
 
-    async def get_entities(self, collection_id: str):
-        pass
+    async def get_entities(
+        self,
+        entity_ids: list[str] | None = None,
+        with_description: bool = False,
+    ):
+        raise NotImplementedError
 
-    async def get_triples(self, collection_id: str):
-        pass
+    async def get_triples(self, triple_ids: list[str] | None = None):
+        raise NotImplementedError
 
     async def structured_query(self):
-        pass
+        raise NotImplementedError
 
     async def update_extraction_prompt(self):
-        pass
+        raise NotImplementedError
 
     async def update_kg_search_prompt(self):
-        pass
+        raise NotImplementedError
 
     async def upsert_triples(self):
-        pass
+        raise NotImplementedError
 
     async def get_entity_count(self, document_id: str) -> int:
         QUERY = f"""

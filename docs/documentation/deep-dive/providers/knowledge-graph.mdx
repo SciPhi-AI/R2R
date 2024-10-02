@@ -22,7 +22,7 @@ provider = "postgres"
 batch_size = 256
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = ["Person", "Organization", "Location"] # if empty, all entities are extracted
     relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted
     max_knowledge_triples = 100
@@ -33,7 +33,7 @@ batch_size = 256
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
     generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 }
+    leiden_params = {}
 ```
 
 

@@ -7,17 +7,14 @@ from uuid import UUID
 from core.base import (
     AsyncPipe,
     AsyncState,
-    Community,
     CommunityReport,
     CompletionProvider,
     EmbeddingProvider,
-    Entity,
     GenerationConfig,
     KGProvider,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
-    Triple,
 )
 
 logger = logging.getLogger(__name__)
@@ -95,7 +92,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        community_id: str,
+        community_number: str,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
@@ -106,13 +103,13 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         community_level, entities, triples = (
             await self.kg_provider.get_community_details(
-                community_id=community_id
+                community_number=community_number
             )
         )
 
-        if entities == [] or triples == []:
+        if entities == [] and triples == []:
             raise ValueError(
-                f"Community {community_id} has no entities or triples."
+                f"Community {community_number} has no entities or triples."
             )
 
         for attempt in range(3):
@@ -153,11 +150,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             except Exception as e:
                 if attempt == 2:
                     raise ValueError(
-                        f"Failed to generate a summary for community {community_id} at level {community_level}."
+                        f"Failed to generate a summary for community {community_number} at level {community_level}."
                     ) from e
 
         community = CommunityReport(
-            community_id=community_id,
+            community_number=community_number,
             collection_id=collection_id,
             level=community_level,
             name=name,
@@ -173,9 +170,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.kg_provider.add_community_report(community, collection_id)  # type: ignore
+        await self.kg_provider.add_community_report(community)
 
-        return {"community_id": community.community_id, "name": community.name}
+        return {
+            "community_number": community.community_number,
+            "name": community.name,
+        }
 
     async def _run_logic(  # type: ignore
         self,
@@ -195,10 +195,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
-        for community_id in range(offset, limit):
+        for community_number in range(offset, limit):
             community_summary_jobs.append(
                 self.process_community(
-                    community_id=community_id,
+                    community_number=community_number,
                     max_summary_input_length=max_summary_input_length,
                     generation_config=generation_config,
                     collection_id=collection_id,
