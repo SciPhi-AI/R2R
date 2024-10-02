@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Set
 from uuid import UUID
 
 import psutil
@@ -403,20 +403,34 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedCollectionOverviewResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can call the `collections_overview` endpoint.",
-                    403,
-                )
-
-            collection_uuids = (
-                [UUID(collection_id) for collection_id in collection_ids]
-                if collection_ids
-                else None
+            user_collections: Optional[Set[UUID]] = (
+                None
+                if auth_user.is_superuser
+                else {UUID(str(cid)) for cid in auth_user.collection_ids}
             )
+
+            filtered_collections: Optional[Set[UUID]] = None
+
+            if collection_ids:
+                input_collections = {UUID(cid) for cid in collection_ids}
+                if user_collections is not None:
+                    filtered_collections = input_collections.intersection(
+                        user_collections
+                    )
+                else:
+                    filtered_collections = input_collections
+            else:
+                filtered_collections = user_collections
+
             collections_overview_response = (
                 await self.service.collections_overview(
-                    collection_ids=collection_uuids, offset=offset, limit=limit
+                    collection_ids=(
+                        [str(cid) for cid in filtered_collections]
+                        if filtered_collections is not None
+                        else None
+                    ),
+                    offset=offset,
+                    limit=limit,
                 )
             )
 
@@ -434,11 +448,12 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedCollectionResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can create collections.", 403
-                )
-            return await self.service.create_collection(name, description)
+            collection_id = await self.service.create_collection(
+                name, description
+            )
+            return await self.service.add_user_to_collection(
+                auth_user.id, collection_id.collection_id
+            )
 
         @self.router.get("/get_collection/{collection_id}")
         @self.base_endpoint
@@ -447,11 +462,16 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedCollectionResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can get Collection details.", 403
-                )
             collection_uuid = UUID(collection_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             result = await self.service.get_collection(collection_uuid)
             return result
 
@@ -468,11 +488,16 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedCollectionResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can update collections.", 403
-                )
             collection_uuid = UUID(collection_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             return await self.service.update_collection(
                 collection_uuid, name, description
             )
@@ -483,11 +508,15 @@ class ManagementRouter(BaseRouter):
             collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can delete collections.", 403
-                )
             collection_uuid = UUID(collection_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
             return await self.service.delete_collection(collection_uuid)
 
         @self.router.get("/list_collections")
@@ -518,12 +547,17 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedAddUserResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can add users to collections.", 403
-                )
-            user_uuid = UUID(user_id)
             collection_uuid = UUID(collection_id)
+            user_uuid = UUID(user_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             result = await self.service.add_user_to_collection(
                 user_uuid, collection_uuid
             )
@@ -536,12 +570,17 @@ class ManagementRouter(BaseRouter):
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can remove users from collections.", 403
-                )
-            user_uuid = UUID(user_id)
             collection_uuid = UUID(collection_id)
+            user_uuid = UUID(user_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             await self.service.remove_user_from_collection(
                 user_uuid, collection_uuid
             )
@@ -559,11 +598,16 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedUsersInCollectionResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can get users in a collection.", 403
-                )
             collection_uuid = UUID(collection_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             users_in_collection_response = (
                 await self.service.get_users_in_collection(
                     collection_id=collection_uuid,
@@ -587,9 +631,10 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedUserCollectionResponse,
         ):
-            if not auth_user.is_superuser:
+            if str(auth_user.id) != user_id or not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get collections for a user.", 403
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
                 )
             user_uuid = UUID(user_id)
             user_collection_response = (
@@ -609,13 +654,17 @@ class ManagementRouter(BaseRouter):
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            if not auth_user.is_superuser:
+            collection_uuid = UUID(collection_id)
+            document_uuid = UUID(document_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
                 raise R2RException(
-                    "Only a superuser can assign documents to collections.",
+                    "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
-            document_uuid = UUID(document_id)
-            collection_uuid = UUID(collection_id)
+
             return await self.service.assign_document_to_collection(
                 document_uuid, collection_uuid
             )
@@ -628,13 +677,17 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=None,
         ):
-            if not auth_user.is_superuser:
+            collection_uuid = UUID(collection_id)
+            document_uuid = UUID(document_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
                 raise R2RException(
-                    "Only a superuser can remove documents from collections.",
+                    "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
-            document_uuid = UUID(document_id)
-            collection_uuid = UUID(collection_id)
+
             await self.service.remove_document_from_collection(
                 document_uuid, collection_uuid
             )
@@ -673,11 +726,16 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedDocumentOverviewResponse,
         ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can get documents in a collection.", 403
-                )
             collection_uuid = UUID(collection_id)
+            if (
+                not auth_user.is_superuser
+                and collection_uuid not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             documents_in_collection_response = (
                 await self.service.documents_in_collection(
                     collection_uuid, offset, limit
