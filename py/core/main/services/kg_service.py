@@ -141,8 +141,8 @@ class KgService(Service):
         # TODO - Do not hardcode the batch size,
         # make it a configurable parameter at runtime & server-side defaults
 
-        # process 50 entities at a time
-        num_batches = math.ceil(entity_count / 50)
+        # process 256 entities at a time
+        num_batches = math.ceil(entity_count / 256)
         all_results = []
         for i in range(num_batches):
             logger.info(
@@ -152,8 +152,8 @@ class KgService(Service):
             node_descriptions = await self.pipes.kg_entity_description_pipe.run(
                 input=self.pipes.kg_entity_description_pipe.Input(
                     message={
-                        "offset": i * 50,
-                        "limit": 50,
+                        "offset": i * 256,
+                        "limit": 256,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
                     }
