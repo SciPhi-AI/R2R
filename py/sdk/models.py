@@ -21,6 +21,7 @@ from shared.abstractions import (  # ChunkingConfig,
     Token,
     VectorSearchResult,
     VectorSearchSettings,
+    RagEvalResult,
 )
 from shared.api.models import (
     KGCreationResponse,

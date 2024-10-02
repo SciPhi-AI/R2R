@@ -29,6 +29,7 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
+from .eval import RagEvalResult
 from .restructure import KGCreationSettings, KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
