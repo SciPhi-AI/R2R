@@ -1,22 +1,22 @@
 import logging
 from pathlib import Path
 from typing import Optional
-
-import yaml
-from fastapi import Body, Depends
-from pydantic import Json
 from uuid import UUID
 
+import yaml
+from fastapi import Body, Depends, Query
+from pydantic import Json
+
+from core.base import RunType
 from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
+from shared.abstractions.kg import KGRunType
 
 from ..services.kg_service import KgService
-from core.base import RunType
-from shared.abstractions.kg import KGRunType
 from .base_router import BaseRouter
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,9 @@ class KGRouter(BaseRouter):
                 logger.warning("Implement permission checks here.")
 
             if not collection_id:
-                collection_id = generate_default_user_collection_id(auth_user.id)
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
 
             logger.info(f"Running on collection {collection_id}")
 
@@ -139,10 +141,14 @@ class KGRouter(BaseRouter):
             )
 
             if not collection_id:
-                collection_id = generate_default_user_collection_id(auth_user.id)
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
 
             if run_type is KGRunType.ESTIMATE:
-                return await self.service.get_enrichment_estimate(collection_id)
+                return await self.service.get_enrichment_estimate(
+                    collection_id
+                )
 
             if kg_enrichment_settings:
                 for key, value in kg_enrichment_settings.items():
@@ -157,4 +163,65 @@ class KGRouter(BaseRouter):
 
             return await self.orchestration_provider.run_workflow(
                 "enrich-graph", {"request": workflow_input}, {}
+            )
+
+        @self.router.get("/entities")
+        @self.base_endpoint
+        async def get_entities(
+            collection_id: UUID = Query(
+                ..., description="Collection ID to retrieve entities from."
+            ),
+            offset: int = Query(0, ge=0, description="Offset for pagination."),
+            limit: int = Query(
+                100, ge=1, le=1000, description="Limit for pagination."
+            ),
+            entity_ids: Optional[list[str]] = Query(
+                None, description="Entity IDs to filter by."
+            ),
+            with_description: bool = Query(
+                False,
+                description="Include entity descriptions in the response.",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Retrieve entities from the knowledge graph.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            return await self.service.get_entities(
+                collection_id,
+                offset,
+                limit,
+                entity_ids,
+                with_description,
+            )
+
+        @self.router.get("/triples")
+        @self.base_endpoint
+        async def get_triples(
+            collection_id: UUID = Query(
+                ..., description="Collection ID to retrieve triples from."
+            ),
+            offset: int = Query(0, ge=0, description="Offset for pagination."),
+            limit: int = Query(
+                100, ge=1, le=1000, description="Limit for pagination."
+            ),
+            triple_ids: Optional[list[str]] = Query(
+                None, description="Triple IDs to filter by."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Retrieve triples from the knowledge graph.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            return await self.service.get_triples(
+                collection_id,
+                offset,
+                limit,
+                triple_ids,
             )

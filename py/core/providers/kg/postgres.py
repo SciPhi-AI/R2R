@@ -20,7 +20,6 @@ from core.base import (
 from shared.abstractions import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
-    KGEnrichmentSettings,
 )
 
 logger = logging.getLogger(__name__)
@@ -644,7 +643,9 @@ class PostgresKGProvider(KGProvider):
     # async def client(self):
     #     return None
 
-    async def get_community_reports(self, collection_id: UUID) -> List[CommunityReport]:
+    async def get_community_reports(
+        self, collection_id: UUID
+    ) -> List[CommunityReport]:
         QUERY = f"""
             SELECT * FROM {self._get_table_name("community_report")} WHERE collection_id = $1
         """
@@ -810,13 +811,72 @@ class PostgresKGProvider(KGProvider):
 
     async def get_entities(
         self,
-        entity_ids: list[str] | None = None,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        entity_ids: Optional[List[str]] = None,
         with_description: bool = False,
-    ):
-        raise NotImplementedError
+    ) -> dict:
+        conditions = []
+        params = [collection_id]
 
-    async def get_triples(self, triple_ids: list[str] | None = None):
-        raise NotImplementedError
+        if entity_ids:
+            conditions.append(f"id = ANY(${len(params) + 1})")
+            params.append(entity_ids)
+
+        params.extend([offset, limit])
+
+        query = f"""
+            SELECT id, name, category, description
+            FROM {self._get_table_name("entity_raw")}
+            WHERE document_id = ANY(
+                SELECT document_id FROM {self._get_table_name("document_info")}
+                WHERE $1 = ANY(collection_ids)
+            )
+            {" AND " + " AND ".join(conditions) if conditions else ""}
+            ORDER BY id
+            OFFSET ${len(params) - 1} LIMIT ${len(params)}
+        """
+        results = await self.fetch_query(query, params)
+        total_entries = await self.get_entity_count(
+            collection_id=collection_id
+        )
+
+        return {"results": results, "total_entries": total_entries}
+
+    async def get_triples(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        triple_ids: Optional[List[str]] = None,
+    ) -> dict:
+        conditions = []
+        params = [str(collection_id)]
+
+        if triple_ids:
+            conditions.append(f"id = ANY(${len(params) + 1})")
+            params.append([str(ele) for ele in triple_ids])
+
+        query = f"""
+            SELECT id, subject, predicate, object
+            FROM {self._get_table_name("triple_raw")}
+            WHERE document_id = ANY(
+                SELECT document_id FROM {self._get_table_name("document_info")}
+                WHERE $1 = ANY(collection_ids)
+            )
+            {" AND " + " AND ".join(conditions) if conditions else ""}
+            ORDER BY id
+            OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}
+        """
+        params.extend([offset, limit])
+
+        results = await self.fetch_query(query, params)
+        total_entries = await self.get_triple_count(
+            collection_id=collection_id
+        )
+
+        return {"results": results, "total_entries": total_entries}
 
     async def structured_query(self):
         raise NotImplementedError
@@ -830,8 +890,68 @@ class PostgresKGProvider(KGProvider):
     async def upsert_triples(self):
         raise NotImplementedError
 
-    async def get_entity_count(self, document_id: UUID) -> int:
+    async def get_entity_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+    ) -> int:
+        if collection_id is None and document_id is None:
+            raise ValueError(
+                "Either collection_id or document_id must be provided."
+            )
+
+        conditions = []
+        params = []
+
+        if collection_id:
+            conditions.append(
+                f"""
+                document_id = ANY(
+                    SELECT document_id FROM {self._get_table_name("document_info")}
+                    WHERE $1 = ANY(collection_ids)
+                )
+                """
+            )
+            params.append(str(collection_id))
+        else:
+            conditions.append("document_id = $1")
+            params.append(str(document_id))
+
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
+            SELECT COUNT(*) FROM {self._get_table_name("entity_raw")}
+            WHERE {" AND ".join(conditions)}
         """
-        return (await self.fetch_query(QUERY, [str(document_id)]))[0]["count"]
+        return (await self.fetch_query(QUERY, params))[0]["count"]
+
+    async def get_triple_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+    ) -> int:
+        if collection_id is None and document_id is None:
+            raise ValueError(
+                "Either collection_id or document_id must be provided."
+            )
+
+        conditions = []
+        params = []
+
+        if collection_id:
+            conditions.append(
+                f"""
+                document_id = ANY(
+                    SELECT document_id FROM {self._get_table_name("document_info")}
+                    WHERE $1 = ANY(collection_ids)
+                )
+                """
+            )
+            params.append(str(collection_id))
+        else:
+            conditions.append("document_id = $1")
+            params.append(str(document_id))
+
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("triple_raw")}
+            WHERE {" AND ".join(conditions)}
+        """
+        return (await self.fetch_query(QUERY, params))[0]["count"]

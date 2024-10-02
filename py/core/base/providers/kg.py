@@ -6,7 +6,6 @@ from typing import Any, Optional, Tuple
 from uuid import UUID
 
 from ..abstractions import (
-    Community,
     CommunityReport,
     Entity,
     KGCreationSettings,
@@ -177,7 +176,6 @@ class KGProvider(ABC):
         """Abstract method to get the entity count."""
         pass
 
-
     @abstractmethod
     async def delete_graph_for_collection(self, collection_id: UUID) -> None:
         """Abstract method to delete the graph for a collection."""
@@ -201,7 +199,9 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_community_reports(self, collection_id: UUID) -> list[CommunityReport]:
+    async def get_community_reports(
+        self, collection_id: UUID
+    ) -> list[CommunityReport]:
         """Abstract method to get community reports."""
         pass
 

@@ -34,6 +34,17 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
+    command: >
+      bash -c "
+        if [ -z \"\$(ls -A /var/lib/postgresql/data)\" ]; then
+          echo \"Data directory is empty, initializing database...\"
+          echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf
+          docker-entrypoint.sh postgres
+        else
+          echo \"Data directory is not empty, skipping initialization...\"
+          docker-entrypoint.sh postgres
+        fi
+      "
 
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
