@@ -6,6 +6,8 @@ from typing import Any, Optional, Tuple
 from uuid import UUID
 
 from ..abstractions import (
+    Community,
+    CommunityReport,
     Entity,
     KGCreationSettings,
     KGEnrichmentSettings,
@@ -67,14 +69,16 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def add_triples(self, triples: list[Triple], table_name: str) -> None:
+    async def add_triples(
+        self, triples: list[Triple], table_name: str
+    ) -> None:
         """Abstract method to add triples."""
         pass
 
     @abstractmethod
     async def add_kg_extractions(
-        self, kg_extractions: list[KGExtraction]
-    ) -> None:
+        self, kg_extractions: list[KGExtraction], table_suffix: str = "_raw"
+    ) -> Tuple[int, int]:
         """Abstract method to add KG extractions."""
         pass
 
@@ -158,7 +162,7 @@ class KGProvider(ABC):
 
     @abstractmethod
     async def get_entity_map(
-        self, offset: int, limit: int, document_id: str
+        self, offset: int, limit: int, document_id: UUID
     ) -> dict[str, Any]:
         """Abstract method to get the entity map."""
         pass
@@ -169,12 +173,14 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_entity_count(self, document_id: str) -> int:
+    async def get_entity_count(self, document_id: UUID) -> int:
         """Abstract method to get the entity count."""
         pass
 
     @abstractmethod
-    async def delete_frga(self, document_id: str, offset: int, limit: int) -> list[str]:
+    async def delete_frga(
+        self, document_id: UUID, offset: int, limit: int
+    ) -> list[str]:
         """Abstract method to get the entity descriptions."""
         pass
 
@@ -191,6 +197,25 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_enrichment_estimate(self, *args: Any, **kwargs: Any) -> Any:
         """Abstract method to get the enrichment estimate."""
+        pass
+
+    @abstractmethod
+    async def add_community_report(
+        self, community_report: CommunityReport
+    ) -> None:
+        """Abstract method to add a community report."""
+        pass
+
+    @abstractmethod
+    async def get_community_reports(self) -> list[CommunityReport]:
+        """Abstract method to get community reports."""
+        pass
+
+    @abstractmethod
+    async def check_community_reports_exist(
+        self, collection_id: UUID, offset: int, limit: int
+    ) -> list[int]:
+        """Abstract method to check if community reports exist."""
         pass
 
 

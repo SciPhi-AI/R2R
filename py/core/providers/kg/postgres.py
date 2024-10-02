@@ -1,27 +1,27 @@
 import json
 import logging
-from typing import Any, Optional, Tuple, List, Dict, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
+from graspologic.partition import HierarchicalClusters
 
 from core.base import (
-    Community,
+    CommunityReport,
     DatabaseProvider,
     EmbeddingProvider,
     Entity,
     KGConfig,
     KGCreationStatus,
+    KGExtraction,
     KGProvider,
     Triple,
-    KGExtraction,
 )
 from shared.abstractions import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
     KGEnrichmentSettings,
 )
-from graspologic.partition import HierarchicalClusters
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class PostgresKGProvider(KGProvider):
         await self.create_tables(project_name=self.db_provider.project_name)
 
     async def execute_query(
-        self, query: str, params: Optional[list[tuple[Any]]] = None
+        self, query: str, params: Optional[list[Any]] = None
     ) -> Any:
         return await self.db_provider.execute_query(query, params)
 
@@ -69,7 +69,9 @@ class PostgresKGProvider(KGProvider):
         return await self.db_provider.execute_many(query, params, batch_size)
 
     async def fetch_query(
-        self, query: str, params: Optional[list[tuple[Any]]] = None
+        self,
+        query: str,
+        params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
         return await self.db_provider.fetch_query(query, params)
 
@@ -254,7 +256,7 @@ class PostgresKGProvider(KGProvider):
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str = 'triples',
+        table_name: str = "triples",
     ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
@@ -474,30 +476,29 @@ class PostgresKGProvider(KGProvider):
         triples = await self.fetch_query(QUERY, [document_ids])
         return triples
 
-    async def add_communities(
-        self, communities: List[Tuple[str, int, Optional[int], int, bool, List[int]]]
-    ) -> None:
+    async def add_communities(self, communities: List[Any]) -> None:
         QUERY = f"""
             INSERT INTO {self._get_table_name("community")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids)
             VALUES ($1, $2, $3, $4, $5, $6)
             """
         await self.execute_many(QUERY, communities)
 
-    async def add_community_report(self, community: Community) -> None:
+    async def add_community_report(
+        self, community_report: CommunityReport
+    ) -> None:
 
-        community.embedding = str(community.embedding)
+        # TODO: Fix in the short term.
+        # we need to do this because postgres insert needs to be a string
+        community_report.embedding = str(community_report.embedding)  # type: ignore[assignment]
 
         non_null_attrs = {
-            k: v for k, v in community.__dict__.items() if v is not None
+            k: v for k, v in community_report.__dict__.items() if v is not None
         }
         columns = ", ".join(non_null_attrs.keys())
         placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
 
         conflict_columns = ", ".join(
-            [
-                f"{k} = EXCLUDED.{k}"
-                for k in non_null_attrs.keys()
-            ]
+            [f"{k} = EXCLUDED.{k}" for k in non_null_attrs.keys()]
         )
 
         QUERY = f"""
@@ -506,7 +507,7 @@ class PostgresKGProvider(KGProvider):
             ON CONFLICT (community_number, level, collection_id) DO UPDATE SET
                 {conflict_columns}
             """
-        
+
         await self.execute_many(QUERY, [tuple(non_null_attrs.values())])
 
     async def perform_graph_clustering(
@@ -597,7 +598,9 @@ class PostgresKGProvider(KGProvider):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def get_community_details(self, community_number: int) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
+    async def get_community_details(
+        self, community_number: int
+    ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
         QUERY = f"""
             SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1

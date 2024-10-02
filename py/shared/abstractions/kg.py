@@ -36,6 +36,22 @@ class KGCreationEstimationResponse(R2RSerializable):
         description="The estimated total time to run the graph creation process.",
     )
 
+    total_chunks: int = Field(
+        description="The estimated total number of chunks.",
+    )
+
+    document_count: int = Field(
+        description="The number of documents in the collection.",
+    )
+
+    max_time_estimate: float = Field(
+        description="The estimated maximum time to run the graph creation process.",
+    )
+
+    number_of_jobs_created: int = Field(
+        description="The number of jobs created for the graph creation process.",
+    )
+
 
 class KGEnrichmentEstimationResponse(R2RSerializable):
     """Response for knowledge graph enrichment estimation."""

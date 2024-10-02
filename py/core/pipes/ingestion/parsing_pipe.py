@@ -70,7 +70,7 @@ class ParsingPipe(AsyncPipe):
             async for extraction in self.ingestion_provider.parse(  # type: ignore
                 file_content, document, ingestion_config_override
             ):
-                id = generate_extraction_id(extraction.id, version)
+                id = generate_extraction_id(document.id, version=version)
                 extraction.id = id
                 extraction.metadata["version"] = version
                 yield extraction

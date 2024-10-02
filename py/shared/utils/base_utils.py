@@ -122,12 +122,12 @@ def generate_document_id(filename: str, user_id: UUID) -> UUID:
 
 
 def generate_extraction_id(
-    document_id: UUID, iteration: int, version: str
+    document_id: UUID, iteration: int = 0, version: str = "0"
 ) -> UUID:
     """
     Generates a unique extraction id from a given document id and iteration
     """
-    return _generate_id_from_label(f"{str(document_id)}-{iteration}")
+    return _generate_id_from_label(f"{str(document_id)}-{iteration}-{version}")
 
 
 def generate_default_user_collection_id(user_id: UUID) -> UUID:
