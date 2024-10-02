@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 
 from core.base import (
     R2RException,
-    generate_id_from_label,
     generate_default_user_collection_id,
+    generate_id_from_label,
 )
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse

@@ -73,8 +73,6 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            if isinstance(kg_creation_settings, str):
-                kg_creation_settings = json.loads(kg_creation_settings)
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
