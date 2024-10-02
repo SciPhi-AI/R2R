@@ -52,6 +52,9 @@ def create_graph(
     else:
         run_type = "run"
 
+    if force_kg_creation:
+        kg_creation_settings = {'force_kg_creation': True}
+
     with timer():
         response = client.create_graph(
             collection_id, run_type, kg_creation_settings
@@ -68,12 +71,22 @@ def create_graph(
     help="Collection ID to enrich graph for.",
 )
 @click.option(
+    "--run",
+    is_flag=True,
+    help="Run the graph enrichment process.",
+)
+@click.option(
+    "--force-kg-enrichment",
+    is_flag=True,
+    help="Force the graph enrichment process.",
+)
+@click.option(
     "--kg-enrichment-settings",
     required=False,
     help="Settings for the graph enrichment process.",
 )
 @pass_context
-def enrich_graph(ctx, collection_id, kg_enrichment_settings):
+def enrich_graph(ctx, collection_id, run, force_kg_enrichment, kg_enrichment_settings):
     """
     Enrich an existing graph.
     """
@@ -88,7 +101,15 @@ def enrich_graph(ctx, collection_id, kg_enrichment_settings):
             )
             return
 
+    if not run:
+        run_type = "estimate"
+    else:
+        run_type = "run"
+
+    if force_kg_enrichment:
+        kg_enrichment_settings = {'force_kg_enrichment': True}
+
     with timer():
-        response = client.enrich_graph(collection_id, kg_enrichment_settings)
+        response = client.enrich_graph(collection_id, run_type, kg_enrichment_settings)
 
     click.echo(json.dumps(response, indent=2))
