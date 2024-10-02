@@ -166,16 +166,21 @@ Knowledge graph creation is done in two steps:
 1. `create-graph`: Extracts nodes and relationships from your input document collection.
 2. `enrich-graph`: Enhances the graph structure through clustering and explaining entities (commonly referred to as `GraphRAG`).
 
+
 ```bash
-# document-ids are optional
-r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+# collection ID is optional. If you don't specify one, the default collection will be used.
+r2r create-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
 ```
 
 ```bash Example Response
 [{'message': 'Graph creation task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
 ```
 
-This step will create a knowledge graph with nodes and relationships. Below is a visualization of the graph which we produced with Neo4j:
+<Note>
+
+</Note>
+
+This step will create a knowledge graph with nodes and relationships. Below is a visualization of the graph which we produced with Neo4j (deprecated as of now. We are working on a new visualization tool):
 
 ```
 MATCH (a)
@@ -226,7 +231,8 @@ Now we have a graph, but this graph is not searchable yet. We need to perform th
 The graph enrichment step adds node and relationship descriptions, performs hierarchical leiden clustering to create communities, and embeds the descriptions. These embeddings will be used later in the local search stage of the pipeline. If you are more interested in the algorithm, please refer to the blog post [here](https://www.sciphi.ai/blog/graphrag).
 
 ```bash
-r2r enrich-graph
+# collection ID is optional. If you don't specify one, the default collection will be used.
+r2r enrich-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
 ```
 
 Now you can see that the graph is enriched with the following information. We have added descriptions and embeddings to the nodes and relationships. Also, each node is mapped to a community.

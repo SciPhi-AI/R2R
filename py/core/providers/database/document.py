@@ -348,7 +348,7 @@ class DocumentMixin(DatabaseMixin):
         self,
         status_type: str,
         status: Union[str, list[str]],
-        collection_id: UUID = None,
+        collection_id: Optional[UUID] = None,
     ):
         """
         Get the IDs for a given status.

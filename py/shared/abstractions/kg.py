@@ -1,11 +1,103 @@
+from enum import Enum
+
 from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
 
 
+class KGRunType(Enum):
+    """Type of KG run."""
+
+    ESTIMATE = "estimate"
+    RUN = "run"
+
+
+class KGCreationEstimationResponse(R2RSerializable):
+    """Response for knowledge graph creation estimation."""
+
+    estimated_entities: int = Field(
+        default=-1,
+        description="The estimated number of entities in the graph.",
+    )
+
+    estimated_triples: int = Field(
+        default=-1,
+        description="The estimated number of triples in the graph.",
+    )
+
+    estimated_llm_calls: int = Field(
+        default=-1,
+        description="The estimated number of LLM calls.",
+    )
+
+    total_in_out_tokens: float = Field(
+        default=-1,
+        description="The estimated total number of input and output tokens.",
+    )
+
+    total_time_estimate: float = Field(
+        default=-1,
+        description="The estimated total time to run the graph creation process.",
+    )
+
+    total_chunks: int = Field(
+        default=-1,
+        description="The estimated total number of chunks.",
+    )
+
+    document_count: int = Field(
+        default=-1,
+        description="The number of documents in the collection.",
+    )
+
+    max_time_estimate: float = Field(
+        default=-1,
+        description="The estimated maximum time to run the graph creation process.",
+    )
+
+    number_of_jobs_created: int = Field(
+        default=-1,
+        description="The number of jobs created for the graph creation process.",
+    )
+
+
+class KGEnrichmentEstimationResponse(R2RSerializable):
+    """Response for knowledge graph enrichment estimation."""
+
+    estimated_entities: int = Field(
+        default=-1,
+        description="The estimated number of entities in the graph.",
+    )
+
+    estimated_triples: int = Field(
+        default=-1,
+        description="The estimated number of triples in the graph.",
+    )
+
+    estimated_llm_calls: int = Field(
+        default=-1,
+        description="The estimated number of LLM calls.",
+    )
+
+    total_in_out_tokens: float = Field(
+        default=-1,
+        description="The estimated total number of input and output tokens.",
+    )
+
+    total_time_estimate: float = Field(
+        default=-1,
+        description="The estimated total time to run the graph enrichment process.",
+    )
+
+
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
+
+    run_mode: KGRunType = Field(
+        default=KGRunType.ESTIMATE,  # or run
+        description="Run an estimate for the full graph creation process.",
+    )
 
     kg_triples_extraction_prompt: str = Field(
         default="graphrag_triples_extraction_few_shot",
@@ -50,6 +142,11 @@ class KGCreationSettings(R2RSerializable):
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
+
+    run_mode: str = Field(
+        default="estimate",  # or run
+        description="Run an estimate for the full graph enrichment process.",
+    )
 
     skip_clustering: bool = Field(
         default=False,

@@ -33,9 +33,6 @@ def get_dataset(dataset_name, save_folder = '.data', split = "train", column_nam
             f.write(item[column_name])
         yield file_path
 
-def generate_id_from_label(label: str) -> uuid.UUID:
-    return uuid.uuid5(uuid.NAMESPACE_DNS, label)
-
 def wait_till_ready(status_var, status_value):
     while True:
         documents_overview = client.documents_overview(limit=1000)['results']

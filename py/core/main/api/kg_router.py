@@ -5,15 +5,19 @@ from typing import Optional
 import yaml
 from fastapi import Body, Depends
 from pydantic import Json
+from uuid import UUID
 
 from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
+from core.utils import generate_default_user_collection_id
 
 from ..services.kg_service import KgService
-from .base_router import BaseRouter, RunType
+from core.base import RunType
+from shared.abstractions.kg import KGRunType
+from .base_router import BaseRouter
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +56,13 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def create_graph(
-            collection_id: str = Body(
+            collection_id: Optional[UUID] = Body(
+                default=None,
                 description="Collection ID to create graph for.",
+            ),
+            run_type: Optional[KGRunType] = Body(
+                default=KGRunType.ESTIMATE,
+                description="Run type for the graph creation process.",
             ),
             kg_creation_settings: Optional[Json[dict]] = Body(
                 default=None,
@@ -64,22 +73,29 @@ class KGRouter(BaseRouter):
         ):
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
-
             This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
-
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
 
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(auth_user.id)
+
+            logger.info(f"Running on collection {collection_id}")
+
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
+
             if kg_creation_settings:
                 for key, value in kg_creation_settings.items():
                     if value is not None:
                         setattr(server_kg_creation_settings, key, value)
+
+            if run_type is KGRunType.ESTIMATE:
+                return await self.service.get_creation_estimate(collection_id)
 
             workflow_input = {
                 "collection_id": collection_id,
@@ -96,8 +112,13 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def enrich_graph(
-            collection_id: str = Body(
-                description="Collection name to enrich graph for.",
+            collection_id: Optional[UUID] = Body(
+                default=None,
+                description="Collection ID to enrich graph for.",
+            ),
+            run_type: Optional[KGRunType] = Body(
+                default=KGRunType.ESTIMATE,
+                description="Run type for the graph enrichment process.",
             ),
             kg_enrichment_settings: Optional[Json[dict]] = Body(
                 default=None,
@@ -116,6 +137,12 @@ class KGRouter(BaseRouter):
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings
             )
+
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(auth_user.id)
+
+            if run_type is KGRunType.ESTIMATE:
+                return await self.service.get_enrichment_estimate(collection_id)
 
             if kg_enrichment_settings:
                 for key, value in kg_enrichment_settings.items():

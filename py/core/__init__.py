@@ -161,7 +161,6 @@ __all__ = [
     "run_pipeline",
     "to_async_generator",
     "generate_run_id",
-    "generate_id_from_label",
     "increment_version",
     "EntityType",
     "RelationshipType",

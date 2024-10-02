@@ -7,6 +7,7 @@ from shared.abstractions import (
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
+    KGRunType,
     KGSearchMethod,
     KGSearchResult,
     KGSearchResultType,

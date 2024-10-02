@@ -21,7 +21,13 @@ from .graph import (
     RelationshipType,
     Triple,
 )
-from .kg import KGCreationSettings, KGEnrichmentSettings
+from .kg import (
+    KGCreationEstimationResponse,
+    KGCreationSettings,
+    KGEnrichmentEstimationResponse,
+    KGEnrichmentSettings,
+    KGRunType,
+)
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -99,9 +105,13 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     "HybridSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGEnrichmentEstimationResponse",
+    "KGExtraction",
+    "KGCreationEstimationResponse",
+    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",

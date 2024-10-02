@@ -86,12 +86,6 @@ class KgService(Service):
                 run_manager=self.run_manager,
             )
 
-            await self.providers.database.relational.set_workflow_status(
-                id=document_id,
-                status_type="kg_extraction_status",
-                status=KGCreationStatus.SUCCESS,
-            )
-
         except Exception as e:
             logger.error(f"Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
@@ -164,6 +158,12 @@ class KgService(Service):
 
             all_results.append(await _collect_results(node_descriptions))
 
+        await self.providers.database.relational.set_workflow_status(
+            id=document_id,
+            status_type="kg_creation_status",
+            status=KGCreationStatus.SUCCESS,
+        )
+
         return all_results
 
     @telemetry_event("kg_clustering")
@@ -211,3 +211,39 @@ class KgService(Service):
             run_manager=self.run_manager,
         )
         return await _collect_results(summary_results)
+
+    @telemetry_event("delete_graph_for_documents")
+    async def delete_graph_for_documents(
+        self,
+        document_ids: list[UUID],
+        **kwargs,
+    ):
+        # TODO: Implement this, as it needs some checks.
+        raise NotImplementedError
+
+    @telemetry_event("delete_graph_for_collection")
+    async def delete_graph_for_collection(
+        self,
+        collection_id: UUID,
+        cascade: bool,
+        **kwargs,
+    ):
+        return await self.providers.kg.delete_graph_for_collection(
+            collection_id, cascade
+        )
+
+    @telemetry_event("get_creation_estimate")
+    async def get_creation_estimate(
+        self,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_creation_estimate(collection_id)
+
+    @telemetry_event("get_enrichment_estimate")
+    async def get_enrichment_estimate(
+        self,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_enrichment_estimate(collection_id)

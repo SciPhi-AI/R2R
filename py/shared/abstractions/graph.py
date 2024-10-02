@@ -3,6 +3,7 @@ import logging
 import uuid
 from dataclasses import dataclass
 from typing import Any, Optional, Union
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -53,8 +54,8 @@ class Entity(R2RSerializable):
     name_embedding: Optional[list[float]] = None
     graph_embedding: Optional[list[float]] = None
     community_numbers: Optional[list[str]] = None
-    extraction_ids: Optional[list[str]] = None
-    document_id: Optional[str] = None
+    extraction_ids: Optional[list[UUID]] = None
+    document_id: Optional[UUID] = None
     rank: Optional[int] = None
     attributes: Optional[Union[dict[str, Any], str]] = None
 
@@ -98,10 +99,10 @@ class Triple(BaseModel):
     predicate_embedding: list[float] | None = None
     """The semantic embedding for the relationship description (optional)."""
 
-    extraction_ids: list[str] = []
+    extraction_ids: list[UUID] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
-    document_id: str | None = None
+    document_id: UUID | None = None
     """Document ID in which the relationship appears (optional)."""
 
     attributes: dict[str, Any] | str = {}
@@ -177,7 +178,7 @@ class Community(BaseModel):
     rank: float | None = 1.0
     """Rank of the report, used for sorting (optional). Higher means more important"""
 
-    summary_embedding: list[float] | None = None
+    embedding: list[float] | None = None
     """The semantic (i.e. text) embedding of the report summary (optional)."""
 
     full_content_embedding: list[float] | None = None

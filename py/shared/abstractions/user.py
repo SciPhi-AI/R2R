@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ..utils import generate_id_from_label
+from ..utils import generate_default_user_collection_id
 
 
 class Collection(BaseModel):
@@ -20,7 +20,7 @@ class Collection(BaseModel):
     def __init__(self, **data):
         super().__init__(**data)
         if self.id is None:
-            self.id = generate_id_from_label(self.name)
+            self.id = generate_default_user_collection_id(self.name)
 
 
 class Token(BaseModel):

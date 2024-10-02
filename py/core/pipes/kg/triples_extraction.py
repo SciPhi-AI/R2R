@@ -147,10 +147,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                                 category=entity_category,
                                 description=entity_description,
                                 name=entity_value,
-                                document_id=str(extractions[0].document_id),
+                                document_id=extractions[0].document_id,
                                 extraction_ids=[
-                                    str(extraction.id)
-                                    for extraction in extractions
+                                    extraction.id for extraction in extractions
                                 ],
                                 attributes={},
                             )
@@ -172,10 +171,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                                 object=object,
                                 description=description,
                                 weight=weight,
-                                document_id=str(extractions[0].document_id),
+                                document_id=extractions[0].document_id,
                                 extraction_ids=[
-                                    str(extraction.id)
-                                    for extraction in extractions
+                                    extraction.id for extraction in extractions
                                 ],
                                 attributes={},
                             )
