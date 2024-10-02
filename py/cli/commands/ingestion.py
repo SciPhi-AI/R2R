@@ -123,7 +123,7 @@ def update_files(ctx, file_paths, document_ids, metadatas):
 
 
 @cli.command()
-@click.option("--v2", is_flag=True, help="Use v2 ingestion")
+@click.option("--v2", is_flag=True, help="use aristotle_v2.txt (a smaller file)")
 @pass_context
 def ingest_sample_file(ctx, v2=False):
     """Ingest the first sample file into R2R."""
