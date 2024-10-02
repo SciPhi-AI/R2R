@@ -27,7 +27,13 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.abstractions.kg import KGCreationSettings, KGEnrichmentSettings, KGRunType, KGCreationEstimationResponse, KGEnrichmentEstimationResponse
+from shared.abstractions.kg import (
+    KGCreationEstimationResponse,
+    KGCreationSettings,
+    KGEnrichmentEstimationResponse,
+    KGEnrichmentSettings,
+    KGRunType,
+)
 from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,

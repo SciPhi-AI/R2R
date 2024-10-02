@@ -15,6 +15,7 @@ from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
 from core.utils import generate_extraction_id
+
 logger = logging.getLogger(__name__)
 
 

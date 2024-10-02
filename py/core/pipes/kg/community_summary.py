@@ -197,8 +197,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community_summary_jobs = []
 
         # check which community summaries exist and don't run them again
-        community_ids_exist = await self.kg_provider.check_community_reports_exist(
-            collection_id=collection_id, offset=offset, limit=limit
+        community_ids_exist = (
+            await self.kg_provider.check_community_reports_exist(
+                collection_id=collection_id, offset=offset, limit=limit
+            )
         )
 
         for community_id in range(offset, offset + limit):
@@ -209,7 +211,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         max_summary_input_length=max_summary_input_length,
                         generation_config=generation_config,
                         collection_id=collection_id,
-                        )
+                    )
                 )
 
         for community_summary in asyncio.as_completed(community_summary_jobs):

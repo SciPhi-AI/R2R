@@ -19,11 +19,9 @@ from core.base import (
     DocumentExtraction,
     DocumentType,
 )
-
-from core.utils import generate_extraction_id
-
 from core.base.abstractions import R2RSerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger(__name__)
 

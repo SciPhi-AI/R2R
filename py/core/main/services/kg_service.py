@@ -209,7 +209,6 @@ class KgService(Service):
         )
         return await _collect_results(summary_results)
 
-
     @telemetry_event("delete_graph_for_documents")
     async def delete_graph_for_documents(
         self,
@@ -218,7 +217,6 @@ class KgService(Service):
     ):
         # TODO: Implement this, as it needs some checks.
         raise NotImplementedError
-    
 
     @telemetry_event("delete_graph_for_collection")
     async def delete_graph_for_collection(
@@ -227,8 +225,9 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.kg.delete_graph_for_collection(collection_id, cascade)
-    
+        return await self.providers.kg.delete_graph_for_collection(
+            collection_id, cascade
+        )
 
     @telemetry_event("get_creation_estimate")
     async def get_creation_estimate(
@@ -237,7 +236,6 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.kg.get_creation_estimate(collection_id)
-    
 
     @telemetry_event("get_enrichment_estimate")
     async def get_enrichment_estimate(

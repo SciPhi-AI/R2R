@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
@@ -10,8 +10,8 @@ from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
     KGEntityResult,
-    KGRelationshipResult,
     KGGlobalResult,
+    KGRelationshipResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -106,11 +106,13 @@ if TYPE_CHECKING:
 def _generate_id_from_label(label: str) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
+
 def generate_run_id() -> UUID:
     """
     Generates a unique run id
     """
     return _generate_id_from_label(str(uuid4()))
+
 
 def generate_document_id(filename: str, user_id: UUID) -> UUID:
     """
@@ -118,11 +120,15 @@ def generate_document_id(filename: str, user_id: UUID) -> UUID:
     """
     return _generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
 
-def generate_extraction_id(document_id: UUID, iteration: int, version: str) -> UUID:
+
+def generate_extraction_id(
+    document_id: UUID, iteration: int, version: str
+) -> UUID:
     """
     Generates a unique extraction id from a given document id and iteration
     """
     return _generate_id_from_label(f"{str(document_id)}-{iteration}")
+
 
 def generate_default_user_collection_id(user_id: UUID) -> UUID:
     """
@@ -130,11 +136,13 @@ def generate_default_user_collection_id(user_id: UUID) -> UUID:
     """
     return _generate_id_from_label(str(user_id))
 
+
 def generate_collection_id_from_name(collection_name: str) -> UUID:
     """
     Generates a unique collection id from a given collection name
     """
     return _generate_id_from_label(collection_name)
+
 
 def generate_user_id(email: str) -> UUID:
     """
@@ -142,17 +150,22 @@ def generate_user_id(email: str) -> UUID:
     """
     return _generate_id_from_label(email)
 
+
 def generate_message_id(query: str, completion_start_time: datetime) -> UUID:
     """
     Generates a unique message id from a given query and completion start time
     """
-    return _generate_id_from_label(f"{query}-{completion_start_time.isoformat()}")
+    return _generate_id_from_label(
+        f"{query}-{completion_start_time.isoformat()}"
+    )
+
 
 def generate_default_prompt_id(prompt_name: str) -> UUID:
     """
     Generates a unique prompt id
     """
     return _generate_id_from_label(prompt_name)
+
 
 async def to_async_generator(
     iterable: Iterable[Any],
@@ -194,4 +207,3 @@ def format_entity_types(entity_types: list[EntityType]) -> str:
 def format_relations(predicates: list[RelationshipType]) -> str:
     lines = [predicate.name for predicate in predicates]
     return "\n".join(lines)
-

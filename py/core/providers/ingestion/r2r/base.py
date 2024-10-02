@@ -18,6 +18,7 @@ from core.base import (
 )
 from core.base.abstractions import DocumentExtraction
 from core.utils import generate_extraction_id
+
 logger = logging.getLogger(__name__)
 
 

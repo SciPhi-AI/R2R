@@ -4,15 +4,11 @@ from typing import TYPE_CHECKING
 
 from hatchet_sdk import Context
 
-from core.base import (
-    IngestionStatus,
-    OrchestrationProvider,
-    increment_version,
-)
+from core.base import IngestionStatus, OrchestrationProvider, increment_version
 from core.base.abstractions import DocumentInfo, R2RException
+from core.utils import generate_default_user_collection_id
 
 from ...services import IngestionService, IngestionServiceAdapter
-from core.utils import generate_default_user_collection_id
 
 if TYPE_CHECKING:
     from hatchet_sdk import Hatchet

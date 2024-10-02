@@ -5,11 +5,13 @@ from pydantic import Field
 from .base import R2RSerializable
 from .llm import GenerationConfig
 
+
 class KGRunType(Enum):
     """Type of KG run."""
 
     ESTIMATE = "estimate"
     RUN = "run"
+
 
 class KGCreationEstimationResponse(R2RSerializable):
     """Response for knowledge graph creation estimation."""
@@ -40,7 +42,7 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
 
     estimated_entities: int = Field(
         description="The estimated number of entities in the graph.",
-    )   
+    )
 
     estimated_triples: int = Field(
         description="The estimated number of triples in the graph.",
@@ -48,7 +50,7 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
 
     estimated_llm_calls: int = Field(
         description="The estimated number of LLM calls.",
-    )   
+    )
 
     total_in_out_tokens: float = Field(
         description="The estimated total number of input and output tokens.",
@@ -56,14 +58,14 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
 
     total_time_estimate: float = Field(
         description="The estimated total time to run the graph enrichment process.",
-    )   
+    )
 
 
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
     run_mode: str = Field(
-        default="estimate", # or run
+        default="estimate",  # or run
         description="Run an estimate for the full graph creation process.",
     )
 
@@ -112,7 +114,7 @@ class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
     run_mode: str = Field(
-        default="estimate", # or run
+        default="estimate",  # or run
         description="Run an estimate for the full graph enrichment process.",
     )
 

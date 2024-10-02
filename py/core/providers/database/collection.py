@@ -7,7 +7,11 @@ from uuid import UUID, uuid4
 from core.base import R2RException
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
-from core.utils import generate_default_user_collection_id, generate_collection_id_from_name
+from core.utils import (
+    generate_collection_id_from_name,
+    generate_default_user_collection_id,
+)
+
 from .base import DatabaseMixin
 
 logger = logging.getLogger(__name__)

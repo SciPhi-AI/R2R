@@ -2,11 +2,11 @@ import json
 from typing import Optional, Union
 
 from .models import (
-    KGRunType,
     KGCreationResponse,
     KGCreationSettings,
     KGEnrichmentResponse,
     KGEnrichmentSettings,
+    KGRunType,
 )
 
 

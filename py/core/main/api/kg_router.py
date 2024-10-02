@@ -6,14 +6,14 @@ import yaml
 from fastapi import Body, Depends
 from pydantic import Json
 
-from core.base import R2RException
-from core.base import KGCreationSettings, KGEnrichmentSettings
+from core.base import KGCreationSettings, KGEnrichmentSettings, R2RException
 from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
+
 from ..services.kg_service import KgService
 from .base_router import BaseRouter, RunType
 
@@ -78,10 +78,15 @@ class KGRouter(BaseRouter):
             """
 
             if not auth_user.is_superuser:
-                raise R2RException(status_code=403, message="Authentication failed: Only superusers can create graph.")
+                raise R2RException(
+                    status_code=403,
+                    message="Authentication failed: Only superusers can create graph.",
+                )
 
             if not collection_id:
-                collection_id = generate_default_user_collection_id(auth_user.id)
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
 
             if isinstance(kg_creation_settings, str):
                 kg_creation_settings = json.loads(kg_creation_settings)
@@ -95,23 +100,27 @@ class KGRouter(BaseRouter):
 
             if run_type == "estimate":
 
-                graph_estimate = await self.service.get_creation_estimate(collection_id)
+                graph_estimate = await self.service.get_creation_estimate(
+                    collection_id
+                )
                 return {"message": graph_estimate}
 
             elif run_type == "full":
                 workflow_input = {
                     "collection_id": collection_id,
                     "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-
                     "user": auth_user.json(),
                 }
 
                 return await self.orchestration_provider.run_workflow(
                     "create-graph", {"request": workflow_input}, {}
                 )
-            
+
             else:
-                raise R2RException(status_code=400, message="Invalid run type. Please specify either 'estimate' or 'full'.")
+                raise R2RException(
+                    status_code=400,
+                    message="Invalid run type. Please specify either 'estimate' or 'full'.",
+                )
 
         @self.router.post(
             "/enrich_graph",
@@ -138,10 +147,15 @@ class KGRouter(BaseRouter):
             """
 
             if not auth_user.is_superuser:
-                raise R2RException(status_code=403, message="Authentication failed: Only superusers can enrich graph.")
+                raise R2RException(
+                    status_code=403,
+                    message="Authentication failed: Only superusers can enrich graph.",
+                )
 
             if not collection_id:
-                collection_id = generate_default_user_collection_id(auth_user.id)
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
 
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings
@@ -153,10 +167,12 @@ class KGRouter(BaseRouter):
                         setattr(server_kg_enrichment_settings, key, value)
 
             if run_type == "estimate":
-            
-                clustering_result = await self.service.get_enrichment_estimate(collection_id)
+
+                clustering_result = await self.service.get_enrichment_estimate(
+                    collection_id
+                )
                 return {"message": clustering_result}
-            
+
             elif run_type == "full":
                 workflow_input = {
                     "collection_id": collection_id,
@@ -170,20 +186,27 @@ class KGRouter(BaseRouter):
                 )
 
             else:
-                raise R2RException(status_code=400, message="Invalid run type. Please specify either 'estimate' or 'full'.")
-
+                raise R2RException(
+                    status_code=400,
+                    message="Invalid run type. Please specify either 'estimate' or 'full'.",
+                )
 
         @self.router.post(
             "/delete_graph_for_documents",
         )
         @self.base_endpoint
         async def delete_graph_for_documents(
-            document_ids: list[str] = Body(description="List of document IDs to delete graph for."),
+            document_ids: list[str] = Body(
+                description="List of document IDs to delete graph for."
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            
+
             if not auth_user.is_superuser:
-                raise R2RException(status_code=403, message="Authentication failed: Only superusers can delete graph for documents.")
+                raise R2RException(
+                    status_code=403,
+                    message="Authentication failed: Only superusers can delete graph for documents.",
+                )
 
             return await self.service.delete_graph_for_documents(document_ids)
 
@@ -192,11 +215,21 @@ class KGRouter(BaseRouter):
         )
         @self.base_endpoint
         async def delete_graph_for_collection(
-            collection_id: str = Body(description="Collection ID to delete graph for."),
-            cascade: bool = Body(description="Whether to delete document level graph and all associated triples.", default=False),
+            collection_id: str = Body(
+                description="Collection ID to delete graph for."
+            ),
+            cascade: bool = Body(
+                description="Whether to delete document level graph and all associated triples.",
+                default=False,
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException(status_code=403, message="Authentication failed: Only superusers can delete graph for collection.")
+                raise R2RException(
+                    status_code=403,
+                    message="Authentication failed: Only superusers can delete graph for collection.",
+                )
 
-            return await self.service.delete_graph_for_collection(collection_id, cascade)
+            return await self.service.delete_graph_for_collection(
+                collection_id, cascade
+            )

@@ -46,7 +46,9 @@ def create_graph(ctx, collection_id, run, kg_creation_settings):
         run_type = "run"
 
     with timer():
-        response = client.create_graph(collection_id, run_type, kg_creation_settings)
+        response = client.create_graph(
+            collection_id, run_type, kg_creation_settings
+        )
 
     click.echo(json.dumps(response, indent=2))
 

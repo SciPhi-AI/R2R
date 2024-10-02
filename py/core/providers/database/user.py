@@ -4,8 +4,8 @@ from uuid import UUID
 
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models import UserResponse
-
 from core.utils import generate_user_id
+
 from .base import DatabaseMixin, QueryBuilder
 
 
