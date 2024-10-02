@@ -93,17 +93,19 @@ R2R requires connections to various services. Set up the following environment v
 
 ## Running R2R
 
+<Note>The full R2R installation does not use the default [`r2r.toml`](https://github.com/SciPhi-AI/R2R/blob/main/py/r2r.toml), instead it provides overrides through a pre-built custom configuration, [`full.toml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/configs/full.toml).</Note>
+
 After setting up your environment, you can start R2R using the following command:
 
 ```bash
 # requires services for unstructured, hatchet, postgres
-r2r serve --config-name=core
+r2r serve --config-name=full
 ```
 
 For local LLM usage:
 
 ```bash
-r2r serve --config-name=core_local_llm
+r2r serve --config-name=full_local_llm
 ```
 
 ## Python Development Mode
