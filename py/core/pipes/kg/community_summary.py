@@ -157,7 +157,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         f"Failed to generate a summary for community {community_number} at level {community_level}."
                     ) from e
 
-        community = CommunityReport(
+        community_report = CommunityReport(
             community_number=community_number,
             collection_id=collection_id,
             level=community_level,
@@ -174,11 +174,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.kg_provider.add_community_report(community)
+        await self.kg_provider.add_community_report(community_report)
 
         return {
-            "community_number": community.community_number,
-            "name": community.name,
+            "community_number": community_report.community_number,
+            "name": community_report.name,
         }
 
     async def _run_logic(  # type: ignore

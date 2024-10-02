@@ -1,9 +1,9 @@
 import json
 import logging
 import uuid
-from uuid import UUID
 from dataclasses import dataclass
 from typing import Any, Optional, Union
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -99,10 +99,10 @@ class Triple(BaseModel):
     predicate_embedding: list[float] | None = None
     """The semantic embedding for the relationship description (optional)."""
 
-    extraction_ids: list[str] = []
+    extraction_ids: list[UUID] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
-    document_id: str | None = None
+    document_id: UUID | None = None
     """Document ID in which the relationship appears (optional)."""
 
     attributes: dict[str, Any] | str = {}

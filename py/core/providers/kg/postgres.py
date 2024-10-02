@@ -1,13 +1,13 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
 from graspologic.partition import HierarchicalClusters
 
 from core.base import (
-    Community,
+    CommunityReport,
     DatabaseProvider,
     EmbeddingProvider,
     Entity,
@@ -55,7 +55,7 @@ class PostgresKGProvider(KGProvider):
         await self.create_tables(project_name=self.db_provider.project_name)
 
     async def execute_query(
-        self, query: str, params: Optional[list[tuple[Any]]] = None
+        self, query: str, params: Optional[list[Any]] = None
     ) -> Any:
         return await self.db_provider.execute_query(query, params)
 
@@ -68,7 +68,9 @@ class PostgresKGProvider(KGProvider):
         return await self.db_provider.execute_many(query, params, batch_size)
 
     async def fetch_query(
-        self, query: str, params: Optional[list[tuple[Any]]] = None
+        self,
+        query: str,
+        params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
         return await self.db_provider.fetch_query(query, params)
 
@@ -473,24 +475,23 @@ class PostgresKGProvider(KGProvider):
         triples = await self.fetch_query(QUERY, [document_ids])
         return triples
 
-    async def add_communities(
-        self,
-        communities: List[
-            Tuple[str, int, Optional[int], int, bool, List[int]]
-        ],
-    ) -> None:
+    async def add_communities(self, communities: List[Any]) -> None:
         QUERY = f"""
             INSERT INTO {self._get_table_name("community")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids)
             VALUES ($1, $2, $3, $4, $5, $6)
             """
         await self.execute_many(QUERY, communities)
 
-    async def add_community_report(self, community: Community) -> None:
+    async def add_community_report(
+        self, community_report: CommunityReport
+    ) -> None:
 
-        community.embedding = str(community.embedding)
+        # TODO: Fix in the short term.
+        # we need to do this because postgres insert needs to be a string
+        community_report.embedding = str(community_report.embedding)  # type: ignore[assignment]
 
         non_null_attrs = {
-            k: v for k, v in community.__dict__.items() if v is not None
+            k: v for k, v in community_report.__dict__.items() if v is not None
         }
         columns = ", ".join(non_null_attrs.keys())
         placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
@@ -641,6 +642,14 @@ class PostgresKGProvider(KGProvider):
     # async def client(self):
     #     return None
 
+    async def get_community_reports(
+        self, collection_id: UUID
+    ) -> List[CommunityReport]:
+        QUERY = f"""
+            SELECT * FROM {self._get_table_name("community_report")} WHERE collection_id = $1
+        """
+        return await self.fetch_query(QUERY, [collection_id])
+
     async def check_community_reports_exist(
         self, collection_id: UUID, offset: int, limit: int
     ) -> List[int]:
@@ -697,47 +706,60 @@ class PostgresKGProvider(KGProvider):
         self, collection_id: UUID
     ) -> KGCreationEstimationResponse:
 
-        document_ids = await self.db_provider.documents_in_collection(
-            collection_id
-        )
+        # document_ids = await self.db_provider.documents_in_collection(
+        #     collection_id
+        # )
 
-        query = f"""
-            SELECT document_id, COUNT(*) as chunk_count
-            FROM {self._get_table_name("document_chunks")}
-            WHERE document_id = ANY($1)
-            GROUP BY document_id
-        """
+        # schema_name = self._get_table_name("document_chunks").split(".")[0]
 
-        chunk_counts = await self.fetch_query(query, [document_ids])
+        # query = f"""
+        #     SELECT document_id, COUNT(*) as chunk_count
+        #     FROM {schema_name}.{schema_name}
+        #     WHERE document_id = ANY($1)
+        #     GROUP BY document_id
+        # """
 
-        total_chunks = (
-            sum(doc["chunk_count"] for doc in chunk_counts) / 4
-        )  # 4 chunks per llm call
-        estimated_entities = (total_chunks) * 25  # 25 entities per 4 chunks
-        estimated_triples = (
-            estimated_entities * 25
-        )  # Assuming 25 triples per entity on average
+        # chunk_counts = await self.fetch_query(query, [document_ids])
 
-        estimated_llm_calls = total_chunks * 2 + estimated_entities
+        # total_chunks = (
+        #     sum(doc["chunk_count"] for doc in chunk_counts) / 4
+        # )  # 4 chunks per llm call
+        # estimated_entities = (total_chunks) * 25  # 25 entities per 4 chunks
+        # estimated_triples = (
+        #     estimated_entities * 25
+        # )  # Assuming 25 triples per entity on average
 
-        total_in_out_tokens = (
-            5000 * estimated_llm_calls / 1000000
-        )  # in millions
+        # estimated_llm_calls = total_chunks * 2 + estimated_entities
 
-        total_time = (
-            total_in_out_tokens * 1 / 60
-        )  # 1 minute per million tokens
+        # total_in_out_tokens = (
+        #     5000 * estimated_llm_calls / 1000000
+        # )  # in millions
+
+        # total_time = (
+        #     total_in_out_tokens * 1 / 60
+        # )  # 1 minute per million tokens
+
+        # return KGCreationEstimationResponse(
+        #     estimated_entities=estimated_entities,
+        #     estimated_triples=estimated_triples,
+        #     total_chunks=total_chunks,
+        #     document_count=len(chunk_counts),
+        #     max_time_estimate=total_time,
+        #     estimated_llm_calls=estimated_llm_calls,
+        #     total_in_out_tokens=total_in_out_tokens,
+        #     total_time_estimate=total_time,
+        #     number_of_jobs_created=len(document_ids),
+        # )
 
         return KGCreationEstimationResponse(
-            estimated_entities=estimated_entities,
-            estimated_triples=estimated_triples,
-            total_chunks=total_chunks,
-            document_count=len(chunk_counts),
-            max_time_estimate=total_time,
-            estimated_llm_calls=estimated_llm_calls,
-            total_in_out_tokens=total_in_out_tokens,
-            total_time_estimate=total_time,
-            number_of_jobs_created=len(document_ids),
+            estimated_entities=0,
+            estimated_triples=0,
+            total_chunks=0,
+            document_count=0,
+            max_time_estimate=0,
+            estimated_llm_calls=0,
+            total_in_out_tokens=0,
+            number_of_jobs_created=0,
         )
 
     async def get_enrichment_estimate(

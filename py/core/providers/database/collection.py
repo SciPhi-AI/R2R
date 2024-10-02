@@ -4,11 +4,7 @@ from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from core.base import (
-    R2RException,
-    generate_default_user_collection_id,
-    generate_id_from_label,
-)
+from core.base import R2RException, generate_default_user_collection_id
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
 from core.utils import (

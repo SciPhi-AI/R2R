@@ -17,23 +17,48 @@ class KGCreationEstimationResponse(R2RSerializable):
     """Response for knowledge graph creation estimation."""
 
     estimated_entities: int = Field(
+        default=-1,
         description="The estimated number of entities in the graph.",
     )
 
     estimated_triples: int = Field(
+        default=-1,
         description="The estimated number of triples in the graph.",
     )
 
     estimated_llm_calls: int = Field(
+        default=-1,
         description="The estimated number of LLM calls.",
     )
 
     total_in_out_tokens: float = Field(
+        default=-1,
         description="The estimated total number of input and output tokens.",
     )
 
     total_time_estimate: float = Field(
+        default=-1,
         description="The estimated total time to run the graph creation process.",
+    )
+
+    total_chunks: int = Field(
+        default=-1,
+        description="The estimated total number of chunks.",
+    )
+
+    document_count: int = Field(
+        default=-1,
+        description="The number of documents in the collection.",
+    )
+
+    max_time_estimate: float = Field(
+        default=-1,
+        description="The estimated maximum time to run the graph creation process.",
+    )
+
+    number_of_jobs_created: int = Field(
+        default=-1,
+        description="The number of jobs created for the graph creation process.",
     )
 
 
@@ -41,22 +66,27 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
     """Response for knowledge graph enrichment estimation."""
 
     estimated_entities: int = Field(
+        default=-1,
         description="The estimated number of entities in the graph.",
     )
 
     estimated_triples: int = Field(
+        default=-1,
         description="The estimated number of triples in the graph.",
     )
 
     estimated_llm_calls: int = Field(
+        default=-1,
         description="The estimated number of LLM calls.",
     )
 
     total_in_out_tokens: float = Field(
+        default=-1,
         description="The estimated total number of input and output tokens.",
     )
 
     total_time_estimate: float = Field(
+        default=-1,
         description="The estimated total time to run the graph enrichment process.",
     )
 
