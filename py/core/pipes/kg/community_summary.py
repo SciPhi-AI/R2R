@@ -195,7 +195,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
-        for community_number in range(offset, limit):
+        for community_number in range(offset, limit + offset):
             community_summary_jobs.append(
                 self.process_community(
                     community_number=community_number,
