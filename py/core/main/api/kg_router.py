@@ -1,6 +1,7 @@
 import logging
+import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union, Dict, Any
 
 import yaml
 from fastapi import Body, Depends
@@ -61,7 +62,7 @@ class KGRouter(BaseRouter):
                 description="Run an estimate or the full graph creation process.",
             ),
             kg_creation_settings: Optional[
-                Union[dict, KGCreationSettings]
+                Union[Dict[str, Any], KGCreationSettings]
             ] = Body(
                 default="{}",
                 description="Settings for the graph creation process.",
@@ -84,19 +85,21 @@ class KGRouter(BaseRouter):
                 )
 
             if not collection_id:
-                collection_id = generate_default_user_collection_id(
+                collection_id = str(generate_default_user_collection_id(
                     auth_user.id
-                )
+                ))
 
             if isinstance(kg_creation_settings, str):
                 kg_creation_settings = json.loads(kg_creation_settings)
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
-            if kg_creation_settings:
+            if isinstance(kg_creation_settings, dict):
                 for key, value in kg_creation_settings.items():
                     if value is not None:
                         setattr(server_kg_creation_settings, key, value)
+            elif isinstance(kg_creation_settings, KGCreationSettings):
+                server_kg_creation_settings = kg_creation_settings
 
             if run_type == "estimate":
 
@@ -134,7 +137,7 @@ class KGRouter(BaseRouter):
                 description="Run an estimate or the full graph enrichment process.",
             ),
             kg_enrichment_settings: Optional[
-                Union[dict, KGEnrichmentSettings]
+                Union[Dict[str, Any], KGEnrichmentSettings]
             ] = Body(
                 default="{}",
                 description="Settings for the graph enrichment process.",
@@ -153,18 +156,20 @@ class KGRouter(BaseRouter):
                 )
 
             if not collection_id:
-                collection_id = generate_default_user_collection_id(
-                    auth_user.id
+                collection_id = str(
+                    generate_default_user_collection_id(auth_user.id)
                 )
 
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings
             )
 
-            if kg_enrichment_settings:
+            if isinstance(kg_enrichment_settings, dict):
                 for key, value in kg_enrichment_settings.items():
                     if value is not None:
                         setattr(server_kg_enrichment_settings, key, value)
+            elif isinstance(kg_enrichment_settings, KGEnrichmentSettings):
+                server_kg_enrichment_settings = kg_enrichment_settings
 
             if run_type == "estimate":
 

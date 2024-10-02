@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, List, Dict, Union
 from uuid import UUID
 
 import asyncpg
@@ -14,13 +14,14 @@ from core.base import (
     KGCreationStatus,
     KGProvider,
     Triple,
+    KGExtraction,
 )
 from shared.abstractions import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
     KGEnrichmentSettings,
-    KGExtraction,
 )
+from graspologic.partition import HierarchicalClusters
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +255,7 @@ class PostgresKGProvider(KGProvider):
         self,
         triples: list[Triple],
         table_name: str,
-    ) -> asyncpg.Record:
+    ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
 
@@ -324,8 +325,8 @@ class PostgresKGProvider(KGProvider):
         return (total_entities, total_relationships)
 
     async def get_entity_map(
-        self, offset: int, limit: int, document_id: str
-    ) -> dict[str, Any]:
+        self, offset: int, limit: int, document_id: UUID
+    ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
 
         QUERY1 = f"""
             WITH entities_list AS (
@@ -379,7 +380,7 @@ class PostgresKGProvider(KGProvider):
             for triple in triples_list
         ]
 
-        entity_map = {}
+        entity_map: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
         for entity in entities_list:
             if entity["name"] not in entity_map:
                 entity_map[entity["name"]] = {"entities": [], "triples": []}
@@ -395,7 +396,7 @@ class PostgresKGProvider(KGProvider):
 
     async def upsert_embeddings(
         self,
-        data: list[dict[str, Any]],
+        data: List[Tuple[str, str, List[float]]],
         table_name: str,
     ) -> None:
         QUERY = f"""
@@ -407,7 +408,7 @@ class PostgresKGProvider(KGProvider):
             """
         return await self.execute_many(QUERY, data)
 
-    async def upsert_entities(self, entities: list[Entity]) -> None:
+    async def upsert_entities(self, entities: List[Entity]) -> None:
         QUERY = """
             INSERT INTO $1.$2 (category, name, description, description_embedding, extraction_ids, document_id, attributes)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -415,9 +416,9 @@ class PostgresKGProvider(KGProvider):
 
         table_name = self._get_table_name("entities")
         query = QUERY.format(table_name)
-        await self.execute_query(query, entities)
+        await self.execute_query(query, [(e.category, e.name, e.description, e.description_embedding, e.extraction_ids, e.document_id, e.attributes) for e in entities])
 
-    async def upsert_relationships(self, relationships: list[Triple]) -> None:
+    async def upsert_relationships(self, relationships: List[Triple]) -> None:
         QUERY = """
             INSERT INTO $1.$2 (source, target, relationship)
             VALUES ($1, $2, $3)
@@ -425,7 +426,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = self._get_table_name("triples")
         query = QUERY.format(table_name)
-        await self.execute_query(query, relationships)
+        await self.execute_query(query, [(r.subject, r.object, r.predicate) for r in relationships])
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
@@ -450,7 +451,7 @@ class PostgresKGProvider(KGProvider):
                 SELECT {property_names_str} FROM {self._get_table_name(table_name)} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
 
-        results = await self.fetch_query(QUERY, (str(query_embedding), limit))
+        results = await self.fetch_query(QUERY, [query_embedding, limit])
 
         for result in results:
             yield {
@@ -458,7 +459,7 @@ class PostgresKGProvider(KGProvider):
                 for property_name in property_names
             }
 
-    async def get_all_triples(self, collection_id: UUID) -> list[Triple]:
+    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
 
         # getting all documents for a collection
         QUERY = f"""
@@ -474,7 +475,7 @@ class PostgresKGProvider(KGProvider):
         return triples
 
     async def add_communities(
-        self, communities: list[tuple[int, Any]]
+        self, communities: List[Tuple[str, int, Optional[int], int, bool, List[int]]]
     ) -> None:
         QUERY = f"""
             INSERT INTO {self._get_table_name("community")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids)
@@ -484,15 +485,15 @@ class PostgresKGProvider(KGProvider):
 
     async def add_community_report(self, community: Community) -> None:
 
-        community.embedding = str(community.embedding)
-
-        await self._add_objects([community], "community_report")
+        community_dict = community.__dict__
+        community_dict['embedding'] = str(community_dict.get('embedding', ''))
+        await self._add_objects([community_dict], "community_report")
 
     async def perform_graph_clustering(
         self,
         collection_id: UUID,
-        leiden_params: dict,  # TODO - Add typing for leiden_params
-    ) -> Tuple[int, int, set[tuple[int, Any]]]:
+        leiden_params: Dict[str, Any],
+    ) -> Tuple[int, int, Set[Tuple[int, Any]]]:
         """
         Leiden clustering algorithm to cluster the knowledge graph triples into communities.
 
@@ -509,7 +510,7 @@ class PostgresKGProvider(KGProvider):
             weight_default: Union[int, float] = 1.0,
             check_directed: bool = True,
         """
-        settings = {}
+        settings: Dict[str, Any] = {}
         triples = await self.get_all_triples(collection_id)
 
         logger.info(f"Clustering with settings: {str(settings)}")
@@ -517,10 +518,10 @@ class PostgresKGProvider(KGProvider):
         G = self.nx.Graph()
         for triple in triples:
             G.add_edge(
-                triple["subject"],
-                triple["object"],
-                weight=triple["weight"],
-                id=triple["id"],
+                triple.subject,
+                triple.object,
+                weight=triple.weight,
+                id=triple.id,
             )
 
         hierarchical_communities = await self._compute_leiden_communities(
@@ -529,15 +530,15 @@ class PostgresKGProvider(KGProvider):
 
         def triple_ids(node: int) -> list[int]:
             return [
-                triple["id"]
+                triple.id
                 for triple in triples
-                if triple["subject"] == node or triple["object"] == node
+                if triple.subject == node or triple.object == node
             ]
 
         # upsert the communities into the database.
         inputs = [
             (
-                item.node,
+                str(item.node),
                 item.cluster,
                 item.parent_cluster,
                 item.level,
@@ -553,13 +554,13 @@ class PostgresKGProvider(KGProvider):
             set([item.cluster for item in hierarchical_communities])
         )
 
-        return num_communities
+        return num_communities, len(triples), set()
 
     async def _compute_leiden_communities(
         self,
         graph: Any,
-        leiden_params: dict,  # TODO - make serve-side and run-time configuration paradigm
-    ) -> dict[int, dict[str, int]]:
+        leiden_params: Dict[str, Any],
+    ) -> HierarchicalClusters:
         """Compute Leiden communities."""
         try:
             from graspologic.partition import hierarchical_leiden
@@ -576,7 +577,7 @@ class PostgresKGProvider(KGProvider):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def get_community_details(self, community_number: int):
+    async def get_community_details(self, community_number: int) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
         QUERY = f"""
             SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1
@@ -621,7 +622,7 @@ class PostgresKGProvider(KGProvider):
 
     async def check_community_reports_exist(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> list[int]:
+    ) -> List[int]:
         QUERY = f"""
             SELECT distinct community_id FROM {self._get_table_name("community_report")} WHERE collection_id = $1 AND community_id >= $2 AND community_id < $3
         """
@@ -706,17 +707,17 @@ class PostgresKGProvider(KGProvider):
             total_in_out_tokens * 1 / 60
         )  # 1 minute per million tokens
 
-        return {
-            "estimated_entities": estimated_entities,
-            "estimated_triples": estimated_triples,
-            "total_chunks": total_chunks,
-            "document_count": len(chunk_counts),
-            "max_time_estimate (hours)": total_time,
-            "estimated_llm_calls": estimated_llm_calls,
-            "total_in_out_tokens (millions)": total_in_out_tokens,
-            "total_time_estimate (hours)": total_time,
-            "number_of_jobs_created": len(document_ids),
-        }
+        return KGCreationEstimationResponse(
+            estimated_entities=estimated_entities,
+            estimated_triples=estimated_triples,
+            total_chunks=total_chunks,
+            document_count=len(chunk_counts),
+            max_time_estimate=total_time,
+            estimated_llm_calls=estimated_llm_calls,
+            total_in_out_tokens=total_in_out_tokens,
+            total_time_estimate=total_time,
+            number_of_jobs_created=len(document_ids),
+        )
 
     async def get_enrichment_estimate(
         self, collection_id: UUID
@@ -741,13 +742,13 @@ class PostgresKGProvider(KGProvider):
             total_in_out_tokens * 1 / 60
         )  # 1 minute per million tokens
 
-        return {
-            "estimated_entities": entity_count,
-            "estimated_triples": entity_count * 1000,
-            "estimated_llm_calls": estimated_llm_calls,
-            "total_in_out_tokens (millions)": total_in_out_tokens,
-            "total_time_estimate (hours)": total_time,
-        }
+        return KGEnrichmentEstimationResponse(
+            estimated_entities=entity_count,
+            estimated_triples=entity_count * 1000,
+            estimated_llm_calls=estimated_llm_calls,
+            total_in_out_tokens=total_in_out_tokens,
+            total_time_estimate=total_time,
+        )
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.
@@ -784,8 +785,8 @@ class PostgresKGProvider(KGProvider):
     async def upsert_triples(self):
         raise NotImplementedError
 
-    async def get_entity_count(self, document_id: str) -> int:
+    async def get_entity_count(self, document_id: UUID) -> int:
         QUERY = f"""
             SELECT COUNT(*) FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
         """
-        return (await self.fetch_query(QUERY, [document_id]))[0]["count"]
+        return (await self.fetch_query(QUERY, [str(document_id)]))[0]["count"]

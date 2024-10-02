@@ -168,6 +168,31 @@ class KGProvider(ABC):
         """Abstract method to get community details."""
         pass
 
+    @abstractmethod
+    async def get_entity_count(self, document_id: str) -> int:
+        """Abstract method to get the entity count."""
+        pass
+
+    @abstractmethod
+    async def delete_frga(self, document_id: str, offset: int, limit: int) -> list[str]:
+        """Abstract method to get the entity descriptions."""
+        pass
+
+    @abstractmethod
+    async def delete_graph_for_collection(self, collection_id: UUID) -> None:
+        """Abstract method to delete the graph for a collection."""
+        pass
+
+    @abstractmethod
+    async def get_creation_estimate(self, *args: Any, **kwargs: Any) -> Any:
+        """Abstract method to get the creation estimate."""
+        pass
+
+    @abstractmethod
+    async def get_enrichment_estimate(self, *args: Any, **kwargs: Any) -> Any:
+        """Abstract method to get the enrichment estimate."""
+        pass
+
 
 def escape_braces(s: str) -> str:
     """
