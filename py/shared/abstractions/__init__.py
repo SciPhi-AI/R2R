@@ -7,7 +7,7 @@ from .document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGCreationStatus,
+    KGExtractionStatus,
     KGEnrichmentStatus,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
@@ -67,7 +67,7 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "KGCreationStatus",
+    "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions

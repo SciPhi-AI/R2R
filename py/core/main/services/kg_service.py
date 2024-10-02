@@ -3,7 +3,7 @@ import math
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import KGCreationStatus, RunLoggingSingleton, RunManager
+from core.base import KGExtractionStatus, RunLoggingSingleton, RunManager
 from core.base.abstractions import GenerationConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -62,7 +62,7 @@ class KgService(Service):
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
-                status=KGCreationStatus.PROCESSING,
+                status=KGExtractionStatus.PROCESSING,
             )
 
             triples = await self.pipes.kg_triples_extraction_pipe.run(
@@ -91,7 +91,7 @@ class KgService(Service):
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
-                status=KGCreationStatus.FAILED,
+                status=KGExtractionStatus.FAILED,
             )
 
         return await _collect_results(result_gen)
@@ -105,13 +105,13 @@ class KgService(Service):
     ):
 
         document_status_filter = [
-            KGCreationStatus.PENDING,
-            KGCreationStatus.FAILED,
+            KGExtractionStatus.PENDING,
+            KGExtractionStatus.FAILED,
         ]
         if force_kg_creation:
             document_status_filter += [
-                KGCreationStatus.SUCCESS,
-                KGCreationStatus.PROCESSING,
+                KGExtractionStatus.SUCCESS,
+                KGExtractionStatus.PROCESSING,
             ]
 
         document_ids = await self.providers.database.relational.get_document_ids_by_status(
@@ -162,8 +162,8 @@ class KgService(Service):
 
         await self.providers.database.relational.set_workflow_status(
             id=document_id,
-            status_type="kg_creation_status",
-            status=KGCreationStatus.SUCCESS,
+            status_type="kg_extraction_status",
+            status=KGExtractionStatus.SUCCESS,
         )
 
         return all_results

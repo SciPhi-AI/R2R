@@ -15,6 +15,7 @@ from core.base import (
     RunLoggingSingleton,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.base.abstractions import Entity
 
 logger = logging.getLogger(__name__)
 
@@ -91,21 +92,31 @@ class KGEntityDescriptionPipe(AsyncPipe):
             return truncated_info
 
         async def process_entity(
-            entities, triples, max_description_input_length
+            entities, triples, max_description_input_length, document_id
         ):
 
             entity_info = [
-                f"{entity['name']}, {entity['description']}"
-                for entity in entities
+                f"{entity.name}, {entity.description}" for entity in entities
             ]
 
             triples_txt = [
-                f"{i+1}: {triple['subject']}, {triple['object']}, {triple['predicate']} - Summary: {triple['description']}"
+                f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}"
                 for i, triple in enumerate(triples)
             ]
 
-            out_entity = {"name": entities[0]["name"]}
-            out_entity["description"] = (
+            # potentially slow at scale, but set to avoid duplicates
+            unique_extraction_ids = set()
+            for entity in entities:
+                for extraction_id in entity.extraction_ids:
+                    unique_extraction_ids.add(extraction_id)
+
+            out_entity = Entity(
+                name=entities[0].name,
+                extraction_ids=list(unique_extraction_ids),
+                document_ids=[document_id],
+            )
+
+            out_entity.description = (
                 (
                     await self.llm_provider.aget_completion(
                         messages=[
@@ -131,9 +142,9 @@ class KGEntityDescriptionPipe(AsyncPipe):
             )
 
             # will do more requests, but it is simpler
-            out_entity["description_embedding"] = (
+            out_entity.description_embedding = (
                 await self.embedding_provider.async_get_embeddings(
-                    [out_entity["description"]]
+                    [out_entity.description]
                 )
             )[0]
 
@@ -141,15 +152,17 @@ class KGEntityDescriptionPipe(AsyncPipe):
             await self.kg_provider.upsert_embeddings(
                 [
                     (
-                        out_entity["name"],
-                        out_entity["description"],
-                        str(out_entity["description_embedding"]),
+                        out_entity.name,
+                        out_entity.description,
+                        str(out_entity.description_embedding),
+                        out_entity.extraction_ids,
+                        document_id,
                     )
                 ],
                 "entity_embedding",
             )
 
-            return out_entity["name"]
+            return out_entity.name
 
         offset = input.message["offset"]
         limit = input.message["limit"]
@@ -171,6 +184,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                         entity_info["entities"],
                         entity_info["triples"],
                         input.message["max_description_input_length"],
+                        document_id,
                     )
                 )
             except Exception as e:
@@ -178,3 +192,5 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
         for result in asyncio.as_completed(workflows):
             yield await result
+
+        logger.info(f"Processed {total_entities} entities for document {document_id}")
