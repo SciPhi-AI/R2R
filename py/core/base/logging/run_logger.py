@@ -89,9 +89,9 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         # TODO - Should we re-consider this naming convention?
-        # e.g. it is confusing to have `POSTGRES_PROJECT_NAME` refer
+        # e.g. it is confusing to have `R2R_PROJECT_NAME` refer
         # to a global project name that is used in non-Postgres contexts
-        self.project_name = os.getenv("POSTGRES_PROJECT_NAME", "default")
+        self.project_name = os.getenv("R2R_PROJECT_NAME", "default")
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
@@ -344,7 +344,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.config = config
-        self.project_name = os.getenv("POSTGRES_PROJECT_NAME", "default")
+        self.project_name = os.getenv("R2R_PROJECT_NAME", "default")
         self.pool = None
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(

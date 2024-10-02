@@ -46,10 +46,10 @@ R2R requires connections to various services. Set up the following environment v
       export POSTGRES_HOST=$YOUR_POSTGRES_HOST
       export POSTGRES_PORT=$YOUR_POSTGRES_PORT
       export POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME
-      export POSTGRES_PROJECT_NAME=$YOUR_PROJECT_NAME # see note below
+      export R2R_PROJECT_NAME=$YOUR_PROJECT_NAME # see note below
     ```
     <Note>
-    The `POSTGRES_PROJECT_NAME` environment variable defines the tables within your Postgres database where the selected R2R project resides. If the specified tables do not exist then they will be created by R2R during initialization.
+    The `R2R_PROJECT_NAME` environment variable defines the tables within your Postgres database where the selected R2R project resides. If the required tables for R2R do not exist then they will be created by R2R during initialization.
     </Note>
     If you are unfamiliar with Postgres then <a href="https://supabase.com/docs"> Supabase's free cloud offering </a> is a good place to start.
   </Accordion>

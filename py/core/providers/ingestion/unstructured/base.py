@@ -84,6 +84,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.MP3: [parsers.AudioParser],
         DocumentType.JSON: [parsers.JSONParser],
         DocumentType.HTML: [parsers.HTMLParser],
+        DocumentType.XLSX: [parsers.XLSXParser],
     }
 
     IMAGE_TYPES = {
