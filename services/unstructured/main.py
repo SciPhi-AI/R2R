@@ -4,7 +4,7 @@ import concurrent.futures
 import logging
 import os
 from io import BytesIO
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ app = FastAPI()
 class PartitionRequestModel(BaseModel):
     file_content: bytes
     ingestion_config: Dict
+    filename: Optional[str] = None
 
 
 class PartitionResponseModel(BaseModel):
@@ -29,10 +30,10 @@ executor = concurrent.futures.ThreadPoolExecutor(
 )
 
 
-def run_partition(file_content: str, ingestion_config: Dict) -> List[Dict]:
+def run_partition(file_content: str, filename: str, ingestion_config: Dict) -> List[Dict]:
     file_content_bytes = base64.b64decode(file_content)
     file_io = BytesIO(file_content_bytes)
-    elements = partition(file=file_io, **ingestion_config)
+    elements = partition(file=file_io, filename=filename, **ingestion_config)
     return [element.to_dict() for element in elements]
 
 

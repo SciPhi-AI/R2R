@@ -226,6 +226,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     json={
                         "file_content": encoded_content,  # Use encoded string
                         "ingestion_config": ingestion_config,
+                        "filename": document.metadata.get("title", None),
                     },
                     timeout=3600,  # Adjust timeout as needed
                 )
