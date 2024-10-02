@@ -92,7 +92,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        community_number: str,
+        community_number: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
@@ -197,17 +197,17 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community_summary_jobs = []
 
         # check which community summaries exist and don't run them again
-        community_ids_exist = (
+        community_numbers_exist = (
             await self.kg_provider.check_community_reports_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
         )
 
-        for community_id in range(offset, offset + limit):
-            if community_id not in community_ids_exist:
+        for community_number in range(offset, offset + limit):
+            if community_number not in community_numbers_exist:
                 community_summary_jobs.append(
                     self.process_community(
-                        community_id=community_id,
+                        community_number=community_number,
                         max_summary_input_length=max_summary_input_length,
                         generation_config=generation_config,
                         collection_id=collection_id,

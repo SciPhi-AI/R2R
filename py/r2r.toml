@@ -29,6 +29,8 @@ provider = "bcrypt"
 
 [database]
 provider = "postgres"
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
 
 [embedding]
 provider = "litellm"
@@ -44,12 +46,10 @@ provider = "postgres"
 
 [ingestion]
 provider = "r2r"
-# strategy = "auto"
-# chunking_method = "by_title"
-# new_after_n_chars = 512
-# max_characters = 1_024
-# combine_under_n_chars = 128
-# overlap = 20
+chunking_strategy = "recursive"
+chunk_size = 1_024
+chunk_overlap = 512
+excluded_parsers = ["mp4"]
 
 [kg]
 provider = "postgres"
@@ -67,12 +67,12 @@ batch_size = 256
   [kg.kg_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports_prompt"
     generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 }
+    leiden_params = {}
 
   [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 [logging]
 provider = "local"
@@ -80,7 +80,7 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [orchestration]
-provider = "hatchet"
+provider = "simple"
 
 [prompt]
 provider = "r2r"

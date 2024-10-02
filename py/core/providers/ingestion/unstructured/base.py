@@ -83,6 +83,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
         DocumentType.JSON: [parsers.JSONParser],
+        DocumentType.HTML: [parsers.HTMLParser],
     }
 
     IMAGE_TYPES = {
@@ -226,6 +227,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     json={
                         "file_content": encoded_content,  # Use encoded string
                         "ingestion_config": ingestion_config,
+                        "filename": document.metadata.get("title", None),
                     },
                     timeout=3600,  # Adjust timeout as needed
                 )

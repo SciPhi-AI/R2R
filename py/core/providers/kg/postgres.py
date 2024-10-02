@@ -416,9 +416,9 @@ class PostgresKGProvider(KGProvider):
 
         table_name = self._get_table_name("entities")
         query = QUERY.format(table_name)
-        await self.execute_query(query, [(e.category, e.name, e.description, e.description_embedding, e.extraction_ids, e.document_id, e.attributes) for e in entities])
+        await self.execute_query(query, entities)
 
-    async def upsert_relationships(self, relationships: List[Triple]) -> None:
+    async def upsert_relationships(self, relationships: list[Triple]) -> None:
         QUERY = """
             INSERT INTO $1.$2 (source, target, relationship)
             VALUES ($1, $2, $3)
@@ -426,7 +426,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = self._get_table_name("triples")
         query = QUERY.format(table_name)
-        await self.execute_query(query, [(r.subject, r.object, r.predicate) for r in relationships])
+        await self.execute_query(query, relationships)
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
@@ -451,7 +451,7 @@ class PostgresKGProvider(KGProvider):
                 SELECT {property_names_str} FROM {self._get_table_name(table_name)} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
 
-        results = await self.fetch_query(QUERY, [query_embedding, limit])
+        results = await self.fetch_query(QUERY, (str(query_embedding), limit))
 
         for result in results:
             yield {
@@ -485,15 +485,35 @@ class PostgresKGProvider(KGProvider):
 
     async def add_community_report(self, community: Community) -> None:
 
-        community_dict = community.__dict__
-        community_dict['embedding'] = str(community_dict.get('embedding', ''))
-        await self._add_objects([community_dict], "community_report")
+        community.embedding = str(community.embedding)
+
+        non_null_attrs = {
+            k: v for k, v in community.__dict__.items() if v is not None
+        }
+        columns = ", ".join(non_null_attrs.keys())
+        placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
+
+        conflict_columns = ", ".join(
+            [
+                f"{k} = EXCLUDED.{k}"
+                for k in non_null_attrs.keys()
+            ]
+        )
+
+        QUERY = f"""
+            INSERT INTO {self._get_table_name("community_report")} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT (community_number, level, collection_id) DO UPDATE SET
+                {conflict_columns}
+            """
+        
+        await self.execute_many(QUERY, [tuple(non_null_attrs.values())])
 
     async def perform_graph_clustering(
         self,
         collection_id: UUID,
         leiden_params: Dict[str, Any],
-    ) -> Tuple[int, int, Set[Tuple[int, Any]]]:
+    ) -> Tuple[int, int, set[Tuple[int, Any]]]:
         """
         Leiden clustering algorithm to cluster the knowledge graph triples into communities.
 
