@@ -22,7 +22,6 @@ jobs:
       POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
       POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
       POSTGRES_PROJECT_NAME: ${{ secrets.POSTGRES_PROJECT_NAME }}
-      POSTGRES_VECS_COLLECTION: ${{ secrets.POSTGRES_VECS_COLLECTION }}
 
     steps:
     - uses: actions/checkout@v4

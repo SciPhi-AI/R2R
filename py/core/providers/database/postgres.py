@@ -75,9 +75,6 @@ class PostgresDBProvider(DatabaseProvider):
             config.project_name
             or config.vecs_collection  # remove after deprecation
             or os.getenv("POSTGRES_PROJECT_NAME")
-            or os.getenv(
-                "POSTGRES_VECS_COLLECTION"
-            )  # remove after deprecation
         )
         if not project_name:
             raise ValueError(
