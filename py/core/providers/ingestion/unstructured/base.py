@@ -83,6 +83,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
         DocumentType.JSON: [parsers.JSONParser],
+        DocumentType.HTML: [parsers.HTMLParser],
     }
 
     IMAGE_TYPES = {

@@ -33,7 +33,7 @@ executor = concurrent.futures.ThreadPoolExecutor(
 def run_partition(file_content: str, filename: str, ingestion_config: Dict) -> List[Dict]:
     file_content_bytes = base64.b64decode(file_content)
     file_io = BytesIO(file_content_bytes)
-    elements = partition(file=file_io, filename=filename, **ingestion_config)
+    elements = partition(file=file_io, file_filename=filename, **ingestion_config)
     return [element.to_dict() for element in elements]
 
 
@@ -51,6 +51,7 @@ async def partition_endpoint(request: PartitionRequestModel):
             executor,
             run_partition,
             request.file_content,
+            request.filename,
             request.ingestion_config,
         )
         logger.info(f"Partitioning completed")
