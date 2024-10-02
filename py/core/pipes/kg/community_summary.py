@@ -142,14 +142,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 else:
                     raise ValueError(
                         f"Failed to generate a summary for community {community_number} at level {community_level}."
-                    ) from e
+                    )
 
-                description = json.loads(description)
-                name = description["name"]
-                summary = description["summary"]
-                findings = description["findings"]
-                rating = description["rating"]
-                rating_explanation = description["rating_explanation"]
+                description_dict = json.loads(description)
+                name = description_dict["name"]
+                summary = description_dict["summary"]
+                findings = description_dict["findings"]
+                rating = description_dict["rating"]
+                rating_explanation = description_dict["rating_explanation"]
                 break
             except Exception as e:
                 if attempt == 2:

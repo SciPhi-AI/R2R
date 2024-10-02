@@ -24,8 +24,13 @@ from cli.utils.timer import timer
     required=False,
     help="Settings for the graph creation process.",
 )
+@click.option(
+    "--force-kg-creation",
+    is_flag=True,
+    help="Force the graph creation process.",
+)
 @pass_context
-def create_graph(ctx, collection_id, run, kg_creation_settings):
+def create_graph(ctx, collection_id, run, kg_creation_settings, force_kg_creation):
     """
     Create a new graph.
     """
@@ -44,6 +49,8 @@ def create_graph(ctx, collection_id, run, kg_creation_settings):
         run_type = "estimate"
     else:
         run_type = "run"
+
+    
 
     with timer():
         response = client.create_graph(
