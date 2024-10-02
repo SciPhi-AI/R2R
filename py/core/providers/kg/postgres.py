@@ -705,47 +705,60 @@ class PostgresKGProvider(KGProvider):
         self, collection_id: UUID
     ) -> KGCreationEstimationResponse:
 
-        document_ids = await self.db_provider.documents_in_collection(
-            collection_id
-        )
+        # document_ids = await self.db_provider.documents_in_collection(
+        #     collection_id
+        # )
 
-        query = f"""
-            SELECT document_id, COUNT(*) as chunk_count
-            FROM {self._get_table_name("document_chunks")}
-            WHERE document_id = ANY($1)
-            GROUP BY document_id
-        """
+        # schema_name = self._get_table_name("document_chunks").split(".")[0]
 
-        chunk_counts = await self.fetch_query(query, [document_ids])
+        # query = f"""
+        #     SELECT document_id, COUNT(*) as chunk_count
+        #     FROM {schema_name}.{schema_name}
+        #     WHERE document_id = ANY($1)
+        #     GROUP BY document_id
+        # """
 
-        total_chunks = (
-            sum(doc["chunk_count"] for doc in chunk_counts) / 4
-        )  # 4 chunks per llm call
-        estimated_entities = (total_chunks) * 25  # 25 entities per 4 chunks
-        estimated_triples = (
-            estimated_entities * 25
-        )  # Assuming 25 triples per entity on average
+        # chunk_counts = await self.fetch_query(query, [document_ids])
 
-        estimated_llm_calls = total_chunks * 2 + estimated_entities
+        # total_chunks = (
+        #     sum(doc["chunk_count"] for doc in chunk_counts) / 4
+        # )  # 4 chunks per llm call
+        # estimated_entities = (total_chunks) * 25  # 25 entities per 4 chunks
+        # estimated_triples = (
+        #     estimated_entities * 25
+        # )  # Assuming 25 triples per entity on average
 
-        total_in_out_tokens = (
-            5000 * estimated_llm_calls / 1000000
-        )  # in millions
+        # estimated_llm_calls = total_chunks * 2 + estimated_entities
 
-        total_time = (
-            total_in_out_tokens * 1 / 60
-        )  # 1 minute per million tokens
+        # total_in_out_tokens = (
+        #     5000 * estimated_llm_calls / 1000000
+        # )  # in millions
+
+        # total_time = (
+        #     total_in_out_tokens * 1 / 60
+        # )  # 1 minute per million tokens
+
+        # return KGCreationEstimationResponse(
+        #     estimated_entities=estimated_entities,
+        #     estimated_triples=estimated_triples,
+        #     total_chunks=total_chunks,
+        #     document_count=len(chunk_counts),
+        #     max_time_estimate=total_time,
+        #     estimated_llm_calls=estimated_llm_calls,
+        #     total_in_out_tokens=total_in_out_tokens,
+        #     total_time_estimate=total_time,
+        #     number_of_jobs_created=len(document_ids),
+        # )
 
         return KGCreationEstimationResponse(
-            estimated_entities=estimated_entities,
-            estimated_triples=estimated_triples,
-            total_chunks=total_chunks,
-            document_count=len(chunk_counts),
-            max_time_estimate=total_time,
-            estimated_llm_calls=estimated_llm_calls,
-            total_in_out_tokens=total_in_out_tokens,
-            total_time_estimate=total_time,
-            number_of_jobs_created=len(document_ids),
+            estimated_entities=0,
+            estimated_triples=0,
+            total_chunks=0,
+            document_count=0,
+            max_time_estimate=0,
+            estimated_llm_calls=0,
+            total_in_out_tokens=0,
+            number_of_jobs_created=0,
         )
 
     async def get_enrichment_estimate(
