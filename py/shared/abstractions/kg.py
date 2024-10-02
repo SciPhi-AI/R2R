@@ -64,8 +64,8 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    run_mode: str = Field(
-        default="estimate",  # or run
+    run_mode: KGRunType = Field(
+        default=KGRunType.ESTIMATE,  # or run
         description="Run an estimate for the full graph creation process.",
     )
 

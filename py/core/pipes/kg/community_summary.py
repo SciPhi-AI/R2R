@@ -135,10 +135,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
             try:
-                if description.startswith("```json"):
+                if description and description.startswith("```json"):
                     description = (
                         description.strip("```json").strip("```").strip()
                     )
+                else:
+                    raise ValueError(
+                        f"Failed to generate a summary for community {community_number} at level {community_level}."
+                    ) from e
 
                 description = json.loads(description)
                 name = description["name"]

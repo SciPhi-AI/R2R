@@ -56,13 +56,6 @@ class KGMethods:
             kg_enrichment_settings = kg_enrichment_settings.model_dump()
         elif kg_enrichment_settings is None or kg_enrichment_settings == "{}":
             kg_enrichment_settings = {}
-        elif isinstance(kg_enrichment_settings, str):
-            try:
-                kg_enrichment_settings = json.loads(kg_enrichment_settings)
-            except json.JSONDecodeError:
-                raise ValueError(
-                    "kg_enrichment_settings must be a valid JSON string if provided as a string"
-                )
 
         data = {
             "collection_id": collection_id,

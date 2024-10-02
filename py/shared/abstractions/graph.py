@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from uuid import UUID
 from dataclasses import dataclass
 from typing import Any, Optional, Union
 
@@ -53,8 +54,8 @@ class Entity(R2RSerializable):
     name_embedding: Optional[list[float]] = None
     graph_embedding: Optional[list[float]] = None
     community_numbers: Optional[list[str]] = None
-    extraction_ids: Optional[list[str]] = None
-    document_id: Optional[str] = None
+    extraction_ids: Optional[list[UUID]] = None
+    document_id: Optional[UUID] = None
     rank: Optional[int] = None
     attributes: Optional[Union[dict[str, Any], str]] = None
 
@@ -177,7 +178,7 @@ class Community(BaseModel):
     rank: float | None = 1.0
     """Rank of the report, used for sorting (optional). Higher means more important"""
 
-    summary_embedding: list[float] | None = None
+    embedding: list[float] | None = None
     """The semantic (i.e. text) embedding of the report summary (optional)."""
 
     full_content_embedding: list[float] | None = None

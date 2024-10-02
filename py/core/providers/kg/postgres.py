@@ -254,7 +254,7 @@ class PostgresKGProvider(KGProvider):
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str,
+        table_name: str = 'triples',
     ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
@@ -396,7 +396,7 @@ class PostgresKGProvider(KGProvider):
 
     async def upsert_embeddings(
         self,
-        data: List[Tuple[str, str, List[float]]],
+        data: List[Tuple[Any]],
         table_name: str,
     ) -> None:
         QUERY = f"""

@@ -67,7 +67,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def add_triples(self, triples: list[Triple]) -> None:
+    async def add_triples(self, triples: list[Triple], table_name: str) -> None:
         """Abstract method to add triples."""
         pass
 
