@@ -67,7 +67,9 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def add_triples(self, triples: list[Triple], table_name: str) -> None:
+    async def add_triples(
+        self, triples: list[Triple], table_name: str
+    ) -> None:
         """Abstract method to add triples."""
         pass
 
@@ -174,7 +176,9 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def delete_frga(self, document_id: str, offset: int, limit: int) -> list[str]:
+    async def delete_frga(
+        self, document_id: str, offset: int, limit: int
+    ) -> list[str]:
         """Abstract method to get the entity descriptions."""
         pass
 

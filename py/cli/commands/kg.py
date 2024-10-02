@@ -30,7 +30,9 @@ from cli.utils.timer import timer
     help="Force the graph creation process.",
 )
 @pass_context
-def create_graph(ctx, collection_id, run, kg_creation_settings, force_kg_creation):
+def create_graph(
+    ctx, collection_id, run, kg_creation_settings, force_kg_creation
+):
     """
     Create a new graph.
     """
@@ -49,8 +51,6 @@ def create_graph(ctx, collection_id, run, kg_creation_settings, force_kg_creatio
         run_type = "estimate"
     else:
         run_type = "run"
-
-    
 
     with timer():
         response = client.create_graph(
@@ -92,3 +92,91 @@ def enrich_graph(ctx, collection_id, kg_enrichment_settings):
         response = client.enrich_graph(collection_id, kg_enrichment_settings)
 
     click.echo(json.dumps(response, indent=2))
+
+    @cli.command()
+    @click.option(
+        "--collection-id",
+        required=True,
+        help="Collection ID to retrieve entities from.",
+    )
+    @click.option(
+        "--offset",
+        type=int,
+        default=0,
+        help="Offset for pagination.",
+    )
+    @click.option(
+        "--limit",
+        type=int,
+        default=100,
+        help="Limit for pagination.",
+    )
+    @click.option(
+        "--entity-ids",
+        multiple=True,
+        help="Entity IDs to filter by.",
+    )
+    @click.option(
+        "--with-description",
+        is_flag=True,
+        help="Include entity descriptions in the response.",
+    )
+    @pass_context
+    def get_entities(
+        ctx, collection_id, offset, limit, entity_ids, with_description
+    ):
+        """
+        Retrieve entities from the knowledge graph.
+        """
+        client = ctx.obj
+
+        with timer():
+            response = client.get_entities(
+                collection_id,
+                offset,
+                limit,
+                list(entity_ids),
+                with_description,
+            )
+
+        click.echo(json.dumps(response, indent=2))
+
+    @cli.command()
+    @click.option(
+        "--collection-id",
+        required=True,
+        help="Collection ID to retrieve triples from.",
+    )
+    @click.option(
+        "--offset",
+        type=int,
+        default=0,
+        help="Offset for pagination.",
+    )
+    @click.option(
+        "--limit",
+        type=int,
+        default=100,
+        help="Limit for pagination.",
+    )
+    @click.option(
+        "--triple-ids",
+        multiple=True,
+        help="Triple IDs to filter by.",
+    )
+    @pass_context
+    def get_triples(ctx, collection_id, offset, limit, triple_ids):
+        """
+        Retrieve triples from the knowledge graph.
+        """
+        client = ctx.obj
+
+        with timer():
+            response = client.get_triples(
+                collection_id,
+                offset,
+                limit,
+                list(triple_ids),
+            )
+
+        click.echo(json.dumps(response, indent=2))

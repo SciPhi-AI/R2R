@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import Any, Optional, Tuple, List, Dict, Union
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
+from graspologic.partition import HierarchicalClusters
 
 from core.base import (
     Community,
@@ -12,16 +13,14 @@ from core.base import (
     Entity,
     KGConfig,
     KGCreationStatus,
+    KGExtraction,
     KGProvider,
     Triple,
-    KGExtraction,
 )
 from shared.abstractions import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
-    KGEnrichmentSettings,
 )
-from graspologic.partition import HierarchicalClusters
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +253,7 @@ class PostgresKGProvider(KGProvider):
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str = 'triples',
+        table_name: str = "triples",
     ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
@@ -475,7 +474,10 @@ class PostgresKGProvider(KGProvider):
         return triples
 
     async def add_communities(
-        self, communities: List[Tuple[str, int, Optional[int], int, bool, List[int]]]
+        self,
+        communities: List[
+            Tuple[str, int, Optional[int], int, bool, List[int]]
+        ],
     ) -> None:
         QUERY = f"""
             INSERT INTO {self._get_table_name("community")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids)
@@ -494,10 +496,7 @@ class PostgresKGProvider(KGProvider):
         placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
 
         conflict_columns = ", ".join(
-            [
-                f"{k} = EXCLUDED.{k}"
-                for k in non_null_attrs.keys()
-            ]
+            [f"{k} = EXCLUDED.{k}" for k in non_null_attrs.keys()]
         )
 
         QUERY = f"""
@@ -506,7 +505,7 @@ class PostgresKGProvider(KGProvider):
             ON CONFLICT (community_number, level, collection_id) DO UPDATE SET
                 {conflict_columns}
             """
-        
+
         await self.execute_many(QUERY, [tuple(non_null_attrs.values())])
 
     async def perform_graph_clustering(
@@ -597,7 +596,9 @@ class PostgresKGProvider(KGProvider):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def get_community_details(self, community_number: int) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
+    async def get_community_details(
+        self, community_number: int
+    ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
         QUERY = f"""
             SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1
@@ -785,13 +786,68 @@ class PostgresKGProvider(KGProvider):
 
     async def get_entities(
         self,
-        entity_ids: list[str] | None = None,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        entity_ids: Optional[List[str]] = None,
         with_description: bool = False,
-    ):
-        raise NotImplementedError
+    ) -> dict:
+        conditions = []
+        params = [collection_id]
 
-    async def get_triples(self, triple_ids: list[str] | None = None):
-        raise NotImplementedError
+        if entity_ids:
+            conditions.append("id = ANY($2)")
+            params.append(entity_ids)
+
+        query = f"""
+            SELECT id, name, category, description
+            FROM {self._get_table_name("entity_raw")}
+            WHERE document_id = ANY(
+                SELECT document_id FROM {self._get_table_name("document_info")}
+                WHERE $1 = ANY(collection_ids)
+            )
+            {" AND " + " AND ".join(conditions) if conditions else ""}
+            ORDER BY id
+            OFFSET $3 LIMIT $4
+        """
+        params.extend([offset, limit])
+
+        results = await self.fetch_query(query, params)
+        total_entries = await self.get_entity_count(collection_id)
+
+        return {"results": results, "total_entries": total_entries}
+
+    async def get_triples(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        triple_ids: Optional[List[str]] = None,
+    ) -> dict:
+        conditions = []
+        params = [collection_id]
+
+        if triple_ids:
+            conditions.append("id = ANY($2)")
+            params.append(triple_ids)
+
+        query = f"""
+            SELECT id, subject, predicate, object
+            FROM {self._get_table_name("triple_raw")}
+            WHERE document_id = ANY(
+                SELECT document_id FROM {self._get_table_name("document_info")}
+                WHERE $1 = ANY(collection_ids)
+            )
+            {" AND " + " AND ".join(conditions) if conditions else ""}
+            ORDER BY id
+            OFFSET $3 LIMIT $4
+        """
+        params.extend([offset, limit])
+
+        results = await self.fetch_query(query, params)
+        total_entries = await self.get_triple_count(collection_id)
+
+        return {"results": results, "total_entries": total_entries}
 
     async def structured_query(self):
         raise NotImplementedError
