@@ -244,12 +244,12 @@ async def serve(
 
     if full:
         click.echo(
-            "Running the full R2R compose which includes `Hatchet` and `Unstructured.io`."
+            "Running the full R2R setup which includes `Hatchet` and `Unstructured.io`."
         )
         if project_name == "r2r":  # overwrite project name if full compose
             project_name = "r2r-full"
     else:
-        click.echo("Running the lightweight R2R compose.")
+        click.echo("Running the lightweight R2R setup.")
 
     if config_path and config_name:
         raise click.UsageError(

@@ -62,7 +62,7 @@ class KGMethods:
             kg_enrichment_settings = {}
 
         data = {
-            "kg_enrichment_settings": kg_enrichment_settings,
+            "kg_enrichment_settings": json.dumps(kg_enrichment_settings),
             "run_type": run_type,
         }
 

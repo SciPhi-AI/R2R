@@ -538,10 +538,10 @@ class PostgresKGProvider(KGProvider):
         G = self.nx.Graph()
         for triple in triples:
             G.add_edge(
-                triple.subject,
-                triple.object,
-                weight=triple.weight,
-                id=triple.id,
+                triple["subject"],
+                triple["object"],
+                weight=triple["weight"],
+                id=triple["id"],
             )
 
         hierarchical_communities = await self._compute_leiden_communities(
@@ -549,10 +549,11 @@ class PostgresKGProvider(KGProvider):
         )
 
         def triple_ids(node: int) -> list[int]:
+            # TODO: convert this to objects
             return [
-                triple.id
+                triple["id"]
                 for triple in triples
-                if triple.subject == node or triple.object == node
+                if triple["subject"] == node or triple["object"] == node
             ]
 
         # upsert the communities into the database.
@@ -574,7 +575,7 @@ class PostgresKGProvider(KGProvider):
             set([item.cluster for item in hierarchical_communities])
         )
 
-        return num_communities, len(triples), set()
+        return num_communities
 
     async def _compute_leiden_communities(
         self,
@@ -654,12 +655,12 @@ class PostgresKGProvider(KGProvider):
         self, collection_id: UUID, offset: int, limit: int
     ) -> List[int]:
         QUERY = f"""
-            SELECT distinct community_id FROM {self._get_table_name("community_report")} WHERE collection_id = $1 AND community_id >= $2 AND community_id < $3
+            SELECT distinct community_number FROM {self._get_table_name("community_report")} WHERE collection_id = $1 AND community_number >= $2 AND community_number < $3
         """
-        community_ids = await self.fetch_query(
+        community_numbers = await self.fetch_query(
             QUERY, [collection_id, offset, offset + limit]
         )
-        return [item["community_id"] for item in community_ids]
+        return [item["community_number"] for item in community_numbers]
 
     async def delete_graph_for_collection(
         self, collection_id: UUID, cascade: bool = False
@@ -771,27 +772,29 @@ class PostgresKGProvider(KGProvider):
             collection_id
         )
 
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
-        """
-        entity_count = (await self.fetch_query(QUERY, [document_ids]))[0][
-            "count"
-        ]
-        estimated_llm_calls = entity_count * 1000
-        total_in_out_tokens = (
-            5000 * estimated_llm_calls / 1000000
-        )  # in millions
-        total_time = (
-            total_in_out_tokens * 1 / 60
-        )  # 1 minute per million tokens
+        # QUERY = f"""
+        #     SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+        # """
+        # entity_count = (await self.fetch_query(QUERY, [document_ids]))[0][
+        #     "count"
+        # ]
+        # estimated_llm_calls = entity_count * 1000
+        # total_in_out_tokens = (
+        #     5000 * estimated_llm_calls / 1000000
+        # )  # in millions
+        # total_time = (
+        #     total_in_out_tokens * 1 / 60
+        # )  # 1 minute per million tokens
 
-        return KGEnrichmentEstimationResponse(
-            estimated_entities=entity_count,
-            estimated_triples=entity_count * 1000,
-            estimated_llm_calls=estimated_llm_calls,
-            total_in_out_tokens=total_in_out_tokens,
-            total_time_estimate=total_time,
-        )
+        # return KGEnrichmentEstimationResponse(
+        #     estimated_entities=entity_count,
+        #     estimated_triples=entity_count * 1000,
+        #     estimated_llm_calls=estimated_llm_calls,
+        #     total_in_out_tokens=total_in_out_tokens,
+        #     total_time_estimate=total_time,
+        # )
+
+        return KGEnrichmentEstimationResponse()
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.
