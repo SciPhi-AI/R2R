@@ -130,9 +130,9 @@ class KGSearchSearchPipe(GeneratorPipe):
                 property_names=[
                     "name",
                     "description",
-                    # "extraction_ids",
-                    # "document_ids",
+                    "extraction_ids",
                 ],
+                filters=kg_search_settings.filters,
             ):
                 yield KGSearchResult(
                     content=KGEntityResult(
@@ -141,12 +141,12 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    # extraction_ids=search_result["extraction_ids"],
-                    # document_ids=search_result["document_ids"],
+                    extraction_ids=search_result["extraction_ids"],
                     metadata={"associated_query": message},
                 )
 
             # relationship search
+            # disabled for now. We will check evaluations and see if we need it
             # search_type = "__Relationship__"
             # async for search_result in self.kg_provider.vector_query(  # type: ignore
             #     input,
@@ -192,6 +192,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     "rating_explanation",
                     "summary",
                 ],
+                filters=kg_search_settings.filters,
             ):
                 yield KGSearchResult(
                     content=KGCommunityResult(

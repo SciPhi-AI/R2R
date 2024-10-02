@@ -46,17 +46,19 @@ class RelationshipType(R2RSerializable):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    id: Optional[int] = None
-    category: str
     name: str
+    id: Optional[int] = None
+    category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float]] = None
-    name_embedding: Optional[list[float]] = None
-    graph_embedding: Optional[list[float]] = None
     community_numbers: Optional[list[str]] = None
     extraction_ids: Optional[list[UUID]] = None
+    collection_id: Optional[UUID] = None
     document_id: Optional[UUID] = None
-    rank: Optional[int] = None
+    # we don't use these yet
+    # name_embedding: Optional[list[float]] = None
+    # graph_embedding: Optional[list[float]] = None
+    # rank: Optional[int] = None
     attributes: Optional[Union[dict[str, Any], str]] = None
 
     def __str__(self):
