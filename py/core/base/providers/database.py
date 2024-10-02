@@ -45,7 +45,6 @@ class DatabaseConfig(ProviderConfig):
     host: Optional[str] = None
     port: Optional[int] = None
     db_name: Optional[str] = None
-    vecs_collection: Optional[str] = None
     project_name: Optional[str] = None
     postgres_configuration_settings: Optional[
         PostgresConfigurationSettings

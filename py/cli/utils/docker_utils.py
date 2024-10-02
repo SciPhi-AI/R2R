@@ -241,7 +241,7 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 def check_set_docker_env_vars():
 
     env_vars = {
-        "POSTGRES_PROJECT_NAME": "r2r",
+        "R2R_PROJECT_NAME": "r2r",
         "POSTGRES_HOST": "postgres",
         "POSTGRES_PORT": "5432",
         "POSTGRES_DBNAME": "postgres",

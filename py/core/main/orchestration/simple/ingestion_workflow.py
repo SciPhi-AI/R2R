@@ -168,4 +168,4 @@ def simple_ingestion_factory(service: IngestionService):
 
         await asyncio.gather(*results)
 
-    return {"ingest-file-changed": ingest_files, "update-files": update_files}
+    return {"ingest-files": ingest_files, "update-files": update_files}

@@ -6,7 +6,6 @@ from typing import Any, Optional, Tuple
 from uuid import UUID
 
 from ..abstractions import (
-    Community,
     CommunityReport,
     Entity,
     KGCreationSettings,

@@ -57,7 +57,7 @@ Alternatively, you may run R2R directly from the python package, but additional 
 ```bash
 # export OPENAI_API_KEY=sk-...
 # export POSTGRES...
-pip install 'r2r[core]'
+pip install 'r2r[core,ingestion-bundle]'
 r2r --config-name=default serve
 ```
 
