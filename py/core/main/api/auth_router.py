@@ -138,7 +138,7 @@ class AuthRouter(BaseRouter):
                 user_uuid = UUID(user_id)
             except ValueError:
                 raise R2RException(
-                    status_code=400, message="Invalid document ID format."
+                    status_code=400, message="Invalid user ID format."
                 )
 
             return await self.service.update_user(
