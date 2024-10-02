@@ -31,7 +31,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_creation_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGCreationStatus.PENDING,
     )
     await temporary_postgres_db_provider.relational.upsert_documents_overview(
         document_info
@@ -55,8 +55,8 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
     assert inserted_document.size_in_bytes == document_info.size_in_bytes
     assert inserted_document.ingestion_status == document_info.ingestion_status
     assert (
-        inserted_document.kg_creation_status
-        == document_info.kg_creation_status
+        inserted_document.kg_extraction_status
+        == document_info.kg_extraction_status
     )
 
     # Update the document and verify the changes
@@ -89,7 +89,7 @@ async def test_delete_from_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_creation_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGCreationStatus.PENDING,
     )
     await temporary_postgres_db_provider.relational.upsert_documents_overview(
         document_info
@@ -120,7 +120,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_creation_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGCreationStatus.PENDING,
     )
     document_info2 = DocumentInfo(
         id=UUID("00000000-0000-0000-0000-000000000004"),
@@ -132,7 +132,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=2048,
         ingestion_status=IngestionStatus.SUCCESS,
-        kg_creation_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGCreationStatus.PENDING,
     )
     await temporary_postgres_db_provider.relational.upsert_documents_overview(
         [document_info1, document_info2]

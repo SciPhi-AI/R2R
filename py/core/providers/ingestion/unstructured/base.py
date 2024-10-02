@@ -34,8 +34,10 @@ class FallbackElement(R2RSerializable):
 
 
 class UnstructuredIngestionConfig(IngestionConfig):
-    combine_under_n_chars: Optional[int] = 128
-    max_characters: Optional[int] = 500
+    combine_under_n_chars: int = 128
+    max_characters: int = 500
+    new_after_n_chars: int = 1500
+
     coordinates: Optional[bool] = None
     encoding: Optional[str] = None  # utf-8
     extract_image_block_types: Optional[list[str]] = None
@@ -46,7 +48,6 @@ class UnstructuredIngestionConfig(IngestionConfig):
 
     languages: Optional[list[str]] = None
     multipage_sections: Optional[bool] = None
-    new_after_n_chars: Optional[int] = 1500
     ocr_languages: Optional[list[str]] = None
     # output_format: Optional[str] = "application/json"
     overlap: Optional[int] = None

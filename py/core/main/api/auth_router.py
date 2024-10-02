@@ -29,12 +29,6 @@ class AuthRouter(BaseRouter):
         super().__init__(service, orchestration_provider, run_type)
         self.service: AuthService = service  # for type hinting
 
-    def _register_workflows(self):
-        pass
-
-    def _load_openapi_extras(self):
-        return {}
-
     def _setup_routes(self):
         @self.router.post("/register", response_model=WrappedUserResponse)
         @self.base_endpoint

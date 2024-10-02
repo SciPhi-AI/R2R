@@ -3,10 +3,10 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Tuple
+from uuid import UUID
 
 from ..abstractions import (
     Entity,
-    GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGExtraction,
@@ -19,6 +19,7 @@ from .base import ProviderConfig
 logger = logging.getLogger(__name__)
 
 
+# TODO - Bolt down types for KGConfig
 class KGConfig(ProviderConfig):
     """A base KG config class"""
 
@@ -58,22 +59,6 @@ class KGProvider(ABC):
     def validate_config(self) -> None:
         self.config.validate_config()
 
-    # @property
-    # @abstractmethod
-    # def client(self) -> Any:
-    #     """Get client."""
-    #     pass
-
-    # @abstractmethod
-    # def get_rel_map(
-    #     self,
-    #     subjs: Optional[list[str]] = None,
-    #     depth: int = 2,
-    #     limit: int = 30,
-    # ) -> dict[str, list[list[str]]]:
-    #     """Abstract method to get depth-aware rel map."""
-    #     pass
-
     @abstractmethod
     async def add_entities(
         self, entities: list[Entity], *args, **kwargs
@@ -89,7 +74,7 @@ class KGProvider(ABC):
     @abstractmethod
     async def add_kg_extractions(
         self, kg_extractions: list[KGExtraction]
-    ) -> Tuple[int, int]:
+    ) -> None:
         """Abstract method to add KG extractions."""
         pass
 
@@ -107,13 +92,6 @@ class KGProvider(ABC):
         self, triple_ids: list[str] | None = None
     ) -> list[Triple]:
         """Abstract method to get triples."""
-        pass
-
-    @abstractmethod
-    async def add_kg_extractions(
-        self, kg_extractions: list[KGExtraction]
-    ) -> None:
-        """Abstract method to add KG extractions."""
         pass
 
     @abstractmethod
@@ -167,6 +145,27 @@ class KGProvider(ABC):
         self, node_type: str, node_property: str, dimension: int
     ) -> None:
         """Abstract method to create a vector index."""
+        pass
+
+    @abstractmethod
+    async def perform_graph_clustering(
+        self,
+        collection_id: UUID,
+        leiden_params: dict,  # TODO - Add typing for leiden_params
+    ) -> Tuple[int, int, set[tuple[int, Any]]]:
+        """Abstract method to perform graph clustering."""
+        pass
+
+    @abstractmethod
+    async def get_entity_map(
+        self, offset: int, limit: int, document_id: str
+    ) -> dict[str, Any]:
+        """Abstract method to get the entity map."""
+        pass
+
+    @abstractmethod
+    async def get_community_details(self, community_number: int):
+        """Abstract method to get community details."""
         pass
 
 

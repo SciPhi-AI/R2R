@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any
 
 from core.base import OrchestrationConfig, OrchestrationProvider, Workflow
@@ -8,7 +7,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         self.config = config
-        self.messages = {}
+        self.messages: dict[str, str] = {}
 
     async def start_worker(self):
         pass
@@ -45,7 +44,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
 
     async def run_workflow(
         self, workflow_name: str, input: dict, options: dict
-    ) -> Any:
+    ) -> dict[str, str]:
         if workflow_name in self.ingestion_workflows:
             await self.ingestion_workflows[workflow_name](input.get("request"))
             return {"message": self.messages[workflow_name]}

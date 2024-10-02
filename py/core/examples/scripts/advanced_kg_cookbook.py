@@ -127,7 +127,7 @@ def main(
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-    prompt = "graphrag_triplet_extraction_zero_shot"
+    prompt = "graphrag_triples_extraction_few_shot"
 
     r2r_prompts.update_prompt(
         prompt,
@@ -157,12 +157,6 @@ def main(
             os.remove(file_name)
         except:
             continue
-
-    print(
-        client.inspect_knowledge_graph(0, 1000, print_descriptions=True)[
-            "results"
-        ]
-    )
 
 
 if __name__ == "__main__":

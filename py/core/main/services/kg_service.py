@@ -1,17 +1,11 @@
 import logging
 import math
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    KGCreationSettings,
-    KGCreationStatus,
-    RunLoggingSingleton,
-    RunManager,
-)
+from core.base import KGCreationStatus, RunLoggingSingleton, RunManager
 from core.base.abstractions import GenerationConfig
 from core.telemetry.telemetry_decorator import telemetry_event
-from shared.abstractions import KGEnrichmentSettings
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -27,6 +21,8 @@ async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
     return results
 
 
+# TODO - Fix naming convention to read `KGService` instead of `KgService`
+# this will require a minor change in how services are registered.
 class KgService(Service):
     def __init__(
         self,
@@ -48,8 +44,8 @@ class KgService(Service):
             logging_connection,
         )
 
-    @telemetry_event("kg_extraction")
-    async def kg_extraction(
+    @telemetry_event("kg_triples_extraction")
+    async def kg_triples_extraction(
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
@@ -57,7 +53,6 @@ class KgService(Service):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
-        hatchet_logger: Optional = None,
         **kwargs,
     ):
         try:
@@ -66,12 +61,12 @@ class KgService(Service):
 
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
-                status_type="kg_creation_status",
+                status_type="kg_extraction_status",
                 status=KGCreationStatus.PROCESSING,
             )
 
-            triples = await self.pipes.kg_extraction_pipe.run(
-                input=self.pipes.kg_extraction_pipe.Input(
+            triples = await self.pipes.kg_triples_extraction_pipe.run(
+                input=self.pipes.kg_triples_extraction_pipe.Input(
                     message={
                         "document_id": document_id,
                         "generation_config": generation_config,
@@ -79,7 +74,6 @@ class KgService(Service):
                         "max_knowledge_triples": max_knowledge_triples,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
-                        "hatchet_logger": hatchet_logger,
                     }
                 ),
                 state=None,
@@ -96,7 +90,7 @@ class KgService(Service):
             logger.error(f"Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
-                status_type="kg_creation_status",
+                status_type="kg_extraction_status",
                 status=KGCreationStatus.FAILED,
             )
 
@@ -121,15 +115,15 @@ class KgService(Service):
             ]
 
         document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_creation_status",
+            status_type="kg_extraction_status",
             status=document_status_filter,
             collection_id=collection_id,
         )
 
         return document_ids
 
-    @telemetry_event("kg_node_description")
-    async def kg_node_description(
+    @telemetry_event("kg_entity_description")
+    async def kg_entity_description(
         self,
         document_id: UUID,
         max_description_input_length: int,
@@ -143,11 +137,11 @@ class KgService(Service):
         all_results = []
         for i in range(num_batches):
             logger.info(
-                f"Running kg_node_description for batch {i+1}/{num_batches} for document {document_id}"
+                f"Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
-            node_extractions = await self.pipes.kg_node_description_pipe.run(
-                input=self.pipes.kg_node_description_pipe.Input(
+            node_descriptions = await self.pipes.kg_entity_description_pipe.run(
+                input=self.pipes.kg_entity_description_pipe.Input(
                     message={
                         "offset": i * 512,
                         "limit": 512,
@@ -159,7 +153,7 @@ class KgService(Service):
                 run_manager=self.run_manager,
             )
 
-            all_results.append(await _collect_results(node_extractions))
+            all_results.append(await _collect_results(node_descriptions))
 
         await self.providers.database.relational.set_workflow_status(
             id=document_id,

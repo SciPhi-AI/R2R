@@ -149,7 +149,7 @@ class DocumentInfo(R2RSerializable):
     version: str
     size_in_bytes: int
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    kg_creation_status: KGCreationStatus = KGCreationStatus.PENDING
+    kg_extraction_status: KGCreationStatus = KGCreationStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
@@ -168,7 +168,7 @@ class DocumentInfo(R2RSerializable):
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "ingestion_status": self.ingestion_status.value,
-            "kg_creation_status": self.kg_creation_status.value,
+            "kg_extraction_status": self.kg_extraction_status.value,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,

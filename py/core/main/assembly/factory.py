@@ -372,15 +372,14 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[AsyncPipe] = None,
         embedding_pipe_override: Optional[AsyncPipe] = None,
-        kg_extraction_pipe_override: Optional[AsyncPipe] = None,
+        kg_triples_extraction_pipe_override: Optional[AsyncPipe] = None,
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
         kg_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
         vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
-        kg_node_extraction_pipe: Optional[AsyncPipe] = None,
-        kg_node_description_pipe: Optional[AsyncPipe] = None,
+        kg_entity_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
         kg_community_summary_pipe: Optional[AsyncPipe] = None,
         *args,
@@ -395,8 +394,8 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_extraction_pipe=kg_extraction_pipe_override
-            or self.create_kg_extraction_pipe(*args, **kwargs),
+            kg_triples_extraction_pipe=kg_triples_extraction_pipe_override
+            or self.create_kg_triples_extraction_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
@@ -409,10 +408,8 @@ class R2RPipeFactory:
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
             or self.create_rag_pipe(True, *args, **kwargs),
-            kg_node_extraction_pipe=kg_node_extraction_pipe
-            or self.create_kg_node_extraction_pipe(*args, **kwargs),
-            kg_node_description_pipe=kg_node_description_pipe
-            or self.create_kg_node_description_pipe(*args, **kwargs),
+            kg_entity_description_pipe=kg_entity_description_pipe
+            or self.create_kg_entity_description_pipe(*args, **kwargs),
             kg_clustering_pipe=kg_clustering_pipe
             or self.create_kg_clustering_pipe(*args, **kwargs),
             kg_community_summary_pipe=kg_community_summary_pipe
@@ -528,7 +525,7 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(name="routing_search_pipe"),
         )
 
-    def create_kg_extraction_pipe(self, *args, **kwargs) -> Any:
+    def create_kg_triples_extraction_pipe(self, *args, **kwargs) -> Any:
         if self.config.kg.provider is None:
             return None
 
@@ -539,7 +536,7 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
-            config=AsyncPipe.PipeConfig(name="kg_extraction_pipe"),
+            config=AsyncPipe.PipeConfig(name="kg_triples_extraction_pipe"),
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
@@ -550,7 +547,6 @@ class R2RPipeFactory:
 
         return KGStoragePipe(
             kg_provider=self.providers.kg,
-            embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_storage_pipe"),
         )
 
@@ -592,25 +588,15 @@ class R2RPipeFactory:
                 ),
             )
 
-    def create_kg_node_extraction_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGNodeExtractionPipe
+    def create_kg_entity_description_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGEntityDescriptionPipe
 
-        return KGNodeExtractionPipe(
-            kg_provider=self.providers.kg,
-            llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
-            config=AsyncPipe.PipeConfig(name="kg_node_extraction_pipe"),
-        )
-
-    def create_kg_node_description_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGNodeDescriptionPipe
-
-        return KGNodeDescriptionPipe(
+        return KGEntityDescriptionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_node_description_pipe"),
+            config=AsyncPipe.PipeConfig(name="kg_entity_description_pipe"),
         )
 
     def create_kg_clustering_pipe(self, *args, **kwargs) -> Any:
@@ -657,7 +643,7 @@ class R2RPipelineFactory:
         # Add KG pipes if provider is set
         if self.config.kg.provider is not None:
             search_pipeline.add_pipe(
-                self.pipes.kg_search_pipe, kg_extraction_pipe=True
+                self.pipes.kg_search_pipe, kg_triples_extraction_pipe=True
             )
 
         return search_pipeline

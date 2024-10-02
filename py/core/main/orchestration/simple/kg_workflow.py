@@ -1,12 +1,8 @@
-import asyncio
 import json
 import logging
 import math
-import uuid
 
-from core import GenerationConfig, IngestionStatus, KGCreationSettings
-from core.base import R2RDocumentProcessingError
-from core.base.abstractions import KGCreationStatus, KGEnrichmentStatus
+from core import GenerationConfig
 
 from ...services import KgService
 
@@ -42,13 +38,14 @@ def simple_kg_factory(service: KgService):
             f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}"
         )
 
-        for cnt, document_id in enumerate(document_ids):
-            await service.kg_extraction(
+        for _, document_id in enumerate(document_ids):
+            # Extract triples from the document
+            await service.kg_triples_extraction(
                 document_id=document_id,
                 **input_data["kg_creation_settings"],
             )
-
-            await service.kg_node_description(
+            # Describe the entities in the graph
+            await service.kg_entity_description(
                 document_id=document_id,
                 **input_data["kg_creation_settings"],
             )
@@ -62,8 +59,10 @@ def simple_kg_factory(service: KgService):
             **input_data["kg_enrichment_settings"],
         )
         num_communities = num_communities[0]["num_communities"]
+        # TODO - Do not hardcode the number of parallel communities,
+        # make it a configurable parameter at runtime & add server-side defaults
         parallel_communities = min(100, num_communities)
-        workflows = []
+
         total_workflows = math.ceil(num_communities / parallel_communities)
         for i in range(total_workflows):
             input_data_copy = input_data.copy()

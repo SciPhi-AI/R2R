@@ -155,24 +155,3 @@ def document_chunks(ctx, document_id, offset, limit):
             click.echo(f"Metadata: {chunk.get('metadata', {})}")
         else:
             click.echo(f"Unexpected chunk format: {chunk}")
-
-
-@cli.command()
-@click.option(
-    "--offset",
-    default=None,
-    help="The offset to start from. Defaults to 0.",
-)
-@click.option(
-    "--limit",
-    default=None,
-    help="The maximum number of nodes to return. Defaults to 100.",
-)
-@pass_context
-def inspect_knowledge_graph(ctx, offset, limit):
-    """Inspect the knowledge graph."""
-    client = ctx.obj
-    with timer():
-        response = client.inspect_knowledge_graph(offset, limit)
-
-    click.echo(response["results"])

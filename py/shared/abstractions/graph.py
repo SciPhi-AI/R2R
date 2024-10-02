@@ -1,7 +1,6 @@
 import json
 import logging
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional, Union
 
@@ -53,7 +52,7 @@ class Entity(R2RSerializable):
     description_embedding: Optional[list[float]] = None
     name_embedding: Optional[list[float]] = None
     graph_embedding: Optional[list[float]] = None
-    community_ids: Optional[list[str]] = None
+    community_numbers: Optional[list[str]] = None
     extraction_ids: Optional[list[str]] = None
     document_id: Optional[str] = None
     rank: Optional[int] = None
@@ -219,7 +218,7 @@ class Community(BaseModel):
 class CommunityReport(BaseModel):
     """Defines an LLM-generated summary report of a community."""
 
-    community_id: int
+    community_number: int
     """The ID of the community this report is associated with."""
 
     level: int
@@ -260,7 +259,7 @@ class CommunityReport(BaseModel):
         d: dict[str, Any],
         id_key: str = "id",
         title_key: str = "title",
-        community_id_key: str = "community_id",
+        community_number_key: str = "community_number",
         short_id_key: str = "short_id",
         summary_key: str = "summary",
         findings_key: str = "findings",
@@ -273,7 +272,7 @@ class CommunityReport(BaseModel):
         return CommunityReport(
             id=d[id_key],
             title=d[title_key],
-            community_id=d[community_id_key],
+            community_number=d[community_number_key],
             short_id=d.get(short_id_key),
             summary=d[summary_key],
             findings=d[findings_key],

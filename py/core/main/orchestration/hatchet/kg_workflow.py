@@ -6,9 +6,8 @@ import uuid
 
 from hatchet_sdk import Context
 
-from core import GenerationConfig, IngestionStatus, KGCreationSettings
-from core.base import OrchestrationProvider, R2RDocumentProcessingError
-from core.base.abstractions import KGCreationStatus, KGEnrichmentStatus
+from core import GenerationConfig
+from core.base import OrchestrationProvider
 
 from ...services import KgService
 
@@ -21,7 +20,7 @@ if TYPE_CHECKING:
 
 def hatchet_kg_factory(
     orchestration_provider: OrchestrationProvider, service: KgService
-) -> list["Hatchet.Workflow"]:
+) -> dict[str, "Hatchet.Workflow"]:
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
@@ -56,7 +55,7 @@ def hatchet_kg_factory(
             # context.log(f"Running KG Extraction for collection ID: {input_data['collection_id']}")
             document_id = input_data["document_id"]
 
-            await self.kg_service.kg_extraction(
+            await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
                 logger=context.log,
                 **input_data["kg_creation_settings"],
@@ -69,14 +68,14 @@ def hatchet_kg_factory(
         @orchestration_provider.step(
             retries=1, timeout="360m", parents=["kg_extract"]
         )
-        async def kg_node_description(self, context: Context) -> dict:
+        async def kg_entity_description(self, context: Context) -> dict:
 
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
             document_id = input_data["document_id"]
 
-            await self.kg_service.kg_node_description(
+            await self.kg_service.kg_entity_description(
                 document_id=uuid.UUID(document_id),
                 **input_data["kg_creation_settings"],
             )
@@ -172,6 +171,7 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1, parents=[], timeout="360m")
         async def kg_clustering(self, context: Context) -> dict:
 
+            logger.info("Running KG Clustering")
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -185,6 +185,10 @@ def hatchet_kg_factory(
             context.log(
                 f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
             )
+            logger.info(
+                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
+            )
+
             return {
                 "result": f"successfully ran kg clustering for collection {collection_id}",
                 "kg_clustering": kg_clustering_results,
@@ -225,7 +229,7 @@ def hatchet_kg_factory(
                 )
             await asyncio.gather(*workflows)
             return {
-                "result": f"successfully ran kg community summary workflows for {num_communities} communities"
+                "result": f"Successfully spawned summary workflows for {num_communities} communities."
             }
 
     @orchestration_provider.workflow(

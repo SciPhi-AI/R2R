@@ -1,7 +1,6 @@
-import json
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import yaml
 from fastapi import Body, Depends
@@ -148,9 +147,10 @@ class KGRouter(BaseRouter):
                 self.service.providers.kg.config.kg_enrichment_settings
             )
 
-            for key, value in kg_enrichment_settings.items():
-                if value is not None:
-                    setattr(server_kg_enrichment_settings, key, value)
+            if kg_enrichment_settings:
+                for key, value in kg_enrichment_settings.items():
+                    if value is not None:
+                        setattr(server_kg_enrichment_settings, key, value)
 
             if run_type == "estimate":
             

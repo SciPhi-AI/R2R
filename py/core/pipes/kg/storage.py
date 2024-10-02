@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 
 
 class KGStoragePipe(AsyncPipe):
+    # TODO - Apply correct type hints to storage messages
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[List[R2RDocumentProcessingError], None]
+        message: AsyncGenerator[List[Any], None]
 
     def __init__(
         self,
         kg_provider: KGProvider,
         config: AsyncPipe.PipeConfig,
-        embedding_provider: Optional[EmbeddingProvider] = None,
         storage_batch_size: int = 1,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -47,7 +47,6 @@ class KGStoragePipe(AsyncPipe):
             **kwargs,
         )
         self.kg_provider = kg_provider
-        self.embedding_provider = embedding_provider
         self.storage_batch_size = storage_batch_size
 
     async def store(

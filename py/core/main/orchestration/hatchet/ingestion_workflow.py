@@ -24,7 +24,7 @@ def hatchet_ingestion_factory(
     orchestration_provider: OrchestrationProvider, service: IngestionService
 ) -> dict[str, "Hatchet.Workflow"]:
     @orchestration_provider.workflow(
-        name="ingest-file",
+        name="ingest-file-changed",
         timeout="60m",
     )
     class HatchetIngestFilesWorkflow:
@@ -100,14 +100,15 @@ def hatchet_ingestion_factory(
             async for _ in storage_generator:
                 pass
 
-            return {
-                "document_info": document_info.to_dict(),
-            }
+            #     return {
+            #         "document_info": document_info.to_dict(),
+            #     }
 
-        @orchestration_provider.step(parents=["embed"], timeout="60m")
-        async def finalize(self, context: Context) -> dict:
-            document_info_dict = context.step_output("embed")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            # @orchestration_provider.step(parents=["embed"], timeout="60m")
+            # async def finalize(self, context: Context) -> dict:
+            #     document_info_dict = context.step_output("embed")["document_info"]
+            #     print("Calling finalize for document_info_dict = ", document_info_dict)
+            #     document_info = DocumentInfo(**document_info_dict)
 
             is_update = context.workflow_input()["request"].get("is_update")
 
@@ -126,6 +127,7 @@ def hatchet_ingestion_factory(
                     document_info.user_id
                 ),
             )
+
             service.providers.database.vector.assign_document_to_collection(
                 document_id=document_info.id, collection_id=collection_id
             )
@@ -263,7 +265,7 @@ def hatchet_ingestion_factory(
                 # Spawn ingest_file workflow as a child workflow
                 child_result = (
                     await context.aio.spawn_workflow(
-                        "ingest-file",
+                        "ingest-file-changed",
                         {"request": ingest_input},
                         key=f"ingest_file_{doc_id}",
                     )
