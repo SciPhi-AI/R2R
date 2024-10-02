@@ -83,9 +83,12 @@ class KGRouter(BaseRouter):
             if not collection_id:
                 collection_id = generate_default_user_collection_id(auth_user.id)
 
+            logger.info(f"Running on collection {collection_id}")
+
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
+
             if kg_creation_settings:
                 for key, value in kg_creation_settings.items():
                     if value is not None:
