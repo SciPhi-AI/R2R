@@ -27,7 +27,7 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.abstractions.kg import KGCreationSettings, KGEnrichmentSettings
+from shared.abstractions.kg import KGCreationSettings, KGEnrichmentSettings, KGRunType, KGCreationEstimationResponse, KGEnrichmentEstimationResponse
 from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -113,6 +113,9 @@ __all__ = [
     # Restructure abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGRunType",
+    "KGCreationEstimationResponse",
+    "KGEnrichmentEstimationResponse",
     # User abstractions
     "Token",
     "TokenData",

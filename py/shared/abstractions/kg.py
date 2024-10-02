@@ -11,8 +11,8 @@ class KGRunType(Enum):
     ESTIMATE = "estimate"
     RUN = "run"
 
-class KGEstimationResponse(R2RSerializable):
-    """Response for knowledge graph estimation."""
+class KGCreationEstimationResponse(R2RSerializable):
+    """Response for knowledge graph creation estimation."""
 
     estimated_entities: int = Field(
         description="The estimated number of entities in the graph.",

@@ -51,6 +51,9 @@ __all__ = [
     # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGRunType",
+    "KGCreationEstimationResponse",
+    "KGEnrichmentEstimationResponse",
     # User abstractions
     "Token",
     "TokenData",

@@ -116,6 +116,11 @@ def generate_message_id(query: str, completion_start_time: datetime) -> UUID:
     """
     return _generate_id_from_label(f"{query}-{completion_start_time.isoformat()}")
 
+def generate_default_prompt_id(prompt_name: str) -> UUID:
+    """
+    Generates a unique prompt id
+    """
+    return _generate_id_from_label(prompt_name)
 
 async def to_async_generator(
     iterable: Iterable[Any],

@@ -7,10 +7,16 @@ from shared.utils import (
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_run_id,
+    generate_document_id,
+    generate_extraction_id,
     generate_default_user_collection_id,
     increment_version,
     run_pipeline,
     to_async_generator,
+    generate_user_id,
+    generate_collection_id_from_name,
+    generate_message_id,
+    generate_default_prompt_id,
 )
 
 __all__ = [
@@ -24,7 +30,12 @@ __all__ = [
     "decrement_version",
     "run_pipeline",
     "to_async_generator",
-    # Text splitter
+    "generate_document_id",
+    "generate_extraction_id",
+    "generate_user_id",
+    "generate_collection_id_from_name",
+    "generate_message_id",
+    "generate_default_prompt_id",
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
 ]

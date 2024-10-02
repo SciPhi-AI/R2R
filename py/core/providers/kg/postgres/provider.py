@@ -9,7 +9,7 @@ from uuid import UUID
 
 import asyncpg
 
-from core import KGEnrichmentSettings, KGExtraction, KGCreationEstimationResponse, KGEnrichmentEstimationResponse
+from shared.abstractions import KGEnrichmentSettings, KGExtraction, KGCreationEstimationResponse, KGEnrichmentEstimationResponse
 from core.base import (
     Community,
     DatabaseProvider,
@@ -653,7 +653,7 @@ class PostgresKGProvider(KGProvider):
         await self.execute_query(QUERY, [KGCreationStatus.PENDING, collection_id])
 
 
-    async def get_creation_estimate(self, collection_id: UUID) -> KGCreationEstimateResponse:
+    async def get_creation_estimate(self, collection_id: UUID) -> KGCreationEstimationResponse:
 
         document_ids = await self.db_provider.documents_in_collection(collection_id)
         
@@ -688,7 +688,7 @@ class PostgresKGProvider(KGProvider):
             "number_of_jobs_created": len(document_ids),
         }
 
-    async def get_enrichment_estimate(self, collection_id: UUID) -> KGEnrichmentEstimateResponse:        
+    async def get_enrichment_estimate(self, collection_id: UUID) -> KGEnrichmentEstimationResponse:        
         # number of entities and triples in the graph. Assume 1000 LLM calls per entity
         
         document_ids = await self.db_provider.documents_in_collection(collection_id)
