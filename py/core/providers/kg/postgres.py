@@ -582,6 +582,9 @@ class PostgresKGProvider(KGProvider):
         try:
             from graspologic.partition import hierarchical_leiden
 
+            if not leiden_params.get("random_seed"):
+                leiden_params["random_seed"] = 7272
+
             community_mapping = hierarchical_leiden(graph, **leiden_params)
 
             return community_mapping
