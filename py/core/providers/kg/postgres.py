@@ -450,6 +450,8 @@ class PostgresKGProvider(KGProvider):
             raise ValueError(f"Invalid search type: {search_type}")
 
         property_names_str = ", ".join(property_names)
+
+        # TODO: for community, we filter based on collection_id, and for entity and relationship, we filter based on document_ids in the collection.
         QUERY = f"""
                 SELECT {property_names_str} FROM {self._get_table_name(table_name)} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
