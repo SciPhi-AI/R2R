@@ -73,18 +73,19 @@ class PostgresDBProvider(DatabaseProvider):
 
         project_name = (
             config.project_name
-            or config.vecs_collection  # remove after deprecation
+            or os.getenv("R2R_PROJECT_NAME")
+            # Remove the following line after deprecation
             or os.getenv("POSTGRES_PROJECT_NAME")
         )
         if not project_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `r2r.toml`."
+                "Error, please set a valid R2R_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `r2r.toml`."
             )
         self.project_name = project_name
 
         if not all([user, password, host, port, db_name, project_name]):
             raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_PROJECT_NAME environment variables to use pgvector database."
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and `R2R_PROJECT_NAME` environment variables to use pgvector database."
             )
 
         # Check if it's a Unix socket connection
