@@ -130,7 +130,9 @@ class KgService(Service):
         **kwargs,
     ):
 
-        entity_count = await self.providers.kg.get_entity_count(document_id)
+        entity_count = await self.providers.kg.get_entity_count(
+            document_id=document_id
+        )
 
         # TODO - Do not hardcode the batch size,
         # make it a configurable parameter at runtime & server-side defaults
@@ -247,3 +249,37 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.kg.get_enrichment_estimate(collection_id)
+
+    @telemetry_event("get_entities")
+    async def get_entities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        entity_ids: Optional[list[str]] = None,
+        with_description: bool = False,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_entities(
+            collection_id,
+            offset,
+            limit,
+            entity_ids,
+            with_description,
+        )
+
+    @telemetry_event("get_triples")
+    async def get_triples(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        triple_ids: Optional[list[str]] = None,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_triples(
+            collection_id,
+            offset,
+            limit,
+            triple_ids,
+        )
