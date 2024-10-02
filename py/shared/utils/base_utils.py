@@ -9,8 +9,8 @@ from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
     KGEntityResult,
-    KGRelationshipResult,
     KGGlobalResult,
+    KGRelationshipResult,
 )
 
 logger = logging.getLogger(__name__)
