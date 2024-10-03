@@ -450,12 +450,31 @@ class PostgresKGProvider(KGProvider):
 
         property_names_str = ", ".join(property_names)
 
-        # TODO: for community, we filter based on collection_id, and for entity and relationship, we filter based on document_ids in the collection.
+        collection_ids_dict = filters.get("collection_ids", {})
+        filter_query = ""
+        if collection_ids_dict:
+            filter_query = "WHERE collection_id = ANY($3)"
+            filter_ids = collection_ids_dict['$overlap']
+
+            if search_type == "__Community__":
+                logger.info(f"Searching in collection ids: {filter_ids}")
+
+            if search_type == "__Entity__" or search_type == "__Relationship__":
+                filter_query = "WHERE document_id = ANY($3)"
+                query = f"""
+                    SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
+                """
+                filter_ids = [doc_id['document_id'] for doc_id in await self.fetch_query(query, filter_ids)]
+                logger.info(f"Searching in document ids: {filter_ids}")
+
         QUERY = f"""
-                SELECT {property_names_str} FROM {self._get_table_name(table_name)} ORDER BY {embedding_type} <=> $1 LIMIT $2;
+            SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
 
-        results = await self.fetch_query(QUERY, (str(query_embedding), limit, ))
+        if filter_query != "":
+            results = await self.fetch_query(QUERY, (str(query_embedding), limit, filter_ids))
+        else:
+            results = await self.fetch_query(QUERY, (str(query_embedding), limit))
 
         for result in results:
             yield {
