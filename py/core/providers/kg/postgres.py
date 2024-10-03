@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
-from graspologic.partition import HierarchicalClusters
 
 from core.base import (
     CommunityReport,
@@ -609,7 +608,7 @@ class PostgresKGProvider(KGProvider):
         self,
         graph: Any,
         leiden_params: Dict[str, Any],
-    ) -> HierarchicalClusters:
+    ) -> Any:
         """Compute Leiden communities."""
         try:
             from graspologic.partition import hierarchical_leiden
