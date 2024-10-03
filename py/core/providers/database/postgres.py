@@ -8,6 +8,7 @@ from core.base import (
     CryptoProvider,
     DatabaseConfig,
     DatabaseProvider,
+    PostgresConfigurationSettings,
     RelationalDBProvider,
     VectorDBProvider,
 )
@@ -72,21 +73,19 @@ class PostgresDBProvider(DatabaseProvider):
 
         project_name = (
             config.project_name
-            or config.vecs_collection  # remove after deprecation
+            or os.getenv("R2R_PROJECT_NAME")
+            # Remove the following line after deprecation
             or os.getenv("POSTGRES_PROJECT_NAME")
-            or os.getenv(
-                "POSTGRES_VECS_COLLECTION"
-            )  # remove after deprecation
         )
         if not project_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `r2r.toml`."
+                "Error, please set a valid R2R_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `r2r.toml`."
             )
         self.project_name = project_name
 
         if not all([user, password, host, port, db_name, project_name]):
             raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_PROJECT_NAME environment variables to use pgvector database."
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and `R2R_PROJECT_NAME` environment variables to use pgvector database."
             )
 
         # Check if it's a Unix socket connection
@@ -106,6 +105,16 @@ class PostgresDBProvider(DatabaseProvider):
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
+        self.postgres_configuration_settings: PostgresConfigurationSettings = (
+            self._get_postgres_configuration_settings(config)
+        )
+        self.default_collection_name = config.default_collection_name
+        self.default_collection_description = (
+            config.default_collection_description
+        )
+
+    def _get_table_name(self, base_name: str) -> str:
+        return f"{self.project_name}.{base_name}"
 
     async def initialize(self):
         self.vector = self._initialize_vector_db()
@@ -125,6 +134,48 @@ class PostgresDBProvider(DatabaseProvider):
             connection_string=self.connection_string,
             crypto_provider=self.crypto_provider,
             project_name=self.project_name,
+            postgres_configuration_settings=self.postgres_configuration_settings,
         )
         await relational_db.initialize()
         return relational_db
+
+    def _get_postgres_configuration_settings(
+        self, config: DatabaseConfig
+    ) -> PostgresConfigurationSettings:
+        settings = PostgresConfigurationSettings()
+
+        env_mapping = {
+            "max_connections": "POSTGRES_MAX_CONNECTIONS",
+            "shared_buffers": "POSTGRES_SHARED_BUFFERS",
+            "effective_cache_size": "POSTGRES_EFFECTIVE_CACHE_SIZE",
+            "maintenance_work_mem": "POSTGRES_MAINTENANCE_WORK_MEM",
+            "checkpoint_completion_target": "POSTGRES_CHECKPOINT_COMPLETION_TARGET",
+            "wal_buffers": "POSTGRES_WAL_BUFFERS",
+            "default_statistics_target": "POSTGRES_DEFAULT_STATISTICS_TARGET",
+            "random_page_cost": "POSTGRES_RANDOM_PAGE_COST",
+            "effective_io_concurrency": "POSTGRES_EFFECTIVE_IO_CONCURRENCY",
+            "work_mem": "POSTGRES_WORK_MEM",
+            "huge_pages": "POSTGRES_HUGE_PAGES",
+            "min_wal_size": "POSTGRES_MIN_WAL_SIZE",
+            "max_wal_size": "POSTGRES_MAX_WAL_SIZE",
+            "max_worker_processes": "POSTGRES_MAX_WORKER_PROCESSES",
+            "max_parallel_workers_per_gather": "POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER",
+            "max_parallel_workers": "POSTGRES_MAX_PARALLEL_WORKERS",
+            "max_parallel_maintenance_workers": "POSTGRES_MAX_PARALLEL_MAINTENANCE_WORKERS",
+        }
+
+        for setting, env_var in env_mapping.items():
+            value = getattr(
+                config.postgres_configuration_settings, setting, None
+            ) or os.getenv(env_var)
+
+            if value is not None and value != "":
+                field_type = settings.__annotations__[setting]
+                if field_type == Optional[int]:
+                    value = int(value)
+                elif field_type == Optional[float]:
+                    value = float(value)
+
+                setattr(settings, setting, value)
+
+        return settings

@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # # Uncomment to delete the user account
     # # Delete account (requires password confirmation)
-    # delete_result = client.delete_user("password123")
+    # delete_result = client.delete_user(login_result["id"], "password123")
     # print(delete_result)
 
     logout_result = client.logout()

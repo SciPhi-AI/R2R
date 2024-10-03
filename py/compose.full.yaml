@@ -1,0 +1,443 @@
+version: '3.8'
+
+x-depends-on:
+  postgres: &postgres-dependency
+    condition: service_healthy
+  hatchet-engine: &hatchet-dependency
+    condition: service_healthy
+
+networks:
+  r2r-network:
+    name: r2r-network
+    driver: bridge
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+    labels:
+      - "com.docker.compose.recreate=always"
+
+volumes:
+  hatchet_certs:
+  hatchet_config:
+  hatchet_api_key:
+  postgres_data:
+  hatchet_rabbitmq_data:
+  hatchet_rabbitmq.conf:
+
+services:
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DBNAME:-postgres}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-1024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - r2r-network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      bash -c "
+        if [ -z \"\$(ls -A /var/lib/postgresql/data)\" ]; then
+          echo \"Data directory is empty, initializing database...\"
+          echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf
+          docker-entrypoint.sh postgres
+        else
+          echo \"Data directory is not empty, skipping initialization...\"
+          docker-entrypoint.sh postgres
+        fi
+      "
+
+  hatchet-rabbitmq:
+    image: "rabbitmq:3-management"
+    hostname: "hatchet-rabbitmq"
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "password"
+    volumes:
+      - "hatchet_rabbitmq_data:/var/lib/rabbitmq"
+      - "hatchet_rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - r2r-network
+
+  hatchet-create-db:
+    image: postgres:latest
+    command: >
+      sh -c "
+        set -e
+        echo 'Waiting for PostgreSQL to be ready...'
+        while ! pg_isready -h postgres -p 5432 -U postgres; do
+          sleep 1
+        done
+        echo 'PostgreSQL is ready, checking if database exists...'
+        if ! PGPASSWORD=${POSTGRES_PASSWORD:-postgres} psql -h postgres -p 5432 -U ${POSTGRES_USER:-postgres} -lqt | grep -qw ${HATCHET_POSTGRES_DBNAME:-hatchet}; then
+          echo 'Database does not exist, creating it...'
+          PGPASSWORD=${POSTGRES_PASSWORD:-postgres} createdb -h postgres -p 5432 -U ${POSTGRES_USER:-postgres} -w ${HATCHET_POSTGRES_DBNAME:-hatchet}
+        else
+          echo 'Database already exists, skipping creation.'
+        fi
+      "
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - r2r-network
+
+  hatchet-migration:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
+      DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      HATCHET_DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+    depends_on:
+      hatchet-create-db:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    networks:
+      - r2r-network
+
+  hatchet-setup-config:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-13421772800}"
+      HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
+      DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      HATCHET_DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      SERVER_TASKQUEUE_RABBITMQ_URL: amqp://user:password@hatchet-rabbitmq:5672/
+      SERVER_AUTH_COOKIE_DOMAIN: "http://host.docker.internal:7274"
+      SERVER_URL: "http://host.docker.internal:7274"
+      SERVER_AUTH_COOKIE_INSECURE: "t"
+      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+      SERVER_GRPC_INSECURE: "t"
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
+      SERVER_GRPC_MAX_MSG_SIZE: 13421772800
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+    depends_on:
+      hatchet-migration:
+        condition: service_completed_successfully
+      hatchet-rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - r2r-network
+
+  hatchet-engine:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
+    command: /hatchet/hatchet-engine --config /hatchet/config
+    restart: on-failure
+    depends_on:
+      hatchet-setup-config:
+        condition: service_completed_successfully
+    ports:
+      - "7077:7077"
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
+      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+      SERVER_GRPC_PORT: 7077
+      SERVER_GRPC_INSECURE: "t"
+      SERVER_GRPC_MAX_MSG_SIZE: 13421772800
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+    networks:
+      r2r-network:
+        aliases:
+          - host.docker.internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8733/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hatchet-api:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-api:latest
+    command: /hatchet/hatchet-api --config /hatchet/config
+    restart: on-failure
+    depends_on:
+      hatchet-setup-config:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+    networks:
+      - r2r-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hatchet-api.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.hatchet-api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.hatchet-api.entrypoints=hatchet"
+
+  hatchet-dashboard:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-frontend:latest
+    networks:
+      - r2r-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hatchet-dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.services.hatchet-frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.hatchet-dashboard.entrypoints=hatchet"
+
+  setup-token:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    command: >
+      sh -c "
+        set -e
+        echo 'Starting token creation process...'
+
+        # Attempt to create token and capture both stdout and stderr
+        TOKEN_OUTPUT=$$(/hatchet/hatchet-admin token create --config /hatchet/config --tenant-id 707d0855-80ab-4e1f-a156-f1c4546cbf52 2>&1)
+
+        # Extract the token (assuming it's the only part that looks like a JWT)
+        TOKEN=$$(echo \"$$TOKEN_OUTPUT\" | grep -Eo 'eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*')
+
+        if [ -z \"$$TOKEN\" ]; then
+          echo 'Error: Failed to extract token. Full command output:' >&2
+          echo \"$$TOKEN_OUTPUT\" >&2
+          exit 1
+        fi
+
+        echo \"$$TOKEN\" > /tmp/hatchet_api_key
+        echo 'Token created and saved to /tmp/hatchet_api_key'
+
+        # Copy token to final destination
+        echo -n \"$$TOKEN\" > /hatchet_api_key/api_key.txt
+        echo 'Token copied to /hatchet_api_key/api_key.txt'
+
+        # Verify token was copied correctly
+        if [ \"$$(cat /tmp/hatchet_api_key)\" != \"$(cat /hatchet_api_key/api_key.txt)\" ]; then
+          echo 'Error: Token copy failed, files do not match' >&2
+          echo 'Content of /tmp/hatchet_api_key:'
+          cat /tmp/hatchet_api_key
+          echo 'Content of /hatchet_api_key/api_key.txt:'
+          cat /hatchet_api_key/api_key.txt
+          exit 1
+        fi
+
+        echo 'Hatchet API key has been saved successfully'
+        echo 'Token length:' $${#TOKEN}
+        echo 'Token (first 20 chars):' $${TOKEN:0:20}
+        echo 'Token structure:' $$(echo $$TOKEN | awk -F. '{print NF-1}') 'parts'
+        # Check each part of the token
+        for i in 1 2 3; do
+          PART=$$(echo $$TOKEN | cut -d. -f$$i)
+          echo 'Part' $$i 'length:' $${#PART}
+          echo 'Part' $$i 'base64 check:' $$(echo $$PART | base64 -d >/dev/null 2>&1 && echo 'Valid' || echo 'Invalid')
+        done
+        # Final validation attempt
+        if ! echo $$TOKEN | awk -F. '{print $$2}' | base64 -d 2>/dev/null | jq . >/dev/null 2>&1; then
+          echo 'Warning: Token payload is not valid JSON when base64 decoded' >&2
+        else
+          echo 'Token payload appears to be valid JSON'
+        fi
+      "
+    networks:
+      - r2r-network
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DBNAME:-postgres}?sslmode=disable"
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      DATABASE_POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      DATABASE_POSTGRES_USERNAME: "${POSTGRES_USER:-postgres}"
+      DATABASE_POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+      - hatchet_api_key:/hatchet_api_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      hatchet-setup-config:
+        condition: service_completed_successfully
+
+  unstructured:
+    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
+    ports:
+      - "7275:7275"
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  r2r:
+    image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
+    build:
+      context: .
+      args:
+        PORT: ${PORT:-7272}
+    ports:
+      - "${PORT:-7272}:${PORT:-7272}"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=${PORT:-7272}
+      - HOST=${HOST:-0.0.0.0}
+      - CONFIG_NAME=${CONFIG_NAME:-}
+      - CONFIG_PATH=${CONFIG_PATH:-}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
+      - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - AZURE_API_KEY=${AZURE_API_KEY:-}
+      - AZURE_API_BASE=${AZURE_API_BASE:-}
+      - AZURE_API_VERSION=${AZURE_API_VERSION:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+      - VERTEX_PROJECT=${VERTEX_PROJECT:-}
+      - VERTEX_LOCATION=${VERTEX_LOCATION:-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION_NAME=${AWS_REGION_NAME:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      - ANYSCALE_API_KEY=${ANYSCALE_API_KEY:-}
+      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+      - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
+      - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
+      - UNSTRUCTURED_LOCAL_URL=${UNSTRUCTURED_LOCAL_URL:-http://unstructured:7275}
+      - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
+      - HATCHET_CLIENT_TLS_STRATEGY=none
+      - HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-13421772800}
+      - HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}
+    command: >
+      sh -c '
+        if [ -z "$${HATCHET_CLIENT_TOKEN}" ]; then
+          export HATCHET_CLIENT_TOKEN=$$(cat /hatchet_api_key/api_key.txt)
+        fi
+        exec uvicorn core.main.app_entry:app --host $${HOST} --port $${PORT}
+      '
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-7272}/v2/health"]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    volumes:
+      - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
+      - hatchet_api_key:/hatchet_api_key:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.r2r.rule=PathPrefix(`/r2r-api`)"
+      - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-7272}"
+      - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/r2r-api"
+      - "traefik.http.middlewares.r2r-add-v2.addprefix.prefix=/v2"
+      - "traefik.http.routers.r2r.middlewares=r2r-strip-prefix,r2r-add-v2,r2r-headers"
+      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Origin=*"
+      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Methods=GET,POST,OPTIONS"
+      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Headers=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+      - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      setup-token:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      unstructured:
+        condition: service_healthy
+
+  r2r-dashboard:
+    image: emrgntcmplxty/r2r-dashboard:latest
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:${R2R_DASHBOARD_PORT:-8001}/r2r-api
+    networks:
+      - r2r-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.r2r-dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.services.r2r-dashboard.loadbalancer.server.port=3000"
+      - "traefik.http.routers.r2r-dashboard.entrypoints=r2r"
+
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.r2r.address=:${R2R_DASHBOARD_PORT:-8001}"
+      - "--entrypoints.hatchet.address=:${HATCHET_DASHBOARD_PORT:-8002}"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+    ports:
+      - "${R2R_DASHBOARD_PORT:-8001}:${R2R_DASHBOARD_PORT:-8001}"
+      - "${HATCHET_DASHBOARD_PORT:-8002}:${HATCHET_DASHBOARD_PORT:-8002}"
+      - "${TRAEFIK_DASHBOARD_PORT:-8081}:${TRAEFIK_DASHBOARD_PORT:-8081}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - r2r-network
+    labels:
+      - "traefik.http.middlewares.no-cache-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store, must-revalidate"
+      - "traefik.http.routers.hatchet-api.middlewares=no-cache-headers"

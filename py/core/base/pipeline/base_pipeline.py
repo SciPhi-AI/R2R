@@ -67,17 +67,20 @@ class AsyncPipeline:
                         **kwargs,
                     )
                     self.futures[config_name].set_result(current_input)
-                return (
-                    current_input
-                    if stream
-                    else await self._consume_all(current_input)
-                )
+
             except Exception as error:
+                # TODO: improve error handling here
                 error_trace = traceback.format_exc()
                 logger.error(
                     f"Pipeline failed with error: {error}\n\nStack trace:\n{error_trace}"
                 )
                 raise error
+
+            return (
+                current_input
+                if stream
+                else await self._consume_all(current_input)
+            )
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []

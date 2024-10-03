@@ -3,9 +3,13 @@ FROM python:3.10-slim AS builder
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
     RUN pip install --no-cache-dir poetry
+
+# Add Rust to PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN mkdir -p /app/py
 WORKDIR /app/py
@@ -13,7 +17,7 @@ COPY pyproject.toml /app/py/pyproject.toml
 
 # Install dependencies
 RUN poetry config virtualenvs.create false \
-    && poetry install --extras "core" --no-dev --no-root \
+    && poetry install --extras "core ingestion-bundle" --no-dev --no-root \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image

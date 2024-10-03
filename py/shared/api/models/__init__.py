@@ -11,6 +11,12 @@ from shared.api.models.ingestion.responses import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
 )
+from shared.api.models.kg.responses import (
+    KGCreationResponse,
+    KGEnrichmentResponse,
+    WrappedKGCreationResponse,
+    WrappedKGEnrichmentResponse,
+)
 from shared.api.models.management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
@@ -41,12 +47,6 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-)
-from shared.api.models.restructure.responses import (
-    KGCreationResponse,
-    KGEnrichmentResponse,
-    WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponse,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,

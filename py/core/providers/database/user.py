@@ -4,12 +4,13 @@ from uuid import UUID
 
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models import UserResponse
-from core.base.utils import generate_id_from_label
+from core.utils import generate_user_id
 
 from .base import DatabaseMixin, QueryBuilder
 
 
 class UserMixin(DatabaseMixin):
+
     async def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('users')} (
@@ -135,7 +136,7 @@ class UserMixin(DatabaseMixin):
             RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
         """
         result = await self.fetchrow_query(
-            query, [email, generate_id_from_label(email), hashed_password, []]
+            query, [email, generate_user_id(email), hashed_password, []]
         )
 
         if not result:

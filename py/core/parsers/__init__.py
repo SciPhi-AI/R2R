@@ -7,7 +7,6 @@ __all__ = [
     "AudioParser",
     "DOCXParser",
     "ImageParser",
-    "MovieParser",
     "PDFParser",
     "PDFParserUnstructured",
     "PDFParserMarker",

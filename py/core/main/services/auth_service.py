@@ -40,7 +40,6 @@ class AuthService(Service):
     async def verify_email(
         self, email: str, verification_code: str
     ) -> dict[str, str]:
-
         if not self.config.auth.require_email_verification:
             raise R2RException(
                 status_code=400, message="Email verification is not required"
@@ -119,21 +118,26 @@ class AuthService(Service):
         self,
         user_id: UUID,
         email: Optional[str] = None,
+        is_superuser: Optional[bool] = None,
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
     ) -> UserResponse:
-        user = await self.providers.database.relational.get_user_by_id(user_id)
+        user: UserResponse = (
+            await self.providers.database.relational.get_user_by_id(user_id)
+        )
         if not user:
             raise R2RException(status_code=404, message="User not found")
-        if email:
-            setattr(user, "email", email)
-        if name:
-            setattr(user, "name", name)
-        if bio:
-            setattr(user, "bio", bio)
-        if profile_picture:
-            setattr(user, "profile_picture", profile_picture)
+        if email is not None:
+            user.email = email
+        if is_superuser is not None:
+            user.is_superuser = is_superuser
+        if name is not None:
+            user.name = name
+        if bio is not None:
+            user.bio = bio
+        if profile_picture is not None:
+            user.profile_picture = profile_picture
         return await self.providers.database.relational.update_user(user)
 
     @telemetry_event("DeleteUserAccount")

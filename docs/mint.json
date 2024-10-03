@@ -82,8 +82,23 @@
           "icon": "bars-progress",
           "pages" : [
             "documentation/installation/overview",
-            "documentation/installation/docker",
-            "documentation/installation/local-system"
+            {
+              "group": "Light",
+              "icon": "feather",
+              "pages": [
+                "documentation/installation/light/local-system",
+                "documentation/installation/light/docker"
+              ]
+            },
+            {
+              "group": "Full",
+              "icon": "gem",
+              "pages": [
+                "documentation/installation/full/docker",
+                "documentation/installation/full/local-system"
+              ]
+            }
+
           ]
         },
         "documentation/quickstart",
@@ -226,8 +241,6 @@
               "pages": [
                 "documentation/deployment/troubleshooting/vector_store_issues",
                 "documentation/deployment/troubleshooting/connection_strings",
-                "documentation/deployment/troubleshooting/graph_db",
-                "documentation/deployment/troubleshooting/neo4j",
                 "documentation/deployment/troubleshooting/workflows"
               ]
             },

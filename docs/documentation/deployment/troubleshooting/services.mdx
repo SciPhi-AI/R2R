@@ -1,6 +1,6 @@
-# R2R Service Configuration Troubleshooting Guide: Postgres, Neo4j, Hatchet
+# R2R Service Configuration Troubleshooting Guide: Postgres, Hatchet
 
-This guide addresses common configuration problems for Postgres, Neo4j, and Hatchet services in R2R deployments.
+This guide addresses common configuration problems for Postgres, and Hatchet services in R2R deployments.
 
 ## Postgres Configuration Issues
 
@@ -49,47 +49,6 @@ c) Authentication problems:
   ```
 - Tune Postgres configuration parameters like `shared_buffers`, `effective_cache_size`, etc.
 
-## Neo4j Configuration Issues
-
-### 1. Authentication Failures
-
-**Symptom:** R2R cannot authenticate with Neo4j.
-
-**Solution:**
-- Verify the `NEO4J_AUTH` environment variable:
-  ```yaml
-  environment:
-    - NEO4J_AUTH=neo4j/yourpassword
-  ```
-- Ensure R2R is using the correct credentials in its configuration.
-
-### 2. Memory Allocation Issues
-
-**Symptom:** Neo4j fails to start or crashes with out-of-memory errors.
-
-**Solution:**
-- Adjust memory settings:
-  ```yaml
-  environment:
-    - NEO4J_server_memory_pagecache_size=1G
-    - NEO4J_server_memory_heap_initial__size=1G
-    - NEO4J_server_memory_heap_max__size=1G
-  ```
-- Ensure your host system has enough available memory.
-
-### 3. Plugin Issues
-
-**Symptom:** Required Neo4j plugins are not loading or functioning.
-
-**Solution:**
-- Verify plugin configuration:
-  ```yaml
-  environment:
-    - NEO4J_PLUGINS=["apoc", "graph-data-science"]
-    - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
-  ```
-- Check Neo4j logs for plugin-related errors.
-- Ensure plugin compatibility with your Neo4j version.
 
 ## Hatchet Configuration Issues
 
@@ -156,14 +115,12 @@ c) Authentication problems:
 1. **Check Logs:** Always start by examining the logs of the problematic service:
    ```
    docker-compose logs postgres
-   docker-compose logs neo4j
    docker-compose logs hatchet-engine
    ```
 
 2. **Verify Network Connectivity:** Ensure services can communicate:
    ```
    docker-compose exec r2r ping postgres
-   docker-compose exec r2r ping neo4j
    docker-compose exec r2r ping hatchet-engine
    ```
 
@@ -185,4 +142,4 @@ c) Authentication problems:
 
 6. **Environment Variables:** Double-check all environment variables in your `.env` file and `docker-compose.yml`.
 
-By following this guide, you should be able to diagnose and resolve most configuration issues related to Postgres, Neo4j, and Hatchet in your R2R deployment. If problems persist, consider seeking help from the R2R community or support channels.
+By following this guide, you should be able to diagnose and resolve most configuration issues related to Postgres, and Hatchet in your R2R deployment. If problems persist, consider seeking help from the R2R community or support channels.

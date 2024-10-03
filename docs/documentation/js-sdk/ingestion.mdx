@@ -51,7 +51,7 @@ const ingestResponse = await client.ingestFiles(files, {
   </ParamField>
 </ParamField>
 
-<ParamField path="chunking_config" type="Optional[Union[dict, ChunkingConfig]]">
+<ParamField path="ingestion_config" type="Optional[Union[dict, ChunkingConfig]]">
   The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
   <Expandable title="properties">
     <ParamField path="provider" type="str" default="unstructured_local">
@@ -219,7 +219,7 @@ const updateResponse = await client.updateFiles(files, {
     An optional array of metadata objects for the updated files.
   </ParamField>
 
-  <ParamField path="chunking_config" type="Record<string, any>">
+  <ParamField path="ingestion_config" type="Record<string, any>">
     The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
     <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">
@@ -261,7 +261,7 @@ const documentsOverview = await client.documentsOverview();
       ```bash
       [
         {
-          'document_id': '93123a68-d668-51de-8291-92162730dc87',
+          'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
           'version': 'v1',
           'size_in_bytes': 73353,
           'metadata': {},
@@ -289,7 +289,7 @@ const documentsOverview = await client.documentsOverview();
 Fetch chunks for a particular document:
 
 ```javascript
-const documentId = '93123a68-d668-51de-8291-92162730dc87';
+const documentId = '9fbe403b-c11c-5aae-8ade-ef22980c3ad1';
 const chunks = await client.documentChunks(documentId);
 ```
 
@@ -301,7 +301,7 @@ const chunks = await client.documentChunks(documentId);
       [{
         'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
         'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-        'document_id': 'db02076e-989a-59cd-98d5-e24e15a0bd27',
+        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
         'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
         'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3'
         'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'chunk_order': 0}}
@@ -337,5 +337,5 @@ const deleteResponse = await client.delete({ document_id: "91662726-7271-51a5-a0
 </AccordionGroup>
 
 <ParamField path="filters" type="{ [key: string]: string | string[] }" required>
-  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
+  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
 </ParamField>

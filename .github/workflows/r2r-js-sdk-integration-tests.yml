@@ -38,7 +38,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
-          POSTGRES_PROJECT_NAME: ${{ secrets.POSTGRES_PROJECT_NAME }}
+          R2R_PROJECT_NAME: ${{ secrets.R2R_PROJECT_NAME }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           r2r serve --docker

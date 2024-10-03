@@ -5,12 +5,12 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.1.53"
+version = "3.2.00"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
-include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "compose.hatchet.yaml", "pyproject.toml"]
+include = ["r2r.toml", "compose.yaml", "compose.full.yaml", "pyproject.toml"]
 packages = [
     { include = "r2r", from = "." },
     { include = "core", from = "." },
@@ -29,58 +29,93 @@ fastapi = "^0.114.0"
 httpx = "^0.27.0"
 nest-asyncio = "^1.6.0"
 openai =  "^1.11.1"
+posthog = "^3.5.0"
 python-dotenv = "^1.0.1"
 requests = "^2.31.0"
 toml = "^0.10.2"
 types-requests = "^2.31.0"
-posthog = "^3.5.0"
+unstructured-client = "^0.25.5"
 
-# Core dependencies (optional)
-future = { version = "^1.0.0", optional = true }
-pydantic = { extras = ["email"], version = "^2.8.2", optional = true }
-fire = { version = "^0.5.0", optional = true }
-gunicorn = { version = "^21.2.0", optional = true }
-uvicorn = { version = "^0.27.0.post1", optional = true }
+# Shared dependencies (optional)
 aiosqlite = { version = "^0.20.0", optional = true }
-python-multipart = { version = "^0.0.9", optional = true }
+apscheduler = { version = "^3.10.4", optional = true }
 asyncpg = { version = "^0.29.0", optional = true }
-redis = { version = "^5.0.4", optional = true }
-beautifulsoup4 = { version = "^4.12.3", optional = true }
-openpyxl = { version = "^3.1.2", optional = true }
+bcrypt = { version = "^4.1.3", optional = true }
+boto3 = { version = "^1.35.17", optional = true } # for AWS bedrock support
+deepdiff = { version = "^7.0.1", optional = true }
+fire = { version = "^0.5.0", optional = true }
+fsspec = { version = "^2024.6.0", optional = true }
+future = { version = "^1.0.0", optional = true }
+graspologic = { version = "^3.4.1", optional = true }
+gunicorn = { version = "^21.2.0", optional = true }
+litellm = { version = "^1.42.3", optional = true }
+networkx = { version = "^3.3", optional = true }
+ollama = { version = "^0.3.1", optional = true }
+passlib = { version = "^1.7.4", optional = true }
+psutil = { version = "^6.0.0", optional = true }
+python-multipart = { version = "^0.0.9", optional = true }
+pydantic = { extras = ["email"], version = "^2.8.2", optional = true }
+pyjwt = { version = "^2.8.0", optional = true }
+pyyaml = { version = "^6.0.1", optional = true }
+sqlalchemy = { version = "^2.0.30", optional = true }
+supabase = { version = "^2.7.4", optional = true }
+tokenizers = { version = "0.19", optional = true }
+uvicorn = { version = "^0.27.0.post1", optional = true }
+vecs = { version = "^0.4.0", optional = true }
+
+# Hatchet
+hatchet-sdk = { version = "^0.36.17", optional = true }
+
+# R2R Ingestion
+numpy = { version = ">=1.22.4,<1.29.0", optional = true }
 markdown = { version = "^3.6", optional = true }
+openpyxl = { version = "^3.1.2", optional = true }
 pypdf = { version = "^4.2.0", optional = true }
 python-pptx = { version = "^1.0.1", optional = true }
 python-docx = { version = "^1.1.0", optional = true }
-vecs = { version = "^0.4.0", optional = true }
-litellm = { version = "^1.42.3", optional = true }
-fsspec = { version = "^2024.6.0", optional = true }
-sqlalchemy = { version = "^2.0.30", optional = true }
-ollama = { version = "^0.3.1", optional = true }
-neo4j = { version = "^5.21.0", optional = true }
-passlib = { version = "^1.7.4", optional = true }
-bcrypt = { version = "^4.1.3", optional = true }
-pyjwt = { version = "^2.8.0", optional = true }
-pyyaml = { version = "^6.0.1", optional = true }
-psutil = { version = "^6.0.0", optional = true }
-deepdiff = { version = "^7.0.1", optional = true }
-supabase = { version = "^2.7.4", optional = true }
-tokenizers = { version = "0.19", optional = true }
-unstructured-client = { version = "^0.25.5", optional = true }
-hatchet-sdk = { version = "^0.36.17", optional = true }
-numpy = { version = ">=1.22.4,<1.29.0", optional = true }
-apscheduler = { version = "^3.10.4", optional = true }
-boto3 = { version = "^1.35.17", optional = true } # for AWS bedrock support
+beautifulsoup4 = { version = "^4.12.3", optional = true }
+bs4 = "^0.0.2"
+
 
 [tool.poetry.extras]
 core = [
-    "future", "pydantic", "fire", "gunicorn", "uvicorn", "aiosqlite",
-    "asyncpg", "redis", "beautifulsoup4", "openpyxl", "markdown", "pypdf",
-    "python-pptx", "python-docx", "vecs", "litellm", "python-multipart",
-    "fsspec", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
-    "pyjwt", "pyyaml", "psutil", "deepdiff", "tokenizers", "supabase",
-    "unstructured-client", "hatchet-sdk", "numpy", "apscheduler", "boto3"
+    "aiosqlite",
+    "apscheduler",
+    "asyncpg",
+    "bcrypt",
+    "boto3",
+    "deepdiff",
+    "fire",
+    "future",
+    "graspologic",
+    "gunicorn",
+    "litellm",
+    "networkx",
+    "ollama",
+    "passlib",
+    "psutil",
+    "pydantic",
+    "pyjwt",
+    "pyyaml",
+    "sqlalchemy",
+    "supabase",
+    "tokenizers",
+    "unstructured-client",
+    "uvicorn",
+    "vecs",
+    "python-multipart",
+    "hatchet-sdk",
 ]
-core-ingest-movies = ["opencv-python", "moviepy"]
+hatchet = ["hatchet-sdk"]
+ingestion-bundle = [
+    "numpy",
+    "markdown",
+    "openpyxl",
+    "pypdf",
+    "python-pptx",
+    "python-docx",
+    "beautifulsoup4",
+]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"

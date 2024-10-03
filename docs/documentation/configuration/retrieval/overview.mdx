@@ -25,7 +25,8 @@ rerank_model = "None"
 concurrent_request_limit = 256
 
 [kg]
-provider = "None"
+provider = "postgres"
+batch_size = 256
 
 [completion]
 provider = "litellm"

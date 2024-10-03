@@ -4,7 +4,6 @@ import logging
 # corresponding flake8 error codes are F403, F405
 from .agent import *
 from .base import *
-from .integrations import *
 from .main import *
 from .parsers import *
 from .pipelines import *
@@ -30,6 +29,9 @@ logger.addHandler(ch)
 # Optional: Prevent propagation to the root logger
 logger.propagate = False
 
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+
 
 __all__ = [
     ## AGENT
@@ -50,10 +52,10 @@ __all__ = [
     "DataType",
     "Document",
     "DocumentExtraction",
-    "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGExtractionStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -133,12 +135,6 @@ __all__ = [
     # Auth provider
     "AuthConfig",
     "AuthProvider",
-    # Chunking provider
-    "UnstructuredChunkingConfig",
-    "R2RChunkingConfig",
-    "ChunkingConfig",
-    "ChunkingProvider",
-    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
@@ -156,10 +152,6 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Parsing provider
-    "ParsingConfig",
-    "ParsingProvider",
-    "OverrideParser",
     # Prompt provider
     "PromptConfig",
     "PromptProvider",
@@ -169,15 +161,11 @@ __all__ = [
     "run_pipeline",
     "to_async_generator",
     "generate_run_id",
-    "generate_id_from_label",
     "increment_version",
     "EntityType",
     "RelationshipType",
     "format_entity_types",
     "format_relations",
-    ## INTEGRATIONS
-    # Serper
-    "SerperClient",
     ## MAIN
     ## R2R ABSTRACTIONS
     "R2RProviders",
@@ -203,19 +191,18 @@ __all__ = [
     "IngestionRouter",
     "ManagementRouter",
     "RetrievalRouter",
-    "RestructureRouter",
+    "KGRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "RestructureService",
+    "KgService",
     ## PARSERS
     # Media parsers
     "AudioParser",
     "DOCXParser",
     "ImageParser",
-    "MovieParser",
     "PDFParser",
     "PDFParserUnstructured",
     "PDFParserMarker",
@@ -238,7 +225,6 @@ __all__ = [
     "EmbeddingPipe",
     "KGTriplesExtractionPipe",
     "ParsingPipe",
-    "ChunkingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
     "StreamingSearchRAGPipe",
@@ -250,9 +236,6 @@ __all__ = [
     # Auth
     "SupabaseAuthProvider",
     "R2RAuthProvider",
-    # Chunking
-    "R2RChunkingProvider",
-    "UnstructuredChunkingProvider",
     # Crypto
     "BCryptProvider",
     "BCryptConfig",
@@ -263,13 +246,14 @@ __all__ = [
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     # KG
-    "Neo4jKGProvider",
+    "PostgresKGProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",
-    # Parsing
-    "R2RParsingProvider",
-    "UnstructuredParsingProvider",
+    # Ingestion
+    "UnstructuredIngestionProvider",
+    "R2RIngestionProvider",
+    "ChunkingStrategy",
     # Prompts
     "R2RPromptProvider",
 ]

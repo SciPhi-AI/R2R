@@ -17,12 +17,12 @@ from core.base import (
     RunManager,
     RunType,
     VectorSearchSettings,
-    generate_id_from_label,
     manage_run,
     to_async_generator,
 )
 from core.base.api.models import RAGResponse, SearchResponse, UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
+from core.utils import generate_message_id
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -140,9 +140,7 @@ class RetrievalService(Service):
                         vector_search_settings.filters[filter] = str(value)
 
                 completion_start_time = datetime.now()
-                message_id = generate_id_from_label(
-                    f"{query}-{completion_start_time.isoformat()}"
-                )
+                message_id = generate_message_id(query, completion_start_time)
 
                 completion_record = CompletionRecord(
                     message_id=message_id,

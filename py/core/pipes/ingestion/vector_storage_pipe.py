@@ -91,7 +91,7 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
 
         for document_id, count in document_counts.items():
             logger.info(
-                f"Successful ingestion for document_id: {document_id}, with vector: {count}"
+                f"Successful ingestion for document_id: {document_id}, with vector count: {count}"
             )
             yield StorageResult(
                 document_id=document_id, num_chunks=count, success=True

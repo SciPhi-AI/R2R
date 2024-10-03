@@ -8,7 +8,7 @@ import asyncpg
 import yaml
 
 from core.base import DatabaseProvider, Prompt, PromptConfig, PromptProvider
-from core.base.utils import generate_id_from_label
+from core.base.utils import generate_default_prompt_id
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class R2RPromptProvider(PromptProvider):
             raise
 
     def _get_table_name(self, base_name: str) -> str:
-        return base_name
+        return self.db_provider._get_table_name(base_name)
 
     async def create_table(self):
         query = f"""
@@ -100,9 +100,9 @@ class R2RPromptProvider(PromptProvider):
     # FIXME: We really should be taking advantage of Pydantic models here
     # so that we don't have to json.dumps/loads all the time
     async def _load_prompts_from_database(self):
-        query = """
+        query = f"""
         SELECT prompt_id, name, template, input_types, created_at, updated_at
-        FROM prompts
+        FROM {self._get_table_name("prompts")}
         """
         try:
             results = await self.fetch_query(query)
@@ -203,7 +203,7 @@ class R2RPromptProvider(PromptProvider):
         modify_created_at: bool = False,
     ) -> None:
         prompt = Prompt(
-            prompt_id=generate_id_from_label(name),
+            prompt_id=generate_default_prompt_id(name),
             name=name,
             template=template,
             input_types=input_types,
@@ -299,7 +299,7 @@ class R2RPromptProvider(PromptProvider):
             await self.execute_query(
                 query,
                 [
-                    generate_id_from_label(prompt.name),
+                    generate_default_prompt_id(prompt.name),
                     prompt.name,
                     prompt.template,
                     json.dumps(prompt.input_types),

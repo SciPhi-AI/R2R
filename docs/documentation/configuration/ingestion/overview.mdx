@@ -4,9 +4,16 @@ description: 'Configure your R2R ingestion pipeline'
 ---
 ## Introduction
 
+
 R2R's ingestion pipeline efficiently processes various document formats, transforming them into searchable content. It seamlessly integrates with vector databases and knowledge graphs for optimal retrieval and analysis.
 
-By default, R2R leverages Unstructured's open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) to handle supported file types. For formats not covered by Unstructured, such as `.mp3`, R2R implements custom ingestion logic to ensure comprehensive support. Supported file types are listed [here](/documentation/configuration/parsing_and_chunking).
+R2R offers two main implementations for ingestion:
+
+- **Light**: Uses R2R's **built-in** ingestion logic, which supports a wide range of file types including TXT, JSON, HTML, PDF, DOCX, PPTX, XLSX, CSV, Markdown, images, audio, and video. This is the default for the 'light' installation.
+- **Full**: Leverages **Unstructured's** open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) to handle supported file types. This is the default for the 'full' installation and provides more advanced parsing capabilities.
+
+
+Supported file types for each implementation are listed [here](/documentation/configuration/ingestion/parsing_and_chunking).
 
 ## Key Configuration Areas
 
@@ -16,17 +23,11 @@ Many of the settings managed by the [`r2r.toml`](https://github.com/SciPhi-AI/R2
 [database]
 provider = "postgres"
 
-[chunking]
-provider = "unstructured_local"
-strategy = "auto"
-chunking_strategy = "basic"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 20
-
-[parsing]
-provider = "unstructured_local"
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1_024
+chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
 [embedding]
@@ -42,9 +43,7 @@ These settings directly impact how R2R performs ingestion:
 
 - The `[database]` section configures the Postgres database used for semantic search and document management. During retrieval, this database is queried to find the most relevant document chunks based on vector similarity.
 
-- The `[chunking]` section defines how documents are split into smaller, manageable pieces. This affects the granularity of information storage and retrieval.
-
-- The `[parsing]` section determines how different file types are processed and converted into text. This impacts the initial extraction of content from various document formats.
+- The `[ingestion]` section determines how different file types are processed and converted into text. This includes protocol for how text is split into smaller, manageable pieces. This affects the granularity of information storage and retrieval.
 
 - The `[embedding]` section defines the model and parameters for converting text into vector embeddings. In the retrieval process, these settings are used to embed the user's query, allowing it to be compared against the stored document embeddings.
 

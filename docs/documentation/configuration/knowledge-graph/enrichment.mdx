@@ -9,25 +9,25 @@ You can configure knowledge graph enrichment in the R2R configuration file. To d
 
 ```toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     max_knowledge_triples = 100 # max number of triples to extract for each document chunk
-    generation_config = { model = "gpt-4o-mini" } # and other generation params
+    generation_config = { model = "openai/gpt-4o-mini" } # and other generation params
 
   [kg.kg_enrichment_settings]
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
-    generation_config = { model = "gpt-4o-mini" } # and other generation params
-    leiden_params = { max_levels = 10 } # more params in graspologic/partition/leiden.py
+    generation_config = { model = "openai/gpt-4o-mini" } # and other generation params
+    leiden_params = {} # more params in graspologic/partition/leiden.py
 
   [kg.kg_search_settings]
-    generation_config = { model = "gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 ```
 
 Next you can do GraphRAG with the knowledge graph. Find out more about GraphRAG in the [GraphRAG Guide](/cookbooks/graphrag).

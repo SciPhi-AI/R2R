@@ -11,7 +11,7 @@ import math
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
 from flupy import flu
@@ -193,7 +193,6 @@ class Collection:
     """
 
     COLUMN_VARS = [
-        "fragment_id",
         "extraction_id",
         "document_id",
         "user_id",
@@ -223,7 +222,9 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
-        self.table = _build_table(name, client.meta, dimension)
+        self.table = _build_table(
+            client.project_name, name, client.meta, dimension
+        )
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
 
@@ -244,7 +245,7 @@ class Collection:
             )
         elif len(reported_dimensions) > 1:
             raise MismatchedDimension(
-                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
+                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `R2R_PROJECT_NAME` environment variable."
             )
 
     def __repr__(self):
@@ -289,7 +290,7 @@ class Collection:
             join pg_attribute pa
                 on pc.oid = pa.attrelid
         where
-            pc.relnamespace = 'vecs'::regnamespace
+            pc.relnamespace = '{self.client.project_name}'::regnamespace
             and pc.relkind = 'r'
             and pa.attname = 'vec'
             and not pc.relname ^@ '_'
@@ -313,7 +314,7 @@ class Collection:
         )
         if len(reported_dimensions) > 1:
             raise MismatchedDimension(
-                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `POSTGRES_PROJECT_NAME` environment variable."
+                "Mismatch in the reported dimensions of the selected vector collection and embedding model. Correct the selected embedding model or specify a new vector collection by modifying the `R2R_PROJECT_NAME` environment variable."
             )
 
         if not collection_dimension:
@@ -347,7 +348,7 @@ class Collection:
                 text(
                     f"""
                     create index ix_meta_{unique_string}
-                      on vecs."{self.table.name}"
+                      on {self.client.project_name}."{self.table.name}"
                       using gin ( metadata jsonb_path_ops )
                     """
                 )
@@ -358,7 +359,7 @@ class Collection:
                 text(
                     f"""
                 CREATE TRIGGER tsvector_update_{unique_string} BEFORE INSERT OR UPDATE
-                ON vecs."{self.table.name}" FOR EACH ROW EXECUTE FUNCTION
+                ON {self.client.project_name}."{self.table.name}" FOR EACH ROW EXECUTE FUNCTION
                 tsvector_update_trigger(fts, 'pg_catalog.english', text);
             """
                 )
@@ -397,23 +398,21 @@ class Collection:
                     stmt = postgresql.insert(self.table).values(
                         [
                             {
-                                "fragment_id": record[0],
-                                "extraction_id": record[1],
-                                "document_id": record[2],
-                                "user_id": record[3],
-                                "collection_ids": record[4],
-                                "vec": record[5],
-                                "text": record[6],
-                                "metadata": record[7],
-                                "fts": func.to_tsvector(record[6]),
+                                "extraction_id": record[0],
+                                "document_id": record[1],
+                                "user_id": record[2],
+                                "collection_ids": record[3],
+                                "vec": record[4],
+                                "text": record[5],
+                                "metadata": record[6],
+                                "fts": func.to_tsvector(record[5]),
                             }
                             for record in chunk
                         ]
                     )
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=[self.table.c.fragment_id],
+                        index_elements=[self.table.c.extraction_id],
                         set_=dict(
-                            extraction_id=stmt.excluded.extraction_id,
                             document_id=stmt.excluded.document_id,
                             user_id=stmt.excluded.user_id,
                             collection_ids=stmt.excluded.collection_ids,
@@ -426,29 +425,29 @@ class Collection:
                     sess.execute(stmt)
         return None
 
-    def fetch(self, fragment_ids: Iterable[UUID]) -> List[Record]:
+    def fetch(self, ids: Iterable[UUID]) -> list[Record]:
         """
-        Fetches vectors from the collection by their fragment identifiers.
+        Fetches vectors from the collection by their identifiers.
 
         Args:
-            fragment_ids (Iterable[UUID]): An iterable of vector fragment identifiers.
+            ids (Iterable[UUID]): An iterable of vector identifiers.
 
         Returns:
-            List[Record]: A list of the fetched vectors.
+            list[Record]: A list of the fetched vectors.
 
         Raises:
-            ArgError: If fragment_ids is not an iterable of UUIDs.
+            ArgError: If ids is not an iterable of UUIDs.
         """
-        if isinstance(fragment_ids, (str, UUID)):
-            raise ArgError("fragment_ids must be an iterable of UUIDs")
+        if isinstance(ids, (str, UUID)):
+            raise ArgError("ids must be an iterable of UUIDs")
 
         chunk_size = 12
         records = []
         with self.client.Session() as sess:
             with sess.begin():
-                for id_chunk in flu(fragment_ids).chunk(chunk_size):
+                for id_chunk in flu(ids).chunk(chunk_size):
                     stmt = select(self.table).where(
-                        self.table.c.fragment_id.in_(id_chunk)
+                        self.table.c.extraction_id.in_(id_chunk)
                     )
                     chunk_records = sess.execute(stmt)
                     records.extend(chunk_records)
@@ -456,58 +455,54 @@ class Collection:
 
     def delete(
         self,
-        fragment_ids: Optional[Iterable[UUID]] = None,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Dict[str, str]]:
+        ids: Optional[Iterable[UUID]] = None,
+        filters: Optional[dict[str, Any]] = None,
+    ) -> dict[str, dict[str, str]]:
         """
-        Deletes vectors from the collection by matching filters or fragment_ids.
+        Deletes vectors from the collection by matching filters or ids.
 
         Args:
-            fragment_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
-            filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
+            extraction_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
+            filters (Optional[dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            Dict[str, Dict[str, str]]: A dictionary of deleted records, where the key is the fragment_id
-            and the value is a dictionary containing 'document_id', 'extraction_id', 'fragment_id', and 'text'.
+            dict[str, dict[str, str]]: A dictionary of deleted records, where the key is the extraction_id
+            and the value is a dictionary containing 'document_id', 'extraction_id', and 'text'.
 
         Raises:
-            ArgError: If neither fragment_ids nor filters are provided, or if both are provided.
+            ArgError: If neither ids nor filters are provided, or if both are provided.
         """
-        if fragment_ids is None and filters is None:
-            raise ArgError("Either fragment_ids or filters must be provided.")
+        if ids is None and filters is None:
+            raise ArgError("Either ids or filters must be provided.")
 
-        if fragment_ids is not None and filters is not None:
-            raise ArgError(
-                "Either fragment_ids or filters must be provided, not both."
-            )
+        if ids is not None and filters is not None:
+            raise ArgError("Either ids or filters must be provided, not both.")
 
-        if isinstance(fragment_ids, (str, UUID)):
-            raise ArgError("fragment_ids must be an iterable of UUIDs")
+        if isinstance(ids, (str, UUID)):
+            raise ArgError("ids must be an iterable of UUIDs")
 
         deleted_records = {}
 
         with self.client.Session() as sess:
             with sess.begin():
-                if fragment_ids:
-                    for id_chunk in flu(fragment_ids).chunk(12):
+                if ids:
+                    for id_chunk in flu(ids).chunk(12):
                         delete_stmt = (
                             delete(self.table)
-                            .where(self.table.c.fragment_id.in_(id_chunk))
+                            .where(self.table.c.extraction_id.in_(id_chunk))
                             .returning(
-                                self.table.c.fragment_id,
-                                self.table.c.document_id,
                                 self.table.c.extraction_id,
+                                self.table.c.document_id,
                                 self.table.c.text,
                             )
                         )
                         result = sess.execute(delete_stmt)
                         for row in result:
-                            fragment_id = str(row[0])
-                            deleted_records[fragment_id] = {
-                                "fragment_id": fragment_id,
+                            extraction_id = str(row[0])
+                            deleted_records[extraction_id] = {
+                                "extraction_id": extraction_id,
                                 "document_id": str(row[1]),
-                                "extraction_id": str(row[2]),
-                                "text": row[3],
+                                "text": row[2],
                             }
 
                 if filters:
@@ -516,20 +511,18 @@ class Collection:
                         delete(self.table)
                         .where(meta_filter)
                         .returning(
-                            self.table.c.fragment_id,
-                            self.table.c.document_id,
                             self.table.c.extraction_id,
+                            self.table.c.document_id,
                             self.table.c.text,
                         )
                     )
                     result = sess.execute(delete_stmt)
                     for row in result:
-                        fragment_id = str(row[0])
-                        deleted_records[fragment_id] = {
-                            "fragment_id": fragment_id,
+                        extraction_id = str(row[0])
+                        deleted_records[extraction_id] = {
+                            "extraction_id": extraction_id,
                             "document_id": str(row[1]),
-                            "extraction_id": str(row[2]),
-                            "text": row[3],
+                            "text": row[2],
                         }
         return deleted_records
 
@@ -556,7 +549,7 @@ class Collection:
         self,
         vector: list[float],
         search_settings: VectorSearchSettings,
-    ) -> Union[List[Record], List[str]]:
+    ) -> Union[list[Record], list[str]]:
         """
         Executes a similarity search in the collection.
 
@@ -567,7 +560,7 @@ class Collection:
             search_settings (VectorSearchSettings): The search settings to use.
 
         Returns:
-            Union[List[Record], List[str]]: The result of the similarity search.
+            Union[list[Record], list[str]]: The result of the similarity search.
         """
 
         try:
@@ -590,7 +583,6 @@ class Collection:
         distance_clause = distance_lambda(self.table.c.vec)(vector)
 
         cols = [
-            self.table.c.fragment_id,
             self.table.c.extraction_id,
             self.table.c.document_id,
             self.table.c.user_id,
@@ -605,8 +597,9 @@ class Collection:
 
         stmt = select(*cols)
 
-        # if filters:
-        stmt = stmt.filter(self.build_filters(search_settings.filters))  # type: ignore
+        if search_settings.filters:
+            stmt = stmt.filter(self.build_filters(search_settings.filters))
+
         stmt = stmt.order_by(distance_clause)
         stmt = stmt.offset(search_settings.offset)
         stmt = stmt.limit(search_settings.search_limit)
@@ -632,11 +625,12 @@ class Collection:
                     )
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
-                return sess.execute(stmt).fetchall() or []
+                result = sess.execute(stmt).fetchall()
+                return result or []
 
     def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
-    ) -> List[VectorSearchResult]:
+    ) -> list[VectorSearchResult]:
         # Create a tsquery from the input query
         ts_query = func.websearch_to_tsquery("english", query_text)
 
@@ -648,7 +642,6 @@ class Collection:
         # Build the main query
         stmt = (
             select(
-                self.table.c.fragment_id,
                 self.table.c.extraction_id,
                 self.table.c.document_id,
                 self.table.c.user_id,
@@ -671,7 +664,6 @@ class Collection:
         # Convert the results to VectorSearchResult objects
         return [
             VectorSearchResult(
-                fragment_id=str(r.fragment_id),
                 extraction_id=str(r.extraction_id),
                 document_id=str(r.document_id),
                 user_id=str(r.user_id),
@@ -683,15 +675,14 @@ class Collection:
             for r in results
         ]
 
-    def build_filters(self, filters: Dict):
+    def build_filters(self, filters: dict):
         """
         PUBLIC
 
         Builds filters for SQL query based on provided dictionary.
 
         Args:
-            table: The SQLAlchemy table object.
-            filters (Dict): The dictionary specifying filter conditions.
+            filters (dict): The dictionary specifying filter conditions.
 
         Raises:
             FilterError: If filter conditions are not correctly formatted.
@@ -709,6 +700,7 @@ class Collection:
                 column = getattr(self.table.c, key)
                 if isinstance(value, dict):
                     op, clause = next(iter(value.items()))
+
                     if op == "$eq":
                         return column == clause
                     elif op == "$ne":
@@ -734,12 +726,15 @@ class Collection:
                             f"Unsupported operator for column {key}: {op}"
                         )
                 else:
+                    # Handle direct equality
+                    if isinstance(value, str):
+                        value = UUID(value)
                     return column == value
             else:
                 # Handle JSON-based filters
                 json_col = self.table.c.metadata
                 if key.startswith("metadata."):
-                    key.split("metadata.")[1]
+                    key = key.split("metadata.")[1]
                 if isinstance(value, dict):
                     if len(value) > 1:
                         raise FilterError("only one operator permitted")
@@ -814,7 +809,7 @@ class Collection:
         return parse_filter(filters)
 
     @classmethod
-    def _list_collections(cls, client: "Client") -> List["Collection"]:
+    def _list_collections(cls, client: "Client") -> list["Collection"]:
         """
         PRIVATE
 
@@ -824,7 +819,7 @@ class Collection:
             client (Client): The database client.
 
         Returns:
-            List[Collection]: A list of all existing collections.
+            list[Collection]: A list of all existing collections.
         """
 
         query = text(
@@ -837,7 +832,7 @@ class Collection:
             join pg_attribute pa
                 on pc.oid = pa.attrelid
         where
-            pc.relnamespace = 'vecs'::regnamespace
+            pc.relnamespace = '{client.project_name}'::regnamespace
             and pc.relkind = 'r'
             and pa.attname = 'vec'
             and not pc.relname ^@ '_'
@@ -888,13 +883,13 @@ class Collection:
 
         if self._index is None:
             query = text(
-                """
+                f"""
             select
                 relname as table_name
             from
                 pg_class pc
             where
-                pc.relnamespace = 'vecs'::regnamespace
+                pc.relnamespace = '{self.client.project_name}'::regnamespace
                 and relname ilike 'ix_vector%'
                 and pc.relkind = 'i'
             """
@@ -1028,7 +1023,11 @@ class Collection:
             with sess.begin():
                 if self.index is not None:
                     if replace:
-                        sess.execute(text(f'drop index vecs."{self.index}";'))
+                        sess.execute(
+                            text(
+                                f'drop index {self.client.project_name}."{self.index}";'
+                            )
+                        )
                         self._index = None
                     else:
                         raise ArgError(
@@ -1037,7 +1036,7 @@ class Collection:
 
                 if method == IndexMethod.ivfflat:
                     if not index_arguments:
-                        n_records: int = sess.execute(func.count(self.table.c.id)).scalar()  # type: ignore
+                        n_records: int = sess.execute(func.count(self.table.c.extraction_id)).scalar()  # type: ignore
 
                         n_lists = (
                             int(max(n_records / 1000, 30))
@@ -1057,7 +1056,7 @@ class Collection:
                         text(
                             f"""
                             create index ix_{ops}_ivfflat_nl{n_lists}_{unique_string}
-                              on vecs."{self.table.name}"
+                              on {self.client.project_name}."{self.table.name}"
                               using ivfflat (vec {ops}) with (lists={n_lists})
                             """
                         )
@@ -1076,7 +1075,7 @@ class Collection:
                         text(
                             f"""
                             create index ix_{ops}_hnsw_m{m}_efc{ef_construction}_{unique_string}
-                              on vecs."{self.table.name}"
+                              on {self.client.project_name}."{self.table.name}"
                               using hnsw (vec {ops}) WITH (m={m}, ef_construction={ef_construction});
                             """
                         )
@@ -1085,12 +1084,13 @@ class Collection:
         return None
 
 
-def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
+def _build_table(
+    project_name: str, name: str, meta: MetaData, dimension: int
+) -> Table:
     table = Table(
         name,
         meta,
-        Column("fragment_id", postgresql.UUID, primary_key=True),
-        Column("extraction_id", postgresql.UUID, nullable=False),
+        Column("extraction_id", postgresql.UUID, primary_key=True),
         Column("document_id", postgresql.UUID, nullable=False),
         Column("user_id", postgresql.UUID, nullable=False),
         Column(

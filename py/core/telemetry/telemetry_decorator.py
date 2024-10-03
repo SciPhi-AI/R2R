@@ -5,6 +5,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from pathlib import Path
+from typing import Optional
 
 import toml
 
@@ -70,12 +71,19 @@ def get_project_metadata():
 
 
 # Create a thread pool with a fixed number of workers
-telemetry_thread_pool = ThreadPoolExecutor(max_workers=2)
+telemetry_thread_pool: Optional[ThreadPoolExecutor] = None
+
+if os.getenv("TELEMETRY_ENABLED", "true").lower() in ("true", "1"):
+    telemetry_thread_pool = ThreadPoolExecutor(max_workers=2)
 
 
 def telemetry_event(event_name):
     def decorator(func):
         def log_telemetry(event_type, user_id, metadata, error_message=None):
+
+            if telemetry_thread_pool is None:
+                return
+
             try:
                 if event_type == "feature":
                     telemetry_client.capture(
@@ -99,6 +107,9 @@ def telemetry_event(event_name):
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
+            if telemetry_thread_pool is None:
+                return await func(*args, **kwargs)
+
             metadata = get_project_metadata()
             user_id = product_telemetry_client.user_id
 

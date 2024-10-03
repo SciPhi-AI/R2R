@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
 from sqlalchemy import text
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from core.base import (
     DatabaseConfig,
@@ -30,12 +31,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
         self.collection: Optional[Collection] = None
+        self.project_name = kwargs.get("project_name", None)
         connection_string = kwargs.get("connection_string", None)
         if not connection_string:
             raise ValueError(
                 "Please provide a valid `connection_string` to the `PostgresVectorDBProvider`."
             )
-        self.vx: Client = create_client(connection_string=connection_string)
+        self.vx: Client = create_client(
+            connection_string=connection_string, project_name=self.project_name
+        )
         if not self.vx:
             raise ValueError(
                 "Error occurred while attempting to connect to the pgvector provider."
@@ -59,8 +63,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def _initialize_vector_db(self, dimension: int) -> None:
         # Create extension for trigram similarity
         with self.vx.Session() as sess:
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin;"))
+            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS btree_gin;"))
             sess.commit()
 
         self.collection = self.vx.get_or_create_vector_table(
@@ -77,7 +81,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection.upsert(
             records=[
                 (
-                    entry.fragment_id,
                     entry.extraction_id,
                     entry.document_id,
                     entry.user_id,
@@ -94,11 +97,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."
             )
-
         self.collection.upsert(
             records=[
                 (
-                    entry.fragment_id,
                     entry.extraction_id,
                     entry.document_id,
                     entry.user_id,
@@ -123,14 +124,13 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         return [
             VectorSearchResult(
-                fragment_id=result[0],  # type: ignore
-                extraction_id=result[1],  # type: ignore
-                document_id=result[2],  # type: ignore
-                user_id=result[3],  # type: ignore
-                collection_ids=result[4],  # type: ignore
-                text=result[5],  # type: ignore
-                score=1 - float(result[6]),  # type: ignore
-                metadata=result[7],  # type: ignore
+                extraction_id=result[0],  # type: ignore
+                document_id=result[1],  # type: ignore
+                user_id=result[2],  # type: ignore
+                collection_ids=result[3],  # type: ignore
+                text=result[4],  # type: ignore
+                score=1 - float(result[5]),  # type: ignore
+                metadata=result[6],  # type: ignore
             )
             for result in results
         ]
@@ -203,7 +203,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         # Combine results using RRF
         combined_results = {
-            result.fragment_id: {
+            result.extraction_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
@@ -224,7 +224,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         rrf_k = search_settings.hybrid_search_settings.rrf_k
         # Combine results using RRF
         combined_results = {
-            result.fragment_id: {
+            result.extraction_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
@@ -233,10 +233,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
         }
 
         for rank, result in enumerate(full_text_results, 1):
-            if result.fragment_id in combined_results:
-                combined_results[result.fragment_id]["full_text_rank"] = rank
+            if result.extraction_id in combined_results:
+                combined_results[result.extraction_id]["full_text_rank"] = rank
             else:
-                combined_results[result.fragment_id] = {
+                combined_results[result.extraction_id] = {
                     "semantic_rank": semantic_limit,
                     "full_text_rank": rank,
                     "data": result,
@@ -272,7 +272,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         return [
             VectorSearchResult(
-                fragment_id=result["data"].fragment_id,  # type: ignore
                 extraction_id=result["data"].extraction_id,  # type: ignore
                 document_id=result["data"].document_id,  # type: ignore
                 user_id=result["data"].user_id,  # type: ignore
@@ -341,7 +340,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET collection_ids = array_append(collection_ids, :collection_id)
             WHERE document_id = :document_id AND NOT (:collection_id = ANY(collection_ids))
             RETURNING document_id
@@ -381,7 +380,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET collection_ids = array_remove(collection_ids, :collection_id)
             WHERE document_id = :document_id AND :collection_id = ANY(collection_ids)
             RETURNING document_id
@@ -407,7 +406,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET collection_ids = array_remove(collection_ids, :collection_id)
             WHERE :collection_id = ANY(collection_ids)
             """
@@ -424,7 +423,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
+            UPDATE {self.project_name}."{table_name}"
             SET user_id = NULL
             WHERE user_id = :user_id
             """
@@ -435,42 +434,44 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.commit()
 
     def delete_collection(self, collection_id: str) -> None:
-        """
-        Remove the specified collection ID from all documents in the vector database.
-
-        Args:
-            collection_id (str): The ID of the collection to remove from all documents.
-
-        Raises:
-            ValueError: If the collection is not initialized.
-        """
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
         table_name = self.collection.table.name
+
         query = text(
             f"""
-            UPDATE vecs."{table_name}"
-            SET collection_ids = array_remove(collection_ids, :collection_id)
-            WHERE :collection_id = ANY(collection_ids)
+            WITH updated AS (
+                UPDATE {self.project_name}."{table_name}"
+                SET collection_ids = array_remove(collection_ids, :collection_id)
+                WHERE :collection_id = ANY(collection_ids)
+                RETURNING 1
+            )
+            SELECT COUNT(*) AS affected_rows FROM updated
             """
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(
-                query, {"collection_id": collection_id}
-            ).fetchone()
-            sess.commit()
+            try:
+                result = sess.execute(query, {"collection_id": collection_id})
+                row = result.one()
+                affected_rows = row.affected_rows
+                sess.commit()
 
-        if not result:
-            raise ValueError(
-                f"Collection {collection_id} not found in any documents."
-            )
-
-        affected_rows = result.rowcount
-        logger.info(
-            f"Removed collection {collection_id} from {affected_rows} documents."
-        )
+                if affected_rows == 0:
+                    raise ValueError(
+                        f"Collection {collection_id} not found in any documents."
+                    )
+            except NoResultFound:
+                raise ValueError(
+                    f"Unexpected error: No result returned for collection {collection_id}"
+                )
+            except SQLAlchemyError as e:
+                sess.rollback()
+                logger.error(
+                    f"Error deleting collection {collection_id}: {str(e)}"
+                )
+                raise
 
     def get_document_chunks(
         self, document_id: str, offset: int = 0, limit: int = -1
@@ -482,8 +483,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            SELECT fragment_id, extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
-            FROM vecs."{table_name}"
+            SELECT extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
+            FROM {self.project_name}."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
             {limit_clause} OFFSET :offset
@@ -501,16 +502,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
         total = 0
 
         if results:
-            total = results[0][7]
+            total = results[0][6]
             chunks = [
                 {
-                    "fragment_id": result[0],
-                    "extraction_id": result[1],
-                    "document_id": result[2],
-                    "user_id": result[3],
-                    "collection_ids": result[4],
-                    "text": result[5],
-                    "metadata": result[6],
+                    "extraction_id": result[0],
+                    "document_id": result[1],
+                    "user_id": result[2],
+                    "collection_ids": result[3],
+                    "text": result[4],
+                    "metadata": result[5],
                 }
                 for result in results
             ]

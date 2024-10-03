@@ -30,25 +30,25 @@ r2r serve
 <Accordion icon="gear" title="Configuration: r2r.toml">
 ``` toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     max_knowledge_triples = 100
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = {}
 
   [kg.kg_search_settings]
-    generation_config = { model = "gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 ```
 </Accordion>
 </Tab>
@@ -92,13 +92,13 @@ batch_size = 32
 add_title_as_prefix = true
 
 [parsing]
-excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+excluded_parsers = [ "mp4" ]
 
 [kg]
-provider = "neo4j"
+provider = "postgres"
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     max_knowledge_triples = 100
@@ -109,7 +109,7 @@ provider = "neo4j"
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    leiden_params = {}
 
   [kg.kg_search_settings]
     generation_config = { model = "ollama/llama3.1" }
@@ -166,19 +166,44 @@ Knowledge graph creation is done in two steps:
 1. `create-graph`: Extracts nodes and relationships from your input document collection.
 2. `enrich-graph`: Enhances the graph structure through clustering and explaining entities (commonly referred to as `GraphRAG`).
 
+
 ```bash
-# document-ids are optional
-r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+# collection ID is optional. If you don't specify one, the default collection will be used.
+r2r create-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
+```
+
+
+This will run a cost estimation step to give you an estimate of the cost of the graph creation process.
+
+```bash Example Response
+Time taken: 0.21 seconds
+{
+  "results": {
+    "message": "These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode=\"run\"` in the client.",
+    "document_count": 2,
+    "number_of_jobs_created": 3,
+    "total_chunks": 29,
+    "estimated_entities": "290 - 580",
+    "estimated_triples": "362 - 870",
+    "estimated_llm_calls": "348 - 638",
+    "estimated_total_in_out_tokens_in_millions": "0 - 1",
+    "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: 0.0 - 0.17",
+    "estimated_cost_in_usd": "0.0 - 0.06"
+  }
+}
+```
+
+Then, you can run the graph creation process with:
+
+```bash
+r2r create-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --run
 ```
 
 ```bash Example Response
 [{'message': 'Graph creation task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
 ```
 
-This step will create a knowledge graph with nodes and relationships. You can visualize the graph in two ways:
-
-
-1. Using the neo4j browser on `http://localhost:7474`. The username and password are `neo4j` and `ineedastrongerpassword`. To visualize the graph, run the following command in the neo4j browser:
+This step will create a knowledge graph with nodes and relationships. Below is a visualization of the graph which we produced with Neo4j (deprecated as of now. We are working on a new visualization tool):
 
 ```
 MATCH (a)
@@ -229,13 +254,36 @@ Now we have a graph, but this graph is not searchable yet. We need to perform th
 The graph enrichment step adds node and relationship descriptions, performs hierarchical leiden clustering to create communities, and embeds the descriptions. These embeddings will be used later in the local search stage of the pipeline. If you are more interested in the algorithm, please refer to the blog post [here](https://www.sciphi.ai/blog/graphrag).
 
 ```bash
-r2r enrich-graph
+# collection ID is optional. If you don't specify one, the default collection will be used.
+r2r enrich-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
 ```
 
-Now you can see that the graph is enriched with the following information. We have added descriptions and embeddings to the nodes and relationships. Also, each node is mapped to a community.
+Similar to the graph creation step, this will run a cost estimation step to give you an estimate of the cost of the graph enrichment process.
+
+```bash Example Response
+Time taken: 0.22 seconds
+{
+  "results": {
+    "total_entities": 269,
+    "total_triples": 345,
+    "estimated_llm_calls": "26 - 53",
+    "estimated_total_in_out_tokens_in_millions": "0.05 - 0.11",
+    "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: 0.01 - 0.02",
+    "estimated_cost_in_usd": "0.0 - 0.01"
+  }
+}
+```
+
+Now, you can run the graph enrichment process with:
+
+```bash
+r2r enrich-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --run
+```
+
+
+Now you can see that the graph is enriched with the following information. We have added descriptions and embeddings to the nodes and relationships. Also, each node is mapped to a community. Following is a visualization of the enriched graph (deprecated as of now. We are working on a new visualization tool):
 
 ![Enriched Graph](../images/enriched.png)
-
 
 ## Search
 

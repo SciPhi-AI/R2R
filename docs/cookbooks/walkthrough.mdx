@@ -58,7 +58,7 @@ client.ingest_files(file_paths=["test.txt"])
 # Call RAG directly
 rag_response = client.rag(
     query="Who is john",
-    rag_generation_config={"model": "gpt-4o-mini", "temperature": 0.0},
+    rag_generation_config={"model": "openai/gpt-4o-mini", "temperature": 0.0},
 )
 results = rag_response["results"]
 print(f"Search Results:\n{results['search_results']}")
@@ -82,13 +82,11 @@ concurrent_request_limit = 16
   temperature = 0.5
 
 [chunking]
-provider = "unstructured_local"
-strategy = "auto"
-chunking_strategy = "by_title"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 20
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 512
+chunk_overlap = 256
+excluded_parsers = ["mp4"]
 ```
 
 Then, use the `config-path` argument to specify your custom configuration when launching R2R:

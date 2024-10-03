@@ -116,7 +116,6 @@ class RegressionTest:
                 "actual_results": actual_results,
             }
         else:
-
             deep_diff = DeepDiff(
                 expected_results,
                 actual_results,

@@ -2,170 +2,73 @@
   "ingest_sample_files": {
     "results": [
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "234d5f77-3a09-4ee4-873b-dc97db81afe8",
+        "message": "Ingestion task completed successfully.",
         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "e361567a-cc8f-47be-914a-0e07286fa3bb",
+        "message": "Ingestion task completed successfully.",
         "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "327685d0-ef5f-4405-a522-bdf8cfc79789",
+        "message": "Ingestion task completed successfully.",
         "document_id": "52e12576-090f-59db-91f4-6d4b2e29ae6c"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "965b2b3f-74aa-4a39-9c36-ab1aad27fb25",
+        "message": "Ingestion task completed successfully.",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "1a467abd-31bf-4c21-b05d-dcb36822b050",
+        "message": "Ingestion task completed successfully.",
         "document_id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "0ae9a48e-bc5c-4eea-bf86-54bf00b09f8f",
+        "message": "Ingestion task completed successfully.",
         "document_id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "4915b7ed-e255-459b-8af0-3a423e09c881",
+        "message": "Ingestion task completed successfully.",
         "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "96248159-021b-442e-9d14-783a1e80b39f",
+        "message": "Ingestion task completed successfully.",
         "document_id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "e886cf3f-362a-4b41-ab98-303a03a2292a",
+        "message": "Ingestion task completed successfully.",
         "document_id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "0ae3812e-071b-4b12-ba2d-a425c9d2bacc",
+        "message": "Ingestion task completed successfully.",
         "document_id": "2f576170-c4f9-5141-a910-a0924f341de4"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "41c6357d-0657-44a1-a0e4-12e99d552b82",
+        "message": "Ingestion task completed successfully.",
         "document_id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "1985e9a6-9e2c-4f0f-9d3c-99f8be6db02b",
+        "message": "Ingestion task completed successfully.",
         "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "937ea186-fa97-4a08-a13c-240de51f9e9a",
-        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27"
+        "message": "Ingestion task completed successfully.",
+        "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "ceb2f270-595d-4bd6-bfd1-bd2925dc5b96",
+        "message": "Ingestion task completed successfully.",
         "document_id": "d421207a-d799-5806-8d67-46b2005b15d4"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "9c90d5e4-1513-48c3-a598-beaccd8fcf09",
+        "message": "Ingestion task completed successfully.",
         "document_id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb"
       },
       {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "d88a4951-22ec-4778-b65c-298710b8e937",
+        "message": "Ingestion task completed successfully.",
         "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
       }
     ]
   },
   "reingest_sample_file": {
-    "results": [
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "f0d71ddb-7516-4331-ad7e-c7f0205f6f66",
-        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "d2c55f19-ceb4-4aad-995d-37569419b40e",
-        "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "9e15204c-4f3a-41cc-9f34-0deff009df46",
-        "document_id": "52e12576-090f-59db-91f4-6d4b2e29ae6c"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "dadbbaf6-559d-48d4-8db4-881f33760af5",
-        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "0892bd5e-57a5-47f5-9a0a-8c558db7b4c1",
-        "document_id": "01d514a4-5cb1-5c86-be8c-0c5c312a02c9"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "04b91d55-2b46-40a7-9ddb-da362286f6bc",
-        "document_id": "c3291abf-8a4e-5d9d-80fd-232ef6fd8526"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "142a0871-1ab2-4f9b-a9c5-b77ff10141ea",
-        "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "c60fa8db-33c4-4d66-8317-f4615568835d",
-        "document_id": "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "154593d2-8498-4b92-b765-005dfa9b0de0",
-        "document_id": "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "e076c320-2e29-4787-92a6-f60afd2db533",
-        "document_id": "2f576170-c4f9-5141-a910-a0924f341de4"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "c7bfee83-259d-4663-9dcc-05d8def34632",
-        "document_id": "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "96875e20-aa60-4ba9-a0c7-013bfd883e68",
-        "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "706ea773-4345-48cb-a5c8-b4296d7cf906",
-        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "55182343-2d74-43e7-873b-50ec76f4c6cd",
-        "document_id": "d421207a-d799-5806-8d67-46b2005b15d4"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "b41719da-cb6f-4667-919e-23fd0b7bf094",
-        "document_id": "451adbbd-e24e-5c9b-80a8-f424b6c7accb"
-      },
-      {
-        "message": "Ingestion task queued successfully.",
-        "task_id": "228230e4-4f54-413e-9655-2c9ae06c6754",
-        "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
-      }
-    ]
+    "results": "{\"detail\":{\"message\":\"Error during ingestion: Document b4ac4dd6-5f27-596e-a55b-7cf242ca30aa was already ingested and is not in a failed state.\",\"error_type\":\"R2RException\"}}"
   },
   "documents_overview": {
     "results": [
@@ -182,8 +85,8 @@
         "size_in_bytes": 166556,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:10.456776Z",
-        "updated_at": "2024-09-20T22:50:10.456787Z",
+        "created_at": "2024-09-27T17:01:31.874002Z",
+        "updated_at": "2024-09-27T17:01:31.874010Z",
         "ingestion_attempt_number": null
       },
       {
@@ -199,42 +102,8 @@
         "size_in_bytes": 1055688,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:10.445592Z",
-        "updated_at": "2024-09-20T22:50:10.445596Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "pg_essay_2.html",
-        "version": "v0",
-        "size_in_bytes": 166816,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.506868Z",
-        "updated_at": "2024-09-20T22:50:09.506871Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "aristotle.txt",
-        "version": "v0",
-        "size_in_bytes": 97804,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.476022Z",
-        "updated_at": "2024-09-20T22:50:09.476024Z",
+        "created_at": "2024-09-27T17:01:17.143733Z",
+        "updated_at": "2024-09-27T17:01:17.143741Z",
         "ingestion_attempt_number": null
       },
       {
@@ -250,8 +119,42 @@
         "size_in_bytes": 62948,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.471883Z",
-        "updated_at": "2024-09-20T22:50:09.471886Z",
+        "created_at": "2024-09-27T17:01:15.832273Z",
+        "updated_at": "2024-09-27T17:01:15.832281Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "aristotle.txt",
+        "version": "v0",
+        "size_in_bytes": 97804,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:01:13.749890Z",
+        "updated_at": "2024-09-27T17:01:13.749901Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:01:13.111406Z",
+        "updated_at": "2024-09-27T17:01:13.111416Z",
         "ingestion_attempt_number": null
       },
       {
@@ -267,8 +170,8 @@
         "size_in_bytes": 28,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.470416Z",
-        "updated_at": "2024-09-20T22:50:09.470418Z",
+        "created_at": "2024-09-27T17:01:12.788282Z",
+        "updated_at": "2024-09-27T17:01:12.788287Z",
         "ingestion_attempt_number": null
       },
       {
@@ -284,8 +187,8 @@
         "size_in_bytes": 1920404,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.469252Z",
-        "updated_at": "2024-09-20T22:50:09.469256Z",
+        "created_at": "2024-09-27T17:00:49.981071Z",
+        "updated_at": "2024-09-27T17:00:49.981086Z",
         "ingestion_attempt_number": null
       },
       {
@@ -299,10 +202,10 @@
         "title": "pg_essay_5.html",
         "version": "v0",
         "size_in_bytes": 165040,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.465810Z",
-        "updated_at": "2024-09-20T22:55:12.531882Z",
+        "created_at": "2024-09-27T17:00:49.315963Z",
+        "updated_at": "2024-09-27T17:00:49.315980Z",
         "ingestion_attempt_number": null
       },
       {
@@ -316,10 +219,10 @@
         "title": "graphrag.pdf",
         "version": "v0",
         "size_in_bytes": 2287544,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.455913Z",
-        "updated_at": "2024-09-20T22:55:12.517199Z",
+        "created_at": "2024-09-27T17:00:48.676977Z",
+        "updated_at": "2024-09-27T17:00:48.676985Z",
         "ingestion_attempt_number": null
       },
       {
@@ -333,10 +236,10 @@
         "title": "pg_essay_4.html",
         "version": "v0",
         "size_in_bytes": 157484,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:07.036336Z",
-        "updated_at": "2024-09-20T22:55:12.484462Z",
+        "created_at": "2024-09-27T17:00:48.182144Z",
+        "updated_at": "2024-09-27T17:00:48.182154Z",
         "ingestion_attempt_number": null
       },
       {
@@ -350,10 +253,10 @@
         "title": "aristotle_v2.txt",
         "version": "v0",
         "size_in_bytes": 3380,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:05.565359Z",
-        "updated_at": "2024-09-20T22:55:12.516690Z",
+        "created_at": "2024-09-27T17:00:47.523137Z",
+        "updated_at": "2024-09-27T17:00:47.523153Z",
         "ingestion_attempt_number": null
       },
       {
@@ -367,10 +270,10 @@
         "title": "sample2.mp3",
         "version": "v0",
         "size_in_bytes": 96608,
-        "ingestion_status": "chunking",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:04.622762Z",
-        "updated_at": "2024-09-20T22:55:12.486232Z",
+        "created_at": "2024-09-27T17:00:46.224925Z",
+        "updated_at": "2024-09-27T17:00:46.224929Z",
         "ingestion_attempt_number": null
       },
       {
@@ -384,10 +287,10 @@
         "title": "uber_2021.pdf",
         "version": "v0",
         "size_in_bytes": 2507312,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:04.211252Z",
-        "updated_at": "2024-09-20T22:55:12.509328Z",
+        "created_at": "2024-09-27T17:00:10.909182Z",
+        "updated_at": "2024-09-27T17:00:10.909191Z",
         "ingestion_attempt_number": null
       },
       {
@@ -401,27 +304,10 @@
         "title": "sample.mp3",
         "version": "v0",
         "size_in_bytes": 162228,
-        "ingestion_status": "storing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.699362Z",
-        "updated_at": "2024-09-20T22:55:10.516462Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "pg_essay_1.html",
-        "version": "v0",
-        "size_in_bytes": 175340,
-        "ingestion_status": "storing",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.517969Z",
-        "updated_at": "2024-09-20T22:55:10.518388Z",
+        "created_at": "2024-09-27T17:00:08.852276Z",
+        "updated_at": "2024-09-27T17:00:08.852281Z",
         "ingestion_attempt_number": null
       },
       {
@@ -435,10 +321,27 @@
         "title": "got.txt",
         "version": "v0",
         "size_in_bytes": 12656,
-        "ingestion_status": "chunking",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.516278Z",
-        "updated_at": "2024-09-20T22:55:10.519709Z",
+        "created_at": "2024-09-27T17:00:08.177884Z",
+        "updated_at": "2024-09-27T17:00:08.177887Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_1.html",
+        "version": "v0",
+        "size_in_bytes": 175340,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:00:07.272659Z",
+        "updated_at": "2024-09-27T17:00:07.272681Z",
         "ingestion_attempt_number": null
       }
     ],
@@ -447,34 +350,750 @@
   "document_chunks_test": {
     "results": [
       {
-        "fragment_id": "67e7ab57-eaa0-57d8-9276-da273abcdabd",
+        "extraction_id": "36474213-c9fa-5fb7-b99e-c3720743da53",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "A Project of One's Own",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
         "extraction_id": "286b3218-517c-50bf-b8ea-1262e8ec6b42",
         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": [],
-        "text": "June 2021 A few days ago, on the way home from school, my nine year old son",
+        "text": "June 2021A few days ago, on the way home from school, my nine year old son\ntold me he couldn't wait to get home to write more of the story he\nwas working on. This made me as happy as anything I've heard him",
         "metadata": {
           "version": "v0",
-          "chunk_order": 0,
-          "document_type": "html",
-          "unstructured_filetype": "text/html",
-          "unstructured_languages": [
-            "eng"
-          ],
-          "unstructured_text_as_html": "<table><tr><td>June 2021 A few days ago, on the way home from school, my nine year old son</td></tr></table>",
-          "partitioned_by_unstructured": true,
-          "unstructured_is_continuation": true
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "94aacd72-c343-5467-a57f-e35069b26d05",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "say \u2014 not just because he was excited about his story, but because\nhe'd discovered this way of working. Working on a project of your\nown is as different from ordinary work as skating is from walking.",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "db93e935-83e2-5930-84f1-00e60acb2b67",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "It's more fun, but also much more productive.What proportion of great work has been done by people who were\nskating in this sense? If not all of it, certainly a lot.There is something special about working on a project of your own.",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "4aa0529e-f7f3-5a0b-b70c-3d5957be6eea",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "I wouldn't say exactly that you're happier. A better word would be\nexcited, or engaged. You're happy when things are going well, but\noften they aren't. When I'm writing an essay, most of the time I'm",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "6b216db3-962d-593b-9d8a-ad096df71900",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "worried and puzzled: worried that the essay will turn out badly,\nand puzzled because I'm groping for some idea that I can't see\nclearly enough. Will I be able to pin it down with words? In the",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "6c192997-1f46-5646-9060-0c5c4fdb5b0c",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "end I usually can, if I take long enough, but I'm never sure; the\nfirst few attempts often fail.You have moments of happiness when things work out, but they don't\nlast long, because then you're on to the next problem. So why do",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "bebcc3b0-1911-58e9-b34d-9844e6c7cebb",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "it at all? Because to the kind of people who like working this way,\nnothing else feels as right. You feel as if you're an animal in its\nnatural habitat, doing what you were meant to do \u2014 not always",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "dd2b7c32-50ae-541e-82d3-c63eb38dbd63",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "happy, maybe, but awake and alive.Many kids experience the excitement of working on projects of their\nown. The hard part is making this converge with the work you do as\nan adult. And our customs make it harder. We treat \"playing\" and",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "3b446288-a384-527b-9ce0-5ae3ff4a6127",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "\"hobbies\" as qualitatively different from \"work\". It's not clear\nto a kid building a treehouse that there's a direct (though long)\nroute from that to architecture or engineering. And instead of",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "1f24eedd-a498-57df-98f2-35ff3f545136",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "pointing out the route, we conceal it, by implicitly treating the\nstuff kids do as different from real work.\n[1]Instead of telling kids that their treehouses could be on the path\nto the work they do as adults, we tell them the path goes through",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "7f5e1067-018e-5a6d-88f8-69a89977bfee",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "school. And unfortunately schoolwork tends to be very different from\nworking on projects of one's own. It's usually neither a project,\nnor one's own. So as school gets more serious, working on projects",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "d94e3ccb-f524-524b-acd1-5c3676c25901",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "of one's own is something that survives, if at all, as a thin thread\noff to the side.It's a bit sad to think of all the high school kids turning their\nbacks on building treehouses and sitting in class dutifully learning",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "41159be9-49fa-5dd6-b8ba-2f17fa152514",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "collaboration. And interestingly, it shades into collaboration in\ntwo different ways. One way to collaborate is to share a single\nproject. For example, when two mathematicians collaborate on a proof",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "ec8bf70e-7cfd-5404-9963-05de778a7027",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "about Darwin or Newton to pass some exam, when the work that made\nDarwin and Newton famous was actually closer in spirit to building\ntreehouses than studying for exams.If I had to choose between my kids getting good grades and",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "91a8d83a-d47b-5a74-a99f-af4843371342",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "working on ambitious projects of their own, I'd pick\nthe projects. And not because I'm an indulgent parent, but because\nI've been on the other end and I know which has more predictive\nvalue. When I was picking startups for Y Combinator, I didn't care",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "2cfc596a-5770-5448-b1b1-b2ac0dd411f6",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "about applicants' grades. But if they'd worked on projects of their\nown, I wanted to hear all about those.\n[2]It may be inevitable that school is the way it is. I'm not saying\nwe have to redesign it (though I'm not saying we don't), just that",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "a77ed9c4-5964-5bad-b6dc-37eed79476ce",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "we should understand what it does to our attitudes to work \u2014 that\nit steers us toward the dutiful plodding kind of work, often using\ncompetition as bait, and away from skating.There are occasionally times when schoolwork becomes a project of",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "5294e1b5-4060-52fb-9c64-849ac9f64e1e",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "one's own. Whenever I had to write a paper, that would become a\nproject of my own \u2014 except in English classes, ironically, because\nthe things one has to write in English classes are so\nbogus. And",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "208dff84-1585-5b7d-8884-22b9e7866552",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "bogus. And\nwhen I got to college and started taking CS classes, the programs\nI had to write became projects of my own. Whenever I was writing\nor programming, I was usually skating, and that has been true ever",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "38d53fb3-23a8-5acd-a380-880597165f89",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "since.So where exactly is the edge of projects of one's own? That's an\ninteresting question, partly because the answer is so complicated,\nand partly because there's so much at stake. There turn out to be",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "4d486be0-9a77-5ea7-9dca-d9e89b2ebca7",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "two senses in which work can be one's own: 1) that you're doing it\nvoluntarily, rather than merely because someone told you to, and\n2) that you're doing it by yourself.The edge of the former is quite sharp. People who care a lot about",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "09c22efb-c142-534a-9447-17494f84c9a3",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "their work are usually very sensitive to the difference between\npulling, and being pushed, and work tends to fall into one category\nor the other. But the test isn't simply whether you're told to do",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "e5d1b3d3-139f-5c23-801d-20558174d518",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "something. You can choose to do something you're told to do. Indeed,\nyou can own it far more thoroughly than the person who told you to\ndo it.For example, math homework is for most people something they're",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "af6ba0d0-c99c-5222-89ac-c5d8d6b28e7c",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "told to do. But for my father, who was a mathematician, it wasn't.\nMost of us think of the problems in a math book as a way to test\nor develop our knowledge of the material explained in each section.",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "55a6064d-e548-5026-9304-380b8f666adb",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "But to my father the problems were the part that mattered, and the\ntext was merely a sort of annotation. Whenever he got a new math\nbook it was to him like being given a puzzle: here was a new set",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "fbcce017-8d52-5f53-8285-a11289f21a36",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "of problems to solve, and he'd immediately set about solving all\nof them.The other sense of a project being one's own \u2014 working on it by\noneself \u2014 has a much softer edge. It shades gradually into",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "e8a5204a-a1a6-5497-a2ad-af07eb4bace7",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "that takes shape in the course of a conversation between them. The\nother way is when multiple people work on separate projects of their\nown that fit together like a jigsaw puzzle. For example, when one",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "bfa628c5-9800-54a4-a63e-07a08f2fefc2",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "person writes the text of a book and another does the graphic design.\n[3]These two paths into collaboration can of course be combined. But\nunder the right conditions, the excitement of working on a project",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "44b6b2da-5060-5cff-b49d-c2c07e4ab53b",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "of one's own can be preserved for quite a while before disintegrating\ninto the turbulent flow of work in a large organization. Indeed,\nthe history of successful organizations is partly the history of\ntechniques for preserving that excitement.",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "cdc83d2a-2dfb-5562-88bd-6854cfcfa560",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "techniques for preserving that excitement.\n[4]The team that made the original Macintosh were a great example of\nthis phenomenon. People like Burrell Smith and Andy Hertzfeld and\nBill Atkinson and Susan Kare were not just following orders. They",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "8393b1e4-dc5c-58a4-96e0-b11311bc5ef4",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "were not tennis balls hit by Steve Jobs, but rockets let loose by\nSteve Jobs. There was a lot of collaboration between them, but\nthey all seem to have individually felt the excitement of",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "d0a3ea65-fd9f-598e-91cb-ad60ca8cb225",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "working on a project of one's own.In Andy Hertzfeld's book on the Macintosh, he describes how they'd\ncome back into the office after dinner and work late into the night.\nPeople who've never experienced the thrill of working on a project",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "90eaa50f-e7f1-5dbe-a5b3-406f524cab69",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "they're excited about can't distinguish this kind of working long\nhours from the kind that happens in sweatshops and boiler rooms,\nbut they're at opposite ends of the spectrum. That's why it's a",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "f258c9a9-6d19-5a0f-a6a4-fe90a34e3886",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "mistake to insist dogmatically on \"work/life balance.\" Indeed, the\nmere expression \"work/life\" embodies a mistake: it assumes work and\nlife are distinct. For those to whom the word \"work\" automatically",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "0a3b3f7e-adec-5c9b-95b3-6439ecffb0bd",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "implies the dutiful plodding kind, they are. But for the skaters,\nthe relationship between work and life would be better represented\nby a dash than a slash. I wouldn't want to work on anything that I didn't",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "028bbbdb-ac34-570d-b06d-8d942d9c655d",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "want to take over my life.Of course, it's easier to achieve this level of motivation when\nyou're making something like the Macintosh. It's easy for something\nnew to feel like a project of your own. That's one of the reasons",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "420e6cc0-cd53-52a8-9603-b6341df16ca3",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "for the tendency programmers have to rewrite things that don't need\nrewriting, and to write their own versions of things that already\nexist. This sometimes alarms managers, and measured by total number",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "ca29fb7e-3f3b-5214-b1ff-8bbfe75ef8e1",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "of characters typed, it's rarely the optimal solution. But it's not\nalways driven simply by arrogance or cluelessness.\nWriting code from scratch is also much more rewarding \u2014 so much\nmore rewarding that a good programmer can end up net ahead, despite",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "7fa17848-6703-50d0-87bc-957ea785bf09",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "the shocking waste of characters. Indeed, it may be one of the\nadvantages of capitalism that it encourages such rewriting. A company\nthat needs software to do something can't use the software already",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "6806b7f4-8531-530f-a148-d4018961a842",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "written to do it at another company, and thus has to write their\nown, which often turns out better.\n[5]The natural alignment between skating and solving new problems is\none of the reasons the payoffs from startups are so high. Not only",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "d07324d2-645c-57c3-bafb-3abfde5607f6",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "is the market price of unsolved problems higher, you also get a\ndiscount on productivity when you work on them. In fact, you get a\ndouble increase in productivity: when you're doing a clean-sheet",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "7bee3ec0-8bc2-5809-9885-ad77e36c619b",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "design, it's easier to recruit skaters, and they get to spend all\ntheir time skating.Steve Jobs knew a thing or two about skaters from having watched\nSteve Wozniak. If you can find the right people, you only have to",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "36f55631-f972-5444-b7d9-df38f149c1ce",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "tell them what to do at the highest level. They'll handle the\ndetails. Indeed, they insist on it. For a project to feel like your\nown, you must have sufficient autonomy. You can't be working to\norder, or slowed down",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "eef34619-2797-5024-8873-42a011f9d1b9",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "order, or slowed down\nby bureaucracy.One way to ensure autonomy is not to have a boss at all. There are\ntwo ways to do that: to be the boss yourself, and to work on projects\noutside of work. Though they're at opposite ends of the scale",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "512b2629-40f6-5611-b39a-ded0925bba83",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "financially, startups and open source projects have a lot in common,\nincluding the fact that they're often run by skaters. And indeed,\nthere's a wormhole from one end of the scale to the other: one of\nthe best ways to discover",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "ed505044-a207-5d2e-b658-eb4356e81901",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "the best ways to discover\nstartup ideas is to work on a project\njust for fun.If your projects are the kind that make money, it's easy to work\non them. It's harder when they're not. And the hardest part, usually,",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "8cb9f991-78db-5796-9774-d3fd28e544e6",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "is morale. That's where adults have it harder than kids. Kids just\nplunge in and build their treehouse without worrying about whether\nthey're wasting their time, or how it compares to other treehouses.",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "c70d905f-608f-5d7d-bcbe-5a20f591a5e8",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "And frankly we could learn a lot from kids here. The high standards\nmost grownups have for \"real\" work do not always serve us well.The most important phase in a project of one's own is at the",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "a7a7fc21-f1da-595a-9571-7112607e1e27",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "beginning: when you go from thinking it might be cool to do x to\nactually doing x. And at that point high standards are not merely\nuseless but positively harmful. There are a few people who start",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "c1cba552-2381-5b9b-88c9-96bd58029425",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "too many new projects, but far more, I suspect, who are deterred\nby fear of failure from starting projects that would have succeeded\nif they had.But if we couldn't benefit as kids from the knowledge that our",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "d66492c5-ce35-5b44-b6ad-1783115ffc74",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "treehouses were on the path to grownup projects, we can at least\nbenefit as grownups from knowing that our projects are on a path\nthat stretches back to treehouses. Remember that careless confidence",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "90bde670-7caa-5f09-93ba-ab2b82b20ac3",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "you had as a kid when starting something new? That would be a\npowerful thing to recapture.If it's harder as adults to retain that kind of confidence, we at\nleast tend to be more aware of what we're doing. Kids bounce, or",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "08e0d5a1-fee3-5074-972d-b2cc05f05780",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "are herded, from one kind of work to the next, barely realizing\nwhat's happening to them. Whereas we know more about different types\nof work and have more control over which we do. Ideally we can have",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "8c4ab727-e5b9-5301-ae57-b21812cfd5d1",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "the best of both worlds: to be deliberate in choosing to work on\nprojects of our own, and carelessly confident in starting new ones.\nNotes[1]\n\"Hobby\" is a curious word. Now it means work that isn't real",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "2ba7e1e5-59e3-5376-b9dc-0f215279624f",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "work \u2014 work that one is not to be judged by \u2014 but originally it just\nmeant an obsession in a fairly general sense (even a political\nopinion, for example) that one metaphorically rode as a child rides",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "37babbc6-03b8-596b-85c5-7cb11461c4f3",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "a hobby-horse. It's hard to say if its recent, narrower meaning is\na change for the better or the worse. For sure there are lots of\nfalse positives \u2014 lots of projects that end up being important but",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "adc03e1d-89db-5c36-bb16-318eac3cb755",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "are dismissed initially as mere hobbies. But on the other hand, the\nconcept provides valuable cover for projects in the early, ugly\nduckling phase.[2]\nTiger parents, as parents so often do, are fighting the last",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "32ff9dd1-fce0-5766-8c3e-0bb8a9068e0e",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "war. Grades mattered more in the old days when the route to success\nwas to acquire\ncredentials\nwhile ascending some predefined ladder.\nBut it's just as well that their tactics are focused on grades. How",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "9222c916-8bc4-58ef-8c58-924ed71a35d0",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "awful it would be if they invaded the territory of projects, and\nthereby gave their kids a distaste for this kind of work by forcing\nthem to do it. Grades are already a grim, fake world, and aren't",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "00505280-32be-5925-b394-eeddb336ab26",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "harmed much by parental interference, but working on one's own\nprojects is a more delicate, private thing that could be damaged\nvery easily.[3]\nThe complicated, gradual edge between working on one's own",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "bac4a7ed-732e-5034-8932-1cffa3fb6b23",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "projects and collaborating with others is one reason there is so\nmuch disagreement about the idea of the \"lone genius.\" In practice\npeople collaborate (or not) in all kinds of different ways, but the",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "13168f68-b395-58ea-8015-32a52e1b577f",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "idea of the lone genius is definitely not a myth. There's a core\nof truth to it that goes with a certain way of working.[4]\nCollaboration is powerful too. The optimal organization would\ncombine collaboration and ownership in such a way as to do the least",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "e879b314-b886-50fd-8503-a3ff208f1796",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "damage to each. Interestingly, companies and university departments\napproach this ideal from opposite directions: companies insist on\ncollaboration, and occasionally also manage both to recruit skaters",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "8d705d89-4e26-5d28-ba87-68662c801efc",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "and allow them to skate, and university departments insist on the\nability to do independent research (which is by custom treated as\nskating, whether it is or not), and the people they hire collaborate\nas much as they choose.[5]",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "b11d3e48-3aa9-5bfd-8912-e7151435778a",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "as much as they choose.[5]\nIf a company could design its software in such a way that the\nbest newly arrived programmers always got a clean sheet, it could\nhave a kind of eternal youth. That might not be impossible. If you",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
+        }
+      },
+      {
+        "extraction_id": "2951ae53-3cd1-5c5e-8898-09b81fe23b64",
+        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [],
+        "text": "had a software backbone defining a game with sufficiently clear\nrules, individual programmers could write their own players.\nThanks to Trevor Blackwell, Paul Buchheit, Andy Hertzfeld, Jessica\nLivingston, and Peter Norvig for reading drafts of this.",
+        "metadata": {
+          "version": "v0",
+          "document_type": "html"
         }
       }
     ],
-    "total_entries": 1
+    "total_entries": 67
   },
   "update_document_test": {
     "results": {
       "message": "Update task queued successfully.",
-      "task_id": "ce9a5927-64b8-4431-acf0-fe12ad2230e5",
       "document_ids": [
-        "db02076e-989a-59cd-98d5-e24e15a0bd27"
+        "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
       ]
     }
   },
@@ -493,8 +1112,8 @@
         "size_in_bytes": 166556,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:10.456776Z",
-        "updated_at": "2024-09-20T22:55:14.529464Z",
+        "created_at": "2024-09-27T17:01:31.874002Z",
+        "updated_at": "2024-09-27T17:01:31.874010Z",
         "ingestion_attempt_number": null
       },
       {
@@ -510,42 +1129,8 @@
         "size_in_bytes": 1055688,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:10.445592Z",
-        "updated_at": "2024-09-20T22:55:14.539605Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "pg_essay_2.html",
-        "version": "v0",
-        "size_in_bytes": 166816,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.506868Z",
-        "updated_at": "2024-09-20T22:55:14.533120Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "aristotle.txt",
-        "version": "v0",
-        "size_in_bytes": 97804,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.476022Z",
-        "updated_at": "2024-09-20T22:55:14.531133Z",
+        "created_at": "2024-09-27T17:01:17.143733Z",
+        "updated_at": "2024-09-27T17:01:17.143741Z",
         "ingestion_attempt_number": null
       },
       {
@@ -561,8 +1146,43 @@
         "size_in_bytes": 62948,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.471883Z",
-        "updated_at": "2024-09-20T22:55:14.531772Z",
+        "created_at": "2024-09-27T17:01:15.832273Z",
+        "updated_at": "2024-09-27T17:01:15.832281Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "title": "aristotle_v2.txt",
+          "version": "v1"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v1",
+        "size_in_bytes": 2534,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:01:13.749890Z",
+        "updated_at": "2024-09-27T17:06:34.291766Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:01:13.111406Z",
+        "updated_at": "2024-09-27T17:01:13.111416Z",
         "ingestion_attempt_number": null
       },
       {
@@ -578,8 +1198,8 @@
         "size_in_bytes": 28,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.470416Z",
-        "updated_at": "2024-09-20T22:55:14.536782Z",
+        "created_at": "2024-09-27T17:01:12.788282Z",
+        "updated_at": "2024-09-27T17:01:12.788287Z",
         "ingestion_attempt_number": null
       },
       {
@@ -593,10 +1213,10 @@
         "title": "lyft_2021.pdf",
         "version": "v0",
         "size_in_bytes": 1920404,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.469252Z",
-        "updated_at": "2024-09-20T22:55:14.569269Z",
+        "created_at": "2024-09-27T17:00:49.981071Z",
+        "updated_at": "2024-09-27T17:00:49.981086Z",
         "ingestion_attempt_number": null
       },
       {
@@ -612,8 +1232,8 @@
         "size_in_bytes": 165040,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.465810Z",
-        "updated_at": "2024-09-20T22:55:12.531882Z",
+        "created_at": "2024-09-27T17:00:49.315963Z",
+        "updated_at": "2024-09-27T17:00:49.315980Z",
         "ingestion_attempt_number": null
       },
       {
@@ -629,8 +1249,8 @@
         "size_in_bytes": 2287544,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.455913Z",
-        "updated_at": "2024-09-20T22:55:12.517199Z",
+        "created_at": "2024-09-27T17:00:48.676977Z",
+        "updated_at": "2024-09-27T17:00:48.676985Z",
         "ingestion_attempt_number": null
       },
       {
@@ -646,8 +1266,8 @@
         "size_in_bytes": 157484,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:07.036336Z",
-        "updated_at": "2024-09-20T22:55:12.484462Z",
+        "created_at": "2024-09-27T17:00:48.182144Z",
+        "updated_at": "2024-09-27T17:00:48.182154Z",
         "ingestion_attempt_number": null
       },
       {
@@ -663,8 +1283,8 @@
         "size_in_bytes": 3380,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:05.565359Z",
-        "updated_at": "2024-09-20T22:55:12.516690Z",
+        "created_at": "2024-09-27T17:00:47.523137Z",
+        "updated_at": "2024-09-27T17:00:47.523153Z",
         "ingestion_attempt_number": null
       },
       {
@@ -680,8 +1300,8 @@
         "size_in_bytes": 96608,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:04.622762Z",
-        "updated_at": "2024-09-20T22:55:12.486232Z",
+        "created_at": "2024-09-27T17:00:46.224925Z",
+        "updated_at": "2024-09-27T17:00:46.224929Z",
         "ingestion_attempt_number": null
       },
       {
@@ -695,10 +1315,10 @@
         "title": "uber_2021.pdf",
         "version": "v0",
         "size_in_bytes": 2507312,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:04.211252Z",
-        "updated_at": "2024-09-20T22:55:12.509328Z",
+        "created_at": "2024-09-27T17:00:10.909182Z",
+        "updated_at": "2024-09-27T17:00:10.909191Z",
         "ingestion_attempt_number": null
       },
       {
@@ -714,25 +1334,8 @@
         "size_in_bytes": 162228,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.699362Z",
-        "updated_at": "2024-09-20T22:55:10.516462Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "pg_essay_1.html",
-        "version": "v0",
-        "size_in_bytes": 175340,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.517969Z",
-        "updated_at": "2024-09-20T22:55:10.518388Z",
+        "created_at": "2024-09-27T17:00:08.852276Z",
+        "updated_at": "2024-09-27T17:00:08.852281Z",
         "ingestion_attempt_number": null
       },
       {
@@ -748,8 +1351,25 @@
         "size_in_bytes": 12656,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.516278Z",
-        "updated_at": "2024-09-20T22:55:10.519709Z",
+        "created_at": "2024-09-27T17:00:08.177884Z",
+        "updated_at": "2024-09-27T17:00:08.177887Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_1.html",
+        "version": "v0",
+        "size_in_bytes": 175340,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:00:07.272659Z",
+        "updated_at": "2024-09-27T17:00:07.272681Z",
         "ingestion_attempt_number": null
       }
     ],
@@ -773,8 +1393,8 @@
         "size_in_bytes": 166556,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:10.456776Z",
-        "updated_at": "2024-09-20T22:55:14.529464Z",
+        "created_at": "2024-09-27T17:01:31.874002Z",
+        "updated_at": "2024-09-27T17:01:31.874010Z",
         "ingestion_attempt_number": null
       },
       {
@@ -790,42 +1410,8 @@
         "size_in_bytes": 1055688,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:10.445592Z",
-        "updated_at": "2024-09-20T22:55:14.539605Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "html",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "pg_essay_2.html",
-        "version": "v0",
-        "size_in_bytes": 166816,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.506868Z",
-        "updated_at": "2024-09-20T22:55:14.533120Z",
-        "ingestion_attempt_number": null
-      },
-      {
-        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-        "collection_ids": [],
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "type": "txt",
-        "metadata": {
-          "version": "v0"
-        },
-        "title": "aristotle.txt",
-        "version": "v0",
-        "size_in_bytes": 97804,
-        "ingestion_status": "success",
-        "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.476022Z",
-        "updated_at": "2024-09-20T22:55:14.531133Z",
+        "created_at": "2024-09-27T17:01:17.143733Z",
+        "updated_at": "2024-09-27T17:01:17.143741Z",
         "ingestion_attempt_number": null
       },
       {
@@ -841,8 +1427,43 @@
         "size_in_bytes": 62948,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.471883Z",
-        "updated_at": "2024-09-20T22:55:14.531772Z",
+        "created_at": "2024-09-27T17:01:15.832273Z",
+        "updated_at": "2024-09-27T17:01:15.832281Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "txt",
+        "metadata": {
+          "title": "aristotle_v2.txt",
+          "version": "v1"
+        },
+        "title": "aristotle_v2.txt",
+        "version": "v1",
+        "size_in_bytes": 2534,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:01:13.749890Z",
+        "updated_at": "2024-09-27T17:06:34.291766Z",
+        "ingestion_attempt_number": null
+      },
+      {
+        "id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+        "collection_ids": [],
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "type": "html",
+        "metadata": {
+          "version": "v0"
+        },
+        "title": "pg_essay_2.html",
+        "version": "v0",
+        "size_in_bytes": 166816,
+        "ingestion_status": "success",
+        "restructuring_status": "pending",
+        "created_at": "2024-09-27T17:01:13.111406Z",
+        "updated_at": "2024-09-27T17:01:13.111416Z",
         "ingestion_attempt_number": null
       },
       {
@@ -858,8 +1479,8 @@
         "size_in_bytes": 28,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.470416Z",
-        "updated_at": "2024-09-20T22:55:14.536782Z",
+        "created_at": "2024-09-27T17:01:12.788282Z",
+        "updated_at": "2024-09-27T17:01:12.788287Z",
         "ingestion_attempt_number": null
       },
       {
@@ -873,10 +1494,10 @@
         "title": "lyft_2021.pdf",
         "version": "v0",
         "size_in_bytes": 1920404,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.469252Z",
-        "updated_at": "2024-09-20T22:55:14.569269Z",
+        "created_at": "2024-09-27T17:00:49.981071Z",
+        "updated_at": "2024-09-27T17:00:49.981086Z",
         "ingestion_attempt_number": null
       },
       {
@@ -892,8 +1513,8 @@
         "size_in_bytes": 165040,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.465810Z",
-        "updated_at": "2024-09-20T22:55:12.531882Z",
+        "created_at": "2024-09-27T17:00:49.315963Z",
+        "updated_at": "2024-09-27T17:00:49.315980Z",
         "ingestion_attempt_number": null
       },
       {
@@ -909,8 +1530,8 @@
         "size_in_bytes": 2287544,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:09.455913Z",
-        "updated_at": "2024-09-20T22:55:12.517199Z",
+        "created_at": "2024-09-27T17:00:48.676977Z",
+        "updated_at": "2024-09-27T17:00:48.676985Z",
         "ingestion_attempt_number": null
       },
       {
@@ -926,8 +1547,8 @@
         "size_in_bytes": 157484,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:07.036336Z",
-        "updated_at": "2024-09-20T22:55:12.484462Z",
+        "created_at": "2024-09-27T17:00:48.182144Z",
+        "updated_at": "2024-09-27T17:00:48.182154Z",
         "ingestion_attempt_number": null
       },
       {
@@ -943,8 +1564,8 @@
         "size_in_bytes": 3380,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:05.565359Z",
-        "updated_at": "2024-09-20T22:55:12.516690Z",
+        "created_at": "2024-09-27T17:00:47.523137Z",
+        "updated_at": "2024-09-27T17:00:47.523153Z",
         "ingestion_attempt_number": null
       },
       {
@@ -960,8 +1581,8 @@
         "size_in_bytes": 96608,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:04.622762Z",
-        "updated_at": "2024-09-20T22:55:12.486232Z",
+        "created_at": "2024-09-27T17:00:46.224925Z",
+        "updated_at": "2024-09-27T17:00:46.224929Z",
         "ingestion_attempt_number": null
       },
       {
@@ -975,10 +1596,10 @@
         "title": "uber_2021.pdf",
         "version": "v0",
         "size_in_bytes": 2507312,
-        "ingestion_status": "parsing",
+        "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:04.211252Z",
-        "updated_at": "2024-09-20T22:55:12.509328Z",
+        "created_at": "2024-09-27T17:00:10.909182Z",
+        "updated_at": "2024-09-27T17:00:10.909191Z",
         "ingestion_attempt_number": null
       },
       {
@@ -994,8 +1615,8 @@
         "size_in_bytes": 162228,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.699362Z",
-        "updated_at": "2024-09-20T22:55:10.516462Z",
+        "created_at": "2024-09-27T17:00:08.852276Z",
+        "updated_at": "2024-09-27T17:00:08.852281Z",
         "ingestion_attempt_number": null
       },
       {
@@ -1011,8 +1632,8 @@
         "size_in_bytes": 12656,
         "ingestion_status": "success",
         "restructuring_status": "pending",
-        "created_at": "2024-09-20T22:50:02.516278Z",
-        "updated_at": "2024-09-20T22:55:10.519709Z",
+        "created_at": "2024-09-27T17:00:08.177884Z",
+        "updated_at": "2024-09-27T17:00:08.177887Z",
         "ingestion_attempt_number": null
       }
     ],

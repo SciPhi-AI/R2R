@@ -335,20 +335,33 @@ export class r2rClient {
    */
   @feature("updateUser")
   async updateUser(
+    userId: string,
     email?: string,
+    isSuperuser?: boolean,
     name?: string,
     bio?: string,
     profilePicture?: string,
   ): Promise<any> {
     this._ensureAuthenticated();
-    return await this._makeRequest("PUT", "user", {
-      data: {
-        email,
-        name,
-        bio,
-        profile_picture: profilePicture,
-      },
-    });
+
+    let data: Record<string, any> = { user_id: userId };
+    if (email !== undefined) {
+      data.email = email;
+    }
+    if (isSuperuser !== undefined) {
+      data.is_superuser = isSuperuser;
+    }
+    if (name !== undefined) {
+      data.name = name;
+    }
+    if (bio !== undefined) {
+      data.bio = bio;
+    }
+    if (profilePicture !== undefined) {
+      data.profile_picture = profilePicture;
+    }
+
+    return await this._makeRequest("PUT", "user", { data });
   }
 
   /**
@@ -464,7 +477,7 @@ export class r2rClient {
       metadatas?: Record<string, any>[];
       document_ids?: string[];
       user_ids?: (string | null)[];
-      chunking_config?: Record<string, any>;
+      ingestion_config?: Record<string, any>;
     } = {},
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -527,8 +540,8 @@ export class r2rClient {
         ? JSON.stringify(options.document_ids)
         : undefined,
       user_ids: options.user_ids ? JSON.stringify(options.user_ids) : undefined,
-      chunking_config: options.chunking_config
-        ? JSON.stringify(options.chunking_config)
+      ingestion_config: options.ingestion_config
+        ? JSON.stringify(options.ingestion_config)
         : undefined,
     };
 
@@ -566,7 +579,7 @@ export class r2rClient {
     options: {
       document_ids: string[];
       metadatas?: Record<string, any>[];
-      chunking_config?: Record<string, any>;
+      ingestion_config?: Record<string, any>;
     },
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -604,8 +617,8 @@ export class r2rClient {
       metadatas: options.metadatas
         ? JSON.stringify(options.metadatas)
         : undefined,
-      chunking_config: options.chunking_config
-        ? JSON.stringify(options.chunking_config)
+      ingestion_config: options.ingestion_config
+        ? JSON.stringify(options.ingestion_config)
         : undefined,
     };
 
@@ -894,28 +907,28 @@ export class r2rClient {
     });
   }
 
-  /**
-   * Inspect the knowledge graph associated with your R2R deployment.
-   * @param limit The maximum number of nodes to return. Defaults to 100.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("inspectKnowledgeGraph")
-  async inspectKnowledgeGraph(
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
+  // /**
+  //  * Inspect the knowledge graph associated with your R2R deployment.
+  //  * @param limit The maximum number of nodes to return. Defaults to 100.
+  //  * @returns A promise that resolves to the response from the server.
+  //  */
+  // @feature("inspectKnowledgeGraph")
+  // async inspectKnowledgeGraph(
+  //   offset?: number,
+  //   limit?: number,
+  // ): Promise<Record<string, any>> {
+  //   this._ensureAuthenticated();
 
-    const params: Record<string, number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
+  //   const params: Record<string, number> = {};
+  //   if (offset !== undefined) {
+  //     params.offset = offset;
+  //   }
+  //   if (limit !== undefined) {
+  //     params.limit = limit;
+  //   }
 
-    return this._makeRequest("GET", "inspect_knowledge_graph", { params });
-  }
+  //   return this._makeRequest("GET", "inspect_knowledge_graph", { params });
+  // }
 
   /**
    * Get an overview of existing collections.

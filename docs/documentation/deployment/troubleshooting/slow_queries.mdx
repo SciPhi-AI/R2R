@@ -36,21 +36,6 @@ Before diving into specific solutions, it's crucial to identify where the slowdo
    VACUUM ANALYZE;
    ```
 
-### 2.2 Neo4j
-
-1. **Use PROFILE to analyze query performance:**
-   ```cypher
-   PROFILE MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100;
-   ```
-
-2. **Check for missing indexes:**
-   ```cypher
-   CALL db.indexes();
-   ```
-
-3. **Monitor the Neo4j query log:**
-   Check the neo4j.log file for slow queries.
-
 ## 3. Optimize Vector Search
 
 1. **Check vector index:**
@@ -120,7 +105,6 @@ Before diving into specific solutions, it's crucial to identify where the slowdo
 1. **Review and optimize complex queries:**
    - Break down complex queries into simpler ones
    - Use appropriate JOIN types in SQL queries
-   - Optimize Cypher queries for Neo4j
 
 2. **Use query parameterization:**
    Avoid string concatenation in queries to leverage query plan caching.

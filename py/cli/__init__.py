@@ -11,7 +11,7 @@ __all__ = [
     "auth",
     "ingestion",
     "management",
-    "restructure",
+    "kg",
     "retrieval",
     "server",
 ]

@@ -20,10 +20,10 @@ __all__ = [
     "DataType",
     "Document",
     "DocumentExtraction",
-    "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGExtractionStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -48,9 +48,12 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGRunType",
+    "KGCreationEstimationResponse",
+    "KGEnrichmentEstimationResponse",
     # User abstractions
     "Token",
     "TokenData",
@@ -107,12 +110,6 @@ __all__ = [
     # Auth provider
     "AuthConfig",
     "AuthProvider",
-    # Chunking provider
-    "R2RChunkingConfig",
-    "UnstructuredChunkingConfig",
-    "ChunkingConfig",
-    "ChunkingProvider",
-    "Strategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
@@ -121,22 +118,23 @@ __all__ = [
     "DatabaseProvider",
     "RelationalDBProvider",
     "VectorDBProvider",
+    "PostgresConfigurationSettings",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
     # File provider
     "FileConfig",
     "FileProvider",
+    # Ingestion provider
+    "IngestionConfig",
+    "IngestionProvider",
+    "ChunkingStrategy",
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Parsing provider
-    "ParsingConfig",
-    "ParsingProvider",
-    "OverrideParser",
     # Prompt provider
     "PromptConfig",
     "PromptProvider",
@@ -147,8 +145,14 @@ __all__ = [
     "to_async_generator",
     "format_search_results_for_llm",
     "format_search_results_for_stream",
+    # ID generation
     "generate_run_id",
-    "generate_id_from_label",
+    "generate_document_id",
+    "generate_extraction_id",
+    "generate_default_user_collection_id",
+    "generate_collection_id_from_name",
+    "generate_user_id",
+    "generate_message_id",
     "increment_version",
     "EntityType",
     "RelationshipType",

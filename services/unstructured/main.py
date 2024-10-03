@@ -1,13 +1,14 @@
+import asyncio
+import base64
+import concurrent.futures
+import logging
+import os
+from io import BytesIO
+from typing import Dict, List
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
-from io import BytesIO
-import asyncio
-import concurrent.futures
-import os
-import base64
 from unstructured.partition.auto import partition
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,8 @@ app = FastAPI()
 
 class PartitionRequestModel(BaseModel):
     file_content: bytes
-    chunking_config: Dict
+    ingestion_config: Dict
+    filename: Optional[str] = None
 
 
 class PartitionResponseModel(BaseModel):
@@ -28,10 +30,10 @@ executor = concurrent.futures.ThreadPoolExecutor(
 )
 
 
-def run_partition(file_content: str, chunking_config: Dict) -> List[Dict]:
+def run_partition(file_content: str, filename: str, ingestion_config: Dict) -> List[Dict]:
     file_content_bytes = base64.b64decode(file_content)
     file_io = BytesIO(file_content_bytes)
-    elements = partition(file=file_io, **chunking_config)
+    elements = partition(file=file_io, file_filename=filename, **ingestion_config)
     return [element.to_dict() for element in elements]
 
 
@@ -49,7 +51,8 @@ async def partition_endpoint(request: PartitionRequestModel):
             executor,
             run_partition,
             request.file_content,
-            request.chunking_config,
+            request.filename,
+            request.ingestion_config,
         )
         logger.info(f"Partitioning completed")
         return PartitionResponseModel(elements=elements)

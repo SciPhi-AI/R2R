@@ -135,16 +135,6 @@ If the R2R API server (default port 7272) is conflicting:
    PORT=7273
    ```
 
-### Neo4j Port Conflicts
-
-Neo4j uses ports 7474 (HTTP) and 7687 (Bolt). If these are conflicting:
-
-1. Check for conflicts:
-   ```bash
-   sudo lsof -i :7474
-   sudo lsof -i :7687
-   ```
-
 ### Hatchet Engine Conflict
 
 If the Hatchet engine (default port 7077) is conflicting:

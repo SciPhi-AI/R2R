@@ -17,15 +17,19 @@ R2R supports two main levels of configuration:
 
 ## Server Configuration
 
-The default settings for R2R are specified in the [`r2r.toml`](https://github.com/SciPhi-AI/R2R/blob/main/r2r.toml) file. To create a custom configuration:
+The default settings for a `light` R2R installation are specified in the [`r2r.toml`](https://github.com/SciPhi-AI/R2R/blob/main/r2r.toml) file.
 
-1. Create a new file named `r2r.toml` in your project directory.
+When doing a `full` installation the R2R CLI uses the [`full.toml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/configs/full.toml) to override some of the default light default settings with those of the added providers.
+
+To create your own custom configuration:
+
+1. Create a new file named `my_r2r.toml` in your project directory.
 2. Add only the settings you wish to customize. For example:
 
-```toml r2r.toml
+```toml my_r2r.toml
 [embedding]
 provider = "litellm"
-base_model = "text-embedding-3-large"
+base_model = "text-embedding-3-small"
 base_dimension = 1536
 
 [completion]
@@ -36,7 +40,7 @@ base_dimension = 1536
 3. Launch R2R with the CLI using your custom configuration:
 
 ```bash
-r2r serve --config-path=r2r.toml
+r2r serve --config-path=my_r2r.toml
 ```
 
 R2R will use your specified settings, falling back to defaults for any unspecified options.

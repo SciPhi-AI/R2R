@@ -11,14 +11,6 @@ require_email_verification = false
 default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
-[chunking]
-provider = "unstructured_local"
-strategy = "auto"
-chunking_strategy = "by_title"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 20
 
 [completion]
 provider = "litellm"
@@ -37,6 +29,8 @@ provider = "bcrypt"
 
 [database]
 provider = "postgres"
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
 
 [embedding]
 provider = "litellm"
@@ -50,28 +44,35 @@ concurrent_request_limit = 256
 [file]
 provider = "postgres"
 
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1_024
+chunk_overlap = 512
+excluded_parsers = ["mp4"]
+
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     max_knowledge_triples = 100
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
+    max_description_input_length = 1024
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports_prompt"
-    max_description_input_length = 65536
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = {}
 
   [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
-    generation_config = { model = "gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 [logging]
 provider = "local"
@@ -79,11 +80,7 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [orchestration]
-provider = "hatchet"
-
-[parsing]
-provider = "unstructured_local"
-excluded_parsers = ["mp4"]
+provider = "simple"
 
 [prompt]
 provider = "r2r"

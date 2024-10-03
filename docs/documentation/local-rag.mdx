@@ -8,15 +8,7 @@ icon: 'house'
 
 To run R2R with default local LLM settings, execute `r2r serve --docker --config-name=local_llm`.
 
-R2R supports RAG with local LLMs through the Ollama library. You may follow the instructions on their [official website](https://ollama.com/) to install Ollama outside of the R2R Docker. To include Ollama inside the R2R Docker, pass the selection `--exclude-ollama=False` in the command shown previously.
-
-<Warning>
-For MacBooks with M1 or newer processors, we recommend setting `--exclude-ollama` flag to True and installing Ollama outside of Docker.
-
-This approach is recommended because Docker doesn't fully support hardware acceleration on Apple Silicon, which can limit performance.
-</Warning>
-
-<Note>Performance may be worse when running Ollama inside Docker. Please review your Docker Desktop settings when running on your local computer.</Note>
+R2R supports RAG with local LLMs through the Ollama library. You may follow the instructions on their [official website](https://ollama.com/) to install Ollama outside of the R2R Docker.
 
 ## Preparing Local LLMs
 
@@ -26,10 +18,6 @@ Next, make sure that you have all the necessary LLMs installed:
 ollama pull llama3.1
 ollama pull mxbai-embed-large
 ollama serve
-
-# when running ollama inisde Docker, instead:
-# docker exec -it r2r-ollama-1 ollama pull llama3.1
-# docker exec -it r2r-ollama-1 ollama pull mxbai-embed-large
 ```
 
 These commands will need to be replaced with models specific to your configuration when deploying R2R with a customized configuration.
@@ -69,7 +57,7 @@ add_title_as_prefix = true
 concurrent_request_limit = 32
 
 [ingestion]
-excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+excluded_parsers = [ "mp4" ]
 ```
 
 This configuration uses `ollama` and the model `mxbai-embed-large` to run embeddings. We have excluded media file parsers as they are not yet supported locally.

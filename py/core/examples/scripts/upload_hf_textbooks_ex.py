@@ -9,7 +9,7 @@ from datasets import load_dataset
 from r2r import R2RClient
 
 
-def generate_id_from_label(label: str) -> uuid.UUID:
+def generate_id(label: str) -> uuid.UUID:
     return uuid.uuid5(uuid.NAMESPACE_DNS, label)
 
 
@@ -42,7 +42,7 @@ async def process_dataset(client, dataset, batch_size, executor, semaphore):
 
     for example in dataset:
         count += 1
-        fname = f"example_{generate_id_from_label(example['completion'])}.txt"
+        fname = f"example_{generate_id(example['completion'])}.txt"
         print(f"Streaming {fname} w/ completion {count} ...")
 
         # Asynchronously write to file
