@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm

@@ -7,8 +7,9 @@ from .document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGExtractionStatus,
     KGEnrichmentStatus,
+    KGExtractionStatus,
+    RawChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
@@ -70,6 +71,7 @@ __all__ = [
     "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
+    "RawChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",

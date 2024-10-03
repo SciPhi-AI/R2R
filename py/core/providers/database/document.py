@@ -21,8 +21,8 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGExtractionStatus,
     KGEnrichmentStatus,
+    KGExtractionStatus,
     R2RException,
 )
 

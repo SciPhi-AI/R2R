@@ -4,7 +4,13 @@ from typing import TYPE_CHECKING
 
 from hatchet_sdk import Context
 
-from core.base import IngestionStatus, OrchestrationProvider, increment_version
+from core.base import (
+    DocumentExtraction,
+    IngestionStatus,
+    OrchestrationProvider,
+    generate_extraction_id,
+    increment_version,
+)
 from core.base.abstractions import DocumentInfo, R2RException
 from core.utils import generate_default_user_collection_id
 
@@ -130,7 +136,7 @@ def hatchet_ingestion_factory(
 
             return {
                 "status": "Successfully finalized ingestion",
-                "document_info": document_info.to_dict(),
+                "document_info": document_info.model_dump(),
             }
 
         @orchestration_provider.failure()
@@ -272,9 +278,154 @@ def hatchet_ingestion_factory(
 
             return None
 
+    @orchestration_provider.workflow(
+        name="ingest-chunks",
+        timeout="60m",
+    )
+    class HatchetIngestChunksWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="60m")
+        async def ingest(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
+                input_data
+            )
+
+            document_info = await self.ingestion_service.ingest_chunks_ingress(
+                **parsed_data
+            )
+
+            await self.ingestion_service.update_document_status(
+                document_info, status=IngestionStatus.EMBEDDING
+            )
+            document_id = document_info.id
+
+            extractions = [
+                DocumentExtraction(
+                    id=generate_extraction_id(document_id, i),
+                    document_id=document_id,
+                    collection_ids=[],
+                    user_id=document_info.user_id,
+                    data=chunk.text,
+                    metadata=parsed_data["metadata"],
+                ).to_dict()
+                for i, chunk in enumerate(parsed_data["chunks"])
+            ]
+            return {
+                "status": "Successfully ingested chunks",
+                "extractions": extractions,
+                "document_info": document_info.to_dict(),
+            }
+
+        @orchestration_provider.step(parents=["ingest"], timeout="60m")
+        async def embed(self, context: Context) -> dict:
+            document_info_dict = context.step_output("ingest")["document_info"]
+            document_info = DocumentInfo(**document_info_dict)
+
+            extractions = context.step_output("ingest")["extractions"]
+
+            embedding_generator = await self.ingestion_service.embed_document(
+                extractions
+            )
+            embeddings = [
+                embedding.model_dump()
+                async for embedding in embedding_generator
+            ]
+
+            await self.ingestion_service.update_document_status(
+                document_info, status=IngestionStatus.STORING
+            )
+
+            storage_generator = await self.ingestion_service.store_embeddings(
+                embeddings
+            )
+            async for _ in storage_generator:
+                pass
+
+            return {
+                "status": "Successfully embedded and stored chunks",
+                "document_info": document_info.to_dict(),
+            }
+
+        @orchestration_provider.step(parents=["embed"], timeout="60m")
+        async def finalize(self, context: Context) -> dict:
+            document_info_dict = context.step_output("embed")["document_info"]
+            document_info = DocumentInfo(**document_info_dict)
+
+            await self.ingestion_service.finalize_ingestion(
+                document_info, is_update=False
+            )
+
+            await self.ingestion_service.update_document_status(
+                document_info, status=IngestionStatus.SUCCESS
+            )
+
+            try:
+                collection_id = await self.ingestion_service.providers.database.relational.assign_document_to_collection(
+                    document_id=document_info.id,
+                    collection_id=generate_default_user_collection_id(
+                        str(document_info.user_id)
+                    ),
+                )
+                self.ingestion_service.providers.database.vector.assign_document_to_collection(
+                    document_id=document_info.id, collection_id=collection_id
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error during assigning document to collection: {str(e)}"
+                )
+
+            return {
+                "status": "Successfully finalized ingestion",
+                "document_info": document_info.to_dict(),
+            }
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            request = context.workflow_input().get("request", {})
+            document_id = request.get("document_id")
+
+            if not document_id:
+                logger.error(
+                    "No document id was found in workflow input to mark a failure."
+                )
+                return
+
+            try:
+                documents_overview = (
+                    await self.ingestion_service.providers.database.relational.get_documents_overview(
+                        filter_document_ids=[document_id]
+                    )
+                )["results"]
+
+                if not documents_overview:
+                    logger.error(
+                        f"Document with id {document_id} not found in database to mark failure."
+                    )
+                    return
+
+                document_info = documents_overview[0]
+
+                if (
+                    not document_info.ingestion_status
+                    == IngestionStatus.SUCCESS
+                ):
+                    await self.ingestion_service.update_document_status(
+                        document_info, status=IngestionStatus.FAILED
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Failed to update document status for {document_id}: {e}"
+                )
+
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
+    ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     return {
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
+        "ingest_chunks": ingest_chunks_workflow,
     }

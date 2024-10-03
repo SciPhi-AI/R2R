@@ -149,7 +149,9 @@ class KGRouter(BaseRouter):
 
             if run_type is KGRunType.ESTIMATE:
 
-                return await self.service.get_enrichment_estimate(collection_id, server_kg_enrichment_settings)
+                return await self.service.get_enrichment_estimate(
+                    collection_id, server_kg_enrichment_settings
+                )
 
             if kg_enrichment_settings:
                 for key, value in kg_enrichment_settings.items():
