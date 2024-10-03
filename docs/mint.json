@@ -294,6 +294,7 @@
       "group": "Document Ingestion",
       "pages": [
         "api-reference/endpoint/ingest_files",
+        "api-reference/endpoint/ingest_chunks",
         "api-reference/endpoint/update_files"
       ]
     },
