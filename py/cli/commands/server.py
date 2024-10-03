@@ -224,6 +224,12 @@ def generate_report():
     default="prod",
     help="Which dev environment to pull the image from?",
 )
+@click.option(
+    "--exclude-postgres",
+    is_flag=True,
+    default=False,
+    help="Excludes creating a Postgres container in the Docker setup.",
+)
 async def serve(
     host,
     port,
@@ -235,6 +241,7 @@ async def serve(
     build,
     image,
     image_env,
+    exclude_postgres,
 ):
     """Start the R2R server."""
     load_dotenv()
@@ -334,6 +341,7 @@ async def serve(
             image,
             config_name,
             config_path,
+            exclude_postgres,
         )
         if (
             "pytest" in sys.modules
