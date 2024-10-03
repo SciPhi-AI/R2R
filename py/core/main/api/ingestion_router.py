@@ -6,10 +6,10 @@ from typing import Optional
 from uuid import UUID
 
 import yaml
-from fastapi import Depends, File, Form, UploadFile
+from fastapi import Body, Depends, File, Form, UploadFile
 from pydantic import Json
 
-from core.base import R2RException, generate_document_id
+from core.base import R2RException, RawChunk, generate_document_id
 from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
@@ -38,12 +38,17 @@ class IngestionRouter(BaseRouter):
             self.service,
             {
                 "ingest-files": (
-                    "Ingestion task queued successfully."
+                    "Ingest files task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Ingestion task completed successfully."
+                ),
+                "ingest-chunks": (
+                    "Ingest chunks task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Ingestion task completed successfully."
                 ),
                 "update-files": (
-                    "Update task queued successfully."
+                    "Update file task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Update task queued successfully."
                 ),
@@ -96,6 +101,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
+            self._validate_ingestion_config(ingestion_config)
 
             # Check if the user is a superuser
             if not auth_user.is_superuser:
@@ -251,6 +257,60 @@ class IngestionRouter(BaseRouter):
             )
             raw_message["message"] = "Update task queued successfully."
             raw_message["document_ids"] = workflow_input["document_ids"]
+            return raw_message
+
+        ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})
+        ingest_chunks_descriptions = ingest_chunks_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.post(
+            "/ingest_chunks",
+            openapi_extra=ingest_chunks_extras.get("openapi_extra"),
+        )
+        @self.base_endpoint
+        async def ingest_chunks_app(
+            chunks: Json[list[RawChunk]] = Body(
+                {}, description=ingest_chunks_descriptions.get("chunks")
+            ),
+            document_id: Optional[UUID] = Body(
+                None, description=ingest_chunks_descriptions.get("document_id")
+            ),
+            metadata: Optional[Json[dict]] = Body(
+                None, description=ingest_files_descriptions.get("metadata")
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+            response_model=WrappedIngestionResponse,
+        ):
+            """
+            Ingest text chunks into the system.
+
+            This endpoint supports multipart/form-data requests, enabling you to ingest pre-parsed text chunks into R2R.
+
+            A valid user authentication token is required to access this endpoint, as regular users can only ingest chunks for their own access. More expansive collection permissioning is under development.
+            """
+            if not document_id:
+                document_id = generate_document_id(
+                    chunks[0].text[:20], auth_user.id
+                )
+
+            workflow_input = {
+                "document_id": str(document_id),
+                "chunks": [chunk.model_dump() for chunk in chunks],
+                "metadata": metadata or {},
+                "user": auth_user.model_dump_json(),
+            }
+
+            raw_message = await self.orchestration_provider.run_workflow(
+                "ingest-chunks",
+                {"request": workflow_input},
+                options={
+                    "additional_metadata": {
+                        "document_id": str(document_id),
+                    }
+                },
+            )
+            raw_message["document_id"] = str(document_id)
             return raw_message
 
     @staticmethod

@@ -105,6 +105,7 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
         description="The estimated total time to run the graph enrichment process.",
     )
 
+
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 

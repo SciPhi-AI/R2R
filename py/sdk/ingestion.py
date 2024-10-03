@@ -128,3 +128,30 @@ class IngestionMethods:
             return await client._make_request(
                 "POST", "update_files", data=data, files=files
             )
+
+    @staticmethod
+    async def ingest_chunks(
+        client,
+        chunks: list[dict],
+        document_id: Optional[UUID] = None,
+        metadata: Optional[dict] = None,
+    ) -> dict:
+        """
+        Ingest files into your R2R deployment
+
+        Args:
+            file_paths (List[str]): List of file paths to ingest.
+            document_ids (Optional[List[str]]): List of document IDs.
+            metadatas (Optional[List[dict]]): List of metadata dictionaries for each file.
+            ingestion_config (Optional[Union[dict]]): Custom chunking configuration.
+
+        Returns:
+            dict: Ingestion results containing processed, failed, and skipped documents.
+        """
+
+        data = {
+            "chunks": chunks,
+            "document_id": document_id,
+            "metadata": metadata,
+        }
+        return await client._make_request("POST", "ingest_chunks", json=data)

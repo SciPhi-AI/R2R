@@ -3,11 +3,12 @@ import math
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-
 from core.base import KGExtractionStatus, RunLoggingSingleton, RunManager
-from core.base.abstractions import KGCreationSettings, KGEnrichmentSettings
-
-from core.base.abstractions import GenerationConfig
+from core.base.abstractions import (
+    GenerationConfig,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+)
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders

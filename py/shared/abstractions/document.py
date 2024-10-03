@@ -185,3 +185,7 @@ class DocumentExtraction(R2RSerializable):
     user_id: UUID
     data: DataType
     metadata: dict
+
+
+class RawChunk(R2RSerializable):
+    text: str
