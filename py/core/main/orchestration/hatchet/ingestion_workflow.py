@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from hatchet_sdk import Context
+from hatchet_sdk import Context, ConcurrencyLimitStrategy
 
 from core.base import IngestionStatus, OrchestrationProvider, increment_version
 from core.base.abstractions import DocumentInfo, R2RException
@@ -26,6 +26,10 @@ def hatchet_ingestion_factory(
     class HatchetIngestFilesWorkflow:
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
+            
+        @orchestration_provider.concurrency(max_runs=256, limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN)
+        def concurrency(self, context) -> str:
+            return str(context.workflow_input()["request"]["user"]["id"])
 
         @orchestration_provider.step(timeout="60m")
         async def parse(self, context: Context) -> dict:
