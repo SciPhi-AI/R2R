@@ -30,7 +30,7 @@ from cli.utils.timer import timer
     help="Force the graph creation process.",
 )
 @pass_context
-async def create_graph(
+def create_graph(
     ctx, collection_id, run, kg_creation_settings, force_kg_creation
 ):
     client = ctx.obj
