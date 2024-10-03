@@ -758,8 +758,8 @@ class PostgresKGProvider(KGProvider):
         )
 
         total_in_out_tokens = (
-            5000 * estimated_llm_calls[0] // 1000000,
-            5000 * estimated_llm_calls[1] // 1000000,
+            2000 * estimated_llm_calls[0] // 1000000,
+            2000 * estimated_llm_calls[1] // 1000000,
         )  # in millions
 
         estimated_cost = (
@@ -768,9 +768,9 @@ class PostgresKGProvider(KGProvider):
         )
 
         total_time_in_minutes = (
-            total_in_out_tokens[0] * 1 / 60,
-            total_in_out_tokens[1] * 1 / 60,
-        )  # 1 minute per million tokens
+            total_in_out_tokens[0] * 10 / 60,
+            total_in_out_tokens[1] * 10 / 60,
+        )  # 10 minutes per million tokens
 
 
         return KGCreationEstimationResponse(
@@ -791,9 +791,9 @@ class PostgresKGProvider(KGProvider):
         kg_enrichment_settings: KGEnrichmentSettings
     ) -> KGEnrichmentEstimationResponse:
 
-        document_ids = await self.db_provider.documents_in_collection(
+        document_ids = [doc.id for doc in (await self.db_provider.documents_in_collection(
             collection_id
-        )
+        ))["results"]]
 
         QUERY = f"""
             SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
@@ -812,20 +812,20 @@ class PostgresKGProvider(KGProvider):
             "count"
         ]
 
-        estimated_llm_calls = (entity_count / 10, entity_count / 5)
-        estimated_total_in_out_tokens = (
-            2000 * estimated_llm_calls[0] // 1000000,
-            2000 * estimated_llm_calls[1] // 1000000,
+        estimated_llm_calls = (entity_count // 10, entity_count // 5)
+        estimated_total_in_out_tokens_in_millions = (
+            2000 * estimated_llm_calls[0] / 1000000,
+            2000 * estimated_llm_calls[1] / 1000000,
         )
         cost_per_million_tokens = llm_cost_per_million_tokens(kg_enrichment_settings.generation_config.model)
         estimated_cost = (
-            estimated_total_in_out_tokens[0] * cost_per_million_tokens,
-            estimated_total_in_out_tokens[1] * cost_per_million_tokens,
+            estimated_total_in_out_tokens_in_millions[0] * cost_per_million_tokens,
+            estimated_total_in_out_tokens_in_millions[1] * cost_per_million_tokens,
         )
         
         estimated_total_time = (
-            estimated_total_in_out_tokens[0] * 1 / 60,
-            estimated_total_in_out_tokens[1] * 1 / 60,
+            estimated_total_in_out_tokens_in_millions[0] * 10 / 60,
+            estimated_total_in_out_tokens_in_millions[1] * 10 / 60,
         )
 
         return KGEnrichmentEstimationResponse(
@@ -833,7 +833,7 @@ class PostgresKGProvider(KGProvider):
             total_entities=entity_count,
             total_triples=triple_count,
             estimated_llm_calls=self._get_str_estimation_output(estimated_llm_calls),
-            estimated_total_in_out_tokens=self._get_str_estimation_output(estimated_total_in_out_tokens),
+            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(estimated_total_in_out_tokens_in_millions),
             estimated_cost_in_usd=self._get_str_estimation_output(estimated_cost),
             estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + self._get_str_estimation_output(estimated_total_time),
         )

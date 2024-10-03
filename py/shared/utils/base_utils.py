@@ -217,6 +217,8 @@ def llm_cost_per_million_tokens(model: str, input_output_ratio: float = 2) -> tu
     """
 
     # improving this to use provider in the future
+
+    model = model.split("/")[-1] # simplifying assumption
     cost_dict = {
         "gpt-4o-mini": (0.15, 0.6),
         "gpt-4o": (2.5, 10),

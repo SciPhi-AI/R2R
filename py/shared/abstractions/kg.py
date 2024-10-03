@@ -85,9 +85,9 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
         description="The estimated number of LLM calls.",
     )
 
-    estimated_total_in_out_tokens: str = Field(
+    estimated_total_in_out_tokens_in_millions: str = Field(
         default="NA",
-        description="The estimated total number of input and output tokens.",
+        description="The estimated total number of input and output tokens in millions.",
     )
 
     estimated_total_time_in_minutes: str = Field(
