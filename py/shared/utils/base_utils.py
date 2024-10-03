@@ -207,3 +207,26 @@ def format_entity_types(entity_types: list[EntityType]) -> str:
 def format_relations(predicates: list[RelationshipType]) -> str:
     lines = [predicate.name for predicate in predicates]
     return "\n".join(lines)
+
+def llm_cost_per_million_tokens(model: str, input_output_ratio: float = 2) -> float:
+    """
+    Returns the cost per million tokens for a given model and input/output ratio.
+    
+    Input/Output ratio is the ratio of input tokens to output tokens.
+
+    """
+
+    # improving this to use provider in the future
+
+    model = model.split("/")[-1] # simplifying assumption
+    cost_dict = {
+        "gpt-4o-mini": (0.15, 0.6),
+        "gpt-4o": (2.5, 10),
+    }
+
+    if model in cost_dict:
+        return (cost_dict[model][0] * input_output_ratio * cost_dict[model][1])/(1 + input_output_ratio)
+    else:
+        # use gpt-4o as default
+        logger.warning(f"Unknown model: {model}. Using gpt-4o as default.")
+        return (cost_dict["gpt-4o"][0] * input_output_ratio * cost_dict["gpt-4o"][1])/(1 + input_output_ratio)
