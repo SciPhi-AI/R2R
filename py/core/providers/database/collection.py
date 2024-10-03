@@ -4,13 +4,13 @@ from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from core.base import (
-    R2RException,
-    generate_default_user_collection_id,
-    generate_id_from_label,
-)
+from core.base import R2RException, generate_default_user_collection_id
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
+from core.utils import (
+    generate_collection_id_from_name,
+    generate_default_user_collection_id,
+)
 
 from .base import DatabaseMixin
 
@@ -24,6 +24,7 @@ class CollectionMixin(DatabaseMixin):
             collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
+            kg_enrichment_status TEXT DEFAULT 'PENDING',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -41,7 +42,7 @@ class CollectionMixin(DatabaseMixin):
                 user_id
             )
         else:
-            default_collection_uuid = generate_id_from_label(
+            default_collection_uuid = generate_collection_id_from_name(
                 config.default_collection_name
             )
 

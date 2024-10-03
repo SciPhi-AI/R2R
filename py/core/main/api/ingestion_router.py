@@ -9,7 +9,7 @@ import yaml
 from fastapi import Depends, File, Form, UploadFile
 from pydantic import Json
 
-from core.base import R2RException, generate_user_document_id
+from core.base import R2RException, generate_document_id
 from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedUpdateResponse,
@@ -37,7 +37,7 @@ class IngestionRouter(BaseRouter):
             Workflow.INGESTION,
             self.service,
             {
-                "ingest-file-changed": (
+                "ingest-files": (
                     "Ingestion task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Ingestion task completed successfully."
@@ -122,7 +122,7 @@ class IngestionRouter(BaseRouter):
                 document_id = (
                     document_ids[it]
                     if document_ids
-                    else generate_user_document_id(
+                    else generate_document_id(
                         file_data["filename"], auth_user.id
                     )
                 )
@@ -145,7 +145,7 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
                 raw_message = await self.orchestration_provider.run_workflow(
-                    "ingest-file-changed",
+                    "ingest-files",
                     {"request": workflow_input},
                     options={
                         "additional_metadata": {
@@ -212,7 +212,7 @@ class IngestionRouter(BaseRouter):
                 document_id = (
                     document_ids[it]
                     if document_ids
-                    else generate_user_document_id(
+                    else generate_document_id(
                         file_data["filename"], auth_user.id
                     )
                 )

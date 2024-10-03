@@ -3,7 +3,10 @@ import math
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
+
 from core.base import KGCreationStatus, RunLoggingSingleton, RunManager
+from core.base.abstractions import KGCreationSettings, KGEnrichmentSettings
+
 from core.base.abstractions import GenerationConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -62,7 +65,7 @@ class KgService(Service):
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
-                status=KGCreationStatus.PROCESSING,
+                status=KGExtractionStatus.PROCESSING,
             )
 
             triples = await self.pipes.kg_triples_extraction_pipe.run(
@@ -86,18 +89,12 @@ class KgService(Service):
                 run_manager=self.run_manager,
             )
 
-            await self.providers.database.relational.set_workflow_status(
-                id=document_id,
-                status_type="kg_extraction_status",
-                status=KGCreationStatus.SUCCESS,
-            )
-
         except Exception as e:
             logger.error(f"Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
-                status=KGCreationStatus.FAILED,
+                status=KGExtractionStatus.FAILED,
             )
 
         return await _collect_results(result_gen)
@@ -111,13 +108,13 @@ class KgService(Service):
     ):
 
         document_status_filter = [
-            KGCreationStatus.PENDING,
-            KGCreationStatus.FAILED,
+            KGExtractionStatus.PENDING,
+            KGExtractionStatus.FAILED,
         ]
         if force_kg_creation:
             document_status_filter += [
-                KGCreationStatus.SUCCESS,
-                KGCreationStatus.PROCESSING,
+                KGExtractionStatus.SUCCESS,
+                KGExtractionStatus.PROCESSING,
             ]
 
         document_ids = await self.providers.database.relational.get_document_ids_by_status(
@@ -136,7 +133,9 @@ class KgService(Service):
         **kwargs,
     ):
 
-        entity_count = await self.providers.kg.get_entity_count(document_id)
+        entity_count = await self.providers.kg.get_entity_count(
+            document_id=document_id
+        )
 
         # TODO - Do not hardcode the batch size,
         # make it a configurable parameter at runtime & server-side defaults
@@ -163,6 +162,12 @@ class KgService(Service):
             )
 
             all_results.append(await _collect_results(node_descriptions))
+
+        await self.providers.database.relational.set_workflow_status(
+            id=document_id,
+            status_type="kg_extraction_status",
+            status=KGExtractionStatus.SUCCESS,
+        )
 
         return all_results
 
@@ -211,3 +216,80 @@ class KgService(Service):
             run_manager=self.run_manager,
         )
         return await _collect_results(summary_results)
+
+    @telemetry_event("delete_graph_for_documents")
+    async def delete_graph_for_documents(
+        self,
+        document_ids: list[UUID],
+        **kwargs,
+    ):
+        # TODO: Implement this, as it needs some checks.
+        raise NotImplementedError
+
+    @telemetry_event("delete_graph_for_collection")
+    async def delete_graph_for_collection(
+        self,
+        collection_id: UUID,
+        cascade: bool,
+        **kwargs,
+    ):
+        return await self.providers.kg.delete_graph_for_collection(
+            collection_id, cascade
+        )
+
+    @telemetry_event("get_creation_estimate")
+    async def get_creation_estimate(
+        self,
+        collection_id: UUID,
+        kg_creation_settings: KGCreationSettings,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_creation_estimate(
+            collection_id, kg_creation_settings
+        )
+
+    @telemetry_event("get_enrichment_estimate")
+    async def get_enrichment_estimate(
+        self,
+        collection_id: UUID,
+        kg_enrichment_settings: KGEnrichmentSettings,
+        **kwargs,
+    ):
+
+        return await self.providers.kg.get_enrichment_estimate(
+            collection_id, kg_enrichment_settings
+        )
+
+    @telemetry_event("get_entities")
+    async def get_entities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        entity_ids: Optional[list[str]] = None,
+        with_description: bool = False,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_entities(
+            collection_id,
+            offset,
+            limit,
+            entity_ids,
+            with_description,
+        )
+
+    @telemetry_event("get_triples")
+    async def get_triples(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        triple_ids: Optional[list[str]] = None,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_triples(
+            collection_id,
+            offset,
+            limit,
+            triple_ids,
+        )

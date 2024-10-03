@@ -47,6 +47,17 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
+    command: >
+      bash -c "
+        if [ -z \"\$(ls -A /var/lib/postgresql/data)\" ]; then
+          echo \"Data directory is empty, initializing database...\"
+          echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf
+          docker-entrypoint.sh postgres
+        else
+          echo \"Data directory is not empty, skipping initialization...\"
+          docker-entrypoint.sh postgres
+        fi
+      "
 
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"
@@ -186,7 +197,7 @@ services:
         aliases:
           - host.docker.internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7077/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8733/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -333,7 +344,7 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
-      - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-r2r_default}
+      - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_API_BASE=${OPENAI_API_BASE:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

@@ -7,7 +7,7 @@ from .document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGCreationStatus,
+    KGExtractionStatus,
     KGEnrichmentStatus,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
@@ -21,7 +21,13 @@ from .graph import (
     RelationshipType,
     Triple,
 )
-from .kg import KGCreationSettings, KGEnrichmentSettings
+from .kg import (
+    KGCreationEstimationResponse,
+    KGCreationSettings,
+    KGEnrichmentEstimationResponse,
+    KGEnrichmentSettings,
+    KGRunType,
+)
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -61,7 +67,7 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "KGCreationStatus",
+    "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
@@ -99,9 +105,13 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     "HybridSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGEnrichmentEstimationResponse",
+    "KGExtraction",
+    "KGCreationEstimationResponse",
+    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",

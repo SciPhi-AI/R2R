@@ -21,7 +21,7 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGCreationStatus,
+    KGExtractionStatus,
     KGEnrichmentStatus,
     R2RException,
 )
@@ -294,7 +294,7 @@ class DocumentMixin(DatabaseMixin):
         if status_type == "ingestion":
             return IngestionStatus, "document_info"
         elif status_type == "kg_extraction_status":
-            return KGCreationStatus, "document_info"
+            return KGExtractionStatus, "document_info"
         elif status_type == "kg_enrichment_status":
             return KGEnrichmentStatus, "collection_info"
         else:
@@ -348,7 +348,7 @@ class DocumentMixin(DatabaseMixin):
         self,
         status_type: str,
         status: Union[str, list[str]],
-        collection_id: UUID = None,
+        collection_id: Optional[UUID] = None,
     ):
         """
         Get the IDs for a given status.
@@ -437,7 +437,7 @@ class DocumentMixin(DatabaseMixin):
                     ingestion_status=IngestionStatus(row["ingestion_status"]),
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
-                    kg_extraction_status=KGCreationStatus(
+                    kg_extraction_status=KGExtractionStatus(
                         row["kg_extraction_status"]
                     ),
                 )

@@ -123,10 +123,13 @@ def update_files(ctx, file_paths, document_ids, metadatas):
 
 
 @cli.command()
+@click.option("--v2", is_flag=True, help="use aristotle_v2.txt (a smaller file)")
 @pass_context
-def ingest_sample_file(ctx):
+def ingest_sample_file(ctx, v2=False):
     """Ingest the first sample file into R2R."""
-    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
+    sample_file_url = (
+        f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle{'_v2' if v2 else ''}.txt"
+    )
     client = ctx.obj
 
     with timer():

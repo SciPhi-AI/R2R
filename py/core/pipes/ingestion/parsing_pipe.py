@@ -10,11 +10,11 @@ from core.base import (
     IngestionConfig,
     PipeType,
     RunLoggingSingleton,
-    generate_id_from_label,
 )
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class ParsingPipe(AsyncPipe):
             async for extraction in self.ingestion_provider.parse(  # type: ignore
                 file_content, document, ingestion_config_override
             ):
-                id = generate_id_from_label(f"{extraction.id}-{version}")
+                id = generate_extraction_id(extraction.id, version=version)
                 extraction.id = id
                 extraction.metadata["version"] = version
                 yield extraction

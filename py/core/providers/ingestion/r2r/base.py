@@ -15,8 +15,9 @@ from core.base import (
     R2RDocumentProcessingError,
     RecursiveCharacterTextSplitter,
     TextSplitter,
-    generate_id_from_label,
 )
+from core.base.abstractions import DocumentExtraction
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +185,7 @@ class R2RIngestionProvider(IngestionProvider):
             chunks = self.chunk(contents, ingestion_config_override)
             for chunk in chunks:
                 extraction = DocumentExtraction(
-                    id=generate_id_from_label(f"{document.id}-{iteration}"),
+                    id=generate_extraction_id(document.id, iteration),
                     document_id=document.id,
                     user_id=document.user_id,
                     collection_ids=document.collection_ids,

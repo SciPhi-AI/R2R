@@ -7,7 +7,7 @@ from shared.abstractions.document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGCreationStatus,
+    KGExtractionStatus,
     KGEnrichmentStatus,
 )
 from shared.abstractions.embedding import (
@@ -27,7 +27,13 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
-from shared.abstractions.kg import KGCreationSettings, KGEnrichmentSettings
+from shared.abstractions.kg import (
+    KGCreationEstimationResponse,
+    KGCreationSettings,
+    KGEnrichmentEstimationResponse,
+    KGEnrichmentSettings,
+    KGRunType,
+)
 from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -72,7 +78,7 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "KGCreationStatus",
+    "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
@@ -113,6 +119,9 @@ __all__ = [
     # Restructure abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGRunType",
+    "KGCreationEstimationResponse",
+    "KGEnrichmentEstimationResponse",
     # User abstractions
     "Token",
     "TokenData",

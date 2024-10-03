@@ -34,6 +34,17 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
+    command: >
+      bash -c "
+        if [ -z \"\$(ls -A /var/lib/postgresql/data)\" ]; then
+          echo \"Data directory is empty, initializing database...\"
+          echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf
+          docker-entrypoint.sh postgres
+        else
+          echo \"Data directory is not empty, skipping initialization...\"
+          docker-entrypoint.sh postgres
+        fi
+      "
 
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
@@ -58,8 +69,9 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
-      - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-${CONFIG_NAME:-vecs}}
       - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-}
+      - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-r2r_default}
+      - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
 
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}

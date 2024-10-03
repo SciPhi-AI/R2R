@@ -16,7 +16,6 @@ from core import (
     LoggingConfig,
     Vector,
     VectorEntry,
-    generate_id_from_label,
 )
 from core.providers import (
     BCryptProvider,

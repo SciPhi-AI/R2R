@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ...utils import generate_id_from_label
+from ...utils import generate_user_id
 from ..abstractions import R2RException, Token, TokenData
 from ..api.models import UserResponse
 from .base import Provider, ProviderConfig
@@ -48,7 +48,7 @@ class AuthProvider(Provider, ABC):
 
     def _get_default_admin_user(self) -> UserResponse:
         return UserResponse(
-            id=generate_id_from_label(self.admin_email),
+            id=generate_user_id(self.admin_email),
             email=self.admin_email,
             hashed_password=self.crypto_provider.get_password_hash(
                 self.admin_password

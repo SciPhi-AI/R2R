@@ -8,7 +8,7 @@ import asyncpg
 import yaml
 
 from core.base import DatabaseProvider, Prompt, PromptConfig, PromptProvider
-from core.base.utils import generate_id_from_label
+from core.base.utils import generate_default_prompt_id
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +203,7 @@ class R2RPromptProvider(PromptProvider):
         modify_created_at: bool = False,
     ) -> None:
         prompt = Prompt(
-            prompt_id=generate_id_from_label(name),
+            prompt_id=generate_default_prompt_id(name),
             name=name,
             template=template,
             input_types=input_types,
@@ -299,7 +299,7 @@ class R2RPromptProvider(PromptProvider):
             await self.execute_query(
                 query,
                 [
-                    generate_id_from_label(prompt.name),
+                    generate_default_prompt_id(prompt.name),
                     prompt.name,
                     prompt.template,
                     json.dumps(prompt.input_types),

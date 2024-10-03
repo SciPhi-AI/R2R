@@ -3,6 +3,7 @@ import logging
 import uuid
 from dataclasses import dataclass
 from typing import Any, Optional, Union
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -45,17 +46,19 @@ class RelationshipType(R2RSerializable):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    id: Optional[int] = None
-    category: str
     name: str
+    id: Optional[int] = None
+    category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float]] = None
-    name_embedding: Optional[list[float]] = None
-    graph_embedding: Optional[list[float]] = None
     community_numbers: Optional[list[str]] = None
-    extraction_ids: Optional[list[str]] = None
-    document_id: Optional[str] = None
-    rank: Optional[int] = None
+    extraction_ids: Optional[list[UUID]] = None
+    collection_id: Optional[UUID] = None
+    document_id: Optional[UUID] = None
+    # we don't use these yet
+    # name_embedding: Optional[list[float]] = None
+    # graph_embedding: Optional[list[float]] = None
+    # rank: Optional[int] = None
     attributes: Optional[Union[dict[str, Any], str]] = None
 
     def __str__(self):
@@ -98,10 +101,10 @@ class Triple(BaseModel):
     predicate_embedding: list[float] | None = None
     """The semantic embedding for the relationship description (optional)."""
 
-    extraction_ids: list[str] = []
+    extraction_ids: list[UUID] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
-    document_id: str | None = None
+    document_id: UUID | None = None
     """Document ID in which the relationship appears (optional)."""
 
     attributes: dict[str, Any] | str = {}
@@ -177,7 +180,7 @@ class Community(BaseModel):
     rank: float | None = 1.0
     """Rank of the report, used for sorting (optional). Higher means more important"""
 
-    summary_embedding: list[float] | None = None
+    embedding: list[float] | None = None
     """The semantic (i.e. text) embedding of the report summary (optional)."""
 
     full_content_embedding: list[float] | None = None

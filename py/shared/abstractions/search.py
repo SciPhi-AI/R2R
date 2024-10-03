@@ -128,8 +128,7 @@ class KGSearchResult(R2RSerializable):
         KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
     ]
     result_type: Optional[KGSearchResultType] = None
-    ids: Optional[list[UUID]] = None
-    document_ids: Optional[list[UUID]] = None
+    extraction_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
 
     class Config:
@@ -137,8 +136,7 @@ class KGSearchResult(R2RSerializable):
             "method": "local",
             "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
-            "ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-            "document_ids": ["3e157b3a-8469-51db-90d9-52e7d896b49b"],
+            "extraction_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "metadata": {"associated_query": "What is the capital of France?"},
         }
 
@@ -287,6 +285,17 @@ class VectorSearchSettings(R2RSerializable):
 
 
 class KGSearchSettings(R2RSerializable):
+
+    filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the KG search",
+    )
+
+    selected_collection_ids: list[UUID] = Field(
+        default_factory=list,
+        description="Collection IDs to search for",
+    )
+
     graphrag_map_system_prompt: str = Field(
         default="graphrag_map_system_prompt",
         description="The system prompt for the graphrag map prompt.",
@@ -310,6 +319,8 @@ class KGSearchSettings(R2RSerializable):
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph search.",
     )
+
+
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []

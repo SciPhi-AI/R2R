@@ -120,7 +120,7 @@ class IngestionStatus(str, Enum):
     SUCCESS = "success"
 
 
-class KGCreationStatus(str, Enum):
+class KGExtractionStatus(str, Enum):
     """Status of KG Creation per document."""
 
     PENDING = "pending"
@@ -150,7 +150,7 @@ class DocumentInfo(R2RSerializable):
     version: str
     size_in_bytes: int
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    kg_extraction_status: KGCreationStatus = KGCreationStatus.PENDING
+    kg_extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None

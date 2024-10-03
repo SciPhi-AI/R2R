@@ -126,6 +126,10 @@ class RetrievalRouter(BaseRouter):
                 auth_user, vector_search_settings
             )
 
+            kg_search_settings.filters = self._select_filters(
+                auth_user, kg_search_settings
+            )
+
             results = await self.service.search(
                 query=query,
                 vector_search_settings=vector_search_settings,
@@ -252,6 +256,8 @@ class RetrievalRouter(BaseRouter):
             vector_search_settings.filters = self._select_filters(
                 auth_user, vector_search_settings
             )
+
+            kg_search_settings.filters = vector_search_settings.filters
 
             try:
                 response = await self.service.agent(

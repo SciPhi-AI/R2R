@@ -92,7 +92,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        community_number: str,
+        community_number: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
@@ -135,17 +135,21 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
             try:
-                if description.startswith("```json"):
+                if description and description.startswith("```json"):
                     description = (
                         description.strip("```json").strip("```").strip()
                     )
+                else:
+                    raise ValueError(
+                        f"Failed to generate a summary for community {community_number} at level {community_level}."
+                    )
 
-                description = json.loads(description)
-                name = description["name"]
-                summary = description["summary"]
-                findings = description["findings"]
-                rating = description["rating"]
-                rating_explanation = description["rating_explanation"]
+                description_dict = json.loads(description)
+                name = description_dict["name"]
+                summary = description_dict["summary"]
+                findings = description_dict["findings"]
+                rating = description_dict["rating"]
+                rating_explanation = description_dict["rating_explanation"]
                 break
             except Exception as e:
                 if attempt == 2:
@@ -153,7 +157,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         f"Failed to generate a summary for community {community_number} at level {community_level}."
                     ) from e
 
-        community = CommunityReport(
+        community_report = CommunityReport(
             community_number=community_number,
             collection_id=collection_id,
             level=community_level,
@@ -170,11 +174,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.kg_provider.add_community_report(community)
+        await self.kg_provider.add_community_report(community_report)
 
         return {
-            "community_number": community.community_number,
-            "name": community.name,
+            "community_number": community_report.community_number,
+            "name": community_report.name,
         }
 
     async def _run_logic(  # type: ignore
@@ -195,15 +199,24 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
-        for community_number in range(offset, offset + limit):
-            community_summary_jobs.append(
-                self.process_community(
-                    community_number=community_number,
-                    max_summary_input_length=max_summary_input_length,
-                    generation_config=generation_config,
-                    collection_id=collection_id,
-                )
+
+        # check which community summaries exist and don't run them again
+        community_numbers_exist = (
+            await self.kg_provider.check_community_reports_exist(
+                collection_id=collection_id, offset=offset, limit=limit
             )
+        )
+
+        for community_number in range(offset, offset + limit):
+            if community_number not in community_numbers_exist:
+                community_summary_jobs.append(
+                    self.process_community(
+                        community_number=community_number,
+                        max_summary_input_length=max_summary_input_length,
+                        generation_config=generation_config,
+                        collection_id=collection_id,
+                    )
+                )
 
         for community_summary in asyncio.as_completed(community_summary_jobs):
             yield await community_summary

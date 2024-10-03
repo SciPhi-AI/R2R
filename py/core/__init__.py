@@ -54,7 +54,7 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "KGCreationStatus",
+    "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions
@@ -161,7 +161,6 @@ __all__ = [
     "run_pipeline",
     "to_async_generator",
     "generate_run_id",
-    "generate_id_from_label",
     "increment_version",
     "EntityType",
     "RelationshipType",
