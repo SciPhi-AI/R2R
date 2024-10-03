@@ -118,6 +118,21 @@ class RetrievalService(Service):
             )
 
             return results.as_dict()
+        
+    @telemetry_event("Completion")
+    async def completion(
+        self,
+        messages: list[dict],
+        rag_generation_config: GenerationConfig,
+        *args,
+        **kwargs,
+    ):
+        return await self.providers.completions.aget_completion(
+            messages,
+            rag_generation_config,
+            *args,
+            **kwargs,
+        )
 
     @telemetry_event("RAG")
     async def rag(

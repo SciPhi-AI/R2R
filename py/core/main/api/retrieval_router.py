@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
+    WrappedCompletionResponse,
 )
 from core.base.providers import OrchestrationProvider
 
@@ -283,3 +284,23 @@ class RetrievalRouter(BaseRouter):
                     return {"messages": response}
             except Exception as e:
                 raise R2RException(str(e), 500)
+
+
+        @self.router.post("/completion")
+        @self.base_endpoint
+        async def completion(
+            messages: list[Message] = Body(..., description="The messages to complete"),
+            generation_config: GenerationConfig = Body(default_factory=GenerationConfig, description="The generation config"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+            response_model=WrappedCompletionResponse,
+        ):
+            """
+            Generate completions for a list of messages.
+
+            This endpoint uses the language model to generate completions for the provided messages.
+            The generation process can be customized using the generation_config parameter.
+            """
+            return await self.service.completion(
+                messages=messages,
+                generation_config=generation_config,
+            )

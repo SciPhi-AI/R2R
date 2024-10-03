@@ -55,6 +55,7 @@ from shared.api.models.retrieval.responses import (
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
+    WrappedCompletionResponse,
 )
 
 __all__ = [
@@ -112,6 +113,7 @@ __all__ = [
     "RAGResponse",
     "RAGAgentResponse",
     "WrappedSearchResponse",
+    "WrappedCompletionResponse",
     "WrappedRAGResponse",
     "WrappedRAGAgentResponse",
 ]
