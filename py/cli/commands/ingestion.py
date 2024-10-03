@@ -138,6 +138,25 @@ def ingest_sample_file(ctx, v2=False):
         f"Sample file ingestion completed. Ingest files response:\n\n{response}"
     )
 
+@cli.command()
+@pass_context
+def evaluate_on_sample_files(ctx):
+    """Evaluate RAG performance on sample files."""
+    client = ctx.obj
+
+    dataset = [{
+        "query": "Who is Aristotle?",
+        "answers": ["Aristotle was a Greek philosopher who lived in the 4th century BC. He was a student of Plato and taught many students, including Alexander the Great."]
+    },
+    {
+        "query": "Who did Aristotle teach?",
+        "answers": ["Aristotle taught many students, including Alexander the Great."]
+    }]
+
+    with timer():
+        response = client.evaluate_rag("default", dataset)
+
+    click.echo(f"Evaluation completed. Evaluation result:\n\n{response}")
 
 @cli.command()
 @pass_context

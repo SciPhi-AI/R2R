@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .base import R2RSerializable
 
 
@@ -27,3 +29,12 @@ class RagEvalResult(R2RSerializable):
 
     metrics: RagEvalResultMetrics
     llm_responses: list[RagEvalLLMResponse]
+
+
+class RagEvalQuestion(R2RSerializable):
+    """A question in RAG evaluation."""
+
+    question: str
+    reference_answer: str
+    context: Optional[str] = None # not used now
+    
