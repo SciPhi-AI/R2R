@@ -29,9 +29,7 @@ from shared.abstractions.graph import (
     Triple,
 )
 from shared.abstractions.kg import (
-    KGCreationEstimationResponse,
     KGCreationSettings,
-    KGEnrichmentEstimationResponse,
     KGEnrichmentSettings,
     KGRunType,
 )
@@ -122,8 +120,6 @@ __all__ = [
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGRunType",
-    "KGCreationEstimationResponse",
-    "KGEnrichmentEstimationResponse",
     # User abstractions
     "Token",
     "TokenData",

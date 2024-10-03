@@ -288,7 +288,7 @@ class IngestionService(Service):
         self,
         document_id: UUID,
         metadata: Optional[dict],
-        chunks: list[dict],
+        chunks: list[RawChunk],
         user: UserResponse,
         *args: Any,
         **kwargs: Any,
@@ -365,4 +365,15 @@ class IngestionServiceAdapter:
             "metadata": data["metadata"],
             "document_id": data["document_id"],
             "chunks": [RawChunk.from_dict(chunk) for chunk in data["chunks"]],
+        }
+
+    @staticmethod
+    def parse_update_files_input(data: dict) -> dict:
+        return {
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+            "document_ids": [UUID(doc_id) for doc_id in data["document_ids"]],
+            "metadatas": data["metadatas"],
+            "ingestion_config": data["ingestion_config"],
+            "file_sizes_in_bytes": data["file_sizes_in_bytes"],
+            "file_datas": data["file_datas"],
         }

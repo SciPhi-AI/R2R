@@ -319,9 +319,15 @@ class DocumentMixin(DatabaseMixin):
         out_model, table_name = self._get_status_model_and_table_name(
             status_type
         )
-        result = map(
-            (await self._get_status_from_table(ids, table_name, status_type)),
-            out_model,
+        result = list(
+            map(
+                (
+                    await self._get_status_from_table(
+                        ids, table_name, status_type
+                    )
+                ),
+                out_model,
+            )
         )
         return result[0] if isinstance(id, UUID) else result
 

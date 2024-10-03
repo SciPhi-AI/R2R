@@ -43,13 +43,15 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
             self.kg_workflows = simple_kg_factory(service)
 
     async def run_workflow(
-        self, workflow_name: str, input: dict, options: dict
+        self, workflow_name: str, parameters: dict, options: dict
     ) -> dict[str, str]:
         if workflow_name in self.ingestion_workflows:
-            await self.ingestion_workflows[workflow_name](input.get("request"))
+            await self.ingestion_workflows[workflow_name](
+                parameters.get("request")
+            )
             return {"message": self.messages[workflow_name]}
         elif workflow_name in self.kg_workflows:
-            await self.kg_workflows[workflow_name](input.get("request"))
+            await self.kg_workflows[workflow_name](parameters.get("request"))
             return {"message": self.messages[workflow_name]}
         else:
             raise ValueError(f"Workflow '{workflow_name}' not found.")

@@ -60,7 +60,7 @@ class TestRetrieval(BaseTest):
 
     def hybrid_rag_test(self, client):
         try:
-            return client.rag("Who is John Snow?", {"use_hybrid_search": True})
+            return client.rag("Who is Jon Snow?", {"use_hybrid_search": True})
         except Exception as e:
             return {"results": str(e)}
 

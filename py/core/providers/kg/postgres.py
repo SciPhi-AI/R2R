@@ -18,10 +18,13 @@ from core.base import (
     Triple,
 )
 from shared.abstractions import (
-    KGCreationEstimationResponse,
     KGCreationSettings,
-    KGEnrichmentEstimationResponse,
     KGEnrichmentSettings,
+    KGRunType,
+)
+from shared.api.models.kg.responses import (
+    KGCreationEstimationResponse,
+    KGEnrichmentEstimationResponse,
 )
 from shared.utils import llm_cost_per_million_tokens
 
@@ -508,7 +511,7 @@ class PostgresKGProvider(KGProvider):
             SELECT id, subject, predicate, weight, object FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1)
         """
         triples = await self.fetch_query(QUERY, [document_ids])
-        return triples
+        return [Triple(**triple) for triple in triples]
 
     async def add_communities(self, communities: List[Any]) -> None:
         QUERY = f"""
@@ -548,7 +551,7 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: UUID,
         leiden_params: Dict[str, Any],
-    ) -> Tuple[int, int, set[Tuple[int, Any]]]:
+    ) -> int:
         """
         Leiden clustering algorithm to cluster the knowledge graph triples into communities.
 
@@ -573,10 +576,10 @@ class PostgresKGProvider(KGProvider):
         G = self.nx.Graph()
         for triple in triples:
             G.add_edge(
-                triple["subject"],
-                triple["object"],
-                weight=triple["weight"],
-                id=triple["id"],
+                triple.subject,
+                triple.object,
+                weight=triple.weight,
+                id=triple.id,
             )
 
         hierarchical_communities = await self._compute_leiden_communities(
@@ -586,9 +589,9 @@ class PostgresKGProvider(KGProvider):
         def triple_ids(node: int) -> list[int]:
             # TODO: convert this to objects
             return [
-                triple["id"]
-                for triple in triples
-                if triple["subject"] == node or triple["object"] == node
+                triple.id or i
+                for i, triple in enumerate(triples)
+                if triple.subject == node or triple.object == node
             ]
 
         # upsert the communities into the database.
@@ -959,7 +962,7 @@ class PostgresKGProvider(KGProvider):
 
         if triple_ids:
             conditions.append(f"id = ANY(${len(params) + 1})")
-            params.append([str(ele) for ele in triple_ids])
+            params.append([str(ele) for ele in triple_ids])  # type: ignore
 
         query = f"""
             SELECT id, subject, predicate, object
@@ -972,7 +975,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY id
             OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}
         """
-        params.extend([offset, limit])
+        params.extend([str(offset), str(limit)])
 
         results = await self.fetch_query(query, params)
         total_entries = await self.get_triple_count(

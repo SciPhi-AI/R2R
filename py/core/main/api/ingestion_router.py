@@ -320,7 +320,9 @@ class IngestionRouter(BaseRouter):
         if ingestion_config:
             R2RProviderFactory.create_ingestion_provider(ingestion_config)
         else:
-            logger.info("No chunking config override provided. Using default.")
+            logger.info(
+                "No ingestion config override provided. Using default."
+            )
 
     @staticmethod
     async def _process_files(files):

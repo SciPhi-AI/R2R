@@ -18,7 +18,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             )
         self.orchestrator = Hatchet()
         self.config: OrchestrationConfig = config  # for type hinting
-        self.messages = {}
+        self.messages: dict[str, str] = {}
 
     def workflow(self, *args, **kwargs) -> Callable:
         return self.orchestrator.workflow(*args, **kwargs)
