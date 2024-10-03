@@ -93,7 +93,7 @@ services:
       - r2r-network
 
   hatchet-migration:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.49.0-alpha.4
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-postgres}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
@@ -115,7 +115,7 @@ services:
       - r2r-network
 
   hatchet-setup-config:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.49.0-alpha.4
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-postgres}"
@@ -153,7 +153,7 @@ services:
       - r2r-network
 
   hatchet-engine:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.49.0-alpha.4
     command: /hatchet/hatchet-engine --config /hatchet/config
     restart: on-failure
     depends_on:
@@ -186,9 +186,9 @@ services:
       timeout: 5s
       retries: 5
 
-  hatchet-api:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-api:latest
-    command: /hatchet/hatchet-api --config /hatchet/config
+  hatchet-dashboard:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:v0.49.0-alpha.4
+    command: sh ./entrypoint.sh --config /hatchet/config
     restart: on-failure
     depends_on:
       hatchet-setup-config:
@@ -196,23 +196,13 @@ services:
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-postgres}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
-      POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
+      POSTGRES_HOST: host.docker.internal
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
-      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-host.docker.internal}:${POSTGRES_PORT:-5432}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
-    networks:
-      - r2r-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hatchet-api.rule=PathPrefix(`/api`)"
-      - "traefik.http.services.hatchet-api.loadbalancer.server.port=8080"
-      - "traefik.http.routers.hatchet-api.entrypoints=hatchet"
-
-  hatchet-dashboard:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-frontend:latest
     networks:
       - r2r-network
     labels:
@@ -222,7 +212,7 @@ services:
       - "traefik.http.routers.hatchet-dashboard.entrypoints=hatchet"
 
   setup-token:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.49.0-alpha.4
     command: >
       sh -c "
         set -e
@@ -424,4 +414,3 @@ services:
       - r2r-network
     labels:
       - "traefik.http.middlewares.no-cache-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store, must-revalidate"
-      - "traefik.http.routers.hatchet-api.middlewares=no-cache-headers"
