@@ -4,7 +4,7 @@ import logging
 import math
 import uuid
 
-from hatchet_sdk import Context
+from hatchet_sdk import Context, ConcurrencyLimitStrategy
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
@@ -40,6 +40,10 @@ def hatchet_kg_factory(
     class KGExtractDescribeEmbedWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
+            
+        @orchestration_provider.concurrency(max_runs=10, limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN)
+        def concurrency(self, context) -> str:
+            return str(context.workflow_input()["request"]["collection_id"])
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
@@ -144,6 +148,9 @@ def hatchet_kg_factory(
                                     ][
                                         "kg_creation_settings"
                                     ],
+                                    "collection_id": context.workflow_input()[
+                                        "request"
+                                    ]["collection_id"],
                                 }
                             },
                             key=f"kg-extract-{cnt}/{len(document_ids)}",
