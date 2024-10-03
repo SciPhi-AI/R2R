@@ -52,11 +52,6 @@ class R2RSerializable(BaseModel):
         json_encoders = {
             bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
-        
-
-class UUID(R2RSerializable, UUID):
-    pass
-
 
 class AsyncSyncMeta(type):
     _event_loop = None  # Class-level shared event loop
