@@ -143,9 +143,8 @@ class PostgresKGProvider(KGProvider):
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
-            collection_id UUID NOT NULL,
             attributes JSONB NOT NULL,
-            UNIQUE (document_ids, subject, predicate, object, collection_id)
+            UNIQUE (document_ids, subject, predicate, object)
         );"""
 
         await self.execute_query(query)
@@ -155,7 +154,6 @@ class PostgresKGProvider(KGProvider):
             CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
-            collection_id UUID NOT NULL,
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
             description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,

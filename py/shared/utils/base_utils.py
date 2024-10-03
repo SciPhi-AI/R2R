@@ -208,7 +208,7 @@ def format_relations(predicates: list[RelationshipType]) -> str:
     lines = [predicate.name for predicate in predicates]
     return "\n".join(lines)
 
-def llm_cost_per_million_tokens(model: str, input_output_ratio: float = 2) -> tuple[float, float]:
+def llm_cost_per_million_tokens(model: str, input_output_ratio: float = 2) -> float:
     """
     Returns the cost per million tokens for a given model and input/output ratio.
     
