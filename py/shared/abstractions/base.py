@@ -53,6 +53,7 @@ class R2RSerializable(BaseModel):
             bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
 
+
 class AsyncSyncMeta(type):
     _event_loop = None  # Class-level shared event loop
 
