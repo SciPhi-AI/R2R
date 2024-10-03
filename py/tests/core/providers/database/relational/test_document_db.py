@@ -7,7 +7,7 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGCreationStatus,
+    KGExtractionStatus,
     KGEnrichmentStatus,
 )
 
@@ -31,7 +31,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_extraction_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGExtractionStatus.PENDING,
     )
     await temporary_postgres_db_provider.relational.upsert_documents_overview(
         document_info
@@ -89,7 +89,7 @@ async def test_delete_from_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_extraction_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGExtractionStatus.PENDING,
     )
     await temporary_postgres_db_provider.relational.upsert_documents_overview(
         document_info
@@ -120,7 +120,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_extraction_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGExtractionStatus.PENDING,
     )
     document_info2 = DocumentInfo(
         id=UUID("00000000-0000-0000-0000-000000000004"),
@@ -132,7 +132,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         version="1.0",
         size_in_bytes=2048,
         ingestion_status=IngestionStatus.SUCCESS,
-        kg_extraction_status=KGCreationStatus.PENDING,
+        kg_extraction_status=KGExtractionStatus.PENDING,
     )
     await temporary_postgres_db_provider.relational.upsert_documents_overview(
         [document_info1, document_info2]

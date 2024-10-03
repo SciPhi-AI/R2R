@@ -3,6 +3,7 @@ import logging
 
 from core.base import R2RException, increment_version
 from core.utils import generate_default_user_collection_id
+
 from ...services import IngestionService
 
 logger = logging.getLogger(__name__)
@@ -167,4 +168,4 @@ def simple_ingestion_factory(service: IngestionService):
 
         await asyncio.gather(*results)
 
-    return {"ingest-file-changed": ingest_files, "update-files": update_files}
+    return {"ingest-files": ingest_files, "update-files": update_files}

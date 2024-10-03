@@ -37,7 +37,7 @@ class IngestionRouter(BaseRouter):
             Workflow.INGESTION,
             self.service,
             {
-                "ingest-file-changed": (
+                "ingest-files": (
                     "Ingestion task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Ingestion task completed successfully."
@@ -145,7 +145,7 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
                 raw_message = await self.orchestration_provider.run_workflow(
-                    "ingest-file-changed",
+                    "ingest-files",
                     {"request": workflow_input},
                     options={
                         "additional_metadata": {

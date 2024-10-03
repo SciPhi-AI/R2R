@@ -7,7 +7,7 @@ from shared.abstractions.document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGCreationStatus,
+    KGExtractionStatus,
     KGEnrichmentStatus,
 )
 from shared.abstractions.embedding import (
@@ -78,7 +78,7 @@ __all__ = [
     "DocumentExtraction",
     "DocumentInfo",
     "IngestionStatus",
-    "KGCreationStatus",
+    "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     # Embedding abstractions

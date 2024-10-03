@@ -1,6 +1,7 @@
 import json
 from typing import Optional, Union
 from uuid import UUID
+
 from .models import (
     KGCreationResponse,
     KGCreationSettings,
@@ -69,3 +70,66 @@ class KGMethods:
             data["collection_id"] = collection_id
 
         return await client._make_request("POST", "enrich_graph", json=data)
+
+    @staticmethod
+    async def get_entities(
+        client,
+        collection_id: str,
+        offset: int = 0,
+        limit: int = 100,
+        entity_ids: Optional[list[str]] = None,
+        with_description: bool = False,
+    ) -> dict:
+        """
+        Retrieve entities from the knowledge graph.
+
+        Args:
+            collection_id (str): The ID of the collection to retrieve entities from.
+            offset (int): The offset for pagination.
+            limit (int): The limit for pagination.
+            entity_ids (Optional[List[str]]): Optional list of entity IDs to filter by.
+            with_description (bool): Whether to include entity descriptions in the response.
+
+        Returns:
+            dict: A dictionary containing the retrieved entities and total count.
+        """
+        params = {
+            "collection_id": collection_id,
+            "offset": offset,
+            "limit": limit,
+            "with_description": with_description,
+        }
+        if entity_ids:
+            params["entity_ids"] = ",".join(entity_ids)
+
+        return await client._make_request("GET", "entities", params=params)
+
+    @staticmethod
+    async def get_triples(
+        client,
+        collection_id: str,
+        offset: int = 0,
+        limit: int = 100,
+        triple_ids: Optional[list[str]] = None,
+    ) -> dict:
+        """
+        Retrieve triples from the knowledge graph.
+
+        Args:
+            collection_id (str): The ID of the collection to retrieve triples from.
+            offset (int): The offset for pagination.
+            limit (int): The limit for pagination.
+            triple_ids (Optional[List[str]]): Optional list of triple IDs to filter by.
+
+        Returns:
+            dict: A dictionary containing the retrieved triples and total count.
+        """
+        params = {
+            "collection_id": collection_id,
+            "offset": offset,
+            "limit": limit,
+        }
+        if triple_ids:
+            params["triple_ids"] = ",".join(triple_ids)
+
+        return await client._make_request("GET", "triples", params=params)
