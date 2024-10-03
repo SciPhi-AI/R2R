@@ -1,11 +1,3 @@
-version: '3.8'
-
-x-depends-on:
-  postgres: &postgres-dependency
-    condition: service_healthy
-  hatchet-engine: &hatchet-dependency
-    condition: service_healthy
-
 networks:
   r2r-network:
     name: r2r-network
@@ -27,10 +19,10 @@ volumes:
   hatchet_rabbitmq.conf:
 
 services:
-
   postgres:
     image: pgvector/pgvector:pg16
     environment:
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DBNAME:-postgres}
@@ -48,16 +40,8 @@ services:
       retries: 5
     restart: on-failure
     command: >
-      bash -c "
-        if [ -z \"\$(ls -A /var/lib/postgresql/data)\" ]; then
-          echo \"Data directory is empty, initializing database...\"
-          echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf
-          docker-entrypoint.sh postgres
-        else
-          echo \"Data directory is not empty, skipping initialization...\"
-          docker-entrypoint.sh postgres
-        fi
-      "
+      postgres
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS:-1024}
 
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"
@@ -85,13 +69,13 @@ services:
       sh -c "
         set -e
         echo 'Waiting for PostgreSQL to be ready...'
-        while ! pg_isready -h postgres -p 5432 -U postgres; do
+        while ! pg_isready -h ${POSTGRES_HOST:-postgres} -p 5432 -U ${POSTGRES_USER:-postgres}; do
           sleep 1
         done
         echo 'PostgreSQL is ready, checking if database exists...'
-        if ! PGPASSWORD=${POSTGRES_PASSWORD:-postgres} psql -h postgres -p 5432 -U ${POSTGRES_USER:-postgres} -lqt | grep -qw ${HATCHET_POSTGRES_DBNAME:-hatchet}; then
+        if ! PGPASSWORD=${POSTGRES_PASSWORD:-postgres} psql -h ${POSTGRES_HOST:-postgres} -p 5432 -U ${POSTGRES_USER:-postgres} -lqt | grep -qw ${HATCHET_POSTGRES_DBNAME:-hatchet}; then
           echo 'Database does not exist, creating it...'
-          PGPASSWORD=${POSTGRES_PASSWORD:-postgres} createdb -h postgres -p 5432 -U ${POSTGRES_USER:-postgres} -w ${HATCHET_POSTGRES_DBNAME:-hatchet}
+          PGPASSWORD=${POSTGRES_PASSWORD:-postgres} createdb -h ${POSTGRES_HOST:-postgres} -p 5432 -U ${POSTGRES_USER:-postgres} -w ${HATCHET_POSTGRES_DBNAME:-hatchet}
         else
           echo 'Database already exists, skipping creation.'
         fi
@@ -197,7 +181,7 @@ services:
         aliases:
           - host.docker.internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8733/live"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8733/live"]
       interval: 10s
       timeout: 5s
       retries: 5
