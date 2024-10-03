@@ -366,7 +366,7 @@ def hatchet_ingestion_factory(
                 collection_id = await self.ingestion_service.providers.database.relational.assign_document_to_collection(
                     document_id=document_info.id,
                     collection_id=generate_default_user_collection_id(
-                        str(document_info.user_id)
+                        document_info.user_id
                     ),
                 )
                 self.ingestion_service.providers.database.vector.assign_document_to_collection(

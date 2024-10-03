@@ -82,9 +82,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
         DocumentType.MP3: [parsers.AudioParser],
-        DocumentType.JSON: [parsers.JSONParser],
-        DocumentType.HTML: [parsers.HTMLParser],
-        DocumentType.XLSX: [parsers.XLSXParser],
+        DocumentType.JSON: [parsers.JSONParser],  # type: ignore
+        DocumentType.HTML: [parsers.HTMLParser],  # type: ignore
+        DocumentType.XLSX: [parsers.XLSXParser],  # type: ignore
     }
 
     IMAGE_TYPES = {

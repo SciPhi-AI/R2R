@@ -50,7 +50,9 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def register_workflows(self, workflow: Workflow, service: Any) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
         pass
 
     @abstractmethod

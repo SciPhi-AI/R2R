@@ -21,7 +21,6 @@ Record = Tuple[
     UUID,
     UUID,
     UUID,
-    UUID,
     list[UUID],
     Iterable[Numeric],
     str,
