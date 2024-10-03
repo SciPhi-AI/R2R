@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 
-from core.base import KGCreationStatus, RunLoggingSingleton, RunManager
+from core.base import KGExtractionStatus, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGCreationSettings, KGEnrichmentSettings
 
 from core.base.abstractions import GenerationConfig

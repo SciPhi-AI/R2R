@@ -1,7 +1,17 @@
 from typing import Optional
 
 from .base import R2RSerializable
+from .prompt import Prompt
+from .search import VectorSearchSettings, KGSearchSettings
+from .llm import GenerationConfig
 
+class EvalConfig(R2RSerializable):
+    """Configuration for RAG evaluation."""    
+    rag_prompt: Prompt
+    llm_judgement_prompt: Prompt
+    vector_search_settings: Optional[VectorSearchSettings] = None
+    kg_search_settings: Optional[KGSearchSettings] = None
+    rag_generation_config: Optional[GenerationConfig] = None
 
 class RagEvalLLMResponse(R2RSerializable):
     """Responses from LLMs for a single question."""
@@ -11,7 +21,6 @@ class RagEvalLLMResponse(R2RSerializable):
     generated_answer: str
     llm_judgement: str
     is_correct: bool
-
 
 class RagEvalResultMetrics(R2RSerializable):
     """Metrics of RAG evaluation."""
@@ -35,6 +44,6 @@ class RagEvalQuestion(R2RSerializable):
     """A question in RAG evaluation."""
 
     question: str
-    reference_answer: str
+    reference_answer: Optional[str] = None
     context: Optional[str] = None # not used now
     
