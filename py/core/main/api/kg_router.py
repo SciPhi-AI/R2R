@@ -1,11 +1,13 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 import yaml
 from fastapi import Body, Depends, Query
-from pydantic import Json
+from pydantic import Json, ValidationError
+
+from core import R2RException
 
 from core.base import RunType
 from core.base.api.models import (
@@ -14,7 +16,7 @@ from core.base.api.models import (
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
-from shared.abstractions.kg import KGRunType
+from shared.abstractions.kg import KGRunType, KGCreationSettings
 
 from ..services.kg_service import KgService
 from .base_router import BaseRouter
@@ -61,10 +63,10 @@ class KGRouter(BaseRouter):
                 description="Collection ID to create graph for.",
             ),
             run_type: Optional[KGRunType] = Body(
-                default=KGRunType.ESTIMATE,
+                default=None,
                 description="Run type for the graph creation process.",
             ),
-            kg_creation_settings: Optional[Json[dict]] = Body(
+            kg_creation_settings: Optional[dict] = Body(
                 default=None,
                 description="Settings for the graph creation process.",
             ),
@@ -76,9 +78,11 @@ class KGRouter(BaseRouter):
             This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
-
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
             if not collection_id:
                 collection_id = generate_default_user_collection_id(
@@ -102,7 +106,7 @@ class KGRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "collection_id": collection_id,
+                "collection_id": str(collection_id),
                 "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
@@ -124,7 +128,7 @@ class KGRouter(BaseRouter):
                 default=KGRunType.ESTIMATE,
                 description="Run type for the graph enrichment process.",
             ),
-            kg_enrichment_settings: Optional[Json[dict]] = Body(
+            kg_enrichment_settings: Optional[dict] = Body(
                 default=None,
                 description="Settings for the graph enrichment process.",
             ),
@@ -134,9 +138,11 @@ class KGRouter(BaseRouter):
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
-
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings
@@ -147,9 +153,13 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
+            logger.info(f"Running on collection {collection_id}")
+
             if run_type is KGRunType.ESTIMATE:
 
-                return await self.service.get_enrichment_estimate(collection_id, server_kg_enrichment_settings)
+                return await self.service.get_enrichment_estimate(
+                    collection_id, server_kg_enrichment_settings
+                )
 
             if kg_enrichment_settings:
                 for key, value in kg_enrichment_settings.items():
@@ -157,7 +167,7 @@ class KGRouter(BaseRouter):
                         setattr(server_kg_enrichment_settings, key, value)
 
             workflow_input = {
-                "collection_id": collection_id,
+                "collection_id": str(collection_id),
                 "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
                 "user": auth_user.json(),
             }

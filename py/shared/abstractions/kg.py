@@ -6,7 +6,7 @@ from .base import R2RSerializable
 from .llm import GenerationConfig
 
 
-class KGRunType(Enum):
+class KGRunType(str, Enum):
     """Type of KG run."""
 
     ESTIMATE = "estimate"
@@ -105,6 +105,7 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
         description="The estimated total time to run the graph enrichment process.",
     )
 
+
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
@@ -167,7 +168,7 @@ class KGEnrichmentSettings(R2RSerializable):
         description="Whether to skip leiden clustering on the graph or not.",
     )
 
-    force_enrichment: bool = Field(
+    force_kg_enrichment: bool = Field(
         default=False,
         description="Force run the enrichment step even if graph creation is still in progress for some documents.",
     )
