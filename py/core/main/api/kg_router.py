@@ -102,7 +102,7 @@ class KGRouter(BaseRouter):
                 )
 
             workflow_input = {
-                "collection_id": collection_id,
+                "collection_id": str(collection_id),
                 "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
@@ -157,7 +157,7 @@ class KGRouter(BaseRouter):
                         setattr(server_kg_enrichment_settings, key, value)
 
             workflow_input = {
-                "collection_id": collection_id,
+                "collection_id": str(collection_id),
                 "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
