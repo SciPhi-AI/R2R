@@ -124,9 +124,10 @@ def run_docker_serve(
     image: str,
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
+    exclude_postgres: bool = False,
 ):
     check_docker_compose_version()
-    check_set_docker_env_vars()
+    check_set_docker_env_vars(exclude_postgres)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -149,6 +150,7 @@ def run_docker_serve(
         image,
         config_name,
         config_path,
+        exclude_postgres,
     )
 
     click.secho("R2R now runs on port 7272 by default!", fg="yellow")
@@ -238,16 +240,20 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             sys.exit(1)
 
 
-def check_set_docker_env_vars():
+def check_set_docker_env_vars(exclude_postgres: bool = False):
 
     env_vars = {
         "R2R_PROJECT_NAME": "r2r",
-        "POSTGRES_HOST": "postgres",
-        "POSTGRES_PORT": "5432",
-        "POSTGRES_DBNAME": "postgres",
-        "POSTGRES_USER": "postgres",
-        "POSTGRES_PASSWORD": "postgres",
     }
+
+    if not exclude_postgres:
+        env_vars |= {
+            "POSTGRES_HOST": "postgres",
+            "POSTGRES_PORT": "5432",
+            "POSTGRES_DBNAME": "postgres",
+            "POSTGRES_USER": "postgres",
+            "POSTGRES_PASSWORD": "postgres",
+        }
 
     is_test = (
         "pytest" in sys.modules
@@ -319,6 +325,7 @@ def build_docker_command(
     image,
     config_name,
     config_path,
+    exclude_postgres: bool = False,
 ):
     if not full:
         base_command = f"docker compose -f {compose_files['base']}"
@@ -346,8 +353,12 @@ def build_docker_command(
     elif full:
         os.environ["CONFIG_NAME"] = "full"
 
-    pull_command = f"{base_command} pull"
-    up_command = f"{base_command} up -d"
+    if not exclude_postgres:
+        pull_command = f"{base_command} --profile postgres pull"
+        up_command = f"{base_command} --profile postgres up -d"
+    else:
+        pull_command = f"{base_command} pull"
+        up_command = f"{base_command} up -d"
 
     return pull_command, up_command
 
