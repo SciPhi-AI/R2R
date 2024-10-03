@@ -123,13 +123,13 @@ class RetrievalService(Service):
     async def completion(
         self,
         messages: list[dict],
-        rag_generation_config: GenerationConfig,
+        generation_config: GenerationConfig,
         *args,
         **kwargs,
     ):
-        return await self.providers.completions.aget_completion(
+        return await self.providers.llm.aget_completion(
             messages,
-            rag_generation_config,
+            generation_config,
             *args,
             **kwargs,
         )
