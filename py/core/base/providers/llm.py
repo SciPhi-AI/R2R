@@ -20,9 +20,9 @@ class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: GenerationConfig = GenerationConfig()
     concurrent_request_limit: int = 256
-    max_retries: int = 2
+    max_retries: int = 8
     initial_backoff: float = 1.0
-    max_backoff: float = 60.0
+    max_backoff: float = 64.0
 
     def validate_config(self) -> None:
         if not self.provider:

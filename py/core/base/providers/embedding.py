@@ -25,10 +25,10 @@ class EmbeddingConfig(ProviderConfig):
     batch_size: int = 1
     prefixes: Optional[dict[str, str]] = None
     add_title_as_prefix: bool = True
-    concurrent_request_limit: int = 16
-    max_retries: int = 2
-    initial_backoff: float = 1.0
-    max_backoff: float = 60.0
+    concurrent_request_limit: int = 256
+    max_retries: int = 8
+    initial_backoff: float = 1
+    max_backoff: float = 64.0
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
@@ -63,6 +63,7 @@ class EmbeddingProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
+            # TODO: Capture different error types and handle them accordingly
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"
