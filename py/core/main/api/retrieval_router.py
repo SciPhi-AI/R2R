@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import yaml
 from fastapi import Body, Depends
@@ -47,11 +47,12 @@ class RetrievalRouter(BaseRouter):
         pass
 
     def _select_filters(
-        self, auth_user: Any, vector_search_settings: VectorSearchSettings
+        self,
+        auth_user: Any,
+        search_settings: Union[VectorSearchSettings, KGSearchSettings],
     ) -> dict[str, Any]:
         selected_collections = {
-            str(cid)
-            for cid in set(vector_search_settings.selected_collection_ids)
+            str(cid) for cid in set(search_settings.selected_collection_ids)
         }
 
         if auth_user.is_superuser:
@@ -83,7 +84,7 @@ class RetrievalRouter(BaseRouter):
                 ]  # type: ignore
             }
 
-        if vector_search_settings.filters != {}:
+        if search_settings.filters != {}:
             filters = {"$and": [filters, vector_search_settings.filters]}  # type: ignore
 
         return filters
@@ -110,8 +111,7 @@ class RetrievalRouter(BaseRouter):
                 description=search_descriptions.get("kg_search_settings"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedSearchResponse,
-        ):
+        ) -> WrappedSearchResponse:
             """
             Perform a search query on the vector database and knowledge graph.
 
@@ -167,8 +167,7 @@ class RetrievalRouter(BaseRouter):
                 description=rag_descriptions.get("include_title_if_available"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedRAGResponse,
-        ):
+        ) -> WrappedRAGResponse:
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
 
@@ -201,7 +200,7 @@ class RetrievalRouter(BaseRouter):
 
                 return StreamingResponse(
                     stream_generator(), media_type="application/json"
-                )
+                )  # type: ignore
             else:
                 return response
 
@@ -240,8 +239,7 @@ class RetrievalRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedRAGAgentResponse,
-        ):
+        ) -> WrappedRAGAgentResponse:
             """
             Implement an agent-based interaction for complex query processing.
 
@@ -278,8 +276,8 @@ class RetrievalRouter(BaseRouter):
 
                     return StreamingResponse(
                         stream_generator(), media_type="application/json"
-                    )
+                    )  # type: ignore
                 else:
-                    return {"messages": response}
+                    return {"messages": response}  # type: ignore
             except Exception as e:
                 raise R2RException(str(e), 500)

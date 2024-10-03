@@ -21,6 +21,7 @@ volumes:
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    profiles: [postgres]
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -86,9 +87,6 @@ services:
       POSTGRES_HOST: "${POSTGRES_HOST:-postgres}"
       POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
       HATCHET_POSTGRES_DBNAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - r2r-network
 
@@ -109,8 +107,6 @@ services:
     depends_on:
       hatchet-create-db:
         condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
     networks:
       - r2r-network
 
@@ -146,8 +142,6 @@ services:
       hatchet-migration:
         condition: service_completed_successfully
       hatchet-rabbitmq:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     networks:
       - r2r-network
@@ -283,8 +277,6 @@ services:
       - hatchet_config:/hatchet/config
       - hatchet_api_key:/hatchet_api_key
     depends_on:
-      postgres:
-        condition: service_healthy
       hatchet-setup-config:
         condition: service_completed_successfully
 
@@ -377,8 +369,6 @@ services:
     depends_on:
       setup-token:
         condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
       unstructured:
         condition: service_healthy
 

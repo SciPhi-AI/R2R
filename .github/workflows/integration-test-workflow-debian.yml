@@ -81,7 +81,7 @@ jobs:
         poetry run r2r rag --query="What was Uber's profit in 2020?"
 
         echo "RAG with Hybrid Search"
-        poetry run r2r rag --query="Who is John Snow?" --use-hybrid-search
+        poetry run r2r rag --query="Who is Jon Snow?" --use-hybrid-search
 
         echo "Streaming RAG"
         poetry run r2r rag --query="who was aristotle" --use-hybrid-search --stream

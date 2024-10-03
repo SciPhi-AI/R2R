@@ -1,8 +1,11 @@
 import asyncio
 import logging
 
-from core.base import R2RException, increment_version
-from core.utils import generate_default_user_collection_id
+from core.base import DocumentExtraction, R2RException, increment_version
+from core.utils import (
+    generate_default_user_collection_id,
+    generate_extraction_id,
+)
 
 from ...services import IngestionService
 
@@ -168,4 +171,80 @@ def simple_ingestion_factory(service: IngestionService):
 
         await asyncio.gather(*results)
 
-    return {"ingest-files": ingest_files, "update-files": update_files}
+    async def ingest_chunks(input_data):
+        try:
+            from core.base import IngestionStatus
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
+                input_data
+            )
+
+            document_info = await service.ingest_chunks_ingress(**parsed_data)
+
+            await service.update_document_status(
+                document_info, status=IngestionStatus.EMBEDDING
+            )
+            document_id = document_info.id
+
+            extractions = [
+                DocumentExtraction(
+                    id=generate_extraction_id(document_id, i),
+                    document_id=document_id,
+                    collection_ids=[],
+                    user_id=document_info.user_id,
+                    data=chunk.text,
+                    metadata=parsed_data["metadata"],
+                ).model_dump()
+                for i, chunk in enumerate(parsed_data["chunks"])
+            ]
+
+            embedding_generator = await service.embed_document(extractions)
+            embeddings = [
+                embedding.model_dump()
+                async for embedding in embedding_generator
+            ]
+
+            await service.update_document_status(
+                document_info, status=IngestionStatus.STORING
+            )
+            storage_generator = await service.store_embeddings(embeddings)
+            async for _ in storage_generator:
+                pass
+
+            await service.finalize_ingestion(document_info, is_update=False)
+
+            await service.update_document_status(
+                document_info, status=IngestionStatus.SUCCESS
+            )
+
+            try:
+                collection_id = await service.providers.database.relational.assign_document_to_collection(
+                    document_id=document_info.id,
+                    collection_id=generate_default_user_collection_id(
+                        str(document_info.user_id)
+                    ),
+                )
+                service.providers.database.vector.assign_document_to_collection(
+                    document_id=document_info.id, collection_id=collection_id
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error during assigning document to collection: {str(e)}"
+                )
+
+        except Exception as e:
+            if document_info is not None:
+                await service.update_document_status(
+                    document_info, status=IngestionStatus.FAILED
+                )
+            raise R2RException(
+                status_code=500,
+                message=f"Error during chunk ingestion: {str(e)}",
+            )
+
+    return {
+        "ingest-files": ingest_files,
+        "update-files": update_files,
+        "ingest-chunks": ingest_chunks,
+    }

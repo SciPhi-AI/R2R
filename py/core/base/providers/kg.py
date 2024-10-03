@@ -84,6 +84,9 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_entities(
         self,
+        collection_id: UUID,
+        offset: int,
+        limit: int,
         entity_ids: list[str] | None = None,
         with_description: bool = False,
     ) -> list[Entity]:
@@ -92,7 +95,11 @@ class KGProvider(ABC):
 
     @abstractmethod
     async def get_triples(
-        self, triple_ids: list[str] | None = None
+        self,
+        collection_id: UUID,
+        offset: int,
+        limit: int,
+        triple_ids: list[str] | None = None,
     ) -> list[Triple]:
         """Abstract method to get triples."""
         pass
@@ -155,7 +162,7 @@ class KGProvider(ABC):
         self,
         collection_id: UUID,
         leiden_params: dict,  # TODO - Add typing for leiden_params
-    ) -> Tuple[int, int, set[tuple[int, Any]]]:
+    ) -> int:
         """Abstract method to perform graph clustering."""
         pass
 
@@ -172,12 +179,18 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_entity_count(self, document_id: UUID) -> int:
+    async def get_entity_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+    ) -> int:
         """Abstract method to get the entity count."""
         pass
 
     @abstractmethod
-    async def delete_graph_for_collection(self, collection_id: UUID) -> None:
+    async def delete_graph_for_collection(
+        self, collection_id: UUID, cascade: bool
+    ) -> None:
         """Abstract method to delete the graph for a collection."""
         pass
 

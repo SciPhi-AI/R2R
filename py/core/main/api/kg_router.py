@@ -14,6 +14,10 @@ from core.base.api.models import (
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
 from shared.abstractions.kg import KGRunType
+from shared.api.models.kg.responses import (
+    KGCreationEstimationResponse,
+    KGEnrichmentEstimationResponse,
+)
 
 from ..services.kg_service import KgService
 from .base_router import BaseRouter
@@ -68,8 +72,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedKGCreationResponse,
-        ):
+        ) -> WrappedKGCreationResponse:
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
             This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
@@ -108,7 +111,7 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            return await self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(  # type: ignore
                 "create-graph", {"request": workflow_input}, {}
             )
 
@@ -130,8 +133,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedKGEnrichmentResponse,
-        ):
+        ) -> WrappedKGEnrichmentResponse:
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
@@ -169,7 +171,7 @@ class KGRouter(BaseRouter):
                 "user": auth_user.json(),
             }
 
-            return await self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(  # type: ignore
                 "enrich-graph", {"request": workflow_input}, {}
             )
 

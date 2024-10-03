@@ -13,9 +13,9 @@ from .base_utils import (
     generate_run_id,
     generate_user_id,
     increment_version,
+    llm_cost_per_million_tokens,
     run_pipeline,
     to_async_generator,
-    llm_cost_per_million_tokens,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 

@@ -475,7 +475,7 @@
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "John Snow is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations [1].",
+              "content": "Jon Snow is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations [1].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -516,7 +516,7 @@
                 "eng"
               ],
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -536,7 +536,7 @@
                 "eng"
               ],
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -556,7 +556,7 @@
                 "eng"
               ],
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -576,7 +576,7 @@
                 "eng"
               ],
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -597,7 +597,7 @@
               ],
               "unstructured_page_number": 208,
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -617,7 +617,7 @@
                 "eng"
               ],
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -638,7 +638,7 @@
               ],
               "unstructured_page_number": 293,
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -658,7 +658,7 @@
                 "eng"
               ],
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -679,7 +679,7 @@
               ],
               "unstructured_page_number": 36,
               "partitioned_by_unstructured": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           },
           {
@@ -701,7 +701,7 @@
               "unstructured_page_number": 13,
               "partitioned_by_unstructured": true,
               "unstructured_is_continuation": true,
-              "associated_query": "Who is John Snow?"
+              "associated_query": "Who is Jon Snow?"
             }
           }
         ],

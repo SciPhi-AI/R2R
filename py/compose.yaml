@@ -13,6 +13,7 @@ networks:
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    profiles: [postgres]
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -120,9 +121,6 @@ services:
       - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
     extra_hosts:
       - host.docker.internal:host-gateway
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
