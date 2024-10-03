@@ -271,13 +271,13 @@ class IngestionRouter(BaseRouter):
         @self.base_endpoint
         async def ingest_chunks_app(
             chunks: Json[list[RawChunk]] = Body(
-                {},  # description=ingest_chunks_descriptions.get("chunks")
+                {}, description=ingest_chunks_descriptions.get("chunks")
             ),
             document_id: Optional[UUID] = Body(
-                None,  # description=ingest_chunks_descriptions.get("document_id")
+                None, description=ingest_chunks_descriptions.get("document_id")
             ),
             metadata: Optional[Json[dict]] = Body(
-                None,  # description=ingest_files_descriptions.get("metadata")
+                None, description=ingest_files_descriptions.get("metadata")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedIngestionResponse,
