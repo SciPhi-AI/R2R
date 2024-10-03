@@ -745,7 +745,7 @@ class PostgresKGProvider(KGProvider):
             // kg_creation_settings.extraction_merge_count
         )  # 4 chunks per llm
         estimated_entities = (
-            (total_chunks * 25, total_chunks * 50)
+            (total_chunks * 10, total_chunks * 20)
         )  # 25 entities per 4 chunks
         estimated_triples = (
             int(estimated_entities[0] * 1.25),
