@@ -1,13 +1,10 @@
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 import yaml
 from fastapi import Body, Depends, Query
-from pydantic import Json, ValidationError
-
-from core import R2RException
 
 from core.base import RunType
 from core.base.api.models import (
@@ -16,7 +13,7 @@ from core.base.api.models import (
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
-from shared.abstractions.kg import KGRunType, KGCreationSettings
+from shared.abstractions.kg import KGRunType
 
 from ..services.kg_service import KgService
 from .base_router import BaseRouter
