@@ -15,10 +15,10 @@ from core.base import (
     VectorSearchSettings,
 )
 from core.base.api.models import (
+    WrappedCompletionResponse,
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
-    WrappedCompletionResponse,
 )
 from core.base.providers import OrchestrationProvider
 
@@ -86,7 +86,7 @@ class RetrievalRouter(BaseRouter):
             }
 
         if search_settings.filters != {}:
-            filters = {"$and": [filters, vector_search_settings.filters]}  # type: ignore
+            filters = {"$and": [filters, search_settings.filters]}  # type: ignore
 
         return filters
 
