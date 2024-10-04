@@ -87,8 +87,8 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_reingest_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_document_overview_sample_file_sdk
-        poetry run python tests/integration/harness_cli.py test_vector_search_sample_file_filter_sdk
-        poetry run python tests/integration/harness_cli.py test_hybrid_search_sample_file_filter_sdk
+        poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
+        poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
 
     - name: Stop R2R server
       if: always()
