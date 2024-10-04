@@ -62,7 +62,12 @@ def sample_entries(dimension, num_entries):
 
 @pytest.fixture(scope="session")
 def app_config():
-    return AppConfig()
+    collection_id = uuid.uuid4()
+
+    random_project_name = f"_{collection_id.hex}_test_project"
+    print("random_project_name", random_project_name)
+
+    return AppConfig(project_name=random_project_name)
 
 # Crypto
 @pytest.fixture(scope="session")
@@ -78,11 +83,8 @@ def crypto_provider(crypto_config, app_config):
 # Postgres
 @pytest.fixture(scope="session")
 def db_config(app_config):
-    collection_id = uuid.uuid4()
-
-    random_project_name = f"test_collection_{collection_id.hex}"
     return DatabaseConfig.create(
-        provider="postgres", project_name=random_project_name, app=app_config
+        provider="postgres",  app=app_config
     )
 
 

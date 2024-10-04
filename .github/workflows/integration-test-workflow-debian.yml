@@ -2,8 +2,9 @@ name: R2R CLI Integration and Regression Test
 
 on:
   push:
-    branches: ['**']
-  workflow_dispatch:
+    branches:
+      - '**'  # Trigger on all branches
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-and-test:
@@ -21,7 +22,21 @@ jobs:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
+
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Poetry and dependencies
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        cd py && poetry install -E core -E ingestion-bundle
+
     - name: Install and configure PostgreSQL
       run: |
         sudo apt-get update
@@ -32,24 +47,16 @@ jobs:
 
     - name: Install pgvector
       run: |
-        sudo apt-get install -y build-essential
-        sudo apt-get install -y postgresql-server-dev-all
+        sudo apt-get install -y build-essential postgresql-server-dev-all
         git clone https://github.com/pgvector/pgvector.git
         cd pgvector
         make
         sudo make install
         cd ..
         sudo -u postgres psql -c "CREATE EXTENSION vector;"
-        
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
 
-    - name: Install Poetry and dependencies
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        cd py && poetry install -E core -E ingestion-bundle
+    - name: Start PostgreSQL
+      run: sudo systemctl start postgresql.service
 
     - name: Start R2R server
       working-directory: ./py
@@ -58,7 +65,7 @@ jobs:
         echo "Waiting for services to start..."
         sleep 30
 
-    - name: Run integration tests
+    - name: Run integration tests - Ingestion
       working-directory: ./py
       run: |
         python tests/integration/runner.py test_ingest_sample_files_cli
