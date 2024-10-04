@@ -124,7 +124,7 @@ def test_hybrid_search_sample_file_filter_sdk():
             "use_hybrid_search": True,
             "search_filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
-            }
+            },
         },
     )["results"]["vector_search_results"]
 
@@ -139,8 +139,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "score": lambda x: 0.016 <= x <= 0.018,
-        "semantic_rank": 1,
-        "full_text_rank": 200
+        'metadata': {'version': 'v0', 'chunk_order': 587, 'document_type': 'pdf', 'semantic_rank': 1, 'full_text_rank': 200, 'associated_query': "What was Uber's recent profit??"}
     }
     compare_result_fields(lead_result, expected_lead_search_result)
 
@@ -159,7 +158,6 @@ def test_rag_response_sample_file_sdk():
         },
     )["results"]["completion"]["choices"][0]["message"]["content"]
 
-
     expected_answer_0 = "net loss"
     expected_answer_1 = "$496 million"
 
@@ -173,7 +171,6 @@ def test_rag_response_sample_file_sdk():
     print("~" * 100)
 
 
-
 def test_rag_response_stream_sample_file_sdk():
     print("Testing: Streaming RAG query for Uber's recent P&L")
     response = client.rag(
@@ -184,7 +181,7 @@ def test_rag_response_stream_sample_file_sdk():
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
-    ) # ["results"]["completion"]["choices"][0]["message"]["content"]
+    )  # ["results"]["completion"]["choices"][0]["message"]["content"]
 
     response = ""
     for res in response:
@@ -202,6 +199,7 @@ def test_rag_response_stream_sample_file_sdk():
 
     print("Streaming RAG response test passed")
     print("~" * 100)
+
 
 def test_rag_response_stream_sample_file_sdk():
     print("Testing: Streaming RAG query for who Aristotle was")
@@ -231,10 +229,16 @@ def test_rag_response_stream_sample_file_sdk():
     print("RAG response stream test passed")
     print("~" * 100)
 
+
 def test_agent_sample_file_sdk():
     print("Testing: Agent query for Uber's recent P&L")
     response = client.agent(
-        messages=[{"role": "user", "content": "What was Uber's recent profit and loss?"}],
+        messages=[
+            {
+                "role": "user",
+                "content": "What was Uber's recent profit and loss?",
+            }
+        ],
         rag_generation_config={"stream": False},
         vector_search_settings={
             "search_filters": {
@@ -247,7 +251,10 @@ def test_agent_sample_file_sdk():
     expected_answer_0 = "net loss"
     expected_answer_1 = "$496 million"
 
-    if expected_answer_0 not in response_content or expected_answer_1 not in response_content:
+    if (
+        expected_answer_0 not in response_content
+        or expected_answer_1 not in response_content
+    ):
         print(
             f"Agent query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response_content}'"
         )
@@ -256,11 +263,17 @@ def test_agent_sample_file_sdk():
     print("Agent response test passed")
     print("~" * 100)
 
+
 def test_agent_stream_sample_file_sdk():
     print("Testing: Streaming agent query for who Aristotle was")
 
     response = client.agent(
-        messages=[{"role": "user", "content": "What was Uber's recent profit and loss?"}],
+        messages=[
+            {
+                "role": "user",
+                "content": "What was Uber's recent profit and loss?",
+            }
+        ],
         rag_generation_config={"stream": True},
         vector_search_settings={
             "search_filters": {
@@ -281,9 +294,8 @@ def test_agent_stream_sample_file_sdk():
         )
         sys.exit(1)
 
-    print("Agent response stream test passed") 
+    print("Agent response stream test passed")
     print("~" * 100)
-
 
 
 if __name__ == "__main__":
