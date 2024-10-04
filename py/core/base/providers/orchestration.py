@@ -13,6 +13,7 @@ class Workflow(Enum):
 class OrchestrationConfig(ProviderConfig):
     provider: str
     max_threads: int = 256
+    kg_creation_concurrency_limit: int = 16
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
