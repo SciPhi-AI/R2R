@@ -94,6 +94,7 @@ def test_vector_search_sample_file_filter_cli():
     compare_result_fields(lead_result, expected_lead_search_result)
 
     print("Vector search test passed")
+    print("~" * 100)
 
 def test_hybrid_search_sample_file_filter_cli():
     print("Testing: Vector search")
@@ -129,8 +130,9 @@ def test_hybrid_search_sample_file_filter_cli():
     # compare_result_fields(lead_result, expected_lead_search_result)
 
     print("Vector search test passed")
+    print("~" * 100)
 
-def test_rag_query_aristotle_birth_year_cli():
+def test_rag_response_sample_file_cli():
     print("Testing: RAG query for Aristotle's birth year")
     output = run_command("poetry run r2r rag --query='What year was Aristotle born?'")
     # TODO - Can we fix the test to check by loading JSON output?
@@ -142,7 +144,33 @@ def test_rag_query_aristotle_birth_year_cli():
         print(f"RAG query test failed: Expected answer '{expected_answer}' not found in '{output}'")
         sys.exit(1)
     
-    print("RAG query test passed")
+    print("RAG response test passed")
+    print("~" * 100)
+
+def test_rag_response_stream_sample_file_cli():
+    print("Testing: Streaming RAG query for who Aristotle was")
+    
+    # Run the command and capture the output
+    # output = run_command("poetry run r2r rag --query='who was aristotle' --use-hybrid-search --stream", capture_output=True)
+    process = subprocess.Popen(
+        ["poetry", "run", "r2r", "rag", "--query='who was aristotle'", "--use-hybrid-search", "--stream"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output, _ = process.communicate()    
+    
+    # Check if the output contains the search and completion tags
+    if "<search>" not in output or "</search>" not in output:
+        print("Streaming RAG query test failed: Search results not found in output")
+        sys.exit(1)
+    
+    if "<completion>" not in output or "</completion>" not in output:
+        print("Streaming RAG query test failed: Completion not found in output")
+        sys.exit(1)
+
+    print("RAG response stream test passed")
+    print("~" * 100)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
