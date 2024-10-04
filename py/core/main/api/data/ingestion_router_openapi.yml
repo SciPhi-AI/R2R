@@ -67,7 +67,7 @@ ingest_chunks:
         source: |
           from r2r import R2RClient
 
-          client = R2RClient("http://localhost:7272") 
+          client = R2RClient("http://localhost:7272")
           # when using auth, do client.login(...)
 
           result = client.ingest_chunks(
@@ -76,12 +76,13 @@ ingest_chunks:
                     "text": "Another chunk of text",
                 },
                 {
-                    "text": "Yet another chunk of text", 
+                    "text": "Yet another chunk of text",
                 },
                 {
                     "text": "A chunk of text",
                 },
-            ],          )
+            ],
+          )
       - lang: Shell
         source: |
           curl -X POST "https://api.example.com/ingest_chunks" \
@@ -96,7 +97,7 @@ ingest_chunks:
                   "text": "Yet another chunk of text"
                 },
                 {
-                  "text": "A chunk of text" 
+                  "text": "A chunk of text"
                 }
               ],
               "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
