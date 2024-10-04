@@ -78,9 +78,12 @@ jobs:
     - name: Run integration tests - Ingestion
       working-directory: ./py
       run: |
-        poetry run python tests/integration/runner.py test_ingest_sample_file_cli
-        poetry run python tests/integration/runner.py test_document_overview_sample_file_cli
-        poetry run python tests/integration/runner.py test_vector_search_sample_file_filter_cli
+        poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_vector_search_sample_file_filter_cli
+
+        poetry run python tests/integration/harness_cli.py test_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_cli.py test_reingest_sample_file_sdk
 
     - name: Stop R2R server
       if: always()

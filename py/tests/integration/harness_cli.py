@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 
+
 def compare_result_fields(result, expected_fields):
     for field, expected_value in expected_fields.items():
         if callable(expected_value):
@@ -18,6 +19,7 @@ def compare_result_fields(result, expected_fields):
                 print(f"Expected {field}:", expected_value)
                 print(f"Actual {field}:", result[field])
                 sys.exit(1)
+
 
 def run_command(command):
     result = subprocess.run(
@@ -41,7 +43,7 @@ def test_document_overview_sample_file_cli():
     print("Testing: Document overview contains 'aristotle.txt'")
     output = run_command("poetry run r2r documents-overview")
     output = output.replace("'", '"')
-    output_lines = output.strip().split('\n')[1:]
+    output_lines = output.strip().split("\n")[1:]
     documents = [json.loads(ele) for ele in output_lines]
 
     aristotle_document = {
@@ -64,12 +66,13 @@ def test_document_overview_sample_file_cli():
     print("Document overview test passed")
     print("~" * 100)
 
+
 def test_vector_search_sample_file_filter_cli():
     print("Testing: Vector search")
     output = run_command(
         """poetry run r2r search --query="Who was aristotle?" --filters='{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}'"""
     )
-    output_lines = output.strip().split('\n')[1:-1]
+    output_lines = output.strip().split("\n")[1:-1]
     cleaned_output_lines = [line.replace("'", '"') for line in output_lines]
     results = []
     for line in cleaned_output_lines:
@@ -89,19 +92,20 @@ def test_vector_search_sample_file_filter_cli():
         "extraction_id": "ff8accdb-791e-5b6d-a83a-5adc32c4222c",
         "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.77 <= x <= 0.79
+        "score": lambda x: 0.77 <= x <= 0.79,
     }
     compare_result_fields(lead_result, expected_lead_search_result)
 
     print("Vector search test passed")
     print("~" * 100)
 
+
 def test_hybrid_search_sample_file_filter_cli():
     print("Testing: Vector search")
     output = run_command(
         """poetry run r2r search --query="Who was aristotle?" --use-hybrid-search --filters='{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}'"""
     )
-    output_lines = output.strip().split('\n')[1:-1]
+    output_lines = output.strip().split("\n")[1:-1]
     cleaned_output_lines = [line.replace("'", '"') for line in output_lines]
     results = []
     for line in cleaned_output_lines:
@@ -114,7 +118,7 @@ def test_hybrid_search_sample_file_filter_cli():
     if not results:
         print("Vector search test failed: No results returned")
         sys.exit(1)
-        
+
     # TODO - Fix loading of CLI result to allow comparison below
     # (e.g. lead result does not properly load as a dictionary)
     # lead_result = results[0]
@@ -132,45 +136,64 @@ def test_hybrid_search_sample_file_filter_cli():
     print("Vector search test passed")
     print("~" * 100)
 
+
 def test_rag_response_sample_file_cli():
     print("Testing: RAG query for Aristotle's birth year")
-    output = run_command("poetry run r2r rag --query='What year was Aristotle born?'")
+    output = run_command(
+        "poetry run r2r rag --query='What year was Aristotle born?'"
+    )
     # TODO - Can we fix the test to check by loading JSON output?
     # response = json.loads(output)
 
     expected_answer = "Aristotle was born in 384 BC"
-    
+
     if expected_answer not in output:
-        print(f"RAG query test failed: Expected answer '{expected_answer}' not found in '{output}'")
+        print(
+            f"RAG query test failed: Expected answer '{expected_answer}' not found in '{output}'"
+        )
         sys.exit(1)
-    
+
     print("RAG response test passed")
     print("~" * 100)
 
+
 def test_rag_response_stream_sample_file_cli():
     print("Testing: Streaming RAG query for who Aristotle was")
-    
+
     # Run the command and capture the output
     # output = run_command("poetry run r2r rag --query='who was aristotle' --use-hybrid-search --stream", capture_output=True)
     process = subprocess.Popen(
-        ["poetry", "run", "r2r", "rag", "--query='who was aristotle'", "--use-hybrid-search", "--stream"],
+        [
+            "poetry",
+            "run",
+            "r2r",
+            "rag",
+            "--query='who was aristotle'",
+            "--use-hybrid-search",
+            "--stream",
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
     )
-    output, _ = process.communicate()    
-    
+    output, _ = process.communicate()
+
     # Check if the output contains the search and completion tags
     if "<search>" not in output or "</search>" not in output:
-        print("Streaming RAG query test failed: Search results not found in output")
+        print(
+            "Streaming RAG query test failed: Search results not found in output"
+        )
         sys.exit(1)
-    
+
     if "<completion>" not in output or "</completion>" not in output:
-        print("Streaming RAG query test failed: Completion not found in output")
+        print(
+            "Streaming RAG query test failed: Completion not found in output"
+        )
         sys.exit(1)
 
     print("RAG response stream test passed")
     print("~" * 100)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

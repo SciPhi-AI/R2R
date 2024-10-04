@@ -149,7 +149,7 @@ class IngestionRouter(BaseRouter):
                     file_content,
                     file_data["content_type"],
                 )
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow( # type: ignore
+                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
