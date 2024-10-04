@@ -40,10 +40,10 @@ def hatchet_kg_factory(
     class KGExtractDescribeEmbedWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
-            
+
         @orchestration_provider.concurrency(
-            max_runs=orchestration_provider.config.kg_creation_concurrency_limit, 
-            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN
+            max_runs=orchestration_provider.config.kg_creation_concurrency_limit,
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context) -> str:
             return str(context.workflow_input()["request"]["collection_id"])

@@ -344,7 +344,9 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.config = config
-        self.project_name = os.getenv("R2R_PROJECT_NAME", "default")
+        self.project_name = config.app.project_name or os.getenv(
+            "R2R_PROJECT_NAME", "default"
+        )
         self.pool = None
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
@@ -581,7 +583,7 @@ class RunLoggingSingleton:
         return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
-    def configure(cls, logging_config: LoggingConfig = LoggingConfig()):
+    def configure(cls, logging_config: LoggingConfig):
         if not cls._is_configured:
             cls._config = logging_config
             cls._is_configured = True

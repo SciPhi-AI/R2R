@@ -1,5 +1,5 @@
 from .auth import AuthConfig, AuthProvider
-from .base import Provider, ProviderConfig
+from .base import AppConfig, Provider, ProviderConfig
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     DatabaseConfig,
@@ -21,6 +21,7 @@ __all__ = [
     "AuthConfig",
     "AuthProvider",
     # Base provider classes
+    "AppConfig",
     "Provider",
     "ProviderConfig",
     # Ingestion provider
