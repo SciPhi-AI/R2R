@@ -33,3 +33,11 @@ jobs:
           sudo apt-get install -y postgresql
           sudo systemctl start postgresql.service
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+
+      # Add your other steps here
+
+      - name: Cleanup PostgreSQL
+        if: always()  # Run this step even if the job fails
+        run: |
+          sudo systemctl stop postgresql.service
+          sudo rm -rf /var/lib/postgresql/          
