@@ -1,4 +1,3 @@
-import json
 from typing import Optional, Union
 from uuid import UUID
 
@@ -16,33 +15,34 @@ class KGMethods:
     @staticmethod
     async def create_graph(
         client,
-        collection_id: Optional[UUID] = None,
-        run_type: KGRunType = KGRunType.ESTIMATE,
+        collection_id: Optional[Union[UUID, str]] = None,
+        run_type: Optional[Union[str, KGRunType]] = None,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
     ) -> KGCreationResponse:
         """
         Create a graph from the given settings.
+
+        Args:
+            collection_id (Optional[Union[UUID, str]]): The ID of the collection to create the graph for.
+            run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
+            kg_creation_settings (Optional[Union[dict, KGCreationSettings]]): Settings for the graph creation process.
         """
         if isinstance(kg_creation_settings, KGCreationSettings):
             kg_creation_settings = kg_creation_settings.model_dump()
-        elif kg_creation_settings is None or kg_creation_settings == "{}":
-            kg_creation_settings = {}
 
         data = {
-            "run_type": run_type,
-            "kg_creation_settings": json.dumps(kg_creation_settings),
+            "collection_id": str(collection_id) if collection_id else None,
+            "run_type": str(run_type) if run_type else None,
+            "kg_creation_settings": kg_creation_settings or {},
         }
-
-        if collection_id:
-            data["collection_id"] = collection_id
 
         return await client._make_request("POST", "create_graph", json=data)
 
     @staticmethod
     async def enrich_graph(
         client,
-        collection_id: Optional[UUID] = None,
-        run_type: KGRunType = KGRunType.ESTIMATE,
+        collection_id: Optional[Union[UUID, str]] = None,
+        run_type: Optional[Union[str, KGRunType]] = None,
         kg_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
@@ -51,23 +51,20 @@ class KGMethods:
         Perform graph enrichment over the entire graph.
 
         Args:
-            collection_id (str): The ID of the collection to enrich.
+            collection_id (Optional[Union[UUID, str]]): The ID of the collection to enrich the graph for.
+            run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
             kg_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
         if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
             kg_enrichment_settings = kg_enrichment_settings.model_dump()
-        elif kg_enrichment_settings is None or kg_enrichment_settings == "{}":
-            kg_enrichment_settings = {}
 
         data = {
-            "kg_enrichment_settings": json.dumps(kg_enrichment_settings),
-            "run_type": run_type,
+            "collection_id": str(collection_id) if collection_id else None,
+            "run_type": str(run_type) if run_type else None,
+            "kg_enrichment_settings": kg_enrichment_settings or {},
         }
-
-        if collection_id:
-            data["collection_id"] = collection_id
 
         return await client._make_request("POST", "enrich_graph", json=data)
 

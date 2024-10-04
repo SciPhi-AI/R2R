@@ -14,8 +14,8 @@ from core.base import (
     PipeType,
     RunLoggingSingleton,
 )
-from core.base.pipes.base_pipe import AsyncPipe
 from core.base.abstractions import Entity
+from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
@@ -193,4 +193,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
         for result in asyncio.as_completed(workflows):
             yield await result
 
-        logger.info(f"Processed {total_entities} entities for document {document_id}")
+        logger.info(
+            f"Processed {total_entities} entities for document {document_id}"
+        )

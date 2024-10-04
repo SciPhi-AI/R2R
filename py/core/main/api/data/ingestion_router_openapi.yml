@@ -59,3 +59,51 @@ update_files:
     document_ids: "An optional list of document ids for each file. If not provided, the system will attempt to generate the corresponding unique from the `generate_document_id` method."
     metadatas: "An optional list of JSON metadata to affix to each file"
     ingestion_config: "JSON string for chunking configuration override"
+
+ingest_chunks:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:7272") 
+          # when using auth, do client.login(...)
+
+          result = client.ingest_chunks(
+            chunks=[
+                {
+                    "text": "Another chunk of text",
+                },
+                {
+                    "text": "Yet another chunk of text", 
+                },
+                {
+                    "text": "A chunk of text",
+                },
+            ],          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/ingest_chunks" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -d '{
+              "chunks": [
+                {
+                  "text": "Another chunk of text"
+                },
+                {
+                  "text": "Yet another chunk of text"
+                },
+                {
+                  "text": "A chunk of text" 
+                }
+              ],
+              "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+              "metadata": {}
+            }'
+
+  input_descriptions:
+    chunks: "A list of text chunks to ingest into the system."
+    document_id: "An optional document id to associate the chunks with. If not provided, a unique document id will be generated."
+    metadata: "Optional JSON metadata to associate with the ingested chunks."

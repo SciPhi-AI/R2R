@@ -320,7 +320,6 @@ class KGSearchSettings(R2RSerializable):
         description="Configuration for text generation during graph search.",
     )
 
-
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []

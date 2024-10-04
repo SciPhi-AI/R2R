@@ -52,7 +52,7 @@ const ingestResponse = await client.ingestFiles(files, {
 </ParamField>
 
 <ParamField path="ingestion_config" type="Optional[Union[dict, ChunkingConfig]]">
-  The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
+  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
   <Expandable title="properties">
     <ParamField path="provider" type="str" default="unstructured_local">
       Which chunking provider to use. Options are "r2r", "unstructured_local", or "unstructured_api".
@@ -220,7 +220,7 @@ const updateResponse = await client.updateFiles(files, {
   </ParamField>
 
   <ParamField path="ingestion_config" type="Record<string, any>">
-    The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
+    The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
     <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">
     Which chunking provider to use, `r2r` or `unstructured`. Selecting `unstructured` is generally recommended when parsing with `unstructured` or `unstructured_api`.

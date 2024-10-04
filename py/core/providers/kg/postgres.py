@@ -4,8 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
-import asyncio
-from graspologic.partition import HierarchicalClusters
 
 from core.base import (
     CommunityReport,
@@ -13,20 +11,21 @@ from core.base import (
     EmbeddingProvider,
     Entity,
     KGConfig,
-    KGExtractionStatus,
     KGExtraction,
+    KGExtractionStatus,
     KGProvider,
     Triple,
 )
 from shared.abstractions import (
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGRunType,
+)
+from shared.api.models.kg.responses import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
-    KGEnrichmentSettings,
-    KGCreationSettings,
 )
-
 from shared.utils import llm_cost_per_million_tokens
-
 
 logger = logging.getLogger(__name__)
 
@@ -340,8 +339,8 @@ class PostgresKGProvider(KGProvider):
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
-            SELECT e.name, e.description, e.category, 
-                   (SELECT array_agg(DISTINCT x) FROM unnest(e.extraction_ids) x) AS extraction_ids, 
+            SELECT e.name, e.description, e.category,
+                   (SELECT array_agg(DISTINCT x) FROM unnest(e.extraction_ids) x) AS extraction_ids,
                    e.document_id
             FROM {self._get_table_name("entity_raw")} e
             JOIN entities_list el ON e.name = el.name
@@ -370,7 +369,7 @@ class PostgresKGProvider(KGProvider):
                 LIMIT {limit} OFFSET {offset}
             )
 
-            SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description, 
+            SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
                    (SELECT array_agg(DISTINCT x) FROM unnest(t.extraction_ids) x) AS extraction_ids, t.document_id
             FROM {self._get_table_name("triple_raw")} t
             JOIN entities_list el ON t.subject = el.name
@@ -466,17 +465,23 @@ class PostgresKGProvider(KGProvider):
         filter_query = ""
         if collection_ids_dict:
             filter_query = "WHERE collection_id = ANY($3)"
-            filter_ids = collection_ids_dict['$overlap']
+            filter_ids = collection_ids_dict["$overlap"]
 
             if search_type == "__Community__":
                 logger.info(f"Searching in collection ids: {filter_ids}")
 
-            if search_type == "__Entity__" or search_type == "__Relationship__":
+            if (
+                search_type == "__Entity__"
+                or search_type == "__Relationship__"
+            ):
                 filter_query = "WHERE document_id = ANY($3)"
                 query = f"""
                     SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
                 """
-                filter_ids = [doc_id['document_id'] for doc_id in await self.fetch_query(query, filter_ids)]
+                filter_ids = [
+                    doc_id["document_id"]
+                    for doc_id in await self.fetch_query(query, filter_ids)
+                ]
                 logger.info(f"Searching in document ids: {filter_ids}")
 
         QUERY = f"""
@@ -484,9 +489,13 @@ class PostgresKGProvider(KGProvider):
         """
 
         if filter_query != "":
-            results = await self.fetch_query(QUERY, (str(query_embedding), limit, filter_ids))
+            results = await self.fetch_query(
+                QUERY, (str(query_embedding), limit, filter_ids)
+            )
         else:
-            results = await self.fetch_query(QUERY, (str(query_embedding), limit))
+            results = await self.fetch_query(
+                QUERY, (str(query_embedding), limit)
+            )
 
         for result in results:
             yield {
@@ -507,7 +516,7 @@ class PostgresKGProvider(KGProvider):
             SELECT id, subject, predicate, weight, object FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1)
         """
         triples = await self.fetch_query(QUERY, [document_ids])
-        return triples
+        return [Triple(**triple) for triple in triples]
 
     async def add_communities(self, communities: List[Any]) -> None:
         QUERY = f"""
@@ -547,7 +556,7 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: UUID,
         leiden_params: Dict[str, Any],
-    ) -> Tuple[int, int, set[Tuple[int, Any]]]:
+    ) -> int:
         """
         Leiden clustering algorithm to cluster the knowledge graph triples into communities.
 
@@ -572,10 +581,10 @@ class PostgresKGProvider(KGProvider):
         G = self.nx.Graph()
         for triple in triples:
             G.add_edge(
-                triple["subject"],
-                triple["object"],
-                weight=triple["weight"],
-                id=triple["id"],
+                triple.subject,
+                triple.object,
+                weight=triple.weight,
+                id=triple.id,
             )
 
         hierarchical_communities = await self._compute_leiden_communities(
@@ -585,9 +594,9 @@ class PostgresKGProvider(KGProvider):
         def triple_ids(node: int) -> list[int]:
             # TODO: convert this to objects
             return [
-                triple["id"]
-                for triple in triples
-                if triple["subject"] == node or triple["object"] == node
+                triple.id or i
+                for i, triple in enumerate(triples)
+                if triple.subject == node or triple.object == node
             ]
 
         # upsert the communities into the database.
@@ -616,7 +625,7 @@ class PostgresKGProvider(KGProvider):
         self,
         graph: Any,
         leiden_params: Dict[str, Any],
-    ) -> HierarchicalClusters:
+    ) -> Any:
         """Compute Leiden communities."""
         try:
             from graspologic.partition import hierarchical_leiden
@@ -738,7 +747,6 @@ class PostgresKGProvider(KGProvider):
             QUERY, [KGExtractionStatus.PENDING, collection_id]
         )
 
-
     def _get_str_estimation_output(self, x: tuple[Any, Any]) -> str:
         if isinstance(x[0], int) and isinstance(x[1], int):
             return " - ".join(map(str, x))
@@ -774,7 +782,8 @@ class PostgresKGProvider(KGProvider):
             // kg_creation_settings.extraction_merge_count
         )  # 4 chunks per llm
         estimated_entities = (
-            (total_chunks * 10, total_chunks * 20)
+            total_chunks * 10,
+            total_chunks * 20,
         )  # 25 entities per 4 chunks
         estimated_triples = (
             int(estimated_entities[0] * 1.25),
@@ -792,8 +801,14 @@ class PostgresKGProvider(KGProvider):
         )  # in millions
 
         estimated_cost = (
-            total_in_out_tokens[0] * llm_cost_per_million_tokens(kg_creation_settings.generation_config.model),
-            total_in_out_tokens[1] * llm_cost_per_million_tokens(kg_creation_settings.generation_config.model),
+            total_in_out_tokens[0]
+            * llm_cost_per_million_tokens(
+                kg_creation_settings.generation_config.model
+            ),
+            total_in_out_tokens[1]
+            * llm_cost_per_million_tokens(
+                kg_creation_settings.generation_config.model
+            ),
         )
 
         total_time_in_minutes = (
@@ -801,28 +816,40 @@ class PostgresKGProvider(KGProvider):
             total_in_out_tokens[1] * 10 / 60,
         )  # 10 minutes per million tokens
 
-
         return KGCreationEstimationResponse(
-            message="These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode=\"run\"` in the client.",
+            message='These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode="run"` in the client.',
             document_count=len(document_ids),
             number_of_jobs_created=len(document_ids) + 1,
             total_chunks=total_chunks,
-            estimated_entities=self._get_str_estimation_output(estimated_entities),
-            estimated_triples=self._get_str_estimation_output(estimated_triples),
-            estimated_llm_calls=self._get_str_estimation_output(estimated_llm_calls),
-            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(total_in_out_tokens),
-            estimated_cost_in_usd=self._get_str_estimation_output(estimated_cost),
-            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + self._get_str_estimation_output(total_time_in_minutes),
+            estimated_entities=self._get_str_estimation_output(
+                estimated_entities
+            ),
+            estimated_triples=self._get_str_estimation_output(
+                estimated_triples
+            ),
+            estimated_llm_calls=self._get_str_estimation_output(
+                estimated_llm_calls
+            ),
+            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(
+                total_in_out_tokens
+            ),
+            estimated_cost_in_usd=self._get_str_estimation_output(
+                estimated_cost
+            ),
+            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
+            + self._get_str_estimation_output(total_time_in_minutes),
         )
 
     async def get_enrichment_estimate(
-        self, collection_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings
+        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
     ) -> KGEnrichmentEstimationResponse:
 
-        document_ids = [doc.id for doc in (await self.db_provider.documents_in_collection(
-            collection_id
-        ))["results"]]
+        document_ids = [
+            doc.id
+            for doc in (
+                await self.db_provider.documents_in_collection(collection_id)
+            )["results"]
+        ]
 
         QUERY = f"""
             SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
@@ -832,7 +859,9 @@ class PostgresKGProvider(KGProvider):
         ]
 
         if not entity_count:
-            raise ValueError("No entities found in the graph. Please run `create-graph` first.")
+            raise ValueError(
+                "No entities found in the graph. Please run `create-graph` first."
+            )
 
         QUERY = f"""
             SELECT COUNT(*) FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
@@ -846,25 +875,36 @@ class PostgresKGProvider(KGProvider):
             2000 * estimated_llm_calls[0] / 1000000,
             2000 * estimated_llm_calls[1] / 1000000,
         )
-        cost_per_million_tokens = llm_cost_per_million_tokens(kg_enrichment_settings.generation_config.model)
-        estimated_cost = (
-            estimated_total_in_out_tokens_in_millions[0] * cost_per_million_tokens,
-            estimated_total_in_out_tokens_in_millions[1] * cost_per_million_tokens,
+        cost_per_million_tokens = llm_cost_per_million_tokens(
+            kg_enrichment_settings.generation_config.model
         )
-        
+        estimated_cost = (
+            estimated_total_in_out_tokens_in_millions[0]
+            * cost_per_million_tokens,
+            estimated_total_in_out_tokens_in_millions[1]
+            * cost_per_million_tokens,
+        )
+
         estimated_total_time = (
             estimated_total_in_out_tokens_in_millions[0] * 10 / 60,
             estimated_total_in_out_tokens_in_millions[1] * 10 / 60,
         )
 
         return KGEnrichmentEstimationResponse(
-            message="These are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_mode=\"run\"` in the client.",
+            message='These are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_mode="run"` in the client.',
             total_entities=entity_count,
             total_triples=triple_count,
-            estimated_llm_calls=self._get_str_estimation_output(estimated_llm_calls),
-            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(estimated_total_in_out_tokens_in_millions),
-            estimated_cost_in_usd=self._get_str_estimation_output(estimated_cost),
-            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + self._get_str_estimation_output(estimated_total_time),
+            estimated_llm_calls=self._get_str_estimation_output(
+                estimated_llm_calls
+            ),
+            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(
+                estimated_total_in_out_tokens_in_millions
+            ),
+            estimated_cost_in_usd=self._get_str_estimation_output(
+                estimated_cost
+            ),
+            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
+            + self._get_str_estimation_output(estimated_total_time),
         )
 
     async def create_vector_index(self):
@@ -927,7 +967,7 @@ class PostgresKGProvider(KGProvider):
 
         if triple_ids:
             conditions.append(f"id = ANY(${len(params) + 1})")
-            params.append([str(ele) for ele in triple_ids])
+            params.append([str(ele) for ele in triple_ids])  # type: ignore
 
         query = f"""
             SELECT id, subject, predicate, object
@@ -940,7 +980,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY id
             OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}
         """
-        params.extend([offset, limit])
+        params.extend([str(offset), str(limit)])
 
         results = await self.fetch_query(query, params)
         total_entries = await self.get_triple_count(

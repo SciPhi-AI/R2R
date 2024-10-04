@@ -45,6 +45,13 @@ def hatchet_kg_factory(
         def concurrency(self, context) -> str:
             return str(context.workflow_input()["request"]["collection_id"])
 
+        @orchestration_provider.concurrency(
+            max_runs=orchestration_provider.config.kg_creation_concurrency_limit,
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context) -> str:
+            return str(context.workflow_input()["request"]["collection_id"])
+
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
 

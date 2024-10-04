@@ -1,7 +1,3 @@
-x-depends-on:
-  postgres: &postgres-dependency
-    condition: service_healthy
-
 networks:
   r2r-network:
     name: r2r-network
@@ -17,7 +13,9 @@ networks:
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    profiles: [postgres]
     environment:
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DBNAME:-postgres}
@@ -35,16 +33,8 @@ services:
       retries: 5
     restart: on-failure
     command: >
-      bash -c "
-        if [ -z \"\$(ls -A /var/lib/postgresql/data)\" ]; then
-          echo \"Data directory is empty, initializing database...\"
-          echo \"max_connections = ${POSTGRES_MAX_CONNECTIONS:-1024}\" >> /var/lib/postgresql/data/postgresql.conf
-          docker-entrypoint.sh postgres
-        else
-          echo \"Data directory is not empty, skipping initialization...\"
-          docker-entrypoint.sh postgres
-        fi
-      "
+      postgres
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS:-1024}
 
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
@@ -131,9 +121,6 @@ services:
       - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
     extra_hosts:
       - host.docker.internal:host-gateway
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
@@ -165,7 +152,6 @@ services:
       - r2r-network
     labels:
       - "traefik.http.middlewares.no-cache-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store, must-revalidate"
-      - "traefik.http.routers.hatchet-api.middlewares=no-cache-headers"
 
 volumes:
   postgres_data:
