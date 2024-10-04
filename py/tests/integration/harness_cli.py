@@ -86,26 +86,27 @@ def test_document_chunks_sample_file_cli():
 
 def test_delete_and_reingest_sample_file_cli():
     print("Testing: Delete and re-ingest Aristotle document")
-    
+
     # Delete the Aristotle document
     delete_output = run_command(
         "poetry run r2r delete --filter='document_id:eq:9fbe403b-c11c-5aae-8ade-ef22980c3ad1'"
     )
-    
+
     # Check if the deletion was successful
     if "'results': {}" not in delete_output:
         print("Delete and re-ingest test failed: Deletion unsuccessful")
         print("Delete output:", delete_output)
         sys.exit(1)
-    
+
     print("Aristotle document deleted successfully")
-    
+
     # Re-ingest the sample file
     run_command("poetry run r2r ingest-sample-file")
     print("Sample file re-ingested successfully")
-    
+
     print("Delete and re-ingest test passed")
     print("~" * 100)
+
 
 def test_vector_search_sample_file_filter_cli():
     print("Testing: Vector search")
