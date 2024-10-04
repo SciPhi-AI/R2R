@@ -15,14 +15,19 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: false
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DBNAME: postgres
       POSTGRES_HOST: localhost
+      POSTGRES_DBNAME: postgres
       POSTGRES_PORT: 5432
-      R2R_PROJECT_NAME: R2R
-
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
     steps:
+    - name: Install and configure PostgreSQL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql
+        sudo systemctl start postgresql.service
+        sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v4
       with:
