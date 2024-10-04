@@ -60,6 +60,7 @@ def sample_entries(dimension, num_entries):
         generate_random_vector_entry(i, dimension) for i in range(num_entries)
     ]
 
+
 @pytest.fixture(scope="function")
 def app_config():
     collection_id = uuid.uuid4()
@@ -67,6 +68,7 @@ def app_config():
     random_project_name = f"a_{collection_id.hex}_test_project"
 
     return AppConfig(project_name=random_project_name)
+
 
 # Crypto
 @pytest.fixture(scope="function")
@@ -82,9 +84,7 @@ def crypto_provider(crypto_config, app_config):
 # Postgres
 @pytest.fixture(scope="function")
 def db_config(app_config):
-    return DatabaseConfig.create(
-        provider="postgres",  app=app_config
-    )
+    return DatabaseConfig.create(provider="postgres", app=app_config)
 
 
 @pytest.fixture(scope="function")
@@ -138,7 +138,7 @@ def auth_config(app_config):
         access_token_lifetime_in_minutes=15,
         refresh_token_lifetime_in_days=1,
         require_email_verification=False,
-        app=app_config
+        app=app_config,
     )
 
 
@@ -160,7 +160,7 @@ def litellm_provider(app_config):
         provider="litellm",
         base_model="text-embedding-3-small",
         base_dimension=1536,
-        app=app_config
+        app=app_config,
     )
     return LiteLLMEmbeddingProvider(config)
 

@@ -26,7 +26,7 @@ def litellm_provider(app_config):
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
-        app=app_config
+        app=app_config,
     )
 
     return LiteLLMEmbeddingProvider(config)
@@ -80,7 +80,7 @@ def test_litellm_rerank_model_not_supported(app_config):
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
         rerank_model="some-model",
-        app=app_config
+        app=app_config,
     )
     with pytest.raises(
         ValueError, match="does not support separate reranking"
@@ -93,7 +93,7 @@ def test_litellm_unsupported_stage(app_config):
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
-        app=app_config
+        app=app_config,
     )
     provider = LiteLLMEmbeddingProvider(config)
     with pytest.raises(
@@ -110,7 +110,7 @@ async def test_litellm_async_unsupported_stage(app_config):
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
-        app=app_config
+        app=app_config,
     )
     provider = LiteLLMEmbeddingProvider(config)
     with pytest.raises(

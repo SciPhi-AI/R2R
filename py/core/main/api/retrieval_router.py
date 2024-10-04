@@ -112,7 +112,7 @@ class RetrievalRouter(BaseRouter):
                 description=search_descriptions.get("kg_search_settings"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedSearchResponse:
+        ) -> WrappedSearchResponse:  # type: ignore
             """
             Perform a search query on the vector database and knowledge graph.
 
@@ -168,7 +168,7 @@ class RetrievalRouter(BaseRouter):
                 description=rag_descriptions.get("include_title_if_available"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedRAGResponse:
+        ) -> WrappedRAGResponse:  # type: ignore
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
 
@@ -240,7 +240,7 @@ class RetrievalRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedRAGAgentResponse:
+        ) -> WrappedRAGAgentResponse:  # type: ignore
             """
             Implement an agent-based interaction for complex query processing.
 

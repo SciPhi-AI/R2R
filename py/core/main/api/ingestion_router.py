@@ -92,8 +92,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedIngestionResponse,
-        ):
+        ) -> WrappedIngestionResponse:  # type: ignore
             """
             Ingest files into the system.
 
@@ -189,8 +188,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedUpdateResponse,
-        ):
+        ) -> WrappedUpdateResponse:  # type: ignore
             """
             Update existing files in the system.
 
@@ -280,8 +278,7 @@ class IngestionRouter(BaseRouter):
                 None, description=ingest_files_descriptions.get("metadata")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedIngestionResponse,
-        ):
+        ) -> WrappedIngestionResponse:  # type: ignore
             """
             Ingest text chunks into the system.
 
