@@ -29,17 +29,17 @@ from core.providers import (
 
 
 # Vectors
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def dimension():
     return 128
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def num_entries():
     return 100
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def sample_entries(dimension, num_entries):
     def generate_random_vector_entry(
         id_value: int, dimension: int
@@ -69,18 +69,18 @@ def app_config():
     return AppConfig(project_name=random_project_name)
 
 # Crypto
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def crypto_config(app_config):
     return BCryptConfig(app=app_config)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def crypto_provider(crypto_config, app_config):
     return BCryptProvider(crypto_config)
 
 
 # Postgres
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def db_config(app_config):
     return DatabaseConfig.create(
         provider="postgres",  app=app_config
@@ -131,7 +131,7 @@ async def temporary_postgres_db_provider(
 
 
 # Auth
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def auth_config(app_config):
     return AuthConfig(
         secret_key="test_secret_key",
