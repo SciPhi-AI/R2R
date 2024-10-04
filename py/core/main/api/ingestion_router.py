@@ -2,7 +2,7 @@ import base64
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 import yaml
@@ -118,7 +118,7 @@ class IngestionRouter(BaseRouter):
 
             file_datas = await self._process_files(files)
 
-            messages = []
+            messages: list[dict[str, Union[str, None]]] = []
             for it, file_data in enumerate(file_datas):
                 content_length = len(file_data["content"])
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
@@ -149,7 +149,7 @@ class IngestionRouter(BaseRouter):
                     file_content,
                     file_data["content_type"],
                 )
-                raw_message = await self.orchestration_provider.run_workflow(
+                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow( # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
@@ -159,9 +159,10 @@ class IngestionRouter(BaseRouter):
                     },
                 )
                 raw_message["document_id"] = str(document_id)
+                if "task_id" not in raw_message:
+                    raw_message["task_id"] = None
                 messages.append(raw_message)
-
-            return messages
+            return messages  # type: ignore
 
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
@@ -188,7 +189,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUpdateResponse:  # type: ignore
+        ) -> WrappedUpdateResponse:
             """
             Update existing files in the system.
 
@@ -255,7 +256,7 @@ class IngestionRouter(BaseRouter):
             )
             raw_message["message"] = "Update task queued successfully."
             raw_message["document_ids"] = workflow_input["document_ids"]
-            return raw_message
+            return raw_message  # type: ignore
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})
         ingest_chunks_descriptions = ingest_chunks_extras.get(
@@ -278,7 +279,7 @@ class IngestionRouter(BaseRouter):
                 None, description=ingest_files_descriptions.get("metadata")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:  # type: ignore
+        ) -> WrappedIngestionResponse:
             """
             Ingest text chunks into the system.
 
@@ -308,7 +309,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
             raw_message["document_id"] = str(document_id)
-            return raw_message
+            return raw_message  # type: ignore
 
     @staticmethod
     def _validate_ingestion_config(ingestion_config):
