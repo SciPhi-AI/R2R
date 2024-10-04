@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
+import asyncio
 
 from core.base import (
     CommunityReport,

@@ -1,6 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
-
+import asyncio
 import asyncpg
 
 from core.base import RelationalDBProvider
@@ -35,6 +35,7 @@ class PostgresRelationalDBProvider(
         self.project_name = project_name
         self.pool = None
         self.postgres_configuration_settings = postgres_configuration_settings
+        self.semaphore = asyncio.Semaphore(100)
 
     async def initialize(self):
         try:
@@ -42,6 +43,7 @@ class PostgresRelationalDBProvider(
                 self.connection_string,
                 max_size=self.postgres_configuration_settings.max_connections,
             )
+
             logger.info(
                 "Successfully connected to Postgres database and created connection pool."
             )
@@ -57,8 +59,9 @@ class PostgresRelationalDBProvider(
 
     @asynccontextmanager
     async def get_connection(self):
-        async with self.pool.acquire() as conn:
-            yield conn
+        async with self.semaphore:
+            async with self.pool.acquire() as conn:
+                yield conn
 
     async def execute_query(self, query, params=None):
         async with self.get_connection() as conn:
