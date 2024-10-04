@@ -30,33 +30,30 @@ jobs:
     - name: Set up Python environment
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.10'  # Use a stable Python version
 
     - name: Install Poetry and dependencies
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         cd py && poetry install -E core -E ingestion-bundle
 
-    - name: Install and configure PostgreSQL
+    - name: Add PostgreSQL Apt Repository
+      run: |
+        sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /usr/share/keyrings/postgresql-archive-keyring.gpg > /dev/null
+
+    - name: Install PostgreSQL and pgvector
       run: |
         sudo apt-get update
-        sudo apt-get upgrade -y
-        sudo apt-get install -y postgresql
-        sudo systemctl start postgresql.service
-        sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+        sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector
 
-    - name: Install pgvector
+    - name: Start PostgreSQL service
+      run: sudo systemctl start postgresql
+
+    - name: Configure PostgreSQL
       run: |
-        sudo apt-get install -y build-essential postgresql-server-dev-all
-        git clone https://github.com/pgvector/pgvector.git
-        cd pgvector
-        make
-        sudo make install
-        cd ..
+        sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
         sudo -u postgres psql -c "CREATE EXTENSION vector;"
-
-    - name: Start PostgreSQL
-      run: sudo systemctl start postgresql.service
 
     - name: Start R2R server
       working-directory: ./py
@@ -68,8 +65,8 @@ jobs:
     - name: Run integration tests - Ingestion
       working-directory: ./py
       run: |
-        python tests/integration/runner.py test_ingest_sample_files_cli
-        python tests/integration/runner.py test_document_ingestion_cli
+        poetry run python tests/integration/runner.py test_ingest_sample_files_cli
+        poetry run python tests/integration/runner.py test_document_ingestion_cli
 
     - name: Stop R2R server
       if: always()
