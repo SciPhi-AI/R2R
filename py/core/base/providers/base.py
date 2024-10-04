@@ -3,10 +3,22 @@ from typing import Any, Optional, Type
 
 from pydantic import BaseModel
 
+from ..abstractions import R2RSerializable
+
+
+class AppConfig(R2RSerializable):
+    project_name: Optional[str] = None
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        project_name = kwargs.get("project_name")
+        return AppConfig(project_name=project_name)
+
 
 class ProviderConfig(BaseModel, ABC):
     """A base provider configuration class"""
 
+    app: AppConfig  # Add an app_config field
     extra_fields: dict[str, Any] = {}
     provider: Optional[str] = None
 

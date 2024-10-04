@@ -7,8 +7,9 @@ from shared.abstractions.document import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGExtractionStatus,
     KGEnrichmentStatus,
+    KGExtractionStatus,
+    RawChunk,
 )
 from shared.abstractions.embedding import (
     EmbeddingPurpose,
@@ -28,9 +29,7 @@ from shared.abstractions.graph import (
     Triple,
 )
 from shared.abstractions.kg import (
-    KGCreationEstimationResponse,
     KGCreationSettings,
-    KGEnrichmentEstimationResponse,
     KGEnrichmentSettings,
     KGRunType,
 )
@@ -77,10 +76,11 @@ __all__ = [
     "Document",
     "DocumentExtraction",
     "DocumentInfo",
+    "DocumentType",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
-    "DocumentType",
+    "RawChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",
@@ -120,8 +120,6 @@ __all__ = [
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGRunType",
-    "KGCreationEstimationResponse",
-    "KGEnrichmentEstimationResponse",
     # User abstractions
     "Token",
     "TokenData",

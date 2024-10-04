@@ -9,9 +9,9 @@ from core.base import (
     DocumentExtraction,
     DocumentInfo,
     DocumentType,
-    IngestionConfig,
     IngestionStatus,
     R2RException,
+    RawChunk,
     RunLoggingSingleton,
     RunManager,
     VectorEntry,
@@ -78,7 +78,7 @@ class IngestionService(Service):
         metadata = metadata or {}
 
         version = version or STARTING_VERSION
-        document_info = self._create_document_info(
+        document_info = self._create_document_info_from_file(
             document_id,
             user,
             file_data["filename"],
@@ -120,7 +120,7 @@ class IngestionService(Service):
             "info": document_info,
         }
 
-    def _create_document_info(
+    def _create_document_info_from_file(
         self,
         document_id: UUID,
         user: UserResponse,
@@ -148,6 +148,33 @@ class IngestionService(Service):
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,
+            ingestion_status=IngestionStatus.PENDING,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+
+    def _create_document_info_from_chunks(
+        self,
+        document_id: UUID,
+        user: UserResponse,
+        chunks: list[RawChunk],
+        metadata: dict,
+        version: str,
+    ) -> DocumentInfo:
+        metadata = metadata or {}
+        metadata["version"] = version
+
+        return DocumentInfo(
+            id=document_id,
+            user_id=user.id,
+            collection_ids=metadata.get("collection_ids", []),
+            type=DocumentType.TXT,
+            title=metadata.get("title", f"Ingested Chunks - {document_id}"),
+            metadata=metadata,
+            version=version,
+            size_in_bytes=sum(
+                len(chunk.text.encode("utf-8")) for chunk in chunks
+            ),
             ingestion_status=IngestionStatus.PENDING,
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -256,6 +283,53 @@ class IngestionService(Service):
             results.append(res.model_dump_json())
         return results
 
+    @telemetry_event("IngestChunks")
+    async def ingest_chunks_ingress(
+        self,
+        document_id: UUID,
+        metadata: Optional[dict],
+        chunks: list[RawChunk],
+        user: UserResponse,
+        *args: Any,
+        **kwargs: Any,
+    ) -> DocumentInfo:
+        if not chunks:
+            raise R2RException(
+                status_code=400, message="No chunks provided for ingestion."
+            )
+
+        metadata = metadata or {}
+        version = STARTING_VERSION
+
+        document_info = self._create_document_info_from_chunks(
+            document_id,
+            user,
+            chunks,
+            metadata,
+            version,
+        )
+
+        existing_document_info = (
+            await self.providers.database.relational.get_documents_overview(
+                filter_user_ids=[user.id],
+                filter_document_ids=[document_id],
+            )
+        )["results"]
+
+        if len(existing_document_info) > 0:
+            existing_doc = existing_document_info[0]
+            if existing_doc.ingestion_status != IngestionStatus.FAILED:
+                raise R2RException(
+                    status_code=409,
+                    message=f"Document {document_id} was already ingested and is not in a failed state.",
+                )
+
+        await self.providers.database.relational.upsert_documents_overview(
+            document_info
+        )
+
+        return document_info
+
 
 class IngestionServiceAdapter:
     @staticmethod
@@ -282,6 +356,15 @@ class IngestionServiceAdapter:
             "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],
+        }
+
+    @staticmethod
+    def parse_ingest_chunks_input(data: dict) -> dict:
+        return {
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+            "metadata": data["metadata"],
+            "document_id": data["document_id"],
+            "chunks": [RawChunk.from_dict(chunk) for chunk in data["chunks"]],
         }
 
     @staticmethod

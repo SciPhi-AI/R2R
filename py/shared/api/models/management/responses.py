@@ -98,7 +98,7 @@ class DocumentOverviewResponse(BaseModel):
 
 
 class DocumentChunkResponse(BaseModel):
-    id: UUID
+    extraction_id: UUID
     document_id: UUID
     user_id: UUID
     collection_ids: list[UUID]
@@ -159,3 +159,4 @@ WrappedUserCollectionResponse = PaginatedResultsWrapper[
 WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
+WrappedDeleteResponse = ResultsWrapper[None]

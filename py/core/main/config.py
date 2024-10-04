@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
 from ..base.logging.run_logger import LoggingConfig
+from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
@@ -40,6 +41,7 @@ class R2RConfig:
     CONFIG_OPTIONS["default"] = None
 
     REQUIRED_KEYS: dict[str, list] = {
+        "app": [],
         "completion": ["provider"],
         "crypto": ["provider"],
         "auth": ["provider"],
@@ -64,6 +66,7 @@ class R2RConfig:
         "orchestration": ["provider"],
     }
 
+    app: AppConfig
     auth: AuthConfig
     completion: CompletionConfig
     crypto: CryptoConfig
@@ -118,23 +121,23 @@ class R2RConfig:
                     )
             setattr(self, section, default_config[section])
 
-        self.completion = CompletionConfig.create(**self.completion)  # type: ignore
+        self.app = AppConfig.create(**self.app)  # type: ignore
+        self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
+        self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
+        self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
+        self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
+        self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
+        self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
+        self.kg = KGConfig.create(**self.kg, app=self.app)  # type: ignore
+        self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
+        self.prompt = PromptConfig.create(**self.prompt, app=self.app)  # type: ignore
+        self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
+        self.file = FileConfig.create(**self.file, app=self.app)  # type: ignore
+        self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()
         )
-
-        self.auth = AuthConfig.create(**self.auth)  # type: ignore
-        self.crypto = CryptoConfig.create(**self.crypto)  # type: ignore
-        self.database = DatabaseConfig.create(**self.database)  # type: ignore
-        self.embedding = EmbeddingConfig.create(**self.embedding)  # type: ignore
-        self.ingestion = IngestionConfig.create(**self.ingestion)  # type: ignore
-        self.kg = KGConfig.create(**self.kg)  # type: ignore
-        self.logging = LoggingConfig.create(**self.logging)  # type: ignore
-        self.prompt = PromptConfig.create(**self.prompt)  # type: ignore
-        self.agent = AgentConfig.create(**self.agent)  # type: ignore
-        self.file = FileConfig.create(**self.file)  # type: ignore
-        self.orchestration = OrchestrationConfig.create(**self.orchestration)  # type: ignore
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list

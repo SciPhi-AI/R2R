@@ -18,7 +18,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             )
         self.orchestrator = Hatchet()
         self.config: OrchestrationConfig = config  # for type hinting
-        self.messages = {}
+        self.messages: dict[str, str] = {}
 
     def workflow(self, *args, **kwargs) -> Callable:
         return self.orchestrator.workflow(*args, **kwargs)
@@ -34,6 +34,9 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             max_threads = self.config.max_threads
         self.worker = self.orchestrator.worker(name, max_threads)
         return self.worker
+
+    def concurrency(self, *args, **kwargs) -> Callable:
+        return self.orchestrator.concurrency(*args, **kwargs)
 
     async def start_worker(self):
         if not self.worker:
