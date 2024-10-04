@@ -6,6 +6,7 @@ from shared.abstractions import KGSearchResult, Message, VectorSearchResult
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import ResultsWrapper
 
+
 class SearchResponse(BaseModel):
     vector_search_results: list[VectorSearchResult] = Field(
         ...,
@@ -137,6 +138,7 @@ class RAGAgentResponse(BaseModel):
                 },
             ]
         }
+
 
 WrappedCompletionResponse = ResultsWrapper[LLMChatCompletion]
 # Create wrapped versions of the responses
