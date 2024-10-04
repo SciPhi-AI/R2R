@@ -84,7 +84,7 @@ jobs:
 
     - name: Stop R2R server
       if: always()
-      run: pkill -f "r2r serve"
+      run: ps aux | grep "r2r serve" | awk '{print $2}' | xargs kill || true
 
     - name: Uninstall PostgreSQL after tests (Optional)
       if: always()
