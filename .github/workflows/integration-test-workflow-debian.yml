@@ -25,6 +25,7 @@ jobs:
     - name: Install and configure PostgreSQL
       run: |
         sudo apt-get update
+        sudo apt-get upgrade -y
         sudo apt-get install -y postgresql
         sudo systemctl start postgresql.service
         sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
