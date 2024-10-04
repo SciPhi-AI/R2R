@@ -1,14 +1,9 @@
-name: R2R CLI Integration (ubuntu latest)
+name: R2R CLI Integration and Regression Test
 
 on:
-  pull_request:
-    branches:
-      - 'dev*'
-      - 'dev-minor*'
   push:
-    branches:
-      - 'dev*'
-      - 'dev-minor*'
+    branches: ['**']
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -20,24 +15,37 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: false
-      POSTGRES_HOST: localhost
-      POSTGRES_DBNAME: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+      R2R_PROJECT_NAME: ${{ secrets.R2R_PROJECT_NAME }}
 
     steps:
-      - name: Install and configure PostgreSQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql
-          sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      # Add your other steps here
+    - name: Install Poetry and dependencies
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        cd py && poetry install -E core -E ingestion-bundle
 
-      - name: Cleanup PostgreSQL
-        if: always()  # Run this step even if the job fails
-        run: |
-          sudo systemctl stop postgresql.service
-          sudo rm -rf /var/lib/postgresql/          
+    - name: Start R2R server
+      working-directory: ./py
+      run: |
+        poetry run r2r serve &
+        echo "Waiting for services to start..."
+        sleep 30
+
+    - name: Run integration tests
+      working-directory: ./py
+      run: |
+        python tests/integration/r2r_integration_tests.py test_ingest_sample_files_cli
+        python tests/integration/r2r_integration_tests.py test_document_ingestion_cli
+
+    - name: Stop R2R server
+      if: always()
+      run: pkill -f "r2r serve"
