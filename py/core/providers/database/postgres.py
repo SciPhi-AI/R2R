@@ -72,7 +72,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.db_name = db_name
 
         project_name = (
-            config.project_name
+            config.app.project_name
             or os.getenv("R2R_PROJECT_NAME")
             # Remove the following line after deprecation
             or os.getenv("POSTGRES_PROJECT_NAME")
