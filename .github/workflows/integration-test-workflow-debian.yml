@@ -29,6 +29,17 @@ jobs:
         sudo systemctl start postgresql.service
         sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
 
+    - name: Install pgvector
+      run: |
+        sudo apt-get install -y build-essential
+        sudo apt-get install -y postgresql-server-dev-all
+        git clone https://github.com/pgvector/pgvector.git
+        cd pgvector
+        make
+        sudo make install
+        cd ..
+        sudo -u postgres psql -c "CREATE EXTENSION vector;"
+        
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v4
       with:

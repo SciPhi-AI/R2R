@@ -20,20 +20,22 @@ async def cleanup_tasks():
 
 
 @pytest.fixture
-def openai_provider():
+def openai_provider(app_config):
     config = EmbeddingConfig(
         provider="openai",
         base_model="text-embedding-ada-002",
         base_dimension=1536,
+        app=app_config
     )
     return OpenAIEmbeddingProvider(config)
 
 
 @pytest.fixture
-def ollama_provider():
+def ollama_provider(app_config):
     config = EmbeddingConfig(
         provider="ollama",
         base_model="mxbai-embed-large",
         base_dimension=1024,
+        app=app_config
     )
     return OllamaEmbeddingProvider(config)
