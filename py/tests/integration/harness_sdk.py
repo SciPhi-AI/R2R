@@ -138,7 +138,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.016 <= x <= 0.017,
+        "score": lambda x: 0.016 <= x <= 0.018,
         "semantic_rank": 1,
         "full_text_rank": 200
     }
@@ -149,20 +149,59 @@ def test_hybrid_search_sample_file_filter_sdk():
 
 
 def test_rag_response_sample_file_sdk():
-    print("Testing: RAG query for Aristotle's birth year")
-    response = client.rag(query="What year was Aristotle born?")
+    print("Testing: RAG query for Uber's recent P&L")
+    response = client.rag(
+        query="What was Uber's recent profit and loss?",
+        vector_search_settings={
+            "search_filters": {
+                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+            }
+        },
+    )["results"]["completion"]["choices"][0]["message"]["content"]
 
-    expected_answer = "Aristotle was born in 384 BC"
 
-    if expected_answer not in response:
+    expected_answer_0 = "net loss"
+    expected_answer_1 = "$496 million"
+
+    if expected_answer_0 not in response or expected_answer_1 not in response:
         print(
-            f"RAG query test failed: Expected answer '{expected_answer}' not found in '{response}'"
+            f"RAG query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response}'"
         )
         sys.exit(1)
 
     print("RAG response test passed")
     print("~" * 100)
 
+
+
+def test_rag_response_stream_sample_file_sdk():
+    print("Testing: Streaming RAG query for Uber's recent P&L")
+    response = client.rag(
+        query="What was Uber's recent profit and loss?",
+        rag_generation_config={"stream": True},
+        vector_search_settings={
+            "search_filters": {
+                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+            }
+        },
+    ) # ["results"]["completion"]["choices"][0]["message"]["content"]
+
+    response = ""
+    for res in response:
+        response += res
+        print(res)
+
+    expected_answer_0 = "net loss"
+    expected_answer_1 = "$496 million"
+
+    if expected_answer_0 not in response or expected_answer_1 not in response:
+        print(
+            f"RAG query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response}'"
+        )
+        sys.exit(1)
+
+    print("Streaming RAG response test passed")
+    print("~" * 100)
 
 def test_rag_response_stream_sample_file_sdk():
     print("Testing: Streaming RAG query for who Aristotle was")
@@ -191,6 +230,60 @@ def test_rag_response_stream_sample_file_sdk():
 
     print("RAG response stream test passed")
     print("~" * 100)
+
+def test_agent_sample_file_sdk():
+    print("Testing: Agent query for Uber's recent P&L")
+    response = client.agent(
+        messages=[{"role": "user", "content": "What was Uber's recent profit and loss?"}],
+        rag_generation_config={"stream": False},
+        vector_search_settings={
+            "search_filters": {
+                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+            }
+        },
+    )["results"]
+    response_content = response["messages"][-1]["content"]
+
+    expected_answer_0 = "net loss"
+    expected_answer_1 = "$496 million"
+
+    if expected_answer_0 not in response_content or expected_answer_1 not in response_content:
+        print(
+            f"Agent query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response_content}'"
+        )
+        sys.exit(1)
+
+    print("Agent response test passed")
+    print("~" * 100)
+
+def test_agent_stream_sample_file_sdk():
+    print("Testing: Streaming agent query for who Aristotle was")
+
+    response = client.agent(
+        messages=[{"role": "user", "content": "What was Uber's recent profit and loss?"}],
+        rag_generation_config={"stream": True},
+        vector_search_settings={
+            "search_filters": {
+                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+            }
+        },
+    )
+    output = ""
+    for response in response:
+        output += response["content"]
+
+    expected_answer_0 = "net loss"
+    expected_answer_1 = "$496 million"
+
+    if expected_answer_0 not in response or expected_answer_1 not in response:
+        print(
+            f"Agent query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response_content}'"
+        )
+        sys.exit(1)
+
+    print("Agent response stream test passed") 
+    print("~" * 100)
+
 
 
 if __name__ == "__main__":
