@@ -43,8 +43,8 @@ jobs:
     - name: Run integration tests
       working-directory: ./py
       run: |
-        python tests/integration/r2r_integration_tests.py test_ingest_sample_files_cli
-        python tests/integration/r2r_integration_tests.py test_document_ingestion_cli
+        python tests/integration/runner.py test_ingest_sample_files_cli
+        python tests/integration/runner.py test_document_ingestion_cli
 
     - name: Stop R2R server
       if: always()
