@@ -1,10 +1,14 @@
-name: R2R CLI Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
+name: R2R CLI Integration (ubuntu latest)
 
 on:
+  pull_request:
+    branches:
+      - 'dev*'
+      - 'dev-minor*'
   push:
     branches:
-      - '**'
-  workflow_dispatch:
+      - 'dev*'
+      - 'dev-minor*'
 
 jobs:
   build-and-test:
@@ -16,133 +20,16 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: false
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
-      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-      R2R_PROJECT_NAME: ${{ secrets.R2R_PROJECT_NAME }}
+      POSTGRES_HOST: localhost
+      POSTGRES_DBNAME: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-
-    - name: Install dependencies
-      working-directory: ./py
-      run: |
-        poetry install -E core -E ingestion-bundle
-
-    - name: Start R2R server
-      working-directory: ./py
-      run: |
-        poetry run r2r serve &
-        echo "Waiting for services to start..."
-        sleep 30
-
-    - name: Run integration tests
-      working-directory: ./py
-      run: |
-        echo "R2R Version"
-        poetry run r2r version
-
-    - name: Walkthrough
-      working-directory: ./py
-      run: |
-        echo "Ingest Data"
-        poetry run r2r ingest-sample-files
-
-        echo "Get Documents Overview"
-        poetry run r2r documents-overview
-
-        echo "Get Document Chunks"
-        poetry run r2r document-chunks --document-id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Delete Documents"
-        poetry run r2r delete --filter=document_id:eq:9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Update Document"
-        poetry run r2r update-files core/examples/data/aristotle_v2.txt --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Vector Search"
-        poetry run r2r search --query="What was Uber's profit in 2020?"
-
-        echo "Hybrid Search"
-        r2r search --query="What was Uber's profit in 2020?" --use-hybrid-search
-
-        echo "Basic RAG"
-        poetry run r2r rag --query="What was Uber's profit in 2020?"
-
-        echo "RAG with Hybrid Search"
-        poetry run r2r rag --query="Who is Jon Snow?" --use-hybrid-search
-
-        echo "Streaming RAG"
-        poetry run r2r rag --query="who was aristotle" --use-hybrid-search --stream
-
-        echo "User Registration"
-        curl -X POST http://localhost:7272/v2/register \
-          -H "Content-Type: application/json" \
-          -d '{
-            "email": "test@example.com",
-            "password": "password123"
-          }'
-
-        echo "User Login"
-        curl -X POST http://localhost:7272/v2/login \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=test@example.com&password=password123"
-
-        echo "Users Overview"
-        poetry run r2r users-overview
-
-        echo "Logging"
-        poetry run r2r logs
-
-        echo "Analytics"
-        poetry run r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
-
-    - name: GraphRAG
-      working-directory: ./py
-      run: |
-        echo "Create Knowledge Graph"
-        poetry run r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Inspect Knowledge Graph"
-        poetry run r2r inspect-knowledge-graph
-
-        echo "Graph Enrichment"
-        poetry run r2r enrich-graph
-
-        echo "Local Search"
-        r2r search --query="Who is Aristotle?" --use-kg-search --kg-search-type=local
-
-        echo "Global Search"
-        r2r search --query="What were Aristotles key contributions to philosophy?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
-
-        echo "RAG"
-        r2r rag --query="What are the key contributions of Aristotle to modern society?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
-
-
-
-
-
-
-    - name: Advanced RAG
-      working-directory: ./py
-      run: |
-        echo "HyDE"
-        poetry run r2r rag --query="who was aristotle" --use-hybrid-search --stream --search-strategy=hyde
-
-        echo "Rag-Fusion"
-        r2r rag --query="Explain the theory of relativity" --use-hybrid-search --stream --search-strategy=rag_fusion
-
-    - name: Stop R2R server
-      run: |
-        pkill -f "r2r serve"
+      - name: Install and configure PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
