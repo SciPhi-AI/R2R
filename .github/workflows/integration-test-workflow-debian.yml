@@ -81,6 +81,7 @@ jobs:
         poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_cli
 
     - name: Run CLI Retrieval
       working-directory: ./py
@@ -95,6 +96,8 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_reingest_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_document_overview_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_document_chunks_sample_file_sdk
+        poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_sdk
 
     - name: Run SDK Retrieval
       working-directory: ./py

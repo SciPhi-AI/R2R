@@ -108,6 +108,37 @@ def test_document_chunks_sample_file_sdk():
     print("Document chunks test passed")
     print("~" * 100)
 
+def test_delete_and_reingest_sample_file_sdk():
+    print("Testing: Delete and re-ingest the Uber document")
+    
+    # Delete the Aristotle document
+    delete_response = client.delete(
+        {
+            "document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}
+        }
+    )
+    
+    # Check if the deletion was successful
+    if delete_response["results"] != {}:
+        print("Delete and re-ingest test failed: Deletion unsuccessful")
+        print("Delete response:", delete_response)
+        sys.exit(1)
+    
+    print("Uber document deleted successfully")
+    
+    # Re-ingest the sample file
+    file_paths = ["core/examples/data/uber_2021.pdf"]
+    ingest_response = client.ingest_files(file_paths=file_paths)
+    
+    if not ingest_response["results"]:
+        print("Delete and re-ingest test failed: Re-ingestion unsuccessful")
+        sys.exit(1)
+    
+    print("Sample file re-ingested successfully")
+    
+    print("Delete and re-ingest test passed")
+    print("~" * 100)
+
 
 def test_vector_search_sample_file_filter_sdk():
     print("Testing: Vector search")
@@ -211,7 +242,7 @@ def test_rag_response_stream_sample_file_sdk():
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
-    )  # ["results"]["completion"]["choices"][0]["message"]["content"]
+    )  
 
     response = ""
     for res in response:
@@ -229,36 +260,6 @@ def test_rag_response_stream_sample_file_sdk():
 
     print("Streaming RAG response test passed")
     print("~" * 100)
-
-
-def test_rag_response_stream_sample_file_sdk():
-    print("Testing: Streaming RAG query for who Aristotle was")
-
-    rag_agent_response = client.agent(
-        messages=[{"role": "user", "content": "who was aristotle"}],
-        vector_search_settings={"use_hybrid_search": True},
-        rag_generation_config={"stream": True},
-    )
-
-    output = ""
-    for response in rag_agent_response:
-        output += response
-
-    if "<search>" not in output or "</search>" not in output:
-        print(
-            "Streaming RAG query test failed: Search results not found in output"
-        )
-        sys.exit(1)
-
-    if "<completion>" not in output or "</completion>" not in output:
-        print(
-            "Streaming RAG query test failed: Completion not found in output"
-        )
-        sys.exit(1)
-
-    print("RAG response stream test passed")
-    print("~" * 100)
-
 
 def test_agent_sample_file_sdk():
     print("Testing: Agent query for Uber's recent P&L")
