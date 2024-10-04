@@ -45,9 +45,7 @@ class PostgresKGProvider(KGProvider):
 
         self.db_provider = db_provider.relational
         self.embedding_provider = embedding_provider
-        
-        self.semaphore = asyncio.Semaphore(512)
-        
+                
         try:
             import networkx as nx
 
@@ -66,8 +64,7 @@ class PostgresKGProvider(KGProvider):
     async def execute_query(
         self, query: str, params: Optional[list[Any]] = None
     ) -> Any:
-        async with self.semaphore:
-            return await self.db_provider.execute_query(query, params)
+        return await self.db_provider.execute_query(query, params)
 
     async def execute_many(
         self,
@@ -75,16 +72,14 @@ class PostgresKGProvider(KGProvider):
         params: Optional[list[tuple[Any]]] = None,
         batch_size: int = 1000,
     ) -> Any:
-        async with self.semaphore:
-            return await self.db_provider.execute_many(query, params, batch_size)
+        return await self.db_provider.execute_many(query, params, batch_size)
 
     async def fetch_query(
         self,
         query: str,
         params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
-        async with self.semaphore:
-            return await self.db_provider.fetch_query(query, params)
+        return await self.db_provider.fetch_query(query, params)
 
     def _get_table_name(self, base_name: str) -> str:
         return self.db_provider._get_table_name(base_name)
