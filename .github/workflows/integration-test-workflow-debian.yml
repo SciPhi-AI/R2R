@@ -15,12 +15,12 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: false
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
-      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-      R2R_PROJECT_NAME: ${{ secrets.R2R_PROJECT_NAME }}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DBNAME: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      R2R_PROJECT_NAME: R2R
 
     steps:
     - uses: actions/checkout@v4
