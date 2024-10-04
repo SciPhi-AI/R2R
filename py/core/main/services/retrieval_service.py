@@ -118,7 +118,7 @@ class RetrievalService(Service):
             )
 
             return results.as_dict()
-        
+
     @telemetry_event("Completion")
     async def completion(
         self,

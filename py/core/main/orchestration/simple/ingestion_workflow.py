@@ -157,11 +157,7 @@ def simple_ingestion_factory(service: IngestionService):
                 "metadata": updated_metadata,
                 "document_id": str(doc_id),
                 "version": new_version,
-                "ingestion_config": (
-                    ingestion_config.model_dump_json()
-                    if ingestion_config
-                    else None
-                ),
+                "ingestion_config": ingestion_config,
                 "size_in_bytes": file_size_in_bytes,
                 "is_update": True,
             }
