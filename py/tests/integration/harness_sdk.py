@@ -86,6 +86,29 @@ def test_document_overview_sample_file_sdk():
     print("~" * 100)
 
 
+def test_document_chunks_sample_file_sdk():
+    print("Testing: Document chunks")
+    document_id = "3e157b3a-8469-51db-90d9-52e7d896b49b"  # Replace with the actual document ID
+    chunks = client.document_chunks(document_id=document_id)["results"]
+
+    lead_chunk = {
+        "extraction_id": "57d761ac-b2df-529c-9c47-6e6e1bbf854f",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+        "text": "UNITED STATESSECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n____________________________________________ \nFORM\n 10-K____________________________________________ \n(Mark One)\n\n ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934For the fiscal year ended\n December 31, 2021OR",
+        "metadata": {
+            "version": "v0",
+            "chunk_order": 0,
+            "document_type": "pdf",
+        },
+    }
+
+    assert len(chunks) >= 100 and lead_chunk == chunks[0]
+    print("Document chunks test passed")
+    print("~" * 100)
+
+
 def test_vector_search_sample_file_filter_sdk():
     print("Testing: Vector search")
     results = client.search(
@@ -139,7 +162,14 @@ def test_hybrid_search_sample_file_filter_sdk():
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "score": lambda x: 0.016 <= x <= 0.018,
-        'metadata': {'version': 'v0', 'chunk_order': 587, 'document_type': 'pdf', 'semantic_rank': 1, 'full_text_rank': 200, 'associated_query': "What was Uber's recent profit??"}
+        "metadata": {
+            "version": "v0",
+            "chunk_order": 587,
+            "document_type": "pdf",
+            "semantic_rank": 1,
+            "full_text_rank": 200,
+            "associated_query": "What was Uber's recent profit??",
+        },
     }
     compare_result_fields(lead_result, expected_lead_search_result)
 

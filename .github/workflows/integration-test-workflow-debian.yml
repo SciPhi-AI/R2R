@@ -80,6 +80,7 @@ jobs:
       run: |
         poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
 
     - name: Run CLI Retrieval
       working-directory: ./py

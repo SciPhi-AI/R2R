@@ -67,6 +67,23 @@ def test_document_overview_sample_file_cli():
     print("~" * 100)
 
 
+def test_document_chunks_sample_file_cli():
+    print("Testing: Document chunks")
+    output = run_command(
+        "poetry run r2r document-chunks --document-id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+    )
+    output = output.replace("'", '"')
+    output_lines = output.strip().split("\n")[1:]
+    aristotle_is_in_chunks = False
+    for line in output_lines:
+        if "aristotle" in line.lower():
+            aristotle_is_in_chunks = True
+            break
+    assert len(output_lines) >= 100 and aristotle_is_in_chunks
+    print("Document chunks test passed")
+    print("~" * 100)
+
+
 def test_vector_search_sample_file_filter_cli():
     print("Testing: Vector search")
     output = run_command(
