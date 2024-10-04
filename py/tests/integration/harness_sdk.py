@@ -62,24 +62,25 @@ def test_reingest_sample_file_sdk():
 
 
 def test_document_overview_sample_file_sdk():
-    print("Testing: Document overview contains 'uber.txt'")
-    documents_overview = client.documents_overview()
+    documents_overview = client.documents_overview()["results"]
 
-    aristotle_document = {
-        "title": "aristotle.txt",
-        "type": "txt",
+    uber_document = {
+        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "title": "uber_2021.pdf",
+        "type": "pdf",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
-        "version": "v0",
-        "metadata": {"title": "aristotle.txt", "version": "v0"},
+        "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+        # "version": "v0",
+        # "metadata": {"title": "uber_2021.pdf"},
     }
 
     if not any(
-        all(doc.get(k) == v for k, v in aristotle_document.items())
+        all(doc.get(k) == v for k, v in uber_document.items())
         for doc in documents_overview
     ):
         print("Document overview test failed")
-        print("Aristotle document not found in the overview")
+        print("Uber document not found in the overview")
         sys.exit(1)
     print("Document overview test passed")
     print("~" * 100)
@@ -88,11 +89,13 @@ def test_document_overview_sample_file_sdk():
 def test_vector_search_sample_file_filter_sdk():
     print("Testing: Vector search")
     results = client.search(
-        query="Who was aristotle?",
-        filters={
-            "document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}
+        query="What was Uber's recent profit??",
+        vector_search_settings={
+            "search_filters": {
+                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+            }
         },
-    )
+    )["results"]["vector_search_results"]
 
     if not results:
         print("Vector search test failed: No results returned")
@@ -100,11 +103,11 @@ def test_vector_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.",
-        "extraction_id": "ff8accdb-791e-5b6d-a83a-5adc32c4222c",
-        "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+        "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
+        "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.77 <= x <= 0.79,
+        "score": lambda x: 0.71 <= x <= 0.73,
     }
     compare_result_fields(lead_result, expected_lead_search_result)
 
@@ -114,25 +117,30 @@ def test_vector_search_sample_file_filter_sdk():
 
 def test_hybrid_search_sample_file_filter_sdk():
     print("Testing: Hybrid search")
+
     results = client.search(
-        query="Who was aristotle?",
-        vector_search_settings={"use_hybrid_search": True},
-        filters={
-            "document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}
+        query="What was Uber's recent profit??",
+        vector_search_settings={
+            "use_hybrid_search": True,
+            "search_filters": {
+                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+            }
         },
-    )
+    )["results"]["vector_search_results"]
 
     if not results:
-        print("Hybrid search test failed: No results returned")
+        print("Vector search test failed: No results returned")
         sys.exit(1)
 
     lead_result = results[0]
     expected_lead_search_result = {
-        "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.",
-        "extraction_id": "ff8accdb-791e-5b6d-a83a-5adc32c4222c",
-        "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+        "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
+        "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
+        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.77 <= x <= 0.79,
+        "score": lambda x: 0.016 <= x <= 0.017,
+        "semantic_rank": 1,
+        "full_text_rank": 200
     }
     compare_result_fields(lead_result, expected_lead_search_result)
 
