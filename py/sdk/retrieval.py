@@ -45,7 +45,6 @@ class RetrievalMethods:
         }
         return await client._make_request("POST", "search", json=data)
 
-    
     @staticmethod
     async def completion(
         client,
@@ -64,7 +63,7 @@ class RetrievalMethods:
             "messages": [msg.model_dump() for msg in cast_messages],
             "generation_config": generation_config,
         }
-        
+
         return await client._make_request("POST", "completion", json=data)
 
     @staticmethod

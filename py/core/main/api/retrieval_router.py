@@ -283,12 +283,16 @@ class RetrievalRouter(BaseRouter):
             except Exception as e:
                 raise R2RException(str(e), 500)
 
-
         @self.router.post("/completion")
         @self.base_endpoint
         async def completion(
-            messages: list[Message] = Body(..., description="The messages to complete"),
-            generation_config: GenerationConfig = Body(default_factory=GenerationConfig, description="The generation config"),
+            messages: list[Message] = Body(
+                ..., description="The messages to complete"
+            ),
+            generation_config: GenerationConfig = Body(
+                default_factory=GenerationConfig,
+                description="The generation config",
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
             response_model=WrappedCompletionResponse,
         ):
