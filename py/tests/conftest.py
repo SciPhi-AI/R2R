@@ -6,6 +6,7 @@ import uuid
 import pytest
 
 from core import (
+    AppConfig,
     AuthConfig,
     BCryptConfig,
     CompletionConfig,
@@ -59,32 +60,35 @@ def sample_entries(dimension, num_entries):
         generate_random_vector_entry(i, dimension) for i in range(num_entries)
     ]
 
+@pytest.fixture(scope="session")
+def app_config():
+    return AppConfig()
 
 # Crypto
 @pytest.fixture(scope="session")
-def crypto_config():
-    return BCryptConfig()
+def crypto_config(app_config):
+    return BCryptConfig(app=app_config)
 
 
 @pytest.fixture(scope="session")
-def crypto_provider(crypto_config):
+def crypto_provider(crypto_config, app_config):
     return BCryptProvider(crypto_config)
 
 
 # Postgres
 @pytest.fixture(scope="session")
-def db_config():
+def db_config(app_config):
     collection_id = uuid.uuid4()
 
     random_project_name = f"test_collection_{collection_id.hex}"
     return DatabaseConfig.create(
-        provider="postgres", project_name=random_project_name
+        provider="postgres", project_name=random_project_name, app=app_config
     )
 
 
 @pytest.fixture(scope="function")
 async def postgres_db_provider(
-    db_config, dimension, crypto_provider, sample_entries
+    db_config, dimension, crypto_provider, sample_entries, app_config
 ):
     db = PostgresDBProvider(
         db_config, dimension=dimension, crypto_provider=crypto_provider
@@ -98,12 +102,12 @@ async def postgres_db_provider(
 
 
 @pytest.fixture(scope="function")
-def db_config_temporary():
+def db_config_temporary(app_config):
     collection_id = uuid.uuid4()
 
     random_project_name = f"test_collection_{collection_id.hex}"
     return DatabaseConfig.create(
-        provider="postgres", project_name=random_project_name
+        provider="postgres", project_name=random_project_name, app=app_config
     )
 
 
@@ -127,12 +131,13 @@ async def temporary_postgres_db_provider(
 
 # Auth
 @pytest.fixture(scope="session")
-def auth_config():
+def auth_config(app_config):
     return AuthConfig(
         secret_key="test_secret_key",
         access_token_lifetime_in_minutes=15,
         refresh_token_lifetime_in_days=1,
         require_email_verification=False,
+        app=app_config
     )
 
 
@@ -149,19 +154,20 @@ async def r2r_auth_provider(
 
 # Embeddings
 @pytest.fixture
-def litellm_provider():
+def litellm_provider(app_config):
     config = EmbeddingConfig(
         provider="litellm",
         base_model="text-embedding-3-small",
         base_dimension=1536,
+        app=app_config
     )
     return LiteLLMEmbeddingProvider(config)
 
 
 # File Provider
 @pytest.fixture(scope="function")
-def file_config():
-    return FileConfig(provider="postgres")
+def file_config(app_config):
+    return FileConfig(provider="postgres", app=app_config)
 
 
 @pytest.fixture(scope="function")
@@ -176,18 +182,18 @@ async def postgres_file_provider(file_config, temporary_postgres_db_provider):
 
 # LLM provider
 @pytest.fixture
-def litellm_completion_provider():
-    config = CompletionConfig(provider="litellm")
+def litellm_completion_provider(app_config):
+    config = CompletionConfig(provider="litellm", app=app_config)
     return LiteCompletionProvider(config)
 
 
 # Logging
 @pytest.fixture(scope="function")
-async def local_logging_provider():
+async def local_logging_provider(app_config):
     unique_id = str(uuid.uuid4())
     logging_path = f"test_{unique_id}.sqlite"
     provider = LocalRunLoggingProvider(
-        LoggingConfig(logging_path=logging_path)
+        LoggingConfig(logging_path=logging_path, app=app_config)
     )
     await provider._init()
     yield provider
