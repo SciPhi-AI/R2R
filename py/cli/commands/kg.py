@@ -33,9 +33,6 @@ from cli.utils.timer import timer
 def create_graph(
     ctx, collection_id, run, kg_creation_settings, force_kg_creation
 ):
-    """
-    Create a new graph.
-    """
     client = ctx.obj
 
     if kg_creation_settings:
@@ -46,18 +43,19 @@ def create_graph(
                 "Error: kg-creation-settings must be a valid JSON string"
             )
             return
-
-    if not run:
-        run_type = "estimate"
     else:
-        run_type = "run"
+        kg_creation_settings = {}
+
+    run_type = "run" if run else "estimate"
 
     if force_kg_creation:
         kg_creation_settings = {"force_kg_creation": True}
 
     with timer():
         response = client.create_graph(
-            collection_id, run_type, kg_creation_settings
+            collection_id=collection_id,
+            run_type=run_type,
+            kg_creation_settings=kg_creation_settings,
         )
 
     click.echo(json.dumps(response, indent=2))
@@ -102,11 +100,10 @@ def enrich_graph(
                 "Error: kg-enrichment-settings must be a valid JSON string"
             )
             return
-
-    if not run:
-        run_type = "estimate"
     else:
-        run_type = "run"
+        kg_enrichment_settings = {}
+
+    run_type = "run" if run else "estimate"
 
     if force_kg_enrichment:
         kg_enrichment_settings = {"force_kg_enrichment": True}

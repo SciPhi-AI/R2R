@@ -5,7 +5,6 @@ from uuid import UUID
 
 import yaml
 from fastapi import Body, Depends, Query
-from pydantic import Json
 
 from core.base import RunType
 from core.base.api.models import (
@@ -65,10 +64,10 @@ class KGRouter(BaseRouter):
                 description="Collection ID to create graph for.",
             ),
             run_type: Optional[KGRunType] = Body(
-                default=KGRunType.ESTIMATE,
+                default=None,
                 description="Run type for the graph creation process.",
             ),
-            kg_creation_settings: Optional[Json[dict]] = Body(
+            kg_creation_settings: Optional[dict] = Body(
                 default=None,
                 description="Settings for the graph creation process.",
             ),
@@ -79,9 +78,11 @@ class KGRouter(BaseRouter):
             This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
-
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
             if not collection_id:
                 collection_id = generate_default_user_collection_id(
@@ -127,7 +128,7 @@ class KGRouter(BaseRouter):
                 default=KGRunType.ESTIMATE,
                 description="Run type for the graph enrichment process.",
             ),
-            kg_enrichment_settings: Optional[Json[dict]] = Body(
+            kg_enrichment_settings: Optional[dict] = Body(
                 default=None,
                 description="Settings for the graph enrichment process.",
             ),
@@ -136,9 +137,11 @@ class KGRouter(BaseRouter):
             """
             This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
             """
-
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings
@@ -148,6 +151,8 @@ class KGRouter(BaseRouter):
                 collection_id = generate_default_user_collection_id(
                     auth_user.id
                 )
+
+            logger.info(f"Running on collection {collection_id}")
 
             if run_type is KGRunType.ESTIMATE:
 
