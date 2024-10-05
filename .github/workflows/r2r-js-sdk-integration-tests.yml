@@ -47,11 +47,11 @@ jobs:
 
       - name: Display R2R server logs if server not responding
         if: failure()
-        run: docker logs $(docker ps -q)
+        run: docker logs r2r-r2r-1
 
       - name: Run integration tests
         run: npm run test
 
       - name: Display R2R server logs if tests fail
         if: failure()
-        run: docker logs $(docker ps -q)
+        run: docker logs r2r-r2r-1
