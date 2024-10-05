@@ -53,10 +53,10 @@ from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
     RAGResponse,
     SearchResponse,
+    WrappedCompletionResponse,
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
-    WrappedCompletionResponse,
 )
 
 __all__ = [

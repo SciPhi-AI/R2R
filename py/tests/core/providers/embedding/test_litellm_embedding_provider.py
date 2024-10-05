@@ -21,11 +21,12 @@ async def cleanup_tasks():
 
 
 @pytest.fixture
-def litellm_provider():
+def litellm_provider(app_config):
     config = EmbeddingConfig(
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
+        app=app_config,
     )
 
     return LiteLLMEmbeddingProvider(config)
@@ -37,9 +38,9 @@ def test_litellm_initialization(litellm_provider):
     assert litellm_provider.base_dimension == 1536
 
 
-def test_litellm_invalid_provider_initialization():
+def test_litellm_invalid_provider_initialization(app_config):
     with pytest.raises(ValueError):
-        config = EmbeddingConfig(provider="invalid_provider")
+        config = EmbeddingConfig(provider="invalid_provider", app=app_config)
         LiteLLMEmbeddingProvider(config)
 
 
@@ -73,12 +74,13 @@ async def test_litellm_async_get_embeddings(litellm_provider):
         assert all(len(emb) == 1536 for emb in embeddings)
 
 
-def test_litellm_rerank_model_not_supported():
+def test_litellm_rerank_model_not_supported(app_config):
     config = EmbeddingConfig(
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
         rerank_model="some-model",
+        app=app_config,
     )
     with pytest.raises(
         ValueError, match="does not support separate reranking"
@@ -86,11 +88,12 @@ def test_litellm_rerank_model_not_supported():
         LiteLLMEmbeddingProvider(config)
 
 
-def test_litellm_unsupported_stage():
+def test_litellm_unsupported_stage(app_config):
     config = EmbeddingConfig(
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
+        app=app_config,
     )
     provider = LiteLLMEmbeddingProvider(config)
     with pytest.raises(
@@ -102,11 +105,12 @@ def test_litellm_unsupported_stage():
 
 
 @pytest.mark.asyncio
-async def test_litellm_async_unsupported_stage():
+async def test_litellm_async_unsupported_stage(app_config):
     config = EmbeddingConfig(
         provider="litellm",
         base_model="openai/text-embedding-3-small",
         base_dimension=1536,
+        app=app_config,
     )
     provider = LiteLLMEmbeddingProvider(config)
     with pytest.raises(

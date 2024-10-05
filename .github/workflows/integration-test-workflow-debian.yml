@@ -1,10 +1,10 @@
-name: R2R CLI Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
+name: R2R CLI Integration and Regression Test
 
 on:
   push:
     branches:
-      - '**'
-  workflow_dispatch:
+      - '**'  # Trigger on all branches
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-and-test:
@@ -16,29 +16,57 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: false
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
-      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-      R2R_PROJECT_NAME: ${{ secrets.R2R_PROJECT_NAME }}
+      POSTGRES_HOST: localhost
+      POSTGRES_DBNAME: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Set up Python environment
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.10'  # Use a stable Python version
 
-    - name: Install Poetry
+    - name: Install Poetry and dependencies
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
+        cd py && poetry install -E core -E ingestion-bundle
 
-    - name: Install dependencies
-      working-directory: ./py
+    - name: Remove pre-installed PostgreSQL
       run: |
-        poetry install -E core -E ingestion-bundle
+        sudo apt-get purge -y 'postgresql-*'
+        sudo rm -rf /var/lib/postgresql
+        sudo rm -rf /var/log/postgresql
+        sudo rm -rf /etc/postgresql
+
+    - name: Add PostgreSQL Apt Repository
+      run: |
+        # Add the PostgreSQL Apt repository
+        echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+        # Download and add the repository GPG key
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+
+    - name: Install PostgreSQL 15 and pgvector
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector
+
+    - name: Start PostgreSQL 15 service
+      run: |
+        sudo systemctl enable postgresql@15-main
+        sudo systemctl start postgresql@15-main
+
+    - name: Configure PostgreSQL
+      run: |
+        # Change to a directory accessible by the postgres user to avoid permission warnings
+        cd /
+        sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
+        sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "CREATE EXTENSION vector;"
 
     - name: Start R2R server
       working-directory: ./py
@@ -47,102 +75,58 @@ jobs:
         echo "Waiting for services to start..."
         sleep 30
 
-    - name: Run integration tests
+    - name: Run CLI Ingestion
       working-directory: ./py
       run: |
-        echo "R2R Version"
-        poetry run r2r version
+        poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_cli
 
-    - name: Walkthrough
+    - name: Run CLI Retrieval
       working-directory: ./py
       run: |
-        echo "Ingest Data"
-        poetry run r2r ingest-sample-files
+        poetry run python tests/integration/harness_cli.py test_vector_search_sample_file_filter_cli
+        poetry run python tests/integration/harness_cli.py test_rag_response_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_rag_response_stream_sample_file_cli
 
-        echo "Get Documents Overview"
-        poetry run r2r documents-overview
-
-        echo "Get Document Chunks"
-        poetry run r2r document-chunks --document-id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Delete Documents"
-        poetry run r2r delete --filter=document_id:eq:9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Update Document"
-        poetry run r2r update-files core/examples/data/aristotle_v2.txt --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-
-        echo "Vector Search"
-        poetry run r2r search --query="What was Uber's profit in 2020?"
-
-        echo "Hybrid Search"
-        r2r search --query="What was Uber's profit in 2020?" --use-hybrid-search
-
-        echo "Basic RAG"
-        poetry run r2r rag --query="What was Uber's profit in 2020?"
-
-        echo "RAG with Hybrid Search"
-        poetry run r2r rag --query="Who is Jon Snow?" --use-hybrid-search
-
-        echo "Streaming RAG"
-        poetry run r2r rag --query="who was aristotle" --use-hybrid-search --stream
-
-        echo "User Registration"
-        curl -X POST http://localhost:7272/v2/register \
-          -H "Content-Type: application/json" \
-          -d '{
-            "email": "test@example.com",
-            "password": "password123"
-          }'
-
-        echo "User Login"
-        curl -X POST http://localhost:7272/v2/login \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=test@example.com&password=password123"
-
-        echo "Users Overview"
-        poetry run r2r users-overview
-
-        echo "Logging"
-        poetry run r2r logs
-
-        echo "Analytics"
-        poetry run r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
-
-    - name: GraphRAG
+    - name: Run SDK Ingestion
       working-directory: ./py
       run: |
-        echo "Create Knowledge Graph"
-        poetry run r2r create-graph --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+        poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_reingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_document_overview_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_document_chunks_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_delete_and_reingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_with_config_sdk
 
-        echo "Inspect Knowledge Graph"
-        poetry run r2r inspect-knowledge-graph
-
-        echo "Graph Enrichment"
-        poetry run r2r enrich-graph
-
-        echo "Local Search"
-        r2r search --query="Who is Aristotle?" --use-kg-search --kg-search-type=local
-
-        echo "Global Search"
-        r2r search --query="What were Aristotles key contributions to philosophy?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
-
-        echo "RAG"
-        r2r rag --query="What are the key contributions of Aristotle to modern society?" --use-kg-search --kg-search-type=global --max-llm-queries-for-global-search=100
-
-
-
-
-
-
-    - name: Advanced RAG
+    - name: Run SDK Retrieval
       working-directory: ./py
       run: |
-        echo "HyDE"
-        poetry run r2r rag --query="who was aristotle" --use-hybrid-search --stream --search-strategy=hyde
+        poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
+        poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
+        poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
 
-        echo "Rag-Fusion"
-        r2r rag --query="Explain the theory of relativity" --use-hybrid-search --stream --search-strategy=rag_fusion
+    - name: Run SDK Auth
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_user_registration_and_login
+        poetry run python tests/integration/harness_sdk.py test_duplicate_user_registration
+        poetry run python tests/integration/harness_sdk.py test_token_refresh
+        poetry run python tests/integration/harness_sdk.py test_user_document_management
+        poetry run python tests/integration/harness_sdk.py test_user_search_and_rag
+        poetry run python tests/integration/harness_sdk.py test_user_password_management
+        poetry run python tests/integration/harness_sdk.py test_user_profile_management
+        poetry run python tests/integration/harness_sdk.py test_user_logout
 
     - name: Stop R2R server
+      if: always()
+      run: ps aux | grep "r2r serve" | awk '{print $2}' | xargs kill || true
+
+    - name: Uninstall PostgreSQL after tests (Optional)
+      if: always()
       run: |
-        pkill -f "r2r serve"
+        sudo apt-get purge -y 'postgresql-*'
+        sudo rm -rf /var/lib/postgresql
+        sudo rm -rf /var/log/postgresql
+        sudo rm -rf /etc/postgresql
