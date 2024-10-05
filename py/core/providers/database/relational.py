@@ -35,7 +35,9 @@ class PostgresRelationalDBProvider(
         self.project_name = project_name
         self.pool = None
         self.postgres_configuration_settings = postgres_configuration_settings
-        self.semaphore = asyncio.Semaphore(100)
+        self.semaphore = asyncio.Semaphore(
+            int(self.postgres_configuration_settings.max_connections * 0.9)
+        )
 
     async def initialize(self):
         try:
