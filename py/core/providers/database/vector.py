@@ -459,7 +459,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 sess.commit()
 
                 if affected_rows == 0:
-                    logger.warning(
+                    raise ValueError(
                         f"Collection {collection_id} not found in any documents."
                     )
             except NoResultFound:
