@@ -320,33 +320,33 @@ class PostgresKGProvider(KGProvider):
         return (total_entities, total_relationships)
 
     async def get_entity_map(
-        self, offset: int, limit: int, document_ids: list[UUID]
+        self, offset: int, limit: int, document_id: UUID
     ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
 
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name
                 FROM {self._get_table_name("entity_raw")}
-                WHERE document_id = ANY($1)
+                WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT e.name, e.description, e.category,
                    (SELECT array_agg(DISTINCT x) FROM unnest(e.extraction_ids) x) AS extraction_ids,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(e.document_ids) x) AS document_ids
+                   e.document_id
             FROM {self._get_table_name("entity_raw")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.entity_id, e.document_ids
+            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.entity_id, e.document_id
             ORDER BY e.name;"""
 
-        entities_list = await self.fetch_query(QUERY1, [document_ids])
+        entities_list = await self.fetch_query(QUERY1, [document_id])
         entities_list = [
             Entity(
                 name=entity["name"],
                 description=entity["description"],
                 category=entity["category"],
                 extraction_ids=entity["extraction_ids"],
-                document_ids=entity["document_ids"],
+                document_id=entity["document_id"],
             )
             for entity in entities_list
         ]
@@ -368,7 +368,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY t.subject, t.predicate, t.object;
         """
 
-        triples_list = await self.fetch_query(QUERY2, [document_ids])
+        triples_list = await self.fetch_query(QUERY2, [document_id])
         triples_list = [
             Triple(
                 subject=triple["subject"],
