@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
-import asyncio
 
 from core.base import (
     CommunityReport,
@@ -45,7 +44,7 @@ class PostgresKGProvider(KGProvider):
 
         self.db_provider = db_provider.relational
         self.embedding_provider = embedding_provider
-                
+
         try:
             import networkx as nx
 
@@ -152,6 +151,7 @@ class PostgresKGProvider(KGProvider):
         await self.execute_query(query)
 
         # embeddings tables
+        # TODO: deprecating document ID
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
             id SERIAL PRIMARY KEY,
@@ -159,15 +159,13 @@ class PostgresKGProvider(KGProvider):
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
             description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
-            document_id UUID NOT NULL,
-            UNIQUE (name, document_id)
+            document_ids UUID[] NOT NULL, 
+            collection_id UUID NOT NULL, 
+            UNIQUE (name, collection_id)
             );
         """
 
         await self.execute_query(query)
-
-        # TODO: Create another table for entity_embedding_collection
-        # entity embeddings at a collection level
 
         # communities table, result of the Leiden algorithm
         query = f"""
@@ -324,33 +322,33 @@ class PostgresKGProvider(KGProvider):
         return (total_entities, total_relationships)
 
     async def get_entity_map(
-        self, offset: int, limit: int, document_id: UUID
+        self, offset: int, limit: int, document_ids: list[UUID]
     ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
 
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name
                 FROM {self._get_table_name("entity_raw")}
-                WHERE document_id = $1
+                WHERE document_id = ANY($1)
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT e.name, e.description, e.category,
                    (SELECT array_agg(DISTINCT x) FROM unnest(e.extraction_ids) x) AS extraction_ids,
-                   e.document_id
+                   (SELECT array_agg(DISTINCT x) FROM unnest(e.document_ids) x) AS document_ids
             FROM {self._get_table_name("entity_raw")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.document_id
+            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.entity_id, e.document_ids
             ORDER BY e.name;"""
 
-        entities_list = await self.fetch_query(QUERY1, [document_id])
+        entities_list = await self.fetch_query(QUERY1, [document_ids])
         entities_list = [
             Entity(
                 name=entity["name"],
                 description=entity["description"],
                 category=entity["category"],
                 extraction_ids=entity["extraction_ids"],
-                document_id=entity["document_id"],
+                document_ids=entity["document_ids"],
             )
             for entity in entities_list
         ]
@@ -372,7 +370,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY t.subject, t.predicate, t.object;
         """
 
-        triples_list = await self.fetch_query(QUERY2, [document_id])
+        triples_list = await self.fetch_query(QUERY2, [document_ids])
         triples_list = [
             Triple(
                 subject=triple["subject"],
