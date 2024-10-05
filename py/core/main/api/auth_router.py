@@ -109,7 +109,6 @@ class AuthRouter(BaseRouter):
         @self.router.put("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def put_user_app(
-            id: UUID = Body(None, description="ID of the user to update"),
             user_id: UUID = Body(None, description="ID of the user to update"),
             email: EmailStr | None = Body(
                 None, description="Updated email address"
@@ -142,15 +141,8 @@ class AuthRouter(BaseRouter):
                         403,
                     )
 
-            try:
-                user_uuid = UUID(user_id)
-            except ValueError:
-                raise R2RException(
-                    status_code=400, message="Invalid user ID format."
-                )
-
             return await self.service.update_user(
-                user_id=user_uuid,
+                user_id=user_id,
                 email=email,
                 is_superuser=is_superuser,
                 name=name,

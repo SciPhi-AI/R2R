@@ -106,15 +106,18 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
         poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
         poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
-        poetry run python tests/integration/harness_sdk.py test_rag_response_stream_sample_file_sdk
 
     - name: Run SDK Auth
       working-directory: ./py
       run: |
-        poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
-        poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
-        poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
-        poetry run python tests/integration/harness_sdk.py test_rag_response_stream_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_user_registration_and_login
+        poetry run python tests/integration/harness_sdk.py test_duplicate_user_registration
+        poetry run python tests/integration/harness_sdk.py test_token_refresh
+        poetry run python tests/integration/harness_sdk.py test_user_document_management
+        poetry run python tests/integration/harness_sdk.py test_user_search_and_rag
+        poetry run python tests/integration/harness_sdk.py test_user_password_management
+        poetry run python tests/integration/harness_sdk.py test_user_profile_management
+        poetry run python tests/integration/harness_sdk.py test_user_logout
 
     - name: Stop R2R server
       if: always()

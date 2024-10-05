@@ -3,7 +3,7 @@ import sys
 
 from r2r import R2RClient
 
-client = R2RClient()
+client = R2RClient("http://localhost:7274")
 
 
 def compare_result_fields(result, expected_fields):
@@ -484,7 +484,6 @@ def test_user_search_and_rag():
     # Perform a search
     search_query = "What was Lyft's revenue in 2021?"
     search_result = client.search(query=search_query)["results"]
-    print(f"Search Result:\n{search_result}")
 
     # Check the search result
     if not search_result["vector_search_results"]:
@@ -547,19 +546,17 @@ def test_user_password_management():
 def test_user_profile_management():
     print("Testing: User profile management")
 
-    client.register("test_user_123456@example.com", "password123")
-    client.login("test_user_123456@example.com", "password123")
+    client.register("user_test123@example.com", "password123")
+    client.login("user_test123@example.com", "password123")
 
     # Get user profile
     profile = client.user()["results"]
-    print(f"User Profile:\n{profile}")
 
     # Update user profile
     update_result = client.update_user(
         user_id=str(profile["id"]), name="John Doe", bio="R2R enthusiast"
     )
-    print(f"Update User Result:\n{update_result}")
-
+    assert update_result["results"]["name"] == "John Doe"
     print("User profile management test passed")
     print("~" * 100)
 
@@ -567,9 +564,10 @@ def test_user_profile_management():
 def test_user_logout():
     print("Testing: User logout")
 
+    client.login("user_test@example.com", "password123")
     logout_result = client.logout()
-    print(f"Logout Result:\n{logout_result}")
 
+    assert logout_result["results"]["message"] == "Logged out successfully"
     print("User logout test passed")
     print("~" * 100)
 
@@ -579,22 +577,21 @@ def test_superuser_capabilities():
 
     # Login as admin
     login_result = client.login("admin@example.com", "change_me_immediately")
-    print(f"Admin Login Result:\n{login_result}")
 
     # Access users overview
     users_overview = client.users_overview()
-    print(f"Users Overview:\n{users_overview}")
+    assert users_overview["total_entries"] > 0
 
     # Access system-wide logs
     logs = client.logs()
-    print(f"System Logs:\n{logs}")
+    assert len(logs["results"]) > 0
 
     # Perform analytics
     analytics_result = client.analytics(
         {"search_latencies": "search_latency"},
         {"search_latencies": ["basic_statistics", "search_latency"]},
     )
-    print(f"Analytics Result:\n{analytics_result}")
+    assert analytics_result["results"]["analytics_data"]["search_latencies"]
 
     print("Superuser capabilities test passed")
     print("~" * 100)

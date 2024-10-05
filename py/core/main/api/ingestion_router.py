@@ -195,7 +195,6 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive collection permissioning is under development.
             """
-            self._validate_ingestion_config(ingestion_config)
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and metadata["user_id"] != str(

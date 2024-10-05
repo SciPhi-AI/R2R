@@ -116,7 +116,7 @@ class R2RProviderFactory:
             )
         else:
             raise ValueError(
-                f"Ingestion provider {ingestion_config['provider']} not supported"
+                f"Ingestion provider {ingestion_config.provider} not supported"
             )
 
     @staticmethod
