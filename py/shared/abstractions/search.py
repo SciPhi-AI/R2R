@@ -207,6 +207,11 @@ class VectorSearchSettings(R2RSerializable):
     filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Filters to apply to the vector search",
+        deprecated=True,
+    )
+    search_filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
     )
     search_limit: int = Field(
         default=10,
@@ -283,12 +288,29 @@ class VectorSearchSettings(R2RSerializable):
         ]
         return dump
 
+    def __init__(self, **data):
+        # Either filters or search filters is supported
+        data["filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        data["search_filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        super().__init__(**data)
+
 
 class KGSearchSettings(R2RSerializable):
 
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="Filters to apply to the KG search",
+        description="Filters to apply to the vector search",
+        deprecated=True,
+    )
+    search_filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
     )
 
     selected_collection_ids: list[UUID] = Field(
@@ -346,3 +368,15 @@ class KGSearchSettings(R2RSerializable):
                 "__Community__": 20,
             },
         }
+
+    def __init__(self, **data):
+        # Either filters or search filters is supported
+        data["filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        data["search_filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        super().__init__(**data)
