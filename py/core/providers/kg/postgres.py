@@ -158,7 +158,7 @@ class PostgresKGProvider(KGProvider):
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
             description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
-            document_id UUID NOT NULL, 
+            document_id UUID NOT NULL,
             UNIQUE (name, document_id)
             );
         """
@@ -336,7 +336,7 @@ class PostgresKGProvider(KGProvider):
                    e.document_id
             FROM {self._get_table_name("entity_raw")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.entity_id, e.document_id
+            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.document_id
             ORDER BY e.name;"""
 
         entities_list = await self.fetch_query(QUERY1, [document_id])
