@@ -35,6 +35,32 @@ def test_ingest_sample_file_sdk():
     print("~" * 100)
 
 
+def test_ingest_sample_file_with_config_sdk():
+    print("Testing: Ingest sample file 2")
+    file_paths = ["core/examples/data/aristotle_v2.txt"]
+
+    ingest_response = client.ingest_files(
+        file_paths=file_paths, ingestion_config={"chunk_size": 4_096}
+    )
+
+    if not ingest_response["results"]:
+        print("Ingestion test failed")
+        sys.exit(1)
+
+    document_id = ingest_response["results"][0]["document_id"]
+
+    if document_id != "c3291abf-8a4e-5d9d-80fd-232ef6fd8526":
+        print("Ingestion test failed: Incorrect document ID")
+        sys.exit(1)
+
+    if len(ingest_response["results"]) != 1:
+        print("Ingestion test failed: Incorrect number of results")
+        sys.exit(1)
+
+    print("Ingestion with config successful")
+    print("~" * 100)
+
+
 def test_reingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
     file_paths = ["core/examples/data/uber_2021.pdf"]
@@ -326,6 +352,251 @@ def test_agent_stream_sample_file_sdk():
         sys.exit(1)
 
     print("Agent response stream test passed")
+    print("~" * 100)
+
+
+def test_user_registration_and_login():
+    print("Testing: User registration and login")
+
+    # Register a new user
+    user_result = client.register("user_test@example.com", "password123")[
+        "results"
+    ]
+
+    # Login immediately (assuming email verification is disabled)
+    login_results = client.login("user_test@example.com", "password123")[
+        "results"
+    ]
+
+    if "access_token" not in login_results:
+        print("User registration and login test failed")
+        sys.exit(1)
+
+    if "refresh_token" not in login_results:
+        print("User registration and login test failed")
+        sys.exit(1)
+
+    print("User registration and login test passed")
+    print("~" * 100)
+
+
+def test_duplicate_user_registration():
+    print("Testing: Duplicate user registration")
+
+    # Register a new user
+    client.register("duplicate_test@example.com", "password123")["results"]
+
+    # Attempt to register the same user again
+    try:
+        client.register("duplicate_test@example.com", "password123")
+        print(
+            "Duplicate user registration test failed: Expected an error but registration succeeded"
+        )
+        sys.exit(1)
+    except Exception as e:
+        error_message = str(e)
+        if "User with this email already exists" not in error_message:
+            print(
+                f"Duplicate user registration test failed: Unexpected error - {error_message}"
+            )
+            sys.exit(1)
+        else:
+            print("Duplicate user registration failed as expected")
+
+    print("Duplicate user registration test passed")
+    print("~" * 100)
+
+
+def test_token_refresh():
+    print("Testing: Access token refresh")
+    client.login("user_test@example.com", "password123")
+
+    refresh_result = client.refresh_access_token()["results"]
+    if "access_token" not in refresh_result:
+        print("Access token refresh test failed")
+        sys.exit(1)
+
+    if "refresh_token" not in refresh_result:
+        print("Access token refresh test failed")
+        sys.exit(1)
+
+    print("Access token refresh test passed")
+    print("~" * 100)
+
+
+def test_user_document_management():
+    print("Testing: User document management")
+    client.login("user_test@example.com", "password123")
+
+    # Ingest a sample file for the logged-in user
+    ingestion_result = client.ingest_files(
+        ["core/examples/data/lyft_2021.pdf"]
+    )["results"]
+
+    # Check the ingestion result
+    if not ingestion_result:
+        print("User document management test failed: Ingestion failed")
+        sys.exit(1)
+
+    ingested_document = ingestion_result[0]
+    expected_ingestion_result = {
+        "message": "Ingestion task completed successfully.",
+        "task_id": None,
+        "document_id": lambda x: len(x)
+        == 36,  # Check if document_id is a valid UUID
+    }
+    compare_result_fields(ingested_document, expected_ingestion_result)
+
+    # Check the user's documents
+    documents_overview = client.documents_overview()["results"]
+
+    if not documents_overview:
+        print(
+            "User document management test failed: No documents found in the overview"
+        )
+        sys.exit(1)
+
+    ingested_document_overview = documents_overview[0]
+    expected_document_overview = {
+        "id": ingested_document["document_id"],
+        "title": "lyft_2021.pdf",
+        "user_id": lambda x: len(x) == 36,  # Check if user_id is a valid UUID
+        "type": "pdf",
+        "ingestion_status": "success",
+        "kg_extraction_status": "pending",
+        "version": "v0",
+        "collection_ids": lambda x: len(x) == 1
+        and len(x[0]) == 36,  # Check if collection_ids contains a valid UUID
+        "metadata": {"version": "v0"},
+    }
+    compare_result_fields(
+        ingested_document_overview, expected_document_overview
+    )
+
+    print("User document management test passed")
+    print("~" * 100)
+
+
+def test_user_search_and_rag():
+    print("Testing: User search and RAG")
+    client.login("user_test@example.com", "password123")
+
+    # Perform a search
+    search_query = "What was Lyft's revenue in 2021?"
+    search_result = client.search(query=search_query)["results"]
+    print(f"Search Result:\n{search_result}")
+
+    # Check the search result
+    if not search_result["vector_search_results"]:
+        print("User search test failed: No search results found")
+        sys.exit(1)
+
+    lead_search_result = search_result["vector_search_results"][0]
+    expected_search_result = {
+        "text": lambda x: "Lyft" in x and "revenue" in x and "2021" in x,
+        "score": lambda x: 0.5 <= x <= 1.0,
+    }
+    compare_result_fields(lead_search_result, expected_search_result)
+
+    # Perform a RAG query
+    rag_query = "What was Lyft's total revenue in 2021 and how did it compare to the previous year?"
+    rag_result = client.rag(query=rag_query)["results"]
+
+    # Check the RAG result
+    if not rag_result["completion"]["choices"]:
+        print("User RAG test failed: No RAG results found")
+        sys.exit(1)
+
+    rag_response = rag_result["completion"]["choices"][0]["message"]["content"]
+    expected_rag_response = (
+        lambda x: "Lyft" in x
+        and "revenue" in x
+        and "2021" in x
+        and "2020" in x
+    )
+
+    if not expected_rag_response(rag_response):
+        print(
+            f"User RAG test failed: Unexpected RAG response - {rag_response}"
+        )
+        sys.exit(1)
+
+    print("User search and RAG test passed")
+    print("~" * 100)
+
+
+def test_user_password_management():
+    print("Testing: User password management")
+
+    # Test for duplicate user
+    client.login("duplicate_test@example.com", "password123")
+
+    # Change password
+    client.change_password("password123", "new_password")
+    # Request password reset
+    client.request_password_reset("user_test@example.com")
+
+    # Confirm password reset (after user receives reset token)
+    # reset_confirm_result = client.confirm_password_reset("reset_token_here", "password123")
+    # print(f"Reset Confirm Result:\n{reset_confirm_result}")
+
+    print("User password management test passed")
+    print("~" * 100)
+
+
+def test_user_profile_management():
+    print("Testing: User profile management")
+
+    client.register("test_user_123456@example.com", "password123")
+    client.login("test_user_123456@example.com", "password123")
+
+    # Get user profile
+    profile = client.user()["results"]
+    print(f"User Profile:\n{profile}")
+
+    # Update user profile
+    update_result = client.update_user(
+        user_id=str(profile["id"]), name="John Doe", bio="R2R enthusiast"
+    )
+    print(f"Update User Result:\n{update_result}")
+
+    print("User profile management test passed")
+    print("~" * 100)
+
+
+def test_user_logout():
+    print("Testing: User logout")
+
+    logout_result = client.logout()
+    print(f"Logout Result:\n{logout_result}")
+
+    print("User logout test passed")
+    print("~" * 100)
+
+
+def test_superuser_capabilities():
+    print("Testing: Superuser capabilities")
+
+    # Login as admin
+    login_result = client.login("admin@example.com", "change_me_immediately")
+    print(f"Admin Login Result:\n{login_result}")
+
+    # Access users overview
+    users_overview = client.users_overview()
+    print(f"Users Overview:\n{users_overview}")
+
+    # Access system-wide logs
+    logs = client.logs()
+    print(f"System Logs:\n{logs}")
+
+    # Perform analytics
+    analytics_result = client.analytics(
+        {"search_latencies": "search_latency"},
+        {"search_latencies": ["basic_statistics", "search_latency"]},
+    )
+    print(f"Analytics Result:\n{analytics_result}")
+
+    print("Superuser capabilities test passed")
     print("~" * 100)
 
 

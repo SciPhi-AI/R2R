@@ -109,7 +109,8 @@ class AuthRouter(BaseRouter):
         @self.router.put("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def put_user_app(
-            user_id: str = Body(None, description="ID of the user to update"),
+            id: UUID = Body(None, description="ID of the user to update"),
+            user_id: UUID = Body(None, description="ID of the user to update"),
             email: EmailStr | None = Body(
                 None, description="Updated email address"
             ),
@@ -128,11 +129,18 @@ class AuthRouter(BaseRouter):
 
             This endpoint allows the authenticated user to update their profile information.
             """
+
             if is_superuser is not None and not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can update the superuser status of a user",
                     403,
                 )
+            if not auth_user.is_superuser:
+                if not auth_user.id == user_id:
+                    raise R2RException(
+                        "Only superusers can update other users' information",
+                        403,
+                    )
 
             try:
                 user_uuid = UUID(user_id)

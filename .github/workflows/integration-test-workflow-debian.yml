@@ -90,7 +90,7 @@ jobs:
         poetry run python tests/integration/harness_cli.py test_rag_response_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_rag_response_stream_sample_file_cli
 
-    - name: Run SDK Integration
+    - name: Run SDK Ingestion
       working-directory: ./py
       run: |
         poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
@@ -98,8 +98,17 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_document_overview_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_document_chunks_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_delete_and_reingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_with_config_sdk
 
     - name: Run SDK Retrieval
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
+        poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
+        poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_rag_response_stream_sample_file_sdk
+
+    - name: Run SDK Auth
       working-directory: ./py
       run: |
         poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk

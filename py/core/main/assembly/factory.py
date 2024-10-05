@@ -82,17 +82,23 @@ class R2RProviderFactory:
     def create_ingestion_provider(
         ingestion_config: IngestionConfig, *args, **kwargs
     ) -> IngestionProvider:
-        config_dict = ingestion_config.model_dump()
+
+        config_dict = (
+            ingestion_config.model_dump()
+            if isinstance(ingestion_config, IngestionConfig)
+            else ingestion_config
+        )
+
         extra_fields = config_dict.pop("extra_fields", {})
 
-        if ingestion_config.provider == "r2r":
+        if config_dict["provider"] == "r2r":
             from core.providers import R2RIngestionConfig, R2RIngestionProvider
 
             r2r_ingestion_config = R2RIngestionConfig(
                 **config_dict, **extra_fields
             )
             return R2RIngestionProvider(r2r_ingestion_config)
-        elif ingestion_config.provider in [
+        elif config_dict["provider"] in [
             "unstructured_local",
             "unstructured_api",
         ]:
@@ -110,7 +116,7 @@ class R2RProviderFactory:
             )
         else:
             raise ValueError(
-                f"Ingestion provider {ingestion_config.provider} not supported"
+                f"Ingestion provider {ingestion_config['provider']} not supported"
             )
 
     @staticmethod
@@ -292,7 +298,7 @@ class R2RProviderFactory:
                 self.config.embedding, *args, **kwargs
             )
         )
-
+        print("self.config.ingestion = ", self.config.ingestion)
         ingestion_provider = (
             ingestion_provider_override
             or self.create_ingestion_provider(

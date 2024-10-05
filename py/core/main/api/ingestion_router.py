@@ -100,8 +100,6 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
-            self._validate_ingestion_config(ingestion_config)
-
             # Check if the user is a superuser
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
@@ -310,17 +308,6 @@ class IngestionRouter(BaseRouter):
             )
             raw_message["document_id"] = str(document_id)
             return raw_message  # type: ignore
-
-    @staticmethod
-    def _validate_ingestion_config(ingestion_config):
-        from ..assembly.factory import R2RProviderFactory
-
-        if ingestion_config:
-            R2RProviderFactory.create_ingestion_provider(ingestion_config)
-        else:
-            logger.info(
-                "No ingestion config override provided. Using default."
-            )
 
     @staticmethod
     async def _process_files(files):
