@@ -21,7 +21,7 @@ provider = "litellm"
 concurrent_request_limit = 256
 
   [completion.generation_config]
-  model = "azure/gpt-4o"
+  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
