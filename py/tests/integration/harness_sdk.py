@@ -3,7 +3,7 @@ import sys
 
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:7274")
+client = R2RClient("http://localhost:7272")
 
 
 def compare_result_fields(result, expected_fields):
