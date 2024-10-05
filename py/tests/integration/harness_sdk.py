@@ -114,7 +114,7 @@ def test_delete_and_reingest_sample_file_sdk():
 
     # Delete the Aristotle document
     delete_response = client.delete(
-        {"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}
+        {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}}
     )
 
     # Check if the deletion was successful
