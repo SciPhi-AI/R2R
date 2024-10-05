@@ -155,7 +155,6 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
-  // TOOD: Fix in R2R, table logs has no column named run_id
   test("Agentic RAG response with streaming", async () => {
     const messages = [
       { role: "system", content: "You are a helpful assistant." },

@@ -248,11 +248,13 @@ class IngestionRouter(BaseRouter):
                 "is_update": True,
             }
 
-            raw_message = await self.orchestration_provider.run_workflow(
+            raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
                 "update-files", {"request": workflow_input}, {}
             )
             raw_message["message"] = "Update task queued successfully."
             raw_message["document_ids"] = workflow_input["document_ids"]
+            if "task_id" not in raw_message:
+                raw_message["task_id"] = None
             return raw_message  # type: ignore
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})
