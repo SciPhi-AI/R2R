@@ -151,7 +151,6 @@ class PostgresKGProvider(KGProvider):
         await self.execute_query(query)
 
         # embeddings tables
-        # TODO: deprecating document ID
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
             id SERIAL PRIMARY KEY,
@@ -159,9 +158,8 @@ class PostgresKGProvider(KGProvider):
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
             description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
-            document_ids UUID[] NOT NULL, 
-            collection_id UUID NOT NULL, 
-            UNIQUE (name, collection_id)
+            document_id UUID NOT NULL, 
+            UNIQUE (name, document_id)
             );
         """
 
