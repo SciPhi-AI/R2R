@@ -18,7 +18,7 @@ default_admin_password = "change_me_immediately"
 
 [completion]
 provider = "litellm"
-concurrent_request_limit = 16
+concurrent_request_limit = 256
 
   [completion.generation_config]
   model = "openai/gpt-4o"

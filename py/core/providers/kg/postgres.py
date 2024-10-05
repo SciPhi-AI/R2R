@@ -40,6 +40,7 @@ class PostgresKGProvider(KGProvider):
 
         self.db_provider = db_provider.relational
         self.embedding_provider = embedding_provider
+
         try:
             import networkx as nx
 
@@ -159,9 +160,6 @@ class PostgresKGProvider(KGProvider):
         """
 
         await self.execute_query(query)
-
-        # TODO: Create another table for entity_embedding_collection
-        # entity embeddings at a collection level
 
         # communities table, result of the Leiden algorithm
         query = f"""
