@@ -134,7 +134,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                                 ),
                             }
                         ],
-                        generation_config=self.kg_provider.config.kg_enrichment_settings.generation_config,
+                        generation_config=self.kg_provider.config.kg_creation_settings.generation_config,
                     )
                 )
                 .choices[0]

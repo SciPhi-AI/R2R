@@ -18,7 +18,7 @@ overlap = 20
 
 [completion]
 provider = "litellm"
-concurrent_request_limit = 16
+concurrent_request_limit = 256
 
   [completion.generation_config]
   model = "bedrock/anthropic.claude-v2"
