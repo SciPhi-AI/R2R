@@ -2,13 +2,8 @@ name: R2R JS SDK Integration Tests
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'js/sdk/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'js/sdk/**'
+    branches:
+      - '**'  # Trigger on all branches
 
 jobs:
   test:
