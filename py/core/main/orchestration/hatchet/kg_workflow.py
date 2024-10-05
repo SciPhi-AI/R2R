@@ -4,7 +4,7 @@ import logging
 import math
 import uuid
 
-from hatchet_sdk import Context, ConcurrencyLimitStrategy
+from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
@@ -40,9 +40,9 @@ def hatchet_kg_factory(
     class KGExtractDescribeEmbedWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
-            
-        @orchestration_provider.concurrency(
-            max_runs=orchestration_provider.config.kg_creation_concurrency_limit,
+
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.kg_creation_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context) -> str:

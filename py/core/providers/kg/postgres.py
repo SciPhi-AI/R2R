@@ -16,11 +16,7 @@ from core.base import (
     KGProvider,
     Triple,
 )
-from shared.abstractions import (
-    KGCreationSettings,
-    KGEnrichmentSettings,
-    KGRunType,
-)
+from shared.abstractions import KGCreationSettings, KGEnrichmentSettings
 from shared.api.models.kg.responses import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
@@ -921,7 +917,7 @@ class PostgresKGProvider(KGProvider):
         with_description: bool = False,
     ) -> dict:
         conditions = []
-        params = [collection_id]
+        params: list = [collection_id]
 
         if entity_ids:
             conditions.append(f"id = ANY(${len(params) + 1})")

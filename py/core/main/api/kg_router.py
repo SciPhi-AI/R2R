@@ -72,7 +72,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
+        ) -> WrappedKGCreationResponse:  # type: ignore
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
             This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.

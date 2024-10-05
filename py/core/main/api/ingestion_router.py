@@ -2,7 +2,7 @@ import base64
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 import yaml
@@ -92,8 +92,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedIngestionResponse,
-        ):
+        ) -> WrappedIngestionResponse:  # type: ignore
             """
             Ingest files into the system.
 
@@ -101,8 +100,6 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
             """
-            self._validate_ingestion_config(ingestion_config)
-
             # Check if the user is a superuser
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
@@ -119,7 +116,7 @@ class IngestionRouter(BaseRouter):
 
             file_datas = await self._process_files(files)
 
-            messages = []
+            messages: list[dict[str, Union[str, None]]] = []
             for it, file_data in enumerate(file_datas):
                 content_length = len(file_data["content"])
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
@@ -150,7 +147,7 @@ class IngestionRouter(BaseRouter):
                     file_content,
                     file_data["content_type"],
                 )
-                raw_message = await self.orchestration_provider.run_workflow(
+                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
@@ -160,9 +157,10 @@ class IngestionRouter(BaseRouter):
                     },
                 )
                 raw_message["document_id"] = str(document_id)
+                if "task_id" not in raw_message:
+                    raw_message["task_id"] = None
                 messages.append(raw_message)
-
-            return messages
+            return messages  # type: ignore
 
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
@@ -189,8 +187,7 @@ class IngestionRouter(BaseRouter):
                 description=ingest_files_descriptions.get("ingestion_config"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedUpdateResponse,
-        ):
+        ) -> WrappedUpdateResponse:
             """
             Update existing files in the system.
 
@@ -198,7 +195,6 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive collection permissioning is under development.
             """
-            self._validate_ingestion_config(ingestion_config)
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
                     if "user_id" in metadata and metadata["user_id"] != str(
@@ -257,7 +253,7 @@ class IngestionRouter(BaseRouter):
             )
             raw_message["message"] = "Update task queued successfully."
             raw_message["document_ids"] = workflow_input["document_ids"]
-            return raw_message
+            return raw_message  # type: ignore
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})
         ingest_chunks_descriptions = ingest_chunks_extras.get(
@@ -280,8 +276,7 @@ class IngestionRouter(BaseRouter):
                 None, description=ingest_files_descriptions.get("metadata")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            response_model=WrappedIngestionResponse,
-        ):
+        ) -> WrappedIngestionResponse:
             """
             Ingest text chunks into the system.
 
@@ -311,18 +306,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
             raw_message["document_id"] = str(document_id)
-            return raw_message
-
-    @staticmethod
-    def _validate_ingestion_config(ingestion_config):
-        from ..assembly.factory import R2RProviderFactory
-
-        if ingestion_config:
-            R2RProviderFactory.create_ingestion_provider(ingestion_config)
-        else:
-            logger.info(
-                "No ingestion config override provided. Using default."
-            )
+            return raw_message  # type: ignore
 
     @staticmethod
     async def _process_files(files):
