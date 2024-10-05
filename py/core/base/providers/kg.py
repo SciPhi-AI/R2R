@@ -89,7 +89,7 @@ class KGProvider(ABC):
         limit: int,
         entity_ids: list[str] | None = None,
         with_description: bool = False,
-    ) -> list[Entity]:
+    ) -> dict:
         """Abstract method to get entities."""
         pass
 
@@ -100,7 +100,7 @@ class KGProvider(ABC):
         offset: int,
         limit: int,
         triple_ids: list[str] | None = None,
-    ) -> list[Triple]:
+    ) -> dict:
         """Abstract method to get triples."""
         pass
 

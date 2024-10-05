@@ -130,6 +130,7 @@ __all__ = [
     "PipeType",
     ## PROVIDERS
     # Base provider classes
+    "AppConfig",
     "Provider",
     "ProviderConfig",
     # Auth provider

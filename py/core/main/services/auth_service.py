@@ -124,7 +124,9 @@ class AuthService(Service):
         profile_picture: Optional[str] = None,
     ) -> UserResponse:
         user: UserResponse = (
-            await self.providers.database.relational.get_user_by_id(user_id)
+            await self.providers.database.relational.get_user_by_id(
+                str(user_id)
+            )
         )
         if not user:
             raise R2RException(status_code=404, message="User not found")
