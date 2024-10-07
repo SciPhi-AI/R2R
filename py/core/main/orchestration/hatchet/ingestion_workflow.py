@@ -136,7 +136,7 @@ def hatchet_ingestion_factory(
 
             return {
                 "status": "Successfully finalized ingestion",
-                "document_info": document_info.model_dump(),
+                "document_info": document_info.to_dict(),
             }
 
         @orchestration_provider.failure()
