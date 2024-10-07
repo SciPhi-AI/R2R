@@ -119,6 +119,13 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_user_profile_management
         poetry run python tests/integration/harness_sdk.py test_user_logout
 
+    - name: Run CLI GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_enrichment_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_filter_cli
+
     - name: Stop R2R server
       if: always()
       run: ps aux | grep "r2r serve" | awk '{print $2}' | xargs kill || true

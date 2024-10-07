@@ -294,3 +294,22 @@ class KgService(Service):
             limit,
             triple_ids,
         )
+
+
+    @telemetry_event("get_communities")
+    async def get_communities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        levels: Optional[list[int]] = None,
+        community_numbers: Optional[list[int]] = None,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_communities(
+            collection_id,
+            offset,
+            limit,
+            levels,
+            community_numbers,
+        )
