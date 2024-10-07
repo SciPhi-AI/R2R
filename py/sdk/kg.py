@@ -131,7 +131,6 @@ class KGMethods:
 
         return await client._make_request("GET", "triples", params=params)
 
-
     @staticmethod
     async def get_communities(
         client,
@@ -157,9 +156,8 @@ class KGMethods:
         }
 
         if levels:
-            params["levels"] = ",".join(levels)
+            params["levels"] = levels
         if community_numbers:
-            params["community_numbers"] = ",".join(community_numbers)
+            params["community_numbers"] = community_numbers
 
         return await client._make_request("GET", "communities", params=params)
-

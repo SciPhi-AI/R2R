@@ -236,7 +236,6 @@ class KGRouter(BaseRouter):
                 triple_ids,
             )
 
-
         @self.router.get("/communities")
         @self.base_endpoint
         async def get_communities(

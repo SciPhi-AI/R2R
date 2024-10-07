@@ -600,9 +600,13 @@ def test_superuser_capabilities():
 def test_kg_create_graph_sample_file_sdk():
     print("Testing: KG create graph")
 
-    create_graph_result = client.create_graph(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run")
+    create_graph_result = client.create_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
 
-    result = client.get_entities(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")
+    result = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
 
     entities_list = [ele["name"] for ele in result["results"]["results"]]
 
@@ -615,9 +619,13 @@ def test_kg_create_graph_sample_file_sdk():
 def test_kg_enrich_graph_sample_file_sdk():
     print("Testing: KG enrich graph")
 
-    enrich_graph_result = client.enrich_graph(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run")
+    enrich_graph_result = client.enrich_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
 
-    result = client.get_communities(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")   
+    result = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
 
     communities = result["results"]
     assert len(communities) >= 10
@@ -631,10 +639,13 @@ def test_kg_enrich_graph_sample_file_sdk():
     print("KG enrich graph test passed")
     print("~" * 100)
 
+
 def test_kg_search_sample_file_sdk():
     print("Testing: KG search")
 
-    output = client.search(query="Who was aristotle?", kg_search_settings={"use_kg_search": True})
+    output = client.search(
+        query="Who was aristotle?", kg_search_settings={"use_kg_search": True}
+    )
 
     kg_search_results = output["results"]["kg_search_results"]
     assert len(kg_search_results) >= 1
@@ -643,20 +654,20 @@ def test_kg_search_sample_file_sdk():
     entities_found = False
     communities_found = False
     for result in kg_search_results:
-        if 'method' in result and result['method'] == 'local':
+        if "method" in result and result["method"] == "local":
             kg_search_result_present = True
-        if 'result_type' in result and result['result_type'] == 'entity':
+        if "result_type" in result and result["result_type"] == "entity":
             entities_found = True
-        if 'result_type' in result and result['result_type'] == 'community':
+        if "result_type" in result and result["result_type"] == "community":
             communities_found = True
 
     assert kg_search_result_present, "No KG search result present"
     assert entities_found, "No entities found"
     assert communities_found, "No communities found"
 
-
     print("KG search test passed")
     print("~" * 100)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

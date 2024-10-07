@@ -121,7 +121,7 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
-  
+
     - name: Run SDK Auth
       working-directory: ./py
       run: |

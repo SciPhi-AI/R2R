@@ -295,7 +295,6 @@ class KgService(Service):
             triple_ids,
         )
 
-
     @telemetry_event("get_communities")
     async def get_communities(
         self,

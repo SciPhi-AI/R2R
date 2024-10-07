@@ -7,6 +7,7 @@ import time
 import requests
 import re
 
+
 def compare_result_fields(result, expected_fields):
     for field, expected_value in expected_fields.items():
         if callable(expected_value):
@@ -242,24 +243,33 @@ def test_kg_create_graph_sample_file_cli():
     print("Testing: KG create graph")
     run_command("poetry run r2r kg create-graph --run")
 
-    response = requests.get("http://localhost:7272/v2/entities", params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"})
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
 
     if response.status_code != 200:
         print("KG create graph test failed: Graph not created")
         sys.exit(1)
 
-    entities_list = [ele["name"] for ele in response.json()["results"]["results"]]
+    entities_list = [
+        ele["name"] for ele in response.json()["results"]["results"]
+    ]
 
     assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
     print("~" * 100)
 
+
 def test_kg_enrich_graph_sample_file_cli():
     print("Testing: KG enrich graph")
     run_command("poetry run r2r kg enrich-graph --run")
 
-    response = requests.get("http://localhost:7272/v2/communities", params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"})
+    response = requests.get(
+        "http://localhost:7272/v2/communities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
 
     if response.status_code != 200:
         print("KG enrichment test failed: Communities not created")
@@ -279,10 +289,13 @@ def test_kg_enrich_graph_sample_file_cli():
     print("KG enrichment test passed")
     print("~" * 100)
 
+
 def test_kg_search_sample_file_cli():
     print("Testing: KG search")
 
-    output = run_command("poetry run r2r search --query='Who was aristotle?' --use-kg-search")
+    output = run_command(
+        "poetry run r2r search --query='Who was aristotle?' --use-kg-search"
+    )
 
     output_lines = output.strip().split("\n")
     results = []
@@ -307,9 +320,9 @@ def test_kg_search_sample_file_cli():
     for result in results:
         if "{'method': 'local'" in result:
             kg_search_result_present = True
-        if 'entity' in result:
+        if "entity" in result:
             entities_found = True
-        if 'community' in result:
+        if "community" in result:
             communities_found = True
 
     assert kg_search_result_present, "No KG search result present"
@@ -327,4 +340,3 @@ if __name__ == "__main__":
 
     test_function = sys.argv[1]
     globals()[test_function]()
-
