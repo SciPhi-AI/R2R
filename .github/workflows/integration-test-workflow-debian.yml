@@ -35,6 +35,7 @@ jobs:
     - name: Install Poetry and dependencies
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="/root/.local/bin:$PATH"
         cd py && poetry install -E core -E ingestion-bundle
 
     - name: Remove pre-installed PostgreSQL
@@ -107,18 +108,6 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
         poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
 
-    - name: Run SDK Auth
-      working-directory: ./py
-      run: |
-        poetry run python tests/integration/harness_sdk.py test_user_registration_and_login
-        poetry run python tests/integration/harness_sdk.py test_duplicate_user_registration
-        poetry run python tests/integration/harness_sdk.py test_token_refresh
-        poetry run python tests/integration/harness_sdk.py test_user_document_management
-        poetry run python tests/integration/harness_sdk.py test_user_search_and_rag
-        poetry run python tests/integration/harness_sdk.py test_user_password_management
-        poetry run python tests/integration/harness_sdk.py test_user_profile_management
-        poetry run python tests/integration/harness_sdk.py test_user_logout
-
     - name: Run CLI GraphRAG
       working-directory: ./py
       run: |
@@ -132,6 +121,18 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
+  
+    - name: Run SDK Auth
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_user_registration_and_login
+        poetry run python tests/integration/harness_sdk.py test_duplicate_user_registration
+        poetry run python tests/integration/harness_sdk.py test_token_refresh
+        poetry run python tests/integration/harness_sdk.py test_user_document_management
+        poetry run python tests/integration/harness_sdk.py test_user_search_and_rag
+        poetry run python tests/integration/harness_sdk.py test_user_password_management
+        poetry run python tests/integration/harness_sdk.py test_user_profile_management
+        poetry run python tests/integration/harness_sdk.py test_user_logout
 
     - name: Stop R2R server
       if: always()
