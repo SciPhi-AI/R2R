@@ -108,7 +108,6 @@ class AuthMethods:
             "bio": bio,
             "profile_picture": profile_picture,
         }
-        print("data = ", data)
         data = {k: v for k, v in data.items() if v is not None}
         return await client._make_request("PUT", "user", json=data)
 

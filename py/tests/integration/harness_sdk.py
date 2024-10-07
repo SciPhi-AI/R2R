@@ -1,7 +1,7 @@
 import json
 import sys
 
-from r2r import R2RClient
+from r2r import R2RClient, R2RException
 
 client = R2RClient("http://localhost:7272")
 
@@ -359,9 +359,7 @@ def test_user_registration_and_login():
     print("Testing: User registration and login")
 
     # Register a new user
-    user_result = client.register("user_test@example.com", "password123")[
-        "results"
-    ]
+    client.register("user_test@example.com", "password123")["results"]
 
     # Login immediately (assuming email verification is disabled)
     login_results = client.login("user_test@example.com", "password123")[
@@ -561,6 +559,30 @@ def test_user_profile_management():
     print("~" * 100)
 
 
+def test_user_overview():
+    print("Testing: User profile management")
+    client.login("user_test@example.com", "password123")
+    user_id = client.user()["results"]["id"]
+
+    # Get user profile
+    client.logout()
+    overview = client.users_overview()
+
+    found_user = False
+    for user in overview["results"]:
+        if user["user_id"] == user_id:
+            found_user = True
+            assert user["num_files"] == 1
+            assert user["total_size_in_bytes"] > 1_000_000
+
+    if not found_user:
+        print("User overview test failed: User not found in the overview")
+        sys.exit(1)
+
+    print("User overview test passed")
+    print("~" * 100)
+
+
 def test_user_logout():
     print("Testing: User logout")
 
@@ -657,6 +679,846 @@ def test_kg_search_sample_file_sdk():
 
     print("KG search test passed")
     print("~" * 100)
+
+def test_user_creates_collection():
+    print("Testing: User creates a collection")
+
+    # Register a new user
+    client.register("collection_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("collection_test@example.com", "password123")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing purposes"
+    )
+
+    # Check the collection creation result
+    if not collection_result["results"]:
+        print("User collection creation test failed: Collection not created")
+        sys.exit(1)
+
+    created_collection = collection_result["results"]
+    expected_collection = {
+        "collection_id": lambda x: len(x)
+        == 36,  # Check if collection_id is a valid UUID
+        "name": "Test Collection",
+        "description": "Collection for testing purposes",
+    }
+    compare_result_fields(created_collection, expected_collection)
+
+    print("User collection creation test passed")
+    print("~" * 100)
+
+
+def test_user_updates_collection():
+    print("Testing: User updates a collection")
+
+    # Register a new user
+    client.register("collection_update_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("collection_update_test@example.com", "password123")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing purposes"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Update the collection
+    update_result = client.update_collection(
+        collection_id,
+        name="Updated Test Collection",
+        description="Updated description for testing",
+    )
+
+    # Check the collection update result
+    if not update_result["results"]:
+        print("User collection update test failed: Collection not updated")
+        sys.exit(1)
+
+    updated_collection = update_result["results"]
+    expected_updated_collection = {
+        "collection_id": collection_id,
+        "name": "Updated Test Collection",
+        "description": "Updated description for testing",
+    }
+    compare_result_fields(updated_collection, expected_updated_collection)
+
+    print("User collection update test passed")
+    print("~" * 100)
+
+
+def test_user_lists_collections():
+    print("Testing: User lists collections")
+
+    # Register a new user
+    client.register("collection_list_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("collection_list_test@example.com", "password123")
+
+    # Create multiple collections
+    client.create_collection(
+        "Test Collection 1", "Collection 1 for testing purposes"
+    )
+    client.create_collection(
+        "Test Collection 2", "Collection 2 for testing purposes"
+    )
+    client.create_collection(
+        "Test Collection 3", "Collection 3 for testing purposes"
+    )
+
+    # List all collections
+    passed = False
+    try:
+        collections_list = client.list_collections()
+        passed = True
+    except R2RException as e:
+        pass
+    if passed:
+        raise Exception(
+            "User collections list test failed: Expected an error for non super-user but listing succeeded"
+        )
+
+    client.login("admin@example.com", "change_me_immediately")
+    collections_list = client.list_collections()
+
+    # Check the collections list result
+    if not collections_list["results"]:
+        print("User collections list test failed: No collections found")
+        sys.exit(1)
+
+    expected_collections = [
+        {
+            "name": "Test Collection 1",
+            "description": "Collection 1 for testing purposes",
+        },
+        {
+            "name": "Test Collection 2",
+            "description": "Collection 2 for testing purposes",
+        },
+        {
+            "name": "Test Collection 3",
+            "description": "Collection 3 for testing purposes",
+        },
+    ]
+
+    for expected_collection in expected_collections:
+        found = False
+        for actual_collection in collections_list["results"]:
+            if (
+                actual_collection["name"] == expected_collection["name"]
+                and actual_collection["description"]
+                == expected_collection["description"]
+            ):
+                found = True
+                break
+        if not found:
+            print(
+                f"User collections list test failed: Expected collection '{expected_collection['name']}' not found"
+            )
+            sys.exit(1)
+
+    print("User collections list test passed")
+    print("~" * 100)
+
+
+def test_user_collection_document_management():
+    print("Testing: User collection document management")
+
+    # Register a new user
+    client.register("collection_doc_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("collection_doc_test@example.com", "password123")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing document management"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Ingest the "aristotle.txt" file
+    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    document_id = ingest_result["results"][0]["document_id"]
+
+    # Assign the document to the collection
+    assign_doc_result = client.assign_document_to_collection(
+        document_id, collection_id
+    )
+
+    # Check the document assignment result
+    if (
+        not assign_doc_result["results"]["message"]
+        == "Document assigned to collection successfully"
+    ):
+        print(
+            "User collection document management test failed: Document assigned to collection successfully"
+        )
+        sys.exit(1)
+
+    # List documents in the collection before removal
+    docs_before_removal = client.documents_in_collection(collection_id)
+
+    # Check if the document is present in the collection before removal
+    if not any(
+        doc["id"] == document_id for doc in docs_before_removal["results"]
+    ):
+        print(
+            "User collection document management test failed: Document not found in the collection before removal"
+        )
+        sys.exit(1)
+
+    # Remove the document from the collection
+    remove_doc_result = client.remove_document_from_collection(
+        document_id, collection_id
+    )
+
+    # Check the document removal result
+    if not remove_doc_result["results"] == None:
+        print(
+            "User collection document management test failed: Document not removed from the collection"
+        )
+        sys.exit(1)
+
+    # List documents in the collection after removal
+    docs_after_removal = client.documents_in_collection(collection_id)
+
+    # Check if the document is absent in the collection after removal
+    if any(doc["id"] == document_id for doc in docs_after_removal["results"]):
+        print(
+            "User collection document management test failed: Document still present in the collection after removal"
+        )
+        sys.exit(1)
+
+    print("User collection document management test passed")
+    print("~" * 100)
+
+
+def test_user_removes_document_from_collection():
+    print("Testing: User removes a document from a collection")
+
+    # Register a new user
+    client.register("remove_doc_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("remove_doc_test@example.com", "password123")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing document removal"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Ingest the "aristotle.txt" file
+    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    document_id = ingest_result["results"][0]["document_id"]
+
+    # Assign the document to the collection
+    assign_doc_result = client.assign_document_to_collection(
+        document_id, collection_id
+    )
+
+    # Check the document assignment result
+    if (
+        not assign_doc_result["results"]["message"]
+        == "Document assigned to collection successfully"
+    ):
+        print(
+            "User removes document from collection test failed: Document not assigned to the collection"
+        )
+        sys.exit(1)
+
+    # Remove the document from the collection
+    remove_doc_result = client.remove_document_from_collection(
+        document_id, collection_id
+    )
+
+    # Check the document removal result
+    if not remove_doc_result["results"] == None:
+        print(
+            "User removes document from collection test failed: Document not removed from the collection"
+        )
+        sys.exit(1)
+
+    print("User removes document from collection test passed")
+    print("~" * 100)
+
+
+def test_user_lists_documents_in_collection():
+    print("Testing: User lists documents in a collection")
+
+    # Register a new user
+    client.register("list_docs_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("list_docs_test@example.com", "password123")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing document listing"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Ingest the "aristotle.txt" file
+    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    document_id = ingest_result["results"][0]["document_id"]
+
+    # Assign the document to the collection
+    assign_doc_result = client.assign_document_to_collection(
+        document_id, collection_id
+    )
+
+    # List documents in the collection before removal
+    docs_before_removal = client.documents_in_collection(collection_id)
+
+    # Check if the document is present in the collection before removal
+    if not any(
+        doc["id"] == document_id for doc in docs_before_removal["results"]
+    ):
+        print(
+            "User lists documents in collection test failed: Document not found in the collection before removal"
+        )
+        sys.exit(1)
+
+    # Remove the document from the collection
+    remove_doc_result = client.remove_document_from_collection(
+        document_id, collection_id
+    )
+
+    # List documents in the collection after removal
+    docs_after_removal = client.documents_in_collection(collection_id)
+
+    # Check if the document is absent in the collection after removal
+    if any(
+        doc["document_id"] == document_id
+        for doc in docs_after_removal["results"]
+    ):
+        print(
+            "User lists documents in collection test failed: Document still present in the collection after removal"
+        )
+        sys.exit(1)
+
+    print("User lists documents in collection test passed")
+    print("~" * 100)
+
+
+def test_pagination_and_filtering():
+    print("Testing: Pagination and filtering")
+
+    # Register a new user
+    client.register("pagination_test@example.com", "password123")
+
+    # Login as the new user
+    client.login("pagination_test@example.com", "password123")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing pagination and filtering"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Ingest multiple documents
+    client.ingest_files(["core/examples/data/aristotle.txt"])
+    client.ingest_files(["core/examples/data/uber_2021.pdf"])
+
+    documents_overview = client.documents_overview()["results"]
+    client.assign_document_to_collection(
+        documents_overview[0]["id"], collection_id
+    )
+    client.assign_document_to_collection(
+        documents_overview[1]["id"], collection_id
+    )
+
+    # Test pagination for documents in collection
+    paginated_docs = client.documents_in_collection(
+        collection_id, offset=0, limit=2
+    )
+    if len(paginated_docs["results"]) != 2:
+        print("Pagination test failed: Incorrect number of documents returned")
+        sys.exit(1)
+
+    # Test pagination for documents in collection
+    paginated_docs = client.documents_in_collection(
+        collection_id, offset=0, limit=1
+    )
+    if len(paginated_docs["results"]) != 1:
+        print("Pagination test failed: Incorrect number of documents returned")
+        sys.exit(1)
+
+    # Test filtering for collections overview
+    collections_overview = client.collections_overview(
+        collection_ids=[collection_id]
+    )
+    if len(collections_overview["results"]) != 1:
+        print(
+            "Filtering test failed: Incorrect number of collections returned"
+        )
+        sys.exit(1)
+
+    print("Pagination and filtering test passed")
+    print("~" * 100)
+
+
+def test_advanced_collection_management():
+    print("Testing: Advanced collection management")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing advanced management"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Test collections overview
+    collections_overview = client.collections_overview()
+    if not any(
+        c["collection_id"] == collection_id
+        for c in collections_overview["results"]
+    ):
+        print("Collections overview test failed: Created collection not found")
+        sys.exit(1)
+
+    # Test deleting a collection
+    delete_result = client.delete_collection(collection_id)
+    if delete_result["results"] != True:
+        print("Delete collection test failed: Unexpected result")
+        sys.exit(1)
+
+    print("Advanced collection management test passed")
+    print("~" * 100)
+
+
+def test_error_handling_and_edge_cases():
+    print("Testing: Error handling and edge cases")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing error handling"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Test adding a non-existent user to a collection
+    try:
+        client.add_user_to_collection("non_existent_user_id", collection_id)
+        print(
+            "Error handling test failed: Expected an exception for non-existent user"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Test removing a user who is not a member of the collection
+    try:
+        client.remove_user_from_collection("non_member_user_id", collection_id)
+        print(
+            "Error handling test failed: Expected an exception for non-member user"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Test assigning a non-existent document to a collection
+    try:
+        client.assign_document_to_collection(
+            "non_existent_document_id", collection_id
+        )
+        print(
+            "Error handling test failed: Expected an exception for non-existent document"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Test removing a document that is not assigned to the collection
+    try:
+        client.remove_document_from_collection(
+            "unassigned_document_id", collection_id
+        )
+        print(
+            "Error handling test failed: Expected an exception for unassigned document"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    print("Error handling and edge cases test passed")
+    print("~" * 100)
+
+
+def test_user_gets_collection_details():
+    print("Testing: User gets collection details")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing get details"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Get collection details
+    collection_details = client.get_collection(collection_id)
+
+    # Check if the retrieved details match the created collection
+    if collection_details["results"]["collection_id"] != collection_id:
+        print("Get collection details test failed: Incorrect collection ID")
+        sys.exit(1)
+
+    print("Get collection details test passed")
+    print("~" * 100)
+
+
+def test_user_adds_user_to_collection():
+    print("Testing: User adds user to a collection")
+    client.login("admin@example.com", "change_me_immediately")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing add user"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # # Register a new user
+    client.register("add_user_test1@example.com", "password123")
+    client.login("add_user_test1@example.com", "password123")["results"]
+    user_id = client.user()["results"]["id"]
+
+    # login as admin
+    client.login("admin@example.com", "change_me_immediately")
+    # Add the user to the collection
+    add_user_result = client.add_user_to_collection(user_id, collection_id)
+
+    print("add_user_result = ", add_user_result)
+    # Check if the user was added successfully
+    if add_user_result["results"] != None:
+        print(
+            "Add user to collection test failed: User not added to the collection"
+        )
+        sys.exit(1)
+
+    print("Add user to collection test passed")
+    print("~" * 100)
+
+
+def test_user_removes_user_from_collection():
+    print("Testing: User removes user from a collection")
+
+    client.login("admin@example.com", "change_me_immediately")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing remove user"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Register a new user
+    client.register("remove_user_test@example.com", "password123")
+    client.login("remove_user_test@example.com", "password123")["results"]
+    user_id = client.user()["results"]["id"]
+
+    client.login("admin@example.com", "change_me_immediately")
+
+    # Add the user to the collection
+    client.add_user_to_collection(user_id, collection_id)
+
+    # Remove the user from the collection
+    remove_user_result = client.remove_user_from_collection(
+        user_id, collection_id
+    )
+
+    # Check if the user was removed successfully
+    if remove_user_result["results"] != None:
+        print(
+            "Remove user from collection test failed: User not removed from the collection"
+        )
+        sys.exit(1)
+
+    print("Remove user from collection test passed")
+    print("~" * 100)
+
+
+def test_user_lists_users_in_collection():
+    print("Testing: User lists users in a collection")
+    client.login("admin@example.com", "change_me_immediately")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing list users"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Register a new user
+    client.register("list_users_test@example.com", "password123")
+    client.login("list_users_test@example.com", "password123")["results"]
+    user_id = client.user()["results"]["id"]
+
+    client.login("admin@example.com", "change_me_immediately")
+
+    # Add the user to the collection
+    client.add_user_to_collection(user_id, collection_id)
+
+    # List users in the collection
+    users_in_collection = client.get_users_in_collection(collection_id)
+
+    # Check if the user is present in the collection
+    if not any(
+        user["id"] == user_id for user in users_in_collection["results"]
+    ):
+        print(
+            "List users in collection test failed: User not found in the collection"
+        )
+        sys.exit(1)
+
+    print("List users in collection test passed")
+    print("~" * 100)
+
+
+def test_user_gets_collections_for_user():
+    print("Testing: User gets collections for a user")
+    client.login("admin@example.com", "change_me_immediately")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing get user collections"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Register a new user
+    client.register("get_user_collections_test@example.com", "password123")
+    client.login("get_user_collections_test@example.com", "password123")
+
+    user_id = client.user()["results"]["id"]
+
+    client.login("admin@example.com", "change_me_immediately")
+    # Add the user to the collection
+    client.add_user_to_collection(user_id, collection_id)
+
+    # Get collections for the user
+    user_collections = client.user_collections(user_id)
+
+    # Check if the collection is present in the user's collections
+    if not any(
+        collection["collection_id"] == collection_id
+        for collection in user_collections["results"]
+    ):
+        print(
+            "Get collections for user test failed: Collection not found in user's collections"
+        )
+        sys.exit(1)
+
+    print("Get collections for user test passed")
+    print("~" * 100)
+
+
+def test_user_gets_collections_for_document():
+    print("Testing: User gets collections for a document")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing get document collections"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Ingest a document
+    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    document_id = ingest_result["results"][0]["document_id"]
+
+    # Assign the document to the collection
+    client.assign_document_to_collection(document_id, collection_id)
+
+    # Get collections for the document
+    document_collections = client.document_collections(document_id)["results"]
+    # Check if the collection is present in the document's collections
+    if collection_id not in [
+        ele["collection_id"] for ele in document_collections
+    ]:
+        print(
+            "Get collections for document test failed: Collection not found in document's collections"
+        )
+        sys.exit(1)
+
+    print("Get collections for document test passed")
+    print("~" * 100)
+
+
+def test_user_permissions():
+    print("Testing: User permissions for collection management")
+
+    # Register a new user
+    client.register("permissions_test22@example.com", "password123")
+    client.login("permissions_test22@example.com", "password123")
+
+    collection = client.create_collection(
+        "Test Collection", "Collection for testing permissions"
+    )
+
+    client.register("permissions_test_222@example.com", "password123")
+    client.login("permissions_test_222@example.com", "password123")
+
+    # Try to delete the collection as a user who is not the owner
+    try:
+        client.delete_collection(collection["results"]["collection_id"])
+        print(
+            "User permissions test failed: User able to delete a collection they do not own"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    print("User permissions test passed")
+    print("~" * 100)
+
+
+def test_collection_user_interactions():
+    print("Testing: Collection user interactions")
+
+    # Register a new user and create a collection
+    client.register("collection_owner@example.com", "password123")
+    client.login("collection_owner@example.com", "password123")
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing user interactions"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Register another user
+    client.register("user_interactions_test@example.com", "password123")
+    client.login("user_interactions_test@example.com", "password123")
+    user_id = client.user()["results"]["id"]
+
+    # Ingest a document
+    client.login("collection_owner@example.com", "password123")
+    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    document_id = ingest_result["results"][0]["document_id"]
+
+    # Assign the document to the collection
+    assignment_result = client.assign_document_to_collection(
+        document_id, collection_id
+    )
+
+    # Try to access the document as a user not in the collection
+    client.login("user_interactions_test@example.com", "password123")
+    try:
+        client.document_chunks(document_id)
+        print(
+            "Collection user interactions test failed: User able to access document in a collection they are not a member of"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Add the user to the collection
+    client.login("collection_owner@example.com", "password123")
+    client.add_user_to_collection(user_id, collection_id)
+
+    # Try to access the document as a user in the collection
+    client.login("user_interactions_test@example.com", "password123")
+    document_chunks = client.document_chunks(document_id)
+    if not document_chunks["results"]:
+        print(
+            "Collection user interactions test failed: User unable to access document in a collection they are a member of"
+        )
+        sys.exit(1)
+
+    print("Collection user interactions test passed")
+    print("~" * 100)
+
+
+def test_collection_document_interactions():
+    print("Testing: Collection document interactions")
+
+    # Create two new collections
+    collection1_result = client.create_collection(
+        "Test Collection 1", "Collection 1 for testing document interactions"
+    )
+    collection1_id = collection1_result["results"]["collection_id"]
+
+    collection2_result = client.create_collection(
+        "Test Collection 2", "Collection 2 for testing document interactions"
+    )
+    collection2_id = collection2_result["results"]["collection_id"]
+
+    # Ingest a document
+    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    document_id = ingest_result["results"][0]["document_id"]
+
+    # Assign the document to both collections
+    client.assign_document_to_collection(document_id, collection1_id)
+    client.assign_document_to_collection(document_id, collection2_id)
+
+    # Get collections for the document
+    document_collections = client.document_collections(document_id)
+
+    # Check if both collections are present in the document's collections
+    if not all(
+        collection["collection_id"] in [collection1_id, collection2_id]
+        for collection in document_collections["results"]
+    ):
+        print(
+            "Collection document interactions test failed: Document not assigned to both collections"
+        )
+        sys.exit(1)
+
+    print("Collection document interactions test passed")
+    print("~" * 100)
+
+
+def test_error_handling():
+    print("Testing: Error handling for collections")
+
+    # Create a new collection
+    collection_result = client.create_collection(
+        "Test Collection", "Collection for testing error handling"
+    )
+    collection_id = collection_result["results"]["collection_id"]
+
+    # Try to add a non-existent user to the collection
+    try:
+        client.add_user_to_collection("non_existent_user_id", collection_id)
+        print(
+            "Error handling test failed: Expected an exception for adding a non-existent user to a collection"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Try to remove a user who is not a member of the collection
+    try:
+        client.remove_user_from_collection("non_member_user_id", collection_id)
+        print(
+            "Error handling test failed: Expected an exception for removing a non-member user from a collection"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Try to assign a non-existent document to the collection
+    try:
+        client.assign_document_to_collection(
+            "non_existent_document_id", collection_id
+        )
+        print(
+            "Error handling test failed: Expected an exception for assigning a non-existent document to a collection"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    # Try to remove a document that is not assigned to the collection
+    try:
+        client.remove_document_from_collection(
+            "unassigned_document_id", collection_id
+        )
+        print(
+            "Error handling test failed: Expected an exception for removing an unassigned document from a collection"
+        )
+        sys.exit(1)
+    except R2RException:
+        pass
+
+    print("Error handling test passed")
+    print("~" * 100)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
