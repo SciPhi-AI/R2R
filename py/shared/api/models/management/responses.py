@@ -151,10 +151,10 @@ WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
 WrappedCollectionOverviewResponse = ResultsWrapper[
     list[CollectionOverviewResponse]
 ]
-WrappedAddUserResponse = ResultsWrapper[AddUserResponse]
+WrappedAddUserResponse = ResultsWrapper[None]
 WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedUserCollectionResponse = PaginatedResultsWrapper[
-    list[CollectionOverviewResponse]
+    list[CollectionResponse]
 ]
 WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
