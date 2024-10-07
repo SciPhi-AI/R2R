@@ -43,8 +43,7 @@ def ingest_files_from_urls(client, urls):
             files_to_ingest.append(temp_file.name)
             metadatas.append({"title": filename})
             # TODO: use the utils function generate_document_id
-            filename = filename.split("/")[-1]
-            document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, filename))
+            document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, url))
 
         response = client.ingest_files(
             files_to_ingest, metadatas=metadatas, document_ids=document_ids
