@@ -107,20 +107,6 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
         poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
 
-    - name: Run CLI GraphRAG
-      working-directory: ./py
-      run: |
-        poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
-        poetry run python tests/integration/harness_cli.py test_kg_enrichment_sample_file_cli
-        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_cli
-
-    - name: Run SDK GraphRAG
-      working-directory: ./py
-      run: |
-        poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
-        poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
-        poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
-
     - name: Run SDK Auth
       working-directory: ./py
       run: |
@@ -152,6 +138,23 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_user
         poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_document
         poetry run python tests/integration/harness_sdk.py test_user_permissions
+
+    - name: Run CLI GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_remove_all_files_and_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_enrichment_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_cli
+
+    - name: Run SDK GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_cli.py test_remove_all_files_and_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
+
 
     - name: Stop R2R server
       if: always()

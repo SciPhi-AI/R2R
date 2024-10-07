@@ -61,6 +61,16 @@ def test_ingest_sample_file_with_config_sdk():
     print("~" * 100)
 
 
+def test_remove_all_files_and_ingest_sample_file_sdk():
+    document_ids = [
+        doc["id"] for doc in client.documents_overview()["results"]
+    ]
+    for document_id in document_ids:
+        client.delete({"document_id": {"$eq": document_id}})
+
+    client.ingest_files(file_paths=["core/examples/data/aristotle.txt"])
+
+
 def test_reingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
     file_paths = ["core/examples/data/uber_2021.pdf"]
@@ -689,6 +699,7 @@ def test_kg_search_sample_file_sdk():
 
     print("KG search test passed")
     print("~" * 100)
+
 
 def test_user_creates_collection():
     print("Testing: User creates a collection")
