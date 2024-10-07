@@ -1,6 +1,7 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
-import asyncio
+
 import asyncpg
 
 from core.base import RelationalDBProvider
