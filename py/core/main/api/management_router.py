@@ -370,8 +370,24 @@ class ManagementRouter(BaseRouter):
             is_owner = str(document_chunks_result[0].get("user_id")) == str(
                 auth_user.id
             )
+            document_collections = await self.service.document_collections(
+                document_uuid, 0, 1
+            )
 
-            if not is_owner and not auth_user.is_superuser:
+            user_has_access = (
+                is_owner
+                or set(auth_user.collection_ids).intersection(
+                    set(
+                        [
+                            ele.collection_id
+                            for ele in document_collections["results"]
+                        ]
+                    )
+                )
+                != set()
+            )
+
+            if not user_has_access and not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can arbitrarily call document_chunks.",
                     403,
@@ -512,7 +528,8 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedCollectionListResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can list all collections.", 403
+                    "Only a superuser can call the list collections endpoint.",
+                    403,
                 )
             list_collections_response = await self.service.list_collections(
                 offset=offset, limit=min(max(limit, 1), 1000)
@@ -543,7 +560,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.add_user_to_collection(
                 user_uuid, collection_uuid
             )
-            return {"result": result}  # type: ignore
+            return result  # type: ignore
 
         @self.router.post("/remove_user_from_collection")
         @self.base_endpoint
@@ -611,7 +628,7 @@ class ManagementRouter(BaseRouter):
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedUserCollectionResponse:
-            if str(auth_user.id) != user_id or not auth_user.is_superuser:
+            if str(auth_user.id) != user_id and not auth_user.is_superuser:
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
