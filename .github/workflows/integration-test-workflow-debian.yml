@@ -124,7 +124,7 @@ jobs:
       run: |
         poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_kg_enrichment_sample_file_cli
-        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_filter_cli
+        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_cli
 
     - name: Run SDK GraphRAG
       working-directory: ./py
