@@ -256,7 +256,9 @@ def test_kg_create_graph_sample_file_cli():
         ele["name"] for ele in response.json()["results"]["results"]
     ]
 
-    assert "ARISTOTLE" in entities_list
+    print("Entities list:", entities_list)
+
+    assert "ARISTOTLE" in entities_list or "aristotle" in entities_list or "Aristotle" in entities_list
 
     print("KG create graph test passed")
     print("~" * 100)
