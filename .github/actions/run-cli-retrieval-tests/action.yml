@@ -3,6 +3,7 @@ description: 'Runs CLI retrieval tests for R2R'
 runs:
   using: "composite"
   steps:
+    # Ingest the sample file via the CLI for later tests
     - name: Ingest sample file (CLI)
       working-directory: ./py
       shell: bash
