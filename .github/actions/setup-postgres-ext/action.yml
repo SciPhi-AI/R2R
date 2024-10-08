@@ -42,7 +42,15 @@ runs:
         brew install postgresql@15
 
         brew services start postgresql@15
-        sleep 5  # Add a short delay to allow the server to start up
+        sleep 5
         /opt/homebrew/opt/postgresql@15/bin/createuser -s postgres
         /opt/homebrew/opt/postgresql@15/bin/psql -d postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+
+        git clone https://github.com/pgvector/pgvector.git
+        cd pgvector
+        make
+        make install
+        cd ..
+        rm -rf pgvector
+
         /opt/homebrew/opt/postgresql@15/bin/psql -d postgres -c "CREATE EXTENSION vector;" -U postgres
