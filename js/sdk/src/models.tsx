@@ -42,7 +42,6 @@ export interface VectorSearchSettings {
   filters?: Record<string, any>;
   search_limit?: number;
   offset?: number;
-  selected_collection_ids?: string[];
   index_measure: IndexMeasure;
   include_values?: boolean;
   include_metadatas?: boolean;
@@ -55,7 +54,6 @@ export interface VectorSearchSettings {
 export interface KGSearchSettings {
   use_kg_search?: boolean;
   filters?: Record<string, any>;
-  selected_collection_ids?: string[];
   graphrag_map_system_prompt?: string;
   kg_search_type?: "global" | "local";
   kg_search_level?: number | null;

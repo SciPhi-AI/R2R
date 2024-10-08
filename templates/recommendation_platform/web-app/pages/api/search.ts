@@ -7,7 +7,7 @@ export const config = {
 interface RagParams {
   query: string;
   use_vector_search?: boolean;
-  search_filters?: Record<string, any>;
+  filters?: Record<string, any>;
   search_limit?: number;
   do_hybrid_search?: boolean;
   use_kg_search?: boolean;
@@ -34,7 +34,7 @@ export default async function handler(req: Request) {
     const params: RagParams = {
       query,
       use_vector_search: true,
-      search_filters: {},
+      filters: {},
       search_limit: 10,
       do_hybrid_search: false,
       use_kg_search: false,

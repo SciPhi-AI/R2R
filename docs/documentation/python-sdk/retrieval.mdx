@@ -71,10 +71,6 @@ search_response = client.search("What was Uber's profit in 2020?")
     Maximum number of results to return (1-1000).
     </ParamField>
 
-    <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
-    Group IDs to search for.
-    </ParamField>
-
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">
     The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
     </ParamField>
@@ -170,7 +166,7 @@ filtered_search_response = client.search(
     "What was Uber's profit in 2020?",
     vector_search_settings={
         # restrict results to the Uber document
-        "search_filters": {"title": {"$eq": "uber_2021.pdf"}},
+        "filters": {"title": {"$eq": "uber_2021.pdf"}},
         "search_limit": 100
     }
 )
@@ -205,7 +201,7 @@ Learn more about the dedicated knowledge graph capabilities [in R2R here](/cookb
 ```python
 kg_search_response = client.search(
     "What is airbnb",
-    vector_search_settings={"use_vector_search": False}
+    vector_search_settings={"use_vector_search": False},
     kg_search_settings={
       "use_kg_search": True,
       "kg_search_type": "local",

@@ -371,7 +371,7 @@ class ManagementRouter(BaseRouter):
                 auth_user.id
             )
             document_collections = await self.service.document_collections(
-                document_uuid, 0, 1
+                document_uuid, 0, -1
             )
 
             user_has_access = (

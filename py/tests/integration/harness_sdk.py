@@ -3,7 +3,7 @@ import sys
 
 from r2r import R2RClient, R2RException
 
-client = R2RClient("http://localhost:7272")
+client = R2RClient("http://localhost:7276")
 
 
 def compare_result_fields(result, expected_fields):
@@ -170,7 +170,7 @@ def test_vector_search_sample_file_filter_sdk():
     results = client.search(
         query="What was Uber's recent profit??",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -201,7 +201,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         query="What was Uber's recent profit??",
         vector_search_settings={
             "use_hybrid_search": True,
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             },
         },
@@ -238,7 +238,7 @@ def test_rag_response_sample_file_sdk():
     response = client.rag(
         query="What was Uber's recent profit and loss?",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -263,7 +263,7 @@ def test_rag_response_stream_sample_file_sdk():
         query="What was Uber's recent profit and loss?",
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -298,7 +298,7 @@ def test_agent_sample_file_sdk():
         ],
         rag_generation_config={"stream": False},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -333,7 +333,7 @@ def test_agent_stream_sample_file_sdk():
         ],
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -1388,13 +1388,14 @@ def test_collection_document_interactions():
     # Get collections for the document
     document_collections = client.document_collections(document_id)
 
-    # Check if both collections are present in the document's collections
+    test_collection_ids = [collection1_id, collection2_id]
     if not all(
-        collection["collection_id"] in [collection1_id, collection2_id]
-        for collection in document_collections["results"]
+        collection_id
+        in [c["collection_id"] for c in document_collections["results"]]
+        for collection_id in test_collection_ids
     ):
         print(
-            "Collection document interactions test failed: Document not assigned to both collections"
+            "Collection document interactions test failed: Document not assigned to both test collections"
         )
         sys.exit(1)
 

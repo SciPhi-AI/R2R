@@ -15,7 +15,7 @@ export default async function handler(req: Request) {
       userId,
       apiUrl,
       use_vector_search,
-      search_filters,
+      filters,
       search_limit,
       do_hybrid_search,
       use_kg_search,
@@ -31,7 +31,7 @@ export default async function handler(req: Request) {
 
     const searchParams = {
       use_vector_search: use_vector_search ?? true,
-      filters: userId ? { ...search_filters, user_id: userId } : search_filters,
+      filters: userId ? { ...filters, user_id: userId } : filters,
       search_limit: 20, // search_limit || 20,
       do_hybrid_search: do_hybrid_search ?? false,
       use_kg_search: true, // use_kg_search ?? false,
