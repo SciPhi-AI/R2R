@@ -39,6 +39,7 @@ runs:
       if: inputs.os == 'macos-latest'
       shell: bash
       run: |
+        brew update
         brew install postgresql@15
 
         brew services start postgresql@15
@@ -46,11 +47,6 @@ runs:
         /opt/homebrew/opt/postgresql@15/bin/createuser -s postgres
         /opt/homebrew/opt/postgresql@15/bin/psql -d postgres -c "ALTER USER postgres PASSWORD 'postgres';"
 
-        git clone https://github.com/pgvector/pgvector.git
-        cd pgvector
-        make
-        make install
-        cd ..
-        rm -rf pgvector
+        brew install pgvector
 
         /opt/homebrew/opt/postgresql@15/bin/psql -d postgres -c "CREATE EXTENSION vector;" -U postgres
