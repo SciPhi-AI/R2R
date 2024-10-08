@@ -1,0 +1,230 @@
+---
+title: 'Collection Management'
+description: 'Manage collections in the R2R TypeScript client'
+---
+
+<Note>
+Occasionally this SDK documentation falls out of date, cross-check with the automatically generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+</Note>
+
+A collection in R2R is a logical grouping of users and documents that allows for efficient access control and organization. Collections enable you to manage permissions and access to documents at a collection level, rather than individually.
+
+## Overview
+
+The R2R TypeScript client provides methods to manage collections, including:
+
+- Creating and deleting collections
+- Updating collection metadata
+- Listing collections
+- Adding and removing users from collections
+- Assigning and removing documents from collections
+- Retrieving users and documents in a collection
+
+## Usage
+
+### Creating a Collection
+
+To create a new collection, use the `createCollection` method:
+
+````typescript
+async createCollection(
+  name: string,
+  description?: string
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+const newCollection = await r2rClient.createCollection('My Collection', 'A sample collection');
+````
+
+### Updating a Collection
+
+To update a collection's name or description, use the `updateCollection` method:
+
+````typescript
+async updateCollection(
+  collectionId: string,
+  name?: string,
+  description?: string
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+await r2rClient.updateCollection('collection_id', 'Updated Name', 'Updated description');
+````
+
+### Deleting a Collection
+
+To delete a collection, use the `deleteCollection` method:
+
+````typescript
+async deleteCollection(collectionId: string): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+await r2rClient.deleteCollection('collection_id');
+````
+
+### Listing Collections
+
+To list all collections, use the `listCollections` method:
+
+````typescript
+async listCollections(
+  offset?: number,
+  limit?: number
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+const collections = await r2rClient.listCollections(0, 10);
+````
+
+### Adding a User to a Collection
+
+To add a user to a collection, use the `addUserToCollection` method:
+
+````typescript
+async addUserToCollection(
+  userId: string,
+  collectionId: string
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+await r2rClient.addUserToCollection('user_id', 'collection_id');
+````
+
+### Removing a User from a Collection
+
+To remove a user from a collection, use the `removeUserFromCollection` method:
+
+````typescript
+async removeUserFromCollection(
+  userId: string,
+  collectionId: string
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+await r2rClient.removeUserFromCollection('user_id', 'collection_id');
+````
+
+### Getting Users in a Collection
+
+To get all users in a collection, use the `getUsersInCollection` method:
+
+````typescript
+async getUsersInCollection(
+  collectionId: string,
+  offset?: number,
+  limit?: number
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+const users = await r2rClient.getUsersInCollection('collection_id', 0, 10);
+````
+
+### Getting Collections for a User
+
+To get all collections a user belongs to, use the `getCollectionsForUser` method:
+
+````typescript
+async getCollectionsForUser(
+  userId: string,
+  offset?: number,
+  limit?: number
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+const userCollections = await r2rClient.getCollectionsForUser('user_id', 0, 10);
+````
+
+### Assigning a Document to a Collection
+
+To assign a document to a collection, use the `assignDocumentToCollection` method:
+
+````typescript
+async assignDocumentToCollection(
+  document_id: string,
+  collection_id: string
+): Promise<any>
+````
+
+Example:
+````typescript
+await r2rClient.assignDocumentToCollection('document_id', 'collection_id');
+````
+
+### Removing a Document from a Collection
+
+To remove a document from a collection, use the `removeDocumentFromCollection` method:
+
+````typescript
+async removeDocumentFromCollection(
+  document_id: string,
+  collection_id: string
+): Promise<any>
+````
+
+Example:
+````typescript
+await r2rClient.removeDocumentFromCollection('document_id', 'collection_id');
+````
+
+### Getting Collections for a Document
+
+To get all collections a document is assigned to, use the `getDocumentCollections` method:
+
+````typescript
+async getDocumentCollections(
+  documentId: string,
+  offset?: number,
+  limit?: number
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+const documentCollections = await r2rClient.getDocumentCollections('document_id', 0, 10);
+````
+
+### Getting Documents in a Collection
+
+To get all documents in a collection, use the `getDocumentsInCollection` method:
+
+````typescript
+async getDocumentsInCollection(
+  collectionId: string,
+  offset?: number,
+  limit?: number
+): Promise<Record<string, any>>
+````
+
+Example:
+````typescript
+const collectionDocuments = await r2rClient.getDocumentsInCollection('collection_id', 0, 10);
+````
+
+## Security Best Practices
+
+When implementing collection permissions, consider the following security best practices:
+
+1. Always use HTTPS in production to encrypt data in transit.
+2. Implement the principle of least privilege by assigning the minimum necessary permissions to users and collections.
+3. Regularly audit collection memberships and document assignments.
+4. Ensure that only authorized users (e.g., admins) can perform collection management operations.
+5. Implement comprehensive logging for all collection-related actions.
+6. Consider implementing additional access controls or custom roles within your application logic for more fine-grained permissions.
+
+For more advanced use cases or custom implementations, refer to the R2R documentation or reach out to the community for support.

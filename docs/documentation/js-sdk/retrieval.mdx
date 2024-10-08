@@ -3,6 +3,9 @@ title: 'Search & RAG'
 description: 'Search and Retrieval-Augmented Generation with R2R.'
 ---
 
+<Note>
+Occasionally this SDK documentation falls out of date, if in doubt, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a>.
+</Note>
 
 ## AI Powered Search
 
@@ -97,41 +100,54 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
   Optional settings for knowledge graph search, either a dictionary, a `KGSearchSettings` object, or `None` may be passed. If a dictionary or `None` is passed, then R2R will use server-side defaults for non-specified fields.
 
   <Expandable title="properties">
-    <ParamField path="use_kg_search" type="boolean" default="False">
-    Whether to use knowledge graph search.
+
+    <ParamField path="filters" type="dict[str, Any]">
+      Filters to apply to the vector search. This field is deprecated in favor of `search_filters`.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
-    Type of knowledge graph search. Can be 'global' or 'local'.
+    <ParamField path="selected_collection_ids" type="list[UUID]">
+      Collection IDs to search for.
+    </ParamField>
+
+    <ParamField path="graphrag_map_system_prompt" type="str" default="graphrag_map_system_prompt">
+      The system prompt for the GraphRAG map prompt.
+    </ParamField>
+
+    <ParamField path="graphrag_reduce_system_prompt" type="str" default="graphrag_reduce_system_prompt">
+      The system prompt for the GraphRAG reduce prompt.
+    </ParamField>
+
+    <ParamField path="use_kg_search" type="bool" default="False">
+      Whether to use knowledge graph search.
+    </ParamField>
+
+    <ParamField path="kg_search_type" type="str" default="local">
+      The type of knowledge graph search to perform. Valid options are "local" or "global".
     </ParamField>
 
     <ParamField path="kg_search_level" type="Optional[str]" default="None">
-    Level of knowledge graph search.
+      The level of knowledge graph search to perform.
     </ParamField>
 
-    <ParamField path="generation_config" type="Optional[GenerationConfig]" default="GenerationConfig()">
-    Configuration for knowledge graph search generation.
+    <ParamField path="generation_config" type="GenerationConfig">
+      Configuration for text generation during graph search.
     </ParamField>
 
-    <ParamField path="entity_types" type="array" default="[]">
-    List of entity types to use for knowledge graph search.
+    <ParamField path="max_community_description_length" type="int" default="65536">
+      The maximum length of the community description.
     </ParamField>
 
-    <ParamField path="relationships" type="array" default="[]">
-    List of relationships to use for knowledge graph search.
+    <ParamField path="max_llm_queries_for_global_search" type="int" default="250">
+      The maximum number of LLM queries to perform during global search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="number" default="65536">
-    Maximum length of community descriptions.
+    <ParamField path="local_search_limits" type="dict[str, int]">
+      The local search limits for different entity types. The default values are:
+      - `"__Entity__"`: 20
+      - `"__Relationship__"`: 20
+      - `"__Community__"`: 20
     </ParamField>
 
-    <ParamField path="max_llm_queries_for_global_search" type="number" default="250">
-    Maximum number of LLM queries for global search.
-    </ParamField>
-
-    <ParamField path="local_search_limits" type="dict[str, number]" default="{'__Entity__': 20, '__Relationship__': 20, '__Community__': 20}">
-    Limits for local search on different types of elements.
-    </ParamField>
   </Expandable>
 </ParamField>
 
@@ -317,44 +333,59 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
 
 <ParamField path="kg_search_settings" type="Optional[Union[KGSearchSettings, dict]]" default="None">
   Optional settings for knowledge graph search, either a dictionary, a `KGSearchSettings` object, or `None` may be passed. If a dictionary or `None` is passed, then R2R will use server-side defaults for non-specified fields.
-
   <Expandable title="properties">
-    <ParamField path="use_kg_search" type="bool" default="False">
+
+  The `KGSearchSettings` class allows you to configure the knowledge graph search settings for your R2R system. Here are the available options:
+
+  <ParamField path="filters" type="dict[str, Any]">
+    Filters to apply to the vector search. This field is deprecated in favor of `search_filters`.
+  </ParamField>
+
+  <ParamField path="selected_collection_ids" type="list[UUID]">
+    Collection IDs to search for.
+  </ParamField>
+
+  <ParamField path="graphrag_map_system_prompt" type="str" default="graphrag_map_system_prompt">
+    The system prompt for the GraphRAG map prompt.
+  </ParamField>
+
+  <ParamField path="graphrag_reduce_system_prompt" type="str" default="graphrag_reduce_system_prompt">
+    The system prompt for the GraphRAG reduce prompt.
+  </ParamField>
+
+  <ParamField path="use_kg_search" type="bool" default="False">
     Whether to use knowledge graph search.
-    </ParamField>
+  </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
-    Type of knowledge graph search. Can be 'global' or 'local'.
-    </ParamField>
+  <ParamField path="kg_search_type" type="str" default="local">
+    The type of knowledge graph search to perform. Valid options are "local" or "global".
+  </ParamField>
 
-    <ParamField path="kg_search_level" type="Optional[str]" default="None">
-    Level of knowledge graph search.
-    </ParamField>
+  <ParamField path="kg_search_level" type="Optional[str]" default="None">
+    The level of knowledge graph search to perform.
+  </ParamField>
 
-    <ParamField path="generation_config" type="Optional[GenerationConfig]" default="GenerationConfig()">
-    Configuration for knowledge graph search generation.
-    </ParamField>
+  <ParamField path="generation_config" type="GenerationConfig">
+    Configuration for text generation during graph search.
+  </ParamField>
 
-    <ParamField path="entity_types" type="list" default="[]">
-    List of entity types to use for knowledge graph search.
-    </ParamField>
+  <ParamField path="max_community_description_length" type="int" default="65536">
+    The maximum length of the community description.
+  </ParamField>
 
-    <ParamField path="relationships" type="list" default="[]">
-    List of relationships to use for knowledge graph search.
-    </ParamField>
+  <ParamField path="max_llm_queries_for_global_search" type="int" default="250">
+    The maximum number of LLM queries to perform during global search.
+  </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="65536">
-    Maximum length of community descriptions.
-    </ParamField>
-
-    <ParamField path="max_llm_queries_for_global_search" type="int" default="250">
-    Maximum number of LLM queries for global search.
-    </ParamField>
-
-    <ParamField path="local_search_limits" type="dict[str, int]" default="{'__Entity__': 20, '__Relationship__': 20, '__Community__': 20}">
-    Limits for local search on different types of elements.
-    </ParamField>
+  <ParamField path="local_search_limits" type="dict[str, int]">
+    The local search limits for different entity types. The default values are:
+    - `"__Entity__"`: 20
+    - `"__Relationship__"`: 20
+    - `"__Community__"`: 20
+  </ParamField>
   </Expandable>
+
+
 </ParamField>
 
 <ParamField path="rag_generation_config" type="Optional[Union[GenerationConfig, dict]]" default="None">
