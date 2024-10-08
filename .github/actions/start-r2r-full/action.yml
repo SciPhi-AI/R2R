@@ -6,6 +6,7 @@ runs:
     DOCKER_REGISTRY_MIRROR: https://registry-1.docker.io
   steps:
     - name: Inspect Docker image manifests
+      shell: bash
       run: |
         docker manifest inspect ragtoriches/prod:latest
 
