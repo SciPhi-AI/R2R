@@ -1,31 +1,47 @@
 name: 'Setup PostgreSQL'
 description: 'Sets up PostgreSQL with pgvector'
+inputs:
+  os:
+    description: 'Operating system'
+    required: true
 runs:
   using: "composite"
   steps:
-    - name: Remove pre-installed PostgreSQL
+    - name: Setup PostgreSQL on Ubuntu
+      if: inputs.os == 'ubuntu-latest'
       shell: bash
       run: |
         sudo apt-get purge -y 'postgresql-*'
         sudo rm -rf /var/lib/postgresql /var/log/postgresql /etc/postgresql
 
-    - name: Add PostgreSQL Apt Repository
-      shell: bash
-      run: |
         echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
         wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
 
-    - name: Install PostgreSQL 15 and pgvector
-      shell: bash
-      run: |
         sudo apt-get update
         sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector
 
-    - name: Start and configure PostgreSQL
-      shell: bash
-      run: |
         sudo systemctl enable postgresql@15-main
         sudo systemctl start postgresql@15-main
         cd /
         sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
         sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "CREATE EXTENSION vector;"
+
+    - name: Setup PostgreSQL on Windows
+      if: inputs.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        choco install postgresql15 --params '/Password:postgres' --force
+
+        $env:PATH += ";C:\Program Files\PostgreSQL\15\bin"
+        psql -c "CREATE EXTENSION vector;" -U postgres
+
+    - name: Setup PostgreSQL on macOS
+      if: inputs.os == 'macos-latest'
+      shell: bash
+      run: |
+        brew install postgresql@15
+
+        brew services start postgresql@15
+        /usr/local/opt/postgresql@15/bin/createuser -s postgres
+        /usr/local/opt/postgresql@15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
+        /usr/local/opt/postgresql@15/bin/psql -c "CREATE EXTENSION vector;" -U postgres
