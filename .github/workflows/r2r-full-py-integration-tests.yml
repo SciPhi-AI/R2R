@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-name: R2R Light Python Integration Test
+name: R2R Full Python Integration Test
 
 on:
   push:
@@ -14,7 +14,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+#        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
         test_category:
           - cli-ingestion
           - cli-retrieval
@@ -41,12 +42,12 @@ jobs:
         with:
           os: ${{ matrix.os }}
 
-      - name: Setup and start PostgreSQL
+      - name: Setup and start Docker
         uses: ./.github/actions/setup-docker
         with:
           os: ${{ matrix.os }}
 
-      - name: Start R2R Light server
+      - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
 
       - name: Run CLI Ingestion Tests

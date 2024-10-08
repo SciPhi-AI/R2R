@@ -7,6 +7,6 @@ runs:
       shell: bash
       run: |
         cd py
-        poetry run r2r serve --docker --full &
+        poetry run r2r serve --docker --full --config-name=full &
         echo "Waiting for services to start..."
         sleep 30
