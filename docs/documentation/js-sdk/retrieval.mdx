@@ -101,8 +101,8 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     Whether to use knowledge graph search.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
-    Type of knowledge graph search. Can be 'global' or 'local'.
+    <ParamField path="kg_search_type" type="str" default="local">
+    Type of knowledge graph search. Supported values: "local".
     </ParamField>
 
     <ParamField path="kg_search_level" type="Optional[str]" default="None">
@@ -323,7 +323,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     Whether to use knowledge graph search.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
+    <ParamField path="kg_search_type" type="str" default="local">
     Type of knowledge graph search. Can be 'global' or 'local'.
     </ParamField>
 

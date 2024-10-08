@@ -57,7 +57,7 @@ export interface KGSearchSettings {
   filters?: Record<string, any>;
   selected_collection_ids?: string[];
   graphrag_map_system_prompt?: string;
-  kg_search_type?: "global" | "local";
+  kg_search_type?: "local" | "local";
   kg_search_level?: number | null;
   generation_config?: GenerationConfig;
   // entity_types?: any[];
