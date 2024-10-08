@@ -1,4 +1,4 @@
-name: R2R CLI Integration and Regression Test
+name: R2R Light (ext. Postgres) CLI Integration Test
 
 on:
   push:

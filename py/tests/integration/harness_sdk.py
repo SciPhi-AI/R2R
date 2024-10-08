@@ -1,9 +1,12 @@
+# import json
+# import sys
+import argparse
 import json
 import sys
 
 from r2r import R2RClient, R2RException
 
-client = R2RClient("http://localhost:7272")
+# client = R2RClient("http://localhost:7272")
 
 
 def compare_result_fields(result, expected_fields):
@@ -1460,10 +1463,31 @@ def test_error_handling():
     print("~" * 100)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Please specify a test function to run")
-        sys.exit(1)
+def create_client(base_url):
+    return R2RClient(base_url)
 
-    test_function = sys.argv[1]
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="R2R SDK Integration Tests")
+    parser.add_argument("test_function", help="Test function to run")
+    parser.add_argument(
+        "--base-url",
+        default="http://localhost:7272",
+        help="Base URL for the R2R client",
+    )
+    args = parser.parse_args()
+
+    global client
+    client = create_client(args.base_url)
+
+    test_function = args.test_function
     globals()[test_function]()
+
+
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Please specify a test function to run")
+#         sys.exit(1)
+
+#     test_function = sys.argv[1]
+#     globals()[test_function]()
