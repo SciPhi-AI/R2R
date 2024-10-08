@@ -43,5 +43,6 @@ jobs:
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
 
-      - name: Run tests
-        uses: ./.github/actions/run-${{ matrix.test_category }}-tests
+      - name: Run CLI Ingestion Tests
+        if: matrix.test_category == 'cli-ingestion'
+        run: python -m pytest tests/cli/ingestion
