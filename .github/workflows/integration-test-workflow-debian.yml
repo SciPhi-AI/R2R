@@ -139,6 +139,22 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_document
         poetry run python tests/integration/harness_sdk.py test_user_permissions
 
+    - name: Run SDK GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_remove_all_files_and_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
+
+    - name: Run CLI GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_remove_all_files_and_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_enrich_graph_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_cli
+
     - name: Stop R2R server
       if: always()
       run: ps aux | grep "r2r serve" | awk '{print $2}' | xargs kill || true

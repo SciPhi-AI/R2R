@@ -235,3 +235,35 @@ class KGRouter(BaseRouter):
                 limit,
                 triple_ids,
             )
+
+        @self.router.get("/communities")
+        @self.base_endpoint
+        async def get_communities(
+            collection_id: UUID = Query(
+                ..., description="Collection ID to retrieve communities from."
+            ),
+            offset: int = Query(0, ge=0, description="Offset for pagination."),
+            limit: int = Query(
+                100, ge=1, le=1000, description="Limit for pagination."
+            ),
+            levels: Optional[list[int]] = Query(
+                None, description="Levels to filter by."
+            ),
+            community_numbers: Optional[list[int]] = Query(
+                None, description="Community numbers to filter by."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Retrieve communities from the knowledge graph.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            return await self.service.get_communities(
+                collection_id,
+                offset,
+                limit,
+                levels,
+                community_numbers,
+            )
