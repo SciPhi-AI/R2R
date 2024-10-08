@@ -52,10 +52,6 @@
     {
       "name": "Cookbooks",
       "url": "cookbooks"
-    },
-    {
-      "name": "SciPhi Cloud",
-      "url": "sciphi-cloud"
     }
   ],
   "anchors": [
@@ -188,7 +184,8 @@
           "pages": [
             "documentation/deployment/azure",
             "documentation/deployment/aws",
-            "documentation/deployment/gcp"
+            "documentation/deployment/gcp",
+            "documentation/deployment/sciphi"
           ]
         },
         {
@@ -379,16 +376,6 @@
       "group": "Status",
       "pages": [
         "api-reference/endpoint/health"
-      ]
-    },
-    {
-      "group": "SciPhi Cloud",
-      "pages": [
-        "sciphi-cloud/introduction",
-        "sciphi-cloud/deploy",
-        "sciphi-cloud/projects",
-        "sciphi-cloud/quickstart",
-        "sciphi-cloud/security"
       ]
     },
     {

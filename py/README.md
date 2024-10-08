@@ -8,8 +8,6 @@
 
 <img width="1041" alt="r2r" src="https://github.com/user-attachments/assets/b6ee6a78-5d37-496d-ae10-ce18eee7a1d6">
 <h3 align="center">
-The Elasticsearch for RAG.
-
 Build, scale, and deploy state of the art Retrieval-Augmented Generation applications.
 </h3>
 
@@ -45,14 +43,8 @@ The recommended way to get started with R2R is by using our CLI.
 pip install r2r
 ```
 
-Then, after installing R2R, it is recommended to launch with Docker, if possible:
 
-```bash
-# export OPENAI_API_KEY=sk-...
-r2r serve --docker
-```
-
-Alternatively, you may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured and the full R2R core is required:
+You may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured and the full R2R core is required:
 
 ```bash
 # export OPENAI_API_KEY=sk-...
@@ -61,6 +53,14 @@ pip install 'r2r[core,ingestion-bundle]'
 r2r --config-name=default serve
 ```
 
+Alternatively, R2R can be launched alongside its requirements inside Docker:
+
+```bash
+# export OPENAI_API_KEY=sk-...
+r2r serve --docker --full
+```
+
+The command above will install the `full` installation which includes Hatchet for orchestration and Unstructured.io for parsing.
 
 
 ## Getting Started

@@ -3,6 +3,11 @@ title: 'Ingestion'
 description: 'Ingesting files with R2R.'
 ---
 
+<Note>
+Occasionally this SDK documentation falls out of date, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+</Note>
+
+
 ## Document Ingestion and Management
 
 ### Ingest Files
@@ -28,7 +33,11 @@ ingest_response = client.ingest_files(
         "overlap": 100,
     }
 )
+
 ```
+
+Refer to the [ingestion configuration](/documentation/configuration/ingestion/parsing_and_chunking) section for comprehensive details on available options.
+
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="dict">
@@ -56,11 +65,30 @@ ingest_response = client.ingest_files(
   An optional list of version strings for the ingested files. If provided, the length should match the number of files being ingested.
 </ParamField>
 
-<ParamField path="ingestion_config" type="Optional[Union[dict, ChunkingConfig]]">
+
+<ParamField path="ingestion_config" type="Optional[Union[dict, IngestionConfig]]">
   The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
-  <Expandable title="properties">
+  <Expandable title="Other Provider Options">
+    <ParamField path="provider" type="str" default="r2r">
+      Which R2R ingestion provider to use. Options are "r2r".
+    </ParamField>
+    <ParamField path="chunking_strategy" type="str" default="recursive">
+      Only `recursive` is currently supported.
+    </ParamField>
+    <ParamField path="chunk_size" type="number" default="1_024">
+      The target size for output chunks.
+    </ParamField>
+    <ParamField path="chunk_overlap" type="number" default="512">
+      The target overlap fraction for output chunks
+    </ParamField>
+    <ParamField path="excluded_parsers" type="list[str]" default="['mp4']">
+      Which parsers to exclude from inside R2R.
+    </ParamField>
+  </Expandable>
+
+  <Expandable title="Unstructured Provider Options">
     <ParamField path="provider" type="str" default="unstructured_local">
-      Which chunking provider to use. Options are "r2r", "unstructured_local", or "unstructured_api".
+      Which unstructured ingestion provider to use. Options are "unstructured_local", or "unstructured_api".
     </ParamField>
 
     <ParamField path="max_chunk_size" type="Optional[int]" default="None">
@@ -173,6 +201,52 @@ ingest_response = client.ingest_files(
   </Expandable>
 </ParamField>
 
+### Ingest Chunks
+
+Ingest pre-parsed text chunks into your R2R system:
+
+```python
+chunks = [
+  {
+    "text": "Aristotle was a Greek philosopher...",
+  },
+  ...,
+  {
+    "text": "He was born in 384 BC in Stagira...",
+  }
+]
+
+ingest_response = client.ingest_chunks(
+  chunks=chunks,
+  metadata={"title": "Aristotle", "source": "wikipedia"}
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system after ingesting the chunks.
+      ```bash
+      {'message': 'Ingest chunks task queued successfully.', 'task_id': '8f27dfca-606d-422d-b73f-2d9e138661c3', 'document_id': 'd4391abf-8a4e-5d9d-80fd-232ef6fd8527'}
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="chunks" type="list[dict]" required>
+  A list of chunk dictionaries to ingest. Each dictionary should contain at least a "text" key with the chunk text. An optional "metadata" key can contain a dictionary of metadata for the chunk.
+</ParamField>
+
+<ParamField path="document_id" type="Optional[UUID]">
+  An optional document ID to assign to the ingested chunks. If not provided, a new document ID will be generated.
+</ParamField>
+
+<ParamField path="metadata" type="Optional[dict]">
+  An optional metadata dictionary for the document.
+</ParamField>
+
+
+
 ### Update Files
 
 Update existing documents:
@@ -187,6 +261,7 @@ update_response = client.update_files(
 )
 ```
 
+The ingestion configuration can be customized analogously to the ingest files endpoint above.
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="dict">
@@ -211,9 +286,145 @@ update_response = client.update_files(
 </ParamField>
 
 
+<ParamField path="ingestion_config" type="Optional[Union[dict, IngestionConfig]]">
+  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
+  <Expandable title="Other Provider Options">
+    <ParamField path="provider" type="str" default="r2r">
+      Which R2R ingestion provider to use. Options are "r2r".
+    </ParamField>
+    <ParamField path="chunking_strategy" type="str" default="recursive">
+      Only `recursive` is currently supported.
+    </ParamField>
+    <ParamField path="chunk_size" type="number" default="1_024">
+      The target size for output chunks.
+    </ParamField>
+    <ParamField path="chunk_overlap" type="number" default="512">
+      The target overlap fraction for output chunks
+    </ParamField>
+    <ParamField path="excluded_parsers" type="list[str]" default="['mp4']">
+      Which parsers to exclude from inside R2R.
+    </ParamField>
+  </Expandable>
+
+  <Expandable title="Unstructured Provider Options">
+    <ParamField path="provider" type="str" default="unstructured_local">
+      Which unstructured ingestion provider to use. Options are "unstructured_local", or "unstructured_api".
+    </ParamField>
+
+    <ParamField path="max_chunk_size" type="Optional[int]" default="None">
+      Sets a maximum size on output chunks.
+    </ParamField>
+
+    <ParamField path="combine_under_n_chars" type="Optional[int]">
+      Combine chunks smaller than this number of characters.
+    </ParamField>
+
+    <ParamField path="max_characters" type="Optional[int]">
+      Maximum number of characters per chunk.
+    </ParamField>
+
+    <ParamField path="coordinates" type="bool" default="False">
+      Whether to include coordinates in the output.
+    </ParamField>
+
+    <ParamField path="encoding" type="Optional[str]">
+      Encoding to use for text files.
+    </ParamField>
+
+    <ParamField path="extract_image_block_types" type="Optional[list[str]]">
+      Types of image blocks to extract.
+    </ParamField>
+
+    <ParamField path="gz_uncompressed_content_type" type="Optional[str]">
+      Content type for uncompressed gzip files.
+    </ParamField>
+
+    <ParamField path="hi_res_model_name" type="Optional[str]">
+      Name of the high-resolution model to use.
+    </ParamField>
+
+    <ParamField path="include_orig_elements" type="Optional[bool]" default="False">
+      Whether to include original elements in the output.
+    </ParamField>
+
+    <ParamField path="include_page_breaks" type="bool">
+      Whether to include page breaks in the output.
+    </ParamField>
+
+    <ParamField path="languages" type="Optional[list[str]]">
+      List of languages to consider for text processing.
+    </ParamField>
+
+    <ParamField path="multipage_sections" type="bool" default="True">
+      Whether to allow sections to span multiple pages.
+    </ParamField>
+
+    <ParamField path="new_after_n_chars" type="Optional[int]">
+      Start a new chunk after this many characters.
+    </ParamField>
+
+    <ParamField path="ocr_languages" type="Optional[list[str]]">
+      Languages to use for OCR.
+    </ParamField>
+
+    <ParamField path="output_format" type="str" default="application/json">
+      Format of the output.
+    </ParamField>
+
+    <ParamField path="overlap" type="int" default="0">
+      Number of characters to overlap between chunks.
+    </ParamField>
+
+    <ParamField path="overlap_all" type="bool" default="False">
+      Whether to overlap all chunks.
+    </ParamField>
+
+    <ParamField path="pdf_infer_table_structure" type="bool" default="True">
+      Whether to infer table structure in PDFs.
+    </ParamField>
+
+    <ParamField path="similarity_threshold" type="Optional[float]">
+      Threshold for considering chunks similar.
+    </ParamField>
+
+    <ParamField path="skip_infer_table_types" type="Optional[list[str]]">
+      Types of tables to skip inferring.
+    </ParamField>
+
+    <ParamField path="split_pdf_concurrency_level" type="int" default="5">
+      Concurrency level for splitting PDFs.
+    </ParamField>
+
+    <ParamField path="split_pdf_page" type="bool" default="True">
+      Whether to split PDFs by page.
+    </ParamField>
+
+    <ParamField path="starting_page_number" type="Optional[int]">
+      Page number to start processing from.
+    </ParamField>
+
+    <ParamField path="strategy" type="str" default="auto">
+      Strategy for processing. Options are "auto", "fast", or "hi_res".
+    </ParamField>
+
+    <ParamField path="chunking_strategy" type="Optional[str]" default="by_title">
+      Strategy for chunking. Options are "by_title" or "basic".
+    </ParamField>
+
+    <ParamField path="unique_element_ids" type="bool" default="False">
+      Whether to generate unique IDs for elements.
+    </ParamField>
+
+    <ParamField path="xml_keep_tags" type="bool" default="False">
+      Whether to keep XML tags in the output.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+
 ### Documents Overview
 
-Retrieve high-level document information, restricted to user files, except when called by a superuser where it will then return results from over all users:
+Retrieve high-level document information. Results are restricted to the current user's files, unless the request is made by a superuser, in which case results from all users are returned:
 
 ```python
 documents_overview = client.documents_overview()
@@ -262,15 +473,17 @@ chunks = client.document_chunks(document_id)
     <ResponseField name="response" type="list[dict]">
       A list of dictionaries containing chunk information.
       ```bash
-      [{
-        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
-        'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
-        'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
-        'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3'
-        'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'chunk_order': 0, 'document_type': 'txt', 'unstructured_filetype': 'text/plain', 'unstructured_languages': ['eng'], 'unstructured_parent_id': '971399f6ba2ec9768d2b5b92ab9d17d6', 'partitioned_by_unstructured': True}
-      },
-      ...]
+      [
+        {
+          'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
+          'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+          'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+          'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
+          'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3'
+          'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'chunk_order': 0, 'document_type': 'txt', 'unstructured_filetype': 'text/plain', 'unstructured_languages': ['eng'], 'unstructured_parent_id': '971399f6ba2ec9768d2b5b92ab9d17d6', 'partitioned_by_unstructured': True}
+        },
+        ...
+      ]
       ```
     </ResponseField>
   </Accordion>

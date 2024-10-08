@@ -117,7 +117,43 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_user_search_and_rag
         poetry run python tests/integration/harness_sdk.py test_user_password_management
         poetry run python tests/integration/harness_sdk.py test_user_profile_management
+        poetry run python tests/integration/harness_sdk.py test_user_overview
         poetry run python tests/integration/harness_sdk.py test_user_logout
+
+    - name: Run Collections
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_user_creates_collection
+        poetry run python tests/integration/harness_sdk.py test_user_updates_collection
+        poetry run python tests/integration/harness_sdk.py test_user_lists_collections
+        poetry run python tests/integration/harness_sdk.py test_user_collection_document_management
+        poetry run python tests/integration/harness_sdk.py test_user_removes_document_from_collection
+        poetry run python tests/integration/harness_sdk.py test_user_lists_documents_in_collection
+        poetry run python tests/integration/harness_sdk.py test_pagination_and_filtering
+        poetry run python tests/integration/harness_sdk.py test_advanced_collection_management
+        poetry run python tests/integration/harness_sdk.py test_user_gets_collection_details
+        poetry run python tests/integration/harness_sdk.py test_user_adds_user_to_collection
+        poetry run python tests/integration/harness_sdk.py test_user_removes_user_from_collection
+        poetry run python tests/integration/harness_sdk.py test_user_lists_users_in_collection
+        poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_user
+        poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_document
+        poetry run python tests/integration/harness_sdk.py test_user_permissions
+
+    - name: Run SDK GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_remove_all_files_and_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
+        poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
+
+    - name: Run CLI GraphRAG
+      working-directory: ./py
+      run: |
+        poetry run python tests/integration/harness_sdk.py test_remove_all_files_and_ingest_sample_file_sdk
+        poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_enrich_graph_sample_file_cli
+        poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_cli
 
     - name: Stop R2R server
       if: always()
