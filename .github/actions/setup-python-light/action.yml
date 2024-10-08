@@ -1,4 +1,4 @@
-name: 'Setup Python'
+name: 'Setup Python for R2R Light'
 description: 'Sets up Python environment and installs dependencies using Poetry'
 runs:
   using: "composite"

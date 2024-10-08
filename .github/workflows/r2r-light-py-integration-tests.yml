@@ -36,4 +36,4 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Python and install dependencies
-      uses: ./.github/actions/setup-python-poetry
+      uses: ./.github/actions/setup-python-light
