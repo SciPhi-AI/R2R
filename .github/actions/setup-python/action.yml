@@ -1,0 +1,15 @@
+name: 'Setup Python'
+description: 'Sets up Python environment and installs dependencies using Poetry'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Poetry and dependencies
+      shell: bash
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        cd py && poetry install -E core -E ingestion-bundle

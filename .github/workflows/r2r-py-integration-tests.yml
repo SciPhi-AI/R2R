@@ -1,0 +1,39 @@
+name: R2R Python Integration Test
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          echo "matrix={\"test_category\":[\"cli-ingestion\",\"cli-retrieval\",\"sdk-ingestion\",\"sdk-retrieval\",\"sdk-auth\",\"collections\"]}" >> $GITHUB_OUTPUT
+
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.setup.outputs.matrix)}}
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TELEMETRY_ENABLED: false
+      POSTGRES_HOST: localhost
+      POSTGRES_DBNAME: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python and install dependencies
+      uses: ./.github/actions/setup-python-poetry
