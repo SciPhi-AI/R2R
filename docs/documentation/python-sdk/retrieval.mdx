@@ -71,6 +71,10 @@ search_response = client.search("What was Uber's profit in 2020?")
     Maximum number of results to return (1-1000).
     </ParamField>
 
+    <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
+    Group IDs to search for.
+    </ParamField>
+
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">
     The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
     </ParamField>
@@ -331,7 +335,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
-    Group IDs to search for.
+    Collection Ids to search for.
     </ParamField>
 
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">
@@ -641,7 +645,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
-    Group IDs to search for.
+    Collection Ids to search for.
     </ParamField>
 
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">

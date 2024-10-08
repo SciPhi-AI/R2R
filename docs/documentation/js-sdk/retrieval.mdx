@@ -72,6 +72,9 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     Maximum number of results to return (1-1000).
     </ParamField>
 
+    <ParamField path="selected_collection_ids" type="Array<string | null>">
+    Collection Ids to search for.
+    </ParamField>
     <ParamField path="index_measure" type="string" default="cosine_distance">
     The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
     </ParamField>
@@ -100,6 +103,10 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
 
     <ParamField path="filters" type="dict[str, Any]">
       Filters to apply to the vector search. This field is deprecated in favor of `filters`.
+    </ParamField>
+
+    <ParamField path="selected_collection_ids" type="list[UUID]">
+      Collection IDs to search for.
     </ParamField>
 
     <ParamField path="graphrag_map_system_prompt" type="str" default="graphrag_map_system_prompt">
@@ -277,6 +284,10 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     Maximum number of results to return (1-1000).
     </ParamField>
 
+    <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
+    Collection Ids to search for.
+    </ParamField>
+
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">
     The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
     </ParamField>
@@ -330,6 +341,9 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     Filters to apply to the vector search. This field is deprecated in favor of `filters`.
   </ParamField>
 
+  <ParamField path="selected_collection_ids" type="list[UUID]">
+    Collection IDs to search for.
+  </ParamField>
 
   <ParamField path="graphrag_map_system_prompt" type="str" default="graphrag_map_system_prompt">
     The system prompt for the GraphRAG map prompt.
