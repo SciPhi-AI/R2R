@@ -24,4 +24,5 @@ runs:
       shell: pwsh
       run: |
         (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+        $env:PATH += ";$env:USERPROFILE\AppData\Roaming\Python\Scripts"
         cd py; poetry install -E core -E ingestion-bundle
