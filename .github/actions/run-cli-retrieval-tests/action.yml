@@ -7,19 +7,19 @@ runs:
     - name: Ingest sample file (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+      run: poetry run python tests/integration/runner_cli.py test_ingest_sample_file_cli
 
     - name: Vector search the sample file (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_vector_search_sample_file_filter_cli
+      run: poetry run python tests/integration/runner_cli.py test_vector_search_sample_file_filter_cli
 
     - name: RAG over sample file (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_rag_response_sample_file_cli
+      run: poetry run python tests/integration/runner_cli.py test_rag_response_sample_file_cli
 
     - name: RAG streaming response (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_rag_response_stream_sample_file_cli
+      run: poetry run python tests/integration/runner_cli.py test_rag_response_stream_sample_file_cli
