@@ -1,85 +1,122 @@
-# This config was automatically generated from your source code
-# Stacks detected: cicd:github-actions:.github/workflows,deps:node:js/sdk,deps:python:py,package_manager:poetry:py,test:jest:
 version: 2.1
+
 orbs:
   node: circleci/node@5
   python: circleci/python@2
+
 jobs:
-  test-node:
-    # Install node dependencies and run tests
-    executor: node/default
-    working_directory: ~/project/js/sdk
-    environment:
-      JEST_JUNIT_OUTPUT_DIR: ./test-results/
-    steps:
-      - checkout:
-          path: ~/project
-      - node/install-packages:
-          pkg-manager: npm
-      - run:
-          command: npm install jest-junit
-      - run:
-          name: Run tests
-          command: npm run test --ci --runInBand --reporters=default --reporters=jest-junit
-      - store_test_results:
-          path: ./test-results/
-  build-node:
-    # Build node project
-    executor: node/default
-    working_directory: ~/project/js/sdk
-    steps:
-      - checkout:
-          path: ~/project
-      - node/install-packages:
-          pkg-manager: npm
-      - run:
-          command: npm run build
-      - run:
-          name: Create the ~/artifacts directory if it doesn't exist
-          command: mkdir -p ~/artifacts
-      # Copy output to artifacts dir
-      - run:
-          name: Copy artifacts
-          command: cp -R build dist public .output .next .docusaurus ~/artifacts 2>/dev/null || true
-      - store_artifacts:
-          path: ~/artifacts
-          destination: node-build
   test-python:
-    # Install dependencies and run tests
     docker:
-      - image: cimg/python:>=3.10,<3.13-node
+      - image: cimg/python:3.10-node
+      - image: cimg/postgres:15.0
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: postgres
     working_directory: ~/project/py
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      TELEMETRY_ENABLED: false
+      POSTGRES_HOST: localhost
+      POSTGRES_DBNAME: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
     steps:
       - checkout:
           path: ~/project
       - python/install-packages:
           pkg-manager: poetry
       - run:
-          name: Run tests
-          command: poetry run pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
+          name: Install system dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+      - run:
+          name: Install pgvector
+          command: |
+            sudo apt-get install -y postgresql-15-pgvector
+      - run:
+          name: Configure PostgreSQL
+          command: |
+            psql -h localhost -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+      - run:
+          name: Start R2R server
+          command: |
+            poetry run r2r serve &
+            echo "Waiting for services to start..."
+            sleep 30
+          background: true
+      - run:
+          name: Run CLI Ingestion Tests
+          command: |
+            poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+            poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+            poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
+            poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_cli
+      - run:
+          name: Run CLI Retrieval Tests
+          command: |
+            poetry run python tests/integration/harness_cli.py test_vector_search_sample_file_filter_cli
+            poetry run python tests/integration/harness_cli.py test_rag_response_sample_file_cli
+            poetry run python tests/integration/harness_cli.py test_rag_response_stream_sample_file_cli
+      - run:
+          name: Run SDK Ingestion Tests
+          command: |
+            poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
+            poetry run python tests/integration/harness_sdk.py test_reingest_sample_file_sdk
+            poetry run python tests/integration/harness_sdk.py test_document_overview_sample_file_sdk
+            poetry run python tests/integration/harness_sdk.py test_document_chunks_sample_file_sdk
+            poetry run python tests/integration/harness_sdk.py test_delete_and_reingest_sample_file_sdk
+            poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_with_config_sdk
+      - run:
+          name: Run SDK Retrieval Tests
+          command: |
+            poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
+            poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
+            poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk
+      - run:
+          name: Run SDK Auth Tests
+          command: |
+            poetry run python tests/integration/harness_sdk.py test_user_registration_and_login
+            poetry run python tests/integration/harness_sdk.py test_duplicate_user_registration
+            poetry run python tests/integration/harness_sdk.py test_token_refresh
+            poetry run python tests/integration/harness_sdk.py test_user_document_management
+            poetry run python tests/integration/harness_sdk.py test_user_search_and_rag
+            poetry run python tests/integration/harness_sdk.py test_user_password_management
+            poetry run python tests/integration/harness_sdk.py test_user_profile_management
+            poetry run python tests/integration/harness_sdk.py test_user_overview
+            poetry run python tests/integration/harness_sdk.py test_user_logout
+      - run:
+          name: Run Collection Tests
+          command: |
+            poetry run python tests/integration/harness_sdk.py test_user_creates_collection
+            poetry run python tests/integration/harness_sdk.py test_user_updates_collection
+            poetry run python tests/integration/harness_sdk.py test_user_lists_collections
+            poetry run python tests/integration/harness_sdk.py test_user_collection_document_management
+            poetry run python tests/integration/harness_sdk.py test_user_removes_document_from_collection
+            poetry run python tests/integration/harness_sdk.py test_user_lists_documents_in_collection
+            poetry run python tests/integration/harness_sdk.py test_pagination_and_filtering
+            poetry run python tests/integration/harness_sdk.py test_advanced_collection_management
+            poetry run python tests/integration/harness_sdk.py test_user_gets_collection_details
+            poetry run python tests/integration/harness_sdk.py test_user_adds_user_to_collection
+            poetry run python tests/integration/harness_sdk.py test_user_removes_user_from_collection
+            poetry run python tests/integration/harness_sdk.py test_user_lists_users_in_collection
+            poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_user
+            poetry run python tests/integration/harness_sdk.py test_user_gets_collections_for_document
+            poetry run python tests/integration/harness_sdk.py test_user_permissions
+            poetry run python tests/integration/harness_sdk.py test_collection_user_interactions
+            poetry run python tests/integration/harness_sdk.py test_collection_document_interactions
+            poetry run python tests/integration/harness_sdk.py test_error_handling
+      - run:
+          name: Stop R2R server
+          command: pkill -f "r2r serve" || true
+          when: always
       - store_test_results:
           path: junit.xml
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
-      - run:
-          name: found github actions config
-          command: ':'
+
 workflows:
   build-and-test:
     jobs:
-      - test-node
-      - build-node:
-          requires:
-            - test-node
-            - test-python
       - test-python
-    # - deploy:
-    #     requires:
-    #       - build-node
