@@ -82,7 +82,7 @@ jobs:
         poetry run python tests/integration/harness_sdk.py test_kg_create_graph_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_kg_enrich_graph_sample_file_sdk
         poetry run python tests/integration/harness_sdk.py test_kg_search_sample_file_sdk
-  
+
     - name: Run CLI GraphRAG
       working-directory: ./py
       run: |
@@ -90,7 +90,7 @@ jobs:
         poetry run python tests/integration/harness_cli.py test_kg_create_graph_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_kg_enrichment_sample_file_cli
         poetry run python tests/integration/harness_cli.py test_kg_search_sample_file_cli
-  
+
     - name: Run CLI Ingestion
       working-directory: ./py
       run: |
