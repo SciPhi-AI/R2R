@@ -1,4 +1,4 @@
-name: R2R Python Integration Test
+name: R2R Light Python Integration Test
 
 on:
   push:
