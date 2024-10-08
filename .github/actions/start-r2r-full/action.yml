@@ -2,7 +2,13 @@ name: 'Start R2R Server'
 description: 'Starts the R2R server'
 runs:
   using: "composite"
+  env:
+    DOCKER_REGISTRY_MIRROR: https://registry-1.docker.io
   steps:
+    - name: Inspect Docker image manifests
+      run: |
+        docker manifest inspect ragtoriches/prod:latest
+
     - name: Start R2R server
       shell: bash
       run: |
