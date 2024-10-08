@@ -82,6 +82,18 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
+    async def get_communities(
+        self,
+        collection_id: UUID,
+        offset: int,
+        limit: int,
+        levels: list[int] | None = None,
+        community_numbers: list[int] | None = None,
+    ) -> list[CommunityReport]:
+        """Abstract method to get communities."""
+        pass
+
+    @abstractmethod
     async def get_entities(
         self,
         collection_id: UUID,

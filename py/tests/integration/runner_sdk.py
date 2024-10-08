@@ -64,6 +64,16 @@ def test_ingest_sample_file_with_config_sdk():
     print("~" * 100)
 
 
+def test_remove_all_files_and_ingest_sample_file_sdk():
+    document_ids = [
+        doc["id"] for doc in client.documents_overview()["results"]
+    ]
+    for document_id in document_ids:
+        client.delete({"document_id": {"$eq": document_id}})
+
+    client.ingest_files(file_paths=["core/examples/data/aristotle_v2.txt"])
+
+
 def test_reingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
     file_paths = ["core/examples/data/uber_2021.pdf"]
@@ -619,6 +629,78 @@ def test_superuser_capabilities():
     assert analytics_result["results"]["analytics_data"]["search_latencies"]
 
     print("Superuser capabilities test passed")
+    print("~" * 100)
+
+
+def test_kg_create_graph_sample_file_sdk():
+    print("Testing: KG create graph")
+
+    create_graph_result = client.create_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
+
+    result = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    entities_list = [ele["name"] for ele in result["results"]["results"]]
+
+    assert "ARISTOTLE" in entities_list
+
+    print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_enrich_graph_sample_file_sdk():
+    print("Testing: KG enrich graph")
+
+    enrich_graph_result = client.enrich_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
+
+    result = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    communities = result["results"]
+    assert len(communities) >= 1
+
+    for community in communities:
+        assert "community_number" in community
+        assert "level" in community
+        assert "collection_id" in community
+        assert "name" in community
+
+    print("KG enrich graph test passed")
+    print("~" * 100)
+
+
+def test_kg_search_sample_file_sdk():
+    print("Testing: KG search")
+
+    output = client.search(
+        query="Who was aristotle?", kg_search_settings={"use_kg_search": True}
+    )
+
+    kg_search_results = output["results"]["kg_search_results"]
+    assert len(kg_search_results) >= 1
+
+    kg_search_result_present = False
+    entities_found = False
+    communities_found = False
+    for result in kg_search_results:
+        if "method" in result and result["method"] == "local":
+            kg_search_result_present = True
+        if "result_type" in result and result["result_type"] == "entity":
+            entities_found = True
+        if "result_type" in result and result["result_type"] == "community":
+            communities_found = True
+
+    assert kg_search_result_present, "No KG search result present"
+    assert entities_found, "No entities found"
+    assert communities_found, "No communities found"
+
+    print("KG search test passed")
     print("~" * 100)
 
 

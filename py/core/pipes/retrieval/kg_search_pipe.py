@@ -221,7 +221,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         # map reduce
         async for message in input.message:
             map_responses = []
-            communities = self.kg_provider.get_communities(  # type: ignore
+            communities = await self.kg_provider.get_communities(  # type: ignore
                 level=kg_search_settings.kg_search_level
             )
 

@@ -242,9 +242,7 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 
 def check_set_docker_env_vars(exclude_postgres: bool = False):
 
-    env_vars = {
-        "R2R_PROJECT_NAME": "r2r",
-    }
+    env_vars = {"R2R_PROJECT_NAME": "r2r"}
 
     if not exclude_postgres:
         env_vars |= {
