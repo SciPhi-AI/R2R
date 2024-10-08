@@ -34,7 +34,6 @@ runs:
 
         $env:PATH += ";C:\Program Files\PostgreSQL\15\bin"
         psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
-        psql -c "CREATE EXTENSION vector;" -U postgres
 
     - name: Setup PostgreSQL on macOS
       if: inputs.os == 'macos-latest'
