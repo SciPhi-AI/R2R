@@ -14,7 +14,8 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          echo "matrix={\"test_category\":[\"sdk-ingestion\",\"sdk-retrieval\",\"sdk-auth\",\"collections\"]}" >> $GITHUB_OUTPUT
+          echo "matrix={\"test_category\":[\"cli-ingestion\",\"cli-retrieval\",\"sdk-ingestion\",\"sdk-retrieval\",\"sdk-auth\",\"sdk-collections\"]}" >> $GITHUB_OUTPUT
+
   test:
     needs: setup
     runs-on: ubuntu-latest
