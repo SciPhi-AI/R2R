@@ -1,0 +1,12 @@
+name: 'Start R2R Server'
+description: 'Starts the R2R server'
+runs:
+  using: "composite"
+  steps:
+    - name: Start R2R server
+      shell: bash
+      run: |
+        cd py
+        poetry run r2r serve --docker --full &
+        echo "Waiting for services to start..."
+        sleep 30

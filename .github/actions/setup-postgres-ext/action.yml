@@ -33,7 +33,9 @@ runs:
         choco install postgresql15 --params '/Password:postgres' --force
 
         $env:PATH += ";C:\Program Files\PostgreSQL\15\bin"
+        $env:PGPASSWORD = 'postgres'
         psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+        psql -U postgres -c "CREATE EXTENSION vector;"
 
     - name: Setup PostgreSQL on macOS
       if: inputs.os == 'macos-latest'
