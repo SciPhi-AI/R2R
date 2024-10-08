@@ -42,6 +42,6 @@ runs:
         brew install postgresql@15
 
         brew services start postgresql@15
-        /usr/local/opt/postgresql@15/bin/createuser -s postgres
-        /usr/local/opt/postgresql@15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
-        /usr/local/opt/postgresql@15/bin/psql -c "CREATE EXTENSION vector;" -U postgres
+        /opt/homebrew/opt/postgresql@15/bin/createuser -s postgres
+        /opt/homebrew/opt/postgresql@15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
+        /opt/homebrew/opt/postgresql@15/bin/psql -c "CREATE EXTENSION vector;" -U postgres
