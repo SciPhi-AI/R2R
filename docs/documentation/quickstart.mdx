@@ -29,7 +29,9 @@ curl http://localhost:7272/v2/health
 # {"results":{"response":"ok"}}
 ```
 
-<Note>SciPhi Cloud includes a generous free tier and is the quickest way to get up and running with R2R. Check out the [documentation here](/sciphi-cloud/deploy) to skip the local installation! </Note>
+<Note>
+SciPhi offers managed enterprise solutions for R2R. If you're interested in a fully managed, scalable deployment of R2R for your organization, please contact their team at founders@sciphi.ai for more information on enterprise offerings.
+</Note>
 
 
 ## Ingesting file(s) and directories
@@ -56,9 +58,9 @@ Example output:
 
 <Info>When no document ID(s) are provided to the ingest_files endpoint, a unique document ID is automatically generated for each ingested document from the input filepath and user id.</Info>
 
-We can monitor the ingestion status by querying the documents overview endpoint:
+After successful ingestion, the documents overview endpoint will return output like so:
 ```bash
-watch -n 1 r2r documents-overview
+r2r documents-overview
 ```
 
 Example output:
@@ -93,20 +95,21 @@ The search query will use basic similarity search to find the most relevant docu
 
 Example output:
 ```plaintext
-{'results': {'vector_search_results': [
-    {
-        'fragment_id': '34c32587-e2c9-529f-b0a7-884e9a3c3b2e',
-        'extraction_id': '8edf5123-0a5c-568c-bf97-654b6adaf8dc',
-        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
-        'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-        'collection_ids': [],
-        'score': 0.780314067545999,
-        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
-        'metadata': {
-            'title': 'aristotle.txt',
-            'version': 'v0',
-            'chunk_order': 0,
-            ...
+{'results':
+    {'vector_search_results': [
+        {
+            'fragment_id': '34c32587-e2c9-529f-b0a7-884e9a3c3b2e',
+            'extraction_id': '8edf5123-0a5c-568c-bf97-654b6adaf8dc',
+            'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+            'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+            'collection_ids': [],
+            'score': 0.780314067545999,
+            'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
+            'metadata': {
+                'title': 'aristotle.txt',
+                'version': 'v0',
+                'chunk_order': 0,
+                ...
 ```
 
 ## RAG Response
@@ -176,3 +179,44 @@ result = client.agent(
 )
 print(result)
 ```
+
+## Additional Features
+
+R2R offers additional features to enhance your document management and user experience:
+
+### User Authentication
+
+R2R provides a complete set of user authentication and management features, allowing you to implement secure and feature-rich authentication systems or integrate with your preferred authentication provider.
+
+<CardGroup cols={2}>
+  <Card title="User Auth Cookbook" icon="key" href="/cookbooks/user-auth">
+    Learn how to implement user registration, login, email verification, and more using R2R's built-in authentication capabilities.
+  </Card>
+  <Card title="Auth Providers" icon="user-shield" href="/documentation/deep-dive/providers/auth">
+    Explore the available authentication provider options in R2R and how to integrate with your preferred provider.
+  </Card>
+</CardGroup>
+
+### Collections
+
+Collections in R2R enable efficient access control and organization of users and documents. With collections, you can manage permissions and access at a group level.
+
+<CardGroup cols={2}>
+  <Card title="Collections Cookbook" icon="database" href="/cookbooks/collections">
+    Discover how to create, manage, and utilize collections in R2R for granular access control and document organization.
+  </Card>
+  <Card title="Collection Permissions" icon="user-lock" href="/cookbooks/collections#security-considerations">
+    Learn about best practices for implementing collection permissions and customizing access control in your R2R application.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that you have a basic understanding of R2R's core features, you can explore more advanced topics:
+
+- Dive deeper into [document ingestion](/documentation/python-sdk/ingestion) and customization options.
+- Learn about [search and RAG](/documentation/python-sdk/retrieval) inside R2R.
+- Implement [user authentication](/cookbooks/user-auth) to secure your application.
+- Organize your documents using [collections](/cookbooks/collections) for granular access control.
+
+If you have any questions or need further assistance, please refer to the [R2R documentation](/) or reach out to our support team.
