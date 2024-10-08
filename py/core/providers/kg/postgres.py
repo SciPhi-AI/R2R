@@ -968,7 +968,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY id
             OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}
         """
-        params.extend([str(offset), str(limit)])
+        params.extend([offset, limit])  # type: ignore
 
         results = await self.fetch_query(query, params)
         total_entries = await self.get_triple_count(
