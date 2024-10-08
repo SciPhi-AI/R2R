@@ -7,20 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - id: set-matrix
-        run: |
-          echo "matrix={\"test_category\":[\"cli-ingestion\",\"cli-retrieval\",\"sdk-ingestion\",\"sdk-retrieval\",\"sdk-auth\",\"sdk-collections\"]}" >> $GITHUB_OUTPUT
-
   test:
-    needs: setup
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{fromJson(needs.setup.outputs.matrix)}}
+      matrix:
+        test_category: [cli-ingestion, cli-retrieval, sdk-ingestion, sdk-retrieval, sdk-auth, sdk-collections]
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: false
