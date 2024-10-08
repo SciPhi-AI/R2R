@@ -1,29 +1,25 @@
-name: 'Run CLI Retrieval Tests'
-description: 'Runs CLI retrieval tests for R2R'
+name: 'Run SDK Retrieval Tests'
+description: 'Runs SDK retrieval tests for R2R'
 runs:
   using: "composite"
   steps:
-    - name: Ingest sample file (CLI)
+    # Ingest the sample file via the SDK for later tests
+    - name: Ingest sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
 
-    - name: Document overview (CLI)
+    - name: Vector search sample file filter (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_vector_search_sample_file_filter_sdk
 
-    - name: Document chunks (CLI)
+    - name: Hybrid search sample file filter (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_hybrid_search_sample_file_filter_sdk
 
-    - name: Delete and reingest (CLI)
+    - name: RAG response sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_cli
-
-    - name: Update file (CLI)
-      working-directory: ./py
-      shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_update_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_rag_response_sample_file_sdk

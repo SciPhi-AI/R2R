@@ -1,29 +1,34 @@
-name: 'Run CLI Retrieval Tests'
-description: 'Runs CLI retrieval tests for R2R'
+name: 'Run SDK Ingestion Tests'
+description: 'Runs SDK ingestion tests for R2R'
 runs:
   using: "composite"
   steps:
-    - name: Ingest sample file (CLI)
+    - name: Ingest sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_sdk
 
-    - name: Document overview (CLI)
+    - name: Reingest sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_reingest_sample_file_sdk
 
-    - name: Document chunks (CLI)
+    - name: Document overview (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_document_overview_sample_file_sdk
 
-    - name: Delete and reingest (CLI)
+    - name: Document chunks (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_document_chunks_sample_file_sdk
 
-    - name: Update file (CLI)
+    - name: Delete and reingest (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_update_file_cli
+      run: poetry run python tests/integration/harness_sdk.py test_delete_and_reingest_sample_file_sdk
+
+    - name: Ingest sample file with config (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/harness_sdk.py test_ingest_sample_file_with_config_sdk
