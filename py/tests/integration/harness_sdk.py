@@ -68,7 +68,7 @@ def test_remove_all_files_and_ingest_sample_file_sdk():
     for document_id in document_ids:
         client.delete({"document_id": {"$eq": document_id}})
 
-    client.ingest_files(file_paths=["core/examples/data/aristotle.txt"])
+    client.ingest_files(file_paths=["core/examples/data/aristotle_v2.txt"])
 
 
 def test_reingest_sample_file_sdk():
