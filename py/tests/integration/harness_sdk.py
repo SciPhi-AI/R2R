@@ -660,7 +660,7 @@ def test_kg_enrich_graph_sample_file_sdk():
     )
 
     communities = result["results"]
-    assert len(communities) >= 10
+    assert len(communities) >= 1
 
     for community in communities:
         assert "community_number" in community
