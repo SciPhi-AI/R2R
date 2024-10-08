@@ -3,27 +3,17 @@ description: 'Runs CLI retrieval tests for R2R'
 runs:
   using: "composite"
   steps:
-    - name: Ingest sample file (CLI)
+    - name: Vector search the sample file (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_ingest_sample_file_cli
+      run: poetry run python tests/integration/harness_cli.py test_vector_search_sample_file_filter_cli
 
-    - name: Document overview (CLI)
+    - name: RAG over sample file (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_document_overview_sample_file_cli
+      run: poetry run python tests/integration/harness_cli.py test_rag_response_sample_file_cli
 
-    - name: Document chunks (CLI)
+    - name: RAG streaming response (CLI)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_document_chunks_sample_file_cli
-
-    - name: Delete and reingest (CLI)
-      working-directory: ./py
-      shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_delete_and_reingest_sample_file_cli
-
-    - name: Update file (CLI)
-      working-directory: ./py
-      shell: bash
-      run: poetry run python tests/integration/harness_cli.py test_update_file_cli
+      run: poetry run python tests/integration/harness_cli.py test_rag_response_stream_sample_file_cli

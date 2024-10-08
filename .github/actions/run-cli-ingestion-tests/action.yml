@@ -1,4 +1,4 @@
-name: 'Run CLI Retrieval Tests'
+name: 'Run CLI Ingestion Tests'
 description: 'Runs CLI retrieval tests for R2R'
 runs:
   using: "composite"
