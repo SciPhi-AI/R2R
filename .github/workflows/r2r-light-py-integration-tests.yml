@@ -10,9 +10,11 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         test_category:
           - cli-ingestion
           - cli-retrieval
