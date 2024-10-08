@@ -43,3 +43,6 @@ jobs:
 
     - name: Start R2R Light server
       uses: ./.github/actions/start-r2r-light
+
+    - name: Ingest files with the CLI
+      uses: ./.github/actions/ingest-with-clie

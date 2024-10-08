@@ -108,6 +108,17 @@ def test_delete_and_reingest_sample_file_cli():
     print("~" * 100)
 
 
+def test_update_file_cli():
+    print("Testing: Update document")
+    update_file_output = run_command(
+        "r2r update-files core/examples/data/aristotle_v2.txt --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+    )
+    print("Sample file updatesuccessfully")
+
+    print("Update test passed")
+    print("~" * 100)
+
+
 def test_vector_search_sample_file_filter_cli():
     print("Testing: Vector search")
     output = run_command(
