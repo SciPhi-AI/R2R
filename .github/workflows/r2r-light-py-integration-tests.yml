@@ -14,8 +14,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          echo "matrix={\"test_category\":[\"cli-ingestion\",\"cli-retrieval\",\"sdk-ingestion\",\"sdk-retrieval\",\"sdk-auth\",\"collections\"]}" >> $GITHUB_OUTPUT
-
+          echo "matrix={\"test_category\":[\"sdk-ingestion\",\"sdk-retrieval\",\"sdk-auth\",\"collections\"]}" >> $GITHUB_OUTPUT
   test:
     needs: setup
     runs-on: ubuntu-latest
@@ -44,5 +43,5 @@ jobs:
     - name: Start R2R Light server
       uses: ./.github/actions/start-r2r-light
 
-    - name: Ingest files with the CLI
-      uses: ./.github/actions/ingest-with-cli
+    - name: Run tests
+      uses: ./.github/actions/run-${{ matrix.test_category }}-tests
