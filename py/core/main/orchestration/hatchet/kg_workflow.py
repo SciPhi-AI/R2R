@@ -45,8 +45,12 @@ def hatchet_kg_factory(
             max_runs=orchestration_provider.config.kg_creation_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
-        def concurrency(self, context) -> str:
-            return str(context.workflow_input()["request"]["collection_id"])
+        def concurrency(self, context: Context) -> str:
+            # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
+            try:
+                return str(context.workflow_input()["request"]["collection_id"])
+            except Exception as e:
+                return str(uuid.uuid4())
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
