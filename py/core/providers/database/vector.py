@@ -306,6 +306,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             measure=measure,
             index_arguments=index_options,
             replace=True,
+            concurrently=True,
         )
 
     def delete(

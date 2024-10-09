@@ -358,8 +358,8 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = 1000,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
     ):
