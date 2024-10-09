@@ -336,8 +336,8 @@ def build_docker_command(
     r2r_dashboard_port = port + 1
     hatchet_dashboard_port = r2r_dashboard_port + 1
 
-    os.environ["PORT"] = str(port)
-    os.environ["HOST"] = host
+    os.environ["R2R_PORT"] = str(port)
+    os.environ["R2R_HOST"] = host
     os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
     os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""

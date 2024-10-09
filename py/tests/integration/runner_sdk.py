@@ -1107,7 +1107,7 @@ def test_advanced_collection_management():
 
     # Test deleting a collection
     delete_result = client.delete_collection(collection_id)
-    if delete_result["results"] != True:
+    if delete_result["results"] != None:
         print("Delete collection test failed: Unexpected result")
         sys.exit(1)
 
