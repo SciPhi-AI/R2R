@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from hatchet_sdk import Context
+from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core.base import (
     DocumentExtraction,
@@ -285,6 +285,17 @@ def hatchet_ingestion_factory(
     class HatchetIngestChunksWorkflow:
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
+
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.ingestion_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context) -> str:
+            input_data = context.workflow_input()["request"]
+            parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
+                input_data
+            )
+            return parsed_data["user"]["id"]
 
         @orchestration_provider.step(timeout="60m")
         async def ingest(self, context: Context) -> dict:
