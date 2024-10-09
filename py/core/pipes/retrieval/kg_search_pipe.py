@@ -209,107 +209,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                     },
                 )
 
-    async def global_search(
-        self,
-        input: GeneratorPipe.Input,
-        state: AsyncState,
-        run_id: UUID,
-        kg_search_settings: KGSearchSettings,
-        *args: Any,
-        **kwargs: Any,
-    ) -> AsyncGenerator[KGSearchResult, None]:
-        # map reduce
-        async for message in input.message:
-            map_responses = []
-            communities = await self.kg_provider.get_communities(  # type: ignore
-                level=kg_search_settings.kg_search_level
-            )
-
-            if len(communities) == 0:
-                raise R2RException(
-                    "No communities found. Please make sure you have run the KG enrichment step before running the search: r2r create-graph and r2r enrich-graph",
-                    400,
-                )
-
-            async def preprocess_communities(communities):
-                merged_report = ""
-                for community in communities:
-                    community_report = community.summary
-                    if (
-                        len(merged_report) + len(community_report)
-                        > kg_search_settings.max_community_description_length
-                    ):
-                        yield merged_report.strip()
-                        merged_report = ""
-                    merged_report += community_report + "\n\n"
-                if merged_report:
-                    yield merged_report.strip()
-
-            async def process_community(merged_report):
-                output = await self.llm_provider.aget_completion(
-                    messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_map_system_prompt,
-                        task_inputs={
-                            "context_data": merged_report,
-                            "input": message,
-                        },
-                    ),
-                    generation_config=kg_search_settings.generation_config,
-                )
-
-                return output.choices[0].message.content
-
-            preprocessed_reports = [
-                merged_report
-                async for merged_report in preprocess_communities(communities)
-            ]
-
-            # Use asyncio.gather to process all preprocessed community reports concurrently
-            logger.info(
-                f"Processing {len(communities)} communities, {len(preprocessed_reports)} reports, Max LLM queries = {kg_search_settings.max_llm_queries_for_global_search}"
-            )
-
-            map_responses = await asyncio.gather(
-                *[
-                    process_community(report)
-                    for report in preprocessed_reports[
-                        : kg_search_settings.max_llm_queries_for_global_search
-                    ]
-                ]
-            )
-            # Filter only the relevant responses
-            filtered_responses = self.filter_responses(map_responses)
-
-            # reducing the outputs
-            output = await self.llm_provider.aget_completion(
-                messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name=self.kg_provider.config.kg_search_settings.graphrag_reduce_system_prompt,
-                    task_inputs={
-                        "response_type": "multiple paragraphs",
-                        "report_data": filtered_responses,
-                        "input": message,
-                    },
-                ),
-                generation_config=kg_search_settings.generation_config,
-            )
-
-            output_text = output.choices[0].message.content
-
-            if not output_text:
-                logger.warning(f"No output generated for query: {message}.")
-                raise R2RException(
-                    "No output generated for query.",
-                    400,
-                )
-
-            yield KGSearchResult(
-                content=KGGlobalResult(
-                    name="Global Result", description=output_text
-                ),
-                method=KGSearchMethod.GLOBAL,
-                metadata={"associated_query": message},
-            )
-
     async def _run_logic(  # type: ignore
         self,
         input: GeneratorPipe.Input,
@@ -321,17 +220,11 @@ class KGSearchSearchPipe(GeneratorPipe):
     ) -> AsyncGenerator[KGSearchResult, None]:
         kg_search_type = kg_search_settings.kg_search_type
 
-        # runs local and/or global search
-        if kg_search_type == "local" or kg_search_type == "local_and_global":
+        if kg_search_type == "local":
             logger.info("Performing KG local search")
             async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
                 yield result
-
-        if kg_search_type == "global" or kg_search_type == "local_and_global":
-            logger.info("Performing KG global search")
-            async for result in self.global_search(
-                input, state, run_id, kg_search_settings
-            ):
-                yield result
+        else:
+            raise ValueError(f"Unsupported KG search type: {kg_search_type}")

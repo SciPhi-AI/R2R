@@ -700,6 +700,7 @@ def test_kg_search_sample_file_sdk():
     print("KG search test passed")
     print("~" * 100)
 
+
 def test_user_creates_collection():
     print("Testing: User creates a collection")
 

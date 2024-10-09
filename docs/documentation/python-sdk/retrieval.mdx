@@ -125,7 +125,7 @@ search_response = client.search("What was Uber's profit in 2020?")
     Whether to use knowledge graph search.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
+    <ParamField path="kg_search_type" type="str" default="local">
     Type of knowledge graph search. Can be 'global' or 'local'.
     </ParamField>
 
@@ -389,7 +389,7 @@ rag_response = client.rag("What was Uber's profit in 2020?")
     Whether to use knowledge graph search.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
+    <ParamField path="kg_search_type" type="str" default="local">
     Type of knowledge graph search. Can be 'global' or 'local'.
     </ParamField>
 
@@ -699,7 +699,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
     Whether to use knowledge graph search.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
+    <ParamField path="kg_search_type" type="str" default="local">
     Type of knowledge graph search. Can be 'global' or 'local'.
     </ParamField>
 
