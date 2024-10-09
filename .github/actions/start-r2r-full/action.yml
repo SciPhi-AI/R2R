@@ -4,10 +4,12 @@ runs:
   using: "composite"
   steps:
   - name: Inspect Docker image manifests
+    shell: bash
     run: |
       docker manifest inspect ragtoriches/prod:latest
 
   - name: Start R2R Server
+    shell: bash
     run: |
       cd py
       poetry run r2r serve --docker --full --config-name=full &
