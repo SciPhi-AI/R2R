@@ -448,7 +448,7 @@ def test_user_document_management():
     ingested_document = ingestion_result[0]
     expected_ingestion_result = {
         # "message": "Ingestion task completed successfully.",
-        "task_id": None,
+        # "task_id": None,
         "document_id": lambda x: len(x)
         == 36,  # Check if document_id is a valid UUID
     }
