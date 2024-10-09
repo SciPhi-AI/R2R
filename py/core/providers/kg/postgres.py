@@ -805,7 +805,7 @@ class PostgresKGProvider(KGProvider):
         )  # 10 minutes per million tokens
 
         return KGCreationEstimationResponse(
-            message='These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode="run"` in the client.',
+            message='Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             document_count=len(document_ids),
             number_of_jobs_created=len(document_ids) + 1,
             total_chunks=total_chunks,
@@ -879,7 +879,7 @@ class PostgresKGProvider(KGProvider):
         )
 
         return KGEnrichmentEstimationResponse(
-            message='These are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_mode="run"` in the client.',
+            message='Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             total_entities=entity_count,
             total_triples=triple_count,
             estimated_llm_calls=self._get_str_estimation_output(
