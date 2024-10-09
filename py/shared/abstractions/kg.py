@@ -16,11 +16,6 @@ class KGRunType(str, Enum):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    run_mode: KGRunType = Field(
-        default=KGRunType.ESTIMATE,  # or run
-        description="Run an estimate for the full graph creation process.",
-    )
-
     kg_triples_extraction_prompt: str = Field(
         default="graphrag_triples_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",
@@ -64,11 +59,6 @@ class KGCreationSettings(R2RSerializable):
 
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
-
-    run_mode: str = Field(
-        default="estimate",  # or run
-        description="Run an estimate for the full graph enrichment process.",
-    )
 
     skip_clustering: bool = Field(
         default=False,
