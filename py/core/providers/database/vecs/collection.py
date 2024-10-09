@@ -382,6 +382,26 @@ class Collection:
 
         return self
 
+    def _get_index_options(
+        self,
+        method: IndexMethod,
+        index_arguments: Optional[Union[IndexArgsIVFFlat, IndexArgsHNSW]],
+    ) -> str:
+        if method == IndexMethod.ivfflat:
+            if isinstance(index_arguments, IndexArgsIVFFlat):
+                return f"WITH (lists={index_arguments.n_lists})"
+            else:
+                # Default value if no arguments provided
+                return "WITH (lists=100)"
+        elif method == IndexMethod.hnsw:
+            if isinstance(index_arguments, IndexArgsHNSW):
+                return f"WITH (m={index_arguments.m}, ef_construction={index_arguments.ef_construction})"
+            else:
+                # Default values if no arguments provided
+                return "WITH (m=16, ef_construction=64)"
+        else:
+            return ""  # No options for other methods
+
     def upsert(
         self,
         records: Iterable[Record],
@@ -941,6 +961,7 @@ class Collection:
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
         replace=True,
+        concurrently=True,
     ) -> None:
         """
         Creates an index for the collection.
@@ -1017,69 +1038,45 @@ class Collection:
         if ops is None:
             raise ArgError("Unknown index measure")
 
+        concurrently_sql = "CONCURRENTLY" if concurrently else ""
+
+        # Drop existing index if needed (must be outside of transaction)
+        if self.index is not None and replace:
+            drop_index_sql = f'DROP INDEX {concurrently_sql} IF EXISTS {self.client.project_name}."{self.index}";'
+            try:
+                with self.client.engine.connect() as connection:
+                    connection = connection.execution_options(
+                        isolation_level="AUTOCOMMIT"
+                    )
+                    connection.execute(text(drop_index_sql))
+            except Exception as e:
+                raise Exception(f"Failed to drop existing index: {e}")
+            self._index = None
+
         unique_string = str(uuid4()).replace("-", "_")[0:7]
+        index_name = f"ix_{ops}_{method}__{unique_string}"
 
-        with self.client.Session() as sess:
-            with sess.begin():
-                if self.index is not None:
-                    if replace:
-                        sess.execute(
-                            text(
-                                f'drop index {self.client.project_name}."{self.index}";'
-                            )
-                        )
-                        self._index = None
-                    else:
-                        raise ArgError(
-                            "replace is set to False but an index exists"
-                        )
+        create_index_sql = f"""
+        CREATE INDEX {concurrently_sql} {index_name}
+        ON {self.client.project_name}."{self.table.name}"
+        USING {method} (vec {ops}) {self._get_index_options(method, index_arguments)};
+        """
 
-                if method == IndexMethod.ivfflat:
-                    if not index_arguments:
-                        n_records: int = sess.execute(func.count(self.table.c.extraction_id)).scalar()  # type: ignore
-
-                        n_lists = (
-                            int(max(n_records / 1000, 30))
-                            if n_records < 1_000_000
-                            else int(math.sqrt(n_records))
-                        )
-                    else:
-                        # The following mypy error is ignored because mypy
-                        # complains that `index_arguments` is typed as a union
-                        # of IndexArgsIVFFlat and IndexArgsHNSW types,
-                        # which both don't necessarily contain the `n_lists`
-                        # parameter, however we have validated that the
-                        # correct type is being used above.
-                        n_lists = index_arguments.n_lists  # type: ignore
-
-                    sess.execute(
-                        text(
-                            f"""
-                            create index ix_{ops}_ivfflat_nl{n_lists}_{unique_string}
-                              on {self.client.project_name}."{self.table.name}"
-                              using ivfflat (vec {ops}) with (lists={n_lists})
-                            """
-                        )
+        try:
+            if concurrently:
+                with self.client.engine.connect() as connection:
+                    connection = connection.execution_options(
+                        isolation_level="AUTOCOMMIT"
                     )
+                    connection.execute(text(create_index_sql))
+            else:
+                with self.client.Session() as sess:
+                    sess.execute(text(create_index_sql))
+                    sess.commit()
+        except Exception as e:
+            raise Exception(f"Failed to create index: {e}")
 
-                if method == IndexMethod.hnsw:
-                    if not index_arguments:
-                        index_arguments = IndexArgsHNSW()
-
-                    # See above for explanation of why the following lines
-                    # are ignored
-                    m = index_arguments.m  # type: ignore
-                    ef_construction = index_arguments.ef_construction  # type: ignore
-
-                    sess.execute(
-                        text(
-                            f"""
-                            create index ix_{ops}_hnsw_m{m}_efc{ef_construction}_{unique_string}
-                              on {self.client.project_name}."{self.table.name}"
-                              using hnsw (vec {ops}) WITH (m={m}, ef_construction={ef_construction});
-                            """
-                        )
-                    )
+        self._index = index_name
 
         return None
 

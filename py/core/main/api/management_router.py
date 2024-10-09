@@ -323,7 +323,11 @@ class ManagementRouter(BaseRouter):
         async def documents_overview_app(
             document_ids: list[str] = Query([]),
             offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            limit: int = Query(
+                100,
+                ge=-1,
+                description="Number of items to return. Use -1 to return all items.",
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedDocumentOverviewResponse:
             request_user_ids = (
