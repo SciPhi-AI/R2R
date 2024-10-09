@@ -1,7 +1,4 @@
-# File: tests/integration/r2r_integration_tests.py
-
 import json
-import re
 import subprocess
 import sys
 import time
@@ -39,6 +36,7 @@ def run_command(command):
 def test_ingest_sample_file_cli():
     print("Testing: Ingest sample file CLI")
     run_command("poetry run r2r ingest-sample-file")
+    time.sleep(10)
     print("Ingestion successful")
     print("~" * 100)
 

@@ -1,12 +1,8 @@
-# import json
-# import sys
 import argparse
-import json
 import sys
+import time
 
 from r2r import R2RClient, R2RException
-
-# client = R2RClient("http://localhost:7272")
 
 
 def compare_result_fields(result, expected_fields):
@@ -33,7 +29,7 @@ def test_ingest_sample_file_sdk():
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
-
+    time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
 
