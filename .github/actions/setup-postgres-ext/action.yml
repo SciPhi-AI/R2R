@@ -35,7 +35,17 @@ runs:
         $env:PATH += ";C:\Program Files\PostgreSQL\15\bin"
         $env:PGPASSWORD = 'postgres'
         psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+
+        # Download and extract pgvector
+        Invoke-WebRequest -Uri "https://github.com/pgvector/pgvector/releases/download/v0.4.0/pgvector-windows-x86_64-pg15-0.4.0.zip" -OutFile "pgvector.zip"
+        Expand-Archive -Path "pgvector.zip" -DestinationPath "."
+
+        # Copy extension files to PostgreSQL directories
+        Copy-Item -Path ".\pgvector\vector.control" -Destination "C:\Program Files\PostgreSQL\15\share\extension"
+        Copy-Item -Path ".\pgvector\vector.dll" -Destination "C:\Program Files\PostgreSQL\15\lib"
+
         psql -U postgres -c "CREATE EXTENSION vector;"
+
 
     - name: Setup PostgreSQL on macOS
       if: inputs.os == 'macos-latest'
