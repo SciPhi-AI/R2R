@@ -4,6 +4,12 @@ inputs:
   os:
     description: 'Operating system'
     required: true
+  docker_username:
+    description: 'Docker Hub username'
+    required: true
+  docker_password:
+    description: 'Docker Hub password or token'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -17,5 +23,5 @@ runs:
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
-        password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_password }}

@@ -46,6 +46,8 @@ jobs:
         uses: ./.github/actions/setup-docker
         with:
           os: ${{ matrix.os }}
+          docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
