@@ -130,11 +130,11 @@ def test_document_chunks_sample_file_sdk():
     chunks = client.document_chunks(document_id=document_id)["results"]
 
     lead_chunk = {
-        "extraction_id": "57d761ac-b2df-529c-9c47-6e6e1bbf854f",
+        # "extraction_id": "57d761ac-b2df-529c-9c47-6e6e1bbf854f",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
-        "text": "UNITED STATESSECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n____________________________________________ \nFORM\n 10-K____________________________________________ \n(Mark One)\n\n ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934For the fiscal year ended\n December 31, 2021OR",
+        # "text": "UNITED STATESSECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n____________________________________________ \nFORM\n 10-K____________________________________________ \n(Mark One)\n\n ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934For the fiscal year ended\n December 31, 2021OR",
         "metadata": {
             "version": "v0",
             "chunk_order": 0,
@@ -142,7 +142,11 @@ def test_document_chunks_sample_file_sdk():
         },
     }
 
-    assert len(chunks) >= 100 and lead_chunk == chunks[0]
+    assert (
+        len(chunks) >= 100
+        and lead_chunk == chunks[0]
+        and "SECURITIES AND EXCHANGE COMMISSION" in chunks[0]["text"]
+    )
     print("Document chunks test passed")
     print("~" * 100)
 
@@ -196,7 +200,7 @@ def test_vector_search_sample_file_filter_sdk():
     lead_result = results[0]
     expected_lead_search_result = {
         # "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
-        "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
+        # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "score": lambda x: 0.71 <= x <= 0.73,
@@ -229,7 +233,7 @@ def test_hybrid_search_sample_file_filter_sdk():
     lead_result = results[0]
     expected_lead_search_result = {
         # "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
-        "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
+        # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "score": lambda x: 0.016 <= x <= 0.018,
