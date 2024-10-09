@@ -1,6 +1,6 @@
 [app]
 # app settings are global available like `r2r_config.agent.app`
-# project_name = "my_project" # optional, can also set with `R2R_PROJECT_NAME` env var
+# project_name = "r2r_default" # optional, can also set with `R2R_PROJECT_NAME` env var
 
 [agent]
 system_instruction_name = "rag_agent"

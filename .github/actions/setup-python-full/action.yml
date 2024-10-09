@@ -1,0 +1,33 @@
+name: 'Setup Python for R2R Full'
+description: 'Sets up Python and installs R2R dependencies for full installation'
+inputs:
+  os:
+    description: 'Operating system'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install R2R CLI & Python SDK
+      shell: bash
+      run: |
+        pip install r2r
+
+    - name: Install Poetry and dependencies on Ubuntu and macOS
+      if: inputs.os == 'ubuntu-latest' || inputs.os == 'macos-latest'
+      shell: bash
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        cd py && poetry install -E core -E ingestion-bundle
+
+    - name: Install Poetry and dependencies on Windows
+      if: inputs.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+        $env:PATH += ";$env:USERPROFILE\AppData\Roaming\Python\Scripts"
+        cd py; poetry install -E core -E ingestion-bundle

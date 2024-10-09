@@ -375,7 +375,7 @@ class ManagementRouter(BaseRouter):
                 auth_user.id
             )
             document_collections = await self.service.document_collections(
-                document_uuid, 0, 1
+                document_uuid, 0, -1
             )
 
             user_has_access = (
@@ -511,7 +511,7 @@ class ManagementRouter(BaseRouter):
         async def delete_collection_app(
             collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedDeleteResponse:
             collection_uuid = UUID(collection_id)
             if (
                 not auth_user.is_superuser
@@ -521,7 +521,8 @@ class ManagementRouter(BaseRouter):
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
-            return await self.service.delete_collection(collection_uuid)  # type: ignore
+            await self.service.delete_collection(collection_uuid)
+            return None  # type: ignore
 
         @self.router.get("/list_collections")
         @self.base_endpoint

@@ -30,10 +30,9 @@ Refer to the retrieval configuration [page here](/documentation/configuration/re
 The `rag_generation_config` parameter allows you to customize the language model's behavior. Default settings are set on the server-side using the `r2r.toml`, as described in in previous configuraiton guides. These settings can be overridden at runtime as shown below:
 
 ```python
-# Configure knowledge graph search
+# Configure vector search
 vector_search_settings = {
     "use_vector_search": True,
-    "filters": {"document_type": "article"},
     "search_limit": 20,
     "use_hybrid_search": True,
     "selected_collection_ids": ["c3291abf-8a4e-5d9d-80fd-232ef6fd8526"]

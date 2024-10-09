@@ -1,9 +1,12 @@
+# import json
+# import sys
+import argparse
 import json
 import sys
 
 from r2r import R2RClient, R2RException
 
-client = R2RClient("http://localhost:7272")
+# client = R2RClient("http://localhost:7272")
 
 
 def compare_result_fields(result, expected_fields):
@@ -180,7 +183,7 @@ def test_vector_search_sample_file_filter_sdk():
     results = client.search(
         query="What was Uber's recent profit??",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -211,7 +214,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         query="What was Uber's recent profit??",
         vector_search_settings={
             "use_hybrid_search": True,
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             },
         },
@@ -248,7 +251,7 @@ def test_rag_response_sample_file_sdk():
     response = client.rag(
         query="What was Uber's recent profit and loss?",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -273,7 +276,7 @@ def test_rag_response_stream_sample_file_sdk():
         query="What was Uber's recent profit and loss?",
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -308,7 +311,7 @@ def test_agent_sample_file_sdk():
         ],
         rag_generation_config={"stream": False},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -343,7 +346,7 @@ def test_agent_stream_sample_file_sdk():
         ],
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -1470,13 +1473,14 @@ def test_collection_document_interactions():
     # Get collections for the document
     document_collections = client.document_collections(document_id)
 
-    # Check if both collections are present in the document's collections
+    test_collection_ids = [collection1_id, collection2_id]
     if not all(
-        collection["collection_id"] in [collection1_id, collection2_id]
-        for collection in document_collections["results"]
+        collection_id
+        in [c["collection_id"] for c in document_collections["results"]]
+        for collection_id in test_collection_ids
     ):
         print(
-            "Collection document interactions test failed: Document not assigned to both collections"
+            "Collection document interactions test failed: Document not assigned to both test collections"
         )
         sys.exit(1)
 
@@ -1541,10 +1545,31 @@ def test_error_handling():
     print("~" * 100)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Please specify a test function to run")
-        sys.exit(1)
+def create_client(base_url):
+    return R2RClient(base_url)
 
-    test_function = sys.argv[1]
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="R2R SDK Integration Tests")
+    parser.add_argument("test_function", help="Test function to run")
+    parser.add_argument(
+        "--base-url",
+        default="http://localhost:7272",
+        help="Base URL for the R2R client",
+    )
+    args = parser.parse_args()
+
+    global client
+    client = create_client(args.base_url)
+
+    test_function = args.test_function
     globals()[test_function]()
+
+
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Please specify a test function to run")
+#         sys.exit(1)
+
+#     test_function = sys.argv[1]
+#     globals()[test_function]()
