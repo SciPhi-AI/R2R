@@ -33,6 +33,18 @@ def hatchet_ingestion_factory(
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.ingestion_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context: Context) -> str:
+            logger.info(f"Concurrency called for context: {context.workflow_input()}")
+            input_data = context.workflow_input()["request"]
+            parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+                input_data
+            )
+            return str(parsed_data["user"].id)
+
         @orchestration_provider.step(timeout="60m")
         async def parse(self, context: Context) -> dict:
             input_data = context.workflow_input()["request"]
@@ -295,7 +307,7 @@ def hatchet_ingestion_factory(
             parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
                 input_data
             )
-            return parsed_data["user"]["id"]
+            return str(parsed_data["user"].id)
 
         @orchestration_provider.step(timeout="60m")
         async def ingest(self, context: Context) -> dict:
