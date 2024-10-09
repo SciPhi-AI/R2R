@@ -26,11 +26,6 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: 'false'
-      POSTGRES_HOST: localhost
-      POSTGRES_DBNAME: postgres
-      POSTGRES_PORT: '5432'
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
 
     steps:
