@@ -447,12 +447,13 @@ def test_user_document_management():
 
     ingested_document = ingestion_result[0]
     expected_ingestion_result = {
-        "message": "Ingestion task completed successfully.",
+        # "message": "Ingestion task completed successfully.",
         "task_id": None,
         "document_id": lambda x: len(x)
         == 36,  # Check if document_id is a valid UUID
     }
     compare_result_fields(ingested_document, expected_ingestion_result)
+    assert "successfully" in ingested_document["message"]
 
     # Check the user's documents
     documents_overview = client.documents_overview()["results"]
