@@ -20,7 +20,7 @@ runs:
       echo "Waiting for R2R server to be ready..."
 
       attempt_counter=0
-      max_attempts=20
+      max_attempts=60
 
       until $(curl --output /dev/null --silent --head --fail http://localhost:7272/v2/health); do
           if [ ${attempt_counter} -eq ${max_attempts} ]; then
