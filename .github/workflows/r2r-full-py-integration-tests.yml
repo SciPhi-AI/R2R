@@ -3,9 +3,6 @@
 name: R2R Full Python Integration Test
 
 on:
-  push:
-    branches:
-      - '**'
   workflow_dispatch:
 
 jobs:
@@ -19,10 +16,12 @@ jobs:
         test_category:
           - cli-ingestion
           - cli-retrieval
+          - cli-graphrag
           - sdk-ingestion
           - sdk-retrieval
           - sdk-auth
           - sdk-collections
+          - sdk-graphrag
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: 'false'
