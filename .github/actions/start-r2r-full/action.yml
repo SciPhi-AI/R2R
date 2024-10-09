@@ -13,3 +13,8 @@ runs:
     run: |
       cd py
       poetry run r2r serve --docker --full --config-name=full &
+
+  - name: Wait for R2R Server to be ready
+    shell: bash
+    run: |
+      sleep 120
