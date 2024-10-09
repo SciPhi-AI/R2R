@@ -348,7 +348,7 @@ def build_docker_command(
     else:
         base_command = f"docker compose -f {compose_files['full']}"
 
-    base_command += f" --project-name {project_name}"
+    base_command += f" --project-name {project_name if project_name else ('r2r' if not full else 'r2r-full')}"
 
     # Find available ports
     r2r_dashboard_port = port + 1
