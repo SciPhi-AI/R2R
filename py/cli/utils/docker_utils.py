@@ -242,9 +242,7 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 
 def check_set_docker_env_vars(exclude_postgres: bool = False):
 
-    env_vars = {
-        "R2R_PROJECT_NAME": "r2r",
-    }
+    env_vars = {"R2R_PROJECT_NAME": "r2r_default"}
 
     if not exclude_postgres:
         env_vars |= {
@@ -338,8 +336,8 @@ def build_docker_command(
     r2r_dashboard_port = port + 1
     hatchet_dashboard_port = r2r_dashboard_port + 1
 
-    os.environ["PORT"] = str(port)
-    os.environ["HOST"] = host
+    os.environ["R2R_PORT"] = str(port)
+    os.environ["R2R_HOST"] = host
     os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
     os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""

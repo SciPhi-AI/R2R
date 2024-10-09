@@ -130,3 +130,34 @@ class KGMethods:
             params["triple_ids"] = ",".join(triple_ids)
 
         return await client._make_request("GET", "triples", params=params)
+
+    @staticmethod
+    async def get_communities(
+        client,
+        collection_id: str,
+        offset: int = 0,
+        limit: int = 100,
+        levels: Optional[list[int]] = None,
+        community_numbers: Optional[list[int]] = None,
+    ) -> dict:
+        """
+        Retrieve communities from the knowledge graph.
+
+        Args:
+            collection_id (str): The ID of the collection to retrieve communities from.
+
+        Returns:
+            dict: A dictionary containing the retrieved communities.
+        """
+        params = {
+            "collection_id": collection_id,
+            "offset": offset,
+            "limit": limit,
+        }
+
+        if levels:
+            params["levels"] = levels
+        if community_numbers:
+            params["community_numbers"] = community_numbers
+
+        return await client._make_request("GET", "communities", params=params)

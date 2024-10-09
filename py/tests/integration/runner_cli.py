@@ -1,8 +1,12 @@
 # File: tests/integration/r2r_integration_tests.py
 
 import json
+import re
 import subprocess
 import sys
+import time
+
+import requests
 
 
 def compare_result_fields(result, expected_fields):
@@ -105,6 +109,17 @@ def test_delete_and_reingest_sample_file_cli():
     print("Sample file re-ingested successfully")
 
     print("Delete and re-ingest test passed")
+    print("~" * 100)
+
+
+def test_update_file_cli():
+    print("Testing: Update document")
+    update_file_output = run_command(
+        "r2r update-files core/examples/data/aristotle_v2.txt --document-ids=9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+    )
+    print("Sample file updatesuccessfully")
+
+    print("Update test passed")
     print("~" * 100)
 
 
@@ -233,6 +248,106 @@ def test_rag_response_stream_sample_file_cli():
         sys.exit(1)
 
     print("RAG response stream test passed")
+    print("~" * 100)
+
+
+def test_kg_create_graph_sample_file_cli():
+    print("Testing: KG create graph")
+    run_command("poetry run r2r kg create-graph --run")
+
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    if response.status_code != 200:
+        print("KG create graph test failed: Graph not created")
+        sys.exit(1)
+
+    entities_list = [
+        ele["name"] for ele in response.json()["results"]["results"]
+    ]
+
+    print("Entities list:", entities_list)
+
+    assert (
+        "ARISTOTLE" in entities_list
+        or "aristotle" in entities_list
+        or "Aristotle" in entities_list
+    )
+
+    print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_enrich_graph_sample_file_cli():
+    print("Testing: KG enrich graph")
+    run_command("poetry run r2r kg enrich-graph --run")
+
+    response = requests.get(
+        "http://localhost:7272/v2/communities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    if response.status_code != 200:
+        print("KG enrichment test failed: Communities not created")
+        sys.exit(1)
+
+    communities = response.json()["results"]
+    assert len(communities) >= 1
+
+    for community in communities:
+        assert "community_number" in community
+        assert "level" in community
+        assert "collection_id" in community
+        assert "name" in community
+        assert "summary" in community
+        assert "findings" in community
+
+    print("KG enrichment test passed")
+    print("~" * 100)
+
+
+def test_kg_search_sample_file_cli():
+    print("Testing: KG search")
+
+    output = run_command(
+        "poetry run r2r search --query='Who was aristotle?' --use-kg-search"
+    )
+
+    output_lines = output.strip().split("\n")
+    results = []
+    for line in output_lines:
+        line = line.strip()
+
+        try:
+            result = json.loads(line)
+            results.append(result)
+        except json.JSONDecodeError as e:
+            results.append(line)
+            continue
+
+    if not results:
+        print("KG search test failed: No results returned")
+        sys.exit(1)
+
+    # there should be vector search and KG search results
+    kg_search_result_present = False
+    entities_found = False
+    communities_found = False
+    for result in results:
+        if "{'method': 'local'" in result:
+            kg_search_result_present = True
+        if "entity" in result:
+            entities_found = True
+        if "community" in result:
+            communities_found = True
+
+    assert kg_search_result_present, "No KG search result present"
+    assert entities_found, "No entities found"
+    assert communities_found, "No communities found"
+
+    print("KG search test passed")
     print("~" * 100)
 
 

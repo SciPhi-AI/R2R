@@ -61,7 +61,6 @@ class KGSearchResultType(str, Enum):
 
 class KGSearchMethod(str, Enum):
     LOCAL = "local"
-    GLOBAL = "global"
 
 
 class KGEntityResult(R2RSerializable):
@@ -357,7 +356,7 @@ class KGSearchSettings(R2RSerializable):
         json_encoders = {UUID: str}
         json_schema_extra = {
             "use_kg_search": True,
-            "kg_search_type": "global",
+            "kg_search_type": "local",
             "kg_search_level": "0",
             "generation_config": GenerationConfig.Config.json_schema_extra,
             "max_community_description_length": 65536,

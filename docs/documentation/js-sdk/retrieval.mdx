@@ -73,7 +73,7 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="Array<string | null>">
-    Group IDs to search for.
+    Collection Ids to search for.
     </ParamField>
     <ParamField path="index_measure" type="string" default="cosine_distance">
     The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
@@ -102,7 +102,7 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
   <Expandable title="properties">
 
     <ParamField path="filters" type="dict[str, Any]">
-      Filters to apply to the vector search. This field is deprecated in favor of `search_filters`.
+      Filters to apply to the vector search. This field is deprecated in favor of `filters`.
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="list[UUID]">
@@ -122,7 +122,7 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="kg_search_type" type="str" default="local">
-      The type of knowledge graph search to perform. Valid options are "local" or "global".
+      The type of knowledge graph search to perform. Supported value: "local".
     </ParamField>
 
     <ParamField path="kg_search_level" type="Optional[str]" default="None">
@@ -159,7 +159,7 @@ Search with custom settings, such as bespoke document filters and larger search 
 # returns only chunks from documents with title `document_title`
 const filtered_search_response = client.search(
     "What was Uber's profit in 2020?",
-    { search_filters: {
+    { filters: {
         $eq: "uber_2021.pdf"
     },
     search_limit: 100
@@ -175,7 +175,7 @@ Combine traditional keyword-based search with vector search:
 ```javascript
 const hybrid_search_response = client.search(
     "What was Uber's profit in 2020?",
-    { search_filters: {
+    { filters: {
         $eq: "uber_2021.pdf"
     },
     search_limit: 100
@@ -285,7 +285,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
-    Group IDs to search for.
+    Collection Ids to search for.
     </ParamField>
 
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">
@@ -338,7 +338,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
   The `KGSearchSettings` class allows you to configure the knowledge graph search settings for your R2R system. Here are the available options:
 
   <ParamField path="filters" type="dict[str, Any]">
-    Filters to apply to the vector search. This field is deprecated in favor of `search_filters`.
+    Filters to apply to the vector search. This field is deprecated in favor of `filters`.
   </ParamField>
 
   <ParamField path="selected_collection_ids" type="list[UUID]">
@@ -358,7 +358,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
   </ParamField>
 
   <ParamField path="kg_search_type" type="str" default="local">
-    The type of knowledge graph search to perform. Valid options are "local" or "global".
+    The type of knowledge graph search to perform. Supported value: "local".
   </ParamField>
 
   <ParamField path="kg_search_level" type="Optional[str]" default="None">
@@ -635,7 +635,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
   Whether to use vector search.
 </ParamField>
 
-<ParamField path="search_filters" type="object">
+<ParamField path="filters" type="object">
   Optional filters for the search.
 </ParamField>
 

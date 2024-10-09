@@ -1,9 +1,12 @@
+# import json
+# import sys
+import argparse
 import json
 import sys
 
 from r2r import R2RClient, R2RException
 
-client = R2RClient("http://localhost:7272")
+# client = R2RClient("http://localhost:7272")
 
 
 def compare_result_fields(result, expected_fields):
@@ -59,6 +62,16 @@ def test_ingest_sample_file_with_config_sdk():
 
     print("Ingestion with config successful")
     print("~" * 100)
+
+
+def test_remove_all_files_and_ingest_sample_file_sdk():
+    document_ids = [
+        doc["id"] for doc in client.documents_overview()["results"]
+    ]
+    for document_id in document_ids:
+        client.delete({"document_id": {"$eq": document_id}})
+
+    client.ingest_files(file_paths=["core/examples/data/aristotle_v2.txt"])
 
 
 def test_reingest_sample_file_sdk():
@@ -170,7 +183,7 @@ def test_vector_search_sample_file_filter_sdk():
     results = client.search(
         query="What was Uber's recent profit??",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -201,7 +214,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         query="What was Uber's recent profit??",
         vector_search_settings={
             "use_hybrid_search": True,
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             },
         },
@@ -238,7 +251,7 @@ def test_rag_response_sample_file_sdk():
     response = client.rag(
         query="What was Uber's recent profit and loss?",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -263,7 +276,7 @@ def test_rag_response_stream_sample_file_sdk():
         query="What was Uber's recent profit and loss?",
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -298,7 +311,7 @@ def test_agent_sample_file_sdk():
         ],
         rag_generation_config={"stream": False},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -333,7 +346,7 @@ def test_agent_stream_sample_file_sdk():
         ],
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -616,6 +629,78 @@ def test_superuser_capabilities():
     assert analytics_result["results"]["analytics_data"]["search_latencies"]
 
     print("Superuser capabilities test passed")
+    print("~" * 100)
+
+
+def test_kg_create_graph_sample_file_sdk():
+    print("Testing: KG create graph")
+
+    create_graph_result = client.create_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
+
+    result = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    entities_list = [ele["name"] for ele in result["results"]["results"]]
+
+    assert "ARISTOTLE" in entities_list
+
+    print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_enrich_graph_sample_file_sdk():
+    print("Testing: KG enrich graph")
+
+    enrich_graph_result = client.enrich_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
+
+    result = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    communities = result["results"]
+    assert len(communities) >= 1
+
+    for community in communities:
+        assert "community_number" in community
+        assert "level" in community
+        assert "collection_id" in community
+        assert "name" in community
+
+    print("KG enrich graph test passed")
+    print("~" * 100)
+
+
+def test_kg_search_sample_file_sdk():
+    print("Testing: KG search")
+
+    output = client.search(
+        query="Who was aristotle?", kg_search_settings={"use_kg_search": True}
+    )
+
+    kg_search_results = output["results"]["kg_search_results"]
+    assert len(kg_search_results) >= 1
+
+    kg_search_result_present = False
+    entities_found = False
+    communities_found = False
+    for result in kg_search_results:
+        if "method" in result and result["method"] == "local":
+            kg_search_result_present = True
+        if "result_type" in result and result["result_type"] == "entity":
+            entities_found = True
+        if "result_type" in result and result["result_type"] == "community":
+            communities_found = True
+
+    assert kg_search_result_present, "No KG search result present"
+    assert entities_found, "No entities found"
+    assert communities_found, "No communities found"
+
+    print("KG search test passed")
     print("~" * 100)
 
 
@@ -1022,7 +1107,7 @@ def test_advanced_collection_management():
 
     # Test deleting a collection
     delete_result = client.delete_collection(collection_id)
-    if delete_result["results"] != True:
+    if delete_result["results"] != None:
         print("Delete collection test failed: Unexpected result")
         sys.exit(1)
 
@@ -1388,13 +1473,14 @@ def test_collection_document_interactions():
     # Get collections for the document
     document_collections = client.document_collections(document_id)
 
-    # Check if both collections are present in the document's collections
+    test_collection_ids = [collection1_id, collection2_id]
     if not all(
-        collection["collection_id"] in [collection1_id, collection2_id]
-        for collection in document_collections["results"]
+        collection_id
+        in [c["collection_id"] for c in document_collections["results"]]
+        for collection_id in test_collection_ids
     ):
         print(
-            "Collection document interactions test failed: Document not assigned to both collections"
+            "Collection document interactions test failed: Document not assigned to both test collections"
         )
         sys.exit(1)
 
@@ -1459,10 +1545,31 @@ def test_error_handling():
     print("~" * 100)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Please specify a test function to run")
-        sys.exit(1)
+def create_client(base_url):
+    return R2RClient(base_url)
 
-    test_function = sys.argv[1]
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="R2R SDK Integration Tests")
+    parser.add_argument("test_function", help="Test function to run")
+    parser.add_argument(
+        "--base-url",
+        default="http://localhost:7272",
+        help="Base URL for the R2R client",
+    )
+    args = parser.parse_args()
+
+    global client
+    client = create_client(args.base_url)
+
+    test_function = args.test_function
     globals()[test_function]()
+
+
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Please specify a test function to run")
+#         sys.exit(1)
+
+#     test_function = sys.argv[1]
+#     globals()[test_function]()
