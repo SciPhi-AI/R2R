@@ -3,14 +3,14 @@
 name: R2R Light Python Integration Test
 
 on:
-  push:
-    branches:
-      - dev
-      - dev-minor
-  pull_request:
-    branches:
-      - dev
-      - dev-minor
+  # push:
+  #   branches:
+  #     - dev
+  #     - dev-minor
+  # pull_request:
+  #   branches:
+  #     - dev
+  #     - dev-minor
   workflow_dispatch:
 
 jobs:
