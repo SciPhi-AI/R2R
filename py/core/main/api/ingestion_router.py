@@ -348,11 +348,11 @@ class IngestionRouter(BaseRouter):
                 description="The arguments for the index method.",
             ),
             replace: bool = Body(
-                default=False,
+                default=True,
                 description="Whether to replace an existing index.",
             ),
             concurrently: bool = Body(
-                default=False,
+                default=True,
                 description="Whether to create the index concurrently.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
