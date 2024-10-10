@@ -218,17 +218,17 @@ class R2RClient:
 
     def __getattr__(self, name):
         async_attr = getattr(self.async_client, name)
-        # if callable(async_attr):
+        if callable(async_attr):
 
-        #     def sync_wrapper(*args, **kwargs):
-        #         result = asyncio.get_event_loop().run_until_complete(
-        #             async_attr(*args, **kwargs)
-        #         )
-        #         if isinstance(result, AsyncGenerator):
-        #             return self._sync_generator(result)
-        #         return result
+            def sync_wrapper(*args, **kwargs):
+                result = asyncio.get_event_loop().run_until_complete(
+                    async_attr(*args, **kwargs)
+                )
+                if isinstance(result, AsyncGenerator):
+                    return self._sync_generator(result)
+                return result
 
-        #     return sync_wrapper
+            return sync_wrapper
         return async_attr
 
     def __dir__(self):
