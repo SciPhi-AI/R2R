@@ -4,7 +4,7 @@ import uuid
 
 from datasets import load_dataset
 
-from r2r import R2RClient
+from r2r import R2RAsyncClient
 
 batch_size = 64
 total_batches = 8
@@ -64,7 +64,7 @@ async def process_dataset(client, dataset, batch_size):
 async def main():
     r2r_url = os.getenv("R2R_API_URL", "http://localhost:7272")
     print(f"Using R2R API at: {r2r_url}")
-    client = R2RClient(r2r_url)
+    client = R2RAsyncClient(r2r_url)
 
     dataset = load_dataset(
         "SciPhi/textbooks-are-all-you-need-lite", streaming=True
