@@ -48,7 +48,7 @@ def rag_agent_example():
     # Use the RAG assistant via the agent endpoint
     response = client.agent(
         messages=messages,
-        vector_search_settings={"search_limit": 5, "search_filters": {}},
+        vector_search_settings={"search_limit": 5, "filters": {}},
         kg_search_settings={"use_kg_search": False},
         rag_generation_config={"max_tokens": 300}
     )
@@ -91,7 +91,7 @@ def streaming_rag_agent_example():
 
     streaming_response = client.agent(
         messages=messages,
-        vector_search_settings={"search_limit": 5, "search_filters": {}},
+        vector_search_settings={"search_limit": 5, "filters": {}},
         kg_search_settings={"use_kg_search": False},
         rag_generation_config={"max_tokens": 300, "stream": True}
     )
@@ -144,7 +144,7 @@ custom_response = client.agent(
         {"role": "system", "content": "You are an expert on ancient Greek philosophy. Ask clarifying questions if needed."},
         {"role": "user", "content": "Compare Aristotle's and Plato's views on the nature of reality."},
     ],
-    vector_search_settings={"search_limit": 25, "use_hybrid_search": True, "search_filters": {"category": "philosophy"}},
+    vector_search_settings={"search_limit": 25, "use_hybrid_search": True, "filters": {"category": {"$eq": "philosophy"}}},
     kg_search_settings={"use_kg_search": False},
     rag_generation_config={
         "max_tokens": 500,

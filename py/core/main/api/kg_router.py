@@ -44,13 +44,25 @@ class KGRouter(BaseRouter):
         return yaml_content
 
     def _register_workflows(self):
+
+        workflow_messages = {}
+        if self.orchestration_provider.config.provider == "hatchet":
+            workflow_messages["create-graph"] = (
+                "Graph creation task queued successfully."
+            )
+            workflow_messages["enrich-graph"] = (
+                "Graph enrichment task queued successfully."
+            )
+        else:
+            workflow_messages["create-graph"] = (
+                "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
+            )
+            workflow_messages["enrich-graph"] = "Graph enriched successfully."
+
         self.orchestration_provider.register_workflows(
             Workflow.KG,
             self.service,
-            {
-                "create-graph": "Graph creation task queued successfully.",
-                "enrich-graph": "Graph enrichment task queued successfully.",
-            },
+            workflow_messages,
         )
 
     def _setup_routes(self):
@@ -74,7 +86,8 @@ class KGRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGCreationResponse:  # type: ignore
             """
-            Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings. If document IDs are not provided, the graph will be created on all documents in the system.
+            Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings.
+            If document IDs are not provided, the graph will be created on all documents in the system.
             This step extracts the relevant entities and relationships from the documents and creates a graph based on the extracted information.
             In order to do GraphRAG, you will need to run the enrich_graph endpoint.
             """
@@ -135,7 +148,9 @@ class KGRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
             """
-            This endpoint enriches the graph with additional information. It creates communities of nodes based on their similarity and adds embeddings to the graph. This step is necessary for GraphRAG to work.
+            This endpoint enriches the graph with additional information.
+            It creates communities of nodes based on their similarity and adds embeddings to the graph.
+            This step is necessary for GraphRAG to work.
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
@@ -234,4 +249,36 @@ class KGRouter(BaseRouter):
                 offset,
                 limit,
                 triple_ids,
+            )
+
+        @self.router.get("/communities")
+        @self.base_endpoint
+        async def get_communities(
+            collection_id: UUID = Query(
+                ..., description="Collection ID to retrieve communities from."
+            ),
+            offset: int = Query(0, ge=0, description="Offset for pagination."),
+            limit: int = Query(
+                100, ge=1, le=1000, description="Limit for pagination."
+            ),
+            levels: Optional[list[int]] = Query(
+                None, description="Levels to filter by."
+            ),
+            community_numbers: Optional[list[int]] = Query(
+                None, description="Community numbers to filter by."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Retrieve communities from the knowledge graph.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            return await self.service.get_communities(
+                collection_id,
+                offset,
+                limit,
+                levels,
+                community_numbers,
             )
