@@ -23,6 +23,7 @@ def bring_down_docker_compose(project_name, volumes, remove_orphans):
         docker_command = f"docker compose  -f {compose_files['full']}"
 
     docker_command += f" --project-name {project_name}"
+    docker_command += " --profile postgres"
 
     if volumes:
         docker_command += " --volumes"

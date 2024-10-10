@@ -20,18 +20,12 @@ runs:
         docker_version: 20.10
         docker_buildx: true
 
-    - name: Set up Docker (macOS)
+    - name: Set up Docker (Windows)
       if: inputs.os == 'macos-latest'
-      run: |
-        brew install --cask docker
-        sudo /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
-        sudo /Applications/Docker.app/Contents/MacOS/Docker --unattended --accept-license
-      shell: bash
-
-    - name: Add Docker to PATH (macOS)
-      if: inputs.os == 'macos-latest'
-      run: echo "/Applications/Docker.app/Contents/Resources/bin" >> $GITHUB_PATH
-      shell: bash
+      uses: docker-practice/actions-setup-docker@master
+      with:
+        docker_version: 20.10
+        docker_buildx: true
 
     - name: Set up Docker (Windows)
       if: inputs.os == 'windows-latest'
