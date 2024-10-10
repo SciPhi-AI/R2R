@@ -76,30 +76,30 @@ def hatchet_ingestion_factory(
             async for extraction in extractions_generator:
                 extractions.append(extraction)
 
-            serializable_extractions = [
-                extraction.to_dict() for extraction in extractions
-            ]
+            # serializable_extractions = [
+            #     extraction.to_dict() for extraction in extractions
+            # ]
 
-            return {
-                "status": "Successfully extracted data",
-                "extractions": serializable_extractions,
-                "document_info": document_info.to_dict(),
-            }
+            # return {
+            #     "status": "Successfully extracted data",
+            #     "extractions": serializable_extractions,
+            #     "document_info": document_info.to_dict(),
+            # }
 
-        @orchestration_provider.step(parents=["parse"], timeout="60m")
-        async def embed(self, context: Context) -> dict:
-            document_info_dict = context.step_output("parse")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            # @orchestration_provider.step(parents=["parse"], timeout="60m")
+            # async def embed(self, context: Context) -> dict:
+            #     document_info_dict = context.step_output("parse")["document_info"]
+            #     document_info = DocumentInfo(**document_info_dict)
 
             await self.ingestion_service.update_document_status(
                 document_info,
                 status=IngestionStatus.EMBEDDING,
             )
 
-            extractions = context.step_output("parse")["extractions"]
+            # extractions = context.step_output("parse")["extractions"]
 
             embedding_generator = await self.ingestion_service.embed_document(
-                extractions
+                [extraction.to_dict() for extraction in extractions]
             )
 
             embeddings = []
