@@ -300,7 +300,10 @@
       "group": "Knowledge Graph",
       "pages": [
         "api-reference/endpoint/create_graph",
-        "api-reference/endpoint/enrich_graph"
+        "api-reference/endpoint/enrich_graph",
+        "api-reference/endpoint/entities",
+        "api-reference/endpoint/triples",
+        "api-reference/endpoint/communities"
       ]
     },
     {

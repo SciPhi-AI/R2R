@@ -89,7 +89,7 @@ class KGProvider(ABC):
         limit: int,
         levels: list[int] | None = None,
         community_numbers: list[int] | None = None,
-    ) -> list[CommunityReport]:
+    ) -> dict:
         """Abstract method to get communities."""
         pass
 
@@ -100,7 +100,6 @@ class KGProvider(ABC):
         offset: int,
         limit: int,
         entity_ids: list[str] | None = None,
-        with_description: bool = False,
     ) -> dict:
         """Abstract method to get entities."""
         pass
@@ -111,6 +110,7 @@ class KGProvider(ABC):
         collection_id: UUID,
         offset: int,
         limit: int,
+        entity_names: list[str] | None = None,
         triple_ids: list[str] | None = None,
     ) -> dict:
         """Abstract method to get triples."""
@@ -235,6 +235,11 @@ class KGProvider(ABC):
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
         """Abstract method to check if community reports exist."""
+        pass
+
+    @abstractmethod
+    async def get_community_count(self, collection_id: UUID) -> int:
+        """Abstract method to get the community count."""
         pass
 
 

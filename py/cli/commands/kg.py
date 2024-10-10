@@ -145,9 +145,7 @@ def enrich_graph(
     help="Include entity descriptions in the response.",
 )
 @pass_context
-def get_entities(
-    ctx, collection_id, offset, limit, entity_ids, with_description
-):
+def get_entities(ctx, collection_id, offset, limit, entity_ids):
     """
     Retrieve entities from the knowledge graph.
     """
@@ -159,7 +157,6 @@ def get_entities(
             offset,
             limit,
             list(entity_ids),
-            with_description,
         )
 
     click.echo(json.dumps(response, indent=2))

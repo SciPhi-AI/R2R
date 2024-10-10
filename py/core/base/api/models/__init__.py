@@ -16,6 +16,9 @@ from shared.api.models.kg.responses import (
     KGEnrichmentResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
+    WrappedKGEntitiesResponse,
+    WrappedKGTriplesResponse,
+    WrappedKGCommunitiesResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
