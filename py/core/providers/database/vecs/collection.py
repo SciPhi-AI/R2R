@@ -928,10 +928,14 @@ class Collection:
             table_name = f"{self.client.project_name}.{self.table.name}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES:
-            table_name = f"{self.client.project_name}.{VectorTableName.ENTITIES}"
+            table_name = (
+                f"{self.client.project_name}.{VectorTableName.ENTITIES}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
-            table_name = f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
+            table_name = (
+                f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
+            )
             col_name = "embedding"
         else:
             raise ArgError("invalid table name")
