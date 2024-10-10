@@ -21,6 +21,11 @@ from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from shared.abstractions.vector import (
+    IndexMethod,
+    IndexMeasure,
+    VectorTableName,
+)
 from ..config import R2RConfig
 from .base import Service
 
@@ -376,4 +381,15 @@ class IngestionServiceAdapter:
             "ingestion_config": data["ingestion_config"],
             "file_sizes_in_bytes": data["file_sizes_in_bytes"],
             "file_datas": data["file_datas"],
+        }
+
+    @staticmethod
+    def parse_create_vector_index_input(data: dict) -> dict:
+        return {
+            "table_name": VectorTableName(data["table_name"]),
+            "index_method": IndexMethod(data["index_method"]),
+            "measure": IndexMeasure(data["measure"]),
+            "index_arguments": data["index_arguments"],
+            "replace": data["replace"],
+            "concurrently": data["concurrently"],
         }

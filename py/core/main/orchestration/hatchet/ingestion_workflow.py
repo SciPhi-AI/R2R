@@ -421,11 +421,38 @@ def hatchet_ingestion_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
+    @orchestration_provider.workflow(
+        name="create-vector-index", timeout="360m"
+    )
+    class HatchetCreateVectorIndexWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="60m")
+        async def create_vector_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_create_vector_index_input(
+                    input_data
+                )
+            )
+
+            self.ingestion_service.providers.database.vector.create_index(
+                **parsed_data
+            )
+
+            return {
+                "status": "Vector index creation queued successfully.",
+            }
+
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
+    create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
+
     return {
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
+        "create_vector_index": create_vector_index_workflow,
     }

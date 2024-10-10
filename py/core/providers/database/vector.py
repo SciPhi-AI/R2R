@@ -298,7 +298,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
     def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
-        index_type: IndexMethod = IndexMethod.hnsw,
+        index_method: IndexMethod = IndexMethod.hnsw,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_arguments: Optional[
             Union[IndexArgsHNSW, IndexArgsIVFFlat]
@@ -313,7 +313,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         self.collection.create_index(
             table_name=table_name,
-            method=index_type,
+            method=index_method,
             measure=measure,
             index_arguments=index_arguments,
             replace=replace,
