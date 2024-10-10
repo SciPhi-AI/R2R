@@ -242,7 +242,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         "metadata": lambda x: "v0" == x["version"]
         and "pdf" == x["document_type"]
         and "What was Uber's recent profit??" == x["associated_query"]
-        and "1" == x["semantic_rank"],
+        and 1 == x["semantic_rank"],
         # "metadata": {
         #     "version": "v0",
         #     # "chunk_order": 587,
