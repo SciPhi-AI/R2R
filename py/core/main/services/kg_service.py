@@ -268,7 +268,6 @@ class KgService(Service):
         offset: int = 0,
         limit: int = 100,
         entity_ids: Optional[list[str]] = None,
-        with_description: bool = False,
         **kwargs,
     ):
         return await self.providers.kg.get_entities(
@@ -276,7 +275,6 @@ class KgService(Service):
             offset,
             limit,
             entity_ids,
-            with_description,
         )
 
     @telemetry_event("get_triples")
@@ -285,6 +283,7 @@ class KgService(Service):
         collection_id: UUID,
         offset: int = 0,
         limit: int = 100,
+        entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
         **kwargs,
     ):
@@ -292,6 +291,7 @@ class KgService(Service):
             collection_id,
             offset,
             limit,
+            entity_names,
             triple_ids,
         )
 
