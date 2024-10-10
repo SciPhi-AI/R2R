@@ -6,7 +6,7 @@ from typing import Optional, Union
 from uuid import UUID
 
 import yaml
-from fastapi import Body, Depends, File, Form, UploadFile
+from fastapi import Body, Depends, File, Form, UploadFile, BackgroundTasks
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
@@ -322,6 +322,7 @@ class IngestionRouter(BaseRouter):
         @self.router.post("/create_vector_index")
         @self.base_endpoint
         async def create_vector_index_app(
+            background_tasks: BackgroundTasks,
             vector_table_name: Optional[VectorTableName] = Body(
                 default=VectorTableName.CHUNKS,
                 description="The name of the vector table to create.",
@@ -350,7 +351,11 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            self.service.providers.database.vector.create_index(
+            
+            logger.info(f"Creating vector index for {vector_table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}")
+
+            background_tasks.add_task(
+                self.service.providers.database.vector.create_index,
                 table_name=vector_table_name,
                 index_type=index_method,
                 measure=measure,
@@ -358,7 +363,7 @@ class IngestionRouter(BaseRouter):
                 replace=replace,
                 concurrently=concurrently,
             )
-            return {"message": "Vector index created successfully."}
+            return {"message": "Vector index creation queued successfully."}
 
     @staticmethod
     async def _process_files(files):
