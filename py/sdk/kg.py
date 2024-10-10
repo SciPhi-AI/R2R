@@ -75,7 +75,6 @@ class KGMethods:
         offset: int = 0,
         limit: int = 100,
         entity_ids: Optional[list[str]] = None,
-        with_description: bool = False,
     ) -> dict:
         """
         Retrieve entities from the knowledge graph.
@@ -85,7 +84,6 @@ class KGMethods:
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
             entity_ids (Optional[List[str]]): Optional list of entity IDs to filter by.
-            with_description (bool): Whether to include entity descriptions in the response.
 
         Returns:
             dict: A dictionary containing the retrieved entities and total count.
@@ -94,7 +92,6 @@ class KGMethods:
             "collection_id": collection_id,
             "offset": offset,
             "limit": limit,
-            "with_description": with_description,
         }
         if entity_ids:
             params["entity_ids"] = ",".join(entity_ids)

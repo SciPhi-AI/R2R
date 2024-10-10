@@ -10,14 +10,13 @@ from core.base import RunType
 from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
+    WrappedKGEntitiesResponse,
+    WrappedKGTriplesResponse,
+    WrappedKGCommunitiesResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
 from shared.abstractions.kg import KGRunType
-from shared.api.models.kg.responses import (
-    KGCreationEstimationResponse,
-    KGEnrichmentEstimationResponse,
-)
 
 from ..services.kg_service import KgService
 from .base_router import BaseRouter
@@ -193,8 +192,8 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
-            collection_id: UUID = Query(
-                ..., description="Collection ID to retrieve entities from."
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve entities from."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
             limit: int = Query(
@@ -203,59 +202,68 @@ class KGRouter(BaseRouter):
             entity_ids: Optional[list[str]] = Query(
                 None, description="Entity IDs to filter by."
             ),
-            with_description: bool = Query(
-                False,
-                description="Include entity descriptions in the response.",
-            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedKGEntitiesResponse:
             """
             Retrieve entities from the knowledge graph.
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
             return await self.service.get_entities(
                 collection_id,
                 offset,
                 limit,
                 entity_ids,
-                with_description,
             )
 
         @self.router.get("/triples")
         @self.base_endpoint
         async def get_triples(
-            collection_id: UUID = Query(
-                ..., description="Collection ID to retrieve triples from."
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve triples from."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
             limit: int = Query(
                 100, ge=1, le=1000, description="Limit for pagination."
             ),
+            entity_names: Optional[list[str]] = Query(
+                None, description="Entity names to filter by."
+            ),
             triple_ids: Optional[list[str]] = Query(
                 None, description="Triple IDs to filter by."
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedKGTriplesResponse:
             """
             Retrieve triples from the knowledge graph.
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
             return await self.service.get_triples(
                 collection_id,
                 offset,
                 limit,
+                entity_names,
                 triple_ids,
             )
 
         @self.router.get("/communities")
         @self.base_endpoint
         async def get_communities(
-            collection_id: UUID = Query(
-                ..., description="Collection ID to retrieve communities from."
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve communities from."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
             limit: int = Query(
@@ -268,12 +276,17 @@ class KGRouter(BaseRouter):
                 None, description="Community numbers to filter by."
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedKGCommunitiesResponse:
             """
             Retrieve communities from the knowledge graph.
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
+
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
 
             return await self.service.get_communities(
                 collection_id,

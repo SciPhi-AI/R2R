@@ -520,10 +520,13 @@ class PostgresKGProvider(KGProvider):
         limit: int = 100,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
-    ) -> List[CommunityReport]:
+    ) -> dict:
 
         query_parts = [
-            f"SELECT * FROM {self._get_table_name('community_report')} WHERE collection_id = $1 ORDER BY community_number LIMIT $2 OFFSET $3"
+            f"""
+            SELECT id, community_number, collection_id, level, name, summary, findings, rating, rating_explanation
+            FROM {self._get_table_name('community_report')} WHERE collection_id = $1 ORDER BY community_number LIMIT $2 OFFSET $3
+            """
         ]
         params = [collection_id, limit, offset]
 
@@ -539,7 +542,21 @@ class PostgresKGProvider(KGProvider):
 
         QUERY = " ".join(query_parts)
 
-        return await self.fetch_query(QUERY, params)
+        communities = await self.fetch_query(QUERY, params)
+        communities = [
+            CommunityReport(**community) for community in communities
+        ]
+
+        return {
+            "communities": communities,
+            "total_entries": (await self.get_community_count(collection_id)),
+        }
+
+    async def get_community_count(self, collection_id: UUID) -> int:
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("community_report")} WHERE collection_id = $1
+        """
+        return (await self.fetch_query(QUERY, [collection_id]))[0]["count"]
 
     async def add_community_report(
         self, community_report: CommunityReport
@@ -942,7 +959,6 @@ class PostgresKGProvider(KGProvider):
         offset: int = 0,
         limit: int = 100,
         entity_ids: Optional[List[str]] = None,
-        with_description: bool = False,
     ) -> dict:
         conditions = []
         params: list = [collection_id]
@@ -954,8 +970,8 @@ class PostgresKGProvider(KGProvider):
         params.extend([offset, limit])
 
         query = f"""
-            SELECT id, name, category, description
-            FROM {self._get_table_name("entity_raw")}
+            SELECT id, name, description
+            FROM {self._get_table_name("entity_embedding")}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
                 WHERE $1 = ANY(collection_ids)
@@ -965,17 +981,21 @@ class PostgresKGProvider(KGProvider):
             OFFSET ${len(params) - 1} LIMIT ${len(params)}
         """
         results = await self.fetch_query(query, params)
+
+        entities = [Entity(**entity) for entity in results]
+
         total_entries = await self.get_entity_count(
             collection_id=collection_id
         )
 
-        return {"results": results, "total_entries": total_entries}
+        return {"entities": entities, "total_entries": total_entries}
 
     async def get_triples(
         self,
         collection_id: UUID,
         offset: int = 0,
         limit: int = 100,
+        entity_names: Optional[List[str]] = None,
         triple_ids: Optional[List[str]] = None,
     ) -> dict:
         conditions = []
@@ -985,8 +1005,14 @@ class PostgresKGProvider(KGProvider):
             conditions.append(f"id = ANY(${len(params) + 1})")
             params.append([str(ele) for ele in triple_ids])  # type: ignore
 
+        if entity_names:
+            conditions.append(
+                f"subject = ANY(${len(params) + 1}) or object = ANY(${len(params) + 1})"
+            )
+            params.append([str(ele) for ele in entity_names])  # type: ignore
+
         query = f"""
-            SELECT id, subject, predicate, object
+            SELECT id, subject, predicate, object, description
             FROM {self._get_table_name("triple_raw")}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -998,12 +1024,13 @@ class PostgresKGProvider(KGProvider):
         """
         params.extend([offset, limit])  # type: ignore
 
-        results = await self.fetch_query(query, params)
+        triples = await self.fetch_query(query, params)
+        triples = [Triple(**triple) for triple in triples]
         total_entries = await self.get_triple_count(
             collection_id=collection_id
         )
 
-        return {"results": results, "total_entries": total_entries}
+        return {"triples": triples, "total_entries": total_entries}
 
     async def structured_query(self):
         raise NotImplementedError
@@ -1045,7 +1072,7 @@ class PostgresKGProvider(KGProvider):
             params.append(str(document_id))
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("entity_raw")}
+            SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")}
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]
