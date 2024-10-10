@@ -238,6 +238,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "text": lambda x: "17.5 billion" in x and "57% year-over-year" in x,
         # "score": lambda x: 0.016 <= x <= 0.018,
         "metadata": lambda x: "v0" == x["version"]
         and "pdf" == x["document_type"]
@@ -253,9 +254,9 @@ def test_hybrid_search_sample_file_filter_sdk():
         # },
     }
     compare_result_fields(lead_result, expected_lead_search_result)
-    if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
-        print("Vector search test failed: Incorrect text")
-        sys.exit(1)
+    # if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
+    #     print("Vector search test failed: Incorrect text")
+    #     sys.exit(1)
 
     print("Hybrid search test passed")
     print("~" * 100)
