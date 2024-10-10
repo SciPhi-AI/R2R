@@ -1,29 +1,13 @@
 name: 'Setup Docker'
 description: 'Sets up Docker for running R2R'
-inputs:
-  os:
-    description: 'Operating system'
-    required: true
 runs:
   using: "composite"
   steps:
-    - name: Set up Docker (Ubuntu)
-      if: inputs.os == 'ubuntu-latest'
+    - name: Set up Docker
       uses: docker-practice/actions-setup-docker@master
       with:
         docker_version: 20.10
         docker_buildx: true
 
-    - name: Set up Docker (macOS)
-      if: inputs.os == 'macos-latest'
-      uses: docker-practice/actions-setup-docker@master
-      with:
-        docker_version: 20.10
-        docker_buildx: true
-
-    - name: Set up Docker (Windows)
-      if: inputs.os == 'windows-latest'
-      uses: docker-practice/actions-setup-docker@master
-      with:
-        docker_version: 20.10
-        docker_buildx: true
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
