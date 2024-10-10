@@ -34,9 +34,9 @@ COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Expose the port and set environment variables
-ARG PORT=8000 HOST=0.0.0.0
-ENV PORT=$PORT HOST=$HOST
-EXPOSE $PORT
+ARG R2R_PORT=8000 HOST=0.0.0.0
+ENV R2R_PORT=$R2R_PORT HOST=$HOST
+EXPOSE $R2R_PORT
 
 COPY . /app
 # Copy the application and config
@@ -47,4 +47,4 @@ COPY r2r.toml /app/r2r.toml
 COPY pyproject.toml /app/pyproject.toml
 
 # Run the application
-CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $PORT"]
+CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $R2R_PORT"]
