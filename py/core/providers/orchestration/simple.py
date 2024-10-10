@@ -12,7 +12,7 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     async def start_worker(self):
         pass
 
-    def get_worker(self, name: str, max_threads: int) -> Any:
+    def get_worker(self, name: str, max_runs: int) -> Any:
         pass
 
     def step(self, *args, **kwargs) -> Any:
