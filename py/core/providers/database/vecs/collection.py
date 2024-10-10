@@ -13,7 +13,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
-import time
 
 from flupy import flu
 from sqlalchemy import (
@@ -925,8 +924,6 @@ class Collection:
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        start_time = time.time()
-
         if table_name == VectorTableName.CHUNKS:
             table_name = f"{self.client.project_name}.{self.table.name}"
 
@@ -970,9 +967,7 @@ class Collection:
             )
 
         ops = INDEX_MEASURE_TO_OPS.get(measure)
-        import pdb
 
-        pdb.set_trace()
         if ops is None:
             raise ArgError("Unknown index measure")
 
@@ -1017,7 +1012,6 @@ class Collection:
         self._index = index_name
 
         end_time = time.time()
-        print(f"Index creation took {end_time - start_time} seconds")
 
         return None
 

@@ -2,6 +2,7 @@ import concurrent.futures
 import copy
 import logging
 from concurrent.futures import ThreadPoolExecutor
+import time
 from typing import Any, Optional, Union
 
 from sqlalchemy import text
@@ -308,6 +309,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
+        start_time = time.time()
+
         self.collection.create_index(
             table_name=table_name,
             method=index_type,
@@ -316,6 +319,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             replace=replace,
             concurrently=concurrently,
         )
+
+        end_time = time.time()
+        logger.info(f"Index creation took {end_time - start_time} seconds")
 
     def delete(
         self,
