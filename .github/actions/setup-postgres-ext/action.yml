@@ -26,6 +26,10 @@ runs:
         sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
         sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "CREATE EXTENSION vector;"
 
+        # Set max_connections to 1024
+        echo "max_connections = 1024" | sudo tee -a /etc/postgresql/15/main/postgresql.conf
+        sudo systemctl reload postgresql@15-main
+
     - name: Setup PostgreSQL on Windows
       if: inputs.os == 'windows-latest'
       shell: pwsh
@@ -58,6 +62,10 @@ runs:
 
         psql -U postgres -c "CREATE EXTENSION vector;"
 
+        # Set max_connections to 1024
+        Add-Content -Path "C:\Program Files\PostgreSQL\15\data\postgresql.conf" -Value "max_connections = 1024"
+        Restart-Service postgresql-x64-15
+
     - name: Setup PostgreSQL on macOS
       if: inputs.os == 'macos-latest'
       shell: bash
@@ -76,3 +84,7 @@ runs:
         export PG_CONFIG=/opt/homebrew/opt/postgresql@15/bin/pg_config
         make
         make install # may need sudo
+
+        # Set max_connections to 1024
+        echo "max_connections = 1024" | sudo tee -a /opt/homebrew/var/postgresql@15/postgresql.conf
+        brew services restart postgresql@15
