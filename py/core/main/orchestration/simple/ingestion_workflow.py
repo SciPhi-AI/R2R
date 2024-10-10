@@ -239,8 +239,28 @@ def simple_ingestion_factory(service: IngestionService):
                 message=f"Error during chunk ingestion: {str(e)}",
             )
 
+    async def create_vector_index(input_data):
+
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_create_vector_index_input(
+                    input_data
+                )
+            )
+
+            service.providers.database.vector.create_index(**parsed_data)
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during vector index creation: {str(e)}",
+            )
+
     return {
         "ingest-files": ingest_files,
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
+        "create-vector-index": create_vector_index,
     }

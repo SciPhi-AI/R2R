@@ -34,6 +34,16 @@ from sqlalchemy.types import Float, UserDefinedType
 from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
 
+from shared.abstractions.vector import (
+    VectorTableName,
+    IndexMeasure,
+    IndexMethod,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    INDEX_MEASURE_TO_OPS,
+    INDEX_MEASURE_TO_SQLA_ACC,
+)
+
 from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
     ArgError,
@@ -45,88 +55,6 @@ from .exc import (
 
 if TYPE_CHECKING:
     from vecs.client import Client
-
-
-class IndexMethod(str, Enum):
-    """
-    An enum representing the index methods available.
-
-    This class currently only supports the 'ivfflat' method but may
-    expand in the future.
-
-    Attributes:
-        auto (str): Automatically choose the best available index method.
-        ivfflat (str): The ivfflat index method.
-        hnsw (str): The hnsw index method.
-    """
-
-    auto = "auto"
-    ivfflat = "ivfflat"
-    hnsw = "hnsw"
-
-
-class IndexMeasure(str, Enum):
-    """
-    An enum representing the types of distance measures available for indexing.
-
-    Attributes:
-        cosine_distance (str): The cosine distance measure for indexing.
-        l2_distance (str): The Euclidean (L2) distance measure for indexing.
-        max_inner_product (str): The maximum inner product measure for indexing.
-    """
-
-    cosine_distance = "cosine_distance"
-    l2_distance = "l2_distance"
-    max_inner_product = "max_inner_product"
-
-
-@dataclass
-class IndexArgsIVFFlat:
-    """
-    A class for arguments that can optionally be supplied to the index creation
-    method when building an IVFFlat type index.
-
-    Attributes:
-        nlist (int): The number of IVF centroids that the index should use
-    """
-
-    n_lists: int
-
-
-@dataclass
-class IndexArgsHNSW:
-    """
-    A class for arguments that can optionally be supplied to the index creation
-    method when building an HNSW type index.
-
-    Ref: https://github.com/pgvector/pgvector#index-options
-
-    Both attributes are Optional in case the user only wants to specify one and
-    leave the other as default
-
-    Attributes:
-        m (int): Maximum number of connections per node per layer (default: 16)
-        ef_construction (int): Size of the dynamic candidate list for
-            constructing the graph (default: 64)
-    """
-
-    m: Optional[int] = 16
-    ef_construction: Optional[int] = 64
-
-
-INDEX_MEASURE_TO_OPS = {
-    # Maps the IndexMeasure enum options to the SQL ops string required by
-    # the pgvector `create index` statement
-    IndexMeasure.cosine_distance: "vector_cosine_ops",
-    IndexMeasure.l2_distance: "vector_l2_ops",
-    IndexMeasure.max_inner_product: "vector_ip_ops",
-}
-
-INDEX_MEASURE_TO_SQLA_ACC = {
-    IndexMeasure.cosine_distance: lambda x: x.cosine_distance,
-    IndexMeasure.l2_distance: lambda x: x.l2_distance,
-    IndexMeasure.max_inner_product: lambda x: x.max_inner_product,
-}
 
 
 class Vector(UserDefinedType):
@@ -955,13 +883,14 @@ class Collection:
 
     def create_index(
         self,
+        table_name: Optional[VectorTableName] = None,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
         method: IndexMethod = IndexMethod.auto,
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
-        replace=True,
-        concurrently=True,
+        replace: bool = True,
+        concurrently: bool = True,
     ) -> None:
         """
         Creates an index for the collection.
@@ -990,11 +919,26 @@ class Collection:
             method (IndexMethod, optional): The indexing method to use. Defaults to 'auto'.
             index_arguments: (IndexArgsIVFFlat | IndexArgsHNSW, optional): Index type specific arguments
             replace (bool, optional): Whether to replace the existing index. Defaults to True.
-
+            concurrently (bool, optional): Whether to create the index concurrently. Defaults to True.
         Raises:
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
+        if table_name == VectorTableName.CHUNKS:
+            table_name = f"{self.client.project_name}.{self.table.name}"
+            col_name = "vec"
+        elif table_name == VectorTableName.ENTITIES:
+            table_name = (
+                f"{self.client.project_name}.{VectorTableName.ENTITIES}"
+            )
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.COMMUNITIES:
+            table_name = (
+                f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
+            )
+            col_name = "embedding"
+        else:
+            raise ArgError("invalid table name")
         if method not in (
             IndexMethod.ivfflat,
             IndexMethod.hnsw,
@@ -1035,6 +979,7 @@ class Collection:
             )
 
         ops = INDEX_MEASURE_TO_OPS.get(measure)
+
         if ops is None:
             raise ArgError("Unknown index measure")
 
@@ -1058,8 +1003,8 @@ class Collection:
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
-        ON {self.client.project_name}."{self.table.name}"
-        USING {method} (vec {ops}) {self._get_index_options(method, index_arguments)};
+        ON {table_name}
+        USING {method} ({col_name} {ops}) {self._get_index_options(method, index_arguments)};
         """
 
         try:

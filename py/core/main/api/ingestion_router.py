@@ -10,14 +10,25 @@ from fastapi import Body, Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
+
 from core.base.api.models import (
+    CreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
+    WrappedCreateVectorIndexResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
+
+from shared.abstractions.vector import (
+    IndexMethod,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    VectorTableName,
+    IndexMeasure,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +62,11 @@ class IngestionRouter(BaseRouter):
                     "Update file task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Update task queued successfully."
+                ),
+                "create-vector-index": (
+                    "Vector index creation task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index creation task completed successfully."
                 ),
             },
         )
@@ -308,6 +324,61 @@ class IngestionRouter(BaseRouter):
                 },
             )
             raw_message["document_id"] = str(document_id)
+            return raw_message  # type: ignore
+
+        @self.router.post("/create_vector_index")
+        @self.base_endpoint
+        async def create_vector_index_app(
+            table_name: Optional[VectorTableName] = Body(
+                default=VectorTableName.CHUNKS,
+                description="The name of the vector table to create.",
+            ),
+            index_method: IndexMethod = Body(
+                default=IndexMethod.hnsw,
+                description="The type of vector index to create.",
+            ),
+            measure: IndexMeasure = Body(
+                default=IndexMeasure.cosine_distance,
+                description="The measure for the index.",
+            ),
+            index_arguments: Optional[
+                Union[IndexArgsIVFFlat, IndexArgsHNSW]
+            ] = Body(
+                None,
+                description="The arguments for the index method.",
+            ),
+            replace: bool = Body(
+                default=False,
+                description="Whether to replace an existing index.",
+            ),
+            concurrently: bool = Body(
+                default=False,
+                description="Whether to create the index concurrently.",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedCreateVectorIndexResponse:
+
+            logger.info(
+                f"Creating vector index for {table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}"
+            )
+
+            raw_message = await self.orchestration_provider.run_workflow(
+                "create-vector-index",
+                {
+                    "request": {
+                        "table_name": table_name,
+                        "index_method": index_method,
+                        "measure": measure,
+                        "index_arguments": index_arguments,
+                        "replace": replace,
+                        "concurrently": concurrently,
+                    },
+                },
+                options={
+                    "additional_metadata": {},
+                },
+            )
+
             return raw_message  # type: ignore
 
     @staticmethod
