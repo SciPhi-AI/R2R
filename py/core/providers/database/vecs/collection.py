@@ -1054,12 +1054,12 @@ class Collection:
             self._index = None
 
         unique_string = str(uuid4()).replace("-", "_")[0:7]
-        index_name = f"ix_{ops}_{method}__{unique_string}"
+        index_name = f"ix_{ops}_{method.value}__{unique_string}"
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
         ON {self.client.project_name}."{self.table.name}"
-        USING {method} (vec {ops}) {self._get_index_options(method, index_arguments)};
+        USING {method.value} (vec {ops}) {self._get_index_options(method.value, index_arguments)};
         """
 
         try:
