@@ -2,7 +2,7 @@ import concurrent.futures
 import copy
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from sqlalchemy import text
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
@@ -15,12 +15,17 @@ from core.base import (
 )
 from core.base.abstractions import VectorSearchSettings
 
+from shared.abstractions.vector import (
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+)
+
 from .vecs import (
     Client,
     Collection,
-    IndexArgsHNSW,
-    IndexMeasure,
-    IndexMethod,
     create_client,
 )
 
@@ -70,7 +75,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection = self.vx.get_or_create_vector_table(
             name=self.project_name, dimension=dimension
         )
-        self.create_index()
+
+        # NOTE: Do not create an index during initialization
+        # self.create_index()
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
@@ -289,24 +296,27 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
     def create_index(
         self,
-        index_type=IndexMethod.hnsw,
-        measure=IndexMeasure.cosine_distance,
-        index_options=None,
+        table_name: Optional[VectorTableName] = None,
+        index_type: IndexMethod = IndexMethod.hnsw,
+        measure: IndexMeasure = IndexMeasure.cosine_distance,
+        index_options: Optional[Union[IndexArgsHNSW, IndexArgsIVFFlat]] = None,
+        replace: bool = True,
+        concurrently: bool = True,
     ):
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
-        if index_options is None:
-            index_options = IndexArgsHNSW(
-                m=16, ef_construction=64
-            )  # Default HNSW parameters
+        import pdb
+
+        pdb.set_trace()
 
         self.collection.create_index(
+            table_name=table_name,
             method=index_type,
             measure=measure,
             index_arguments=index_options,
-            replace=True,
-            concurrently=True,
+            replace=replace,
+            concurrently=concurrently,
         )
 
     def delete(
