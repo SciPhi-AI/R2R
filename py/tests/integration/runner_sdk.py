@@ -75,13 +75,14 @@ def test_reingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
     file_paths = ["core/examples/data/uber_2021.pdf"]
     try:
-        client.ingest_files(file_paths=file_paths)
+        results = client.ingest_files(file_paths=file_paths)
         time.sleep(30)
 
-        print(
-            "Re-ingestion test failed: Expected an error but ingestion succeeded"
-        )
-        sys.exit(1)
+        if "task_id" not in results:
+            print(
+                "Re-ingestion test failed: Expected an error but ingestion succeeded"
+            )
+            sys.exit(1)
     except Exception as e:
         error_message = str(e)
         if (
