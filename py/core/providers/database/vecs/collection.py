@@ -926,7 +926,15 @@ class Collection:
 
         if table_name == VectorTableName.CHUNKS:
             table_name = f"{self.client.project_name}.{self.table.name}"
-
+            col_name = "vec"
+        elif table_name == VectorTableName.ENTITIES:
+            table_name = f"{self.client.project_name}.{VectorTableName.ENTITIES}"
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.COMMUNITIES:
+            table_name = f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
+            col_name = "embedding"
+        else:
+            raise ArgError("invalid table name")
         if method not in (
             IndexMethod.ivfflat,
             IndexMethod.hnsw,
@@ -992,7 +1000,7 @@ class Collection:
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
         ON {table_name}
-        USING {method} (vec {ops}) {self._get_index_options(method, index_arguments)};
+        USING {method} ({col_name} {ops}) {self._get_index_options(method, index_arguments)};
         """
 
         try:
@@ -1010,8 +1018,6 @@ class Collection:
             raise Exception(f"Failed to create index: {e}")
 
         self._index = index_name
-
-        end_time = time.time()
 
         return None
 

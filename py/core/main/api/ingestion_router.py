@@ -12,8 +12,10 @@ from pydantic import Json
 from core.base import R2RException, RawChunk, generate_document_id
 
 from core.base.api.models import (
+    CreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
+    WrappedCreateVectorIndexResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 
@@ -350,7 +352,7 @@ class IngestionRouter(BaseRouter):
                 description="Whether to create the index concurrently.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCreateVectorIndexResponse:
 
             logger.info(
                 f"Creating vector index for {vector_table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}"
@@ -365,7 +367,7 @@ class IngestionRouter(BaseRouter):
                 replace=replace,
                 concurrently=concurrently,
             )
-            return {"message": "Vector index creation queued successfully."}
+            return {"message": "Vector index creation queued successfully."}  # type: ignore
 
     @staticmethod
     async def _process_files(files):

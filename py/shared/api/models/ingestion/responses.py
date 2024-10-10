@@ -56,5 +56,13 @@ class UpdateResponse(BaseModel):
         }
 
 
+class CreateVectorIndexResponse(BaseModel):
+    message: str = Field(
+        ...,
+        description="Vector index creation queued successfully.",
+    )
+
+
 WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
+WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
