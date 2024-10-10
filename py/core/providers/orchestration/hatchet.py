@@ -29,10 +29,10 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     def failure(self, *args, **kwargs) -> Callable:
         return self.orchestrator.on_failure_step(*args, **kwargs)
 
-    def get_worker(self, name: str, max_threads: Optional[int] = None) -> Any:
-        if not max_threads:
-            max_threads = self.config.max_threads
-        self.worker = self.orchestrator.worker(name, max_threads)
+    def get_worker(self, name: str, max_runs: Optional[int] = None) -> Any:
+        if not max_runs:
+            max_runs = self.config.max_runs
+        self.worker = self.orchestrator.worker(name, max_runs)
         return self.worker
 
     def concurrency(self, *args, **kwargs) -> Callable:
