@@ -239,9 +239,10 @@ def test_hybrid_search_sample_file_filter_sdk():
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         # "score": lambda x: 0.016 <= x <= 0.018,
-        "metadata": lambda x: "v0" in x
-        and "pdf" in x
-        and "What was Uber's recent profit??" in x,
+        "metadata": lambda x: "v0" == x["version"]
+        and "pdf" == x["document_type"]
+        and "What was Uber's recent profit??" == x["associated_query"]
+        and "1" == x["semantic_rank"],
         # "metadata": {
         #     "version": "v0",
         #     # "chunk_order": 587,
