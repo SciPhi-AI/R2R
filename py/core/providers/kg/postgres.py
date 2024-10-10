@@ -513,6 +513,34 @@ class PostgresKGProvider(KGProvider):
             """
         await self.execute_many(QUERY, communities)
 
+    async def get_communities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        levels: Optional[list[int]] = None,
+        community_numbers: Optional[list[int]] = None,
+    ) -> List[CommunityReport]:
+
+        query_parts = [
+            f"SELECT * FROM {self._get_table_name('community_report')} WHERE collection_id = $1 ORDER BY community_number LIMIT $2 OFFSET $3"
+        ]
+        params = [collection_id, limit, offset]
+
+        if levels is not None:
+            query_parts.append(f"AND level = ANY(${len(params) + 1})")
+            params.append(levels)
+
+        if community_numbers is not None:
+            query_parts.append(
+                f"AND community_number = ANY(${len(params) + 1})"
+            )
+            params.append(community_numbers)
+
+        QUERY = " ".join(query_parts)
+
+        return await self.fetch_query(QUERY, params)
+
     async def add_community_report(
         self, community_report: CommunityReport
     ) -> None:
@@ -805,7 +833,7 @@ class PostgresKGProvider(KGProvider):
         )  # 10 minutes per million tokens
 
         return KGCreationEstimationResponse(
-            message='These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode="run"` in the client.',
+            message='Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             document_count=len(document_ids),
             number_of_jobs_created=len(document_ids) + 1,
             total_chunks=total_chunks,
@@ -879,7 +907,7 @@ class PostgresKGProvider(KGProvider):
         )
 
         return KGEnrichmentEstimationResponse(
-            message='These are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_mode="run"` in the client.',
+            message='Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             total_entities=entity_count,
             total_triples=triple_count,
             estimated_llm_calls=self._get_str_estimation_output(
@@ -968,7 +996,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY id
             OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}
         """
-        params.extend([str(offset), str(limit)])
+        params.extend([offset, limit])  # type: ignore
 
         results = await self.fetch_query(query, params)
         total_entries = await self.get_triple_count(

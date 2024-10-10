@@ -15,7 +15,13 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']}  -f {compose_files['full']}"
+    if project_name == "r2r":
+        docker_command = f"docker compose -f {compose_files['base']}"
+    elif project_name == "r2r-full":
+        docker_command = f"docker compose -f {compose_files['full']}"
+    else:
+        docker_command = f"docker compose  -f {compose_files['full']}"
+
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -26,7 +32,9 @@ def bring_down_docker_compose(project_name, volumes, remove_orphans):
 
     docker_command += " down"
 
-    click.echo(f"Bringing down {project_name} Docker Compose setup...")
+    click.echo(
+        f"Bringing down {project_name} Docker Compose setup with command {docker_command}..."
+    )
     return os.system(docker_command)
 
 
@@ -127,7 +135,7 @@ def run_docker_serve(
     exclude_postgres: bool = False,
 ):
     check_docker_compose_version()
-    check_set_docker_env_vars(exclude_postgres)
+    check_set_docker_env_vars(project_name, exclude_postgres)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -240,11 +248,19 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             sys.exit(1)
 
 
-def check_set_docker_env_vars(exclude_postgres: bool = False):
+def check_set_docker_env_vars(
+    project_name: str, exclude_postgres: bool = False
+):
 
-    env_vars = {
-        "R2R_PROJECT_NAME": "r2r",
-    }
+    env_vars = {"R2R_PROJECT_NAME": "r2r_default"}
+    if project_name:
+        if os.environ.get("R2R_PROJECT_NAME"):
+            warning_text = click.style("Warning:", fg="red", bold=True)
+            prompt = f"{warning_text} You have set R2R_PROJECT_NAME in your environment. Do you want to override it with '{project_name}'?"
+            if not click.confirm(prompt, default=False):
+                project_name = os.environ["R2R_PROJECT_NAME"]
+        else:
+            env_vars["R2R_PROJECT_NAME"] = project_name
 
     if not exclude_postgres:
         env_vars |= {
@@ -332,14 +348,14 @@ def build_docker_command(
     else:
         base_command = f"docker compose -f {compose_files['full']}"
 
-    base_command += f" --project-name {project_name}"
+    base_command += f" --project-name {project_name if project_name else ('r2r' if not full else 'r2r-full')}"
 
     # Find available ports
     r2r_dashboard_port = port + 1
     hatchet_dashboard_port = r2r_dashboard_port + 1
 
-    os.environ["PORT"] = str(port)
-    os.environ["HOST"] = host
+    os.environ["R2R_PORT"] = str(port)
+    os.environ["R2R_HOST"] = host
     os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
     os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""

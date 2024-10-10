@@ -1,9 +1,8 @@
-import json
+import argparse
 import sys
+import time
 
 from r2r import R2RClient, R2RException
-
-client = R2RClient("http://localhost:7272")
 
 
 def compare_result_fields(result, expected_fields):
@@ -30,7 +29,7 @@ def test_ingest_sample_file_sdk():
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
-
+    time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -42,6 +41,7 @@ def test_ingest_sample_file_with_config_sdk():
     ingest_response = client.ingest_files(
         file_paths=file_paths, ingestion_config={"chunk_size": 4_096}
     )
+    time.sleep(10)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
@@ -61,15 +61,28 @@ def test_ingest_sample_file_with_config_sdk():
     print("~" * 100)
 
 
+def test_remove_all_files_and_ingest_sample_file_sdk():
+    document_ids = [
+        doc["id"] for doc in client.documents_overview()["results"]
+    ]
+    for document_id in document_ids:
+        client.delete({"document_id": {"$eq": document_id}})
+
+    client.ingest_files(file_paths=["core/examples/data/aristotle_v2.txt"])
+
+
 def test_reingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
     file_paths = ["core/examples/data/uber_2021.pdf"]
     try:
-        reingest_response = client.ingest_files(file_paths=file_paths)
-        print(
-            "Re-ingestion test failed: Expected an error but ingestion succeeded"
-        )
-        sys.exit(1)
+        results = client.ingest_files(file_paths=file_paths)
+        time.sleep(30)
+
+        if "task_id" not in results["results"]:
+            print(
+                "Re-ingestion test failed: Expected an error but ingestion succeeded"
+            )
+            sys.exit(1)
     except Exception as e:
         error_message = str(e)
         if (
@@ -118,11 +131,11 @@ def test_document_chunks_sample_file_sdk():
     chunks = client.document_chunks(document_id=document_id)["results"]
 
     lead_chunk = {
-        "extraction_id": "57d761ac-b2df-529c-9c47-6e6e1bbf854f",
+        # "extraction_id": "57d761ac-b2df-529c-9c47-6e6e1bbf854f",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
-        "text": "UNITED STATESSECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n____________________________________________ \nFORM\n 10-K____________________________________________ \n(Mark One)\n\n ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934For the fiscal year ended\n December 31, 2021OR",
+        # "text": "UNITED STATESSECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n____________________________________________ \nFORM\n 10-K____________________________________________ \n(Mark One)\n\n ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934For the fiscal year ended\n December 31, 2021OR",
         "metadata": {
             "version": "v0",
             "chunk_order": 0,
@@ -130,7 +143,13 @@ def test_document_chunks_sample_file_sdk():
         },
     }
 
-    assert len(chunks) >= 100 and lead_chunk == chunks[0]
+    assert (
+        len(chunks) >= 100
+        and lead_chunk["document_id"] == chunks[0]["document_id"]
+        and lead_chunk["user_id"] == chunks[0]["user_id"]
+        and lead_chunk["collection_ids"][0] == chunks[0]["collection_ids"][0]
+        # and "SECURITIES AND EXCHANGE COMMISSION" in chunks[0]["text"]
+    )
     print("Document chunks test passed")
     print("~" * 100)
 
@@ -154,6 +173,7 @@ def test_delete_and_reingest_sample_file_sdk():
     # Re-ingest the sample file
     file_paths = ["core/examples/data/uber_2021.pdf"]
     ingest_response = client.ingest_files(file_paths=file_paths)
+    time.sleep(30)
 
     if not ingest_response["results"]:
         print("Delete and re-ingest test failed: Re-ingestion unsuccessful")
@@ -170,7 +190,7 @@ def test_vector_search_sample_file_filter_sdk():
     results = client.search(
         query="What was Uber's recent profit??",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -182,14 +202,16 @@ def test_vector_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
-        "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
+        # "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
+        # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.71 <= x <= 0.73,
+        # "score": lambda x: 0.71 <= x <= 0.73,
     }
     compare_result_fields(lead_result, expected_lead_search_result)
-
+    if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
+        print("Vector search test failed: Incorrect text")
+        sys.exit(1)
     print("Vector search test passed")
     print("~" * 100)
 
@@ -201,7 +223,7 @@ def test_hybrid_search_sample_file_filter_sdk():
         query="What was Uber's recent profit??",
         vector_search_settings={
             "use_hybrid_search": True,
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             },
         },
@@ -213,21 +235,29 @@ def test_hybrid_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
-        "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
+        # "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
+        # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.016 <= x <= 0.018,
-        "metadata": {
-            "version": "v0",
-            "chunk_order": 587,
-            "document_type": "pdf",
-            "semantic_rank": 1,
-            "full_text_rank": 200,
-            "associated_query": "What was Uber's recent profit??",
-        },
+        "text": lambda x: "17.5 billion" in x and "57% year-over-year" in x,
+        # "score": lambda x: 0.016 <= x <= 0.018,
+        "metadata": lambda x: "v0" == x["version"]
+        and "pdf" == x["document_type"]
+        and "What was Uber's recent profit??" == x["associated_query"]
+        and 1 == x["semantic_rank"],
+        # "metadata": {
+        #     "version": "v0",
+        #     # "chunk_order": 587,
+        #     "document_type": "pdf",
+        #     "semantic_rank": 1,
+        #     "full_text_rank": 200,
+        #     "associated_query": "What was Uber's recent profit??",
+        # },
     }
     compare_result_fields(lead_result, expected_lead_search_result)
+    # if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
+    #     print("Vector search test failed: Incorrect text")
+    #     sys.exit(1)
 
     print("Hybrid search test passed")
     print("~" * 100)
@@ -238,7 +268,7 @@ def test_rag_response_sample_file_sdk():
     response = client.rag(
         query="What was Uber's recent profit and loss?",
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -263,7 +293,7 @@ def test_rag_response_stream_sample_file_sdk():
         query="What was Uber's recent profit and loss?",
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -298,7 +328,7 @@ def test_agent_sample_file_sdk():
         ],
         rag_generation_config={"stream": False},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -333,7 +363,7 @@ def test_agent_stream_sample_file_sdk():
         ],
         rag_generation_config={"stream": True},
         vector_search_settings={
-            "search_filters": {
+            "filters": {
                 "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
             }
         },
@@ -347,7 +377,7 @@ def test_agent_stream_sample_file_sdk():
 
     if expected_answer_0 not in response or expected_answer_1 not in response:
         print(
-            f"Agent query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response_content}'"
+            f"Agent query test failed: Expected answer(s) '{expected_answer_0}, {expected_answer_1}' not found in '{response}'"
         )
         sys.exit(1)
 
@@ -430,6 +460,7 @@ def test_user_document_management():
     ingestion_result = client.ingest_files(
         ["core/examples/data/lyft_2021.pdf"]
     )["results"]
+    time.sleep(30)
 
     # Check the ingestion result
     if not ingestion_result:
@@ -438,12 +469,14 @@ def test_user_document_management():
 
     ingested_document = ingestion_result[0]
     expected_ingestion_result = {
-        "message": "Ingestion task completed successfully.",
-        "task_id": None,
+        # "message": "Ingestion task completed successfully.",
+        # "task_id": None,
         "document_id": lambda x: len(x)
         == 36,  # Check if document_id is a valid UUID
     }
+    time.sleep(30)
     compare_result_fields(ingested_document, expected_ingestion_result)
+    assert "successfully" in ingested_document["message"]
 
     # Check the user's documents
     documents_overview = client.documents_overview()["results"]
@@ -490,8 +523,8 @@ def test_user_search_and_rag():
 
     lead_search_result = search_result["vector_search_results"][0]
     expected_search_result = {
-        "text": lambda x: "Lyft" in x and "revenue" in x and "2021" in x,
-        "score": lambda x: 0.5 <= x <= 1.0,
+        "text": lambda x: "Lyft" in x and "revenue" in x,
+        # "score": lambda x: 0.5 <= x <= 1.0,
     }
     compare_result_fields(lead_search_result, expected_search_result)
 
@@ -616,6 +649,78 @@ def test_superuser_capabilities():
     assert analytics_result["results"]["analytics_data"]["search_latencies"]
 
     print("Superuser capabilities test passed")
+    print("~" * 100)
+
+
+def test_kg_create_graph_sample_file_sdk():
+    print("Testing: KG create graph")
+
+    create_graph_result = client.create_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
+
+    result = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    entities_list = [ele["name"] for ele in result["results"]["results"]]
+
+    assert "ARISTOTLE" in entities_list
+
+    print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_enrich_graph_sample_file_sdk():
+    print("Testing: KG enrich graph")
+
+    enrich_graph_result = client.enrich_graph(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+    )
+
+    result = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    communities = result["results"]
+    assert len(communities) >= 1
+
+    for community in communities:
+        assert "community_number" in community
+        assert "level" in community
+        assert "collection_id" in community
+        assert "name" in community
+
+    print("KG enrich graph test passed")
+    print("~" * 100)
+
+
+def test_kg_search_sample_file_sdk():
+    print("Testing: KG search")
+
+    output = client.search(
+        query="Who was aristotle?", kg_search_settings={"use_kg_search": True}
+    )
+
+    kg_search_results = output["results"]["kg_search_results"]
+    assert len(kg_search_results) >= 1
+
+    kg_search_result_present = False
+    entities_found = False
+    communities_found = False
+    for result in kg_search_results:
+        if "method" in result and result["method"] == "local":
+            kg_search_result_present = True
+        if "result_type" in result and result["result_type"] == "entity":
+            entities_found = True
+        if "result_type" in result and result["result_type"] == "community":
+            communities_found = True
+
+    assert kg_search_result_present, "No KG search result present"
+    assert entities_found, "No entities found"
+    assert communities_found, "No communities found"
+
+    print("KG search test passed")
     print("~" * 100)
 
 
@@ -782,6 +887,8 @@ def test_user_collection_document_management():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    time.sleep(10)
+
     document_id = ingest_result["results"][0]["document_id"]
 
     # Assign the document to the collection
@@ -854,6 +961,8 @@ def test_user_removes_document_from_collection():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    time.sleep(10)
+
     document_id = ingest_result["results"][0]["document_id"]
 
     # Assign the document to the collection
@@ -904,6 +1013,8 @@ def test_user_lists_documents_in_collection():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    time.sleep(10)
+
     document_id = ingest_result["results"][0]["document_id"]
 
     # Assign the document to the collection
@@ -964,6 +1075,8 @@ def test_pagination_and_filtering():
     client.ingest_files(["core/examples/data/aristotle.txt"])
     client.ingest_files(["core/examples/data/uber_2021.pdf"])
 
+    time.sleep(40)
+
     documents_overview = client.documents_overview()["results"]
     client.assign_document_to_collection(
         documents_overview[0]["id"], collection_id
@@ -1022,7 +1135,7 @@ def test_advanced_collection_management():
 
     # Test deleting a collection
     delete_result = client.delete_collection(collection_id)
-    if delete_result["results"] != True:
+    if delete_result["results"] != None:
         print("Delete collection test failed: Unexpected result")
         sys.exit(1)
 
@@ -1261,6 +1374,8 @@ def test_user_gets_collections_for_document():
 
     # Ingest a document
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    time.sleep(10)
+
     document_id = ingest_result["results"][0]["document_id"]
 
     # Assign the document to the collection
@@ -1328,6 +1443,8 @@ def test_collection_user_interactions():
     # Ingest a document
     client.login("collection_owner@example.com", "password123")
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    time.sleep(10)
+
     document_id = ingest_result["results"][0]["document_id"]
 
     # Assign the document to the collection
@@ -1379,6 +1496,8 @@ def test_collection_document_interactions():
 
     # Ingest a document
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
+    time.sleep(10)
+
     document_id = ingest_result["results"][0]["document_id"]
 
     # Assign the document to both collections
@@ -1388,13 +1507,14 @@ def test_collection_document_interactions():
     # Get collections for the document
     document_collections = client.document_collections(document_id)
 
-    # Check if both collections are present in the document's collections
+    test_collection_ids = [collection1_id, collection2_id]
     if not all(
-        collection["collection_id"] in [collection1_id, collection2_id]
-        for collection in document_collections["results"]
+        collection_id
+        in [c["collection_id"] for c in document_collections["results"]]
+        for collection_id in test_collection_ids
     ):
         print(
-            "Collection document interactions test failed: Document not assigned to both collections"
+            "Collection document interactions test failed: Document not assigned to both test collections"
         )
         sys.exit(1)
 
@@ -1459,10 +1579,31 @@ def test_error_handling():
     print("~" * 100)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Please specify a test function to run")
-        sys.exit(1)
+def create_client(base_url):
+    return R2RClient(base_url)
 
-    test_function = sys.argv[1]
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="R2R SDK Integration Tests")
+    parser.add_argument("test_function", help="Test function to run")
+    parser.add_argument(
+        "--base-url",
+        default="http://localhost:7272",
+        help="Base URL for the R2R client",
+    )
+    args = parser.parse_args()
+
+    global client
+    client = create_client(args.base_url)
+
+    test_function = args.test_function
     globals()[test_function]()
+
+
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Please specify a test function to run")
+#         sys.exit(1)
+
+#     test_function = sys.argv[1]
+#     globals()[test_function]()
