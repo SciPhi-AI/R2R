@@ -1,8 +1,9 @@
 import asyncio
 import logging
+import uuid
 from typing import TYPE_CHECKING
 
-from hatchet_sdk import Context
+from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core.base import (
     DocumentExtraction,
@@ -32,6 +33,21 @@ def hatchet_ingestion_factory(
     class HatchetIngestFilesWorkflow:
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
+
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.ingestion_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context: Context) -> str:
+            # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+                    input_data
+                )
+                return str(parsed_data["user"].id)
+            except Exception as e:
+                return str(uuid.uuid4())
 
         @orchestration_provider.step(timeout="60m")
         async def parse(self, context: Context) -> dict:

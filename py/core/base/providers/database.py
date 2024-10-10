@@ -17,7 +17,7 @@ class PostgresConfigurationSettings(BaseModel):
     To tune these settings for a specific deployment, see https://pgtune.leopard.in.ua/
     """
 
-    max_connections: Optional[int] = 100
+    max_connections: Optional[int] = 256
     shared_buffers: Optional[int] = 16384
     effective_cache_size: Optional[int] = 524288
     maintenance_work_mem: Optional[int] = 65536

@@ -1,8 +1,14 @@
-# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-
 name: R2R Full Python Integration Test
 
 on:
+  push:
+    branches:
+      - dev
+      - dev-minor
+  pull_request:
+    branches:
+      - dev
+      - dev-minor
   workflow_dispatch:
 
 jobs:
@@ -11,8 +17,8 @@ jobs:
 
     strategy:
       matrix:
-#        os: [ubuntu-latest, windows-latest, macos-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # os: [ubuntu-latest]
         test_category:
           - cli-ingestion
           - cli-retrieval

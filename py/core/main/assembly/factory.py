@@ -298,7 +298,6 @@ class R2RProviderFactory:
                 self.config.embedding, *args, **kwargs
             )
         )
-        print("self.config.ingestion = ", self.config.ingestion)
         ingestion_provider = (
             ingestion_provider_override
             or self.create_ingestion_provider(

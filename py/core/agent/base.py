@@ -10,6 +10,9 @@ from core.base.abstractions import (
     syncable,
 )
 from core.base.agent import Agent, Conversation
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):
@@ -147,17 +150,16 @@ class R2RStreamingAgent(R2RAgent):
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
                     if not tool_call.function:
-                        raise ValueError(
-                            "Tool function not found in tool call."
-                        )
+                        logger.info("Tool function not found in tool call.")
+                        continue
                     name = tool_call.function.name
                     if not name:
-                        raise ValueError("Tool name not found in tool call.")
+                        logger.info("Tool name not found in tool call.")
+                        continue
                     arguments = tool_call.function.arguments
                     if not arguments:
-                        raise ValueError(
-                            "Tool arguments not found in tool call."
-                        )
+                        logger.info("Tool arguments not found in tool call.")
+                        continue
 
                     results = await self.handle_function_or_tool_call(
                         name,
@@ -170,7 +172,7 @@ class R2RStreamingAgent(R2RAgent):
                     yield "<tool_call>"
                     yield f"<name>{name}</name>"
                     yield f"<arguments>{arguments}</arguments>"
-                    yield f"<results>{results}</results>"
+                    yield f"<results>{results.llm_formatted_result}</results>"
                     yield "</tool_call>"
 
             if delta.function_call:
@@ -186,9 +188,8 @@ class R2RStreamingAgent(R2RAgent):
 
             if chunk.choices[0].finish_reason == "function_call":
                 if not function_name:
-                    raise ValueError(
-                        "Function name not found in function call."
-                    )
+                    logger.info("Function name not found in function call.")
+                    continue
 
                 yield "<function_call>"
                 yield f"<name>{function_name}</name>"
@@ -206,8 +207,6 @@ class R2RStreamingAgent(R2RAgent):
                 function_name = None
                 function_arguments = ""
 
-                self.arun(*args, **kwargs)
-
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
                     await self.conversation.add_message(
@@ -215,3 +214,11 @@ class R2RStreamingAgent(R2RAgent):
                     )
                 self._completed = True
                 yield "</completion>"
+
+        # Handle any remaining content after the stream ends
+        if content_buffer and not self._completed:
+            await self.conversation.add_message(
+                Message(role="assistant", content=content_buffer)
+            )
+            self._completed = True
+            yield "</completion>"

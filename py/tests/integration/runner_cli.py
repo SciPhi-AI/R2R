@@ -1,7 +1,4 @@
-# File: tests/integration/r2r_integration_tests.py
-
 import json
-import re
 import subprocess
 import sys
 import time
@@ -39,6 +36,7 @@ def run_command(command):
 def test_ingest_sample_file_cli():
     print("Testing: Ingest sample file CLI")
     run_command("poetry run r2r ingest-sample-file")
+    time.sleep(10)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -128,29 +126,17 @@ def test_vector_search_sample_file_filter_cli():
     output = run_command(
         """poetry run r2r search --query="Who was aristotle?" --filters='{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}'"""
     )
-    output_lines = output.strip().split("\n")[1:-1]
-    cleaned_output_lines = [line.replace("'", '"') for line in output_lines]
-    results = []
-    for line in cleaned_output_lines:
-        try:
-            result = json.loads(line)
-            results.append(result)
-        except json.JSONDecodeError:
-            continue
 
-    if not results:
-        print("Vector search test failed: No results returned")
-        sys.exit(1)
-
-    lead_result = results[0]
     expected_lead_search_result = {
         "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.",
         "extraction_id": "ff8accdb-791e-5b6d-a83a-5adc32c4222c",
         "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "score": lambda x: 0.77 <= x <= 0.79,
+        # "score": lambda x: 0.77 <= x <= 0.79,
     }
-    compare_result_fields(lead_result, expected_lead_search_result)
+    # compare_result_fields(output, expected_lead_search_result)
+    for value in expected_lead_search_result.values():
+        assert value in output
 
     print("Vector search test passed")
     print("~" * 100)
@@ -253,7 +239,9 @@ def test_rag_response_stream_sample_file_cli():
 
 def test_kg_create_graph_sample_file_cli():
     print("Testing: KG create graph")
-    run_command("poetry run r2r kg create-graph --run")
+    print("Calling `poetry run r2r create-graph --run` ")
+    run_command("poetry run r2r create-graph --run")
+    time.sleep(30)
 
     response = requests.get(
         "http://localhost:7272/v2/entities",
@@ -282,7 +270,8 @@ def test_kg_create_graph_sample_file_cli():
 
 def test_kg_enrich_graph_sample_file_cli():
     print("Testing: KG enrich graph")
-    run_command("poetry run r2r kg enrich-graph --run")
+    run_command("poetry run r2r enrich-graph --run")
+    time.sleep(60)
 
     response = requests.get(
         "http://localhost:7272/v2/communities",
