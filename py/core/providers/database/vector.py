@@ -299,22 +299,20 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name: Optional[VectorTableName] = None,
         index_type: IndexMethod = IndexMethod.hnsw,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
-        index_options: Optional[Union[IndexArgsHNSW, IndexArgsIVFFlat]] = None,
+        index_arguments: Optional[
+            Union[IndexArgsHNSW, IndexArgsIVFFlat]
+        ] = None,
         replace: bool = True,
         concurrently: bool = True,
     ):
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
-        import pdb
-
-        pdb.set_trace()
-
         self.collection.create_index(
             table_name=table_name,
             method=index_type,
             measure=measure,
-            index_arguments=index_options,
+            index_arguments=index_arguments,
             replace=replace,
             concurrently=concurrently,
         )

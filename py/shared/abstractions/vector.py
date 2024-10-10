@@ -30,6 +30,9 @@ class IndexMethod(str, Enum):
     ivfflat = "ivfflat"
     hnsw = "hnsw"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class IndexMeasure(str, Enum):
     """
@@ -44,6 +47,9 @@ class IndexMeasure(str, Enum):
     cosine_distance = "cosine_distance"
     l2_distance = "l2_distance"
     max_inner_product = "max_inner_product"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class IndexArgsIVFFlat(R2RSerializable):
@@ -105,6 +111,9 @@ class VectorTableName(str, Enum):
     ENTITIES = "entity_embedding"
     TRIPLES = "triple_raw"
     COMMUNITIES = "community_embedding"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class Vector(R2RSerializable):

@@ -35,6 +35,7 @@ from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
 
 from shared.abstractions.vector import (
+    VectorTableName,
     IndexMeasure,
     IndexMethod,
     IndexArgsIVFFlat,
@@ -882,14 +883,14 @@ class Collection:
 
     def create_index(
         self,
-        table_name: Optional[str] = None,
+        table_name: Optional[VectorTableName] = None,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
         method: IndexMethod = IndexMethod.auto,
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
-        replace=True,
-        concurrently=True,
+        replace: bool = True,
+        concurrently: bool = True,
     ) -> None:
         """
         Creates an index for the collection.
@@ -923,7 +924,7 @@ class Collection:
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        if table_name is None:
+        if table_name == VectorTableName.CHUNKS:
             table_name = f"{self.client.project_name}.{self.table.name}"
 
         if method not in (

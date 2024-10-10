@@ -334,7 +334,7 @@ class IngestionRouter(BaseRouter):
                 default=IndexMeasure.cosine_distance,
                 description="The measure for the index.",
             ),
-            index_args: Optional[
+            index_arguments: Optional[
                 Union[IndexArgsIVFFlat, IndexArgsHNSW]
             ] = Body(
                 None,
@@ -350,13 +350,13 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            await self.service.providers.database.vector.create_index(
-                vector_table_name,
-                index_method,
-                measure,
-                index_args,
-                replace,
-                concurrently,
+            self.service.providers.database.vector.create_index(
+                table_name=vector_table_name,
+                index_type=index_method,
+                measure=measure,
+                index_arguments=index_arguments,
+                replace=replace,
+                concurrently=concurrently,
             )
             return {"message": "Vector index created successfully."}
 
