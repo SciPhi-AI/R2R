@@ -78,7 +78,7 @@ def test_reingest_sample_file_sdk():
         results = client.ingest_files(file_paths=file_paths)
         time.sleep(30)
 
-        if "task_id" not in results:
+        if "task_id" not in results["results"]:
             print(
                 "Re-ingestion test failed: Expected an error but ingestion succeeded"
             )
