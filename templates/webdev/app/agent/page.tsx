@@ -21,11 +21,11 @@ const R2RQueryApp: React.FC = () => {
         },
         body: JSON.stringify({ query }), // You'd usually anticipate passing an array of messages here. The r2r-js client does NOT maintain the conversation context for you.
       });
-      
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      
+
       const { message } = await response.json()
       setResult(message);
     } catch (error) {
@@ -73,7 +73,7 @@ const R2RQueryApp: React.FC = () => {
       </button>
       {isLoading ? (
         <div className={styles.spinner} />
-      ) : result.length > 0 ? ( 
+      ) : result.length > 0 ? (
           <div>
             <div className={styles.resultDisplay}>
               <Answer message = {result[result.length -1 ].content}/>
