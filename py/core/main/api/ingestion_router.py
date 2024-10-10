@@ -351,8 +351,10 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            
-            logger.info(f"Creating vector index for {vector_table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}")
+
+            logger.info(
+                f"Creating vector index for {vector_table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}"
+            )
 
             background_tasks.add_task(
                 self.service.providers.database.vector.create_index,

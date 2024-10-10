@@ -925,7 +925,6 @@ class Collection:
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-
         start_time = time.time()
 
         if table_name == VectorTableName.CHUNKS:
