@@ -15,24 +15,30 @@ runs:
   steps:
     - name: Set up Docker (Ubuntu)
       if: inputs.os == 'ubuntu-latest'
-      uses: docker-practice/actions-setup-docker@master
+      uses: docker-practice/actions-setup-buildx-action@v2
       with:
         docker_version: 20.10
         docker_buildx: true
+      run: |
+        docker --version
 
-    - name: Set up Docker (Windows)
+    - name: Set up Docker (macOS)
       if: inputs.os == 'macos-latest'
-      uses: docker-practice/actions-setup-docker@master
+      uses: docker-practice/actions-setup-buildx-action@v2
       with:
         docker_version: 20.10
         docker_buildx: true
+      run: |
+        docker --version
 
     - name: Set up Docker (Windows)
       if: inputs.os == 'windows-latest'
-      uses: docker-practice/actions-setup-docker@master
+      uses: docker-practice/actions-setup-buildx-action@v2
       with:
         docker_version: 20.10
         docker_buildx: true
+      run: |
+        docker --version
 
     - name: Login to Docker Hub
       uses: docker/login-action@v2
