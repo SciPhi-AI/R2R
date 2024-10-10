@@ -14,6 +14,7 @@ from shared.utils.base_utils import (
     increment_version,
     run_pipeline,
     to_async_generator,
+    validate_uuid,
 )
 from shared.utils.splitter.text import (
     RecursiveCharacterTextSplitter,
@@ -36,6 +37,7 @@ __all__ = [
     "run_pipeline",
     "to_async_generator",
     "generate_default_user_collection_id",
+    "validate_uuid",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

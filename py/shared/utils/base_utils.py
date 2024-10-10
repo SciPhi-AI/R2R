@@ -239,3 +239,7 @@ def llm_cost_per_million_tokens(
             * input_output_ratio
             * cost_dict["gpt-4o"][1]
         ) / (1 + input_output_ratio)
+
+
+def validate_uuid(uuid_str: str) -> UUID:
+    return UUID(uuid_str)
