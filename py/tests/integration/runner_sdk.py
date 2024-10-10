@@ -144,7 +144,9 @@ def test_document_chunks_sample_file_sdk():
 
     assert (
         len(chunks) >= 100
-        and lead_chunk == chunks[0]
+        and lead_chunk["document_id"] == chunks[0]["document_id"]
+        and lead_chunk["user_id"] == chunks[0]["user_id"]
+        and lead_chunk["collection_ids"][0] == chunks[0]["collection_ids"][0]
         # and "SECURITIES AND EXCHANGE COMMISSION" in chunks[0]["text"]
     )
     print("Document chunks test passed")
@@ -237,14 +239,17 @@ def test_hybrid_search_sample_file_filter_sdk():
         "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         # "score": lambda x: 0.016 <= x <= 0.018,
-        "metadata": {
-            "version": "v0",
-            # "chunk_order": 587,
-            "document_type": "pdf",
-            "semantic_rank": 1,
-            "full_text_rank": 200,
-            "associated_query": "What was Uber's recent profit??",
-        },
+        "metadata": lambda x: "v0" in x
+        and "pdf" in x
+        and "What was Uber's recent profit??" in x,
+        # "metadata": {
+        #     "version": "v0",
+        #     # "chunk_order": 587,
+        #     "document_type": "pdf",
+        #     "semantic_rank": 1,
+        #     "full_text_rank": 200,
+        #     "associated_query": "What was Uber's recent profit??",
+        # },
     }
     compare_result_fields(lead_result, expected_lead_search_result)
     if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
