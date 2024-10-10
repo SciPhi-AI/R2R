@@ -83,34 +83,45 @@ def logs(ctx, run_type_filter, offset, limit):
     is_flag=True,
     help="Remove containers for services not defined in the Compose file",
 )
-@click.option("--project-name", default="r2r", help="Project name for Docker")
+@click.option(
+    "--project-name",
+    default=None,
+    help="Which Docker Compose project to bring down",
+)
+@click.option("--project-name", default=None, help="Project name for Docker")
 def docker_down(volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
-    result = bring_down_docker_compose(project_name, volumes, remove_orphans)
 
     remove_r2r_network()
 
-    if result != 0:
-        click.echo(
-            f"An error occurred while bringing down the {project_name} Docker Compose setup. Attempting to remove the network..."
-        )
+    if not project_name:
+        print("Bringing down the default R2R Docker setup(s)...")
+        try:
+            result = bring_down_docker_compose(
+                project_name or "r2r", volumes, remove_orphans
+            )
+        except:
+            pass
+        try:
+            result = bring_down_docker_compose(
+                project_name or "r2r-full", volumes, remove_orphans
+            )
+        except:
+            pass
     else:
-        click.echo(
-            f"{project_name} Docker Compose setup has been successfully brought down."
+        print(f"Bringing down the `{project_name}` R2R Docker setup...")
+        result = bring_down_docker_compose(
+            project_name, volumes, remove_orphans
         )
 
-    result = bring_down_docker_compose("r2r-full", volumes, remove_orphans)
-
-    # TODO - Clean up the way we do this r2r-down
-    click.echo(f"Also attempting to bring down the full deployment")
-    if result != 0:
-        click.echo(
-            f"An error occurred while bringing down the r2r-full Docker Compose setup. Attempting to remove the network..."
-        )
-    else:
-        click.echo(
-            f"r2r-full Docker Compose setup has been successfully brought down."
-        )
+        if result != 0:
+            click.echo(
+                f"An error occurred while bringing down the {project_name} Docker Compose setup. Attempting to remove the network..."
+            )
+        else:
+            click.echo(
+                f"{project_name} Docker Compose setup has been successfully brought down."
+            )
 
 
 @cli.command()
@@ -202,7 +213,7 @@ def generate_report():
     help="Run the full R2R compose? This includes Hatchet and Unstructured.",
 )
 @click.option(
-    "--project-name", default="r2r", help="Project name for Docker deployment"
+    "--project-name", default=None, help="Project name for Docker deployment"
 )
 @click.option(
     "--config-name", default=None, help="Name of the R2R configuration to use"
@@ -253,15 +264,16 @@ async def serve(
         click.echo(
             "Running the full R2R setup which includes `Hatchet` and `Unstructured.io`."
         )
-        if project_name == "r2r":  # overwrite project name if full compose
-            project_name = "r2r-full"
-    else:
-        click.echo("Running the lightweight R2R setup.")
 
     if config_path and config_name:
         raise click.UsageError(
             "Both `config-path` and `config-name` were provided. Please provide only one."
         )
+    if config_name and os.path.isfile(config_name):
+        click.echo(
+            "Warning: `config-name` corresponds to an existing file. If you intended a custom config, use `config-path`."
+        )
+
     if build:
         click.echo(
             "`build` flag detected. Building Docker image from local repository..."
@@ -354,8 +366,9 @@ async def serve(
             import webbrowser
 
             click.echo("Waiting for all services to become healthy...")
-
-            if not wait_for_container_health(project_name, "r2r"):
+            if not wait_for_container_health(
+                project_name or ("r2r" if not full else "r2r-full"), "r2r"
+            ):
                 click.secho(
                     "r2r container failed to become healthy.", fg="red"
                 )

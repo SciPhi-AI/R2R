@@ -16,6 +16,7 @@ from .base_utils import (
     llm_cost_per_million_tokens,
     run_pipeline,
     to_async_generator,
+    validate_uuid,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -39,6 +40,7 @@ __all__ = [
     "run_pipeline",
     "to_async_generator",
     "llm_cost_per_million_tokens",
+    "validate_uuid",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
