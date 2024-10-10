@@ -289,7 +289,8 @@ services:
       retries: 5
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     build:
       context: .
       args:
@@ -301,34 +302,62 @@ services:
       - PYTHONUNBUFFERED=1
       - R2R_PORT=${R2R_PORT:-${PORT:-7272}} # Eventually get rid of PORT, but for now keep it for backwards compatibility
       - HOST=${HOST:-0.0.0.0}
+
+      # R2R
       - CONFIG_NAME=${CONFIG_NAME:-}
       - CONFIG_PATH=${CONFIG_PATH:-}
+
+      # Postgres
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-}
+      - POSTGRES_PROJECT_NAME=${POSTGRES_PROJECT_NAME:-r2r_default}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
+
+      # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+
+      # Anthropic
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+      # Azure
       - AZURE_API_KEY=${AZURE_API_KEY:-}
       - AZURE_API_BASE=${AZURE_API_BASE:-}
       - AZURE_API_VERSION=${AZURE_API_VERSION:-}
+
+      # Google Vertex AI
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
       - VERTEX_PROJECT=${VERTEX_PROJECT:-}
       - VERTEX_LOCATION=${VERTEX_LOCATION:-}
+
+      # AWS Bedrock
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION_NAME=${AWS_REGION_NAME:-}
+
+      # Groq
       - GROQ_API_KEY=${GROQ_API_KEY:-}
+
+      # Cohere
       - COHERE_API_KEY=${COHERE_API_KEY:-}
+
+      # Anyscale
       - ANYSCALE_API_KEY=${ANYSCALE_API_KEY:-}
+
+      # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+
+      # Unstructured
       - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
       - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
       - UNSTRUCTURED_LOCAL_URL=${UNSTRUCTURED_LOCAL_URL:-http://unstructured:7275}
       - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
+
+      # Hatchet
       - HATCHET_CLIENT_TLS_STRATEGY=none
       - HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-13421772800}
       - HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-13421772800}

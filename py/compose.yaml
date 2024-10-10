@@ -1,14 +1,13 @@
 networks:
   r2r-network:
-    name: r2r-network
     driver: bridge
     attachable: true
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.0.0/16
     labels:
       - "com.docker.compose.recreate=always"
+
+volumes:
+  postgres_data:
+    name: ${VOLUME_POSTGRES_DATA:-postgres_data}
 
 services:
   postgres:
@@ -25,7 +24,7 @@ services:
     networks:
       - r2r-network
     ports:
-      - "5432:5432"
+      - "${R2R_POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
@@ -37,16 +36,18 @@ services:
       -c max_connections=${POSTGRES_MAX_CONNECTIONS:-1024}
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest-unstructured}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     build:
       context: .
       args:
-        PORT: ${PORT:-7272}
+        PORT: ${R2R_PORT:-${PORT:-7272}} # Eventually get rid of PORT, but for now keep it for backwards compatibility
+        R2R_PORT: ${R2R_PORT:-${PORT:-7272}}
     ports:
-      - "${PORT:-7272}:${PORT:-7272}"
+      - "${R2R_PORT:-${PORT:-7272}}:${R2R_PORT:-${PORT:-7272}}"
     environment:
       - PYTHONUNBUFFERED=1
-      - PORT=${PORT:-7272}
+      - R2R_PORT=${R2R_PORT:-${PORT:-7272}} # Eventually get rid of PORT, but for now keep it for backwards compatibility
       - HOST=${HOST:-0.0.0.0}
 
       # R2R
@@ -107,51 +108,14 @@ services:
     restart: on-failure
     volumes:
       - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.r2r.rule=PathPrefix(`/r2r-api`)"
-      - "traefik.http.services.r2r.loadbalancer.server.port=${PORT:-7272}"
-      - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
-      - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/r2r-api"
-      - "traefik.http.middlewares.r2r-add-v2.addprefix.prefix=/v2"
-      - "traefik.http.routers.r2r.middlewares=r2r-strip-prefix,r2r-add-v2,r2r-headers"
-      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Origin=*"
-      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Methods=GET,POST,OPTIONS"
-      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Headers=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
-      - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
     extra_hosts:
       - host.docker.internal:host-gateway
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${R2R_DASHBOARD_PORT:-8001}/r2r-api
+      - NEXT_PUBLIC_API_URL=http://localhost:${R2R_PORT:-7272}/r2r-api
     networks:
       - r2r-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.r2r-dashboard.rule=PathPrefix(`/`)"
-      - "traefik.http.services.r2r-dashboard.loadbalancer.server.port=3000"
-      - "traefik.http.routers.r2r-dashboard.entrypoints=r2r"
-
-  traefik:
-    image: traefik:v2.9
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.r2r.address=:${R2R_DASHBOARD_PORT:-8001}"
-      - "--accesslog=true"
-      - "--accesslog.filepath=/var/log/traefik/access.log"
     ports:
-      - "${R2R_DASHBOARD_PORT:-8001}:${R2R_DASHBOARD_PORT:-8001}"
-      - "${TRAEFIK_DASHBOARD_PORT:-8081}:${TRAEFIK_DASHBOARD_PORT:-8081}"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - r2r-network
-    labels:
-      - "traefik.http.middlewares.no-cache-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store, must-revalidate"
-
-volumes:
-  postgres_data:
+      - "${R2R_DASHBOARD_PORT:-7273}:3000"
