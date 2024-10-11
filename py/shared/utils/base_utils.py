@@ -263,7 +263,4 @@ def update_settings_from_dict(server_settings, settings_dict: dict):
             else:
                 setattr(settings, key, value)
 
-    import pdb
-
-    pdb.set_trace()
     return settings
