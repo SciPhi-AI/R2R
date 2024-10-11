@@ -207,10 +207,20 @@ class R2RConfig:
         if config_path and config_name:
             raise ValueError("Cannot specify both config_path and config_name")
 
-        if config_path := os.getenv("CONFIG_PATH") or config_path:
+        # TODO: Remove CONFIG_PATH and CONFIG_NAME in a future release
+        if (
+            config_path := os.getenv("R2R_CONFIG_PATH")
+            or os.getenv("CONFIG_PATH")
+            or config_path
+        ):
             return cls.from_toml(config_path)
-        else:
-            config_name = os.getenv("CONFIG_NAME") or config_name or "default"
-            if config_name not in R2RConfig.CONFIG_OPTIONS:
-                raise ValueError(f"Invalid config name: {config_name}")
-            return cls.from_toml(R2RConfig.CONFIG_OPTIONS[config_name])
+
+        config_name = (
+            os.getenv("R2R_CONFIG_NAME")
+            or os.getenv("CONFIG_NAME")
+            or config_name
+            or "default"
+        )
+        if config_name not in R2RConfig.CONFIG_OPTIONS:
+            raise ValueError(f"Invalid config name: {config_name}")
+        return cls.from_toml(R2RConfig.CONFIG_OPTIONS[config_name])

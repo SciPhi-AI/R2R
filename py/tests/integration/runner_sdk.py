@@ -33,6 +33,7 @@ def test_ingest_sample_file_sdk():
     print("Ingestion successful")
     print("~" * 100)
 
+
 def test_ingest_sample_file_2_sdk():
     print("Testing: Ingest sample file SDK 2")
     file_paths = ["core/examples/data/aristotle_v2.txt"]
@@ -44,6 +45,7 @@ def test_ingest_sample_file_2_sdk():
     time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
+
 
 def test_ingest_sample_file_with_config_sdk():
     print("Testing: Ingest sample file 2")
