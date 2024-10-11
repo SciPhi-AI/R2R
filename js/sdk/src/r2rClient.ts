@@ -22,6 +22,7 @@ import {
   VectorSearchSettings,
   KGSearchSettings,
   GenerationConfig,
+  RawChunk,
 } from "./models";
 
 function handleRequestError(response: AxiosResponse): void {
@@ -641,6 +642,26 @@ export class r2rClient {
           return data;
         },
       ],
+    });
+  }
+
+  @feature("ingestChunks")
+  async ingestChunks(
+    chunks: RawChunk[],
+    documentId?: string,
+    metadata?: Record<string, any>,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    return await this._makeRequest("POST", "ingest_chunks", {
+      data: {
+        chunks: chunks,
+        document_id: documentId,
+        metadata: metadata,
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   }
 

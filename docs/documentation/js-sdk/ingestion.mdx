@@ -196,11 +196,12 @@ const chunks = [
   },
   {
     text: "He was born in 384 BC in Stagira...",
-  }
+  },
 ];
 
-const ingestResponse = await client.ingestChunks(chunks, {
-  metadata: { title: "Aristotle", source: "wikipedia" }
+const ingestResponse = await client.ingestChunks(chunks, undefined, {
+  title: "Aristotle",
+  source: "wikipedia",
 });
 ````
 
@@ -209,24 +210,26 @@ const ingestResponse = await client.ingestChunks(chunks, {
     <ResponseField name="response" type="object">
       The response from the R2R system after ingesting the chunks.
       ```bash
-      {'message': 'Ingest chunks task queued successfully.', 'task_id': '8f27dfca-606d-422d-b73f-2d9e138661c3', 'document_id': 'd4391abf-8a4e-5d9d-80fd-232ef6fd8527'}
+      {
+        'message': 'Ingest chunks task queued successfully.',
+        'task_id': '8f27dfca-606d-422d-b73f-2d9e138661c3',
+        'document_id': 'd4391abf-8a4e-5d9d-80fd-232ef6fd8527'
+      }
       ```
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="chunks" type="Array<{ text: string; metadata?: Record<string, any> }>" required>
-  An array of chunk objects to ingest. Each object should contain at least a "text" property with the chunk text. An optional "metadata" property can contain a dictionary of metadata for the chunk.
+<ParamField path="chunks" type="Array<{ text: string; }>" required>
+  An array of chunk objects to ingest. Each object should contain at least a `text` property with the chunk text.
 </ParamField>
 
-<ParamField path="options" type="object">
-  <ParamField path="document_id" type="string">
-    An optional document ID to assign to the ingested chunks. If not provided, a new document ID will be generated.
-  </ParamField>
+<ParamField path="documentId" type="string">
+  An optional document ID to assign to the ingested chunks. If not provided, a new document ID will be generated.
+</ParamField>
 
-  <ParamField path="metadata" type="Record<string, any>">
-    An optional metadata object for the document.
-  </ParamField>
+<ParamField path="metadata" type="Record<string, any>">
+  An optional metadata object for the document.
 </ParamField>
 
 
