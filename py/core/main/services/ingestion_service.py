@@ -19,13 +19,13 @@ from core.base import (
 )
 from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
-
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from shared.abstractions.vector import (
-    IndexMethod,
     IndexMeasure,
+    IndexMethod,
     VectorTableName,
 )
+
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 

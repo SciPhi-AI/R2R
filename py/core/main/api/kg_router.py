@@ -8,11 +8,11 @@ from fastapi import Body, Depends, Query
 
 from core.base import RunType
 from core.base.api.models import (
+    WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
     WrappedKGTriplesResponse,
-    WrappedKGCommunitiesResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id

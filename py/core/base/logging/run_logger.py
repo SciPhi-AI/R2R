@@ -1,12 +1,9 @@
-import uuid
-from typing import Dict, List, Optional, Tuple
-
-from core.base import Message
 import logging
 import os
+import uuid
 from abc import abstractmethod
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -41,6 +38,7 @@ class LoggingConfig(ProviderConfig):
     @property
     def supported_providers(self) -> list[str]:
         return ["local", "postgres"]
+
 
 class RunLoggingProvider(Provider):
     @abstractmethod
@@ -269,6 +267,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         ]
 
     async def create_conversation(self) -> str:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         conversation_id = str(uuid.uuid4())
         created_at = datetime.utcnow().timestamp()
 
@@ -285,12 +288,23 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         content: Message,
         parent_id: Optional[str] = None,
     ) -> str:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         message_id = str(uuid.uuid4())
         created_at = datetime.utcnow().timestamp()
 
         await self.conn.execute(
             "INSERT INTO messages (id, conversation_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?)",
-            (message_id, conversation_id, parent_id, content.json(), created_at),
+            (
+                message_id,
+                conversation_id,
+                parent_id,
+                content.json(),
+                created_at,
+            ),
         )
 
         if parent_id is not None:
@@ -333,10 +347,15 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
         await self.conn.commit()
         return message_id
-        
+
     async def edit_message(
         self, message_id: str, new_content: str
     ) -> Tuple[str, str]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         # Get the original message details
         async with self.conn.execute(
             "SELECT conversation_id, parent_id, content FROM messages WHERE id = ?",
@@ -371,7 +390,13 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         message_created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
             "INSERT INTO messages (id, conversation_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?)",
-            (new_message_id, conversation_id, parent_id, edited_message.json(), message_created_at),
+            (
+                new_message_id,
+                conversation_id,
+                parent_id,
+                edited_message.json(),
+                message_created_at,
+            ),
         )
         # Link the new message to the new branch
         await self.conn.execute(
@@ -414,6 +439,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
     ) -> List[Message]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         if branch_id is None:
             # Get the most recent branch by created_at timestamp
             async with self.conn.execute(
@@ -456,6 +486,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             return messages
 
     async def list_branches(self, conversation_id: str) -> List[Dict]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         async with self.conn.execute(
             """
             SELECT b.id, b.branch_point_id, m.content, b.created_at
@@ -478,6 +513,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             ]
 
     async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         async with self.conn.execute(
             """
             SELECT id FROM branches
@@ -492,6 +532,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             return row[0] if row else None
 
     async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         async with self.conn.execute(
             """
             SELECT id FROM branches
@@ -506,6 +551,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             return row[0] if row else None
 
     async def branch_at_message(self, message_id: str) -> str:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         # Get the conversation_id of the message
         async with self.conn.execute(
             "SELECT conversation_id FROM messages WHERE id = ?",
@@ -550,38 +600,40 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         return new_branch_id
 
     async def delete_conversation(self, conversation_id: str):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
         # Ensure the connection is initialized
         if not self.conn:
-            raise ValueError("Initialize the connection pool before attempting to delete.")
+            raise ValueError(
+                "Initialize the connection pool before attempting to delete."
+            )
 
         # Begin a transaction
         async with self.conn.execute("BEGIN TRANSACTION"):
             # Delete all message branches associated with the conversation
             await self.conn.execute(
                 "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)",
-                (conversation_id,)
+                (conversation_id,),
             )
             # Delete all branches associated with the conversation
             await self.conn.execute(
                 "DELETE FROM branches WHERE conversation_id = ?",
-                (conversation_id,)
+                (conversation_id,),
             )
             # Delete all messages associated with the conversation
             await self.conn.execute(
                 "DELETE FROM messages WHERE conversation_id = ?",
-                (conversation_id,)
+                (conversation_id,),
             )
             # Finally, delete the conversation itself
             await self.conn.execute(
-                "DELETE FROM conversations WHERE id = ?",
-                (conversation_id,)
+                "DELETE FROM conversations WHERE id = ?", (conversation_id,)
             )
             # Commit the transaction
             await self.conn.commit()
-
-    async def close(self):
-        await self.conn.commit()
-        await self.conn.close()
 
     async def get_logs(
         self,

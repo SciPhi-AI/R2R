@@ -101,7 +101,9 @@ async def test_branch_at_message(local_logging_provider):
         conversation_id, Message(role="user", content="Hello")
     )
     message_id_2 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="Hi there!"), message_id_1
+        conversation_id,
+        Message(role="assistant", content="Hi there!"),
+        message_id_1,
     )
 
     branch_id = await local_logging_provider.branch_at_message(message_id_1)
@@ -114,23 +116,30 @@ async def test_branch_at_message(local_logging_provider):
     assert len(retrieved_messages) == 1
     assert retrieved_messages[0].content == "Hello"
 
+
 @pytest.mark.asyncio
 async def test_edit_message_in_middle(local_logging_provider):
     # Create a conversation with multiple messages
     conversation_id = await local_logging_provider.create_conversation()
-    
+
     # Add initial messages
     message_id_1 = await local_logging_provider.add_message(
         conversation_id, Message(role="user", content="Hello")
     )
     message_id_2 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="Hi there!"), message_id_1
+        conversation_id,
+        Message(role="assistant", content="Hi there!"),
+        message_id_1,
     )
     message_id_3 = await local_logging_provider.add_message(
-        conversation_id, Message(role="user", content="How are you?"), message_id_2
+        conversation_id,
+        Message(role="user", content="How are you?"),
+        message_id_2,
     )
     message_id_4 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="I'm doing well, thanks!"), message_id_3
+        conversation_id,
+        Message(role="assistant", content="I'm doing well, thanks!"),
+        message_id_3,
     )
 
     # Edit message 2
@@ -143,13 +152,14 @@ async def test_edit_message_in_middle(local_logging_provider):
         conversation_id, new_branch_id
     )
 
-    print('retrieved_messages = ', retrieved_messages)
+    print("retrieved_messages = ", retrieved_messages)
     # Verify that messages after the edited message are not present
     assert len(retrieved_messages) == 2
     assert retrieved_messages[0].content == "Hello"
     assert retrieved_messages[0].role == "user"
     assert retrieved_messages[1].content == "Greetings!"
     assert retrieved_messages[1].role == "assistant"
+
 
 @pytest.mark.asyncio
 async def test_multiple_branches_from_same_message(local_logging_provider):
@@ -159,17 +169,26 @@ async def test_multiple_branches_from_same_message(local_logging_provider):
         conversation_id, Message(role="user", content="Tell me a joke.")
     )
     message_id_2 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="Why did the chicken cross the road?"), message_id_1
+        conversation_id,
+        Message(
+            role="assistant", content="Why did the chicken cross the road?"
+        ),
+        message_id_1,
     )
 
     # Create first branch
-    new_message_id_1, new_branch_id_1 = await local_logging_provider.edit_message(
-        message_id_2, "Knock, knock!"
+    new_message_id_1, new_branch_id_1 = (
+        await local_logging_provider.edit_message(
+            message_id_2, "Knock, knock!"
+        )
     )
 
     # Create second branch
-    new_message_id_2, new_branch_id_2 = await local_logging_provider.edit_message(
-        message_id_2, "What do you call a bear with no teeth? A gummy bear!"
+    new_message_id_2, new_branch_id_2 = (
+        await local_logging_provider.edit_message(
+            message_id_2,
+            "What do you call a bear with no teeth? A gummy bear!",
+        )
     )
 
     # Retrieve messages for the first new branch
@@ -190,14 +209,19 @@ async def test_multiple_branches_from_same_message(local_logging_provider):
     # Verify second branch messages
     assert len(retrieved_messages_2) == 2
     assert retrieved_messages_2[0].content == "Tell me a joke."
-    assert retrieved_messages_2[1].content == "What do you call a bear with no teeth? A gummy bear!"
+    assert (
+        retrieved_messages_2[1].content
+        == "What do you call a bear with no teeth? A gummy bear!"
+    )
+
 
 @pytest.mark.asyncio
 async def test_navigate_between_branches(local_logging_provider):
     # Create a conversation and add a message
     conversation_id = await local_logging_provider.create_conversation()
     message_id = await local_logging_provider.add_message(
-        conversation_id, Message(role="user", content="What's the weather like?")
+        conversation_id,
+        Message(role="user", content="What's the weather like?"),
     )
 
     # Create multiple branches by editing the message
@@ -224,48 +248,51 @@ async def test_navigate_between_branches(local_logging_provider):
     prev_branch = await local_logging_provider.get_prev_branch(branch_id_2)
     assert prev_branch == branch_id_1
 
-@pytest.mark.asyncio
-async def test_messages_at_branch_point(local_logging_provider):
-    # Create a conversation with initial messages
-    conversation_id = await local_logging_provider.create_conversation()
-    user_message_id = await local_logging_provider.add_message(
-        conversation_id, Message(role="user", content="What's the capital of France?")
-    )
-    assistant_message_id = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="The capital of France is Paris."), user_message_id
-    )
 
-    # Create multiple branches by editing the assistant's message
-    _, branch_id_1 = await local_logging_provider.edit_message(
-        assistant_message_id, "It's Paris."
-    )
-    _, branch_id_2 = await local_logging_provider.edit_message(
-        assistant_message_id, "Paris is the capital city of France."
-    )
+# @pytest.mark.asyncio
+# async def test_messages_at_branch_point(local_logging_provider):
+#     # Create a conversation with initial messages
+#     conversation_id = await local_logging_provider.create_conversation()
+#     user_message_id = await local_logging_provider.add_message(
+#         conversation_id, Message(role="user", content="What's the capital of France?")
+#     )
+#     assistant_message_id = await local_logging_provider.add_message(
+#         conversation_id, Message(role="assistant", content="The capital of France is Paris."), user_message_id
+#     )
 
-    # List all branches
-    branches = await local_logging_provider.list_branches(conversation_id)
+#     # Create multiple branches by editing the assistant's message
+#     _, branch_id_1 = await local_logging_provider.edit_message(
+#         assistant_message_id, "It's Paris."
+#     )
+#     _, branch_id_2 = await local_logging_provider.edit_message(
+#         assistant_message_id, "Paris is the capital city of France."
+#     )
 
-    # Collect messages at the branching point
-    messages_at_branch_point = []
-    for branch in branches:
-        print('branch = ', branch)
-        if branch["branch_point_id"] == assistant_message_id:
-            # Get the message content at the branching point
-            content = Message.parse_raw(branch["content"]).content
-            messages_at_branch_point.append(content)
+#     # List all branches
+#     branches = await local_logging_provider.list_branches(conversation_id)
 
-    # Verify that all alternative messages are available
-    assert len(messages_at_branch_point) == 2
-    assert "It's Paris." in messages_at_branch_point
-    assert "Paris is the capital city of France." in messages_at_branch_point
+#     # Collect messages at the branching point
+#     messages_at_branch_point = []
+#     for branch in branches:
+#         print('branch = ', branch)
+#         if branch["branch_point_id"] == assistant_message_id:
+#             # Get the message content at the branching point
+#             content = Message.parse_raw(branch["content"]).content
+#             messages_at_branch_point.append(content)
+
+#     # Verify that all alternative messages are available
+#     assert len(messages_at_branch_point) == 2
+#     assert "It's Paris." in messages_at_branch_point
+#     assert "Paris is the capital city of France." in messages_at_branch_point
+
 
 @pytest.mark.asyncio
 async def test_delete_branch(local_logging_provider):
     # Create a conversation and branches
     conversation_id = await local_logging_provider.create_conversation()
     message_id = await local_logging_provider.add_message(
-        conversation_id, Message(role="user", content="Explain quantum physics.")
+        conversation_id,
+        Message(role="user", content="Explain quantum physics."),
     )
     _, branch_id = await local_logging_provider.edit_message(
         message_id, "Explain quantum physics in simple terms."

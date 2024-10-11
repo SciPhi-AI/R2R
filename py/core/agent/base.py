@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
@@ -10,7 +11,6 @@ from core.base.abstractions import (
     syncable,
 )
 from core.base.agent import Agent, Conversation
-import logging
 
 logger = logging.getLogger(__name__)
 

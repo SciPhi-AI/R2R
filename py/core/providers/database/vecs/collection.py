@@ -33,15 +33,14 @@ from sqlalchemy.types import Float, UserDefinedType
 
 from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
-
 from shared.abstractions.vector import (
-    VectorTableName,
-    IndexMeasure,
-    IndexMethod,
-    IndexArgsIVFFlat,
-    IndexArgsHNSW,
     INDEX_MEASURE_TO_OPS,
     INDEX_MEASURE_TO_SQLA_ACC,
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
 )
 
 from .adapter import Adapter, AdapterContext, NoOp, Record
