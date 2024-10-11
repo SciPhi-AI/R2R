@@ -14,6 +14,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
+import time
 from flupy import flu
 from sqlalchemy import (
     Column,
@@ -998,8 +999,8 @@ class Collection:
                 raise Exception(f"Failed to drop existing index: {e}")
             self._index = None
 
-        unique_string = str(uuid4()).replace("-", "_")[0:7]
-        index_name = f"ix_{ops}_{method}__{unique_string}"
+        timestamp = time.strftime("%Y%m%d%H%M%S")
+        index_name = f"ix_{ops}_{method}__{timestamp}"
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
