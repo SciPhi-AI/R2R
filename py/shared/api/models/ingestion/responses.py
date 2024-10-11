@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import Optional, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -13,7 +13,7 @@ class IngestionResponse(BaseModel):
         ...,
         description="A message describing the result of the ingestion request.",
     )
-    task_id: UUID = Field(
+    task_id: Optional[UUID] = Field(
         ...,
         description="The task ID of the ingestion request.",
     )
@@ -37,7 +37,7 @@ class UpdateResponse(BaseModel):
         ...,
         description="A message describing the result of the ingestion request.",
     )
-    task_id: UUID = Field(
+    task_id: Optional[UUID] = Field(
         ...,
         description="The task ID of the ingestion request.",
     )

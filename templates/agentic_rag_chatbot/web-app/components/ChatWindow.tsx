@@ -128,7 +128,7 @@ export const ChatWindow: FC<{
             messages: [...messages, newUserMessage],
             apiUrl: agentUrl,
             use_vector_search: true,
-            search_filters: {},
+            filters: {},
             search_limit: 10,
             do_hybrid_search: false,
             use_kg_search: false,

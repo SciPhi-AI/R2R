@@ -3,6 +3,11 @@ title: 'Ingestion'
 description: 'Ingesting files with R2R.'
 ---
 
+<Note>
+Occasionally this SDK documentation falls out of date, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+</Note>
+
+
 ## Document Ingestion and Management
 
 ### Ingest Files
@@ -51,8 +56,8 @@ const ingestResponse = await client.ingestFiles(files, {
   </ParamField>
 </ParamField>
 
-<ParamField path="chunking_config" type="Optional[Union[dict, ChunkingConfig]]">
-  The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
+<ParamField path="ingestion_config" type="Optional[Union[dict, ChunkingConfig]]">
+  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
   <Expandable title="properties">
     <ParamField path="provider" type="str" default="unstructured_local">
       Which chunking provider to use. Options are "r2r", "unstructured_local", or "unstructured_api".
@@ -180,6 +185,51 @@ const ingestResponse = await client.ingestFiles(files, {
   </Expandable>
 </ParamField>
 
+### Ingest Chunks
+
+Ingest pre-parsed text chunks into your R2R system:
+
+````javascript
+const chunks = [
+  {
+    text: "Aristotle was a Greek philosopher...",
+  },
+  {
+    text: "He was born in 384 BC in Stagira...",
+  }
+];
+
+const ingestResponse = await client.ingestChunks(chunks, {
+  metadata: { title: "Aristotle", source: "wikipedia" }
+});
+````
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response from the R2R system after ingesting the chunks.
+      ```bash
+      {'message': 'Ingest chunks task queued successfully.', 'task_id': '8f27dfca-606d-422d-b73f-2d9e138661c3', 'document_id': 'd4391abf-8a4e-5d9d-80fd-232ef6fd8527'}
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="chunks" type="Array<{ text: string; metadata?: Record<string, any> }>" required>
+  An array of chunk objects to ingest. Each object should contain at least a "text" property with the chunk text. An optional "metadata" property can contain a dictionary of metadata for the chunk.
+</ParamField>
+
+<ParamField path="options" type="object">
+  <ParamField path="document_id" type="string">
+    An optional document ID to assign to the ingested chunks. If not provided, a new document ID will be generated.
+  </ParamField>
+
+  <ParamField path="metadata" type="Record<string, any>">
+    An optional metadata object for the document.
+  </ParamField>
+</ParamField>
+
+
 ### Update Files
 
 Update existing documents:
@@ -219,8 +269,8 @@ const updateResponse = await client.updateFiles(files, {
     An optional array of metadata objects for the updated files.
   </ParamField>
 
-  <ParamField path="chunking_config" type="Record<string, any>">
-    The chunking config override parameter enables developers to customize their R2R chunking strategy at runtime.
+  <ParamField path="ingestion_config" type="Record<string, any>">
+    The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
     <Expandable title="properties">
     <ParamField path="provider" type="str" default="r2r">
     Which chunking provider to use, `r2r` or `unstructured`. Selecting `unstructured` is generally recommended when parsing with `unstructured` or `unstructured_api`.
@@ -261,7 +311,7 @@ const documentsOverview = await client.documentsOverview();
       ```bash
       [
         {
-          'document_id': '93123a68-d668-51de-8291-92162730dc87',
+          'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
           'version': 'v1',
           'size_in_bytes': 73353,
           'metadata': {},
@@ -289,7 +339,7 @@ const documentsOverview = await client.documentsOverview();
 Fetch chunks for a particular document:
 
 ```javascript
-const documentId = '93123a68-d668-51de-8291-92162730dc87';
+const documentId = '9fbe403b-c11c-5aae-8ade-ef22980c3ad1';
 const chunks = await client.documentChunks(documentId);
 ```
 
@@ -301,7 +351,7 @@ const chunks = await client.documentChunks(documentId);
       [{
         'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
         'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-        'document_id': 'db02076e-989a-59cd-98d5-e24e15a0bd27',
+        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
         'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
         'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3'
         'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'chunk_order': 0}}
@@ -337,5 +387,5 @@ const deleteResponse = await client.delete({ document_id: "91662726-7271-51a5-a0
 </AccordionGroup>
 
 <ParamField path="filters" type="{ [key: string]: string | string[] }" required>
-  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
+  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
 </ParamField>

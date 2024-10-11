@@ -47,7 +47,6 @@ graph TD
 
     subgraph "Storage"
         PG[(Postgres + pgvector)]
-        Neo[(Neo4j Graph DB)]
         FS[File Storage]
     end
 
@@ -83,7 +82,7 @@ R2R is built on a modular, service-oriented architecture designed for scalabilit
 
 3. **Orchestration**: Manages complex workflows and long-running tasks using a message queue system.
 
-4. **Storage**: Utilizes PostgreSQL with pgvector for vector storage and search, Neo4j for graph data, and a file system for raw document storage.
+4. **Storage**: Utilizes PostgreSQL with pgvector for vector storage and search, and graph search.
 
 5. **Providers**: Pluggable components for embedding, LLM, auth, and ingestion services, supporting multimodal ingestion and flexible model integration.
 
@@ -91,4 +90,4 @@ R2R is built on a modular, service-oriented architecture designed for scalabilit
 
 This architecture enables R2R to handle everything from simple RAG applications to complex, production-grade systems with advanced features like hybrid search and GraphRAG.
 
-Ready to get started? Check out our [Docker installation guide](/documentation/installation/docker) and [Quickstart tutorial](/documentation/quickstart) to begin your R2R journey.
+Ready to get started? Check out our [Docker installation guide](/documentation/installation/full/docker) and [Quickstart tutorial](/documentation/quickstart) to begin your R2R journey.

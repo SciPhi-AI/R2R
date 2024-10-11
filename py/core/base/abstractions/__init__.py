@@ -4,11 +4,12 @@ from shared.abstractions.document import (
     DataType,
     Document,
     DocumentExtraction,
-    DocumentFragment,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    RestructureStatus,
+    KGEnrichmentStatus,
+    KGExtractionStatus,
+    RawChunk,
 )
 from shared.abstractions.embedding import (
     EmbeddingPurpose,
@@ -27,6 +28,11 @@ from shared.abstractions.graph import (
     RelationshipType,
     Triple,
 )
+from shared.abstractions.kg import (
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGRunType,
+)
 from shared.abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -35,10 +41,6 @@ from shared.abstractions.llm import (
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt
-from shared.abstractions.restructure import (
-    KGCreationSettings,
-    KGEnrichmentSettings,
-)
 from shared.abstractions.search import (
     AggregateSearchResult,
     HybridSearchSettings,
@@ -73,11 +75,12 @@ __all__ = [
     "DataType",
     "Document",
     "DocumentExtraction",
-    "DocumentFragment",
     "DocumentInfo",
-    "IngestionStatus",
-    "RestructureStatus",
     "DocumentType",
+    "IngestionStatus",
+    "KGExtractionStatus",
+    "KGEnrichmentStatus",
+    "RawChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",
@@ -116,6 +119,7 @@ __all__ = [
     # Restructure abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",

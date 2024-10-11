@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 
+import yaml
 from datasets import load_dataset
 
 args = argparse.ArgumentParser()
@@ -32,9 +33,6 @@ def get_dataset(dataset_name, save_folder = '.data', split = "train", column_nam
             f.write(item[column_name])
         yield file_path
 
-def generate_id_from_label(label: str) -> uuid.UUID:
-    return uuid.uuid5(uuid.NAMESPACE_DNS, label)
-
 def wait_till_ready(status_var, status_value):
     while True:
         documents_overview = client.documents_overview(limit=1000)['results']
@@ -58,10 +56,10 @@ def wait_till_ready(status_var, status_value):
             break
         else:
             # if at least one says failed, exit
-            if "failure" in status_counts or "enrichment_failure" in status_counts:
+            if "failed" in status_counts or "enrichment_failure" in status_counts:
                 print(f"At least one document has failed {status_var} => {status_value}")
                 for document in documents_overview:
-                    if document.get(status_var) == "failure":
+                    if document.get(status_var) == "failed":
                         print(document.get("id"), document.get("status"))
                 exit(1)
         time.sleep(10)
@@ -80,15 +78,15 @@ def create_graph():
     print("Creating graph...")
     entity_types = ["ORGANIZATION", "GEO", "PERSON", "INDUSTRY_SECTOR", "PRODUCT", "COMPETITOR", "TECHNOLOGY", "ACQUISITION", "INVESTOR", ]
     documents_overview = client.documents_overview(limit=1000)['results']
-    document_ids = [document.get("id") for document in documents_overview if document.get("restructuring_status") in ["pending", "failure", "enrichment_failure"]]
+    document_ids = [document.get("id") for document in documents_overview if document.get("kg_extraction_status") in ["pending", "failed", "enrichment_failure"]]
     client.create_graph(document_ids = document_ids)
-    wait_till_ready("restructuring_status", "success")
+    wait_till_ready("kg_extraction_status", "success")
 
 
 def enrich_graph():
     print("Enriching graph...")
     client.enrich_graph()
-    wait_till_ready("restructuring_status", "enriched")
+    wait_till_ready("kg_extraction_status", "enriched")
 
 def update_prompts():
     print("Updating prompts...")

@@ -129,7 +129,6 @@ class PDFParserUnstructured(AsyncParser[DataType]):
         partition_strategy: str = "hi_res",
         chunking_strategy="by_title",
     ) -> AsyncGenerator[str, None]:
-
         # partition the pdf
         elements = self.partition_pdf(
             file=BytesIO(data),

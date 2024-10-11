@@ -1,5 +1,6 @@
 import { r2rClient } from "../src/index";
 const fs = require("fs");
+import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
@@ -17,8 +18,8 @@ const baseUrl = "http://localhost:7272";
  *     X verifyEmail
  *     - login
  *     - logout
- *     X user
- *     X updateUser
+ *     - user
+ *     - updateUser
  *     - refreshAccessToken
  *     - changePassword
  *     X requestPasswordReset
@@ -28,17 +29,17 @@ const baseUrl = "http://localhost:7272";
  *     - ingestFiles
  *     - updateFiles
  *    Management:
- *     X serverStats
+ *     - serverStats
  *     X updatePrompt
  *     X analytics
  *     X logs
  *     - appSettings
  *     X scoreCompletion
- *     X usersOverview
+ *     - usersOverview
  *     - delete
  *     X downloadFile
  *     - documentsOverview
- *     X documentChunks
+ *     - documentChunks
  *     X inspectKnowledgeGraph
  *     X collectionsOverview
  *     X createCollection
@@ -87,6 +88,30 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
+  test("User", async () => {
+    const asdf = await client.user();
+
+    await expect(client.user()).resolves.not.toThrow();
+  });
+
+  test("Update user profile", async () => {
+    const userId = "2bf8fd84-91ec-5048-9eb8-cf2ee9d66b64";
+    const email = "newemail@example.com";
+    const name = "New Name";
+    const bio = "Updated bio";
+    const profilePicture = "http://example.com/new-profile-pic.jpg";
+
+    await expect(
+      client.updateUser(userId, email, undefined, name, bio, profilePicture),
+    ).resolves.not.toThrow();
+  });
+
+  test("Login", async () => {
+    await expect(
+      client.login("newemail@example.com", "password"),
+    ).resolves.not.toThrow();
+  });
+
   test("Ingest file", async () => {
     const files = [
       { path: "examples/data/raskolnikov.txt", name: "raskolnikov.txt" },
@@ -131,10 +156,28 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
+  test("Only an authorized user can call server stats", async () => {
+    await expect(client.serverStats()).rejects.toThrow(
+      "Status 403: Only an authorized user can call the `server_stats` endpoint.",
+    );
+  });
+
   test("Only a superuser can call app settings", async () => {
     await expect(client.appSettings()).rejects.toThrow(
       "Status 403: Only a superuser can call the `app_settings` endpoint.",
     );
+  });
+
+  test("Only a superuser can call users overview", async () => {
+    await expect(client.usersOverview()).rejects.toThrow(
+      "Status 403: Only a superuser can call the `users_overview` endpoint.",
+    );
+  });
+
+  test("Document chunks", async () => {
+    await expect(
+      client.documentChunks("00f69fa0-c947-5f5f-a374-1837a1283366"),
+    ).resolves.not.toThrow();
   });
 
   test("Refresh access token", async () => {
@@ -151,7 +194,7 @@ describe("r2rClient Integration Tests", () => {
 
   test("Login after logout", async () => {
     await expect(
-      client.login("test@gmail.com", "password"),
+      client.login("newemail@example.com", "password"),
     ).resolves.not.toThrow();
   });
 

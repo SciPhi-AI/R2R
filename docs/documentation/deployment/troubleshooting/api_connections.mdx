@@ -38,7 +38,7 @@ Look for error messages or exceptions that might indicate why the API is not res
 **Symptom:** API starts but immediately exits or fails to initialize.
 
 **Solutions:**
-- Verify that all required services (Postgres, Neo4j, etc.) are up and healthy.
+- Verify that all required services (Postgres, etc.) are up and healthy.
 - Check if the `depends_on` conditions in the Docker Compose file are correct.
 - Increase the retry count or add a delay in the API service startup script.
 

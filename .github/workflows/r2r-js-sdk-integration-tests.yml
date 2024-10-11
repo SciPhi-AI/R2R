@@ -2,13 +2,8 @@ name: R2R JS SDK Integration Tests
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'js/sdk/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'js/sdk/**'
+    branches:
+      - '**'  # Trigger on all branches
 
 jobs:
   test:
@@ -33,12 +28,6 @@ jobs:
 
       - name: Start R2R server
         env:
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-          POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
-          POSTGRES_PROJECT_NAME: ${{ secrets.POSTGRES_PROJECT_NAME }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           r2r serve --docker
@@ -58,11 +47,11 @@ jobs:
 
       - name: Display R2R server logs if server not responding
         if: failure()
-        run: cat r2r_server.log
+        run: docker logs r2r-r2r-1
 
       - name: Run integration tests
         run: npm run test
 
       - name: Display R2R server logs if tests fail
         if: failure()
-        run: cat r2r_server.log
+        run: docker logs r2r-r2r-1

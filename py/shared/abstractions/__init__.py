@@ -4,11 +4,12 @@ from .document import (
     DataType,
     Document,
     DocumentExtraction,
-    DocumentFragment,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    RestructureStatus,
+    KGEnrichmentStatus,
+    KGExtractionStatus,
+    RawChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
@@ -21,6 +22,7 @@ from .graph import (
     RelationshipType,
     Triple,
 )
+from .kg import KGCreationSettings, KGEnrichmentSettings, KGRunType
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -29,7 +31,6 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
-from .restructure import KGCreationSettings, KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
     HybridSearchSettings,
@@ -59,11 +60,12 @@ __all__ = [
     "DataType",
     "Document",
     "DocumentExtraction",
-    "DocumentFragment",
     "DocumentInfo",
     "IngestionStatus",
-    "RestructureStatus",
+    "KGExtractionStatus",
+    "KGEnrichmentStatus",
     "DocumentType",
+    "RawChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",
@@ -99,9 +101,11 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     "HybridSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGExtraction",
+    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",

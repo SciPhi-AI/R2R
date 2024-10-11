@@ -23,7 +23,7 @@ class RegressionTestRunner:
             "TestDocumentManagement",
             "TestRetrieval",
             "TestUserManagement",
-            # "TestObservability",
+            "TestObservability",
             "TestGroupManagement",
         ]
         self.check_only = check_only

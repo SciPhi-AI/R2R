@@ -7,7 +7,7 @@ require_email_verification = false
 default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
-[chunking]
+[ingestion]
 provider = "unstructured_local"
 strategy = "auto"
 chunking_strategy = "by_title"
@@ -18,7 +18,7 @@ overlap = 20
 
 [completion]
 provider = "litellm"
-concurrent_request_limit = 16
+concurrent_request_limit = 256
 
   [completion.generation_config]
   model = "bedrock/anthropic.claude-v2"

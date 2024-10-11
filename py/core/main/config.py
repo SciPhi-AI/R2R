@@ -10,15 +10,16 @@ from pydantic import BaseModel
 from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
 from ..base.logging.run_logger import LoggingConfig
+from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
-from ..base.providers.chunking import ChunkingConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
 from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.file import FileConfig
+from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.kg import KGConfig
 from ..base.providers.llm import CompletionConfig
-from ..base.providers.parsing import ParsingConfig
+from ..base.providers.orchestration import OrchestrationConfig
 from ..base.providers.prompt import PromptConfig
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ class R2RConfig:
     CONFIG_OPTIONS["default"] = None
 
     REQUIRED_KEYS: dict[str, list] = {
+        "app": [],
+        "completion": ["provider"],
         "crypto": ["provider"],
         "auth": ["provider"],
         "embedding": [
@@ -49,32 +52,33 @@ class R2RConfig:
             "batch_size",
             "add_title_as_prefix",
         ],
+        "ingestion": ["provider"],
         "kg": [
             "provider",
             "batch_size",
             "kg_enrichment_settings",
         ],
-        "parsing": ["provider", "excluded_parsers"],
-        "chunking": ["provider"],
-        "completion": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "database": ["provider"],
         "agent": ["generation_config"],
         "file": ["provider"],
+        "orchestration": ["provider"],
     }
+
+    app: AppConfig
     auth: AuthConfig
-    chunking: ChunkingConfig
     completion: CompletionConfig
     crypto: CryptoConfig
     database: DatabaseConfig
     embedding: EmbeddingConfig
+    ingestion: IngestionConfig
     kg: KGConfig
     logging: LoggingConfig
-    parsing: ParsingConfig
     prompt: PromptConfig
     agent: AgentConfig
     file: FileConfig
+    orchestration: OrchestrationConfig
 
     def __init__(
         self, config_data: dict[str, Any], base_path: Optional[Path] = None
@@ -117,25 +121,23 @@ class R2RConfig:
                     )
             setattr(self, section, default_config[section])
 
-        self.completion = CompletionConfig.create(**self.completion)  # type: ignore
+        self.app = AppConfig.create(**self.app)  # type: ignore
+        self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
+        self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
+        self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
+        self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
+        self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
+        self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
+        self.kg = KGConfig.create(**self.kg, app=self.app)  # type: ignore
+        self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
+        self.prompt = PromptConfig.create(**self.prompt, app=self.app)  # type: ignore
+        self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
+        self.file = FileConfig.create(**self.file, app=self.app)  # type: ignore
+        self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()
         )
-
-        self.auth = AuthConfig.create(**self.auth)  # type: ignore
-        self.chunking = ChunkingConfig.create(**self.chunking)  # type: ignore
-        self.crypto = CryptoConfig.create(**self.crypto)  # type: ignore
-        self.database = DatabaseConfig.create(**self.database)  # type: ignore
-        self.embedding = EmbeddingConfig.create(**self.embedding)  # type: ignore
-        self.kg = KGConfig.create(**self.kg)  # type: ignore
-        self.logging = LoggingConfig.create(**self.logging)  # type: ignore
-        if "chunking_config" not in self.parsing:  # type: ignore
-            self.parsing["chunking_config"] = self.chunking  # type: ignore
-        self.parsing = ParsingConfig.create(**self.parsing)  # type: ignore
-        self.prompt = PromptConfig.create(**self.prompt)  # type: ignore
-        self.agent = AgentConfig.create(**self.agent)  # type: ignore
-        self.file = FileConfig.create(**self.file)  # type: ignore
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -166,19 +168,6 @@ class R2RConfig:
             for section in R2RConfig.REQUIRED_KEYS.keys()
         }
         return toml.dumps(config_data)
-
-    def save_to_redis(self, redis_client: Any, key: str):
-        redis_client.set(f"R2RConfig:{key}", self.to_toml())
-
-    @classmethod
-    def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
-        config_data = redis_client.get(f"R2RConfig:{key}")
-        if config_data is None:
-            raise ValueError(
-                f"Configuration not found in Redis with key '{key}'"
-            )
-        config_data = toml.loads(config_data)
-        return cls(config_data)
 
     @classmethod
     def load_default_config(cls) -> dict:

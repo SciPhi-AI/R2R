@@ -58,7 +58,7 @@ client.ingest_files(file_paths=["test.txt"])
 # Call RAG directly
 rag_response = client.rag(
     query="Who is john",
-    rag_generation_config={"model": "gpt-4o-mini", "temperature": 0.0},
+    rag_generation_config={"model": "openai/gpt-4o-mini", "temperature": 0.0},
 )
 results = rag_response["results"]
 print(f"Search Results:\n{results['search_results']}")
@@ -81,14 +81,12 @@ concurrent_request_limit = 16
   model = "openai/gpt-4o"
   temperature = 0.5
 
-[chunking]
-provider = "unstructured_local"
-strategy = "auto"
-chunking_strategy = "by_title"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 20
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1_024
+chunk_overlap = 512
+excluded_parsers = ["mp4"]
 ```
 
 Then, use the `config-path` argument to specify your custom configuration when launching R2R:
@@ -118,7 +116,7 @@ Key features include:
 <AccordionGroup>
 
 <Accordion icon="database" title="Ingest Data" defaultOpen={true}>
-R2R offers a powerful data ingestion process that handles various file types including `html`, `pdf`, `png`, `mp3`, and `txt`. The full list of supported filetypes is available [here](/documentation/configuration/parsing_and_chunking). The ingestion process parses, chunks, embeds, and stores documents efficiently with a fully asynchronous pipeline. To demonstrate this functionality:
+R2R offers a powerful data ingestion process that handles various file types including `html`, `pdf`, `png`, `mp3`, and `txt`. The full list of supported filetypes is available [here](/documentation/configuration/ingestion/overview). The ingestion process parses, chunks, embeds, and stores documents efficiently with a fully asynchronous pipeline. To demonstrate this functionality:
 
 <Tabs>
 <Tab title="CLI">
@@ -628,7 +626,7 @@ r2r search --query="Who founded Airbnb?" --use-kg-search --kg-search-type=local
 ```python
 client.search("Who founded Airbnb?", kg_search_settings={
     "use_kg_search": True,
-    "kg_search_type": "global",
+    "kg_search_type": "local",
     "kg_search_level": 0, # level of community to search
     "max_community_description_length": 65536,
     "max_llm_queries_for_global_search": 250,
@@ -645,7 +643,7 @@ client.search("Who founded Airbnb?", kg_search_settings={
 ```javascript
 await client.search("Who founded Airbnb?", true, {}, 10, false, {}, {
     useKgSearch: true,
-    kgSearchType: "global",
+    kgSearchType: "local",
     kgSearchLevel: "0",
     maxCommunityDescriptionLength: 65536,
     maxLlmQueriesForGlobalSearch: 250,
@@ -666,7 +664,7 @@ curl -X POST http://localhost:7272/v2/search \
     "query": "Who founded Airbnb?",
     "kg_search_settings": {
       "use_kg_search": true,
-      "kg_search_type": "global",
+      "kg_search_type": "local",
       "kg_search_level": "0",
       "max_community_description_length": 65536,
       "max_llm_queries_for_global_search": 250,
@@ -684,7 +682,7 @@ curl -X POST http://localhost:7272/v2/search \
 Key configurable parameters for knowledge graph search include:
 
 - `use_kg_search`: Enable knowledge graph search.
-- `kg_search_type`: Choose between "global" or "local" search.
+- `kg_search_type`: "local"
 - `kg_search_level`: Specify the level of community to search.
 - `entity_types`: List of entity types to include in the search.
 - `relationships`: List of relationship types to include in the search.
@@ -775,21 +773,21 @@ R2R also supports hybrid search in RAG, combining the power of vector search and
 <Tabs>
 <Tab title="CLI">
 ```bash
-r2r rag --query="Who is John Snow?" --use-hybrid-search
+r2r rag --query="Who is Jon Snow?" --use-hybrid-search
 ```
 </Tab>
 
 
 <Tab title="Python">
 ```javascript
-results = client.rag("Who is John Snow?", {"use_hybrid_search": True})
+results = client.rag("Who is Jon Snow?", {"use_hybrid_search": True})
 ```
 </Tab>
 
 <Tab title="JavaScript">
 ```javascript
 await client.rag({
-  query: "Who is John Snow?",
+  query: "Who is Jon Snow?",
 });
 ```
 </Tab>
@@ -799,10 +797,10 @@ await client.rag({
 curl -X POST http://localhost:7272/v2/rag \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "Who is John Snow?",
+    "query": "Who is Jon Snow?",
     "vector_search_settings": {
       "use_vector_search": true,
-      "search_filters": {},
+      "filters": {},
       "search_limit": 10,
       "use_hybrid_search": true
     }
@@ -825,7 +823,7 @@ curl -X POST http://localhost:7272/v2/rag \
                 index=0,
                 logprobs=None,
                 message=ChatCompletionMessage(
-                    content="John Snow is mentioned in the context as one of Samwell (Sam) Tarly's closest companions at the Wall [5], [6].",
+                    content="Jon Snow is mentioned in the context as one of Samwell (Sam) Tarly's closest companions at the Wall [5], [6].",
                     role='assistant',
                     function_call=None,
                     tool_calls=None)
@@ -948,7 +946,7 @@ await client.rag({
 curl -X POST http://localhost:7272/v2/rag \
     -H "Content-Type: application/json" \
     -d '{
-        "query": "Who is John Snow?",
+        "query": "Who is Jon Snow?",
         "rag_generation_config": {
             "model": "claude-3-haiku-20240307",
             "temperature": 0.7

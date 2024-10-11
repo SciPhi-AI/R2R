@@ -63,7 +63,6 @@ a. Increase Docker's memory limit:
    - On Docker Desktop, go to Settings > Resources > Advanced and increase memory allocation.
 
 b. Optimize memory usage in R2R configuration:
-   - Adjust `NEO4J_server_memory_heap_max__size` for Neo4j
    - Modify Postgres memory settings in `postgresql.conf`
 
 c. Add or increase swap space on your host system.
@@ -94,7 +93,7 @@ b. Increase disk space allocation for Docker:
    - On Docker Desktop, go to Settings > Resources > Advanced and increase disk image size.
 
 c. Monitor and manage log file sizes:
-   - Implement log rotation for services like Neo4j and Postgres
+   - Implement log rotation for services like Postgres
    - Use Docker's logging options to limit log file sizes:
      ```yaml
      logging:

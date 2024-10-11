@@ -1,5 +1,6 @@
 export interface TokenInfo {
   token: string;
+  token_type: string;
 }
 
 export interface LoginResponse {
@@ -47,17 +48,20 @@ export interface VectorSearchSettings {
   include_metadatas?: boolean;
   probes?: number;
   ef_search?: number;
-  search_strategy?: string;
   hybrid_search_settings?: HybridSearchSettings;
+  search_strategy?: string;
 }
 
 export interface KGSearchSettings {
   use_kg_search?: boolean;
-  kg_search_type?: "global" | "local";
+  filters?: Record<string, any>;
+  selected_collection_ids?: string[];
+  graphrag_map_system_prompt?: string;
+  kg_search_type?: "local";
   kg_search_level?: number | null;
   generation_config?: GenerationConfig;
-  entity_types?: any[];
-  relationships?: any[];
+  // entity_types?: any[];
+  // relationships?: any[];
   max_community_description_length?: number;
   max_llm_queries_for_global_search?: number;
   local_search_limits?: Record<string, number>;

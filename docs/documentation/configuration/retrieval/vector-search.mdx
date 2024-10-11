@@ -10,7 +10,7 @@ Example using the Python SDK:
 ```python
 vector_search_settings = {
     "use_vector_search": True,
-    "filters": {"metadata.document_type": "article"},
+    "search_filters": {"document_type": {"$eq": "article"}},
     "search_limit": 20,
     "use_hybrid_search": True,
     "selected_collection_ids": ["c3291abf-8a4e-5d9d-80fd-232ef6fd8526"]
@@ -27,7 +27,7 @@ response = client.search("query", vector_search_settings=vector_search_settings)
 2. `use_hybrid_search` (bool): Whether to perform a hybrid search (combining vector and keyword search)
 3. `filters` (dict): Filters to apply to the vector search
 4. `search_limit` (int): Maximum number of results to return (1-1000)
-5. `selected_collection_ids` (list[UUID]): Group IDs to search for
+5. `selected_collection_ids` (list[UUID]): Collection Ids to search for
 6. `index_measure` (IndexMeasure): The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product)
 7. `include_values` (bool): Whether to include search score values in the search results
 8. `include_metadatas` (bool): Whether to include element metadata in the search results
@@ -55,9 +55,9 @@ Example of advanced filtering:
 ```python
 filters = {
     "$and": [
-        {"metadata.publication_date": {"$gte": "2023-01-01"}},
-        {"metadata.author": {"$in": ["John Doe", "Jane Smith"]}},
-        {"metadata.category": {"$ilike": "%technology%"}}
+        {"publication_date": {"$gte": "2023-01-01"}},
+        {"author": {"$in": ["John Doe", "Jane Smith"]}},
+        {"category": {"$ilike": "%technology%"}}
     ]
 }
 vector_search_settings["filters"] = filters

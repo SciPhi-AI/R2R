@@ -1,0 +1,78 @@
+name: 'Setup PostgreSQL'
+description: 'Sets up PostgreSQL with pgvector'
+inputs:
+  os:
+    description: 'Operating system'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Setup PostgreSQL on Ubuntu
+      if: inputs.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        sudo apt-get purge -y 'postgresql-*'
+        sudo rm -rf /var/lib/postgresql /var/log/postgresql /etc/postgresql
+
+        echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+
+        sudo apt-get update
+        sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector
+
+        sudo systemctl enable postgresql@15-main
+        sudo systemctl start postgresql@15-main
+        cd /
+        sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
+        sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "CREATE EXTENSION vector;"
+
+    - name: Setup PostgreSQL on Windows
+      if: inputs.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        choco install postgresql15 --params '/Password:postgres' --force
+
+        $env:PATH += ";C:\Program Files\PostgreSQL\15\bin"
+        $env:PGPASSWORD = 'postgres'
+        psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+
+        # Install Visual Studio Build Tools
+        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
+
+        # Set up environment for building pgvector
+        $vcvars64Path = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+        cmd.exe /c "call `"$vcvars64Path`" && set > %temp%\vcvars.txt"
+        Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
+          if ($_ -match "^(.*?)=(.*)$") {
+            Set-Content "env:\$($matches[1])" $matches[2]
+          }
+        }
+
+        # Clone and build pgvector
+        $env:PGROOT = "C:\Program Files\PostgreSQL\15"
+        Set-Location -Path $env:TEMP
+        git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
+        Set-Location -Path "$env:TEMP\pgvector"
+        nmake /F Makefile.win
+        nmake /F Makefile.win install
+
+        psql -U postgres -c "CREATE EXTENSION vector;"
+
+    - name: Setup PostgreSQL on macOS
+      if: inputs.os == 'macos-latest'
+      shell: bash
+      run: |
+        brew update
+        brew install postgresql@15
+
+        brew services start postgresql@15
+        sleep 5
+        /opt/homebrew/opt/postgresql@15/bin/createuser -s postgres
+        /opt/homebrew/opt/postgresql@15/bin/psql -d postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+
+        cd /tmp
+        git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
+        cd pgvector
+        export PG_CONFIG=/opt/homebrew/opt/postgresql@15/bin/pg_config
+        make
+        make install # may need sudo

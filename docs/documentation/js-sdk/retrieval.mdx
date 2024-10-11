@@ -3,6 +3,9 @@ title: 'Search & RAG'
 description: 'Search and Retrieval-Augmented Generation with R2R.'
 ---
 
+<Note>
+Occasionally this SDK documentation falls out of date, if in doubt, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a>.
+</Note>
 
 ## AI Powered Search
 
@@ -70,7 +73,7 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="Array<string | null>">
-    Group IDs to search for.
+    Collection Ids to search for.
     </ParamField>
     <ParamField path="index_measure" type="string" default="cosine_distance">
     The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product).
@@ -97,41 +100,54 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
   Optional settings for knowledge graph search, either a dictionary, a `KGSearchSettings` object, or `None` may be passed. If a dictionary or `None` is passed, then R2R will use server-side defaults for non-specified fields.
 
   <Expandable title="properties">
-    <ParamField path="use_kg_search" type="boolean" default="False">
-    Whether to use knowledge graph search.
+
+    <ParamField path="filters" type="dict[str, Any]">
+      Filters to apply to the vector search. This field is deprecated in favor of `filters`.
     </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
-    Type of knowledge graph search. Can be 'global' or 'local'.
+    <ParamField path="selected_collection_ids" type="list[UUID]">
+      Collection IDs to search for.
+    </ParamField>
+
+    <ParamField path="graphrag_map_system_prompt" type="str" default="graphrag_map_system_prompt">
+      The system prompt for the GraphRAG map prompt.
+    </ParamField>
+
+    <ParamField path="graphrag_reduce_system_prompt" type="str" default="graphrag_reduce_system_prompt">
+      The system prompt for the GraphRAG reduce prompt.
+    </ParamField>
+
+    <ParamField path="use_kg_search" type="bool" default="False">
+      Whether to use knowledge graph search.
+    </ParamField>
+
+    <ParamField path="kg_search_type" type="str" default="local">
+      The type of knowledge graph search to perform. Supported value: "local".
     </ParamField>
 
     <ParamField path="kg_search_level" type="Optional[str]" default="None">
-    Level of knowledge graph search.
+      The level of knowledge graph search to perform.
     </ParamField>
 
-    <ParamField path="generation_config" type="Optional[GenerationConfig]" default="GenerationConfig()">
-    Configuration for knowledge graph search generation.
+    <ParamField path="generation_config" type="GenerationConfig">
+      Configuration for text generation during graph search.
     </ParamField>
 
-    <ParamField path="entity_types" type="array" default="[]">
-    List of entity types to use for knowledge graph search.
+    <ParamField path="max_community_description_length" type="int" default="65536">
+      The maximum length of the community description.
     </ParamField>
 
-    <ParamField path="relationships" type="array" default="[]">
-    List of relationships to use for knowledge graph search.
+    <ParamField path="max_llm_queries_for_global_search" type="int" default="250">
+      The maximum number of LLM queries to perform during global search.
     </ParamField>
 
-    <ParamField path="max_community_description_length" type="number" default="65536">
-    Maximum length of community descriptions.
+    <ParamField path="local_search_limits" type="dict[str, int]">
+      The local search limits for different entity types. The default values are:
+      - `"__Entity__"`: 20
+      - `"__Relationship__"`: 20
+      - `"__Community__"`: 20
     </ParamField>
 
-    <ParamField path="max_llm_queries_for_global_search" type="number" default="250">
-    Maximum number of LLM queries for global search.
-    </ParamField>
-
-    <ParamField path="local_search_limits" type="dict[str, number]" default="{'__Entity__': 20, '__Relationship__': 20, '__Community__': 20}">
-    Limits for local search on different types of elements.
-    </ParamField>
   </Expandable>
 </ParamField>
 
@@ -143,7 +159,7 @@ Search with custom settings, such as bespoke document filters and larger search 
 # returns only chunks from documents with title `document_title`
 const filtered_search_response = client.search(
     "What was Uber's profit in 2020?",
-    { search_filters: {
+    { filters: {
         $eq: "uber_2021.pdf"
     },
     search_limit: 100
@@ -159,7 +175,7 @@ Combine traditional keyword-based search with vector search:
 ```javascript
 const hybrid_search_response = client.search(
     "What was Uber's profit in 2020?",
-    { search_filters: {
+    { filters: {
         $eq: "uber_2021.pdf"
     },
     search_limit: 100
@@ -269,7 +285,7 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="selected_collection_ids" type="list[UUID]" default="[]">
-    Group IDs to search for.
+    Collection Ids to search for.
     </ParamField>
 
     <ParamField path="index_measure" type="IndexMeasure" default="cosine_distance">
@@ -317,44 +333,59 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
 
 <ParamField path="kg_search_settings" type="Optional[Union[KGSearchSettings, dict]]" default="None">
   Optional settings for knowledge graph search, either a dictionary, a `KGSearchSettings` object, or `None` may be passed. If a dictionary or `None` is passed, then R2R will use server-side defaults for non-specified fields.
-
   <Expandable title="properties">
-    <ParamField path="use_kg_search" type="bool" default="False">
+
+  The `KGSearchSettings` class allows you to configure the knowledge graph search settings for your R2R system. Here are the available options:
+
+  <ParamField path="filters" type="dict[str, Any]">
+    Filters to apply to the vector search. This field is deprecated in favor of `filters`.
+  </ParamField>
+
+  <ParamField path="selected_collection_ids" type="list[UUID]">
+    Collection IDs to search for.
+  </ParamField>
+
+  <ParamField path="graphrag_map_system_prompt" type="str" default="graphrag_map_system_prompt">
+    The system prompt for the GraphRAG map prompt.
+  </ParamField>
+
+  <ParamField path="graphrag_reduce_system_prompt" type="str" default="graphrag_reduce_system_prompt">
+    The system prompt for the GraphRAG reduce prompt.
+  </ParamField>
+
+  <ParamField path="use_kg_search" type="bool" default="False">
     Whether to use knowledge graph search.
-    </ParamField>
+  </ParamField>
 
-    <ParamField path="kg_search_type" type="str" default="global">
-    Type of knowledge graph search. Can be 'global' or 'local'.
-    </ParamField>
+  <ParamField path="kg_search_type" type="str" default="local">
+    The type of knowledge graph search to perform. Supported value: "local".
+  </ParamField>
 
-    <ParamField path="kg_search_level" type="Optional[str]" default="None">
-    Level of knowledge graph search.
-    </ParamField>
+  <ParamField path="kg_search_level" type="Optional[str]" default="None">
+    The level of knowledge graph search to perform.
+  </ParamField>
 
-    <ParamField path="generation_config" type="Optional[GenerationConfig]" default="GenerationConfig()">
-    Configuration for knowledge graph search generation.
-    </ParamField>
+  <ParamField path="generation_config" type="GenerationConfig">
+    Configuration for text generation during graph search.
+  </ParamField>
 
-    <ParamField path="entity_types" type="list" default="[]">
-    List of entity types to use for knowledge graph search.
-    </ParamField>
+  <ParamField path="max_community_description_length" type="int" default="65536">
+    The maximum length of the community description.
+  </ParamField>
 
-    <ParamField path="relationships" type="list" default="[]">
-    List of relationships to use for knowledge graph search.
-    </ParamField>
+  <ParamField path="max_llm_queries_for_global_search" type="int" default="250">
+    The maximum number of LLM queries to perform during global search.
+  </ParamField>
 
-    <ParamField path="max_community_description_length" type="int" default="65536">
-    Maximum length of community descriptions.
-    </ParamField>
-
-    <ParamField path="max_llm_queries_for_global_search" type="int" default="250">
-    Maximum number of LLM queries for global search.
-    </ParamField>
-
-    <ParamField path="local_search_limits" type="dict[str, int]" default="{'__Entity__': 20, '__Relationship__': 20, '__Community__': 20}">
-    Limits for local search on different types of elements.
-    </ParamField>
+  <ParamField path="local_search_limits" type="dict[str, int]">
+    The local search limits for different entity types. The default values are:
+    - `"__Entity__"`: 20
+    - `"__Relationship__"`: 20
+    - `"__Community__"`: 20
+  </ParamField>
   </Expandable>
+
+
 </ParamField>
 
 <ParamField path="rag_generation_config" type="Optional[Union[GenerationConfig, dict]]" default="None">
@@ -418,7 +449,7 @@ Use hybrid search in RAG:
 
 ```javascript
 const hybridRagResponse = await client.rag({
-  query: "Who is John Snow?",
+  query: "Who is Jon Snow?",
   use_hybrid_search: true
 });
 ```
@@ -604,7 +635,7 @@ Note that any of the customization seen in AI powered search and RAG documentati
   Whether to use vector search.
 </ParamField>
 
-<ParamField path="search_filters" type="object">
+<ParamField path="filters" type="object">
   Optional filters for the search.
 </ParamField>
 
@@ -669,7 +700,7 @@ if (agentResponse instanceof ReadableStream) {
     <ResponseField name="response" type="ReadableStream">
     The agent endpoint will stream back its response, including internal tool calls.
         ```javascript
-        <function_call><name>search</name><arguments>{"query":"Aristotle's influence on later thinkers in philosophy"}</arguments><results>"{"id":"b234931e-0cfb-5644-8f23-560a3097f5fe","score":1.0,"metadata":{"text":"ormation: List of writers influenced by Aristotle More than 2300 years after his death, Aristotle remains one of the most influential people who ever lived.[142][143][144] He contributed to almost every field of human knowledge then in existence, and he was the founder of many new fields. According to the philosopher Bryan Magee, \"it is doubtful whether any human being has ever known as much as he did\".[145]","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"93123a68-d668-51de-8291-92162730dc87","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"1827ac2c-2a06-5bc2-ad29-aa14b4d99540","score":1.0,"metadata":{"text":"subject of contemporary philosophical discussion. Aristotle's views profoundly shaped medieval scholarship. The influence of his physical science extended from late antiquity and the Early Middle Ages into the Renaissance, and was not replaced systematically until the Enlightenment and theories such as classical mechanics were developed. He influenced Judeo-Islamic philosophies during the Middle Ages, as well as Christian theology, especially the Neoplatonism of the Early Church and the scholastic tradition","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"93123a68-d668-51de-8291-92162730dc87","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"94718936-ea92-5e29-a5ee-d4a6bc037384","score":1.0,"metadata":{"text":"the scholastic tradition of the Catholic Church. Aristotle was revered among medieval Muslim scholars as \"The First Teacher\", and among medieval Christians like Thomas Aquinas as simply \"The Philosopher\", while the poet Dante called him \"the master of those who know\". His works contain the earliest known formal study of logic, and were studied by medieval scholars such as Peter Abelard and Jean Buridan. Aristotle's influence on logic continued well into the 19th century. In addition, his ethics, although","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"93123a68-d668-51de-8291-92162730dc87","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"16483f14-f8a2-5c5c-8fcd-1bcbbd6603e4","score":1.0,"metadata":{"text":"hilosophy\nFurther information: Peripatetic school The immediate influence of Aristotle's work was felt as the Lyceum grew into the Peripatetic school. Aristotle's students included Aristoxenus, Dicaearchus, Demetrius of Phalerum, Eudemos of Rhodes, Harpalus, Hephaestion, Mnason of Phocis, Nicomachus, and Theophrastus. Aristotle's influence over Alexander the Great is seen in the latter's bringing with him on his expedition a host of zoologists, botanists, and researchers. He had also learned a great deal","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"93123a68-d668-51de-8291-92162730dc87","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"26eb20ee-a203-5ad5-beaa-511cc526aa6e","score":1.0,"metadata":{"text":"scholastic philosophers. Alkindus greatly admired Aristotle's philosophy,[168] and Averroes spoke of Aristotle as the \"exemplar\" for all future philosophers.[169] Medieval Muslim scholars regularly described Aristotle as the \"First Teacher\".[167] The title was later used by Western philosophers (as in the famous poem of Dante) who were influenced by the tradition of Islamic philosophy.[170]\n\nMedieval Europe\nFurther information: Aristotelianism and Syllogism § Medieval","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"93123a68-d668-51de-8291-92162730dc87","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"a08fd1b4-4e6f-5487-9af6-df2f6cfe1048","score":1.0,"metadata":{"text":"those by James of Venice and William of Moerbeke. After the Scholastic Thomas Aquinas wrote his Summa Theologica, working from Moerbeke's translations and calling Aristotle \"The Philosopher\",[172] the demand for Aristotle's writings grew, and the Greek manuscripts returned to the West, stimulating a revival of Aristotelianism in Europe that continued into the Renaissance.[173] These thinkers blended Aristotelian philosophy with Christianity, bringing the thought of Ancient Greece into the Middle Ages.","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"93123a68-d668-51de-8291-92162730dc87","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}"</results></function_call><completion>Aristotle's contributions to philosophy, particularly his development of formal logic, had a profound influence on later thinkers across various cultures and eras. Here are some key ways in which his work influenced subsequent intellectual traditions:
+        <function_call><name>search</name><arguments>{"query":"Aristotle's influence on later thinkers in philosophy"}</arguments><results>"{"id":"b234931e-0cfb-5644-8f23-560a3097f5fe","score":1.0,"metadata":{"text":"ormation: List of writers influenced by Aristotle More than 2300 years after his death, Aristotle remains one of the most influential people who ever lived.[142][143][144] He contributed to almost every field of human knowledge then in existence, and he was the founder of many new fields. According to the philosopher Bryan Magee, \"it is doubtful whether any human being has ever known as much as he did\".[145]","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"9fbe403b-c11c-5aae-8ade-ef22980c3ad1","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"1827ac2c-2a06-5bc2-ad29-aa14b4d99540","score":1.0,"metadata":{"text":"subject of contemporary philosophical discussion. Aristotle's views profoundly shaped medieval scholarship. The influence of his physical science extended from late antiquity and the Early Middle Ages into the Renaissance, and was not replaced systematically until the Enlightenment and theories such as classical mechanics were developed. He influenced Judeo-Islamic philosophies during the Middle Ages, as well as Christian theology, especially the Neoplatonism of the Early Church and the scholastic tradition","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"9fbe403b-c11c-5aae-8ade-ef22980c3ad1","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"94718936-ea92-5e29-a5ee-d4a6bc037384","score":1.0,"metadata":{"text":"the scholastic tradition of the Catholic Church. Aristotle was revered among medieval Muslim scholars as \"The First Teacher\", and among medieval Christians like Thomas Aquinas as simply \"The Philosopher\", while the poet Dante called him \"the master of those who know\". His works contain the earliest known formal study of logic, and were studied by medieval scholars such as Peter Abelard and Jean Buridan. Aristotle's influence on logic continued well into the 19th century. In addition, his ethics, although","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"9fbe403b-c11c-5aae-8ade-ef22980c3ad1","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"16483f14-f8a2-5c5c-8fcd-1bcbbd6603e4","score":1.0,"metadata":{"text":"hilosophy\nFurther information: Peripatetic school The immediate influence of Aristotle's work was felt as the Lyceum grew into the Peripatetic school. Aristotle's students included Aristoxenus, Dicaearchus, Demetrius of Phalerum, Eudemos of Rhodes, Harpalus, Hephaestion, Mnason of Phocis, Nicomachus, and Theophrastus. Aristotle's influence over Alexander the Great is seen in the latter's bringing with him on his expedition a host of zoologists, botanists, and researchers. He had also learned a great deal","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"9fbe403b-c11c-5aae-8ade-ef22980c3ad1","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"26eb20ee-a203-5ad5-beaa-511cc526aa6e","score":1.0,"metadata":{"text":"scholastic philosophers. Alkindus greatly admired Aristotle's philosophy,[168] and Averroes spoke of Aristotle as the \"exemplar\" for all future philosophers.[169] Medieval Muslim scholars regularly described Aristotle as the \"First Teacher\".[167] The title was later used by Western philosophers (as in the famous poem of Dante) who were influenced by the tradition of Islamic philosophy.[170]\n\nMedieval Europe\nFurther information: Aristotelianism and Syllogism § Medieval","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"9fbe403b-c11c-5aae-8ade-ef22980c3ad1","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}","{"id":"a08fd1b4-4e6f-5487-9af6-df2f6cfe1048","score":1.0,"metadata":{"text":"those by James of Venice and William of Moerbeke. After the Scholastic Thomas Aquinas wrote his Summa Theologica, working from Moerbeke's translations and calling Aristotle \"The Philosopher\",[172] the demand for Aristotle's writings grew, and the Greek manuscripts returned to the West, stimulating a revival of Aristotelianism in Europe that continued into the Renaissance.[173] These thinkers blended Aristotelian philosophy with Christianity, bringing the thought of Ancient Greece into the Middle Ages.","title":"aristotle.txt","user_id":"2acb499e-8428-543b-bd85-0d9098718220","document_id":"9fbe403b-c11c-5aae-8ade-ef22980c3ad1","extraction_id":"69431c4a-30cf-504f-8fab-7dcfc7580c63","associatedQuery":"Aristotle's influence on later thinkers in philosophy"}}"</results></function_call><completion>Aristotle's contributions to philosophy, particularly his development of formal logic, had a profound influence on later thinkers across various cultures and eras. Here are some key ways in which his work influenced subsequent intellectual traditions:
 
 1. Medieval Islamic Philosophy: Aristotle was highly revered among medieval Muslim scholars, who referred to him as "The First Teacher." His works were extensively translated into Arabic and studied by philosophers such as Averroes and Avicenna. These scholars not only preserved Aristotle's works but also expanded upon them, influencing both Islamic and Western thought.
 

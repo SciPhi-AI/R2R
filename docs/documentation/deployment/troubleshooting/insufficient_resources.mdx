@@ -88,35 +88,25 @@ Look for error messages related to resource constraints.
 
 ## R2R-Specific Resource Considerations
 
-### 1. Neo4j Memory Configuration
-
-Neo4j can be memory-intensive. Adjust its memory settings in the Docker Compose file:
-
-```yaml
-environment:
-  - NEO4J_server_memory_pagecache_size=2G
-  - NEO4J_server_memory_heap_max__size=2G
-```
-
-### 2. Postgres with pgvector
+### 1. Postgres with pgvector
 
 Vector operations can be CPU-intensive. Ensure your instance has sufficient CPU resources, or consider using a managed database service.
 
-### 3. Ollama for Local LLM
+### 2. Ollama for Local LLM
 
 Local LLM inference can be very resource-intensive. Ensure your instance has:
 - At least 8GB of RAM (16GB+ recommended)
 - Sufficient disk space for model storage
 - A capable CPU or GPU for inference
 
-### 4. Hatchet Engine
+### 3. Hatchet Engine
 
 The Hatchet workflow engine may require significant resources depending on your workload. Monitor its resource usage and adjust as necessary.
 
 ## Optimizing Resource Usage
 
 1. **Use Resource Limits:** Set appropriate CPU and memory limits for each container.
-2. **Optimize Configurations:** Fine-tune application configs (e.g., Neo4j memory settings, Postgres work_mem).
+2. **Optimize Configurations:** Fine-tune application configs (e.g., Postgres work_mem).
 3. **Scale Horizontally:** Consider splitting services across multiple smaller instances instead of one large instance.
 4. **Use Managed Services:** For production, consider using managed services for databases and other resource-intensive components.
 5. **Monitor and Alert:** Set up monitoring and alerting for resource usage to catch issues early.

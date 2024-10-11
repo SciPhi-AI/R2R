@@ -1,0 +1,123 @@
+graphrag_triples_extraction_few_shot:
+  template: >
+    -Goal-
+    Given a text document, identify all entities and their entity types from the text and all relationships among the identified entities.
+    Given the text, extract up to {max_knowledge_triples} entity-relation triplets.
+    -Steps-
+    1. Identify all entities. For each identified entity, extract the following information:
+    - entity_name: Name of the entity, capitalized
+    - entity_type: Type of the entity. If the list below is not empty, only extract entities of the given types. If this list is empty, extract all entities.
+    {entity_types}
+    - entity_description: Comprehensive description of the entity's attributes and activities that is explicitly mentioned in the text.
+    Format each entity as ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>).
+    Output additional entities based on the entity_description if they contain more named entities. You will later use this to create relationships between them.
+    2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
+    For each pair of related entities, extract the following information:
+    - source_entity: name of the source entity, as identified in step 1
+    - target_entity: name of the target entity, as identified in step 1
+    - relation: relationship between source_entity and target_entity. If the list below is not empty, only extract relations of the given types. If this list is empty, extract all relations.
+    {relation_types}
+    - relationship_description: explanation as to why you think the source entity and the target entity are related to each other
+    - relationship_weight: a weight between 0 and 10 that represents the strength of the relationship between the source entity and the target entity
+    Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>$$$$<relationship_weight>)
+    3. Make sure that each entity has at least one relationship. If you are not able to find a relationship from the pair of entities above, first create a new entity based on the source entity description and then create a relationship connecting them.
+       Again, make sure that each entity has at least one relationship. If you don't do this, you will be fired.
+    3. When finished, output in the format in as given in the examples below. Do not repeat the same entity or relationship multiple times.
+
+    Example 1:
+    If the list is empty, extract all entities and relations.
+    Entity_types:
+    Relation_types:
+    Text:
+    The Verdantis's Central Institution is scheduled to meet on Monday and Thursday, with the institution planning to release its latest policy decision on Thursday at 1:30 p.m. PDT, followed by a press conference where Central Institution Chair Martin Smith will take questions. Investors expect the Market Strategy Committee to hold its benchmark interest rate steady in a range of 3.5%-3.75%.
+    ######################
+    Output:
+    ("entity"$$$$Central Institution$$$$Organization$$$$The central bank of Verdantis, responsible for monetary policy and setting interest rates)
+    ("entity"$$$$Martin Smith$$$$Person$$$$Chair of the Central Institution of Verdantis)
+    ("entity"$$$$Market Strategy Committee$$$$Organization$$$$Committee within the Central Institution that makes key decisions on monetary policy)
+    ("entity"$$$$Monday$$$$Time$$$$First meeting day of the Central Institution)
+    ("entity"$$$$Thursday$$$$Time$$$$Second meeting day of the Central Institution, when policy decisions are announced)
+    ("entity"$$$$1:30 PM PDT$$$$Time$$$$Scheduled time for the Central Institution's policy decision release on Thursday)
+    ("entity"$$$$Press Conference$$$$Event$$$$Media briefing held by the Central Institution following the policy decision release)
+    ("entity"$$$$Interest Rate$$$$Economic Concept$$$$Key monetary policy tool used by the Central Institution to influence the economy)
+    ("entity"$$$$3.5%-3.75%$$$$Economic Value$$$$Expected range for the benchmark interest rate)
+    ("relationship"$$$$Martin Smith$$$$Central Institution$$$$Chairs$$$$Martin Smith is the Chair of the Central Institution and will lead the press conference$$$$9)
+    ("relationship"$$$$Central Institution$$$$Press Conference$$$$Conducts$$$$The Central Institution conducts a press conference following its policy decision release$$$$9)
+    ("relationship"$$$$Market Strategy Committee$$$$Central Institution$$$$Part Of$$$$The Market Strategy Committee is a key decision-making body within the Central Institution$$$$9)
+    ("relationship"$$$$Market Strategy Committee$$$$Interest Rate$$$$Sets$$$$The Market Strategy Committee determines the benchmark interest rate$$$$9)
+    ("relationship"$$$$Central Institution$$$$Interest Rate$$$$Controls$$$$The Central Institution controls interest rates as part of its monetary policy$$$$9)
+    ("relationship"$$$$3.5%-3.75%$$$$Interest Rate$$$$Expected Range$$$$Investors anticipate the benchmark interest rate to remain within this range$$$$8)
+    ("relationship"$$$$Monday$$$$Central Institution$$$$Meeting Day$$$$The Central Institution holds its first meeting of the week on Monday$$$$7)
+    ("relationship"$$$$Thursday$$$$Central Institution$$$$Decision Day$$$$The Central Institution announces its policy decision on Thursday$$$$9)
+    ("relationship"$$$$1:30 PM PDT$$$$Central Institution$$$$Press Conference$$$$The policy decision release at 1:30 PM PDT is followed by the press conference$$$$8)
+
+    ######################
+    Example 2:
+    If the list is empty, extract all entities and relations.
+    Entity_types: Organization
+    Relation_types: Formerly Owned By
+
+    Text:
+    TechGlobal's (TG) stock skyrocketed in its opening day on the Global Exchange Thursday. But IPO experts warn that the semiconductor corporation's debut on the public markets isn't indicative of how other newly listed companies may perform.
+
+    TechGlobal, a formerly public company, was taken private by Vision Holdings in 2014. The well-established chip designer says it powers 85% of premium smartphones.
+    ######################
+    Output:
+    ("entity"$$$$TECHGLOBAL$$$$Organization$$$$TechGlobal is a stock now listed on the Global Exchange which powers 85% of premium smartphones)
+    ("entity"$$$$VISION HOLDINGS$$$$Organization$$$$Vision Holdings is a firm that previously owned TechGlobal)
+    ("relationship"$$$$TECHGLOBAL$$$$VISION HOLDINGS$$$$Formerly Owned By$$$$Vision Holdings formerly owned TechGlobal from 2014 until present$$$$5)
+
+    ######################
+    Example 3:
+    If the list is empty, extract all entities and relations.
+    Entity_types: Organization,Geo,Person
+    Relation_types: ""
+    Text:
+    Five Aurelians jailed for 8 years in Firuzabad and widely regarded as hostages are on their way home to Aurelia.
+
+    The swap orchestrated by Quintara was finalized when $8bn of Firuzi funds were transferred to financial institutions in Krohaara, the capital of Quintara.
+
+    The exchange initiated in Firuzabad's capital, Tiruzia, led to the four men and one woman, who are also Firuzi nationals, boarding a chartered flight to Krohaara.
+
+    They were welcomed by senior Aurelian officials and are now on their way to Aurelia's capital, Cashion.
+
+    The Aurelians include 39-year-old businessman Samuel Namara, who has been held in Tiruzia's Alhamia Prison, as well as journalist Durke Bataglani, 59, and environmentalist Meggie Tazbah, 53, who also holds Bratinas nationality.
+    ######################
+    Output:
+    ("entity"$$$$FIRUZABAD$$$$Geo$$$$Firuzabad held Aurelians as hostages)
+    ("entity"$$$$AURELIA$$$$Geo$$$$Country seeking to release hostages)
+    ("entity"$$$$QUINTARA$$$$Geo$$$$Country that negotiated a swap of money in exchange for hostages)
+    ("entity"$$$$TIRUZIA$$$$Geo$$$$Capital of Firuzabad where the Aurelians were being held)
+    ("entity"$$$$KROHAARA$$$$Geo$$$$Capital city in Quintara)
+    ("entity"$$$$CASHION$$$$Geo$$$$Capital city in Aurelia)
+    ("entity"$$$$SAMUEL NAMARA$$$$Person$$$$Aurelian who spent time in Tiruzia's Alhamia Prison)
+    ("entity"$$$$ALHAMIA PRISON$$$$Geo$$$$Prison in Tiruzia)
+    ("entity"$$$$DURKE BATAGLANI$$$$Person$$$$Aurelian journalist who was held hostage)
+    ("entity"$$$$MEGGIE TAZBAH$$$$Person$$$$Bratinas national and environmentalist who was held hostage)
+    ("relationship"$$$$FIRUZABAD$$$$AURELIA$$$$Negotiated Hostage Exchange$$$$Firuzabad negotiated a hostage exchange with Aurelia$$$$2)
+    ("relationship"$$$$QUINTARA$$$$AURELIA$$$$Negotiated Hostage Exchange$$$$Quintara brokered the hostage exchange between Firuzabad and Aurelia$$$$2)
+    ("relationship"$$$$QUINTARA$$$$FIRUZABAD$$$$Negotiated Hostage Exchange$$$$Quintara brokered the hostage exchange between Firuzabad and Aurelia$$$$2)
+    ("relationship"$$$$SAMUEL NAMARA$$$$ALHAMIA PRISON$$$$Held At Alhamia Prison$$$$Samuel Namara was a prisoner at Alhamia prison$$$$8)
+    ("relationship"$$$$SAMUEL NAMARA$$$$MEGGIE TAZBAH$$$$Exchanged Hostages$$$$Samuel Namara and Meggie Tazbah were exchanged in the same hostage release$$$$2)
+    ("relationship"$$$$SAMUEL NAMARA$$$$DURKE BATAGLANI$$$$Exchanged Hostages$$$$Samuel Namara and Durke Bataglani were exchanged in the same hostage release$$$$2)
+    ("relationship"$$$$MEGGIE TAZBAH$$$$DURKE BATAGLANI$$$$Exchanged Hostages$$$$Meggie Tazbah and Durke Bataglani were exchanged in the same hostage release$$$$2)
+    ("relationship"$$$$SAMUEL NAMARA$$$$FIRUZABAD$$$$Held As Hostage$$$$Samuel Namara was a hostage in Firuzabad$$$$2)
+    ("relationship"$$$$MEGGIE TAZBAH$$$$FIRUZABAD$$$$Held As Hostage$$$$Meggie Tazbah was a hostage in Firuzabad$$$$2)
+    ("relationship"$$$$DURKE BATAGLANI$$$$FIRUZABAD$$$$Held As Hostage$$$$Durke Bataglani was a hostage in Firuzabad$$$$2)
+
+    -Real Data-
+    ######################
+    If the list is empty, extract all entities and relations.
+    Entity_types: {entity_types}
+    Relation_types: {relation_types}
+
+    Text:
+    {input}
+    ######################
+    Output:
+
+  input_types:
+    max_knowledge_triples: int
+    input: str
+    entity_types: list[str]
+    relation_types: list[str]

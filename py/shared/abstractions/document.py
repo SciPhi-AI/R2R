@@ -116,20 +116,26 @@ class IngestionStatus(str, Enum):
     EMBEDDING = "embedding"
     STORING = "storing"
 
-    FAILURE = "failure"
+    FAILED = "failed"
     SUCCESS = "success"
 
 
-class RestructureStatus(str, Enum):
-    """Status of document processing."""
+class KGExtractionStatus(str, Enum):
+    """Status of KG Creation per document."""
 
     PENDING = "pending"
     PROCESSING = "processing"
-    ENRICHING = "enriching"
-    FAILURE = "failure"
     SUCCESS = "success"
-    ENRICHED = "enriched"
-    ENRICHMENT_FAILURE = "enrichment_failure"
+    FAILED = "failed"
+
+
+class KGEnrichmentStatus(str, Enum):
+    """Status of KG Enrichment per collection."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class DocumentInfo(R2RSerializable):
@@ -144,7 +150,7 @@ class DocumentInfo(R2RSerializable):
     version: str
     size_in_bytes: int
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    restructuring_status: RestructureStatus = RestructureStatus.PENDING
+    kg_extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
@@ -163,7 +169,7 @@ class DocumentInfo(R2RSerializable):
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "ingestion_status": self.ingestion_status.value,
-            "restructuring_status": self.restructuring_status.value,
+            "kg_extraction_status": self.kg_extraction_status.value,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,
@@ -181,13 +187,5 @@ class DocumentExtraction(R2RSerializable):
     metadata: dict
 
 
-class DocumentFragment(R2RSerializable):
-    """A fragment extracted from a document."""
-
-    id: UUID
-    extraction_id: UUID
-    document_id: UUID
-    user_id: UUID
-    collection_ids: list[UUID]
-    data: DataType
-    metadata: dict
+class RawChunk(R2RSerializable):
+    text: str

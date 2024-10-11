@@ -3,6 +3,11 @@ title: 'Authentication'
 description: 'Manage users in R2R with built-in authentication'
 ---
 
+<Note>
+Occasionally this SDK documentation falls out of date, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+</Note>
+
+
 ## User Authentication and Management
 
 R2R provides a comprehensive set of user authentication and management features, allowing you to implement secure and feature-rich authentication systems in your applications.
@@ -257,7 +262,8 @@ update_result = client.update_user(name="John Doe", bio="R2R enthusiast")
 Delete the user's account:
 
 ```python
-delete_result = client.delete_user("password123")
+user_id = register_response["results"]["id"] # input unique id here
+delete_result = client.delete_user(user_id, "password123")
 ```
 
 <AccordionGroup>

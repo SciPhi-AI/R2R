@@ -3,11 +3,13 @@ const fs = require("fs");
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
+let newCollectionId: string;
 
 /**
  * raskolnikov.txt should have an id of `f9f61fc8-079c-52d0-910a-c657958e385b`
  * karamozov.txt should have an id of `73749580-1ade-50c6-8fbe-a5e9e87783c8`
  * myshkin.txt should have an id of `2e05b285-2746-5778-9e4a-e293db92f3be`
+ * The default collection should have an id of `122fdf6a-e116-546b-a8f6-e4cb2e2c0a09`
  */
 
 /**
@@ -18,7 +20,7 @@ const baseUrl = "http://localhost:7272";
  *     X verifyEmail
  *     - login
  *     - logout
- *     X user
+ *     - user
  *     X updateUser
  *     - refreshAccessToken
  *     X changePassword
@@ -42,14 +44,14 @@ const baseUrl = "http://localhost:7272";
  *     - documentChunks
  *     X inspectKnowledgeGraph
  *     X collectionsOverview
- *     X createCollection
- *     X getCollection
- *     X updateCollection
- *     X deleteCollection
- *     X listCollections
+ *     - createCollection
+ *     - getCollection
+ *     - updateCollection
+ *     - deleteCollection
+ *     - listCollections
  *     X addUserToCollection
  *     X removeUserFromCollection
- *     X getUsersInCollection
+ *     - getUsersInCollection
  *     X getCollectionsForUser
  *     X assignDocumentToCollection
  *     X removeDocumentFromCollection
@@ -80,6 +82,10 @@ describe("r2rClient Integration Tests", () => {
     await expect(
       client.login("admin@example.com", "change_me_immediately"),
     ).resolves.not.toThrow();
+  });
+
+  test("User", async () => {
+    await expect(client.user()).resolves.not.toThrow();
   });
 
   test("Server stats", async () => {
@@ -149,7 +155,6 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
-  // TOOD: Fix in R2R, table logs has no column named run_id
   test("Agentic RAG response with streaming", async () => {
     const messages = [
       { role: "system", content: "You are a helpful assistant." },
@@ -221,6 +226,53 @@ describe("r2rClient Integration Tests", () => {
       client.documentChunks("73749580-1ade-50c6-8fbe-a5e9e87783c8"),
     ).resolves.not.toThrow();
   });
+
+  test("Collections overview", async () => {
+    await expect(client.collectionsOverview()).resolves.not.toThrow();
+  });
+
+  test("Create collection", async () => {
+    const response = await client.createCollection("test_collection", "test_description");
+    newCollectionId = response.results.collection_id;
+
+    expect(newCollectionId).toBeDefined();
+  });
+
+  test("Get default collection", async () => {
+    await expect(client.getCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")).resolves.not.toThrow();
+  });
+
+  test("Get newly created collection", async () => {
+    await expect(client.getCollection(newCollectionId)).resolves.not.toThrow();
+  });
+
+  test("Update collection", async () => {
+      await expect(
+        client.updateCollection(
+          newCollectionId,
+          "updated_test_collection",
+          "updated_test_description"
+        ),
+      ).resolves.not.toThrow();
+    });
+
+    test("List collections", async () => {
+      await expect(client.listCollections()).resolves.not.toThrow();
+    });
+
+    test("Delete collection", async () => {
+      await expect(
+        client.deleteCollection(newCollectionId),
+      ).resolves.not.toThrow();
+    });
+
+    test("Get users in collection", async () => {
+      await expect(client.getUsersInCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")).resolves.not.toThrow();
+    });
+
+    test("Get users in collection with pagination", async () => {
+      await expect(client.getUsersInCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", 10, 10)).resolves.not.toThrow();
+    });
 
   test("Clean up remaining documents", async () => {
     // Deletes karamozov.txt

@@ -4,7 +4,7 @@ from .app import *
 
 # from .app_entry import r2r_app
 from .assembly import *
-from .hatchet import *
+from .orchestration import *
 from .services import *
 
 __all__ = [
@@ -19,13 +19,9 @@ __all__ = [
     "IngestionRouter",
     "ManagementRouter",
     "RetrievalRouter",
-    "RestructureRouter",
+    "KGRouter",
     ## R2R APP
     "R2RApp",
-    ## R2R APP ENTRY
-    # "r2r_app",
-    ## R2R HATCHET
-    "r2r_hatchet",
     ## R2R ASSEMBLY
     # Builder
     "R2RBuilder",
@@ -41,5 +37,5 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "RestructureService",
+    "KgService",
 ]

@@ -9,15 +9,6 @@ R2R's `KGProvider` handles the creation, management, and querying of knowledge g
 
 For a practical, step-by-step guide on implementing knowledge graphs in R2R, including code examples and common use cases, see our [GraphRAG Cookbook](/cookbooks/graphrag).
 
-## Providers
-
-The default `Neo4jKGProvider` offers a complete knowledge graph solution.
-
-Key features:
-- Neo4j-based graph database
-- Entity and relationship extraction from text
-- Graph querying and traversal
-- Integration with vector search
 
 ## Configuration
 
@@ -27,36 +18,24 @@ These are located in the `r2r.toml` file, under the `[kg]` section.
 
 ```toml
 [kg]
-provider = "neo4j"
+provider = "postgres"
 batch_size = 256
-user = "your_neo4j_user"
-password = "your_neo4j_password"
-url = "your_neo4j_url"
-database = "your_neo4j_database"
 
   [kg.kg_creation_settings]
-    kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = ["Person", "Organization", "Location"] # if empty, all entities are extracted
     relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted
     max_knowledge_triples = 100
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for triplet extraction
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
-    generation_config = { model = "gpt-4o-mini" } # and other params, model used for node description and graph clustering
-    leiden_params = { max_levels = 10 } # more params here: https://neo4j.com/docs/graph-data-science/current/algorithms/leiden/
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = {}
 ```
 
-Alternatively, instead of setting `user`, `password`, `url`, and `database` in your `r2r.toml`, you can set these values using environment variables:
-
-```bash
-export NEO4J_USER=your_username
-export NEO4J_PASSWORD=your_password
-export NEO4J_URL=your_neo4j_url
-export NEO4J_DATABASE=neo4j
-```
 
 Environment variables take precedence over the config settings in case of conflicts. The R2R Docker includes configuration options that facilitate integration with a combined Postgres+pgvector database setup.
 
@@ -162,12 +141,6 @@ Common issues and solutions:
 1. **Ingestion Errors**: Check file formats and encoding.
 2. **Query Performance**: Optimize graph structure and use appropriate indexes.
 3. **Memory Issues**: Adjust batch sizes and implement pagination for large graphs.
-
-## Performance Considerations
-
-1. **Query Optimization**: Use efficient Cypher queries for Neo4j.
-2. **Embedding Caching**: Cache embeddings for frequently accessed entities.
-3. **Asynchronous Processing**: Use async methods for non-blocking operations.
 
 ## Conclusion
 

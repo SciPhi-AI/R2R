@@ -13,7 +13,6 @@ from .llm import GenerationConfig
 class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
-    fragment_id: UUID
     extraction_id: UUID
     document_id: UUID
     user_id: Optional[UUID]
@@ -23,14 +22,13 @@ class VectorSearchResult(R2RSerializable):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"VectorSearchResult(fragment_id={self.fragment_id}, extraction_id={self.extraction_id}, document_id={self.document_id}, score={self.score})"
+        return f"VectorSearchResult(id={self.extraction_id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
         return self.__str__()
 
     def as_dict(self) -> dict:
         return {
-            "fragment_id": self.fragment_id,
             "extraction_id": self.extraction_id,
             "document_id": self.document_id,
             "user_id": self.user_id,
@@ -42,7 +40,6 @@ class VectorSearchResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
             "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
@@ -64,7 +61,6 @@ class KGSearchResultType(str, Enum):
 
 class KGSearchMethod(str, Enum):
     LOCAL = "local"
-    GLOBAL = "global"
 
 
 class KGEntityResult(R2RSerializable):
@@ -95,13 +91,19 @@ class KGRelationshipResult(R2RSerializable):
 
 class KGCommunityResult(R2RSerializable):
     name: str
-    description: str
+    summary: str
+    rating: float
+    rating_explanation: str
+    findings: list[str]
     metadata: Optional[dict[str, Any]] = None
 
     class Config:
         json_schema_extra = {
             "name": "Community Name",
-            "description": "Community Description",
+            "summary": "Community Summary",
+            "rating": 9,
+            "rating_explanation": "Rating Explanation",
+            "findings": ["Finding 1", "Finding 2"],
             "metadata": {},
         }
 
@@ -125,8 +127,7 @@ class KGSearchResult(R2RSerializable):
         KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
     ]
     result_type: Optional[KGSearchResultType] = None
-    fragment_ids: Optional[list[UUID]] = None
-    document_ids: Optional[list[UUID]] = None
+    extraction_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
 
     class Config:
@@ -134,8 +135,7 @@ class KGSearchResult(R2RSerializable):
             "method": "local",
             "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
-            "fragment_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-            "document_ids": ["3e157b3a-8469-51db-90d9-52e7d896b49b"],
+            "extraction_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "metadata": {"associated_query": "What is the capital of France?"},
         }
 
@@ -204,6 +204,11 @@ class VectorSearchSettings(R2RSerializable):
         description="Whether to perform a hybrid search (combining vector and keyword search)",
     )
     filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
+        deprecated=True,
+    )
+    search_filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Filters to apply to the vector search",
     )
@@ -282,8 +287,35 @@ class VectorSearchSettings(R2RSerializable):
         ]
         return dump
 
+    def __init__(self, **data):
+        # Either filters or search filters is supported
+        data["filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        data["search_filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        super().__init__(**data)
+
 
 class KGSearchSettings(R2RSerializable):
+
+    filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
+        deprecated=True,
+    )
+    search_filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
+    )
+
+    selected_collection_ids: list[UUID] = Field(
+        default_factory=list,
+        description="Collection IDs to search for",
+    )
 
     graphrag_map_system_prompt: str = Field(
         default="graphrag_map_system_prompt",
@@ -308,6 +340,7 @@ class KGSearchSettings(R2RSerializable):
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph search.",
     )
+
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []
@@ -323,7 +356,7 @@ class KGSearchSettings(R2RSerializable):
         json_encoders = {UUID: str}
         json_schema_extra = {
             "use_kg_search": True,
-            "kg_search_type": "global",
+            "kg_search_type": "local",
             "kg_search_level": "0",
             "generation_config": GenerationConfig.Config.json_schema_extra,
             "max_community_description_length": 65536,
@@ -334,3 +367,15 @@ class KGSearchSettings(R2RSerializable):
                 "__Community__": 20,
             },
         }
+
+    def __init__(self, **data):
+        # Either filters or search filters is supported
+        data["filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        data["search_filters"] = {
+            **data.get("filters", {}),
+            **data.get("search_filters", {}),
+        }
+        super().__init__(**data)

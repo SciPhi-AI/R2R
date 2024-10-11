@@ -91,14 +91,13 @@ class DocumentOverviewResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     ingestion_status: str
-    restructuring_status: str
+    kg_extraction_status: str
     version: str
     collection_ids: list[UUID]
     metadata: dict[str, Any]
 
 
 class DocumentChunkResponse(BaseModel):
-    fragment_id: UUID
     extraction_id: UUID
     document_id: UUID
     user_id: UUID
@@ -152,11 +151,12 @@ WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
 WrappedCollectionOverviewResponse = ResultsWrapper[
     list[CollectionOverviewResponse]
 ]
-WrappedAddUserResponse = ResultsWrapper[AddUserResponse]
+WrappedAddUserResponse = ResultsWrapper[None]
 WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedUserCollectionResponse = PaginatedResultsWrapper[
-    list[CollectionOverviewResponse]
+    list[CollectionResponse]
 ]
 WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
+WrappedDeleteResponse = ResultsWrapper[None]

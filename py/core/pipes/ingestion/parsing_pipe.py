@@ -7,13 +7,14 @@ from core.base import (
     Document,
     DocumentExtraction,
     FileProvider,
-    ParsingProvider,
+    IngestionConfig,
     PipeType,
     RunLoggingSingleton,
-    generate_id_from_label,
 )
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
+from core.base.providers.ingestion import IngestionProvider
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class ParsingPipe(AsyncPipe):
 
     def __init__(
         self,
-        parsing_provider: ParsingProvider,
+        ingestion_provider: IngestionProvider,
         file_provider: FileProvider,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.INGESTOR,
@@ -39,7 +40,7 @@ class ParsingPipe(AsyncPipe):
             *args,
             **kwargs,
         )
-        self.parsing_provider = parsing_provider
+        self.ingestion_provider = ingestion_provider
         self.file_provider = file_provider
 
     async def _parse(
@@ -47,21 +48,30 @@ class ParsingPipe(AsyncPipe):
         document: Document,
         run_id: UUID,
         version: str,
+        ingestion_config_override: Optional[dict],
     ) -> AsyncGenerator[DocumentExtraction, None]:
         try:
+            ingestion_config_override = ingestion_config_override or {}
+            override_provider = ingestion_config_override.pop("provider", None)
+            if (
+                override_provider
+                and override_provider
+                != self.ingestion_provider.config.provider
+            ):
+                raise ValueError(
+                    f"Provider '{override_provider}' does not match ingestion provider '{self.ingestion_provider.config.provider}'."
+                )
             if result := await self.file_provider.retrieve_file(document.id):
                 file_name, file_wrapper, file_size = result
 
             with file_wrapper as file_content_stream:
                 file_content = file_content_stream.read()
 
-            async for extraction in self.parsing_provider.parse(  # type: ignore
-                file_content, document
+            async for extraction in self.ingestion_provider.parse(  # type: ignore
+                file_content, document, ingestion_config_override
             ):
-                extraction_id = generate_id_from_label(
-                    f"{extraction.id}-{version}"
-                )
-                extraction.id = extraction_id
+                id = generate_extraction_id(extraction.id, version=version)
+                extraction.id = id
                 extraction.metadata["version"] = version
                 yield extraction
         except Exception as e:
@@ -78,7 +88,12 @@ class ParsingPipe(AsyncPipe):
         *args,
         **kwargs,
     ) -> AsyncGenerator[DocumentExtraction, None]:
+        ingestion_config = kwargs.get("ingestion_config")
+
         async for result in self._parse(
-            input.message, run_id, input.message.metadata.get("version", "v0")
+            input.message,
+            run_id,
+            input.message.metadata.get("version", "v0"),
+            ingestion_config_override=ingestion_config,
         ):
             yield result

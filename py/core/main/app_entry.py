@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown
+    # # Shutdown
     scheduler.shutdown()
 
 
@@ -67,8 +67,8 @@ config_name = os.getenv("CONFIG_NAME", None)
 config_path = os.getenv("CONFIG_PATH", None)
 if not config_path and not config_name:
     config_name = "default"
-host = os.getenv("HOST", "0.0.0.0")
-port = int(os.getenv("PORT", "7272"))
+host = os.getenv("R2R_HOST", os.getenv("HOST", "0.0.0.0"))
+port = int(os.getenv("R2R_PORT", (os.getenv("PORT", "7272"))))
 
 logger.info(
     f"Environment CONFIG_NAME: {'None' if config_name is None else config_name}"

@@ -52,10 +52,6 @@
     {
       "name": "Cookbooks",
       "url": "cookbooks"
-    },
-    {
-      "name": "SciPhi Cloud",
-      "url": "sciphi-cloud"
     }
   ],
   "anchors": [
@@ -82,8 +78,23 @@
           "icon": "bars-progress",
           "pages" : [
             "documentation/installation/overview",
-            "documentation/installation/docker",
-            "documentation/installation/local-system"
+            {
+              "group": "Light",
+              "icon": "feather",
+              "pages": [
+                "documentation/installation/light/local-system",
+                "documentation/installation/light/docker"
+              ]
+            },
+            {
+              "group": "Full",
+              "icon": "gem",
+              "pages": [
+                "documentation/installation/full/docker",
+                "documentation/installation/full/local-system"
+              ]
+            }
+
           ]
         },
         "documentation/quickstart",
@@ -116,7 +127,8 @@
             },
             "documentation/api-reference"
           ]
-        }
+        },
+        "documentation/glossary"
       ]
     },
     {
@@ -173,7 +185,8 @@
           "pages": [
             "documentation/deployment/azure",
             "documentation/deployment/aws",
-            "documentation/deployment/gcp"
+            "documentation/deployment/gcp",
+            "documentation/deployment/sciphi"
           ]
         },
         {
@@ -226,8 +239,6 @@
               "pages": [
                 "documentation/deployment/troubleshooting/vector_store_issues",
                 "documentation/deployment/troubleshooting/connection_strings",
-                "documentation/deployment/troubleshooting/graph_db",
-                "documentation/deployment/troubleshooting/neo4j",
                 "documentation/deployment/troubleshooting/workflows"
               ]
             },
@@ -281,6 +292,7 @@
       "group": "Document Ingestion",
       "pages": [
         "api-reference/endpoint/ingest_files",
+        "api-reference/endpoint/ingest_chunks",
         "api-reference/endpoint/update_files"
       ]
     },
@@ -365,16 +377,6 @@
       "group": "Status",
       "pages": [
         "api-reference/endpoint/health"
-      ]
-    },
-    {
-      "group": "SciPhi Cloud",
-      "pages": [
-        "sciphi-cloud/introduction",
-        "sciphi-cloud/deploy",
-        "sciphi-cloud/projects",
-        "sciphi-cloud/quickstart",
-        "sciphi-cloud/security"
       ]
     },
     {

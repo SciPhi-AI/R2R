@@ -36,7 +36,7 @@ health_response = client.health()
 
 4. Login (Optional):
 ```python
-# client.register("me@email.com", "my_password")
+client.register("me@email.com", "my_password")
 # client.verify_email("me@email.com", "my_verification_code")
 client.login("me@email.com", "my_password")
 ```

@@ -7,18 +7,17 @@ from uuid import UUID
 from core.base import (
     Document,
     DocumentExtraction,
-    DocumentFragment,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
     R2RException,
+    RawChunk,
     RunLoggingSingleton,
     RunManager,
     VectorEntry,
     decrement_version,
 )
 from core.base.api.models import UserResponse
-from core.base.providers import ChunkingConfig
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -79,7 +78,7 @@ class IngestionService(Service):
         metadata = metadata or {}
 
         version = version or STARTING_VERSION
-        document_info = self._create_document_info(
+        document_info = self._create_document_info_from_file(
             document_id,
             user,
             file_data["filename"],
@@ -93,10 +92,11 @@ class IngestionService(Service):
                 filter_user_ids=[user.id],
                 filter_document_ids=[document_id],
             )
-        )
-        if documents := existing_document_info.get("documents", []):
-            existing_doc = documents[0]
-            if is_update:
+        )["results"]
+
+        if len(existing_document_info) > 0:
+            existing_doc = existing_document_info[0]
+            if not is_update:
                 if (
                     existing_doc.version >= version
                     and existing_doc.ingestion_status
@@ -104,13 +104,13 @@ class IngestionService(Service):
                 ):
                     raise R2RException(
                         status_code=409,
-                        message=f"Must increment version number before attempting to overwrite document {document_id}.",
+                        message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
                     )
-            elif existing_doc.ingestion_status != IngestionStatus.FAILURE:
-                raise R2RException(
-                    status_code=409,
-                    message=f"Document {document_id} was already ingested and is not in a failed state.",
-                )
+                elif existing_doc.ingestion_status != IngestionStatus.FAILED:
+                    raise R2RException(
+                        status_code=409,
+                        message=f"Document {document_id} was already ingested and is not in a failed state.",
+                    )
 
         await self.providers.database.relational.upsert_documents_overview(
             document_info
@@ -120,7 +120,7 @@ class IngestionService(Service):
             "info": document_info,
         }
 
-    def _create_document_info(
+    def _create_document_info_from_file(
         self,
         document_id: UUID,
         user: UserResponse,
@@ -153,10 +153,36 @@ class IngestionService(Service):
             updated_at=datetime.now(),
         )
 
-    async def parse_file(
+    def _create_document_info_from_chunks(
         self,
-        document_info: DocumentInfo,
-    ) -> AsyncGenerator[DocumentFragment, None]:
+        document_id: UUID,
+        user: UserResponse,
+        chunks: list[RawChunk],
+        metadata: dict,
+        version: str,
+    ) -> DocumentInfo:
+        metadata = metadata or {}
+        metadata["version"] = version
+
+        return DocumentInfo(
+            id=document_id,
+            user_id=user.id,
+            collection_ids=metadata.get("collection_ids", []),
+            type=DocumentType.TXT,
+            title=metadata.get("title", f"Ingested Chunks - {document_id}"),
+            metadata=metadata,
+            version=version,
+            size_in_bytes=sum(
+                len(chunk.text.encode("utf-8")) for chunk in chunks
+            ),
+            ingestion_status=IngestionStatus.PENDING,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+
+    async def parse_file(
+        self, document_info: DocumentInfo, ingestion_config: dict
+    ) -> AsyncGenerator[DocumentExtraction, None]:
         return await self.pipes.parsing_pipe.run(
             input=self.pipes.parsing_pipe.Input(
                 message=Document(
@@ -172,24 +198,7 @@ class IngestionService(Service):
             ),
             state=None,
             run_manager=self.run_manager,
-        )
-
-    async def chunk_document(
-        self,
-        parsed_documents: list[dict],
-        chunking_config: ChunkingConfig,
-    ) -> AsyncGenerator[DocumentFragment, None]:
-
-        return await self.pipes.chunking_pipe.run(
-            input=self.pipes.chunking_pipe.Input(
-                message=[
-                    DocumentExtraction.from_dict(chunk)
-                    for chunk in parsed_documents
-                ]
-            ),
-            state=None,
-            run_manager=self.run_manager,
-            chunking_config=chunking_config,
+            ingestion_config=ingestion_config,
         )
 
     async def embed_document(
@@ -199,7 +208,7 @@ class IngestionService(Service):
         return await self.pipes.embedding_pipe.run(
             input=self.pipes.embedding_pipe.Input(
                 message=[
-                    DocumentFragment.from_dict(chunk)
+                    DocumentExtraction.from_dict(chunk)
                     for chunk in chunked_documents
                 ]
             ),
@@ -274,6 +283,53 @@ class IngestionService(Service):
             results.append(res.model_dump_json())
         return results
 
+    @telemetry_event("IngestChunks")
+    async def ingest_chunks_ingress(
+        self,
+        document_id: UUID,
+        metadata: Optional[dict],
+        chunks: list[RawChunk],
+        user: UserResponse,
+        *args: Any,
+        **kwargs: Any,
+    ) -> DocumentInfo:
+        if not chunks:
+            raise R2RException(
+                status_code=400, message="No chunks provided for ingestion."
+            )
+
+        metadata = metadata or {}
+        version = STARTING_VERSION
+
+        document_info = self._create_document_info_from_chunks(
+            document_id,
+            user,
+            chunks,
+            metadata,
+            version,
+        )
+
+        existing_document_info = (
+            await self.providers.database.relational.get_documents_overview(
+                filter_user_ids=[user.id],
+                filter_document_ids=[document_id],
+            )
+        )["results"]
+
+        if len(existing_document_info) > 0:
+            existing_doc = existing_document_info[0]
+            if existing_doc.ingestion_status != IngestionStatus.FAILED:
+                raise R2RException(
+                    status_code=409,
+                    message=f"Document {document_id} was already ingested and is not in a failed state.",
+                )
+
+        await self.providers.database.relational.upsert_documents_overview(
+            document_info
+        )
+
+        return document_info
+
 
 class IngestionServiceAdapter:
     @staticmethod
@@ -289,7 +345,6 @@ class IngestionServiceAdapter:
 
     @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
-        print('data["chunking_config"] = ', data["chunking_config"])
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadata": data["metadata"],
@@ -297,14 +352,19 @@ class IngestionServiceAdapter:
                 UUID(data["document_id"]) if data["document_id"] else None
             ),
             "version": data.get("version"),
-            "chunking_config": (
-                ChunkingConfig.from_dict(data["chunking_config"])
-                if data["chunking_config"]
-                else None
-            ),
+            "ingestion_config": data["ingestion_config"] or {},
             "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],
+        }
+
+    @staticmethod
+    def parse_ingest_chunks_input(data: dict) -> dict:
+        return {
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+            "metadata": data["metadata"],
+            "document_id": data["document_id"],
+            "chunks": [RawChunk.from_dict(chunk) for chunk in data["chunks"]],
         }
 
     @staticmethod
@@ -313,11 +373,7 @@ class IngestionServiceAdapter:
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "document_ids": [UUID(doc_id) for doc_id in data["document_ids"]],
             "metadatas": data["metadatas"],
-            "chunking_config": (
-                ChunkingConfig.from_dict(data["chunking_config"])
-                if data["chunking_config"]
-                else None
-            ),
+            "ingestion_config": data["ingestion_config"],
             "file_sizes_in_bytes": data["file_sizes_in_bytes"],
             "file_datas": data["file_datas"],
         }

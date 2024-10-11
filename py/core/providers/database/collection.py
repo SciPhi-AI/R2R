@@ -2,11 +2,15 @@ import json
 import logging
 from datetime import datetime
 from typing import Optional, Union
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from core.base import R2RException
+from core.base import R2RException, generate_default_user_collection_id
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
+from core.utils import (
+    generate_collection_id_from_name,
+    generate_default_user_collection_id,
+)
 
 from .base import DatabaseMixin
 
@@ -20,11 +24,37 @@ class CollectionMixin(DatabaseMixin):
             collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
+            kg_enrichment_status TEXT DEFAULT 'PENDING',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
         await self.execute_query(query)
+
+    async def create_default_collection(
+        self, user_id: Optional[UUID] = None
+    ) -> CollectionResponse:
+        """Create a default collection if it doesn't exist."""
+        config = self.get_config()
+
+        if user_id:
+            default_collection_uuid = generate_default_user_collection_id(
+                user_id
+            )
+        else:
+            default_collection_uuid = generate_collection_id_from_name(
+                config.default_collection_name
+            )
+
+        if not await self.collection_exists(default_collection_uuid):
+            logger.info("Initializing a new default collection...")
+            return await self.create_collection(
+                name=config.default_collection_name,
+                description=config.default_collection_description,
+                collection_id=default_collection_uuid,
+            )
+
+        return await self.get_collection(default_collection_uuid)
 
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
@@ -32,19 +62,28 @@ class CollectionMixin(DatabaseMixin):
             SELECT 1 FROM {self._get_table_name('collections')}
             WHERE collection_id = $1
         """
-        result = await self.execute_query(query, [collection_id])
-        return bool(result)
+        result = await self.fetchrow_query(query, [collection_id])
+        return result is not None
 
     async def create_collection(
-        self, name: str, description: str = ""
+        self,
+        name: str,
+        description: str = "",
+        collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
         current_time = datetime.utcnow()
         query = f"""
-            INSERT INTO {self._get_table_name('collections')} (name, description, created_at, updated_at)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO {self._get_table_name('collections')} (collection_id, name, description, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING collection_id, name, description, created_at, updated_at
         """
-        params = [name, description, current_time, current_time]
+        params = [
+            collection_id or uuid4(),
+            name,
+            description,
+            current_time,
+            current_time,
+        ]
 
         try:
             async with self.pool.acquire() as conn:  # type: ignore
@@ -137,23 +176,53 @@ class CollectionMixin(DatabaseMixin):
         )
 
     async def delete_collection(self, collection_id: UUID) -> None:
-        # Remove collection_id from users
-        user_update_query = f"""
-            UPDATE {self._get_table_name('users')}
-            SET collection_ids = array_remove(collection_ids, $1)
-            WHERE $1 = ANY(collection_ids)
-        """
-        await self.execute_query(user_update_query, [collection_id])
+        async with self.pool.acquire() as conn:  # type: ignore
+            async with conn.transaction():
+                try:
+                    # Remove collection_id from users
+                    user_update_query = f"""
+                        UPDATE {self._get_table_name('users')}
+                        SET collection_ids = array_remove(collection_ids, $1)
+                        WHERE $1 = ANY(collection_ids)
+                    """
+                    await conn.execute(user_update_query, collection_id)
 
-        # Delete the collection
-        delete_query = f"""
-            DELETE FROM {self._get_table_name('collections')}
-            WHERE collection_id = $1
-        """
-        result = await self.execute_query(delete_query, [collection_id])
+                    # Remove collection_id from documents
+                    document_update_query = f"""
+                        WITH updated AS (
+                            UPDATE {self._get_table_name('document_info')}
+                            SET collection_ids = array_remove(collection_ids, $1)
+                            WHERE $1 = ANY(collection_ids)
+                            RETURNING 1
+                        )
+                        SELECT COUNT(*) AS affected_rows FROM updated
+                    """
+                    result = await conn.fetchrow(
+                        document_update_query, collection_id
+                    )
+                    affected_rows = result["affected_rows"]
 
-        if result == "DELETE 0":
-            raise R2RException(status_code=404, message="Collection not found")
+                    # Delete the collection
+                    delete_query = f"""
+                        DELETE FROM {self._get_table_name('collections')}
+                        WHERE collection_id = $1
+                        RETURNING collection_id
+                    """
+                    deleted = await conn.fetchrow(delete_query, collection_id)
+
+                    if not deleted:
+                        raise R2RException(
+                            status_code=404, message="Collection not found"
+                        )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error deleting collection {collection_id}: {str(e)}"
+                    )
+                    raise R2RException(
+                        status_code=500,
+                        message=f"An error occurred while deleting the collection: {str(e)}",
+                    )
 
     async def list_collections(
         self, offset: int = 0, limit: int = -1
@@ -357,8 +426,10 @@ class CollectionMixin(DatabaseMixin):
         return {"results": collections, "total_entries": total_entries}
 
     async def assign_document_to_collection(
-        self, document_id: UUID, collection_id: UUID
-    ) -> None:
+        self,
+        document_id: UUID,
+        collection_id: UUID,
+    ) -> UUID:
         """
         Assign a document to a collection.
 
@@ -407,6 +478,8 @@ class CollectionMixin(DatabaseMixin):
                     status_code=409,
                     message="Document is already assigned to the collection",
                 )
+
+            return collection_id
 
         except R2RException:
             # Re-raise R2RExceptions as they are already handled

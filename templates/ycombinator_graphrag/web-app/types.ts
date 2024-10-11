@@ -354,7 +354,7 @@ export interface KGSearchResult {
   method: 'local' | 'global';
   content: any;
   result_type: 'entity' | 'relationship' | 'community' | 'global';
-  fragment_ids: string[];
+  extraction_ids: string[];
   document_ids: string[];
   metadata: Record<string, any>;
 }

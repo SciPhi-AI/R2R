@@ -6,8 +6,6 @@ icon: 'display'
 
 R2R offers an [open-source React+Next.js application](https://github.com/SciPhi-AI/R2R-Application) designed to give developers an administrative portal for their R2R deployment, and users an application to communicate with out of the box.
 
-In addition, R2R comes with an orchestration GUI powered by Hatchet, which you can learn about [here](/cookbooks/orchestration).
-
 ## Setup
 
 ### Install PNPM
@@ -36,7 +34,7 @@ After installation, you may need to add PNPM to your system's PATH.
 
 ### Installing and Running the R2R Dashboard
 
-If you're running R2R with the Docker, you already have the R2R dashboard running! Just navigate to [http://localhost:3000](http://localhost:3000).
+If you're running R2R with the Docker, you already have the R2R application running! Just navigate to [http://localhost:7273](http://localhost:7273).
 
 If you're running R2R outside of Docker, run the following commands to install the R2R Dashboard.
 
@@ -74,15 +72,27 @@ By default, an R2R instance is hosted on port 7272. The login page will include 
 
 ### Documents
 
-The documents page provides an overview of uploaded documents and their metadata. You can upload new documents and update or delete existing ones.
+The documents page provides an overview of uploaded documents and their metadata. You can upload new documents and update, download, or delete existing ones. Additionally, you can view information about each document, including the documents' chunks and previews of PDFs.
 
 ![Documents Page](/images/oss_dashboard_documents.png)
 
-### Playground
+### Collections
 
-The playground allows streaming RAG responses with different models and configurable settings.
+Collections allow users to create and share sets of documents. The collections page provides a place to manage your existing collections or create new collections.
 
-![Playground Interface](/images/playground.png)
+![Collections Page](/images/oss_collections_page.png)
+
+### Chat
+
+In the chat page, you can stream RAG responses with different models and configurable settings. You can interact with both the RAG Agent and RAG endpoints here.
+
+![Chat Interface](/images/chat.png)
+
+### Users
+
+Manage your users and gain insight into their interactions.
+
+![Users Page](/images/users.png)
 
 ### Logs
 
