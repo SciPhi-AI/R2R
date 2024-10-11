@@ -246,6 +246,7 @@ def llm_cost_per_million_tokens(
 def validate_uuid(uuid_str: str) -> UUID:
     return UUID(uuid_str)
 
+
 def update_settings_from_dict(server_settings, settings_dict: dict):
     """
     Updates a settings object with values from a dictionary.
@@ -256,11 +257,13 @@ def update_settings_from_dict(server_settings, settings_dict: dict):
             if isinstance(value, dict):
                 for k, v in value.items():
                     if isinstance(getattr(settings, key), dict):
-                        getattr(settings, key)[k] = v 
+                        getattr(settings, key)[k] = v
                     else:
                         setattr(getattr(settings, key), k, v)
             else:
                 setattr(settings, key, value)
 
-    import pdb; pdb.set_trace()
+    import pdb
+
+    pdb.set_trace()
     return settings

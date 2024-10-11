@@ -105,7 +105,7 @@ class KGRouter(BaseRouter):
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
-            # Apply runtime settings overrides 
+            # Apply runtime settings overrides
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
@@ -170,7 +170,7 @@ class KGRouter(BaseRouter):
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
-            # Apply runtime settings overrides 
+            # Apply runtime settings overrides
             server_kg_enrichment_settings = (
                 self.service.providers.kg.config.kg_enrichment_settings
             )

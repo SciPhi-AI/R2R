@@ -971,7 +971,7 @@ class PostgresKGProvider(KGProvider):
         params.extend([offset, limit])
 
         query = f"""
-            SELECT id, name, description
+            SELECT id, name, description, extraction_ids, document_id
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
