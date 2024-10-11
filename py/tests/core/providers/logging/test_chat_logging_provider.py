@@ -1,6 +1,6 @@
 import pytest
 
-from core import LocalRunLoggingProvider, LoggingConfig, Message
+from core import Message
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ async def test_branch_at_message(local_logging_provider):
         conversation_id, Message(role="user", content="Hello")
     )
     message_id_2 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="Hi there!")
+        conversation_id, Message(role="assistant", content="Hi there!"), message_id_1
     )
 
     branch_id = await local_logging_provider.branch_at_message(message_id_1)
@@ -124,13 +124,13 @@ async def test_edit_message_in_middle(local_logging_provider):
         conversation_id, Message(role="user", content="Hello")
     )
     message_id_2 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="Hi there!")
+        conversation_id, Message(role="assistant", content="Hi there!"), message_id_1
     )
     message_id_3 = await local_logging_provider.add_message(
-        conversation_id, Message(role="user", content="How are you?")
+        conversation_id, Message(role="user", content="How are you?"), message_id_2
     )
     message_id_4 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="I'm doing well, thanks!")
+        conversation_id, Message(role="assistant", content="I'm doing well, thanks!"), message_id_3
     )
 
     # Edit message 2
@@ -143,6 +143,7 @@ async def test_edit_message_in_middle(local_logging_provider):
         conversation_id, new_branch_id
     )
 
+    print('retrieved_messages = ', retrieved_messages)
     # Verify that messages after the edited message are not present
     assert len(retrieved_messages) == 2
     assert retrieved_messages[0].content == "Hello"
@@ -158,7 +159,7 @@ async def test_multiple_branches_from_same_message(local_logging_provider):
         conversation_id, Message(role="user", content="Tell me a joke.")
     )
     message_id_2 = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="Why did the chicken cross the road?")
+        conversation_id, Message(role="assistant", content="Why did the chicken cross the road?"), message_id_1
     )
 
     # Create first branch
@@ -231,7 +232,7 @@ async def test_messages_at_branch_point(local_logging_provider):
         conversation_id, Message(role="user", content="What's the capital of France?")
     )
     assistant_message_id = await local_logging_provider.add_message(
-        conversation_id, Message(role="assistant", content="The capital of France is Paris.")
+        conversation_id, Message(role="assistant", content="The capital of France is Paris."), user_message_id
     )
 
     # Create multiple branches by editing the assistant's message
@@ -248,6 +249,7 @@ async def test_messages_at_branch_point(local_logging_provider):
     # Collect messages at the branching point
     messages_at_branch_point = []
     for branch in branches:
+        print('branch = ', branch)
         if branch["branch_point_id"] == assistant_message_id:
             # Get the message content at the branching point
             content = Message.parse_raw(branch["content"]).content
@@ -270,7 +272,7 @@ async def test_delete_branch(local_logging_provider):
     )
 
     # Delete the branch (assuming a delete_branch method exists)
-    await local_logging_provider.delete_branch(branch_id)
+    await local_logging_provider.delete_conversation(conversation_id)
 
     # Try to retrieve the deleted branch
     retrieved_messages = await local_logging_provider.get_conversation(

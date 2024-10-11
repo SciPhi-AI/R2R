@@ -549,6 +549,36 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         await self.conn.commit()
         return new_branch_id
 
+    async def delete_conversation(self, conversation_id: str):
+        # Ensure the connection is initialized
+        if not self.conn:
+            raise ValueError("Initialize the connection pool before attempting to delete.")
+
+        # Begin a transaction
+        async with self.conn.execute("BEGIN TRANSACTION"):
+            # Delete all message branches associated with the conversation
+            await self.conn.execute(
+                "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)",
+                (conversation_id,)
+            )
+            # Delete all branches associated with the conversation
+            await self.conn.execute(
+                "DELETE FROM branches WHERE conversation_id = ?",
+                (conversation_id,)
+            )
+            # Delete all messages associated with the conversation
+            await self.conn.execute(
+                "DELETE FROM messages WHERE conversation_id = ?",
+                (conversation_id,)
+            )
+            # Finally, delete the conversation itself
+            await self.conn.execute(
+                "DELETE FROM conversations WHERE id = ?",
+                (conversation_id,)
+            )
+            # Commit the transaction
+            await self.conn.commit()
+
     async def close(self):
         await self.conn.commit()
         await self.conn.close()
