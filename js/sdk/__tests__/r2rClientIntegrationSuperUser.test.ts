@@ -9,6 +9,8 @@ let newCollectionId: string;
  * raskolnikov.txt should have an id of `f9f61fc8-079c-52d0-910a-c657958e385b`
  * karamozov.txt should have an id of `73749580-1ade-50c6-8fbe-a5e9e87783c8`
  * myshkin.txt should have an id of `2e05b285-2746-5778-9e4a-e293db92f3be`
+ * The first ingested chunk should have an id of `731030c6-9244-5cfc-a9fd-81e4eb356cd3`
+ * The second ingested chunk should have an id of `bd2cbead-66e0-57bc-acea-2c34711a39b5`
  * The default collection should have an id of `122fdf6a-e116-546b-a8f6-e4cb2e2c0a09`
  */
 
@@ -30,6 +32,7 @@ let newCollectionId: string;
  *    Ingestion:
  *     - ingestFiles
  *     - updateFiles
+ *     - ingestChunks
  *    Management:
  *     - serverStats
  *     X updatePrompt
@@ -119,6 +122,22 @@ describe("r2rClient Integration Tests", () => {
         document_ids: ["2e05b285-2746-5778-9e4a-e293db92f3be"],
         metadatas: [{ title: "updated_karamozov.txt" }],
       }),
+    ).resolves.not.toThrow();
+  });
+
+  test("Ingest chunks with no id or metadata", async () => {
+    await expect(
+      client.ingestChunks([{ text: "test chunks" }]),
+    ).resolves.not.toThrow();
+  });
+
+  test("Ingest chunks", async () => {
+    await expect(
+      client.ingestChunks(
+        [{ text: "chunk 1" }, { text: "chunk 2" }],
+        undefined,
+        { source: "example" },
+      ),
     ).resolves.not.toThrow();
   });
 
@@ -232,14 +251,19 @@ describe("r2rClient Integration Tests", () => {
   });
 
   test("Create collection", async () => {
-    const response = await client.createCollection("test_collection", "test_description");
+    const response = await client.createCollection(
+      "test_collection",
+      "test_description",
+    );
     newCollectionId = response.results.collection_id;
 
     expect(newCollectionId).toBeDefined();
   });
 
   test("Get default collection", async () => {
-    await expect(client.getCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")).resolves.not.toThrow();
+    await expect(
+      client.getCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"),
+    ).resolves.not.toThrow();
   });
 
   test("Get newly created collection", async () => {
@@ -247,32 +271,40 @@ describe("r2rClient Integration Tests", () => {
   });
 
   test("Update collection", async () => {
-      await expect(
-        client.updateCollection(
-          newCollectionId,
-          "updated_test_collection",
-          "updated_test_description"
-        ),
-      ).resolves.not.toThrow();
-    });
+    await expect(
+      client.updateCollection(
+        newCollectionId,
+        "updated_test_collection",
+        "updated_test_description",
+      ),
+    ).resolves.not.toThrow();
+  });
 
-    test("List collections", async () => {
-      await expect(client.listCollections()).resolves.not.toThrow();
-    });
+  test("List collections", async () => {
+    await expect(client.listCollections()).resolves.not.toThrow();
+  });
 
-    test("Delete collection", async () => {
-      await expect(
-        client.deleteCollection(newCollectionId),
-      ).resolves.not.toThrow();
-    });
+  test("Delete collection", async () => {
+    await expect(
+      client.deleteCollection(newCollectionId),
+    ).resolves.not.toThrow();
+  });
 
-    test("Get users in collection", async () => {
-      await expect(client.getUsersInCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")).resolves.not.toThrow();
-    });
+  test("Get users in collection", async () => {
+    await expect(
+      client.getUsersInCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"),
+    ).resolves.not.toThrow();
+  });
 
-    test("Get users in collection with pagination", async () => {
-      await expect(client.getUsersInCollection("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", 10, 10)).resolves.not.toThrow();
-    });
+  test("Get users in collection with pagination", async () => {
+    await expect(
+      client.getUsersInCollection(
+        "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        10,
+        10,
+      ),
+    ).resolves.not.toThrow();
+  });
 
   test("Clean up remaining documents", async () => {
     // Deletes karamozov.txt
@@ -289,6 +321,24 @@ describe("r2rClient Integration Tests", () => {
       client.delete({
         document_id: {
           $eq: "2e05b285-2746-5778-9e4a-e293db92f3be",
+        },
+      }),
+    ).resolves.toBe("");
+
+    // Deletes Ingested chunk 1
+    await expect(
+      client.delete({
+        document_id: {
+          $eq: "731030c6-9244-5cfc-a9fd-81e4eb356cd3",
+        },
+      }),
+    ).resolves.toBe("");
+
+    // Deletes Ingseted chunk 2
+    await expect(
+      client.delete({
+        document_id: {
+          $eq: "bd2cbead-66e0-57bc-acea-2c34711a39b5",
         },
       }),
     ).resolves.toBe("");

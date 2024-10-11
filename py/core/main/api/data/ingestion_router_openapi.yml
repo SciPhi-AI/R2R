@@ -11,8 +11,7 @@ ingest_files:
           result = client.ingest_files(
               file_paths=["pg_essay_1.html", "got.txt"],
               metadatas=[{"metadata_1":"some random metadata"}, {"metadata_2": "some other random metadata"}],
-              document_ids=None,
-              versions=None
+              document_ids=None
           )
       - lang: Shell
         source: |
@@ -22,14 +21,12 @@ ingest_files:
             -F "file=@pg_essay_1.html;type=text/html" \
             -F "file=@got.txt;type=text/plain" \
             -F 'metadatas=[{},{}]' \
-            -F 'document_ids=null' \
-            -F 'versions=null'
+            -F 'document_ids=null'
 
   input_descriptions:
     files: "The list of paths of input files to ingest into the system."
     metadatas: "An optional list of JSON metadata to affix to each file"
     document_ids: "An optional list of document ids for each file. If not provided, the system will generate a unique document id via the `generate_document_id` method."
-    versions: "An optional list of versions for each file. If not provided, the system will default to the tag `v1`."
     ingestion_config: "An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration."
 
 update_files:

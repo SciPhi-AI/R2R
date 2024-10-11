@@ -108,6 +108,7 @@
               "pages": [
                 "documentation/python-sdk/introduction",
                 "documentation/python-sdk/ingestion",
+                "documentation/python-sdk/graphrag",
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
                 "documentation/python-sdk/collections",
@@ -122,6 +123,7 @@
                 "documentation/js-sdk/ingestion",
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
+                "documentation/js-sdk/collections",
                 "documentation/js-sdk/observability"
               ]
             },
@@ -293,14 +295,18 @@
       "pages": [
         "api-reference/endpoint/ingest_files",
         "api-reference/endpoint/ingest_chunks",
-        "api-reference/endpoint/update_files"
+        "api-reference/endpoint/update_files",
+        "api-reference/endpoint/create_vector_index"
       ]
     },
     {
       "group": "Knowledge Graph",
       "pages": [
         "api-reference/endpoint/create_graph",
-        "api-reference/endpoint/enrich_graph"
+        "api-reference/endpoint/enrich_graph",
+        "api-reference/endpoint/entities",
+        "api-reference/endpoint/triples",
+        "api-reference/endpoint/communities"
       ]
     },
     {
