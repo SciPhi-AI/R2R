@@ -38,7 +38,7 @@ class UpdateResponse(BaseModel):
         description="A message describing the result of the ingestion request.",
     )
     task_id: Optional[UUID] = Field(
-        ...,
+        None,
         description="The task ID of the ingestion request.",
     )
     document_ids: list[UUID] = Field(
