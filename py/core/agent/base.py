@@ -53,6 +53,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         *args,
         **kwargs,
     ) -> list[dict]:
+        # TODO - Make this method return a list of messages.
         self._reset()
         await self._setup(system_instruction)
 
@@ -68,9 +69,24 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 generation_config,
             )
             await self.process_llm_response(response, *args, **kwargs)
+        # Get the output messages
+        all_messages = await self.conversation.get_messages()
+        all_messages.reverse()
 
-        return await self.conversation.get_messages()
+        output_messages = []
+        for message in all_messages:
+            print('message = ', message)
+            print('messages[-1] = ', messages[-1])
+            if message.get('content') and message.get('content') != messages[-1].content:
+                output_messages.append(message)
+            else:
+                break
+        output_messages.reverse()
 
+        print('output_messages = ', output_messages)
+
+        return output_messages    
+        
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
     ) -> None:

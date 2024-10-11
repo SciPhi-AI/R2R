@@ -25,7 +25,6 @@ from core.base.api.models import (
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
-    WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
@@ -752,3 +751,16 @@ class ManagementRouter(BaseRouter):
                     "total_entries"
                 ]
             }
+
+        @self.router.get("/conversations/{conversation_id}")
+        @self.base_endpoint
+        async def get_conversation(
+            conversation_id: str = Path(..., description="Conversation ID"),
+            branch_id: str = Query(None, description="Branch ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            print("....")
+            result = await self.service.get_conversation(
+                conversation_id, branch_id, auth_user
+            )
+            return result

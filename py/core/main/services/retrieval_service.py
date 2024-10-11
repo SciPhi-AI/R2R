@@ -154,20 +154,9 @@ class RetrievalService(Service):
                     if isinstance(value, UUID):
                         vector_search_settings.filters[filter] = str(value)
 
-                completion_start_time = datetime.now()
-                message_id = generate_message_id(query, completion_start_time)
-
-                completion_record = CompletionRecord(
-                    message_id=message_id,
-                    message_type=MessageType.ASSISTANT,
-                    search_query=query,
-                    completion_start_time=completion_start_time,
-                )
-
                 if rag_generation_config.stream:
                     return await self.stream_rag_response(
                         query,
-                        completion_record,
                         rag_generation_config,
                         vector_search_settings,
                         kg_search_settings,
@@ -199,24 +188,6 @@ class RetrievalService(Service):
                         f"Multiple results found for query: {query}"
                     )
 
-                completion_record.search_results = (
-                    results[0].search_results
-                    if hasattr(results[0], "search_results")
-                    else None
-                )
-                completion_record.llm_response = (
-                    results[0].completion
-                    if hasattr(results[0], "completion")
-                    else None
-                )
-                completion_record.completion_end_time = datetime.now()
-
-                await self.logging_connection.log(
-                    run_id=run_id,
-                    key="completion_record",
-                    value=completion_record.to_json(),
-                )
-
                 # unpack the first result
                 return results[0]
 
@@ -234,7 +205,6 @@ class RetrievalService(Service):
     async def stream_rag_response(
         self,
         query,
-        completion_record,
         rag_generation_config,
         vector_search_settings,
         kg_search_settings,
@@ -250,7 +220,6 @@ class RetrievalService(Service):
                     "vector_search_settings": vector_search_settings,
                     "kg_search_settings": kg_search_settings,
                     "rag_generation_config": rag_generation_config,
-                    "completion_record": completion_record,
                     **kwargs,
                 }
 
@@ -267,12 +236,14 @@ class RetrievalService(Service):
     @telemetry_event("Agent")
     async def agent(
         self,
-        messages: list[Message],
+        message: Message,
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
+        conversation_id: Optional[str] = None,
+        branch_id: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -281,12 +252,45 @@ class RetrievalService(Service):
                 t0 = time.time()
 
                 # Transform UUID filters to strings
-                for (
-                    filter,
-                    value,
-                ) in vector_search_settings.filters.items():
+                for filter, value in vector_search_settings.filters.items():
                     if isinstance(value, UUID):
                         vector_search_settings.filters[filter] = str(value)
+
+                # Fetch or create conversation
+                messages = None
+                ids = None
+                if conversation_id:
+                    print("getting conversation_id = ", conversation_id)
+                    print("getting branch_id = ", branch_id)
+                    conversation = (
+                        await self.logging_connection.get_conversation(
+                            str(conversation_id), branch_id
+                        )
+                    )
+                    print("conversation = ", conversation)
+                    messages = [conv[1] for conv in conversation] + [message]
+                    ids = [conv[0] for conv in conversation]
+                else:
+                    conversation_id = (
+                        await self.logging_connection.create_conversation()
+                    )
+                    messages = [message]
+
+                print("a")
+                print('ids = ', ids)
+                print("message = ", message)
+                # Save the new message to the conversation
+                message_id = await self.logging_connection.add_message(
+                    conversation_id,
+                    message,
+                    parent_id=(
+                        str(ids[-2][0])
+                        if ids and len(ids) > 1
+                        else None
+                    ),
+                )
+                print("message_id = ", message_id)
+                print("b")
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -330,6 +334,14 @@ class RetrievalService(Service):
                     *args,
                     **kwargs,
                 )
+
+                print('message_id = ', message_id)
+                print('adding results[-1] = ', results[-1])
+
+                await self.logging_connection.add_message(
+                    conversation_id, Message(**results[-1]), parent_id=message_id
+                )
+
                 t1 = time.time()
                 latency = f"{t1 - t0:.2f}"
 
@@ -338,13 +350,19 @@ class RetrievalService(Service):
                     key="rag_agent_generation_latency",
                     value=latency,
                 )
+                print("conversation_id = ", conversation_id)
+                print("branch_id = ", branch_id)
+                # # Include conversation_id and branch_id in the response
+                # results.conversation_id = conversation_id
+                # results.branch_id = branch_id
                 return results
+
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):
                     raise R2RException(
                         status_code=502,
-                        message="Ollama server not reachable or returned an invalid response",
+                        message="Server not reachable or returned an invalid response",
                     )
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
@@ -425,30 +443,32 @@ class RetrievalServiceAdapter:
 
     @staticmethod
     def prepare_agent_input(
-        messages: list[Message],
+        message: Message,
         vector_search_settings: VectorSearchSettings,
         kg_search_settings: KGSearchSettings,
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
         include_title_if_available: bool,
         user: UserResponse,
+        conversation_id: Optional[str] = None,
+        branch_id: Optional[str] = None,
     ) -> dict:
         return {
-            "messages": [message.to_dict() for message in messages],  # type: ignore
+            "message": message.to_dict(),
             "vector_search_settings": vector_search_settings.to_dict(),
             "kg_search_settings": kg_search_settings.to_dict(),
             "rag_generation_config": rag_generation_config.to_dict(),
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
             "user": user.to_dict(),
+            "conversation_id": conversation_id,
+            "branch_id": branch_id,
         }
 
     @staticmethod
     def parse_agent_input(data: dict):
         return {
-            "messages": [
-                Message.from_dict(message) for message in data["messages"]  # type: ignore
-            ],
+            "message": Message.from_dict(data["message"]),
             "vector_search_settings": VectorSearchSettings.from_dict(
                 data["vector_search_settings"]
             ),
@@ -461,4 +481,6 @@ class RetrievalServiceAdapter:
             "task_prompt_override": data["task_prompt_override"],
             "include_title_if_available": data["include_title_if_available"],
             "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
+            "conversation_id": data.get("conversation_id"),
+            "branch_id": data.get("branch_id"),
         }

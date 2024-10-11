@@ -131,7 +131,6 @@ class R2RAsyncClient:
             # Weird mocking fix...
             params = kwargs.pop("params", {})
             params = {**params, **EMPTY_ARGS}
-
             response = getattr(self.client, method.lower())(
                 url, headers=headers, params=params, **kwargs
             )
@@ -221,6 +220,8 @@ class R2RClient:
         if callable(async_attr):
 
             def sync_wrapper(*args, **kwargs):
+                print("kwargs = ", kwargs)
+
                 result = asyncio.get_event_loop().run_until_complete(
                     async_attr(*args, **kwargs)
                 )

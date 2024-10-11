@@ -9,6 +9,7 @@ from core.base import (
     AnalysisTypes,
     LogFilterCriteria,
     LogProcessor,
+    Message,
     Prompt,
     R2RException,
     RunLoggingSingleton,
@@ -650,3 +651,14 @@ class ManagementService(Service):
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
+
+    @telemetry_event("GetConversation")
+    async def get_conversation(
+        self,
+        conversation_id: str,
+        branch_id: Optional[str] = None,
+        auth_user=None,
+    ) -> list[Message]:
+        return await self.logging_connection.get_conversation(
+            conversation_id, branch_id
+        )

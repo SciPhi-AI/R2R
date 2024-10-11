@@ -215,8 +215,8 @@ class RetrievalRouter(BaseRouter):
         )
         @self.base_endpoint
         async def agent_app(
-            messages: list[Message] = Body(
-                ..., description=agent_descriptions.get("messages")
+            message: Message = Body(
+                ..., description=agent_descriptions.get("message")
             ),
             vector_search_settings: VectorSearchSettings = Body(
                 default_factory=VectorSearchSettings,
@@ -244,6 +244,10 @@ class RetrievalRouter(BaseRouter):
                 None,
                 description=agent_descriptions.get("conversation_id"),
             ),
+            branch_id: UUID = Body(
+                None,
+                description=agent_descriptions.get("branch_id"),
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:  # type: ignore
             """
@@ -262,25 +266,29 @@ class RetrievalRouter(BaseRouter):
             )
 
             kg_search_settings.filters = vector_search_settings.filters
-
+            print("message = ", message)
             try:
                 response = await self.service.agent(
-                    messages=messages,
+                    message=message,
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
-                    conversation_id=conversation_id,
+                    conversation_id=str(conversation_id) if conversation_id else None,
+                    branch_id=str(branch_id) if branch_id else None,
                 )
 
                 if rag_generation_config.stream:
 
                     async def stream_generator():
+                        content = ""
                         async for chunk in response:
                             yield chunk
+                            content += chunk
                             await asyncio.sleep(0)
-
+                        print('content = ', content)
+                        print('conversation = ', self.service.agent.conversation)
                     return StreamingResponse(
                         stream_generator(), media_type="application/json"
                     )  # type: ignore
