@@ -40,6 +40,7 @@ def test_ingest_sample_file_cli():
     print("Ingestion successful")
     print("~" * 100)
 
+
 def test_ingest_sample_file_2_cli():
     """
     Ingesting Aristotle v2, the smaller version of the file.
