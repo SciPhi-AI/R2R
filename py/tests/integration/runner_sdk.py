@@ -665,8 +665,9 @@ def test_kg_create_graph_sample_file_sdk():
 
     entities_list = [ele["name"] for ele in result["results"]["entities"]]
 
-    assert len(entities_list) >= 1
+    print(entities_list)
 
+    assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
