@@ -340,11 +340,6 @@ class RetrievalService(Service):
                     key="rag_agent_generation_latency",
                     value=latency,
                 )
-                print("conversation_id = ", conversation_id)
-                print("branch_id = ", branch_id)
-                # # Include conversation_id and branch_id in the response
-                # results.conversation_id = conversation_id
-                # results.branch_id = branch_id
                 return results
 
             except Exception as e:

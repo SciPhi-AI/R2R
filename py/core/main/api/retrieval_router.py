@@ -264,7 +264,6 @@ class RetrievalRouter(BaseRouter):
             )
 
             kg_search_settings.filters = vector_search_settings.filters
-            print("message = ", message)
             try:
                 response = await self.service.agent(
                     message=message,

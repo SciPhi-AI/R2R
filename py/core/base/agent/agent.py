@@ -18,8 +18,6 @@ from .base import Tool, ToolResult
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 
 class Conversation:
     def __init__(self):
