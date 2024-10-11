@@ -1,4 +1,3 @@
-import json
 import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple
