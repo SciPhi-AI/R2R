@@ -40,6 +40,16 @@ def test_ingest_sample_file_cli():
     print("Ingestion successful")
     print("~" * 100)
 
+def test_ingest_sample_file_2_cli():
+    """
+    Ingesting Aristotle v2, the smaller version of the file.
+    """
+    print("Testing: Ingest sample file CLI 2")
+    run_command("poetry run r2r ingest-sample-file --v2")
+    time.sleep(10)
+    print("Ingestion successful")
+    print("~" * 100)
+
 
 def test_document_overview_sample_file_cli():
     print("Testing: Document overview contains 'aristotle.txt'")
