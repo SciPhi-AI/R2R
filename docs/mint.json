@@ -122,6 +122,7 @@
                 "documentation/js-sdk/ingestion",
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
+                "documentation/js-sdk/collections",
                 "documentation/js-sdk/observability"
               ]
             },
