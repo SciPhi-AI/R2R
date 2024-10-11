@@ -273,82 +273,127 @@ class RetrievalService(Service):
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
+        conversation_id: Optional[UUID] = None,
         *args,
         **kwargs,
     ):
         async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
-            try:
-                t0 = time.time()
+            print("run_id:", run_id)
 
-                # Transform UUID filters to strings
-                for (
-                    filter,
-                    value,
-                ) in vector_search_settings.filters.items():
-                    if isinstance(value, UUID):
-                        vector_search_settings.filters[filter] = str(value)
+            if conversation_id is None:
+                # Create a new conversation
+                print("Getting conversation_id")
+                conversation_id = (
+                    await self.logging_connection.create_conversation()
+                )
+                print("conversation_id:", conversation_id)
 
-                if rag_generation_config.stream:
-                    t1 = time.time()
-                    latency = f"{t1 - t0:.2f}"
-
-                    await self.logging_connection.log(
-                        run_id=run_id,
-                        key="rag_agent_generation_latency",
-                        value=latency,
+                # No existing messages
+                conversation_messages = []
+                last_message_id = None
+            else:
+                # Use the existing conversation
+                # Retrieve existing messages
+                conversation_messages = (
+                    await self.logging_connection.get_conversation(
+                        conversation_id
                     )
-
-                    async def stream_response():
-                        async with manage_run(self.run_manager, "rag_agent"):
-                            agent = R2RStreamingRAGAgent(
-                                llm_provider=self.providers.llm,
-                                prompt_provider=self.providers.prompt,
-                                config=self.config.agent,
-                                search_pipeline=self.pipelines.search_pipeline,
-                            )
-                            async for chunk in agent.arun(
-                                messages=messages,
-                                system_instruction=task_prompt_override,
-                                vector_search_settings=vector_search_settings,
-                                kg_search_settings=kg_search_settings,
-                                rag_generation_config=rag_generation_config,
-                                include_title_if_available=include_title_if_available,
-                                *args,
-                                **kwargs,
-                            ):
-                                yield chunk
-
-                    return stream_response()
-
-                results = await self.agents.rag_agent.arun(
-                    messages=messages,
-                    system_instruction=task_prompt_override,
-                    vector_search_settings=vector_search_settings,
-                    kg_search_settings=kg_search_settings,
-                    rag_generation_config=rag_generation_config,
-                    include_title_if_available=include_title_if_available,
-                    *args,
-                    **kwargs,
                 )
-                t1 = time.time()
-                latency = f"{t1 - t0:.2f}"
+                # Get the last message ID to use as parent_id
+                last_message_id = None
+                if conversation_messages:
+                    last_message_id = conversation_messages[-1].id
 
-                await self.logging_connection.log(
-                    run_id=run_id,
-                    key="rag_agent_generation_latency",
-                    value=latency,
+            # Add the new messages to the conversation
+            for message in messages:
+                message_id = await self.logging_connection.add_message(
+                    conversation_id, message, parent_id=last_message_id
                 )
-                return results
-            except Exception as e:
-                logger.error(f"Pipeline error: {str(e)}")
-                if "NoneType" in str(e):
-                    raise R2RException(
-                        status_code=502,
-                        message="Ollama server not reachable or returned an invalid response",
-                    )
-                raise R2RException(
-                    status_code=500, message="Internal Server Error"
+                last_message_id = (
+                    message_id  # Update parent_id for the next message
                 )
+
+            # Now, prepare the messages for the agent
+            # If messages contain the entire history, we can use them directly
+            # If messages contain only new messages, we might need to combine them with existing ones
+
+            # For this example, let's assume we use all messages from the conversation
+            conversation_messages = (
+                await self.logging_connection.get_conversation(conversation_id)
+            )
+
+            # try:
+            #     t0 = time.time()
+
+            #     # Transform UUID filters to strings
+            #     for (
+            #         filter,
+            #         value,
+            #     ) in vector_search_settings.filters.items():
+            #         if isinstance(value, UUID):
+            #             vector_search_settings.filters[filter] = str(value)
+
+            #     if rag_generation_config.stream:
+            #         t1 = time.time()
+            #         latency = f"{t1 - t0:.2f}"
+
+            #         await self.logging_connection.log(
+            #             run_id=run_id,
+            #             key="rag_agent_generation_latency",
+            #             value=latency,
+            #         )
+
+            #         async def stream_response():
+            #             async with manage_run(self.run_manager, "rag_agent"):
+            #                 agent = R2RStreamingRAGAgent(
+            #                     llm_provider=self.providers.llm,
+            #                     prompt_provider=self.providers.prompt,
+            #                     config=self.config.agent,
+            #                     search_pipeline=self.pipelines.search_pipeline,
+            #                 )
+            #                 async for chunk in agent.arun(
+            #                     messages=messages,
+            #                     system_instruction=task_prompt_override,
+            #                     vector_search_settings=vector_search_settings,
+            #                     kg_search_settings=kg_search_settings,
+            #                     rag_generation_config=rag_generation_config,
+            #                     include_title_if_available=include_title_if_available,
+            #                     *args,
+            #                     **kwargs,
+            #                 ):
+            #                     yield chunk
+
+            #         return stream_response()
+
+            #     results = await self.agents.rag_agent.arun(
+            #         messages=messages,
+            #         system_instruction=task_prompt_override,
+            #         vector_search_settings=vector_search_settings,
+            #         kg_search_settings=kg_search_settings,
+            #         rag_generation_config=rag_generation_config,
+            #         include_title_if_available=include_title_if_available,
+            #         *args,
+            #         **kwargs,
+            #     )
+            #     t1 = time.time()
+            #     latency = f"{t1 - t0:.2f}"
+
+            #     await self.logging_connection.log(
+            #         run_id=run_id,
+            #         key="rag_agent_generation_latency",
+            #         value=latency,
+            #     )
+            #     return results
+            # except Exception as e:
+            #     logger.error(f"Pipeline error: {str(e)}")
+            #     if "NoneType" in str(e):
+            #         raise R2RException(
+            #             status_code=502,
+            #             message="Ollama server not reachable or returned an invalid response",
+            #         )
+            #     raise R2RException(
+            #         status_code=500, message="Internal Server Error"
+            #     )
 
 
 class RetrievalServiceAdapter:

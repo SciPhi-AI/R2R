@@ -31,9 +31,6 @@ def app_settings(client):
     click.echo(response)
 
 
-# TODO: Implement score_completion
-
-
 @cli.command()
 @click.option("--user-ids", multiple=True, help="User IDs to overview")
 @click.option(

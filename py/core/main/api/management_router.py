@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Optional, Set, Any
+from typing import Any, Optional, Set
 from uuid import UUID
 
 import psutil
@@ -223,18 +223,6 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.service.app_settings()
-
-        @self.router.post("/score_completion")
-        @self.base_endpoint
-        async def score_completion(
-            message_id: str = Body(..., description="Message ID"),
-            score: float = Body(..., description="Completion score"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedScoreCompletionResponse:
-            message_uuid = UUID(message_id)
-            return await self.service.score_completion(
-                message_id=message_uuid, score=score
-            )
 
         @self.router.get("/users_overview")
         @self.base_endpoint

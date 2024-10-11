@@ -3,7 +3,6 @@ import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple
 from uuid import UUID
-from core.base.utils import validate_uuid
 
 import toml
 
@@ -17,6 +16,7 @@ from core.base import (
     RunManager,
     RunType,
 )
+from core.base.utils import validate_uuid
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -194,55 +194,6 @@ class ManagementService(Service):
             "config": config_dict,
             "prompts": prompts,
         }
-
-    @telemetry_event("ScoreCompletion")
-    async def score_completion(
-        self,
-        message_id: UUID,
-        score: float = 0.0,
-        run_type_filter: Optional[RunType] = None,
-        max_runs: int = 100,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        try:
-            if self.logging_connection is None:
-                raise R2RException(
-                    status_code=404, message="Logging provider not found."
-                )
-
-            run_info = await self.logging_connection.get_info_logs(
-                limit=max_runs,
-                run_type_filter=run_type_filter,
-            )
-            run_ids = [run.run_id for run in run_info]
-
-            logs = await self.logging_connection.get_logs(run_ids)
-
-            for log in logs:
-                if log["key"] != "completion_record":
-                    continue
-                completion_record = log["value"]
-                try:
-                    completion_dict = json.loads(completion_record)
-                except json.JSONDecodeError as e:
-                    logger.error(f"Error processing completion record: {e}")
-                    continue
-
-                if completion_dict.get("message_id") == str(message_id):
-                    bounded_score = round(min(max(score, -1.00), 1.00), 2)
-                    updated = await RunLoggingSingleton.score_completion(
-                        log["run_id"], message_id, bounded_score
-                    )
-                    if not updated:
-                        logger.error(
-                            f"Error updating completion record for message_id: {message_id}"
-                        )
-
-        except Exception as e:
-            logger.error(f"An error occurred in ascore_completion: {e}")
-
-        return {"message": "Completion scored successfully"}
 
     @telemetry_event("UsersOverview")
     async def users_overview(

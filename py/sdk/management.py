@@ -148,27 +148,6 @@ class ManagementMethods:
         return await client._make_request("GET", "app_settings")
 
     @staticmethod
-    async def score_completion(
-        client,
-        message_id: str,
-        score: float = 0.0,
-    ) -> dict:
-        """
-        Assign a score to a message from an LLM completion. The score should be a float between -1.0 and 1.0.
-
-        Args:
-            message_id (str): The ID of the message to score.
-            score (float): The score to assign to the message.
-
-        Returns:
-            dict: The response from the server.
-        """
-        data = {"message_id": message_id, "score": score}
-        return await client._make_request(
-            "POST", "score_completion", json=data
-        )
-
-    @staticmethod
     async def users_overview(
         client,
         user_ids: Optional[list[str]] = None,

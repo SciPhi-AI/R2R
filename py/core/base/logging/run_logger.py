@@ -9,10 +9,387 @@ from uuid import UUID
 import asyncpg
 from pydantic import BaseModel
 
+from core.base import Message
+
 from ..providers.base import Provider, ProviderConfig
 from .base import RunType
 
 logger = logging.getLogger(__name__)
+
+import uuid
+from typing import Dict, List, Optional, Tuple
+
+
+class ConversationManager:
+    def __init__(self, conn):
+        import aiosqlite
+
+        self.conn: aiosqlite = conn
+
+    async def _init(self):
+        await self.conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS conversations (
+                id TEXT,
+                conversation_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS messages (
+                id TEXT,
+                conversation_id TEXT,
+                parent_id TEXT,
+                content TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+                FOREIGN KEY (parent_id) REFERENCES messages(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS branches (
+                id TEXT,
+                conversation_id TEXT,
+                branch_point_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+                FOREIGN KEY (branch_point_id) REFERENCES messages(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS message_branches (
+                message_id TEXT,
+                branch_id TEXT,
+                PRIMARY KEY (message_id, branch_id),
+                FOREIGN KEY (message_id) REFERENCES messages(id),
+                FOREIGN KEY (branch_id) REFERENCES branches(id)
+            );
+        """
+        )
+        await self.conn.commit()
+
+    async def create_conversation(self) -> str:
+        print("a")
+        conversation_id = str(uuid.uuid4())
+        await self.conn.execute(
+            "INSERT INTO conversations (conversation_id) VALUES (?)",
+            (conversation_id,),
+        )
+
+        print("b")
+        # Create initial branch for the conversation
+        branch_id = str(uuid.uuid4())
+        await self.conn.execute(
+            "INSERT INTO branches (id, conversation_id, branch_point_id) VALUES (?, ?, NULL)",
+            (branch_id, conversation_id),
+        )
+
+        print("c")
+        await self.conn.commit()
+        print("d")
+        return conversation_id
+
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: Message,
+        parent_id: Optional[str] = None,
+    ) -> str:
+        print("az")
+        message_id = str(uuid.uuid4())
+        print("message_id = ", message_id)
+        print("conversation_id = ", conversation_id)
+        print("parent_id = ", parent_id)
+        print("content = ", content)
+        print("content.json = ", content.json())
+        await self.conn.execute(
+            """
+            INSERT INTO messages (id, conversation_id, parent_id, content)
+            VALUES (?, ?, ?, ?)
+        """,
+            (message_id, conversation_id, parent_id, content.json()),
+        )
+
+        if parent_id is not None:
+            print("bz")
+
+            # Get the branch_id(s) of the parent message
+            cursor = await self.conn.execute(
+                """
+                SELECT branch_id FROM message_branches
+                WHERE message_id = ?
+                ORDER BY branch_id DESC
+                LIMIT 1
+            """,
+                (parent_id,),
+            )
+            branch_id_row = await cursor.fetchone()
+            if branch_id_row:
+                branch_id = branch_id_row[0]
+            else:
+                print("cz")
+
+                # If parent message is not linked to any branch, use the most recent branch
+                cursor = await self.conn.execute(
+                    """
+                    SELECT id FROM branches
+                    WHERE conversation_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """,
+                    (conversation_id,),
+                )
+                branch_id = (await cursor.fetchone())[0]
+        else:
+            print("dz")
+
+            # For messages with no parent, use the most recent branch
+            cursor = await self.conn.execute(
+                """
+                SELECT id FROM branches
+                WHERE conversation_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+            """,
+                (conversation_id,),
+            )
+            branch_id = (await cursor.fetchone())[0]
+
+        # Link the new message to the same branch as its parent
+        await self.conn.execute(
+            """
+            INSERT OR IGNORE INTO message_branches (message_id, branch_id)
+            VALUES (?, ?)
+        """,
+            (message_id, branch_id),
+        )
+
+        await self.conn.commit()
+        return message_id
+
+    async def edit_message(
+        self, message_id: int, new_content: str
+    ) -> Tuple[int, int]:
+        # Get the original message details
+        await self.conn.execute(
+            "SELECT conversation_id, parent_id FROM messages WHERE id = ?",
+            (message_id,),
+        )
+        conversation_id, parent_id = await self.conn.fetchone()
+
+        # Create a new branch
+        await self.conn.execute(
+            """
+            INSERT INTO branches (conversation_id, branch_point_id)
+            VALUES (?, ?)
+        """,
+            (conversation_id, message_id),
+        )
+        new_branch_id = str(uuid.uuid4())  # await self.conn.lastrowid
+
+        # Add the edited message with the same parent_id
+        await self.conn.execute(
+            """
+            INSERT INTO messages (conversation_id, parent_id, content)
+            VALUES (?, ?, ?)
+        """,
+            (conversation_id, parent_id, new_content),
+        )
+        new_message_id = await self.conn.lastrowid
+
+        # Link the new message to the new branch
+        await self.conn.execute(
+            """
+            INSERT INTO message_branches (message_id, branch_id)
+            VALUES (?, ?)
+        """,
+            (new_message_id, new_branch_id),
+        )
+
+        # Link ancestor messages (excluding the original message) to the new branch
+        await self.conn.execute(
+            """
+            WITH RECURSIVE ancestors(id) AS (
+                SELECT parent_id FROM messages WHERE id = ?
+                UNION ALL
+                SELECT m.parent_id FROM messages m JOIN ancestors a ON m.id = a.id WHERE m.parent_id IS NOT NULL
+            )
+            INSERT OR IGNORE INTO message_branches (message_id, branch_id)
+            SELECT id, ? FROM ancestors WHERE id IS NOT NULL
+        """,
+            (message_id, new_branch_id),
+        )
+
+        # Do NOT link descendants to the new branch or update their parent_ids
+
+        await self.conn.commit()
+        return new_message_id, new_branch_id
+
+    async def get_conversation(
+        self, conversation_id: int, branch_id: Optional[int] = None
+    ) -> List[Dict]:
+        if branch_id is None:
+            # Get the most recent branch by ID
+            await self.conn.execute(
+                """
+                SELECT id FROM branches
+                WHERE conversation_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+            """,
+                (conversation_id,),
+            )
+            branch_id = str(uuid.uuid4())  # await self.conn.fetchone()[0]
+
+        # Get all messages for this branch
+        async with self.conn.execute(
+            """
+            WITH RECURSIVE branch_messages(id, content, parent_id, depth) AS (
+                SELECT DISTINCT m.id, m.content, m.parent_id, 0
+                FROM messages m
+                JOIN message_branches mb ON m.id = mb.message_id
+                LEFT JOIN message_branches mbp ON m.parent_id = mbp.message_id AND mbp.branch_id = mb.branch_id
+                WHERE mb.branch_id = ? AND (m.parent_id IS NULL OR mbp.branch_id IS NOT NULL)
+                UNION
+                SELECT DISTINCT m.id, m.content, m.parent_id, bm.depth + 1
+                FROM messages m
+                JOIN message_branches mb ON m.id = mb.message_id
+                JOIN branch_messages bm ON m.parent_id = bm.id
+                WHERE mb.branch_id = ?
+            )
+            SELECT DISTINCT id, content, parent_id FROM branch_messages
+            ORDER BY depth, id
+        """,
+            (branch_id, branch_id),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            messages = [
+                {"id": row[0], "content": row[1], "parent_id": row[2]}
+                for row in rows
+            ]
+            return messages
+
+        # # Get all messages for this branch
+        # await self.conn.execute('''
+        #     WITH RECURSIVE branch_messages(id, content, parent_id, depth) AS (
+        #         SELECT DISTINCT m.id, m.content, m.parent_id, 0
+        #         FROM messages m
+        #         JOIN message_branches mb ON m.id = mb.message_id
+        #         LEFT JOIN message_branches mbp ON m.parent_id = mbp.message_id AND mbp.branch_id = mb.branch_id
+        #         WHERE mb.branch_id = ? AND (m.parent_id IS NULL OR mbp.branch_id IS NOT NULL)
+        #         UNION
+        #         SELECT DISTINCT m.id, m.content, m.parent_id, bm.depth + 1
+        #         FROM messages m
+        #         JOIN message_branches mb ON m.id = mb.message_id
+        #         JOIN branch_messages bm ON m.parent_id = bm.id
+        #         WHERE mb.branch_id = ?
+        #     )
+        #     SELECT DISTINCT id, content, parent_id FROM branch_messages
+        #     ORDER BY depth, id
+        # ''', (branch_id, branch_id))
+
+        # messages = [{'id': row[0], 'content': row[1], 'parent_id': row[2]} for row in (await self.conn.fetchall())]
+        # return messages
+
+    # async def list_branches(self, conversation_id: int) -> List[Dict]:
+    #     await self.conn.execute('''
+    #         SELECT b.id, b.branch_point_id, m.content, b.created_at
+    #         FROM branches b
+    #         LEFT JOIN messages m ON b.branch_point_id = m.id
+    #         WHERE b.conversation_id = ?
+    #         ORDER BY b.created_at
+    #     ''', (conversation_id,))
+    #     return [{
+    #         'branch_id': row[0],
+    #         'branch_point_id': row[1],
+    #         'content': row[2],
+    #         'created_at': row[3]
+    #     } for row in self.conn.fetchall()]
+
+    async def list_branches(self, conversation_id: int) -> List[Dict]:
+        async with self.conn.execute(
+            """
+            SELECT b.id, b.branch_point_id, m.content, b.created_at
+            FROM branches b
+            LEFT JOIN messages m ON b.branch_point_id = m.id
+            WHERE b.conversation_id = ?
+            ORDER BY b.created_at
+        """,
+            (conversation_id,),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [
+                {
+                    "branch_id": row[0],
+                    "branch_point_id": row[1],
+                    "content": row[2],
+                    "created_at": row[3],
+                }
+                for row in rows
+            ]
+
+    async def get_next_branch(self, current_branch_id: int) -> Optional[int]:
+        await self.conn.execute(
+            """
+            SELECT id FROM branches
+            WHERE conversation_id = (SELECT conversation_id FROM branches WHERE id = ?)
+            AND id > ?
+            ORDER BY id
+            LIMIT 1
+        """,
+            (current_branch_id, current_branch_id),
+        )
+
+        result = self.conn.fetchone()
+        return result[0] if result else None
+
+    async def get_prev_branch(self, current_branch_id: int) -> Optional[int]:
+        self.conn.execute(
+            """
+            SELECT id FROM branches
+            WHERE conversation_id = (SELECT conversation_id FROM branches WHERE id = ?)
+            AND id < ?
+            ORDER BY id DESC
+            LIMIT 1
+        """,
+            (current_branch_id, current_branch_id),
+        )
+
+        result = await self.conn.fetchone()
+        return result[0] if result else None
+
+    async def branch_at_message(self, message_id: int) -> int:
+        await self.conn.execute(
+            "SELECT conversation_id FROM messages WHERE id = ?", (message_id,)
+        )
+        conversation_id = await self.conn.fetchone()[0]
+
+        # Create a new branch starting from message_id
+        await self.conn.execute(
+            """
+            INSERT INTO branches (conversation_id, branch_point_id)
+            VALUES (?, ?)
+        """,
+            (conversation_id, message_id),
+        )
+        new_branch_id = str(uuid.uuid4())  # self.conn.lastrowid
+
+        # Link ancestor messages to the new branch
+        await self.conn.execute(
+            """
+            WITH RECURSIVE ancestors(id) AS (
+                SELECT id FROM messages WHERE id = ?
+                UNION ALL
+                SELECT m.parent_id FROM messages m JOIN ancestors a ON m.id = a.id WHERE m.parent_id IS NOT NULL
+            )
+            INSERT OR IGNORE INTO message_branches (message_id, branch_id)
+            SELECT id, ? FROM ancestors
+        """,
+            (message_id, new_branch_id),
+        )
+
+        await self.conn.commit()
+        return new_branch_id
+
+    async def close(self):
+        await self.conn.close()
 
 
 class RunInfoLog(BaseModel):
@@ -77,12 +454,6 @@ class RunLoggingProvider(Provider):
     ) -> list[RunInfoLog]:
         pass
 
-    @abstractmethod
-    async def score_completion(
-        self, run_id: UUID, message_id: UUID, score: float
-    ) -> str:
-        pass
-
 
 class LocalRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
@@ -131,6 +502,10 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         """
         )
         await self.conn.commit()
+        self.conversation_manager = ConversationManager(self.conn)
+        print("self.conversation_manager = ", self.conversation_manager)
+        print("~~~" * 500)
+        await self.conversation_manager._init()
 
     async def __aenter__(self):
         if self.conn is None:
@@ -268,51 +643,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                 result.append(row_dict)
                 run_id_count[row_run_id] += 1
         return result
-
-    async def score_completion(
-        self, run_id: UUID, message_id: UUID, score: float
-    ):
-        if not self.conn:
-            raise ValueError(
-                "Initialize the connection pool before attempting to log."
-            )
-        cursor = await self.conn.cursor()
-
-        await cursor.execute(
-            f"SELECT value FROM {self.project_name}_{self.log_table} WHERE run_id = ? AND key = 'completion_record'",
-            (str(run_id),),
-        )
-        row = await cursor.fetchone()
-
-        if row:
-            completion_record = json.loads(row[0])
-
-            if completion_record.get("message_id") == str(message_id):
-                if (
-                    "score" not in completion_record
-                    or completion_record["score"] is None
-                ):
-                    completion_record["score"] = [score]
-                elif isinstance(completion_record["score"], list):
-                    completion_record["score"] = [
-                        x for x in completion_record["score"] if x is not None
-                    ]
-                    completion_record["score"].append(score)
-                else:
-                    completion_record["score"] = [
-                        completion_record["score"],
-                        score,
-                    ]
-
-                await cursor.execute(
-                    f"UPDATE {self.project_name}_{self.log_table} SET value = ? WHERE run_id = ? AND key = 'completion_record'",
-                    (json.dumps(completion_record), str(run_id)),
-                )
-
-                await self.conn.commit()
-                return {"message": "Score updated successfully."}
-
-        return {"message": "Score not updated."}
 
 
 class PostgresLoggingConfig(LoggingConfig):
@@ -520,51 +850,6 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
             rows = await conn.fetch(query, *params)
             return [{key: row[key] for key in row.keys()} for row in rows]
 
-    async def score_completion(
-        self, run_id: UUID, message_id: UUID, score: float
-    ):
-        if not self.pool:
-            raise ValueError(
-                "Initialize the connection pool before attempting to log."
-            )
-
-        async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                f"SELECT value FROM {self.project_name}.{self.log_table} WHERE run_id = $1 AND key = 'completion_record'",
-                run_id,
-            )
-
-            if row:
-                completion_record = json.loads(row["value"])
-
-                if completion_record.get("message_id") == str(message_id):
-                    if (
-                        "score" not in completion_record
-                        or completion_record["score"] is None
-                    ):
-                        completion_record["score"] = [score]
-                    elif isinstance(completion_record["score"], list):
-                        completion_record["score"] = [
-                            x
-                            for x in completion_record["score"]
-                            if x is not None
-                        ]
-                        completion_record["score"].append(score)
-                    else:
-                        completion_record["score"] = [
-                            completion_record["score"],
-                            score,
-                        ]
-
-                    await conn.execute(
-                        f"UPDATE {self.project_name}.{self.log_table} SET value = $1 WHERE run_id = $2 AND key = 'completion_record'",
-                        json.dumps(completion_record),
-                        run_id,
-                    )
-                    return {"message": "Score updated successfully."}
-
-        return {"message": "Score not updated."}
-
 
 class RunLoggingSingleton:
     _instance = None
@@ -608,13 +893,14 @@ class RunLoggingSingleton:
         run_type: RunType,
         user_id: UUID,
     ):
-        try:
-            async with cls.get_instance() as provider:
-                await provider.info_log(run_id, run_type, user_id)
-        except Exception as e:
-            logger.error(
-                f"Error logging info data {(run_id, run_type, user_id)}: {e}"
-            )
+        # try:
+        #     async with cls.get_instance() as provider:
+        #         await provider.info_log(run_id, run_type, user_id)
+        # except Exception as e:
+        #     logger.error(
+        #         f"Error logging info data {(run_id, run_type, user_id)}: {e}"
+        #     )
+        pass
 
     @classmethod
     async def get_info_logs(
@@ -642,8 +928,69 @@ class RunLoggingSingleton:
             return await provider.get_logs(run_ids, limit_per_run)
 
     @classmethod
-    async def score_completion(
-        cls, run_id: UUID, message_id: UUID, score: float
-    ):
+    async def create_conversation(cls) -> str:
         async with cls.get_instance() as provider:
-            return await provider.score_completion(run_id, message_id, score)
+            return await provider.conversation_manager.create_conversation()
+
+    @classmethod
+    async def add_message(
+        cls,
+        conversation_id: str,
+        content: str,
+        parent_id: Optional[str] = None,
+    ) -> str:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.add_message(
+                conversation_id, content, parent_id
+            )
+
+    @classmethod
+    async def edit_message(
+        cls, message_id: int, new_content: str
+    ) -> Tuple[int, int]:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.edit_message(
+                message_id, new_content
+            )
+
+    @classmethod
+    async def get_conversation(
+        cls, conversation_id: int, branch_id: Optional[int] = None
+    ) -> List[Dict]:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.get_conversation(
+                conversation_id, branch_id
+            )
+
+    @classmethod
+    async def list_branches(cls, conversation_id: int) -> List[Dict]:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.list_branches(
+                conversation_id
+            )
+
+    @classmethod
+    async def get_next_branch(cls, current_branch_id: int) -> Optional[int]:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.get_next_branch(
+                current_branch_id
+            )
+
+    @classmethod
+    async def get_prev_branch(cls, current_branch_id: int) -> Optional[int]:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.get_prev_branch(
+                current_branch_id
+            )
+
+    @classmethod
+    async def branch_at_message(cls, message_id: int) -> int:
+        async with cls.get_instance() as provider:
+            return await provider.conversation_manager.branch_at_message(
+                message_id
+            )
+
+    @classmethod
+    async def close(cls):
+        async with cls.get_instance() as provider:
+            await provider.close()

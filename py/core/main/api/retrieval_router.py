@@ -240,8 +240,9 @@ class RetrievalRouter(BaseRouter):
                     "include_title_if_available"
                 ),
             ),
-            conversation_id: Optional[UUID] = Body(
-                None, description=agent_descriptions.get("conversation_id")
+            conversation_id: UUID = Body(
+                None,
+                description=agent_descriptions.get("conversation_id"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:  # type: ignore
@@ -270,6 +271,7 @@ class RetrievalRouter(BaseRouter):
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
+                    conversation_id=conversation_id,
                 )
 
                 if rag_generation_config.stream:
