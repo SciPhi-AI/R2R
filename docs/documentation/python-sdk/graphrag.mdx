@@ -1,0 +1,107 @@
+---
+title: 'Knowledge Graphs'
+description: 'Creating a knowledge graph and running graphrag using R2R.'
+---
+
+## Create a graph
+
+Creating a graph on your documents.
+
+
+```python
+client.create_graph(
+    collection_id='122fdf6a-e116-546b-a8f6-e4cb2e2c0a09', # optional
+    run_type="run", # estimate or run
+    kg_creation_settings={
+        "kg_triples_extraction_prompt": "graphrag_triples_extraction_few_shot",
+        "entity_types": [],
+        "relation_types": [],
+        "extraction_merge_count": 4,
+        "max_knowledge_triples": 100,
+        "max_description_input_length": 65536,
+        "generation_config": {
+            "model": "openai/gpt-4o-mini",
+            # other generation config params
+        }
+    }
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system after creating the graph.
+      ```bash
+      {'message': 'Graph creation task queued successfully.', 'task_id': '6e27dfca-606d-422d-b73f-2d9e138661b4'}
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="collection_id" type="Optional[Union[UUID, str]]">
+  The ID of the collection to create the graph for. If not provided, the graph will be created for the default collection.
+</ParamField>
+
+<ParamField path="run_type" type="Optional[Union[str, KGRunType]]">
+  The type of run to perform. Options are "estimate" or "run".
+</ParamField>
+
+
+<ParamField path="kg_creation_settings" type="Optional[Union[dict, KGCreationSettings]]">
+  The settings for the graph creation process.
+  <Expandable title="KGCreationSettings">
+    <ParamField path="kg_triples_extraction_prompt" type="str">
+      The prompt to use for triples extraction.
+    </ParamField>
+    <ParamField path="entity_types" type="list[str]">
+      The entity types to extract. If not provided, all entity types will be extracted. 
+    </ParamField>
+    <ParamField path="relation_types" type="list[str]">
+      The relation types to extract. If not provided, all relation types will be extracted.
+    </ParamField>
+    <ParamField path="extraction_merge_count" type="int">
+      The number of chunks to merge into a single extraction.
+    </ParamField>
+    <ParamField path="max_knowledge_triples" type="int">
+      The maximum number of triples to extract from each chunk.
+    </ParamField>
+    <ParamField path="max_description_input_length" type="int">
+      The maximum length of the description for a node in the graph.
+    </ParamField>
+    <ParamField path="generation_config" type="GenerationConfig">
+      The configuration for text generation during graph enrichment.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Enrich a graph
+
+```python
+client.enrich_graph(
+    collection_id='122fdf6a-e116-546b-a8f6-e4cb2e2c0a09',
+    run_type="estimate",
+    kg_enrichment_settings={
+        "community_reports_prompt": "graphrag_community_reports_prompt",
+        "max_summary_input_length": 65536,
+        "generation_config": {
+            "model": "openai/gpt-4o-mini",
+            "temperature": 0.12,
+            # other generation config params
+        },
+        "leiden_params": {
+            # leiden algorithm params, all are optional, default values are shown
+            "max_cluster_size": 1000,
+            "starting_communities": None,
+            "extra_forced_iterations": 0,
+            "resolution": 1.0,
+            "randomness": 0.001,
+            "use_modularity": True,
+            "random_seed": None,
+            "weight_attribute": "weight",
+            "is_weighted": None,
+            "weight_default": 1.0,
+            "check_directed": True,
+        }
+    }
+)
+```
