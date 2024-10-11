@@ -1,5 +1,5 @@
-name: 'Run SDK Ingestion Tests'
-description: 'Runs SDK ingestion tests for R2R'
+name: 'Run CLI Graphrag Tests'
+description: 'Runs CLI graphrag tests for R2R'
 runs:
   using: "composite"
   steps:
