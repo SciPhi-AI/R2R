@@ -33,6 +33,17 @@ def test_ingest_sample_file_sdk():
     print("Ingestion successful")
     print("~" * 100)
 
+def test_ingest_sample_file_2_sdk():
+    print("Testing: Ingest sample file SDK 2")
+    file_paths = ["core/examples/data/aristotle_v2.txt"]
+    ingest_response = client.ingest_files(file_paths=file_paths)
+
+    if not ingest_response["results"]:
+        print("Ingestion test failed")
+        sys.exit(1)
+    time.sleep(60)
+    print("Ingestion successful")
+    print("~" * 100)
 
 def test_ingest_sample_file_with_config_sdk():
     print("Testing: Ingest sample file 2")
@@ -660,11 +671,14 @@ def test_kg_create_graph_sample_file_sdk():
     )
 
     result = client.get_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", limit=1000
     )
 
-    entities_list = [ele["name"] for ele in result["results"]["results"]]
+    entities_list = [ele["name"] for ele in result["results"]["entities"]]
 
+    print(entities_list)
+
+    assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
@@ -682,7 +696,7 @@ def test_kg_enrich_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    communities = result["results"]
+    communities = result["results"]["communities"]
     assert len(communities) >= 1
 
     for community in communities:
