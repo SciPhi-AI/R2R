@@ -45,7 +45,7 @@ class Conversation:
         async with self._lock:
             self.messages.append(message)
 
-    async def get_messages(self) -> List[Dict[str, Any]]:
+    async def get_messages(self) -> list[dict[str, Any]]:
         async with self._lock:
             return [
                 {**msg.model_dump(exclude_none=True), "role": str(msg.role)}

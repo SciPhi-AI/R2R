@@ -164,11 +164,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         """
         )
         await self.conn.commit()
-        # await self.conn.commit()
-        # self.conversation_manager = ConversationManager(self.conn)
-        # print("self.conversation_manager = ", self.conversation_manager)
-        # print("~~~" * 500)
-        # await self.conversation_manager._init()
 
     async def __aenter__(self):
         if self.conn is None:
@@ -292,9 +287,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
             )
-        print("conversation_id = ", conversation_id)
-        print("content = ", content)
-        print("parent_id = ", parent_id)
 
         message_id = str(uuid.uuid4())
         created_at = datetime.utcnow().timestamp()
@@ -441,16 +433,13 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> Tuple[str, List[Message]]:
+    ) -> Tuple[str, list[Message]]:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
             )
-        print("conversation_id = ", conversation_id)
-        print("branch_id = ", branch_id)
 
         if branch_id is None:
-            print("executing here....")
             # Get the most recent branch by created_at timestamp
             async with self.conn.execute(
                 """
@@ -467,7 +456,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         if branch_id is None:
             return []  # No branches found for the conversation
 
-        print("branch_id = ", branch_id)
         # Get all messages for this branch
         async with self.conn.execute(
             """
@@ -489,7 +477,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             (branch_id, branch_id),
         ) as cursor:
             rows = await cursor.fetchall()
-            print("rows = ", rows)
             messages = [(row[0], Message.parse_raw(row[1])) for row in rows]
             return messages
 
@@ -768,7 +755,7 @@ class RunLoggingSingleton:
     async def add_message(
         cls,
         conversation_id: str,
-        content: str,
+        content: Message,
         parent_id: Optional[str] = None,
     ) -> str:
         async with cls.get_instance() as provider:
@@ -786,12 +773,12 @@ class RunLoggingSingleton:
     @classmethod
     async def get_conversation(
         cls, conversation_id: str, branch_id: Optional[str] = None
-    ) -> List[Dict]:
+    ) -> list[dict]:
         async with cls.get_instance() as provider:
             return await provider.get_conversation(conversation_id, branch_id)
 
     @classmethod
-    async def list_branches(cls, conversation_id: str) -> List[Dict]:
+    async def list_branches(cls, conversation_id: str) -> list[dict]:
         async with cls.get_instance() as provider:
             return await provider.list_branches(conversation_id)
 

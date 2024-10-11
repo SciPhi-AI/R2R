@@ -260,14 +260,11 @@ class RetrievalService(Service):
                 messages = None
                 ids = None
                 if conversation_id:
-                    print("getting conversation_id = ", conversation_id)
-                    print("getting branch_id = ", branch_id)
                     conversation = (
                         await self.logging_connection.get_conversation(
                             str(conversation_id), branch_id
                         )
                     )
-                    print("conversation = ", conversation)
                     messages = [conv[1] for conv in conversation] + [message]
                     ids = [conv[0] for conv in conversation]
                 else:
@@ -276,21 +273,12 @@ class RetrievalService(Service):
                     )
                     messages = [message]
 
-                print("a")
-                print('ids = ', ids)
-                print("message = ", message)
                 # Save the new message to the conversation
                 message_id = await self.logging_connection.add_message(
                     conversation_id,
                     message,
-                    parent_id=(
-                        str(ids[-2][0])
-                        if ids and len(ids) > 1
-                        else None
-                    ),
+                    parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,
                 )
-                print("message_id = ", message_id)
-                print("b")
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -335,11 +323,13 @@ class RetrievalService(Service):
                     **kwargs,
                 )
 
-                print('message_id = ', message_id)
-                print('adding results[-1] = ', results[-1])
+                print("message_id = ", message_id)
+                print("adding results[-1] = ", results[-1])
 
                 await self.logging_connection.add_message(
-                    conversation_id, Message(**results[-1]), parent_id=message_id
+                    conversation_id,
+                    Message(**results[-1]),
+                    parent_id=message_id,
                 )
 
                 t1 = time.time()

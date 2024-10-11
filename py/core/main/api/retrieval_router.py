@@ -275,7 +275,9 @@ class RetrievalRouter(BaseRouter):
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
-                    conversation_id=str(conversation_id) if conversation_id else None,
+                    conversation_id=(
+                        str(conversation_id) if conversation_id else None
+                    ),
                     branch_id=str(branch_id) if branch_id else None,
                 )
 
@@ -287,8 +289,11 @@ class RetrievalRouter(BaseRouter):
                             yield chunk
                             content += chunk
                             await asyncio.sleep(0)
-                        print('content = ', content)
-                        print('conversation = ', self.service.agent.conversation)
+                        print("content = ", content)
+                        print(
+                            "conversation = ", self.service.agent.conversation
+                        )
+
                     return StreamingResponse(
                         stream_generator(), media_type="application/json"
                     )  # type: ignore
