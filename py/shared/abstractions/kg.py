@@ -60,11 +60,6 @@ class KGCreationSettings(R2RSerializable):
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
-    skip_clustering: bool = Field(
-        default=False,
-        description="Whether to skip leiden clustering on the graph or not.",
-    )
-
     force_kg_enrichment: bool = Field(
         default=False,
         description="Force run the enrichment step even if graph creation is still in progress for some documents.",
