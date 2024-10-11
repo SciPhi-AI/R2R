@@ -373,8 +373,7 @@
     {
       "group": "Analytics and Observability",
       "pages": [
-        "api-reference/endpoint/analytics",
-        "api-reference/endpoint/score_completion"
+        "api-reference/endpoint/analytics"
       ]
     },
     {
