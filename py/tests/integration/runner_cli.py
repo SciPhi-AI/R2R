@@ -41,6 +41,17 @@ def test_ingest_sample_file_cli():
     print("~" * 100)
 
 
+def test_ingest_sample_file_2_cli():
+    """
+    Ingesting Aristotle v2, the smaller version of the file.
+    """
+    print("Testing: Ingest sample file CLI 2")
+    run_command("poetry run r2r ingest-sample-file --v2")
+    time.sleep(10)
+    print("Ingestion successful")
+    print("~" * 100)
+
+
 def test_document_overview_sample_file_cli():
     print("Testing: Document overview contains 'aristotle.txt'")
     output = run_command("poetry run r2r documents-overview")
@@ -245,7 +256,10 @@ def test_kg_create_graph_sample_file_cli():
 
     response = requests.get(
         "http://localhost:7272/v2/entities",
-        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+        params={
+            "collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+            "limit": 1000,
+        },
     )
 
     if response.status_code != 200:
@@ -253,16 +267,13 @@ def test_kg_create_graph_sample_file_cli():
         sys.exit(1)
 
     entities_list = [
-        ele["name"] for ele in response.json()["results"]["results"]
+        ele["name"] for ele in response.json()["results"]["entities"]
     ]
 
-    print("Entities list:", entities_list)
+    print(entities_list)
 
-    assert (
-        "ARISTOTLE" in entities_list
-        or "aristotle" in entities_list
-        or "Aristotle" in entities_list
-    )
+    assert len(entities_list) >= 1
+    assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
     print("~" * 100)
@@ -282,7 +293,7 @@ def test_kg_enrich_graph_sample_file_cli():
         print("KG enrichment test failed: Communities not created")
         sys.exit(1)
 
-    communities = response.json()["results"]
+    communities = response.json()["results"]["communities"]
     assert len(communities) >= 1
 
     for community in communities:

@@ -104,6 +104,7 @@ class KGMethods:
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
+        entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
     ) -> dict:
         """
@@ -113,6 +114,7 @@ class KGMethods:
             collection_id (str): The ID of the collection to retrieve triples from.
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
+            entity_names (Optional[List[str]]): Optional list of entity names to filter by.
             triple_ids (Optional[List[str]]): Optional list of triple IDs to filter by.
 
         Returns:
@@ -123,6 +125,10 @@ class KGMethods:
             "offset": offset,
             "limit": limit,
         }
+
+        if entity_names:
+            params["entity_names"] = entity_names
+
         if triple_ids:
             params["triple_ids"] = ",".join(triple_ids)
 
@@ -142,6 +148,10 @@ class KGMethods:
 
         Args:
             collection_id (str): The ID of the collection to retrieve communities from.
+            offset (int): The offset for pagination.
+            limit (int): The limit for pagination.
+            levels (Optional[List[int]]): Optional list of levels to filter by.
+            community_numbers (Optional[List[int]]): Optional list of community numbers to filter by.
 
         Returns:
             dict: A dictionary containing the retrieved communities.

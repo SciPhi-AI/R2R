@@ -185,8 +185,13 @@ def get_entities(ctx, collection_id, offset, limit, entity_ids):
     multiple=True,
     help="Triple IDs to filter by.",
 )
+@click.option(
+    "--entity-names",
+    multiple=True,
+    help="Entity names to filter by.",
+)
 @pass_context
-def get_triples(ctx, collection_id, offset, limit, triple_ids):
+def get_triples(ctx, collection_id, offset, limit, triple_ids, entity_names):
     """
     Retrieve triples from the knowledge graph.
     """
@@ -197,6 +202,7 @@ def get_triples(ctx, collection_id, offset, limit, triple_ids):
             collection_id,
             offset,
             limit,
+            list(entity_names),
             list(triple_ids),
         )
 

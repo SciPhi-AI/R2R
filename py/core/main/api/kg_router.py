@@ -17,6 +17,7 @@ from core.base.api.models import (
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
 from shared.abstractions.kg import KGRunType
+from shared.utils.base_utils import update_settings_from_dict
 
 from ..services.kg_service import KgService
 from .base_router import BaseRouter
@@ -93,39 +94,45 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
+            logger.info(f"Running create-graph on collection {collection_id}")
 
+            # If no collection ID is provided, use the default user collection
             if not collection_id:
                 collection_id = generate_default_user_collection_id(
                     auth_user.id
                 )
 
-            logger.info(f"Running on collection {collection_id}")
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
+            # Apply runtime settings overrides
             server_kg_creation_settings = (
                 self.service.providers.kg.config.kg_creation_settings
             )
 
             if kg_creation_settings:
-                for key, value in kg_creation_settings.items():
-                    if value is not None:
-                        setattr(server_kg_creation_settings, key, value)
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_kg_creation_settings, kg_creation_settings
+                )
 
+            # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
                 return await self.service.get_creation_estimate(
                     collection_id, server_kg_creation_settings
                 )
 
-            workflow_input = {
-                "collection_id": str(collection_id),
-                "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                "user": auth_user.json(),
-            }
+            # Otherwise, create the graph
+            else:
+                workflow_input = {
+                    "collection_id": str(collection_id),
+                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
 
-            return await self.orchestration_provider.run_workflow(  # type: ignore
-                "create-graph", {"request": workflow_input}, {}
-            )
+                return await self.orchestration_provider.run_workflow(  # type: ignore
+                    "create-graph", {"request": workflow_input}, {}
+                )
 
         @self.router.post(
             "/enrich_graph",
@@ -154,40 +161,42 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
-
-            server_kg_enrichment_settings = (
-                self.service.providers.kg.config.kg_enrichment_settings
-            )
-
+            # If no collection ID is provided, use the default user collection
             if not collection_id:
                 collection_id = generate_default_user_collection_id(
                     auth_user.id
                 )
 
-            logger.info(f"Running on collection {collection_id}")
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
+            # Apply runtime settings overrides
+            server_kg_enrichment_settings = (
+                self.service.providers.kg.config.kg_enrichment_settings
+            )
+            if kg_enrichment_settings:
+                server_kg_enrichment_settings = update_settings_from_dict(
+                    server_kg_enrichment_settings, kg_enrichment_settings
+                )
+
+            # If the run type is estimate, return an estimate of the enrichment cost
             if run_type is KGRunType.ESTIMATE:
-
                 return await self.service.get_enrichment_estimate(
                     collection_id, server_kg_enrichment_settings
                 )
 
-            if kg_enrichment_settings:
-                for key, value in kg_enrichment_settings.items():
-                    if value is not None:
-                        setattr(server_kg_enrichment_settings, key, value)
+            # Otherwise, run the enrichment workflow
+            else:
+                workflow_input = {
+                    "collection_id": str(collection_id),
+                    "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
 
-            workflow_input = {
-                "collection_id": str(collection_id),
-                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-                "user": auth_user.json(),
-            }
-
-            return await self.orchestration_provider.run_workflow(  # type: ignore
-                "enrich-graph", {"request": workflow_input}, {}
-            )
+                return await self.orchestration_provider.run_workflow(  # type: ignore
+                    "enrich-graph", {"request": workflow_input}, {}
+                )
 
         @self.router.get("/entities")
         @self.base_endpoint

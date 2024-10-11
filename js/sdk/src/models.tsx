@@ -98,3 +98,7 @@ export enum IndexMeasure {
   L2_DISTANCE = "l2_distance",
   MAX_INNER_PRODUCT = "max_inner_product",
 }
+
+export interface RawChunk {
+  text: string;
+}

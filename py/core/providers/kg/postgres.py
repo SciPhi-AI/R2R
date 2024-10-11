@@ -959,6 +959,7 @@ class PostgresKGProvider(KGProvider):
         offset: int = 0,
         limit: int = 100,
         entity_ids: Optional[List[str]] = None,
+        entity_table_name: str = "entity_embedding",
     ) -> dict:
         conditions = []
         params: list = [collection_id]
@@ -970,8 +971,8 @@ class PostgresKGProvider(KGProvider):
         params.extend([offset, limit])
 
         query = f"""
-            SELECT id, name, description
-            FROM {self._get_table_name("entity_embedding")}
+            SELECT id, name, description, extraction_ids, document_id
+            FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
                 WHERE $1 = ANY(collection_ids)
@@ -1048,6 +1049,7 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        entity_table_name: str = "entity_embedding",
     ) -> int:
         if collection_id is None and document_id is None:
             raise ValueError(
@@ -1072,7 +1074,7 @@ class PostgresKGProvider(KGProvider):
             params.append(str(document_id))
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")}
+            SELECT COUNT(*) FROM {self._get_table_name(entity_table_name)}
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]

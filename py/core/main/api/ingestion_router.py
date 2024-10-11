@@ -282,13 +282,13 @@ class IngestionRouter(BaseRouter):
         )
         @self.base_endpoint
         async def ingest_chunks_app(
-            chunks: Json[list[RawChunk]] = Body(
+            chunks: list[RawChunk] = Body(
                 {}, description=ingest_chunks_descriptions.get("chunks")
             ),
-            document_id: Optional[UUID] = Body(
+            document_id: Optional[str] = Body(
                 None, description=ingest_chunks_descriptions.get("document_id")
             ),
-            metadata: Optional[Json[dict]] = Body(
+            metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -300,13 +300,22 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest chunks for their own access. More expansive collection permissioning is under development.
             """
+
+            if document_id:
+                try:
+                    document_uuid = UUID(document_id)
+                except ValueError:
+                    raise R2RException(
+                        status_code=422, message="Invalid document ID format."
+                    )
+
             if not document_id:
-                document_id = generate_document_id(
+                document_uuid = generate_document_id(
                     chunks[0].text[:20], auth_user.id
                 )
 
             workflow_input = {
-                "document_id": str(document_id),
+                "document_id": str(document_uuid),
                 "chunks": [chunk.model_dump() for chunk in chunks],
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
@@ -317,12 +326,13 @@ class IngestionRouter(BaseRouter):
                 {"request": workflow_input},
                 options={
                     "additional_metadata": {
-                        "document_id": str(document_id),
+                        "document_id": str(document_uuid),
                     }
                 },
             )
-            raw_message["document_id"] = str(document_id)
-            return raw_message  # type: ignore
+            raw_message["document_id"] = str(document_uuid)
+
+            return [raw_message]  # type: ignore
 
         @self.router.post("/create_vector_index")
         @self.base_endpoint

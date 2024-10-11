@@ -8,6 +8,7 @@ All public classes, enums, and functions are re-exported by the top level `vecs`
 from __future__ import annotations
 
 import math
+import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -997,8 +998,8 @@ class Collection:
                 raise Exception(f"Failed to drop existing index: {e}")
             self._index = None
 
-        unique_string = str(uuid4()).replace("-", "_")[0:7]
-        index_name = f"ix_{ops}_{method}__{unique_string}"
+        timestamp = time.strftime("%Y%m%d%H%M%S")
+        index_name = f"ix_{ops}_{method}__{timestamp}"
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
