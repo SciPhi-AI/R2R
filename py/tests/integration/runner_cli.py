@@ -253,7 +253,7 @@ def test_kg_create_graph_sample_file_cli():
         sys.exit(1)
 
     entities_list = [
-        ele["name"] for ele in response.json()["results"]["results"]
+        ele["name"] for ele in response.json()["results"]["entities"]
     ]
 
     print("Entities list:", entities_list)
@@ -282,7 +282,7 @@ def test_kg_enrich_graph_sample_file_cli():
         print("KG enrichment test failed: Communities not created")
         sys.exit(1)
 
-    communities = response.json()["results"]
+    communities = response.json()["results"]["communities"]
     assert len(communities) >= 1
 
     for community in communities:

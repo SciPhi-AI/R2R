@@ -663,7 +663,7 @@ def test_kg_create_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    entities_list = [ele["name"] for ele in result["results"]["results"]]
+    entities_list = [ele["name"] for ele in result["results"]["entities"]]
 
     assert "ARISTOTLE" in entities_list
 
@@ -682,7 +682,7 @@ def test_kg_enrich_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    communities = result["results"]
+    communities = result["results"]["communities"]
     assert len(communities) >= 1
 
     for community in communities:
