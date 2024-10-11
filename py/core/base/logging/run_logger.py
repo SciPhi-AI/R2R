@@ -134,7 +134,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             """
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at REAL
             );
 
             CREATE TABLE IF NOT EXISTS messages (
@@ -142,7 +142,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                 conversation_id TEXT,
                 parent_id TEXT,
                 content TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at REAL,
                 FOREIGN KEY (conversation_id) REFERENCES conversations(id),
                 FOREIGN KEY (parent_id) REFERENCES messages(id)
             );
@@ -151,7 +151,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                 id TEXT PRIMARY KEY,
                 conversation_id TEXT,
                 branch_point_id TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at REAL,
                 FOREIGN KEY (conversation_id) REFERENCES conversations(id),
                 FOREIGN KEY (branch_point_id) REFERENCES messages(id)
             );
@@ -270,9 +270,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
     async def create_conversation(self) -> str:
         conversation_id = str(uuid.uuid4())
+        created_at = datetime.utcnow().timestamp()
+
         await self.conn.execute(
-            "INSERT INTO conversations (id) VALUES (?)",
-            (conversation_id,),
+            "INSERT INTO conversations (id, created_at) VALUES (?, ?)",
+            (conversation_id, created_at),
         )
         await self.conn.commit()
         return conversation_id
@@ -284,9 +286,11 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         parent_id: Optional[str] = None,
     ) -> str:
         message_id = str(uuid.uuid4())
+        created_at = datetime.utcnow().timestamp()
+
         await self.conn.execute(
-            "INSERT INTO messages (id, conversation_id, parent_id, content) VALUES (?, ?, ?, ?)",
-            (message_id, conversation_id, parent_id, content.json()),
+            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?)",
+            (message_id, conversation_id, parent_id, content.json(), created_at),
         )
 
         if parent_id is not None:
@@ -356,18 +360,19 @@ class LocalRunLoggingProvider(RunLoggingProvider):
 
         # Create a new branch
         new_branch_id = str(uuid.uuid4())
+        created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
-            "INSERT INTO branches (id, conversation_id, branch_point_id) VALUES (?, ?, ?)",
-            (new_branch_id, conversation_id, message_id),
+            "INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, ?, ?)",
+            (new_branch_id, conversation_id, message_id, created_at),
         )
 
         # Add the edited message with the same parent_id
         new_message_id = str(uuid.uuid4())
+        message_created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
-            "INSERT INTO messages (id, conversation_id, parent_id, content) VALUES (?, ?, ?, ?)",
-            (new_message_id, conversation_id, parent_id, edited_message.json()),
+            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?)",
+            (new_message_id, conversation_id, parent_id, edited_message.json(), message_created_at),
         )
-
         # Link the new message to the new branch
         await self.conn.execute(
             "INSERT INTO message_branches (message_id, branch_id) VALUES (?, ?)",
@@ -429,20 +434,20 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         # Get all messages for this branch
         async with self.conn.execute(
             """
-            WITH RECURSIVE branch_messages(id, content, parent_id, depth) AS (
-                SELECT m.id, m.content, m.parent_id, 0
+            WITH RECURSIVE branch_messages(id, content, parent_id, depth, created_at) AS (
+                SELECT m.id, m.content, m.parent_id, 0, m.created_at
                 FROM messages m
                 JOIN message_branches mb ON m.id = mb.message_id
                 WHERE mb.branch_id = ? AND m.parent_id IS NULL
                 UNION
-                SELECT m.id, m.content, m.parent_id, bm.depth + 1
+                SELECT m.id, m.content, m.parent_id, bm.depth + 1, m.created_at
                 FROM messages m
                 JOIN message_branches mb ON m.id = mb.message_id
                 JOIN branch_messages bm ON m.parent_id = bm.id
                 WHERE mb.branch_id = ?
             )
             SELECT id, content, parent_id FROM branch_messages
-            ORDER BY depth, id
+            ORDER BY depth, created_at
         """,
             (branch_id, branch_id),
         ) as cursor:
