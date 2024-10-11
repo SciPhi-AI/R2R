@@ -245,7 +245,10 @@ def test_kg_create_graph_sample_file_cli():
 
     response = requests.get(
         "http://localhost:7272/v2/entities",
-        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+        params={
+            "collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+            "limit": 1000,
+        },
     )
 
     if response.status_code != 200:

@@ -660,7 +660,7 @@ def test_kg_create_graph_sample_file_sdk():
     )
 
     result = client.get_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", limit = 1000
     )
 
     entities_list = [ele["name"] for ele in result["results"]["entities"]]
