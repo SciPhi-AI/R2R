@@ -88,7 +88,6 @@ def logs(ctx, run_type_filter, offset, limit):
     default=None,
     help="Which Docker Compose project to bring down",
 )
-@click.option("--project-name", default=None, help="Project name for Docker")
 def docker_down(volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
 
