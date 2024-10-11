@@ -171,9 +171,8 @@ class IngestionRouter(BaseRouter):
                     },
                 )
                 raw_message["document_id"] = str(document_id)
-                if "task_id" not in raw_message:
-                    raw_message["task_id"] = None
                 messages.append(raw_message)
+
             return messages  # type: ignore
 
         update_files_extras = self.openapi_extras.get("update_files", {})
@@ -267,8 +266,7 @@ class IngestionRouter(BaseRouter):
             )
             raw_message["message"] = "Update task queued successfully."
             raw_message["document_ids"] = workflow_input["document_ids"]
-            if "task_id" not in raw_message:
-                raw_message["task_id"] = None
+
             return raw_message  # type: ignore
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})

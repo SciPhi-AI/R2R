@@ -240,13 +240,11 @@ class RetrievalRouter(BaseRouter):
                     "include_title_if_available"
                 ),
             ),
-            conversation_id: UUID = Body(
-                None,
-                description=agent_descriptions.get("conversation_id"),
+            conversation_id: Optional[UUID] = Body(
+                None, description=agent_descriptions.get("conversation_id")
             ),
-            branch_id: UUID = Body(
-                None,
-                description=agent_descriptions.get("branch_id"),
+            branch_id: Optional[UUID] = Body(
+                None, description=agent_descriptions.get("branch_id")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:  # type: ignore

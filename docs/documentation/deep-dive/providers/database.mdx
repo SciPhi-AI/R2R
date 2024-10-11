@@ -35,11 +35,11 @@ your_project_name = "your_project_name"
 Alternatively, you can set these values using environment variables:
 
 ```bash
-export POSTGRES_USER=your_postgres_user
-export POSTGRES_PASSWORD=your_postgres_password
-export POSTGRES_HOST=your_postgres_host
-export POSTGRES_PORT=your_postgres_port
-export POSTGRES_DBNAME=your_database_name
+export R2R_POSTGRES_USER=your_postgres_user
+export R2R_POSTGRES_PASSWORD=your_postgres_password
+export R2R_POSTGRES_HOST=your_postgres_host
+export R2R_POSTGRES_PORT=your_postgres_port
+export R2R_POSTGRES_DBNAME=your_database_name
 export R2R_PROJECT_NAME=your_project_name
 ```
 Environment variables take precedence over the config settings in case of conflicts. The R2R Docker includes configuration options that facilitate integration with a combined Postgres+pgvector database setup.

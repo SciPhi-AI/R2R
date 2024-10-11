@@ -14,6 +14,8 @@ from core.base.agent import Agent, Conversation
 
 logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):
     pass
