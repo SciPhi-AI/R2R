@@ -270,8 +270,7 @@ services:
       retries: 5
 
   r2r:
-    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
-    image: r2r/test
+    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
     build:
       context: .
       args:

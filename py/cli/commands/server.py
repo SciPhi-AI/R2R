@@ -261,7 +261,7 @@ async def serve(
         host = os.getenv("R2R_HOST", "0.0.0.0")
 
     if port is None:
-        port = int(os.getenv("R2R_PORT", port))
+        port = int(os.getenv("R2R_PORT", (os.getenv("PORT", "7272"))))
 
     click.echo(f"Running on {host}:{port}, with docker={docker}")
 
