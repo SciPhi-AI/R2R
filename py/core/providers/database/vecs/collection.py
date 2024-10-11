@@ -64,6 +64,8 @@ class IndexMethod(str, Enum):
     ivfflat = "ivfflat"
     hnsw = "hnsw"
 
+    def __str__(self):
+        return self.value
 
 class IndexMeasure(str, Enum):
     """
@@ -79,6 +81,8 @@ class IndexMeasure(str, Enum):
     l2_distance = "l2_distance"
     max_inner_product = "max_inner_product"
 
+    def __str__(self):
+        return self.value
 
 @dataclass
 class IndexArgsIVFFlat:
