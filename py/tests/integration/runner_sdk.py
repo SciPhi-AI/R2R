@@ -667,6 +667,8 @@ def test_kg_create_graph_sample_file_sdk():
 
     assert len(entities_list) >= 1
 
+    assert "ARISTOTLE" in entities_list
+
     print("KG create graph test passed")
     print("~" * 100)
 
