@@ -288,7 +288,7 @@ class ManagementRouter(BaseRouter):
                 document_uuid = UUID(document_id)
             except ValueError:
                 raise R2RException(
-                    status_code=400, message="Invalid document ID format."
+                    status_code=422, message="Invalid document ID format."
                 )
 
             file_tuple = await self.service.download_file(document_uuid)

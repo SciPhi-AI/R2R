@@ -168,6 +168,7 @@ def simple_ingestion_factory(service: IngestionService):
         await asyncio.gather(*results)
 
     async def ingest_chunks(input_data):
+        document_info = None
         try:
             from core.base import IngestionStatus
             from core.main import IngestionServiceAdapter
