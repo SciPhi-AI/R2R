@@ -472,7 +472,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                 WHERE mb.branch_id = ?
             )
             SELECT id, content, parent_id FROM branch_messages
-            ORDER BY depth, created_at
+            ORDER BY created_at ASC
         """,
             (branch_id, branch_id),
         ) as cursor:

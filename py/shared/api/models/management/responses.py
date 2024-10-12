@@ -1,10 +1,12 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+
+from ....abstractions.llm import Message
 
 
 class UpdatePromptResponse(BaseModel):
@@ -141,6 +143,7 @@ WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedUserOverviewResponse = PaginatedResultsWrapper[
     list[UserOverviewResponse]
 ]
+WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]

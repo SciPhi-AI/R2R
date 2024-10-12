@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedConversationResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -758,7 +759,7 @@ class ManagementRouter(BaseRouter):
             conversation_id: str = Path(..., description="Conversation ID"),
             branch_id: str = Query(None, description="Branch ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedConversationResponse:
             result = await self.service.get_conversation(
                 conversation_id, branch_id, auth_user
             )

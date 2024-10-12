@@ -294,12 +294,17 @@ class RetrievalService(Service):
                             await self.logging_connection.create_conversation()
                         )
                         parent_id = None
-                        for message in messages[:-1]:
+                        for inner_message in messages[:-1]:
+                            print("rr recording message = ", inner_message)
+
                             parent_id = (
                                 await self.logging_connection.add_message(
-                                    conversation_id, message, parent_id
+                                    conversation_id, inner_message, parent_id
                                 )
                             )
+                        message = messages[-1]
+
+                print("qq recording message = ", message)
 
                 # Save the new message to the conversation
                 message_id = await self.logging_connection.add_message(
@@ -350,7 +355,7 @@ class RetrievalService(Service):
                     *args,
                     **kwargs,
                 )
-
+                print("ss recording message = ", results[-1])
                 await self.logging_connection.add_message(
                     conversation_id,
                     Message(**results[-1]),
