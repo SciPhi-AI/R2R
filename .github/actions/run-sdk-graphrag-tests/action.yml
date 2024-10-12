@@ -1,12 +1,12 @@
-name: 'Run SDK Ingestion Tests'
-description: 'Runs SDK ingestion tests for R2R'
+name: 'Run SDK Graphrag Tests'
+description: 'Runs SDK graphrag tests for R2R'
 runs:
   using: "composite"
   steps:
     - name: Ingest sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_remove_all_files_and_ingest_sample_file_sdk
+      run: poetry run python tests/integration/runner_sdk.py test_ingest_sample_file_2_sdk
 
     - name: Create the graph (SDK)
       working-directory: ./py

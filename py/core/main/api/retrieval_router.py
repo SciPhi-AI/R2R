@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 from typing import Any, Optional, Union
+from uuid import UUID
 
 import yaml
 from fastapi import Body, Depends
@@ -238,6 +239,9 @@ class RetrievalRouter(BaseRouter):
                 description=agent_descriptions.get(
                     "include_title_if_available"
                 ),
+            ),
+            conversation_id: Optional[UUID] = Body(
+                None, description=agent_descriptions.get("conversation_id")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:  # type: ignore

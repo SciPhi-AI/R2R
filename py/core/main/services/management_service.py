@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple
 from uuid import UUID
+from core.base.utils import validate_uuid
 
 import toml
 
@@ -273,6 +274,45 @@ class ManagementService(Service):
         NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
         NOTE: This method assumes that filters delete entire contents of any touched documents.
         """
+
+        def validate_filters(filters: dict[str, Any]) -> None:
+            ALLOWED_FILTERS = {"document_id", "user_id", "collection_ids"}
+
+            if not filters:
+                raise R2RException(
+                    status_code=422, message="No filters provided"
+                )
+
+            for field in filters:
+                if field not in ALLOWED_FILTERS:
+                    raise R2RException(
+                        status_code=422,
+                        message=f"Invalid filter field: {field}",
+                    )
+
+            for field in ["document_id", "user_id"]:
+                if field in filters:
+                    op = next(iter(filters[field].keys()))
+                    try:
+                        validate_uuid(filters[field][op])
+                    except ValueError:
+                        raise R2RException(
+                            status_code=422,
+                            message=f"Invalid UUID: {filters[field][op]}",
+                        )
+
+            if "collection_ids" in filters:
+                op = next(iter(filters["collection_ids"].keys()))
+                for id_str in filters["collection_ids"][op]:
+                    try:
+                        validate_uuid(id_str)
+                    except ValueError:
+                        raise R2RException(
+                            status_code=422, message=f"Invalid UUID: {id_str}"
+                        )
+
+        validate_filters(filters)
+
         logger.info(f"Deleting entries with filters: {filters}")
 
         try:
@@ -297,17 +337,14 @@ class ManagementService(Service):
         relational_filters = {}
         if "document_id" in filters:
             relational_filters["filter_document_ids"] = [
-                UUID(filters["document_id"]["$eq"])
+                filters["document_id"]["$eq"]
             ]
         if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [
-                UUID(filters["user_id"]["$eq"])
-            ]
+            relational_filters["filter_user_ids"] = [filters["user_id"]["$eq"]]
         if "collection_ids" in filters:
-            relational_filters["filter_collection_ids"] = [
-                UUID(collection_id)
-                for collection_id in filters["collection_ids"]["$in"]
-            ]
+            relational_filters["filter_collection_ids"] = list(
+                filters["collection_ids"]["$in"]
+            )
 
         try:
             documents_overview = (

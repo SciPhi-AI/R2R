@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Optional, Set
+from typing import Optional, Set, Any
 from uuid import UUID
 
 import psutil
@@ -269,8 +269,26 @@ class ManagementRouter(BaseRouter):
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            filters_dict = json.loads(filters) if filters else None
-            return await self.service.delete(filters=filters_dict)  # type: ignore
+            try:
+                filters_dict = json.loads(filters)
+            except json.JSONDecodeError:
+                raise R2RException(
+                    status_code=422, message="Invalid JSON in filters"
+                )
+
+            if not isinstance(filters_dict, dict):
+                raise R2RException(
+                    status_code=422, message="Filters must be a JSON object"
+                )
+
+            for key, value in filters_dict.items():
+                if not isinstance(value, dict):
+                    raise R2RException(
+                        status_code=422,
+                        message=f"Invalid filter format for key: {key}",
+                    )
+
+            return await self.service.delete(filters=filters_dict)
 
         @self.router.get(
             "/download_file/{document_id}", response_class=StreamingResponse
@@ -289,7 +307,7 @@ class ManagementRouter(BaseRouter):
                 document_uuid = UUID(document_id)
             except ValueError:
                 raise R2RException(
-                    status_code=400, message="Invalid document ID format."
+                    status_code=422, message="Invalid document ID format."
                 )
 
             file_tuple = await self.service.download_file(document_uuid)

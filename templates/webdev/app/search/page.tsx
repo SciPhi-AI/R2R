@@ -21,11 +21,11 @@ const R2RQueryApp: React.FC = () => {
         },
         body: JSON.stringify({ query }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      
+
       const { message } = await response.json()
       setResult(message);
     } catch (error) {

@@ -320,23 +320,29 @@ class PostgresLoggingConfig(LoggingConfig):
     log_table: str = "logs"
     log_info_table: str = "log_info"
 
+    ENV_VAR_MAPPING: dict[str, str] = {
+        "R2R_POSTGRES_DBNAME": "POSTGRES_DBNAME",
+        "R2R_POSTGRES_USER": "POSTGRES_USER",
+        "R2R_POSTGRES_PASSWORD": "POSTGRES_PASSWORD",
+        "R2R_POSTGRES_HOST": "POSTGRES_HOST",
+        "R2R_POSTGRES_PORT": "POSTGRES_PORT",
+    }
+
     def validate_config(self) -> None:
-        required_env_vars = [
-            "POSTGRES_DBNAME",
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_HOST",
-            "POSTGRES_PORT",
-        ]
-        for var in required_env_vars:
-            if not os.getenv(var):
-                raise ValueError(f"Environment variable {var} is not set.")
+        for new_var, old_var in self.ENV_VAR_MAPPING.items():
+            if not os.getenv(new_var) and not os.getenv(old_var):
+                raise ValueError(f"Environment variable {new_var} is not set.")
+            if os.getenv(old_var):
+                logger.warning(
+                    f"Environment variable {old_var} is deprecated. Please use {new_var} instead."
+                )
 
     @property
     def supported_providers(self) -> list[str]:
         return ["postgres"]
 
 
+# TODO: Remove anything without the R2R_ prefix in a future release
 class PostgresRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: PostgresLoggingConfig):
         self.log_table = config.log_table
@@ -346,34 +352,28 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
             "R2R_PROJECT_NAME", "r2r_default"
         )
         self.pool = None
-        if not os.getenv("POSTGRES_DBNAME"):
-            raise ValueError(
-                "Please set the environment variable POSTGRES_DBNAME."
-            )
-        if not os.getenv("POSTGRES_USER"):
-            raise ValueError(
-                "Please set the environment variable POSTGRES_USER."
-            )
-        if not os.getenv("POSTGRES_PASSWORD"):
-            raise ValueError(
-                "Please set the environment variable POSTGRES_PASSWORD."
-            )
-        if not os.getenv("POSTGRES_HOST"):
-            raise ValueError(
-                "Please set the environment variable POSTGRES_HOST."
-            )
-        if not os.getenv("POSTGRES_PORT"):
-            raise ValueError(
-                "Please set the environment variable POSTGRES_PORT."
-            )
+        self.validate_env_vars()
+
+    def validate_env_vars(self):
+        for new_var, old_var in PostgresLoggingConfig.ENV_VAR_MAPPING.items():
+            if not os.getenv(new_var) and not os.getenv(old_var):
+                raise ValueError(
+                    f"Please set the environment variable {new_var}."
+                )
+            if os.getenv(old_var):
+                logger.warning(
+                    f"Environment variable {old_var} is deprecated. Please use {new_var} instead."
+                )
 
     async def _init(self):
         self.pool = await asyncpg.create_pool(
-            database=os.getenv("POSTGRES_DBNAME"),
-            user=os.getenv("POSTGRES_USER"),
-            password=os.getenv("POSTGRES_PASSWORD"),
-            host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT"),
+            database=os.getenv("R2R_POSTGRES_DBNAME")
+            or os.getenv("POSTGRES_DBNAME"),
+            user=os.getenv("R2R_POSTGRES_USER") or os.getenv("POSTGRES_USER"),
+            password=os.getenv("R2R_POSTGRES_PASSWORD")
+            or os.getenv("POSTGRES_PASSWORD"),
+            host=os.getenv("R2R_POSTGRES_HOST") or os.getenv("POSTGRES_HOST"),
+            port=os.getenv("R2R_POSTGRES_PORT") or os.getenv("POSTGRES_PORT"),
             statement_cache_size=0,  # Disable statement caching
         )
         async with self.pool.acquire() as conn:

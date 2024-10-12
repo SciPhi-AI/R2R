@@ -135,7 +135,8 @@ class KgService(Service):
     ):
 
         entity_count = await self.providers.kg.get_entity_count(
-            document_id=document_id
+            document_id=document_id,
+            entity_table_name="entity_raw",
         )
 
         # TODO - Do not hardcode the batch size,
@@ -280,7 +281,7 @@ class KgService(Service):
         offset: int = 0,
         limit: int = 100,
         entity_ids: Optional[list[str]] = None,
-        with_description: bool = False,
+        entity_table_name: str = "entity_embedding",
         **kwargs,
     ):
         return await self.providers.kg.get_entities(
@@ -288,7 +289,7 @@ class KgService(Service):
             offset,
             limit,
             entity_ids,
-            with_description,
+            entity_table_name=entity_table_name,
         )
 
     @telemetry_event("get_triples")
@@ -297,6 +298,7 @@ class KgService(Service):
         collection_id: UUID,
         offset: int = 0,
         limit: int = 100,
+        entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
         **kwargs,
     ):
@@ -304,6 +306,7 @@ class KgService(Service):
             collection_id,
             offset,
             limit,
+            entity_names,
             triple_ids,
         )
 

@@ -17,6 +17,7 @@ from shared.utils import (
     increment_version,
     run_pipeline,
     to_async_generator,
+    validate_uuid,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "generate_default_prompt_id",
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
+    "validate_uuid",
 ]
