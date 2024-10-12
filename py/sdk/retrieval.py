@@ -1,3 +1,4 @@
+import logging
 from typing import AsyncGenerator, Optional, Union
 
 from .models import (
@@ -8,6 +9,8 @@ from .models import (
     SearchResponse,
     VectorSearchSettings,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RetrievalMethods:
@@ -122,8 +125,8 @@ class RetrievalMethods:
     @staticmethod
     async def agent(
         client,
-        message: Union[dict, Message],
-        rag_generation_config: Optional[Union[dict, GenerationConfig]],
+        message: Optional[Union[dict, Message]] = None,
+        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         vector_search_settings: Optional[
             Union[dict, VectorSearchSettings]
         ] = None,
@@ -132,6 +135,8 @@ class RetrievalMethods:
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
         branch_id: Optional[str] = None,
+        # TODO - Deprecate messages
+        messages: Optional[Union[dict, Message]] = None,
     ) -> Union[list[Message], AsyncGenerator[Message, None]]:
         """
         Performs a single turn in a conversation with a RAG agent.
@@ -147,6 +152,10 @@ class RetrievalMethods:
         Returns:
             Union[List[Message], AsyncGenerator[Message, None]]: The agent response.
         """
+        if messages:
+            logger.warning(
+                "The `messages` argument is deprecated. Please use `message` instead."
+            )
         if rag_generation_config and not isinstance(
             rag_generation_config, dict
         ):
@@ -158,21 +167,31 @@ class RetrievalMethods:
         if kg_search_settings and not isinstance(kg_search_settings, dict):
             kg_search_settings = kg_search_settings.model_dump()
 
-        cast_message: Message = (
-            Message(**message) if isinstance(message, dict) else message
-        )
-
         data = {
-            "message": cast_message.model_dump(),
-            "rag_generation_config": rag_generation_config,
-            "vector_search_settings": vector_search_settings,
+            "rag_generation_config": rag_generation_config or {},
+            "vector_search_settings": vector_search_settings or {},
             "kg_search_settings": kg_search_settings,
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
             "conversation_id": conversation_id,
             "branch_id": branch_id,
         }
-        print("input data = ", data)
+
+        if message:
+            cast_message: Message = (
+                Message(**message) if isinstance(message, dict) else message
+            )
+            data["message"] = cast_message.model_dump()
+
+        if messages:
+            data["messages"] = [
+                (
+                    Message(**msg).model_dump()  # type: ignore
+                    if isinstance(msg, dict)
+                    else msg.model_dump()  # type: ignore
+                )
+                for msg in messages
+            ]
 
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False

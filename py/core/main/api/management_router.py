@@ -759,7 +759,6 @@ class ManagementRouter(BaseRouter):
             branch_id: str = Query(None, description="Branch ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            print("....")
             result = await self.service.get_conversation(
                 conversation_id, branch_id, auth_user
             )

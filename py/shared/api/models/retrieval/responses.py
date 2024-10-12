@@ -73,6 +73,9 @@ class RAGAgentResponse(BaseModel):
     messages: list[Message] = Field(
         ..., description="List of messages in the RAG agent response"
     )
+    conversation_id: str = Field(
+        ..., description="The conversation ID for the RAG agent response"
+    )
 
     class Config:
         json_schema_extra = {

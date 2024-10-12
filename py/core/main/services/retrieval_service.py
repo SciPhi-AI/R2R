@@ -236,7 +236,6 @@ class RetrievalService(Service):
     @telemetry_event("Agent")
     async def agent(
         self,
-        message: Message,
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
@@ -244,6 +243,8 @@ class RetrievalService(Service):
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
         branch_id: Optional[str] = None,
+        message: Optional[Message] = None,
+        messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
     ):
@@ -251,33 +252,60 @@ class RetrievalService(Service):
             try:
                 t0 = time.time()
 
+                if message and messages:
+                    raise R2RException(
+                        status_code=400,
+                        message="Only one of message or messages should be provided",
+                    )
+
+                if not message and not messages:
+                    raise R2RException(
+                        status_code=400,
+                        message="Either message or messages should be provided",
+                    )
+
                 # Transform UUID filters to strings
                 for filter, value in vector_search_settings.filters.items():
                     if isinstance(value, UUID):
                         vector_search_settings.filters[filter] = str(value)
 
-                # Fetch or create conversation
-                messages = None
                 ids = None
-                if conversation_id:
-                    conversation = (
-                        await self.logging_connection.get_conversation(
-                            str(conversation_id), branch_id
+
+                if not messages:
+                    # Fetch or create conversation
+                    if conversation_id:
+                        conversation = (
+                            await self.logging_connection.get_conversation(
+                                conversation_id, branch_id
+                            )
                         )
-                    )
-                    messages = [conv[1] for conv in conversation] + [message]
-                    ids = [conv[0] for conv in conversation]
+                        messages = [conv[1] for conv in conversation] + [
+                            message
+                        ]
+                        ids = [conv[0] for conv in conversation]
+                    else:
+                        conversation_id = (
+                            await self.logging_connection.create_conversation()
+                        )
+                        messages = [message]  # type: ignore
                 else:
-                    conversation_id = (
-                        await self.logging_connection.create_conversation()
-                    )
-                    messages = [message]
+                    if not conversation_id:
+                        conversation_id = (
+                            await self.logging_connection.create_conversation()
+                        )
+                        parent_id = None
+                        for message in messages[:-1]:
+                            parent_id = (
+                                await self.logging_connection.add_message(
+                                    conversation_id, message, parent_id
+                                )
+                            )
 
                 # Save the new message to the conversation
                 message_id = await self.logging_connection.add_message(
-                    conversation_id,
-                    message,
-                    parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,
+                    conversation_id,  # type: ignore
+                    message,  # type: ignore
+                    parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
                 )
 
                 if rag_generation_config.stream:
@@ -323,9 +351,6 @@ class RetrievalService(Service):
                     **kwargs,
                 )
 
-                print("message_id = ", message_id)
-                print("adding results[-1] = ", results[-1])
-
                 await self.logging_connection.add_message(
                     conversation_id,
                     Message(**results[-1]),
@@ -340,7 +365,10 @@ class RetrievalService(Service):
                     key="rag_agent_generation_latency",
                     value=latency,
                 )
-                return results
+                return {
+                    "messages": results,
+                    "conversation_id": conversation_id,
+                }
 
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")

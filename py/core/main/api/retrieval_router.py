@@ -215,8 +215,13 @@ class RetrievalRouter(BaseRouter):
         )
         @self.base_endpoint
         async def agent_app(
-            message: Message = Body(
-                ..., description=agent_descriptions.get("message")
+            message: Optional[Message] = Body(
+                None, description=agent_descriptions.get("message")
+            ),
+            messages: Optional[list[Message]] = Body(
+                None,
+                description=agent_descriptions.get("messages"),
+                deprecated=True,
             ),
             vector_search_settings: VectorSearchSettings = Body(
                 default_factory=VectorSearchSettings,
@@ -267,6 +272,7 @@ class RetrievalRouter(BaseRouter):
             try:
                 response = await self.service.agent(
                     message=message,
+                    messages=messages,
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
@@ -286,16 +292,12 @@ class RetrievalRouter(BaseRouter):
                             yield chunk
                             content += chunk
                             await asyncio.sleep(0)
-                        print("content = ", content)
-                        print(
-                            "conversation = ", self.service.agent.conversation
-                        )
 
                     return StreamingResponse(
                         stream_generator(), media_type="application/json"
                     )  # type: ignore
                 else:
-                    return {"messages": response}  # type: ignore
+                    return response
             except Exception as e:
                 raise R2RException(str(e), 500)
 

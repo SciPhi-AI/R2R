@@ -220,8 +220,6 @@ class R2RClient:
         if callable(async_attr):
 
             def sync_wrapper(*args, **kwargs):
-                print("kwargs = ", kwargs)
-
                 result = asyncio.get_event_loop().run_until_complete(
                     async_attr(*args, **kwargs)
                 )

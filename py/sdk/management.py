@@ -656,3 +656,26 @@ class ManagementMethods:
         return await client._make_request(
             "GET", f"collection/{str(collection_id)}/documents", params=params
         )
+
+    @staticmethod
+    async def get_conversation(
+        client,
+        conversation_id: Union[str, UUID],
+        branch_id: Optional[str] = None,
+    ) -> dict:
+        """
+        Get a conversation by its ID.
+
+        Args:
+            conversation_id (str): The ID of the conversation to retrieve.
+            branch_id (Optional[str]): The ID of a specific branch to retrieve.
+
+        Returns:
+            dict: The conversation data.
+        """
+        params = {}
+        if branch_id is not None:
+            params["branch_id"] = branch_id
+        return await client._make_request(
+            "GET", f"conversations/{str(conversation_id)}", params=params
+        )

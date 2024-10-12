@@ -213,7 +213,8 @@ agent:
             }'
 
   input_descriptions:
-    messages: "List of message objects"
+    messages: "List of message objects (deprecated, use message instead)"
+    message: "Message object"
     vector_search_settings: "Vector search settings"
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
