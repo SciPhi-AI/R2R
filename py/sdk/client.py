@@ -131,7 +131,6 @@ class R2RAsyncClient:
             # Weird mocking fix...
             params = kwargs.pop("params", {})
             params = {**params, **EMPTY_ARGS}
-
             response = getattr(self.client, method.lower())(
                 url, headers=headers, params=params, **kwargs
             )

@@ -1,8 +1,8 @@
 import logging
 import os
+import warnings
 from contextlib import asynccontextmanager
 from typing import Optional
-import warnings
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI

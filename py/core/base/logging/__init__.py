@@ -9,8 +9,6 @@ from .log_processor import (
 from .run_logger import (
     LocalRunLoggingProvider,
     LoggingConfig,
-    PostgresLoggingConfig,
-    PostgresRunLoggingProvider,
     RunLoggingSingleton,
 )
 from .run_manager import RunManager, manage_run
@@ -26,8 +24,6 @@ __all__ = [
     # Logging Providers
     "LocalRunLoggingProvider",
     "LoggingConfig",
-    "PostgresLoggingConfig",
-    "PostgresRunLoggingProvider",
     "RunLoggingSingleton",
     # Run Manager
     "RunManager",

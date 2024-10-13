@@ -215,8 +215,13 @@ class RetrievalRouter(BaseRouter):
         )
         @self.base_endpoint
         async def agent_app(
-            messages: list[Message] = Body(
-                ..., description=agent_descriptions.get("messages")
+            message: Optional[Message] = Body(
+                None, description=agent_descriptions.get("message")
+            ),
+            messages: Optional[list[Message]] = Body(
+                None,
+                description=agent_descriptions.get("messages"),
+                deprecated=True,
             ),
             vector_search_settings: VectorSearchSettings = Body(
                 default_factory=VectorSearchSettings,
@@ -243,6 +248,9 @@ class RetrievalRouter(BaseRouter):
             conversation_id: Optional[UUID] = Body(
                 None, description=agent_descriptions.get("conversation_id")
             ),
+            branch_id: Optional[UUID] = Body(
+                None, description=agent_descriptions.get("branch_id")
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:  # type: ignore
             """
@@ -261,29 +269,35 @@ class RetrievalRouter(BaseRouter):
             )
 
             kg_search_settings.filters = vector_search_settings.filters
-
             try:
                 response = await self.service.agent(
+                    message=message,
                     messages=messages,
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
+                    conversation_id=(
+                        str(conversation_id) if conversation_id else None
+                    ),
+                    branch_id=str(branch_id) if branch_id else None,
                 )
 
                 if rag_generation_config.stream:
 
                     async def stream_generator():
+                        content = ""
                         async for chunk in response:
                             yield chunk
+                            content += chunk
                             await asyncio.sleep(0)
 
                     return StreamingResponse(
                         stream_generator(), media_type="application/json"
                     )  # type: ignore
                 else:
-                    return {"messages": response}  # type: ignore
+                    return response
             except Exception as e:
                 raise R2RException(str(e), 500)
 

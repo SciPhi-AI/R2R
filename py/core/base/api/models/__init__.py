@@ -7,20 +7,20 @@ from shared.api.models.auth.responses import (
     WrappedUserResponse,
 )
 from shared.api.models.ingestion.responses import (
-    IngestionResponse,
     CreateVectorIndexResponse,
+    IngestionResponse,
+    WrappedCreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
-    WrappedCreateVectorIndexResponse,
 )
 from shared.api.models.kg.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
+    WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
     WrappedKGTriplesResponse,
-    WrappedKGCommunitiesResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -41,6 +41,7 @@ from shared.api.models.management.responses import (
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedConversationResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -48,7 +49,6 @@ from shared.api.models.management.responses import (
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
-    WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
@@ -101,8 +101,8 @@ __all__ = [
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",
     "WrappedAppSettingsResponse",
-    "WrappedScoreCompletionResponse",
     "WrappedUserOverviewResponse",
+    "WrappedConversationResponse",
     "WrappedDocumentChunkResponse",
     "WrappedDocumentOverviewResponse",
     "WrappedDocumentChunkResponse",

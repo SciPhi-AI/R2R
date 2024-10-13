@@ -139,13 +139,13 @@ class AsyncPipe(Generic[T]):
         state = state or AsyncState()
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
-            async with manage_run(run_manager, RunType.UNSPECIFIED) as run_id:
+            async with manage_run(run_manager, RunType.UNSPECIFIED) as run_id:  # type: ignore
                 self.log_worker_task = asyncio.create_task(  # type: ignore
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
                 try:
                     async for result in self._run_logic(  # type: ignore
-                        input, state, run_id, *args, **kwargs
+                        input, state, run_id, *args, **kwargs  # type: ignore
                     ):
                         yield result
                 finally:

@@ -10,24 +10,23 @@ from fastapi import Body, Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
-
 from core.base.api.models import (
+    CreateVectorIndexResponse,
+    WrappedCreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
-    WrappedCreateVectorIndexResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
+from shared.abstractions.vector import (
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
-
-from shared.abstractions.vector import (
-    IndexMethod,
-    IndexArgsIVFFlat,
-    IndexArgsHNSW,
-    VectorTableName,
-    IndexMeasure,
-)
 
 logger = logging.getLogger(__name__)
 

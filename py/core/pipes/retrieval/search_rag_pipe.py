@@ -48,7 +48,6 @@ class SearchRAGPipe(GeneratorPipe):
         state: AsyncState,
         run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[RAGCompletion, None]:

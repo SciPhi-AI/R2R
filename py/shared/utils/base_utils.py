@@ -1,13 +1,13 @@
 import asyncio
 import json
 import logging
+from copy import deepcopy
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
-from copy import deepcopy
 
-from ..abstractions.graph import EntityType, RelationshipType
 from ..abstractions import R2RSerializable
+from ..abstractions.graph import EntityType, RelationshipType
 from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
