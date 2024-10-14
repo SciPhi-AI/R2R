@@ -797,24 +797,28 @@ class PostgresKGProvider(KGProvider):
         delete_queries = [
             f"DELETE FROM {self._get_table_name('entity_raw')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('triple_raw')} WHERE document_id = $1",
-            f"DELETE FROM {self._get_table_name('entity_embedding')} WHERE document_id = $1"
+            f"DELETE FROM {self._get_table_name('entity_embedding')} WHERE document_id = $1",
         ]
-        
+
         for query in delete_queries:
-            await self.execute_query(query, [document_id]) 
+            await self.execute_query(query, [document_id])
 
         # Check if this is the last document in the collection
-        documents = await self.db_provider.documents_in_collection(collection_id)
+        documents = await self.db_provider.documents_in_collection(
+            collection_id
+        )
         count = documents["total_entries"]
-        
+
         if count == 0:
             # If it's the last document, delete collection-related data
             collection_queries = [
                 f"DELETE FROM {self._get_table_name('community')} WHERE collection_id = $1",
-                f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1"
+                f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1",
             ]
             for query in collection_queries:
-                await self.execute_query(query, [collection_id])  # Ensure collection_id is in a list
+                await self.execute_query(
+                    query, [collection_id]
+                )  # Ensure collection_id is in a list
 
             # set status to PENDING for this collection.
             QUERY = f"""
@@ -823,10 +827,8 @@ class PostgresKGProvider(KGProvider):
             await self.execute_query(
                 QUERY, [KGExtractionStatus.PENDING, collection_id]
             )
-            return False
-        
-        return True
-        
+            return None
+        return None
 
     def _get_str_estimation_output(self, x: tuple[Any, Any]) -> str:
         if isinstance(x[0], int) and isinstance(x[1], int):

@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS builder
+FROM python:3.11-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,7 +23,7 @@ RUN poetry config virtualenvs.create false \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Install runtime dependencies
 RUN apt-get update \
@@ -32,7 +32,7 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Expose the port and set environment variables

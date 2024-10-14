@@ -386,7 +386,7 @@ class ManagementService(Service):
 
     @telemetry_event("RemoveDocumentFromCollection")
     async def remove_document_from_collection(
-        self, document_id: str, collection_id: UUID
+        self, document_id: UUID, collection_id: UUID
     ):
         await self.providers.database.relational.remove_document_from_collection(
             document_id, collection_id
@@ -394,8 +394,10 @@ class ManagementService(Service):
         self.providers.database.vector.remove_document_from_collection(
             document_id, collection_id
         )
-        enrichment = await self.providers.kg.delete_node_via_document_id(document_id, collection_id)
-        return enrichment
+        await self.providers.kg.delete_node_via_document_id(
+            document_id, collection_id
+        )
+        return None
 
     @telemetry_event("DocumentCollections")
     async def document_collections(

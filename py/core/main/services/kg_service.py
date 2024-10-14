@@ -1,6 +1,7 @@
 import logging
 import math
 import time
+from time import strftime
 from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
@@ -11,14 +12,11 @@ from core.base.abstractions import (
     KGEnrichmentSettings,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
-
 from shared.utils import HatchetLogger
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
-
-from time import strftime
 
 logger = logging.getLogger(__name__)
 
@@ -293,8 +291,7 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.kg.delete_node_via_document_id(
-            collection_id,
-            document_id
+            collection_id, document_id
         )
 
     @telemetry_event("get_creation_estimate")
