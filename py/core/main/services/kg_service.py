@@ -15,6 +15,8 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
+from time import strftime
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,11 +59,15 @@ class KgService(Service):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
+        hatchet_logger: Optional[Any] = None,
         **kwargs,
     ):
         try:
 
             logger.info(f"Processing document {document_id} for KG extraction")
+
+            if hatchet_logger:
+                hatchet_logger(f"KgService: Processing document {document_id} for KG extraction")
 
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
@@ -78,11 +84,15 @@ class KgService(Service):
                         "max_knowledge_triples": max_knowledge_triples,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
+                        "hatchet_logger": hatchet_logger,
                     }
                 ),
                 state=None,
                 run_manager=self.run_manager,
             )
+
+            if hatchet_logger:
+                hatchet_logger.info(f"Finished processing document {document_id} for KG extraction")
 
             result_gen = await self.pipes.kg_storage_pipe.run(
                 input=self.pipes.kg_storage_pipe.Input(message=triples),
@@ -97,6 +107,7 @@ class KgService(Service):
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.FAILED,
             )
+            raise e
 
         return await _collect_results(result_gen)
 
@@ -131,6 +142,7 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
+        hatchet_logger: Optional[Any] = None,
         **kwargs,
     ):
 
@@ -146,6 +158,11 @@ class KgService(Service):
         num_batches = math.ceil(entity_count / 256)
         all_results = []
         for i in range(num_batches):
+            if hatchet_logger:
+                hatchet_logger.info(
+                    f"Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}",
+                    function="KgService",
+                )
             logger.info(
                 f"Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
@@ -157,6 +174,7 @@ class KgService(Service):
                         "limit": 256,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
+                        "hatchet_logger": hatchet_logger,
                     }
                 ),
                 state=None,
@@ -164,6 +182,12 @@ class KgService(Service):
             )
 
             all_results.append(await _collect_results(node_descriptions))
+
+            if hatchet_logger:
+                hatchet_logger.info(
+                    f"Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}",
+                    function="KgService",
+                )
 
         await self.providers.database.relational.set_workflow_status(
             id=document_id,

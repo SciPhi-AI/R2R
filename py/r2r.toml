@@ -44,6 +44,7 @@ batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
+quantization_config = { quantization_type = "fp32" }
 
 [file]
 provider = "postgres"
@@ -55,8 +56,7 @@ chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
-[kg]
-provider = "postgres"
+
 batch_size = 256
 
   [kg.kg_creation_settings]

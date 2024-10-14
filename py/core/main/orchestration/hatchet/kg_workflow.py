@@ -8,8 +8,10 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-
+from shared.abstractions.document import KGExtractionStatus
 from ...services import KgService
+
+from shared.utils import create_hatchet_logger
 
 logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
@@ -70,9 +72,11 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
-                logger=context.log,
+                hatchet_logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
+
+            context.log(f"Successfully ran kg triples extraction for document {document_id}")
 
             return {
                 "result": f"successfully ran kg triples extraction for document {document_id}"
@@ -90,12 +94,36 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_entity_description(
                 document_id=uuid.UUID(document_id),
+                hatchet_logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
+
+            context.log(f"Successfully ran kg node description for document {document_id}")
 
             return {
                 "result": f"successfully ran kg node description for document {document_id}"
             }
+        
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            request = context.workflow_input().get("request", {})
+            document_id = request.get("document_id")
+
+            if not document_id:
+                context.log("No document id was found in workflow input to mark a failure.")
+                return
+
+            try:
+                await self.kg_service.providers.database.relational.set_workflow_status(
+                    id=document_id,
+                    status_type="kg_extraction_status",
+                    status=KGExtractionStatus.FAILED,
+                )
+
+                # TODO: garbage collection
+
+            except Exception as e:
+                context.log(f"Failed to update document status for {document_id}: {e}")
 
     @orchestration_provider.workflow(name="create-graph", timeout="360m")
     class CreateGraphWorkflow:

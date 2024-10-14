@@ -117,6 +117,28 @@ class VectorTableName(str, Enum):
         return self.value
 
 
+class VectorQuantizationType(str, Enum):
+    FP32 = "vector" # or vector
+    FP16 = "halfvec" # or halfvec
+    INT1 = "bit" # or bit
+    SPARSE = "sparsevec" # or sparsevec
+
+    def __str__(self) -> str:
+        return self.value
+
+# VECTOR_QUANTIZATION_OBJECT_MAP = {
+#     VectorQuantizationType.FP32: Vector,
+#     VectorQuantizationType.FP16: Vector,
+#     VectorQuantizationType.INT1: Vector,
+#     VectorQuantizationType.SPARSE: Vector,
+# }
+
+
+
+
+class VectorQuantizationSettings(R2RSerializable):
+    quantization_type: Optional[VectorQuantizationType] = None
+
 class Vector(R2RSerializable):
     """A vector with the option to fix the number of elements."""
 
