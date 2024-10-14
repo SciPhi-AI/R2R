@@ -61,12 +61,16 @@ class KgService(Service):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
-        logger: Optional[Any] = None,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
         try:
 
-            logger.info(f"KGService: Processing document {document_id} for KG extraction")
+            logger.info(
+                f"KGService: Processing document {document_id} for KG extraction"
+            )
 
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
@@ -91,7 +95,7 @@ class KgService(Service):
             )
 
             logger.info(
-                f"Finished processing document {document_id} for KG extraction"
+                f"KGService: Finished processing document {document_id} for KG extraction"
             )
 
             result_gen = await self.pipes.kg_storage_pipe.run(
@@ -101,7 +105,7 @@ class KgService(Service):
             )
 
         except Exception as e:
-            logger.error(f"Error in kg_extraction: {e}")
+            logger.error(f"KGService: Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
@@ -142,7 +146,9 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
-        logger: Optional[Union[logging.Logger, HatchetLogger]] = logging.getLogger(__name__),
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
 

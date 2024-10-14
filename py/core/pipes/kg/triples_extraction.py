@@ -83,7 +83,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         relation_types: list[str],
         retries: int = 5,
         delay: int = 2,
-        logger: Optional[Union[logging.Logger, HatchetLogger]] = logging.getLogger(__name__), 
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
     ) -> KGExtraction:
@@ -91,7 +93,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         Extracts NER triples from a extraction with retries.
         """
 
-        logger.info(f"KGTriplesExtractionPipe: Extracting KG Triples for document {extractions[0].document_id}")
+        logger.info(
+            f"KGTriplesExtractionPipe: Extracting KG Triples for document {extractions[0].document_id}"
+        )
 
         # combine all extractions into a single string
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
@@ -232,7 +236,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
-        logger.info("Running KG Extraction Pipe")
 
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
@@ -242,13 +245,12 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         relation_types = input.message["relation_types"]
         logger = input.message.get("logger", logging.getLogger(__name__))
 
-
         logger.info(
             f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
         )
 
         extractions = [
-            DocumentExtraction( 
+            DocumentExtraction(
                 id=extraction["extraction_id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
@@ -264,18 +266,13 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGTriplesExtractionPipe: Sorting extractions for document {document_id}",
+            f"KGTriplesExtractionPipe: Sorting extractions for document {document_id} with length {len(extractions)}",
         )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
         extractions = sorted(
             extractions, key=lambda x: x.metadata["chunk_order"]
         )
-
-        logger.info(
-            f"KGTriplesExtractionPipe: Grouping extractions for document {document_id}",
-        )
-
 
         # group these extractions into groups of extraction_merge_count
         extractions_groups = [
@@ -284,7 +281,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGTriplesExtractionPipe: Extracting KG Triples for document {document_id}",
+            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)} tasks",
         )
 
         tasks = [
@@ -306,12 +303,16 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         completed_tasks = 0
         total_tasks = len(tasks)
 
+        logger.info(
+            f"KGTriplesExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+        )
+
         for completed_task in asyncio.as_completed(tasks):
             try:
                 yield await completed_task
                 completed_tasks += 1
                 logger.info(
-                    f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks for document {document_id}"
+                    f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks"
                 )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Triples: {e}")

@@ -65,6 +65,9 @@ class Vector(UserDefinedType):
         super(UserDefinedType, self).__init__()
         self.dim = dim
 
+    def get_col_spec(self, **kw):
+        return "VECTOR" if self.dim is None else f"VECTOR({self.dim})"
+
     def bind_processor(self, dialect):
         def process(value):
             if value is None:

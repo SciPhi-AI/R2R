@@ -167,7 +167,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         offset = input.message["offset"]
         limit = input.message["limit"]
         document_id = input.message["document_id"]
-        logger = input.message['logger']
+        logger = input.message["logger"]
 
         if logger:
             logger.info(

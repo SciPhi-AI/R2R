@@ -59,10 +59,6 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
 
-            context.log(
-                f"Running KG Extraction for input: {context.workflow_input()['request']}"
-            )
-
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )

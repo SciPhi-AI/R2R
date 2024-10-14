@@ -275,11 +275,10 @@ class HatchetLogger:
         self.hatchet_logger = hatchet_logger
 
     def _log(self, level: str, message: str, function: Optional[str] = None):
-        timestamp = strftime("%Y-%m-%d %H:%M:%S")
         if function:
-            log_message = f"{timestamp}: {level}: {function}: {message}"
+            log_message = f"[{level}]: {function}: {message}"
         else:
-            log_message = f"{timestamp}: {level}: {message}"
+            log_message = f"[{level}]: {message}"
         self.hatchet_logger(log_message)
 
     def debug(self, message: str, function: Optional[str] = None):
