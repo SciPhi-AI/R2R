@@ -32,7 +32,9 @@ class EmbeddingConfig(ProviderConfig):
     max_retries: int = 8
     initial_backoff: float = 1
     max_backoff: float = 64.0
-    quantization_settings: Optional[VectorQuantizationSettings] = None
+    quantization_settings: VectorQuantizationSettings = (
+        VectorQuantizationSettings()
+    )
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:

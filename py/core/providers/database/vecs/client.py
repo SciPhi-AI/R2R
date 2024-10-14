@@ -17,6 +17,7 @@ from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
+from shared.abstractions.vector import VectorQuantizationType
 from .adapter import Adapter
 from .exc import CollectionNotFound
 
@@ -156,6 +157,7 @@ class Client:
         *,
         dimension: Optional[int] = None,
         adapter: Optional[Adapter] = None,
+        quantization_type: Optional[VectorQuantizationType] = None,
     ) -> Collection:
         """
         Get a vector collection by name, or create it if no collection with
@@ -181,6 +183,7 @@ class Client:
         collection = Collection(
             name=name,
             dimension=dimension or adapter_dimension,  # type: ignore
+            quantization_type=quantization_type,
             client=self,
             adapter=adapter,
         )
