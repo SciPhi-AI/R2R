@@ -230,6 +230,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         max_knowledge_triples = input.message["max_knowledge_triples"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
+
         extractions = [
             DocumentExtraction(
                 id=extraction["extraction_id"],

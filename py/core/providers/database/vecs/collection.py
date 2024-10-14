@@ -15,6 +15,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
+import time
 from flupy import flu
 from sqlalchemy import (
     Column,
@@ -44,6 +45,17 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
+from shared.abstractions.vector import (
+    VectorTableName,
+    IndexMeasure,
+    IndexMethod,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    INDEX_MEASURE_TO_OPS,
+    INDEX_MEASURE_TO_SQLA_ACC,
+    VectorQuantizationType,
+)
+
 from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
     ArgError,
@@ -64,8 +76,17 @@ class Vector(UserDefinedType):
         super(UserDefinedType, self).__init__()
         self.dim = dim
 
-    def get_col_spec(self, **kw):
-        return "VECTOR" if self.dim is None else f"VECTOR({self.dim})"
+    def get_col_spec(
+        self, quantization_type: Optional[VectorQuantizationType] = None, **kw
+    ):
+        # return self._decorate_vector_type("VECTOR", quantization_type) if self.dim is None else self._decorate_vector_type(f"VECTOR({self.dim})", quantization_type)
+
+        if self.dim is None:
+            return self._decorate_vector_type("", quantization_type)
+        else:
+            return self._decorate_vector_type(
+                f"({self.dim})", quantization_type
+            )
 
     def bind_processor(self, dialect):
         def process(value):
@@ -199,7 +220,20 @@ class Collection:
                 stmt = select(func.count()).select_from(self.table)
                 return sess.execute(stmt).scalar() or 0
 
-    def _create_if_not_exists(self):
+    def _decorate_vector_type(
+        self,
+        input_str: str,
+        quantization_type: Optional[VectorQuantizationType],
+    ) -> str:
+        if (
+            quantization_type is None
+            or quantization_type == VectorQuantizationType.FP32
+        ):
+            return f"{quantization_type}{input_str}"
+
+    def _create_if_not_exists(
+        self, quantization_type: Optional[VectorQuantizationType]
+    ):
         """
         PRIVATE
 
@@ -1027,8 +1061,18 @@ class Collection:
 
 
 def _build_table(
-    project_name: str, name: str, meta: MetaData, dimension: int
+    project_name: str,
+    name: str,
+    meta: MetaData,
+    dimension: int,
+    quantization_type: Optional[VectorQuantizationType] = None,
 ) -> Table:
+
+    if quantization_type is not None:
+        vector_column = (Column("vec", Vector(dimension), nullable=False),)
+    else:
+        vector_column = Vector(dimension)
+
     table = Table(
         name,
         meta,
@@ -1040,7 +1084,6 @@ def _build_table(
             postgresql.ARRAY(postgresql.UUID),
             server_default="{}",
         ),
-        Column("vec", Vector(dimension), nullable=False),
         Column("text", postgresql.TEXT, nullable=True),
         Column(
             "fts",

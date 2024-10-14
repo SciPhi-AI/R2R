@@ -3,6 +3,7 @@ import copy
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
+import time
 from typing import Any, Optional, Union
 
 from sqlalchemy import text
@@ -15,15 +16,21 @@ from core.base import (
     VectorSearchResult,
 )
 from core.base.abstractions import VectorSearchSettings
+
 from shared.abstractions.vector import (
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
     VectorTableName,
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
 )
 
-from .vecs import Client, Collection, create_client
+from .vecs import (
+    Client,
+    Collection,
+    create_client,
+)
+
 
 logger = logging.getLogger(__name__)
 

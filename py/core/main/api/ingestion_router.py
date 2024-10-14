@@ -10,6 +10,7 @@ from fastapi import Body, Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
+
 from core.base.api.models import (
     CreateVectorIndexResponse,
     WrappedCreateVectorIndexResponse,
@@ -27,6 +28,15 @@ from shared.abstractions.vector import (
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
+
+from shared.abstractions.vector import (
+    IndexMethod,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    VectorTableName,
+    IndexMeasure,
+    VectorIndexQuantizationConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -361,6 +371,12 @@ class IngestionRouter(BaseRouter):
                 default=True,
                 description="Whether to create the index concurrently.",
             ),
+            quantization_config: Optional[
+                VectorIndexQuantizationConfig
+            ] = Body(
+                default=None,
+                description="The quantization configuration for the index.",
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
 
@@ -378,6 +394,7 @@ class IngestionRouter(BaseRouter):
                         "index_arguments": index_arguments,
                         "replace": replace,
                         "concurrently": concurrently,
+                        "quantization_config": quantization_config,
                     },
                 },
                 options={

@@ -1,6 +1,8 @@
 from . import exc
 from .client import Client
-from .collection import Collection
+from .collection import (
+    Collection,
+)
 
 __project__ = "vecs"
 __version__ = "0.4.2"

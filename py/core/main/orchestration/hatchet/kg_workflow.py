@@ -8,7 +8,6 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-
 from ...services import KgService
 
 logger = logging.getLogger(__name__)
@@ -70,7 +69,6 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
-                logger=context.log,
                 **input_data["kg_creation_settings"],
             )
 
