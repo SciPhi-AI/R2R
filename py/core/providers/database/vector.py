@@ -331,7 +331,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         end_time = time.time()
-        logger.info(f"Index creation took {end_time - start_time} seconds")
+        logger.info(f"Index creation took {end_time - start_time:.2f} seconds")
 
     def delete(
         self,

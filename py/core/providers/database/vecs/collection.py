@@ -54,15 +54,10 @@ from .exc import (
     MismatchedDimension,
 )
 
+from shared.utils import _decorate_vector_type
+
 if TYPE_CHECKING:
     from vecs.client import Client
-
-
-def _decorate_vector_type(
-    input_str: str,
-    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
-) -> str:
-    return f"{quantization_type.db_type}{input_str}"
 
 
 def index_measure_to_ops(
