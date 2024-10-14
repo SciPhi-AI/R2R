@@ -27,7 +27,7 @@ class ImageParser(AsyncParser[DataType]):
         self.max_image_size = max_image_size
 
     async def ingest(  # type: ignore
-        self, data: DataType, chunk_size: int = 1024
+        self, data: DataType, chunk_size: int = 1024, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest image data and yield a description."""
 
