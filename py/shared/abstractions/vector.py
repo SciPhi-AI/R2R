@@ -133,9 +133,6 @@ class VectorQuantizationType(str, Enum):
 #     VectorQuantizationType.SPARSE: Vector,
 # }
 
-
-
-
 class VectorQuantizationSettings(R2RSerializable):
     quantization_type: Optional[VectorQuantizationType] = None
 
