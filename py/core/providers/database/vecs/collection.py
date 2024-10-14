@@ -15,6 +15,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
+import time
 from flupy import flu
 from sqlalchemy import (
     Column,
@@ -1029,6 +1030,7 @@ class Collection:
 def _build_table(
     project_name: str, name: str, meta: MetaData, dimension: int
 ) -> Table:
+
     table = Table(
         name,
         meta,

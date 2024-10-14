@@ -780,6 +780,54 @@ class PostgresKGProvider(KGProvider):
             QUERY, [KGExtractionStatus.PENDING, collection_id]
         )
 
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        # don't delete if status is PROCESSING.
+        QUERY = f"""
+            SELECT kg_enrichment_status FROM {self._get_table_name("collections")} WHERE collection_id = $1
+        """
+        status = (await self.fetch_query(QUERY, [collection_id]))[0][
+            "kg_enrichment_status"
+        ]
+        if status == KGExtractionStatus.PROCESSING.value:
+            return
+
+        # Execute separate DELETE queries
+        delete_queries = [
+            f"DELETE FROM {self._get_table_name('entity_raw')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('triple_raw')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('entity_embedding')} WHERE document_id = $1"
+        ]
+        
+        for query in delete_queries:
+            await self.execute_query(query, [document_id]) 
+
+        # Check if this is the last document in the collection
+        documents = await self.db_provider.documents_in_collection(collection_id)
+        count = documents["total_entries"]
+        
+        if count == 0:
+            # If it's the last document, delete collection-related data
+            collection_queries = [
+                f"DELETE FROM {self._get_table_name('community')} WHERE collection_id = $1",
+                f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1"
+            ]
+            for query in collection_queries:
+                await self.execute_query(query, [collection_id])  # Ensure collection_id is in a list
+
+            # set status to PENDING for this collection.
+            QUERY = f"""
+                UPDATE {self._get_table_name("collections")} SET kg_enrichment_status = $1 WHERE collection_id = $2
+            """
+            await self.execute_query(
+                QUERY, [KGExtractionStatus.PENDING, collection_id]
+            )
+            return False
+        
+        return True
+        
+
     def _get_str_estimation_output(self, x: tuple[Any, Any]) -> str:
         if isinstance(x[0], int) and isinstance(x[1], int):
             return " - ".join(map(str, x))
@@ -1049,6 +1097,7 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        distinct: bool = False,
         entity_table_name: str = "entity_embedding",
     ) -> int:
         if collection_id is None and document_id is None:
@@ -1073,8 +1122,13 @@ class PostgresKGProvider(KGProvider):
             conditions.append("document_id = $1")
             params.append(str(document_id))
 
+        if distinct:
+            count_value = "DISTINCT name"
+        else:
+            count_value = "*"
+
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name(entity_table_name)}
+            SELECT COUNT({count_value}) FROM {self._get_table_name(entity_table_name)}
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]

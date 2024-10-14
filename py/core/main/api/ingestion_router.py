@@ -10,6 +10,7 @@ from fastapi import Body, Depends, File, Form, UploadFile
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
+
 from core.base.api.models import (
     CreateVectorIndexResponse,
     WrappedCreateVectorIndexResponse,

@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
-
+import time
 from core.base import (
     AsyncPipe,
     AsyncState,
@@ -193,18 +193,29 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Executes the KG community summary pipe: summarizing communities.
         """
 
+        start_time = time.time()
+
         offset = input.message["offset"]
         limit = input.message["limit"]
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
+        logger = input.message.get("logger", logging.getLogger(__name__))
 
         # check which community summaries exist and don't run them again
+
+        logger.info(
+            f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
+        )
         community_numbers_exist = (
             await self.kg_provider.check_community_reports_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
+        )
+
+        logger.info(
+            f"KGCommunitySummaryPipe: Community summaries exist for communities {len(community_numbers_exist)}"
         )
 
         for community_number in range(offset, offset + limit):
@@ -218,5 +229,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
                     )
                 )
 
+        completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
+            completed_community_summary_jobs += 1
+            if completed_community_summary_jobs % 50 == 0:
+                logger.info(
+                    f"KGCommunitySummaryPipe: {completed_community_summary_jobs}/{len(community_summary_jobs)} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
+                )
             yield await community_summary

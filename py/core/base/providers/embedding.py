@@ -10,6 +10,7 @@ from ..abstractions import (
     VectorSearchResult,
     default_embedding_prefixes,
 )
+
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)

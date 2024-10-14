@@ -196,6 +196,7 @@ class KGProvider(ABC):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        distinct: bool = False,
         entity_table_name: str = "entity_embedding",
     ) -> int:
         """Abstract method to get the entity count."""
@@ -208,6 +209,13 @@ class KGProvider(ABC):
         """Abstract method to delete the graph for a collection."""
         pass
 
+    @abstractmethod
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        """Abstract method to delete the node via document id."""
+        pass
+    
     @abstractmethod
     async def get_creation_estimate(self, *args: Any, **kwargs: Any) -> Any:
         """Abstract method to get the creation estimate."""

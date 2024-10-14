@@ -107,7 +107,7 @@ services:
       - r2r-network
 
   hatchet-migration:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.49.0-alpha.4
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     depends_on:
@@ -117,7 +117,7 @@ services:
       - r2r-network
 
   hatchet-setup-config:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.49.0-alpha.4
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
@@ -151,7 +151,7 @@ services:
       - r2r-network
 
   hatchet-engine:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.49.0-alpha.4
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
     command: /hatchet/hatchet-engine --config /hatchet/config
     restart: on-failure
     depends_on:
@@ -178,7 +178,7 @@ services:
       retries: 5
 
   hatchet-dashboard:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:v0.49.0-alpha.4
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:latest
     command: sh ./entrypoint.sh --config /hatchet/config
     restart: on-failure
     depends_on:

@@ -15,11 +15,13 @@ from core.base import (
     VectorSearchResult,
 )
 from core.base.abstractions import VectorSearchSettings
+
 from shared.abstractions.vector import (
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
-    IndexMeasure,
     IndexMethod,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    VectorTableName,
+    IndexMeasure,
     VectorTableName,
 )
 

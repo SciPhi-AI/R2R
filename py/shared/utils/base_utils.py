@@ -1,3 +1,5 @@
+from time import strftime
+from typing import Optional
 import asyncio
 import json
 import logging
@@ -5,9 +7,11 @@ from copy import deepcopy
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
+from copy import deepcopy
 
 from ..abstractions import R2RSerializable
 from ..abstractions.graph import EntityType, RelationshipType
+from ..abstractions import R2RSerializable
 from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
@@ -264,3 +268,37 @@ def update_settings_from_dict(server_settings, settings_dict: dict):
                 setattr(settings, key, value)
 
     return settings
+
+
+class HatchetLogger:
+    def __init__(self, hatchet_logger: Any):
+        self.hatchet_logger = hatchet_logger
+
+    def _log(self, level: str, message: str, function: Optional[str] = None):
+        if function:
+            log_message = f"[{level}]: {function}: {message}"
+        else:
+            log_message = f"[{level}]: {message}"
+        self.hatchet_logger(log_message)
+
+    def debug(self, message: str, function: Optional[str] = None):
+        self._log("DEBUG", message, function)
+
+    def info(self, message: str, function: Optional[str] = None):
+        self._log("INFO", message, function)
+
+    def warning(self, message: str, function: Optional[str] = None):
+        self._log("WARNING", message, function)
+
+    def error(self, message: str, function: Optional[str] = None):
+        self._log("ERROR", message, function)
+
+    def critical(self, message: str, function: Optional[str] = None):
+        self._log("CRITICAL", message, function)
+
+
+def create_hatchet_logger(hatchet_logger: Any) -> HatchetLogger:
+    """
+    Creates a HatchetLogger instance with different logging levels.
+    """
+    return HatchetLogger(hatchet_logger)
