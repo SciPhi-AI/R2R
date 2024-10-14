@@ -16,13 +16,13 @@ from core.base import (
 )
 from core.base.abstractions import VectorSearchSettings
 
-from .vecs import (
-    Client,
-    Collection,
-    IndexArgsHNSW,
-    IndexMeasure,
+from shared.abstractions.vector import (
     IndexMethod,
-    create_client,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    VectorTableName,
+    IndexMeasure,
+    VectorTableName,
 )
 
 from .vecs import Client, Collection, create_client

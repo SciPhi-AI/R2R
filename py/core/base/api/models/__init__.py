@@ -12,7 +12,6 @@ from shared.api.models.ingestion.responses import (
     WrappedCreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
-    WrappedCreateVectorIndexResponse,
 )
 from shared.api.models.kg.responses import (
     KGCreationResponse,

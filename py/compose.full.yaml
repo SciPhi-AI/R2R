@@ -166,10 +166,6 @@ services:
       SERVER_GRPC_PORT: "7077"
       SERVER_GRPC_INSECURE: "t"
       SERVER_GRPC_MAX_MSG_SIZE: 13421772800
-      SERVER_LOGGER_LEVEL: warn
-      SERVER_LOGGER_FORMAT: console
-      DATABASE_LOGGER_LEVEL: warn
-      DATABASE_LOGGER_FORMAT: console
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config

@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple
 from uuid import UUID
-from core.base.utils import validate_uuid
 
 import toml
 

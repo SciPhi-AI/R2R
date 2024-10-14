@@ -6,8 +6,6 @@ from pydantic import BaseModel, Field
 from shared.abstractions.base import R2RSerializable
 from shared.abstractions.graph import CommunityReport, Entity, Triple
 from shared.api.models.base import ResultsWrapper
-from shared.abstractions.graph import Entity, Triple, CommunityReport
-
 
 class KGCreationResponse(BaseModel):
     message: str = Field(

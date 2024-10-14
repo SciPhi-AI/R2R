@@ -26,11 +26,6 @@ from shared.abstractions.vector import (
 )
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from shared.abstractions.vector import (
-    IndexMethod,
-    IndexMeasure,
-    VectorTableName,
-)
 from ..config import R2RConfig
 from .base import Service
 

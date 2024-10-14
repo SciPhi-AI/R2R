@@ -45,16 +45,6 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
-from shared.abstractions.vector import (
-    VectorTableName,
-    IndexMeasure,
-    IndexMethod,
-    IndexArgsIVFFlat,
-    IndexArgsHNSW,
-    INDEX_MEASURE_TO_OPS,
-    INDEX_MEASURE_TO_SQLA_ACC,
-)
-
 from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
     ArgError,
