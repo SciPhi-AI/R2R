@@ -76,7 +76,9 @@ def hatchet_kg_factory(
                 **input_data["kg_creation_settings"],
             )
 
-            context.log(f"Successfully ran kg triples extraction for document {document_id}")
+            context.log(
+                f"Successfully ran kg triples extraction for document {document_id}"
+            )
 
             return {
                 "result": f"successfully ran kg triples extraction for document {document_id}"
@@ -98,19 +100,23 @@ def hatchet_kg_factory(
                 **input_data["kg_creation_settings"],
             )
 
-            context.log(f"Successfully ran kg node description for document {document_id}")
+            context.log(
+                f"Successfully ran kg node description for document {document_id}"
+            )
 
             return {
                 "result": f"successfully ran kg node description for document {document_id}"
             }
-        
+
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
             request = context.workflow_input().get("request", {})
             document_id = request.get("document_id")
 
             if not document_id:
-                context.log("No document id was found in workflow input to mark a failure.")
+                context.log(
+                    "No document id was found in workflow input to mark a failure."
+                )
                 return
 
             try:
@@ -123,7 +129,9 @@ def hatchet_kg_factory(
                 # TODO: garbage collection
 
             except Exception as e:
-                context.log(f"Failed to update document status for {document_id}: {e}")
+                context.log(
+                    f"Failed to update document status for {document_id}: {e}"
+                )
 
     @orchestration_provider.workflow(name="create-graph", timeout="360m")
     class CreateGraphWorkflow:

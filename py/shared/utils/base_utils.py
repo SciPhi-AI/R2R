@@ -269,12 +269,13 @@ def update_settings_from_dict(server_settings, settings_dict: dict):
 
     return settings
 
+
 class HatchetLogger:
     def __init__(self, hatchet_logger: Any):
         self.hatchet_logger = hatchet_logger
 
     def _log(self, level: str, message: str, function: Optional[str] = None):
-        timestamp = strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = strftime("%Y-%m-%d %H:%M:%S")
         if function:
             log_message = f"{timestamp}: {level}: {function}: {message}"
         else:
@@ -295,6 +296,7 @@ class HatchetLogger:
 
     def critical(self, message: str, function: Optional[str] = None):
         self._log("CRITICAL", message, function)
+
 
 def create_hatchet_logger(hatchet_logger: Any) -> HatchetLogger:
     """

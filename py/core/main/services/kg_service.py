@@ -67,7 +67,9 @@ class KgService(Service):
             logger.info(f"Processing document {document_id} for KG extraction")
 
             if hatchet_logger:
-                hatchet_logger(f"KgService: Processing document {document_id} for KG extraction")
+                hatchet_logger(
+                    f"KgService: Processing document {document_id} for KG extraction"
+                )
 
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
@@ -92,7 +94,9 @@ class KgService(Service):
             )
 
             if hatchet_logger:
-                hatchet_logger.info(f"Finished processing document {document_id} for KG extraction")
+                hatchet_logger.info(
+                    f"Finished processing document {document_id} for KG extraction"
+                )
 
             result_gen = await self.pipes.kg_storage_pipe.run(
                 input=self.pipes.kg_storage_pipe.Input(message=triples),

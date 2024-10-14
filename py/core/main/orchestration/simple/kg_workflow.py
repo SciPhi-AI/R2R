@@ -53,8 +53,9 @@ def simple_kg_factory(service: KgService):
                 )
 
             except Exception as e:
-                logger.error(f"Error in creating graph for document {document_id}: {e}")
-
+                logger.error(
+                    f"Error in creating graph for document {document_id}: {e}"
+                )
 
     async def enrich_graph(input_data):
 

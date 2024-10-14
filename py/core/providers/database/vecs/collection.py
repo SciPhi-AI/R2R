@@ -1027,7 +1027,7 @@ class Collection:
 def _build_table(
     project_name: str, name: str, meta: MetaData, dimension: int
 ) -> Table:
-    
+
     table = Table(
         name,
         meta,

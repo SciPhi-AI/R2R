@@ -116,6 +116,7 @@ class VectorTableName(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
 class Vector(R2RSerializable):
     """A vector with the option to fix the number of elements."""
 

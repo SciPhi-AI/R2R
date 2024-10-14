@@ -7,6 +7,7 @@ from shared.abstractions.base import R2RSerializable
 from shared.abstractions.graph import CommunityReport, Entity, Triple
 from shared.api.models.base import ResultsWrapper
 
+
 class KGCreationResponse(BaseModel):
     message: str = Field(
         ...,
