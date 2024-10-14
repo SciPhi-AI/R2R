@@ -167,40 +167,29 @@ class KGEntityDescriptionPipe(AsyncPipe):
         offset = input.message["offset"]
         limit = input.message["limit"]
         document_id = input.message["document_id"]
+        logger = input.message['logger']
 
-        hatchet_logger = input.message["hatchet_logger"]
-
-        if hatchet_logger:
-            hatchet_logger.info(
-                f"Running kg_entity_description for document {document_id}",
-                function="KGEntityDescriptionPipe",
+        if logger:
+            logger.info(
+                f"KGEntityDescriptionPipe: Running kg_entity_description for document {document_id}",
             )
 
-        hatchet_logger.info(
-            f"Getting entity map for document {document_id}",
-            function="KGEntityDescriptionPipe",
+        logger.info(
+            f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
         )
 
         entity_map = await self.kg_provider.get_entity_map(
             offset, limit, document_id
         )
 
-        if hatchet_logger:
-            hatchet_logger.info(
-                f"Got entity map for document {document_id}",
-                function="KGEntityDescriptionPipe",
-            )
+        logger.info(
+            f"KGEntityDescriptionPipe: Got entity map for document {document_id}",
+        )
 
         total_entities = len(entity_map)
 
-        if hatchet_logger:
-            hatchet_logger.info(
-                f"Processing {total_entities} entities for document {document_id}",
-                function="KGEntityDescriptionPipe",
-            )
-
         logger.info(
-            f"Processing {total_entities} entities for document {document_id}"
+            f"KGEntityDescriptionPipe: Processing {total_entities} entities for document {document_id}",
         )
 
         workflows = []
@@ -220,20 +209,12 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
         completed_entities = 0
         for result in asyncio.as_completed(workflows):
-            if hatchet_logger:
-                hatchet_logger.info(
-                    f"Completed entity {completed_entities+1} of {total_entities} for document {document_id}",
-                    function="KGEntityDescriptionPipe",
-                )
+            logger.info(
+                f"KGEntityDescriptionPipe: Completed entity {completed_entities+1} of {total_entities} for document {document_id}",
+            )
             yield await result
             completed_entities += 1
 
-        if hatchet_logger:
-            hatchet_logger.info(
-                f"Completed processing {total_entities} entities for document {document_id}",
-                function="KGEntityDescriptionPipe",
-            )
-
         logger.info(
-            f"Processed {total_entities} entities for document {document_id}"
+            f"KGEntityDescriptionPipe: Processed {total_entities} entities for document {document_id}",
         )

@@ -3,7 +3,7 @@ import copy
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from sqlalchemy import text
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
