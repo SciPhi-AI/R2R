@@ -11,8 +11,6 @@ from core.base import OrchestrationProvider
 from shared.abstractions.document import KGExtractionStatus
 from ...services import KgService
 
-from shared.utils import create_hatchet_logger
-
 logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
 
@@ -72,7 +70,6 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
-                hatchet_logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
@@ -94,7 +91,6 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_entity_description(
                 document_id=uuid.UUID(document_id),
-                hatchet_logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
