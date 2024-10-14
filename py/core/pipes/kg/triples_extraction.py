@@ -234,8 +234,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             "filter_out_existing_chunks", True
         )
 
-        # PATCH: check already existing extractions for this document
-
         extractions = [
             DocumentExtraction(
                 id=extraction["extraction_id"],
