@@ -3,13 +3,16 @@ import json
 import logging
 import math
 import uuid
+import time
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-
+from shared.abstractions.document import KGExtractionStatus
 from ...services import KgService
+
+from shared.utils import create_hatchet_logger
 
 logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
@@ -57,9 +60,7 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
 
-            context.log(
-                f"Running KG Extraction for input: {context.workflow_input()['request']}"
-            )
+            start_time = time.time()
 
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
@@ -70,12 +71,16 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
-                logger=context.log,
+                logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
+            context.log(
+                f"Successfully ran kg triples extraction for document {document_id}"
+            )
+
             return {
-                "result": f"successfully ran kg triples extraction for document {document_id}"
+                "result": f"successfully ran kg triples extraction for document {document_id} in {time.time() - start_time:.2f} seconds",
             }
 
         @orchestration_provider.step(
@@ -90,12 +95,43 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_entity_description(
                 document_id=uuid.UUID(document_id),
+                logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
+            )
+
+            context.log(
+                f"Successfully ran kg node description for document {document_id}"
             )
 
             return {
                 "result": f"successfully ran kg node description for document {document_id}"
             }
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            request = context.workflow_input().get("request", {})
+            document_id = request.get("document_id")
+
+            if not document_id:
+                context.log(
+                    "No document id was found in workflow input to mark a failure."
+                )
+                return
+
+            try:
+                await self.kg_service.providers.database.relational.set_workflow_status(
+                    id=uuid.UUID(document_id),
+                    status_type="kg_extraction_status",
+                    status=KGExtractionStatus.FAILED,
+                )
+                context.log(
+                    f"Updated KG extraction status for {document_id} to FAILED"
+                )
+
+            except Exception as e:
+                context.log(
+                    f"Failed to update document status for {document_id}: {e}"
+                )
 
     @orchestration_provider.workflow(name="create-graph", timeout="360m")
     class CreateGraphWorkflow:
@@ -187,6 +223,8 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1, parents=[], timeout="360m")
         async def kg_clustering(self, context: Context) -> dict:
 
+            start_time = time.time()
+
             logger.info("Running KG Clustering")
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
@@ -195,11 +233,12 @@ def hatchet_kg_factory(
 
             kg_clustering_results = await self.kg_service.kg_clustering(
                 collection_id=collection_id,
+                logger=create_hatchet_logger(context.log),
                 **input_data["kg_enrichment_settings"],
             )
 
             context.log(
-                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
+                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)} in {time.time() - start_time:.2f} seconds"
             )
             logger.info(
                 f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
@@ -220,10 +259,14 @@ def hatchet_kg_factory(
             num_communities = context.step_output("kg_clustering")[
                 "kg_clustering"
             ][0]["num_communities"]
-
             parallel_communities = min(100, num_communities)
             total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
+
+            context.log(
+                f"Running KG Community Summary for {num_communities} communities, spawning {total_workflows} workflows"
+            )
+
             for i in range(total_workflows):
                 offset = i * parallel_communities
                 workflows.append(
@@ -257,15 +300,19 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_community_summary(self, context: Context) -> dict:
+
+            start_time = time.time()
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
 
             community_summary = await self.kg_service.kg_community_summary(
-                **input_data
+                logger=create_hatchet_logger(context.log),
+                **input_data,
             )
             context.log(
-                f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"
+                f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "
             )
             return {
                 "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"

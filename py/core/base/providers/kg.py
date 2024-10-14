@@ -196,6 +196,7 @@ class KGProvider(ABC):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        distinct: bool = False,
         entity_table_name: str = "entity_embedding",
     ) -> int:
         """Abstract method to get the entity count."""

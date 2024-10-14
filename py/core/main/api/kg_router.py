@@ -18,7 +18,6 @@ from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
 from shared.abstractions.kg import KGRunType
 from shared.utils.base_utils import update_settings_from_dict
-
 from ..services.kg_service import KgService
 from .base_router import BaseRouter
 
