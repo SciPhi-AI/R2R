@@ -203,8 +203,8 @@ def generate_report():
 
 
 @cli.command()
-@click.option("--host", default="0.0.0.0", help="Host to run the server on")
-@click.option("--port", default=7272, help="Port to run the server on")
+@click.option("--host", default=None, help="Host to run the server on")
+@click.option("--port", default=None, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
     "--full",
@@ -256,6 +256,12 @@ async def serve(
     """Start the R2R server."""
     load_dotenv()
     click.echo("Spinning up an R2R deployment...")
+
+    if host is None:
+        host = os.getenv("R2R_HOST", "0.0.0.0")
+
+    if port is None:
+        port = int(os.getenv("R2R_PORT", (os.getenv("PORT", "7272"))))
 
     click.echo(f"Running on {host}:{port}, with docker={docker}")
 
@@ -321,15 +327,7 @@ async def serve(
 
     if build:
         subprocess.run(
-            [
-                "docker",
-                "build",
-                "-t",
-                image,
-                "-f",
-                f"Dockerfile",
-                ".",
-            ],
+            ["docker", "build", "-t", image, "-f", "Dockerfile", "."],
             check=True,
         )
 
@@ -366,7 +364,7 @@ async def serve(
 
             click.echo("Waiting for all services to become healthy...")
             if not wait_for_container_health(
-                project_name or ("r2r" if not full else "r2r-full"), "r2r"
+                project_name or ("r2r-full" if full else "r2r"), "r2r"
             ):
                 click.secho(
                     "r2r container failed to become healthy.", fg="red"

@@ -19,6 +19,11 @@ from core.base import (
 )
 from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
+from shared.abstractions.vector import (
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from shared.abstractions.vector import (

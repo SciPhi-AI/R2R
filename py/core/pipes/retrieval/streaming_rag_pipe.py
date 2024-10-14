@@ -57,7 +57,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
         state: AsyncState,
         run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
@@ -83,14 +82,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             yield chunk_txt
 
         yield f"</{self.COMPLETION_STREAM_MARKER}>"
-        if not completion_record:
-            raise ValueError(
-                "Completion record is expected in the streaming RAG pipe and is used for logging."
-            )
-        completion_record.search_results = search_results
-        completion_record.llm_response = response
-        completion_record.completion_end_time = datetime.now()
-        await self.log_completion_record(run_id, completion_record)
 
     async def _yield_chunks(
         self,
@@ -106,12 +97,3 @@ class StreamingSearchRAGPipe(GeneratorPipe):
     @staticmethod
     def _process_chunk(chunk: LLMChatCompletionChunk) -> str:
         return chunk.choices[0].delta.content or ""
-
-    async def log_completion_record(
-        self, run_id: UUID, completion_record: CompletionRecord
-    ):
-        await self.enqueue_log(
-            run_id=run_id,
-            key="completion_record",
-            value=completion_record.to_json(),
-        )

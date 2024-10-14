@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type, Union
 
@@ -15,6 +16,8 @@ from core.base.providers import CompletionProvider, PromptProvider
 
 from .base import Tool, ToolResult
 import logging
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +48,7 @@ class Conversation:
         async with self._lock:
             self.messages.append(message)
 
-    async def get_messages(self) -> List[Dict[str, Any]]:
+    async def get_messages(self) -> list[dict[str, Any]]:
         async with self._lock:
             return [
                 {**msg.model_dump(exclude_none=True), "role": str(msg.role)}

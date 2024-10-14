@@ -120,7 +120,7 @@ class MessageType(Enum):
         return self.value
 
 
-class Message(BaseModel):
+class Message(R2RSerializable):
     role: Union[MessageType, str]
     content: Optional[str] = None
     name: Optional[str] = None

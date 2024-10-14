@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Optional, Set, Any
+from typing import Any, Optional, Set
 from uuid import UUID
 
 import psutil
@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedConversationResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -25,7 +26,6 @@ from core.base.api.models import (
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
-    WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
@@ -223,18 +223,6 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.service.app_settings()
-
-        @self.router.post("/score_completion")
-        @self.base_endpoint
-        async def score_completion(
-            message_id: str = Body(..., description="Message ID"),
-            score: float = Body(..., description="Completion score"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedScoreCompletionResponse:
-            message_uuid = UUID(message_id)
-            return await self.service.score_completion(
-                message_id=message_uuid, score=score
-            )
 
         @self.router.get("/users_overview")
         @self.base_endpoint
@@ -764,3 +752,15 @@ class ManagementRouter(BaseRouter):
                     "total_entries"
                 ]
             }
+
+        @self.router.get("/conversations/{conversation_id}")
+        @self.base_endpoint
+        async def get_conversation(
+            conversation_id: str = Path(..., description="Conversation ID"),
+            branch_id: str = Query(None, description="Branch ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedConversationResponse:
+            result = await self.service.get_conversation(
+                conversation_id, branch_id, auth_user
+            )
+            return result

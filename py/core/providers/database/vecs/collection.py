@@ -8,6 +8,7 @@ All public classes, enums, and functions are re-exported by the top level `vecs`
 from __future__ import annotations
 
 import math
+import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -34,6 +35,15 @@ from sqlalchemy.types import Float, UserDefinedType
 
 from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
+from shared.abstractions.vector import (
+    INDEX_MEASURE_TO_OPS,
+    INDEX_MEASURE_TO_SQLA_ACC,
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 from shared.abstractions.vector import (
     VectorTableName,

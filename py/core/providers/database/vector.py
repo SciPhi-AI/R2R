@@ -1,6 +1,7 @@
 import concurrent.futures
 import copy
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 import time
 from typing import Any, Optional, Union
@@ -29,6 +30,7 @@ from .vecs import (
     Collection,
     create_client,
 )
+
 
 logger = logging.getLogger(__name__)
 

@@ -91,14 +91,14 @@ async def run_local_serve(
         from r2r import R2RBuilder, R2RConfig
     except ImportError as e:
         click.echo(
-            f"Error: You must install the `r2r core` package to run the R2R server locally."
+            "Error: You must install the `r2r core` package to run the R2R server locally."
         )
         raise e
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
     if not config_path and not config_name:
-        config_name = "default" if not full else "full"
+        config_name = "full" if full else "default"
 
     r2r_instance = await R2RBuilder(
         config=R2RConfig.load(config_name, config_path)
@@ -252,7 +252,6 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 def check_set_docker_env_vars(
     project_name: str, exclude_postgres: bool = False
 ):
-
     env_vars = {"R2R_PROJECT_NAME": "r2r_default"}
     if project_name:
         if os.environ.get("R2R_PROJECT_NAME"):
@@ -265,12 +264,29 @@ def check_set_docker_env_vars(
 
     if not exclude_postgres:
         env_vars |= {
-            "POSTGRES_HOST": "postgres",
-            "POSTGRES_PORT": "5432",
-            "POSTGRES_DBNAME": "postgres",
-            "POSTGRES_USER": "postgres",
-            "POSTGRES_PASSWORD": "postgres",
+            "R2R_POSTGRES_HOST": "postgres",
+            "R2R_POSTGRES_PORT": "5432",
+            "R2R_POSTGRES_DBNAME": "postgres",
+            "R2R_POSTGRES_USER": "postgres",
+            "R2R_POSTGRES_PASSWORD": "postgres",
         }
+
+    # Mapping of old variables to new variables
+    old_to_new_vars = {
+        "POSTGRES_HOST": "R2R_POSTGRES_HOST",
+        "POSTGRES_PORT": "R2R_POSTGRES_PORT",
+        "POSTGRES_DBNAME": "R2R_POSTGRES_DBNAME",
+        "POSTGRES_USER": "R2R_POSTGRES_USER",
+        "POSTGRES_PASSWORD": "R2R_POSTGRES_PASSWORD",
+    }
+
+    # Check for old variables and warn if found
+    for old_var, new_var in old_to_new_vars.items():
+        if old_var in os.environ:
+            warning_text = click.style("Warning:", fg="yellow", bold=True)
+            click.echo(
+                f"{warning_text} The environment variable {old_var} is deprecated and support for it will be removed in release 3.5.0. Please use {new_var} instead."
+            )
 
     is_test = (
         "pytest" in sys.modules
@@ -349,26 +365,26 @@ def build_docker_command(
     else:
         base_command = f"docker compose -f {compose_files['full']}"
 
-    base_command += f" --project-name {project_name if project_name else ('r2r' if not full else 'r2r-full')}"
+    base_command += (
+        f" --project-name {project_name or ('r2r-full' if full else 'r2r')}"
+    )
 
     # Find available ports
     r2r_dashboard_port = port + 1
     hatchet_dashboard_port = r2r_dashboard_port + 1
 
-    os.environ["R2R_PORT"] = str(port)
-    os.environ["R2R_HOST"] = host
     os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
     os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
     os.environ["R2R_IMAGE"] = image or ""
 
     if config_name is not None:
-        os.environ["CONFIG_NAME"] = config_name
+        os.environ["R2R_CONFIG_NAME"] = config_name
     elif config_path:
-        os.environ["CONFIG_PATH"] = (
+        os.environ["R2R_CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
     elif full:
-        os.environ["CONFIG_NAME"] = "full"
+        os.environ["R2R_CONFIG_NAME"] = "full"
 
     if not exclude_postgres:
         pull_command = f"{base_command} --profile postgres pull"

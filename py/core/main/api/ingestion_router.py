@@ -13,11 +13,19 @@ from core.base import R2RException, RawChunk, generate_document_id
 
 from core.base.api.models import (
     CreateVectorIndexResponse,
+    WrappedCreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
     WrappedCreateVectorIndexResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
+from shared.abstractions.vector import (
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
@@ -174,9 +182,8 @@ class IngestionRouter(BaseRouter):
                     },
                 )
                 raw_message["document_id"] = str(document_id)
-                if "task_id" not in raw_message:
-                    raw_message["task_id"] = None
                 messages.append(raw_message)
+
             return messages  # type: ignore
 
         update_files_extras = self.openapi_extras.get("update_files", {})
@@ -270,8 +277,7 @@ class IngestionRouter(BaseRouter):
             )
             raw_message["message"] = "Update task queued successfully."
             raw_message["document_ids"] = workflow_input["document_ids"]
-            if "task_id" not in raw_message:
-                raw_message["task_id"] = None
+
             return raw_message  # type: ignore
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})

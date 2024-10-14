@@ -2,7 +2,7 @@ import argparse
 import sys
 import time
 
-from r2r import R2RClient, R2RException
+from r2r import Message, R2RClient, R2RException
 
 
 def compare_result_fields(result, expected_fields):
@@ -1592,6 +1592,100 @@ def test_error_handling():
         pass
 
     print("Error handling test passed")
+    print("~" * 100)
+
+
+def test_conversation_history_sdk():
+    print("Testing: Conversation history")
+
+    # Start a conversation
+    messages = [
+        {"role": "user", "content": "Who was Aristotle?"},
+        {
+            "role": "assistant",
+            "content": "Aristotle was a Greek philosopher and scientist who lived from 384 BC to 322 BC. He was a student of Plato and later became the tutor of Alexander the Great. Aristotle is considered one of the most influential thinkers in Western philosophy and his works covered a wide range of subjects including logic, metaphysics, ethics, biology, and politics.",
+        },
+        {
+            "role": "user",
+            "content": "What were some of his major contributions to philosophy?",
+        },
+    ]
+
+    response = client.agent(
+        messages=messages,
+        rag_generation_config={"stream": False},
+    )["results"]
+
+    conversation = client.get_conversation(response["conversation_id"])
+    messages.append(
+        {"role": "assistant", "content": response["messages"][-1]["content"]}
+    )
+
+    # Check if the conversation history is maintained
+    if len(conversation["results"]) != 4:
+        print(
+            "Conversation history test failed: Incorrect number of messages in the conversation"
+        )
+        sys.exit(1)
+
+    for i, (message_id, message) in enumerate(conversation["results"]):
+        if (
+            message["role"] != messages[i]["role"]
+            or message["content"] != messages[i]["content"]
+        ):
+            print(
+                "Conversation history test failed: Incorrect message content or role"
+            )
+            sys.exit(1)
+
+    # pass another message
+    message = {
+        "role": "user",
+        "content": "What were some of his major contributions to philosophy?",
+    }
+    messages.append(message)
+
+    response = client.agent(
+        message=message,
+        conversation_id=response["conversation_id"],
+        rag_generation_config={"stream": False},
+    )["results"]
+    messages.append(
+        {"role": "assistant", "content": response["messages"][-1]["content"]}
+    )
+
+    conversation = client.get_conversation(response["conversation_id"])
+
+    # Check if the conversation history is maintained
+    if len(conversation["results"]) != 6:
+        print(
+            "Conversation history test failed: Incorrect number of messages in the conversation"
+        )
+        sys.exit(1)
+
+    for i, (message_id, message) in enumerate(conversation["results"]):
+        if i < len(messages):
+            if (
+                message["role"] != messages[i]["role"]
+                or message["content"] != messages[i]["content"]
+            ):
+                print(
+                    "Conversation history test failed: Incorrect message content or role"
+                )
+                sys.exit(1)
+        else:
+            if message["role"] != "assistant":
+                print(
+                    "Conversation history test failed: Incorrect message role for assistant response"
+                )
+                sys.exit(1)
+            if response["messages"][-1]["content"] != message["content"]:
+                print(
+                    "Conversation history test failed: Incorrect assistant response content"
+                )
+                sys.exit(1)
+
+    print("Conversation history test passed")
     print("~" * 100)
 
 

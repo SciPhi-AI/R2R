@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
@@ -11,6 +12,8 @@ from core.base.abstractions import (
 )
 from core.base.agent import Agent, Conversation
 import logging
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +51,12 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
     @syncable
     async def arun(
         self,
+        messages: list[Message],
         system_instruction: Optional[str] = None,
-        messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
     ) -> list[dict]:
+        # TODO - Make this method return a list of messages.
         self._reset()
         await self._setup(system_instruction)
 
@@ -69,7 +73,22 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
             )
             await self.process_llm_response(response, *args, **kwargs)
 
-        return await self.conversation.get_messages()
+        # Get the output messages
+        all_messages: list[dict] = await self.conversation.get_messages()
+        all_messages.reverse()
+
+        output_messages = []
+        for message_2 in all_messages:
+            if (
+                message_2.get("content")
+                and message_2.get("content") != messages[-1].content
+            ):
+                output_messages.append(message_2)
+            else:
+                break
+        output_messages.reverse()
+
+        return output_messages
 
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs

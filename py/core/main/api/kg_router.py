@@ -8,6 +8,7 @@ from fastapi import Body, Depends, Query
 
 from core.base import RunType
 from core.base.api.models import (
+    WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
