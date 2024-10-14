@@ -191,13 +191,13 @@ class ZeroxPDFParser(AsyncParser[DataType]):
         """
         try:
             # from pyzerox import zerox
-            from .zerox.py_zerox.pyzerox import zerox
+            from .pyzerox import zerox
 
             self.zerox = zerox
 
         except ImportError as e:
             raise ValueError(
-                f"Error, zerox is not installed {e}, please install using `pip install py-zerox` "
+                f"Error, zerox is not installed {e}, please install through the R2R ingestion bundle with `pip install r2r -E ingestion-bundle` "
             )
 
     async def ingest(

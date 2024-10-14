@@ -161,7 +161,7 @@ profile = "black"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'core/parsers/media/zerox/py_zerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
+exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"
