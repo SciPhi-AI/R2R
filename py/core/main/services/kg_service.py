@@ -152,9 +152,17 @@ class KgService(Service):
         **kwargs,
     ):
 
+        logger.info(
+            f"KGService: Running kg_entity_description for document {document_id}"
+        )
+
         entity_count = await self.providers.kg.get_entity_count(
             document_id=document_id,
             entity_table_name="entity_raw",
+        )
+
+        logger.info(
+            f"KGService: Found {entity_count} entities in document {document_id}"
         )
 
         # TODO - Do not hardcode the batch size,
