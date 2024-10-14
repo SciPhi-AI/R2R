@@ -47,8 +47,4 @@ COPY r2r.toml /app/r2r.toml
 COPY pyproject.toml /app/pyproject.toml
 
 # Run the application
-<<<<<<< HEAD
-CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $R2R_PORT"]
-=======
 CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $R2R_HOST --port $R2R_PORT"]
->>>>>>> 8ae04c5bfdbeab77073b6ae1169c5bff1b32489b
