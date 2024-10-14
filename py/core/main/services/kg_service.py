@@ -130,7 +130,6 @@ class KgService(Service):
         ]
         if force_kg_creation:
             document_status_filter += [
-                KGExtractionStatus.SUCCESS,
                 KGExtractionStatus.PROCESSING,
             ]
 
