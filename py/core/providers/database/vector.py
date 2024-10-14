@@ -1,9 +1,9 @@
 import concurrent.futures
 import copy
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import time
-from typing import Any, Optional, Union
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Optional
 
 from sqlalchemy import text
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
@@ -16,19 +16,16 @@ from core.base import (
 )
 from core.base.abstractions import VectorSearchSettings
 
-from shared.abstractions.vector import (
-    IndexMeasure,
-    IndexMethod,
-    VectorTableName,
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
-)
-
 from .vecs import (
     Client,
     Collection,
+    IndexArgsHNSW,
+    IndexMeasure,
+    IndexMethod,
     create_client,
 )
+
+from .vecs import Client, Collection, create_client
 
 logger = logging.getLogger(__name__)
 

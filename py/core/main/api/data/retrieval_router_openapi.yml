@@ -213,7 +213,8 @@ agent:
             }'
 
   input_descriptions:
-    messages: "List of message objects"
+    messages: "List of message objects (deprecated, use message instead)"
+    message: "Message object"
     vector_search_settings: "Vector search settings"
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
@@ -221,3 +222,5 @@ agent:
     conversation_id: "The ID of the conversation, a new ID is assigned if not provided"
     include_title_if_available: "Includes document title in chunk response, if available."
     rag_strategy: "The RAG strategy to use (default | hyde | rag_fusion)"
+    conversation_id: "The ID of the conversation, a new ID is assigned if not provided"
+    branch_id: "The ID of the branch"

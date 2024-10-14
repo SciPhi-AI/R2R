@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
+from shared.abstractions.graph import CommunityReport, Entity, Triple
 from shared.api.models.base import ResultsWrapper
 from shared.abstractions.graph import Entity, Triple, CommunityReport
 
@@ -142,20 +143,19 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
 class KGEntitiesResponse(R2RSerializable):
     """Response for knowledge graph entities."""
 
-    total_entries: int = Field(
-        ...,
-        description="The total number of entities in the graph for the collection or document.",
-    )
-
     entities: list[Entity] = Field(
         ...,
         description="The list of entities in the graph.",
     )
 
+    total_entries: int = Field(
+        ...,
+        description="The total number of entities in the graph for the collection or document.",
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
-                "total_entries": 2,
                 "entities": [
                     {
                         "id": "1",
@@ -168,6 +168,7 @@ class KGEntitiesResponse(R2RSerializable):
                         "description": "Description 2",
                     },
                 ],
+                "total_entries": 2,
             }
         }
 
@@ -175,14 +176,14 @@ class KGEntitiesResponse(R2RSerializable):
 class KGTriplesResponse(R2RSerializable):
     """Response for knowledge graph triples."""
 
-    total_entries: int = Field(
-        ...,
-        description="The total number of triples in the graph for the collection or document.",
-    )
-
     triples: list[Triple] = Field(
         ...,
         description="The list of triples in the graph.",
+    )
+
+    total_entries: int = Field(
+        ...,
+        description="The total number of triples in the graph for the collection or document.",
     )
 
     class Config:

@@ -23,3 +23,9 @@ runs:
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_sdk.py test_rag_response_sample_file_sdk
+
+
+    - name: Agent response sample file (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_sdk.py test_conversation_history_sdk

@@ -314,7 +314,8 @@
       "pages": [
         "api-reference/endpoint/search",
         "api-reference/endpoint/rag",
-        "api-reference/endpoint/agent"
+        "api-reference/endpoint/agent",
+        "api-reference/endpoint/completion"
       ]
     },
     {
@@ -375,8 +376,7 @@
     {
       "group": "Analytics and Observability",
       "pages": [
-        "api-reference/endpoint/analytics",
-        "api-reference/endpoint/score_completion"
+        "api-reference/endpoint/analytics"
       ]
     },
     {
