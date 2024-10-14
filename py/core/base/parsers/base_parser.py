@@ -10,5 +10,7 @@ T = TypeVar("T")
 
 class AsyncParser(ABC, Generic[T]):
     @abstractmethod
-    async def ingest(self, data: T) -> AsyncGenerator[DataType, None]:
+    async def ingest(
+        self, data: T, **kwargs
+    ) -> AsyncGenerator[DataType, None]:
         pass
