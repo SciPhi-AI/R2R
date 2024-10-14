@@ -28,7 +28,6 @@ from shared.abstractions.vector import (
     IndexArgsHNSW,
     VectorTableName,
     IndexMeasure,
-    VectorIndexQuantizationConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -366,10 +365,6 @@ class IngestionRouter(BaseRouter):
                 default=True,
                 description="Whether to create the index concurrently.",
             ),
-            quantization_config: Optional[VectorIndexQuantizationConfig] = Body(
-                default=None,
-                description="The quantization configuration for the index.",
-            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
 
@@ -387,7 +382,6 @@ class IngestionRouter(BaseRouter):
                         "index_arguments": index_arguments,
                         "replace": replace,
                         "concurrently": concurrently,
-                        "quantization_config": quantization_config,
                     },
                 },
                 options={

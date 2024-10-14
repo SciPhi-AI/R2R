@@ -44,7 +44,6 @@ batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
-quantization_config = { quantization_type = "fp32" }
 
 [file]
 provider = "postgres"
