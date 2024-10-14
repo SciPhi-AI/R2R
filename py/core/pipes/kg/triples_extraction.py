@@ -4,7 +4,6 @@ import logging
 import re
 from typing import Any, AsyncGenerator, Optional, Union
 
-from shared.utils import HatchetLogger
 from core.base import (
     AsyncState,
     CompletionProvider,

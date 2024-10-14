@@ -14,6 +14,8 @@ from core.base.abstractions import (
 )
 from core.base.providers import CompletionProvider, PromptProvider
 
+from .base import Tool, ToolResult
+
 logger = logging.getLogger(__name__)
 
 

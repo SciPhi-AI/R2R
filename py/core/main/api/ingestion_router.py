@@ -16,7 +16,6 @@ from core.base.api.models import (
     WrappedCreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,
-    WrappedCreateVectorIndexResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from shared.abstractions.vector import (
