@@ -786,6 +786,27 @@ class PostgresKGProvider(KGProvider):
         else:
             return " - ".join(f"{round(a, 2)}" for a in x)
 
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        QUERY = f"""
+            SELECT distinct extraction_ids FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
+        """
+        extraction_ids = [
+            item["extraction_ids"]
+            for item in await self.fetch_query(QUERY, [document_id])
+        ]
+        unique_ids = list(
+            set(
+                [
+                    extraction_id
+                    for extraction_ids in extraction_ids
+                    for extraction_id in extraction_ids
+                ]
+            )
+        )
+        return unique_ids
+
     async def get_creation_estimate(
         self, collection_id: UUID, kg_creation_settings: KGCreationSettings
     ) -> KGCreationEstimationResponse:

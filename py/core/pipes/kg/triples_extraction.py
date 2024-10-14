@@ -230,6 +230,12 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         max_knowledge_triples = input.message["max_knowledge_triples"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
+        filter_out_existing_chunks = input.message.get(
+            "filter_out_existing_chunks", True
+        )
+
+        # PATCH: check already existing extractions for this document
+
         extractions = [
             DocumentExtraction(
                 id=extraction["extraction_id"],
@@ -245,6 +251,25 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 "results"
             ]
         ]
+
+        logger.info(
+            f"Found {len(extractions)} extractions for document {document_id}"
+        )
+
+        if filter_out_existing_chunks:
+            existing_extraction_ids = (
+                await self.kg_provider.get_existing_entity_extraction_ids(
+                    document_id=document_id
+                )
+            )
+            extractions = [
+                extraction
+                for extraction in extractions
+                if extraction.id not in existing_extraction_ids
+            ]
+            logger.info(
+                f"Filtered out {len(existing_extraction_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
+            )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
         extractions = sorted(
