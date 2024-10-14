@@ -3,7 +3,10 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 
+import time
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
+
+from shared.utils import create_hatchet_logger
 
 from core.base import (
     DocumentExtraction,
@@ -453,6 +456,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
+            index_creation_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             self.ingestion_service.providers.database.vector.create_index(
                 **parsed_data
             )
@@ -460,6 +464,32 @@ def hatchet_ingestion_factory(
             return {
                 "status": "Vector index creation queued successfully.",
             }
+        
+        @orchestration_provider.step(parents=["create_vector_index"], timeout="60m")
+        async def check_index_creation_progress(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_create_vector_index_input(
+                    input_data
+                )
+            )
+
+            # sleep for 10 seconds before starting to check progress
+            await asyncio.sleep(10)
+
+            progress = self.ingestion_service.providers.database.vector.check_index_creation_progress(
+                logger=create_hatchet_logger(context.log),
+                **parsed_data
+            )
+            
+        @orchestration_provider.step(parents=["delete_previous_index"], timeout="60m")
+        async def delete_previous_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_create_vector_index_input(
+                    input_data
+                )
+            )
 
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)

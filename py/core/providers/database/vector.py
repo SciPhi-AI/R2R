@@ -25,6 +25,7 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
+from shared.utils import HatchetLogger
 from .vecs import Client, Collection, create_client
 
 logger = logging.getLogger(__name__)
@@ -319,6 +320,63 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         end_time = time.time()
         logger.info(f"Index creation took {end_time - start_time} seconds")
+
+    def check_index_creation_progress(
+        self,
+        table_name: Optional[VectorTableName] = None,
+        index_name: Optional[str] = None,
+        logger: Union[HatchetLogger, logging.Logger] = logging.getLogger(__name__),
+    ):
+
+        if table_name == VectorTableName.CHUNKS:
+            project_name, table_name = f"{self.client.project_name}.{self.table.name}"
+        elif table_name == VectorTableName.ENTITIES:
+            project_name, table_name = (
+                f"{self.client.project_name}.{VectorTableName.ENTITIES}"
+            )
+        elif table_name == VectorTableName.COMMUNITIES:
+            project_name, table_name = (
+                f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
+            )
+        else:
+            raise ValueError("Invalid table name")
+
+        logger.info(f"Checking index creation progress for {table_name}")
+
+
+        # check if index exists
+        index_query = f"""
+            SELECT i.relid
+            FROM pg_class i
+            JOIN pg_namespace n ON n.oid = i.relnamespace
+            WHERE n.nspname = '{project_name}'
+            AND i.relname = '{index_name}';
+        """
+
+        with self.vx.Session() as sess:
+            result = sess.execute(index_query).fetchone()
+
+            if result == index_name:
+                return True
+
+
+        # check if table exists
+        table_query = f"""
+            SELECT c.oid AS relid
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = '{project_name}'
+            AND c.relname = '{table_name}';
+        """
+
+        with self.vx.Session() as sess:
+            result = sess.execute(table_query).fetchone()
+
+            if result:
+                return True
+
+
+        return result
 
     def delete(
         self,
