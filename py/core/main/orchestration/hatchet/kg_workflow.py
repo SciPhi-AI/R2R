@@ -120,12 +120,13 @@ def hatchet_kg_factory(
 
             try:
                 await self.kg_service.providers.database.relational.set_workflow_status(
-                    id=document_id,
+                    id=uuid.UUID(document_id),
                     status_type="kg_extraction_status",
                     status=KGExtractionStatus.FAILED,
                 )
-
-                # TODO: garbage collection
+                context.log(
+                    f"Updated KG extraction status for {document_id} to FAILED"
+                )
 
             except Exception as e:
                 context.log(
