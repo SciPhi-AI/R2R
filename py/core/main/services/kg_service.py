@@ -285,6 +285,18 @@ class KgService(Service):
             collection_id, cascade
         )
 
+    @telemetry_event("delete_node_via_document_id")
+    async def delete_node_via_document_id(
+        self,
+        document_id: UUID,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.kg.delete_node_via_document_id(
+            collection_id,
+            document_id
+        )
+
     @telemetry_event("get_creation_estimate")
     async def get_creation_estimate(
         self,

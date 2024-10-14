@@ -210,6 +210,13 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        """Abstract method to delete the node via document id."""
+        pass
+    
+    @abstractmethod
     async def get_creation_estimate(self, *args: Any, **kwargs: Any) -> Any:
         """Abstract method to get the creation estimate."""
         pass
