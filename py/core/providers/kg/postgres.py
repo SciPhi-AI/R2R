@@ -790,22 +790,13 @@ class PostgresKGProvider(KGProvider):
         self, document_id: UUID
     ) -> list[str]:
         QUERY = f"""
-            SELECT distinct extraction_ids FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
+            SELECT DISTINCT unnest(extraction_ids) AS extraction_id FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
         """
         extraction_ids = [
-            item["extraction_ids"]
+            item["extraction_id"]
             for item in await self.fetch_query(QUERY, [document_id])
         ]
-        unique_ids = list(
-            set(
-                [
-                    extraction_id
-                    for extraction_ids in extraction_ids
-                    for extraction_id in extraction_ids
-                ]
-            )
-        )
-        return unique_ids
+        return extraction_ids
 
     async def get_creation_estimate(
         self, collection_id: UUID, kg_creation_settings: KGCreationSettings

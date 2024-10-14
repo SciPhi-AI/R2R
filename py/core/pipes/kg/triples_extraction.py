@@ -269,6 +269,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 f"Filtered out {len(existing_extraction_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
             )
 
+            if len(extractions) == 0:
+                logger.info(f"No extractions left for document {document_id}")
+                return
+
         # sort the extractions accroding to chunk_order field in metadata in ascending order
         extractions = sorted(
             extractions, key=lambda x: x.metadata["chunk_order"]
