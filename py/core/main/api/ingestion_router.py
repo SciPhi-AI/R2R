@@ -29,14 +29,6 @@ from shared.abstractions.vector import (
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
 
-from shared.abstractions.vector import (
-    IndexMethod,
-    IndexArgsIVFFlat,
-    IndexArgsHNSW,
-    VectorTableName,
-    IndexMeasure,
-)
-
 logger = logging.getLogger(__name__)
 
 
