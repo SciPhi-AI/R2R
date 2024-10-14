@@ -3,6 +3,7 @@ import json
 import logging
 import math
 import uuid
+import time
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
@@ -59,6 +60,8 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
 
+            start_time = time.time()
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -77,7 +80,7 @@ def hatchet_kg_factory(
             )
 
             return {
-                "result": f"successfully ran kg triples extraction for document {document_id}"
+                "result": f"successfully ran kg triples extraction for document {document_id} in {time.time() - start_time:.2f} seconds",
             }
 
         @orchestration_provider.step(
@@ -219,6 +222,8 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1, parents=[], timeout="360m")
         async def kg_clustering(self, context: Context) -> dict:
 
+            start_time = time.time()
+
             logger.info("Running KG Clustering")
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
@@ -227,11 +232,12 @@ def hatchet_kg_factory(
 
             kg_clustering_results = await self.kg_service.kg_clustering(
                 collection_id=collection_id,
+                logger=create_hatchet_logger(context.log),
                 **input_data["kg_enrichment_settings"],
             )
 
             context.log(
-                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
+                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)} in {time.time() - start_time:.2f} seconds"
             )
             logger.info(
                 f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
@@ -252,10 +258,14 @@ def hatchet_kg_factory(
             num_communities = context.step_output("kg_clustering")[
                 "kg_clustering"
             ][0]["num_communities"]
-
             parallel_communities = min(100, num_communities)
             total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
+
+            context.log(
+                f"Running KG Community Summary for {num_communities} communities, spawning {total_workflows} workflows"
+            )
+
             for i in range(total_workflows):
                 offset = i * parallel_communities
                 workflows.append(
@@ -289,15 +299,19 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_community_summary(self, context: Context) -> dict:
+
+            start_time = time.time()
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
 
             community_summary = await self.kg_service.kg_community_summary(
-                **input_data
+                logger=create_hatchet_logger(context.log),
+                **input_data,
             )
             context.log(
-                f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"
+                f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "
             )
             return {
                 "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"

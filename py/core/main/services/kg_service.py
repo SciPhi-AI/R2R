@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
@@ -152,12 +153,15 @@ class KgService(Service):
         **kwargs,
     ):
 
+        start_time = time.time()
+
         logger.info(
             f"KGService: Running kg_entity_description for document {document_id}"
         )
 
         entity_count = await self.providers.kg.get_entity_count(
             document_id=document_id,
+            distinct=True,
             entity_table_name="entity_raw",
         )
 
@@ -202,6 +206,10 @@ class KgService(Service):
             status=KGExtractionStatus.SUCCESS,
         )
 
+        logger.info(
+            f"KGService: Completed kg_entity_description for document {document_id} in {time.time() - start_time:.2f} seconds",
+        )
+
         return all_results
 
     @telemetry_event("kg_clustering")
@@ -210,6 +218,9 @@ class KgService(Service):
         collection_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
@@ -218,6 +229,7 @@ class KgService(Service):
                     "collection_id": collection_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
+                    "logger": logger,
                 }
             ),
             state=None,
@@ -233,6 +245,9 @@ class KgService(Service):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
@@ -243,6 +258,7 @@ class KgService(Service):
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
                     "collection_id": collection_id,
+                    "logger": logger,
                 }
             ),
             state=None,

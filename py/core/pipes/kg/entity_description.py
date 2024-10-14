@@ -16,6 +16,7 @@ from core.base import (
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
         """
         Extracts description from the input.
         """
+
+        start_time = time.time()
 
         # TODO - Move this to a .yaml file and load it as we do in triples extraction
         summarization_content = """
@@ -169,11 +172,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
         document_id = input.message["document_id"]
         logger = input.message["logger"]
 
-        if logger:
-            logger.info(
-                f"KGEntityDescriptionPipe: Running kg_entity_description for document {document_id}",
-            )
-
         logger.info(
             f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
         )
@@ -181,15 +179,10 @@ class KGEntityDescriptionPipe(AsyncPipe):
         entity_map = await self.kg_provider.get_entity_map(
             offset, limit, document_id
         )
-
-        logger.info(
-            f"KGEntityDescriptionPipe: Got entity map for document {document_id}",
-        )
-
         total_entities = len(entity_map)
 
         logger.info(
-            f"KGEntityDescriptionPipe: Processing {total_entities} entities for document {document_id}",
+            f"KGEntityDescriptionPipe: Got entity map for document {document_id}, total entities: {total_entities}, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         workflows = []
@@ -209,12 +202,13 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
         completed_entities = 0
         for result in asyncio.as_completed(workflows):
-            logger.info(
-                f"KGEntityDescriptionPipe: Completed entity {completed_entities+1} of {total_entities} for document {document_id}",
-            )
+            if completed_entities % 100 == 0:
+                logger.info(
+                    f"KGEntityDescriptionPipe: Completed {completed_entities+1} of {total_entities} entities for document {document_id}",
+                )
             yield await result
             completed_entities += 1
 
         logger.info(
-            f"KGEntityDescriptionPipe: Processed {total_entities} entities for document {document_id}",
+            f"KGEntityDescriptionPipe: Processed {total_entities} entities for document {document_id}, time from start: {time.time() - start_time:.2f} seconds",
         )

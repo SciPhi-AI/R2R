@@ -1049,6 +1049,7 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        distinct: bool = False,
         entity_table_name: str = "entity_embedding",
     ) -> int:
         if collection_id is None and document_id is None:
@@ -1073,8 +1074,13 @@ class PostgresKGProvider(KGProvider):
             conditions.append("document_id = $1")
             params.append(str(document_id))
 
+        if distinct:
+            count_value = "DISTINCT name"
+        else:
+            count_value = "*"
+
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name(entity_table_name)}
+            SELECT COUNT({count_value}) FROM {self._get_table_name(entity_table_name)}
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]

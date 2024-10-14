@@ -264,7 +264,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGTriplesExtractionPipe: Obtained {len(extractions)} extractions for document {document_id}, took {time.time() - start_time} seconds",
+            f"KGTriplesExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
@@ -279,7 +279,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)} tasks, took {time.time() - start_time} seconds",
+            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)}, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         tasks = [
@@ -309,9 +309,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             try:
                 yield await completed_task
                 completed_tasks += 1
-                logger.info(
-                    f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
-                )
+                if completed_tasks % 100 == 0:
+                    logger.info(
+                        f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                    )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Triples: {e}")
                 yield R2RDocumentProcessingError(
@@ -320,5 +321,5 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 )
 
         logger.info(
-            f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, took {time.time() - start_time} seconds",
+            f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
