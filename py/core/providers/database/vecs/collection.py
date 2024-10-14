@@ -1080,13 +1080,6 @@ def _build_table(
     dimension: int,
     quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ) -> Table:
-
-    if (
-        quantization_type != VectorQuantizationType.FP32
-        and quantization_type != VectorQuantizationType.FP16
-    ):
-        raise ValueError(f"Invalid quantization type: {quantization_type}")
-
     table = Table(
         name,
         meta,
