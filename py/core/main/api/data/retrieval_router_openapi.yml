@@ -219,7 +219,6 @@ agent:
     kg_search_settings: "Knowledge graph search settings"
     rag_generation_config: "RAG generation configuration"
     task_prompt_override: "Task prompt override"
-    conversation_id: "The ID of the conversation, a new ID is assigned if not provided"
     include_title_if_available: "Includes document title in chunk response, if available."
     rag_strategy: "The RAG strategy to use (default | hyde | rag_fusion)"
     conversation_id: "The ID of the conversation, a new ID is assigned if not provided"

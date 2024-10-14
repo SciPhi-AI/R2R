@@ -372,7 +372,9 @@ class IngestionRouter(BaseRouter):
                 default=True,
                 description="Whether to create the index concurrently.",
             ),
-            quantization_config: Optional[VectorIndexQuantizationConfig] = Body(
+            quantization_config: Optional[
+                VectorIndexQuantizationConfig
+            ] = Body(
                 default=None,
                 description="The quantization configuration for the index.",
             ),

@@ -1,5 +1,4 @@
 from .base_utils import (
-    HatchetLogger,
     decrement_version,
     format_entity_types,
     format_relations,
@@ -45,5 +44,4 @@ __all__ = [
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
-    "HatchetLogger",
 ]

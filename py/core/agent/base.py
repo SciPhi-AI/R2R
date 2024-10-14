@@ -10,10 +10,6 @@ from core.base.abstractions import (
     Message,
     syncable,
 )
-from core.base.agent import Agent, Conversation
-import logging
-
-logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 

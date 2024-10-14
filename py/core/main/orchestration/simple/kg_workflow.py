@@ -41,20 +41,15 @@ def simple_kg_factory(service: KgService):
         for _, document_id in enumerate(document_ids):
             # Extract triples from the document
 
-            try:
-                await service.kg_triples_extraction(
-                    document_id=document_id,
-                    **input_data["kg_creation_settings"],
-                )
-                # Describe the entities in the graph
-                await service.kg_entity_description(
-                    document_id=document_id,
-                    **input_data["kg_creation_settings"],
-                )
-
-            except Exception as e:
-                logger.error(f"Error in creating graph for document {document_id}: {e}")
-
+            await service.kg_triples_extraction(
+                document_id=document_id,
+                **input_data["kg_creation_settings"],
+            )
+            # Describe the entities in the graph
+            await service.kg_entity_description(
+                document_id=document_id,
+                **input_data["kg_creation_settings"],
+            )
 
     async def enrich_graph(input_data):
 

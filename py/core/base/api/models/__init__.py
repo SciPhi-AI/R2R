@@ -9,7 +9,6 @@ from shared.api.models.auth.responses import (
 from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
     IngestionResponse,
-    CreateVectorIndexResponse,
     WrappedCreateVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedUpdateResponse,

@@ -1,5 +1,3 @@
-from time import strftime
-from typing import Optional
 import asyncio
 import json
 import logging
@@ -11,7 +9,6 @@ from copy import deepcopy
 
 from ..abstractions import R2RSerializable
 from ..abstractions.graph import EntityType, RelationshipType
-from ..abstractions import R2RSerializable
 from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,

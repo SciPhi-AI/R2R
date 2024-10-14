@@ -79,7 +79,7 @@ class KgService(Service):
                         "extraction_merge_count": extraction_merge_count,
                         "max_knowledge_triples": max_knowledge_triples,
                         "entity_types": entity_types,
-                        "relation_types": relation_types
+                        "relation_types": relation_types,
                     }
                 ),
                 state=None,
@@ -99,7 +99,6 @@ class KgService(Service):
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.FAILED,
             )
-            raise e
 
         return await _collect_results(result_gen)
 

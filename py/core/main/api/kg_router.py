@@ -13,7 +13,6 @@ from core.base.api.models import (
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
     WrappedKGTriplesResponse,
-    WrappedKGCommunitiesResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id

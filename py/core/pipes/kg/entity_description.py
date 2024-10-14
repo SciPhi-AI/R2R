@@ -167,19 +167,16 @@ class KGEntityDescriptionPipe(AsyncPipe):
         offset = input.message["offset"]
         limit = input.message["limit"]
         document_id = input.message["document_id"]
-
         entity_map = await self.kg_provider.get_entity_map(
             offset, limit, document_id
         )
 
         total_entities = len(entity_map)
-
         logger.info(
             f"Processing {total_entities} entities for document {document_id}"
         )
 
         workflows = []
-
         for i, (entity_name, entity_info) in enumerate(entity_map.items()):
             try:
                 workflows.append(
@@ -193,10 +190,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
             except Exception as e:
                 logger.error(f"Error processing entity {entity_name}: {e}")
 
-        completed_entities = 0
         for result in asyncio.as_completed(workflows):
             yield await result
-            completed_entities += 1
 
         logger.info(
             f"Processed {total_entities} entities for document {document_id}"

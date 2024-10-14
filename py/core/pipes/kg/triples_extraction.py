@@ -83,8 +83,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         relation_types: list[str],
         retries: int = 5,
         delay: int = 2,
-        task_id: Optional[int] = None,
-        total_tasks: Optional[int] = None,
     ) -> KGExtraction:
         """
         Extracts NER triples from a extraction with retries.
@@ -269,11 +267,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                     max_knowledge_triples=max_knowledge_triples,
                     entity_types=entity_types,
                     relation_types=relation_types,
-                    task_id=task_id,
-                    total_tasks=len(extractions_groups),
                 )
             )
-            for task_id, extractions_group in enumerate(extractions_groups)
+            for extractions_group in extractions_groups
         ]
 
         completed_tasks = 0
