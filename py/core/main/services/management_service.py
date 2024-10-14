@@ -394,7 +394,9 @@ class ManagementService(Service):
         self.providers.database.vector.remove_document_from_collection(
             document_id, collection_id
         )
-        enrichment = await self.providers.kg.delete_node_via_document_id(document_id, collection_id)
+        enrichment = await self.providers.kg.delete_node_via_document_id(
+            document_id, collection_id
+        )
         return enrichment
 
     @telemetry_event("DocumentCollections")

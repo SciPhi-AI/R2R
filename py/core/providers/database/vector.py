@@ -26,8 +26,6 @@ from shared.abstractions.vector import (
     VectorTableName,
     IndexMeasure,
     VectorTableName,
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
 )
 
 from .vecs import (

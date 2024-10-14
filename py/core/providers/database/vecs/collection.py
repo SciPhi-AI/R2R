@@ -42,15 +42,6 @@ from shared.abstractions.vector import (
     IndexMeasure,
     IndexMethod,
     VectorTableName,
-)
-
-from shared.abstractions.vector import (
-    VectorTableName,
-    IndexMeasure,
-    IndexMethod,
-    IndexArgsIVFFlat,
-    IndexArgsHNSW,
-    INDEX_MEASURE_TO_SQLA_ACC,
     VectorQuantizationType,
 )
 

@@ -692,7 +692,6 @@ class ManagementRouter(BaseRouter):
                 default=None,
                 description="Settings for the graph enrichment process.",
             ),
-            
         ) -> WrappedDeleteResponse:
             collection_uuid = UUID(collection_id)
             document_uuid = UUID(document_id)
@@ -734,7 +733,7 @@ class ManagementRouter(BaseRouter):
                 self.orchestration_provider.run_workflow(
                     "enrich-graph", {"request": workflow_input}, {}
                 )
-            
+
             return None  # type: ignore
 
         @self.router.get("/document_collections/{document_id}")

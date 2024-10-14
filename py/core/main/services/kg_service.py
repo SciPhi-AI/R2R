@@ -293,8 +293,7 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.kg.delete_node_via_document_id(
-            collection_id,
-            document_id
+            collection_id, document_id
         )
 
     @telemetry_event("get_creation_estimate")
