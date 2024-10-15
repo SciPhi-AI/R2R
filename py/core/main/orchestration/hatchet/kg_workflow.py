@@ -231,7 +231,9 @@ def hatchet_kg_factory(
             )
             collection_id = input_data["collection_id"]
 
-            logger.info(f"Running KG Clustering for collection {collection_id} with settings {input_data['kg_enrichment_settings']}")
+            logger.info(
+                f"Running KG Clustering for collection {collection_id} with settings {input_data['kg_enrichment_settings']}"
+            )
 
             kg_clustering_results = await self.kg_service.kg_clustering(
                 collection_id=collection_id,

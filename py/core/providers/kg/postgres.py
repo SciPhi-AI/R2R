@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
+import time
 
 import asyncpg
 
@@ -585,12 +586,8 @@ class PostgresKGProvider(KGProvider):
         """
         settings: Dict[str, Any] = {}
 
-        import time
         start_time = time.time()
-
-        logger.info(f"Getting all triples for collection {collection_id}, Leiden clustering started.")
         triples = await self.get_all_triples(collection_id)
-        logger.info(f"Getting all triples completed in {time.time() - start_time:.2f} seconds.")
 
         logger.info(f"Clustering with settings: {str(leiden_params)}")
 
@@ -604,13 +601,15 @@ class PostgresKGProvider(KGProvider):
             )
             
         logger.info(f"Computing Leiden communities started.")
+        
         hierarchical_communities = await self._compute_leiden_communities(
             G, leiden_params
         )
-        logger.info(f"Computing Leiden communities completed in {time.time() - start_time:.2f} seconds.")
+
+        logger.info(f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds.")
 
         # caching the triple ids
-        triple_ids_cache = {}
+        triple_ids_cache = dict[str, list[int]]()
         for triple in triples:
             if triple.subject not in triple_ids_cache:
                 triple_ids_cache[triple.subject] = []
@@ -622,7 +621,7 @@ class PostgresKGProvider(KGProvider):
         def triple_ids(node: int) -> list[int]:
             return triple_ids_cache.get(node, [])
 
-        logger.info(f"Created the triple ids cache of length {len(triple_ids_cache)}, time {time.time() - start_time:.2f} seconds.")
+        logger.info(f"Cached {len(triple_ids_cache)} triple ids, time {time.time() - start_time:.2f} seconds.")
 
         # upsert the communities into the database.
         inputs = [
@@ -638,17 +637,13 @@ class PostgresKGProvider(KGProvider):
             for item in hierarchical_communities
         ]
 
-        logger.info(f"Created the inputs list of length {len(inputs)}, time {time.time() - start_time:.2f} seconds.")
         await self.add_communities(inputs)
-
-        logger.info(f"Upserting communities completed., time {time.time() - start_time:.2f} seconds.")
 
         num_communities = len(
             set([item.cluster for item in hierarchical_communities])
         )
-        # num_communities = 10
 
-        logger.info(f"Number of communities: {num_communities}, time {time.time() - start_time:.2f} seconds.")
+        logger.info(f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds.")
 
         return num_communities
 
@@ -666,12 +661,12 @@ class PostgresKGProvider(KGProvider):
                     7272  # add seed to control randomness
                 )
 
-            import time
             start_time = time.time()
             logger.info(f"Running Leiden clustering with params: {leiden_params}")
+            
             community_mapping = hierarchical_leiden(graph, **leiden_params)
-            end_time = time.time()
-            logger.info(f"Leiden clustering completed in {end_time - start_time} seconds.")
+
+            logger.info(f"Leiden clustering completed in {time.time() - start_time:.2f} seconds.")
             return community_mapping
 
         except ImportError as e:
