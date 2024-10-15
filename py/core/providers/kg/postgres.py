@@ -592,7 +592,7 @@ class PostgresKGProvider(KGProvider):
         triples = await self.get_all_triples(collection_id)
         logger.info(f"Getting all triples completed in {time.time() - start_time:.2f} seconds.")
 
-        logger.info(f"Clustering with settings: {str(settings)}")
+        logger.info(f"Clustering with settings: {str(leiden_params)}")
 
         G = self.nx.Graph()
         for triple in triples:
