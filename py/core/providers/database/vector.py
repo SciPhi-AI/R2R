@@ -3,6 +3,7 @@ import copy
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
+import time
 from typing import Any, Optional, Union
 
 from sqlalchemy import text
@@ -15,15 +16,24 @@ from core.base import (
     VectorSearchResult,
 )
 from core.base.abstractions import VectorSearchSettings
+
 from shared.abstractions.vector import (
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
+    VectorQuantizationType,
     IndexMeasure,
     IndexMethod,
+    IndexArgsIVFFlat,
+    IndexArgsHNSW,
+    VectorTableName,
+    IndexMeasure,
     VectorTableName,
 )
 
-from .vecs import Client, Collection, create_client
+from .vecs import (
+    Client,
+    Collection,
+    create_client,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,17 +61,20 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "Please provide a valid `project_name` to the `PostgresVectorDBProvider`."
             )
         dimension = kwargs.get("dimension", None)
+        quantization_type = kwargs.get("quantization_type", None)
         if not dimension:
             raise ValueError(
                 "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
             )
 
-        self._initialize_vector_db(dimension)
+        self._initialize_vector_db(dimension, quantization_type)
         logger.info(
             f"Successfully initialized PGVectorDB for project: {self.project_name}"
         )
 
-    def _initialize_vector_db(self, dimension: int) -> None:
+    def _initialize_vector_db(
+        self, dimension: int, quantization_type: VectorQuantizationType
+    ) -> None:
         # Create extension for trigram similarity
         with self.vx.Session() as sess:
             sess.execute(text(f"CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
@@ -69,7 +82,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.commit()
 
         self.collection = self.vx.get_or_create_vector_table(
-            name=self.project_name, dimension=dimension
+            name=self.project_name,
+            dimension=dimension,
+            quantization_type=quantization_type,
         )
 
         # NOTE: Do not create an index during initialization
@@ -316,7 +331,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         end_time = time.time()
-        logger.info(f"Index creation took {end_time - start_time} seconds")
+        logger.info(f"Index creation took {end_time - start_time:.2f} seconds")
 
     def delete(
         self,

@@ -5,6 +5,7 @@ import os
 import warnings
 from typing import Any, Optional
 
+from shared.abstractions.vector import VectorQuantizationType
 from core.base import (
     CryptoProvider,
     DatabaseConfig,
@@ -48,6 +49,7 @@ class PostgresDBProvider(DatabaseProvider):
         self,
         config: DatabaseConfig,
         dimension: int,
+        quantization_type: VectorQuantizationType,
         crypto_provider: CryptoProvider,
         *args,
         **kwargs,
@@ -95,6 +97,7 @@ class PostgresDBProvider(DatabaseProvider):
             logger.info("Connecting to Postgres via TCP/IP")
 
         self.vector_db_dimension = dimension
+        self.vector_db_quantization_type = quantization_type
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
@@ -119,6 +122,7 @@ class PostgresDBProvider(DatabaseProvider):
             connection_string=self.connection_string,
             project_name=self.project_name,
             dimension=self.vector_db_dimension,
+            quantization_type=self.vector_db_quantization_type,
         )
 
     async def _initialize_relational_db(self) -> RelationalDBProvider:
