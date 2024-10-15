@@ -165,27 +165,26 @@ class UnstructuredIngestionProvider(IngestionProvider):
     async def parse_fallback(
         self,
         file_content: bytes,
-        chunk_size: int,
-        chunk_overlap: int,
+        ingestion_config: dict,
         parser_name: str,
     ) -> AsyncGenerator[FallbackElement, None]:
-        texts = self.parsers[parser_name].ingest(  # type: ignore
-            file_content  # , chunk_size=chunk_size
-        )
+        context = ""
+        async for text in self.parsers[parser_name].ingest(file_content, **ingestion_config):  # type: ignore
+            context += text + "\n\n"
+        logging.info(f"Fallback ingestion with config = {ingestion_config}")
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_size=ingestion_config["new_after_n_chars"],
+            chunk_overlap=ingestion_config["overlap"],
         )
 
         chunk_id = 0
-        async for text in texts:  # type: ignore
-            if text and text != "":
-                for text_chunk in splitter.create_documents([text]):
-                    yield FallbackElement(
-                        text=text_chunk.page_content,
-                        metadata={"chunk_id": chunk_id},
-                    )
-                chunk_id += 1
+
+        for text_chunk in splitter.create_documents([context]):
+            yield FallbackElement(
+                text=text_chunk.page_content,
+                metadata={"chunk_id": chunk_id},
+            )
+            chunk_id += 1
 
     async def parse(
         self,
@@ -206,17 +205,17 @@ class UnstructuredIngestionProvider(IngestionProvider):
         parser_overrides = ingestion_config_override.get(
             "parser_overrides", {}
         )
+        elements = []
+
         # TODO - Cleanup this approach to be less hardcoded
         # TODO - Remove code duplication between Unstructured & R2R
         if document.type.value in parser_overrides:
             logger.info(
                 f"Using parser_override for {document.type} with input value {parser_overrides[document.type.value]}"
             )
-            elements = []
             async for element in self.parse_fallback(
                 file_content,
-                chunk_size=self.config.combine_under_n_chars,
-                chunk_overlap=self.config.overlap,
+                ingestion_config=ingestion_config,
                 parser_name=f"zerox_{DocumentType.PDF.value}",
             ):
                 elements.append(element)
@@ -225,11 +224,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
             logger.info(
                 f"Parsing {document.type}: {document.id} with fallback parser"
             )
-            elements = []
             async for element in self.parse_fallback(
                 file_content,
-                chunk_size=self.config.combine_under_n_chars,
-                chunk_overlap=self.config.overlap,
+                ingestion_config=ingestion_config,
                 parser_name=document.type,
             ):
                 elements.append(element)

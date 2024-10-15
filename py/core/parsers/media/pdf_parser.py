@@ -1,6 +1,7 @@
 # type: ignore
 import asyncio
 import logging
+import os
 import string
 import unicodedata
 from io import BytesIO
@@ -197,7 +198,7 @@ class ZeroxPDFParser(AsyncParser[DataType]):
 
         except ImportError as e:
             raise ValueError(
-                f"Error, zerox is not installed {e}, please install through the R2R ingestion bundle with `pip install r2r -E ingestion-bundle` "
+                f"Error, zerox installation failed with Error='{e}', please install through the R2R ingestion bundle with `pip install r2r -E ingestion-bundle` "
             )
 
     async def ingest(
@@ -208,7 +209,6 @@ class ZeroxPDFParser(AsyncParser[DataType]):
 
         model = kwargs.get("zerox_parsing_model", ZEROX_DEFAULT_MODEL)
         model = model.split("/")[-1]  # remove the provider prefix
-
         result = await self.zerox(
             file_data=data,
             model=model,

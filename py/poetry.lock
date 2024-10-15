@@ -4,7 +4,7 @@
 name = "aiofiles"
 version = "24.1.0"
 description = "File support for asyncio."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5"},
@@ -151,7 +151,7 @@ aiohttp = "*"
 name = "aioshutil"
 version = "1.5"
 description = "Asynchronous shutil module."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "aioshutil-1.5-py3-none-any.whl", hash = "sha256:bc2a6cdcf1a8615b62f856154fd81131031d03f2834912ebb06d8a2391253652"},
@@ -469,7 +469,7 @@ test-tox-coverage = ["coverage (>=5.5)"]
 name = "beautifulsoup4"
 version = "4.12.3"
 description = "Screen-scraping library"
-optional = false
+optional = true
 python-versions = ">=3.6.0"
 files = [
     {file = "beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"},
@@ -572,7 +572,7 @@ crt = ["awscrt (==0.22.0)"]
 name = "bs4"
 version = "0.0.2"
 description = "Dummy package for Beautiful Soup (beautifulsoup4)"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "bs4-0.0.2-py2.py3-none-any.whl", hash = "sha256:abf8742c0805ef7f662dce4b51cca104cffe52b835238afc169142ab9b3fbccc"},
@@ -3269,7 +3269,7 @@ test = ["pytest", "pytest-cov", "scipy"]
 name = "pdf2image"
 version = "1.17.0"
 description = "A wrapper around the pdftoppm and pdftocairo command line tools to convert PDF to a PIL Image list."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pdf2image-1.17.0-py3-none-any.whl", hash = "sha256:ecdd58d7afb810dffe21ef2b1bbc057ef434dabbac6c33778a38a3f7744a27e2"},
@@ -3296,7 +3296,7 @@ numpy = "*"
 name = "pillow"
 version = "10.4.0"
 description = "Python Imaging Library (Fork)"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "pillow-10.4.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:4d9667937cfa347525b319ae34375c37b9ee6b525440f3ef48542fcf66f2731e"},
@@ -4000,6 +4000,24 @@ dev = ["black", "flit", "pip-tools", "pre-commit (<2.18.0)", "pytest-cov", "pyte
 docs = ["myst_parser", "sphinx", "sphinx_rtd_theme"]
 full = ["Pillow (>=8.0.0)", "PyCryptodome", "cryptography"]
 image = ["Pillow (>=8.0.0)"]
+
+[[package]]
+name = "pypdf2"
+version = "3.0.1"
+description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "PyPDF2-3.0.1.tar.gz", hash = "sha256:a74408f69ba6271f71b9352ef4ed03dc53a31aa404d29b5d31f53bfecfee1440"},
+    {file = "pypdf2-3.0.1-py3-none-any.whl", hash = "sha256:d16e4205cfee272fbdc0568b68d82be796540b1537508cef59388f839c191928"},
+]
+
+[package.extras]
+crypto = ["PyCryptodome"]
+dev = ["black", "flit", "pip-tools", "pre-commit (<2.18.0)", "pytest-cov", "wheel"]
+docs = ["myst_parser", "sphinx", "sphinx_rtd_theme"]
+full = ["Pillow", "PyCryptodome"]
+image = ["Pillow"]
 
 [[package]]
 name = "pytest"
@@ -4713,7 +4731,7 @@ files = [
 name = "soupsieve"
 version = "2.6"
 description = "A modern CSS selector implementation for Beautiful Soup."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "soupsieve-2.6-py3-none-any.whl", hash = "sha256:e72c4ff06e4fb6e4b5a9f0f55fe6e81514581fca1515028625d0f299c602ccc9"},
@@ -5722,11 +5740,10 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-core = ["aiosqlite", "apscheduler", "asyncpg", "bcrypt", "boto3", "deepdiff", "fire", "future", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "passlib", "psutil", "pydantic", "pyjwt", "python-multipart", "pyyaml", "sqlalchemy", "supabase", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
-hatchet = ["hatchet-sdk"]
-ingestion-bundle = ["beautifulsoup4", "markdown", "numpy", "openpyxl", "pypdf", "python-docx", "python-pptx"]
+core = ["aiosqlite", "apscheduler", "asyncpg", "bcrypt", "boto3", "deepdiff", "fire", "fsspec", "future", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "passlib", "psutil", "pydantic", "pyjwt", "python-multipart", "pyyaml", "sqlalchemy", "supabase", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
+ingestion-bundle = ["aiofiles", "aioshutil", "beautifulsoup4", "bs4", "markdown", "numpy", "openpyxl", "pdf2image", "pypdf", "python-docx", "python-pptx"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "6109732dcdfef5458195416783a99396b2124e18f4d91697117adc4796d3c4b8"
+content-hash = "8da93cbb68500ef3d9933e0bf14d68de4fcc1d546ac9079fdcce096c72d3fe98"

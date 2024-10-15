@@ -11,7 +11,6 @@ import aioshutil as async_shutil
 
 from ..constants.messages import Messages
 from ..errors import FileUnavailable
-from ..models import litellmmodel
 
 # Package Imports
 from ..processor import (
@@ -19,6 +18,7 @@ from ..processor import (
     process_page,
     process_pages_in_batches,
 )
+from ..zerox_models import litellmmodel
 from .types import Page, ZeroxOutput
 
 

@@ -202,7 +202,6 @@ class R2RIngestionProvider(IngestionProvider):
                     raise ValueError(
                         "Only Zerox PDF parser override is available."
                     )
-                print("keys = ", self.parsers.keys())
                 async for text in self.parsers[
                     f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):

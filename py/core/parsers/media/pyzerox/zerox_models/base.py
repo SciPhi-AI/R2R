@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Dict, Optional, Type, TypeVar
 
 if TYPE_CHECKING:
-    from ..models import CompletionResponse
+    from ..zerox_models import CompletionResponse
 
 T = TypeVar("T", bound="BaseModel")
 

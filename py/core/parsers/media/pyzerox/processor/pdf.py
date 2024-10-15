@@ -1,12 +1,14 @@
 import asyncio
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from pdf2image import convert_from_path
 
 from ..constants import Messages, PDFConversionDefaultOptions
-from ..models import litellmmodel
+
+if TYPE_CHECKING:
+    from ..zerox_models import litellmmodel
 
 # Package Imports
 from .image import save_image
@@ -35,7 +37,7 @@ async def convert_pdf_to_images(local_path: str, temp_dir: str) -> List[str]:
 
 async def process_page(
     image: str,
-    model: litellmmodel,
+    model: "litellmmodel",
     temp_directory: str = "",
     input_token_count: int = 0,
     output_token_count: int = 0,
@@ -86,7 +88,7 @@ async def process_page(
 async def process_pages_in_batches(
     images: List[str],
     concurrency: int,
-    model: litellmmodel,
+    model: "litellmmodel",
     temp_directory: str = "",
     input_token_count: int = 0,
     output_token_count: int = 0,
