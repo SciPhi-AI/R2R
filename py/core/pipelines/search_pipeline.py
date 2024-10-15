@@ -8,12 +8,12 @@ from ..base.abstractions import (
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.logging.run_logger import R2RLoggingProvider
+from ..base.logging.r2r_logger import R2RLoggingProvider
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class SearchPipeline(AsyncPipeline):

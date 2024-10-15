@@ -23,7 +23,7 @@ from core.base import (
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
@@ -243,7 +243,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             "filter_out_existing_chunks", True
         )
 
-        logger = input.message.get("logger", logging.getLogger(__name__))
+        logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
             f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
@@ -315,7 +315,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                     max_knowledge_triples=max_knowledge_triples,
                     entity_types=entity_types,
                     relation_types=relation_types,
-                    logger=logger,
                     task_id=task_id,
                     total_tasks=len(extractions_groups),
                 )

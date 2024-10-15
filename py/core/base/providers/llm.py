@@ -15,7 +15,7 @@ from core.base.abstractions import (
 
 from .base import Provider, ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class CompletionConfig(ProviderConfig):

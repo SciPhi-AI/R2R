@@ -18,7 +18,7 @@ from shared.abstractions.vector import VectorQuantizationType
 from .relational import PostgresRelationalDBProvider
 from .vector import PostgresVectorDBProvider
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def get_env_var(new_var, old_var, config_value):

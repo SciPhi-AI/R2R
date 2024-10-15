@@ -10,7 +10,7 @@ from .pipelines import *
 from .pipes import *
 from .providers import *
 
-logger = logging.getLogger("core")
+logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Create a console handler and set the level to info

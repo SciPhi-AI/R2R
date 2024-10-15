@@ -14,7 +14,7 @@ from core.base import (
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers import KGProvider
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGStoragePipe(AsyncPipe):

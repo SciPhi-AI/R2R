@@ -18,7 +18,7 @@ from core.base import (
     R2RLoggingProvider,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGCommunitySummaryPipe(AsyncPipe):
@@ -202,7 +202,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
-        logger = input.message.get("logger", logging.getLogger(__name__))
+        logger = input.message.get("logger", logging.getLogger())
 
         # check which community summaries exist and don't run them again
 

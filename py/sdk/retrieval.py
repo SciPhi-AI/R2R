@@ -10,7 +10,7 @@ from .models import (
     VectorSearchSettings,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class RetrievalMethods:

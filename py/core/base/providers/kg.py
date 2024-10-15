@@ -17,7 +17,7 @@ from ..abstractions import (
 )
 from .base import ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 # TODO - Bolt down types for KGConfig

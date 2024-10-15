@@ -29,7 +29,7 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100

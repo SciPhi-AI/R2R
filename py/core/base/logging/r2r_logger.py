@@ -14,7 +14,7 @@ from core.base import Message
 from ..providers.base import Provider, ProviderConfig
 from .base import RunType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 import uuid
 from typing import Dict, List, Optional, Tuple

@@ -24,7 +24,7 @@ from core.base.abstractions import R2RSerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 from core.utils import generate_extraction_id
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class FallbackElement(R2RSerializable):

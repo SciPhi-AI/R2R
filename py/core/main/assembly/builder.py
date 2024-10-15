@@ -37,7 +37,7 @@ from .factory import (
     R2RProviderFactory,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @dataclass

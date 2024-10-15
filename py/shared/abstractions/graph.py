@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from .base import R2RSerializable
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @dataclass

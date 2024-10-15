@@ -16,7 +16,7 @@ from core.base import (
 
 from ..abstractions.search_pipe import SearchPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class VectorSearchPipe(SearchPipe):

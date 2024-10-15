@@ -1,12 +1,12 @@
 import logging
 from typing import Optional
 
-from ..base.logging.run_logger import R2RLoggingProvider
+from ..base.logging.r2r_logger import R2RLoggingProvider
 from ..base.logging.run_manager import RunManager
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGEnrichmentPipeline(AsyncPipeline):

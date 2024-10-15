@@ -16,7 +16,7 @@ from ..abstractions.search import (
 )
 from ..abstractions.vector import VectorQuantizationType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def format_search_results_for_llm(results: AggregateSearchResult) -> str:

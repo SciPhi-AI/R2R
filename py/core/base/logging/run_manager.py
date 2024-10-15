@@ -8,7 +8,7 @@ from core.base.api.models import UserResponse
 from core.base.logging.base import RunType
 from core.base.utils import generate_run_id
 
-from .run_logger import R2RLoggingProvider
+from .r2r_logger import R2RLoggingProvider
 
 run_id_var = contextvars.ContextVar("run_id", default=generate_run_id())
 

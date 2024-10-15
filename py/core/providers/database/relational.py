@@ -11,7 +11,7 @@ from core.providers.database.document import DocumentMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
 from core.providers.database.user import UserMixin
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PostgresRelationalDBProvider(

@@ -13,7 +13,7 @@ from core.base import (
     R2RLoggingProvider,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGClusteringPipe(AsyncPipe):

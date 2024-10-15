@@ -6,7 +6,7 @@ from .log_processor import (
     LogFilterCriteria,
     LogProcessor,
 )
-from .run_logger import (
+from .r2r_logger import (
     LoggingConfig,
     R2RLoggingProvider,
     SqlitePersistentLoggingProvider,

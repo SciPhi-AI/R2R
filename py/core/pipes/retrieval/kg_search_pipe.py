@@ -27,7 +27,7 @@ from core.base.abstractions import (
 
 from ..abstractions.generator_pipe import GeneratorPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGSearchSearchPipe(GeneratorPipe):

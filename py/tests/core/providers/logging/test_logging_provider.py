@@ -11,7 +11,7 @@ from core import (
     generate_run_id,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional
 
 from core.base import OrchestrationConfig, OrchestrationProvider, Workflow
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class HatchetOrchestrationProvider(OrchestrationProvider):

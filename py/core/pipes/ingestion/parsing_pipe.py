@@ -16,7 +16,7 @@ from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
 from core.utils import generate_extraction_id
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class ParsingPipe(AsyncPipe):

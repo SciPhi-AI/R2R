@@ -12,7 +12,7 @@ from core.base import (
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class VectorStoragePipe(AsyncPipe[StorageResult]):

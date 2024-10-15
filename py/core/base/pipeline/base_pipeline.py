@@ -5,11 +5,11 @@ import logging
 import traceback
 from typing import Any, AsyncGenerator, Optional
 
-from ..logging.run_logger import R2RLoggingProvider
+from ..logging.r2r_logger import R2RLoggingProvider
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class AsyncPipeline:

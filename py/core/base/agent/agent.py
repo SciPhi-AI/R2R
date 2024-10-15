@@ -16,7 +16,7 @@ from core.base.providers import CompletionProvider, PromptProvider
 
 from .base import Tool, ToolResult
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class Conversation:
@@ -226,7 +226,6 @@ class Agent(ABC):
                 tool_result.stream_result = tool.stream_function(raw_result)
         else:
             error_message = f"The requested tool '{function_name}' is not available. Available tools: {', '.join(t.name for t in self.tools)}"
-            logger.debug(error_message)
             tool_result = ToolResult(
                 raw_result=error_message,
                 llm_formatted_result=error_message,

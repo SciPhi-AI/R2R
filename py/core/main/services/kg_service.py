@@ -17,7 +17,7 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
