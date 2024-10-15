@@ -18,6 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
 from shared.abstractions.vector import VectorQuantizationType
+
 from .adapter import Adapter
 from .exc import CollectionNotFound
 

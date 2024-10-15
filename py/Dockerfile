@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS builder
+FROM python:3.11-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-    RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry
 
 
 # Add Rust to PATH
@@ -23,16 +23,24 @@ RUN poetry config virtualenvs.create false \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Install runtime dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl poppler-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Add poppler to PATH
+ENV PATH="/usr/bin:${PATH}"
+
+# Debugging steps
+RUN echo "PATH: $PATH"
+RUN which pdfinfo
+RUN pdfinfo -v
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Expose the port and set environment variables

@@ -74,9 +74,9 @@ markdown = { version = "^3.6", optional = true }
 openpyxl = { version = "^3.1.2", optional = true }
 pdf2image = { version = "^1.17.0", optional = true }
 pypdf = { version = "^4.2.0", optional = true }
+pypdf2 = { version = "^3.0.1", optional = true }
 python-pptx = { version = "^1.0.1", optional = true }
 python-docx = { version = "^1.1.0", optional = true }
-
 
 [tool.poetry.extras]
 core = [
@@ -118,6 +118,7 @@ ingestion-bundle = [
     "openpyxl",
     "pdf2image",
     "pypdf",
+    "pypdf2",
     "python-pptx",
     "python-docx",
 ]
@@ -161,7 +162,7 @@ profile = "black"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'core/parsers/media/zerox/py_zerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
+exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"

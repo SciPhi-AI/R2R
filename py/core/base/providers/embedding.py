@@ -5,14 +5,13 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Optional
 
+from shared.abstractions.vector import VectorQuantizationSettings
+
 from ..abstractions import (
     EmbeddingPurpose,
     VectorSearchResult,
     default_embedding_prefixes,
 )
-
-from shared.abstractions.vector import VectorQuantizationSettings
-
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)

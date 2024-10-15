@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import uuid
@@ -141,6 +142,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                 parent_id TEXT,
                 content TEXT,
                 created_at REAL,
+                metadata TEXT,
                 FOREIGN KEY (conversation_id) REFERENCES conversations(id),
                 FOREIGN KEY (parent_id) REFERENCES messages(id)
             );
@@ -282,6 +284,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
     ) -> str:
         if not self.conn:
             raise ValueError(
@@ -292,13 +295,14 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         created_at = datetime.utcnow().timestamp()
 
         await self.conn.execute(
-            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?)",
             (
                 message_id,
                 conversation_id,
                 parent_id,
                 content.json(),
                 created_at,
+                json.dumps(metadata) if metadata else "{}",
             ),
         )
 

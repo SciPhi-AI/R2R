@@ -716,7 +716,7 @@ class ManagementRouter(BaseRouter):
                 )
                 if run_type is KGRunType.ESTIMATE:
 
-                    return await self.service.get_enrichment_estimate(
+                    return await self.service.providers.kg.get_enrichment_estimate(
                         collection_id, server_kg_enrichment_settings
                     )
 
@@ -730,7 +730,7 @@ class ManagementRouter(BaseRouter):
                     "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
                     "user": auth_user.json(),
                 }
-                self.orchestration_provider.run_workflow(
+                await self.orchestration_provider.run_workflow(
                     "enrich-graph", {"request": workflow_input}, {}
                 )
 

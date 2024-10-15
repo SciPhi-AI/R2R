@@ -17,12 +17,12 @@ from core.base import (
     Triple,
 )
 from shared.abstractions import KGCreationSettings, KGEnrichmentSettings
+from shared.abstractions.vector import VectorQuantizationType
 from shared.api.models.kg.responses import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
 )
-from shared.abstractions.vector import VectorQuantizationType
-from shared.utils import llm_cost_per_million_tokens, _decorate_vector_type
+from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ class PostgresKGProvider(KGProvider):
             )
             for obj in objects
         ]
-        return await self.execute_many(QUERY, params)
+        return await self.execute_many(QUERY, params)  # type: ignore
 
     async def add_entities(
         self,
@@ -759,7 +759,7 @@ class PostgresKGProvider(KGProvider):
 
     async def delete_node_via_document_id(
         self, document_id: UUID, collection_id: UUID
-    ) -> bool:
+    ) -> None:
         # don't delete if status is PROCESSING.
         QUERY = f"""
             SELECT kg_enrichment_status FROM {self._get_table_name("collections")} WHERE collection_id = $1
@@ -804,9 +804,8 @@ class PostgresKGProvider(KGProvider):
             await self.execute_query(
                 QUERY, [KGExtractionStatus.PENDING, collection_id]
             )
-            return False
-
-        return True
+            return None
+        return None
 
     def _get_str_estimation_output(self, x: tuple[Any, Any]) -> str:
         if isinstance(x[0], int) and isinstance(x[1], int):

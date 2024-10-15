@@ -18,6 +18,7 @@ from core.base import (
     Document,
     DocumentExtraction,
     DocumentType,
+    RecursiveCharacterTextSplitter,
 )
 from core.base.abstractions import R2RSerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
@@ -35,6 +36,7 @@ class UnstructuredIngestionConfig(IngestionConfig):
     combine_under_n_chars: int = 128
     max_characters: int = 500
     new_after_n_chars: int = 1500
+    overlap: int = 64
 
     coordinates: Optional[bool] = None
     encoding: Optional[str] = None  # utf-8
@@ -48,7 +50,6 @@ class UnstructuredIngestionConfig(IngestionConfig):
     multipage_sections: Optional[bool] = None
     ocr_languages: Optional[list[str]] = None
     # output_format: Optional[str] = "application/json"
-    overlap: Optional[int] = None
     overlap_all: Optional[bool] = None
     pdf_infer_table_structure: Optional[bool] = None
 
@@ -85,6 +86,16 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.JSON: [parsers.JSONParser],  # type: ignore
         DocumentType.HTML: [parsers.HTMLParser],  # type: ignore
         DocumentType.XLSX: [parsers.XLSXParser],  # type: ignore
+    }
+
+    EXTRA_PARSERS = {
+        DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
+        DocumentType.PDF: {
+            "unstructured": parsers.PDFParserUnstructured,
+            "zerox": parsers.ZeroxPDFParser,
+            "marker": parsers.PDFParserMarker,
+        },
+        DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
     }
 
     IMAGE_TYPES = {
@@ -143,21 +154,37 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 ):
                     # will choose the first parser in the list
                     self.parsers[doc_type] = parser_info()
+        # TODO - Reduce code duplication between Unstructured & R2R
+        for doc_type, doc_parser_name in self.config.extra_parsers.items():
+            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
+                UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type][
+                    doc_parser_name
+                ]()
+            )
 
     async def parse_fallback(
-        self, file_content: bytes, document: Document, chunk_size: int
+        self,
+        file_content: bytes,
+        ingestion_config: dict,
+        parser_name: str,
     ) -> AsyncGenerator[FallbackElement, None]:
-        texts = self.parsers[document.type].ingest(  # type: ignore
-            file_content, chunk_size=chunk_size
+        context = ""
+        async for text in self.parsers[parser_name].ingest(file_content, **ingestion_config):  # type: ignore
+            context += text + "\n\n"
+        logging.info(f"Fallback ingestion with config = {ingestion_config}")
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=ingestion_config["new_after_n_chars"],
+            chunk_overlap=ingestion_config["overlap"],
         )
 
         chunk_id = 0
-        async for text in texts:  # type: ignore
-            if text and text != "":
-                yield FallbackElement(
-                    text=text, metadata={"chunk_id": chunk_id}
-                )
-                chunk_id += 1
+
+        for text_chunk in splitter.create_documents([context]):
+            yield FallbackElement(
+                text=text_chunk.page_content,
+                metadata={"chunk_id": chunk_id},
+            )
+            chunk_id += 1
 
     async def parse(
         self,
@@ -175,15 +202,32 @@ class UnstructuredIngestionProvider(IngestionProvider):
         ingestion_config.pop("excluded_parsers", None)
 
         t0 = time.time()
-        if document.type in self.R2R_FALLBACK_PARSERS.keys():
+        parser_overrides = ingestion_config_override.get(
+            "parser_overrides", {}
+        )
+        elements = []
+
+        # TODO - Cleanup this approach to be less hardcoded
+        # TODO - Remove code duplication between Unstructured & R2R
+        if document.type.value in parser_overrides:
+            logger.info(
+                f"Using parser_override for {document.type} with input value {parser_overrides[document.type.value]}"
+            )
+            async for element in self.parse_fallback(
+                file_content,
+                ingestion_config=ingestion_config,
+                parser_name=f"zerox_{DocumentType.PDF.value}",
+            ):
+                elements.append(element)
+
+        elif document.type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(
                 f"Parsing {document.type}: {document.id} with fallback parser"
             )
-            elements = []
             async for element in self.parse_fallback(
                 file_content,
-                document,
-                chunk_size=self.config.combine_under_n_chars,
+                ingestion_config=ingestion_config,
+                parser_name=document.type,
             ):
                 elements.append(element)
         else:

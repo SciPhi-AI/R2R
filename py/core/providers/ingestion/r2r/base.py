@@ -186,19 +186,14 @@ class R2RIngestionProvider(IngestionProvider):
             )
         else:
             t0 = time.time()
-
             contents = ""
             parser_overrides = ingestion_config_override.get(
                 "parser_overrides", {}
             )
-            print("parser_overrides = ", parser_overrides)
-            print("document.type.value = ", document.type.value)
-            print(
-                "document.type.value in parser_overrides = ",
-                document.type.value in parser_overrides,
-            )
             if document.type.value in parser_overrides:
-                print("In zerox parser ...")
+                logger.info(
+                    f"Using parser_override for {document.type} with input value {parser_overrides[document.type.value]}"
+                )
                 # TODO - Cleanup this approach to be less hardcoded
                 if (
                     document.type != DocumentType.PDF
@@ -207,7 +202,6 @@ class R2RIngestionProvider(IngestionProvider):
                     raise ValueError(
                         "Only Zerox PDF parser override is available."
                     )
-                print("keys = ", self.parsers.keys())
                 async for text in self.parsers[
                     f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):

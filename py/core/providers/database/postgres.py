@@ -5,7 +5,6 @@ import os
 import warnings
 from typing import Any, Optional
 
-from shared.abstractions.vector import VectorQuantizationType
 from core.base import (
     CryptoProvider,
     DatabaseConfig,
@@ -14,6 +13,7 @@ from core.base import (
     RelationalDBProvider,
     VectorDBProvider,
 )
+from shared.abstractions.vector import VectorQuantizationType
 
 from .relational import PostgresRelationalDBProvider
 from .vector import PostgresVectorDBProvider

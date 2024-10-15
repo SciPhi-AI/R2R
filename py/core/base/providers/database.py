@@ -4,8 +4,9 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from .base import Provider, ProviderConfig
 from shared.abstractions.vector import VectorQuantizationType
+
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
-import time
 from flupy import flu
 from sqlalchemy import (
     Column,
@@ -41,9 +40,10 @@ from shared.abstractions.vector import (
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
-    VectorTableName,
     VectorQuantizationType,
+    VectorTableName,
 )
+from shared.utils import _decorate_vector_type
 
 from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
@@ -53,8 +53,6 @@ from .exc import (
     FilterError,
     MismatchedDimension,
 )
-
-from shared.utils import _decorate_vector_type
 
 if TYPE_CHECKING:
     from vecs.client import Client
@@ -1066,6 +1064,7 @@ def _build_table(
     dimension: int,
     quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ) -> Table:
+
     table = Table(
         name,
         meta,
