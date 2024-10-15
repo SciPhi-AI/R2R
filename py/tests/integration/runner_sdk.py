@@ -47,6 +47,19 @@ def test_ingest_sample_file_2_sdk():
     print("~" * 100)
 
 
+def test_ingest_sample_file_3_sdk():
+    print("Testing: Ingest sample file SDK 2")
+    file_paths = ["core/examples/data/lyft_2021.pdf"]
+    ingest_response = client.ingest_files(file_paths=file_paths)
+
+    if not ingest_response["results"]:
+        print("Ingestion test failed")
+        sys.exit(1)
+    time.sleep(60)
+    print("Ingestion successful")
+    print("~" * 100)
+
+
 def test_ingest_sample_file_with_config_sdk():
     print("Testing: Ingest sample file 2")
     file_paths = ["core/examples/data/aristotle_v2.txt"]

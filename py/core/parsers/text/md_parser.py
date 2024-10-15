@@ -15,7 +15,9 @@ class MDParser(AsyncParser[DataType]):
 
         self.markdown = markdown
 
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: DataType, *args, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest Markdown data and yield text."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")

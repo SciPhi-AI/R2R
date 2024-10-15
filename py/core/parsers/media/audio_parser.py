@@ -15,7 +15,7 @@ class AudioParser(AsyncParser[bytes]):
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
 
     async def ingest(  # type: ignore
-        self, data: bytes, chunk_size: int = 1024, **kwargs
+        self, data: bytes, chunk_size: int = 1024, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest audio data and yield a transcription."""
         temp_audio_path = "temp_audio.wav"

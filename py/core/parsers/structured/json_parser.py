@@ -10,7 +10,7 @@ class JSONParser(AsyncParser[DataType]):
     """A parser for JSON data."""
 
     async def ingest(
-        self, data: DataType, **kwargs: Any
+        self, data: DataType, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """
         Ingest JSON data and yield a formatted text representation.

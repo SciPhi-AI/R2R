@@ -119,7 +119,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
 
             self.unstructured_api_url = os.environ.get(
                 "UNSTRUCTURED_API_URL",
-                "https://api.unstructured.io/general/v0/general",
+                "https://api.unstructuredapp.io/general/v0/general",
             )
 
             self.client = UnstructuredClient(
@@ -193,10 +193,12 @@ class UnstructuredIngestionProvider(IngestionProvider):
         ingestion_config_override: dict,
     ) -> AsyncGenerator[DocumentExtraction, None]:
 
-        ingestion_config = {
-            **self.config.to_ingestion_request(),
-            **(ingestion_config_override or {}),
-        }
+        ingestion_config = copy(
+            {
+                **self.config.to_ingestion_request(),
+                **(ingestion_config_override or {}),
+            }
+        )
         # cleanup extra fields
         ingestion_config.pop("provider", None)
         ingestion_config.pop("excluded_parsers", None)
@@ -244,6 +246,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     content=file_content.read(),  # type: ignore
                     file_name=document.metadata.get("title", "unknown_file"),
                 )
+
+                ingestion_config.pop("app", None)
+                ingestion_config.pop("extra_parsers", None)
 
                 req = self.operations.PartitionRequest(
                     self.shared.PartitionParameters(
