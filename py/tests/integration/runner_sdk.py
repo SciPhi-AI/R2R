@@ -685,6 +685,8 @@ def test_kg_create_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
     )
 
+    time.sleep(120)
+
     result = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", limit=1000
     )
@@ -706,6 +708,8 @@ def test_kg_enrich_graph_sample_file_sdk():
     enrich_graph_result = client.enrich_graph(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
     )
+
+    time.sleep(120)
 
     result = client.get_communities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
