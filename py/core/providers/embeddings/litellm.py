@@ -1,8 +1,8 @@
 import logging
-from typing import Any, List
+from typing import Any
 
 import litellm
-from litellm import aembedding, embedding
+from litellm import aembedding, embedding, AuthenticationError
 
 from core.base import (
     EmbeddingConfig,
@@ -55,7 +55,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         embedding_kwargs.update(kwargs)
         return embedding_kwargs
 
-    async def _execute_task(self, task: dict[str, Any]) -> List[List[float]]:
+    async def _execute_task(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
@@ -65,13 +65,18 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                 **kwargs,
             )
             return [data["embedding"] for data in response.data]
+        except AuthenticationError as e:
+            logger.error(
+                "Authentication error: Invalid API key or credentials."
+            )
+            raise
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
 
             raise R2RException(error_msg, 400)
 
-    def _execute_task_sync(self, task: dict[str, Any]) -> List[List[float]]:
+    def _execute_task_sync(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
@@ -80,6 +85,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                 **kwargs,
             )
             return [data["embedding"] for data in response.data]
+        except AuthenticationError as e:
+            logger.error(
+                "Authentication error: Invalid API key or credentials."
+            )
+            raise
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
@@ -91,7 +101,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."
@@ -111,7 +121,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "Error getting embeddings: LiteLLMEmbeddingProvider only supports search stage."
@@ -127,11 +137,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
     async def async_get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."
@@ -147,11 +157,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
     def get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."

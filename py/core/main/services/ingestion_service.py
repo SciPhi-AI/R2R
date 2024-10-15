@@ -70,60 +70,70 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        if not file_data:
+        try:
+            if not file_data:
+                raise R2RException(
+                    status_code=400, message="No files provided for ingestion."
+                )
+
+            if not file_data.get("filename"):
+                raise R2RException(
+                    status_code=400, message="File name not provided."
+                )
+
+            metadata = metadata or {}
+
+            version = version or STARTING_VERSION
+            document_info = self._create_document_info_from_file(
+                document_id,
+                user,
+                file_data["filename"],
+                metadata,
+                version,
+                size_in_bytes,
+            )
+
+            existing_document_info = (
+                await self.providers.database.relational.get_documents_overview(
+                    filter_user_ids=[user.id],
+                    filter_document_ids=[document_id],
+                )
+            )["results"]
+
+            if len(existing_document_info) > 0:
+                existing_doc = existing_document_info[0]
+                if not is_update:
+                    if (
+                        existing_doc.version >= version
+                        and existing_doc.ingestion_status
+                        == IngestionStatus.SUCCESS
+                    ):
+                        raise R2RException(
+                            status_code=409,
+                            message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
+                        )
+                    elif (
+                        existing_doc.ingestion_status != IngestionStatus.FAILED
+                    ):
+                        raise R2RException(
+                            status_code=409,
+                            message=f"Document {document_id} was already ingested and is not in a failed state.",
+                        )
+
+            await self.providers.database.relational.upsert_documents_overview(
+                document_info
+            )
+
+            return {
+                "info": document_info,
+            }
+        except R2RException as e:
+            logger.error(f"R2RException in ingest_file_ingress: {str(e)}")
+            raise
+        except Exception as e:
             raise R2RException(
-                status_code=400, message="No files provided for ingestion."
+                status_code=500, message=f"Error during ingestion: {str(e)}"
             )
-
-        if not file_data.get("filename"):
-            raise R2RException(
-                status_code=400, message="File name not provided."
-            )
-
-        metadata = metadata or {}
-
-        version = version or STARTING_VERSION
-        document_info = self._create_document_info_from_file(
-            document_id,
-            user,
-            file_data["filename"],
-            metadata,
-            version,
-            size_in_bytes,
-        )
-
-        existing_document_info = (
-            await self.providers.database.relational.get_documents_overview(
-                filter_user_ids=[user.id],
-                filter_document_ids=[document_id],
-            )
-        )["results"]
-
-        if len(existing_document_info) > 0:
-            existing_doc = existing_document_info[0]
-            if not is_update:
-                if (
-                    existing_doc.version >= version
-                    and existing_doc.ingestion_status
-                    == IngestionStatus.SUCCESS
-                ):
-                    raise R2RException(
-                        status_code=409,
-                        message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
-                    )
-                elif existing_doc.ingestion_status != IngestionStatus.FAILED:
-                    raise R2RException(
-                        status_code=409,
-                        message=f"Document {document_id} was already ingested and is not in a failed state.",
-                    )
-
-        await self.providers.database.relational.upsert_documents_overview(
-            document_info
-        )
-
-        return {
-            "info": document_info,
-        }
 
     def _create_document_info_from_file(
         self,

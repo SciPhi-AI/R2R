@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 from typing import TYPE_CHECKING
+from litellm import AuthenticationError
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
@@ -51,109 +52,128 @@ def hatchet_ingestion_factory(
 
         @orchestration_provider.step(timeout="60m")
         async def parse(self, context: Context) -> dict:
-            input_data = context.workflow_input()["request"]
-            parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
-                input_data
-            )
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+                    input_data
+                )
 
-            ingestion_result = (
-                await self.ingestion_service.ingest_file_ingress(**parsed_data)
-            )
+                ingestion_result = (
+                    await self.ingestion_service.ingest_file_ingress(
+                        **parsed_data
+                    )
+                )
 
-            document_info = ingestion_result["info"]
+                document_info = ingestion_result["info"]
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.PARSING,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.PARSING,
+                )
 
-            ingestion_config = parsed_data["ingestion_config"] or {}
-            extractions_generator = await self.ingestion_service.parse_file(
-                document_info, ingestion_config
-            )
+                ingestion_config = parsed_data["ingestion_config"] or {}
+                extractions_generator = (
+                    await self.ingestion_service.parse_file(
+                        document_info, ingestion_config
+                    )
+                )
 
-            extractions = []
-            async for extraction in extractions_generator:
-                extractions.append(extraction)
+                extractions = []
+                async for extraction in extractions_generator:
+                    extractions.append(extraction)
 
-            # serializable_extractions = [
-            #     extraction.to_dict() for extraction in extractions
-            # ]
+                # serializable_extractions = [
+                #     extraction.to_dict() for extraction in extractions
+                # ]
 
-            # return {
-            #     "status": "Successfully extracted data",
-            #     "extractions": serializable_extractions,
-            #     "document_info": document_info.to_dict(),
-            # }
+                # return {
+                #     "status": "Successfully extracted data",
+                #     "extractions": serializable_extractions,
+                #     "document_info": document_info.to_dict(),
+                # }
 
-            # @orchestration_provider.step(parents=["parse"], timeout="60m")
-            # async def embed(self, context: Context) -> dict:
-            #     document_info_dict = context.step_output("parse")["document_info"]
-            #     document_info = DocumentInfo(**document_info_dict)
+                # @orchestration_provider.step(parents=["parse"], timeout="60m")
+                # async def embed(self, context: Context) -> dict:
+                #     document_info_dict = context.step_output("parse")["document_info"]
+                #     document_info = DocumentInfo(**document_info_dict)
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.EMBEDDING,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.EMBEDDING,
+                )
 
-            # extractions = context.step_output("parse")["extractions"]
+                # extractions = context.step_output("parse")["extractions"]
 
-            embedding_generator = await self.ingestion_service.embed_document(
-                [extraction.to_dict() for extraction in extractions]
-            )
+                embedding_generator = (
+                    await self.ingestion_service.embed_document(
+                        [extraction.to_dict() for extraction in extractions]
+                    )
+                )
 
-            embeddings = []
-            async for embedding in embedding_generator:
-                embeddings.append(embedding)
+                embeddings = []
+                async for embedding in embedding_generator:
+                    embeddings.append(embedding)
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.STORING,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.STORING,
+                )
 
-            storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
-                embeddings
-            )
+                storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
+                    embeddings
+                )
 
-            async for _ in storage_generator:
-                pass
+                async for _ in storage_generator:
+                    pass
 
-            #     return {
-            #         "document_info": document_info.to_dict(),
-            #     }
+                #     return {
+                #         "document_info": document_info.to_dict(),
+                #     }
 
-            # @orchestration_provider.step(parents=["embed"], timeout="60m")
-            # async def finalize(self, context: Context) -> dict:
-            #     document_info_dict = context.step_output("embed")["document_info"]
-            #     print("Calling finalize for document_info_dict = ", document_info_dict)
-            #     document_info = DocumentInfo(**document_info_dict)
+                # @orchestration_provider.step(parents=["embed"], timeout="60m")
+                # async def finalize(self, context: Context) -> dict:
+                #     document_info_dict = context.step_output("embed")["document_info"]
+                #     print("Calling finalize for document_info_dict = ", document_info_dict)
+                #     document_info = DocumentInfo(**document_info_dict)
 
-            is_update = context.workflow_input()["request"].get("is_update")
+                is_update = context.workflow_input()["request"].get(
+                    "is_update"
+                )
 
-            await self.ingestion_service.finalize_ingestion(
-                document_info, is_update=is_update
-            )
+                await self.ingestion_service.finalize_ingestion(
+                    document_info, is_update=is_update
+                )
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.SUCCESS,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.SUCCESS,
+                )
 
-            collection_id = await service.providers.database.relational.assign_document_to_collection(
-                document_id=document_info.id,
-                collection_id=generate_default_user_collection_id(
-                    document_info.user_id
-                ),
-            )
+                collection_id = await service.providers.database.relational.assign_document_to_collection(
+                    document_id=document_info.id,
+                    collection_id=generate_default_user_collection_id(
+                        document_info.user_id
+                    ),
+                )
 
-            service.providers.database.vector.assign_document_to_collection(
-                document_id=document_info.id, collection_id=collection_id
-            )
+                service.providers.database.vector.assign_document_to_collection(
+                    document_id=document_info.id, collection_id=collection_id
+                )
 
-            return {
-                "status": "Successfully finalized ingestion",
-                "document_info": document_info.to_dict(),
-            }
+                return {
+                    "status": "Successfully finalized ingestion",
+                    "document_info": document_info.to_dict(),
+                }
+            except AuthenticationError as e:
+                raise R2RException(
+                    status_code=401,
+                    message="Authentication error: Invalid API key or credentials.",
+                )
+            except Exception as e:
+                raise R2RException(
+                    status_code=500,
+                    message=f"Error during ingestion: {str(e)}",
+                )
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:

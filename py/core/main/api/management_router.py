@@ -340,13 +340,18 @@ class ManagementRouter(BaseRouter):
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
+
+            filter_collection_ids = (
+                None if auth_user.is_superuser else auth_user.collection_ids
+            )
+
             document_uuids = [
                 UUID(document_id) for document_id in document_ids
             ]
             documents_overview_response = (
                 await self.service.documents_overview(
                     user_ids=request_user_ids,
-                    collection_ids=auth_user.collection_ids,
+                    collection_ids=filter_collection_ids,
                     document_ids=document_uuids,
                     offset=offset,
                     limit=limit,
