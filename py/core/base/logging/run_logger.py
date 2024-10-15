@@ -295,14 +295,14 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         created_at = datetime.utcnow().timestamp()
 
         await self.conn.execute(
-            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 message_id,
                 conversation_id,
                 parent_id,
                 content.json(),
                 created_at,
-                json.dumps(metadata) if metadata else "{}",
+                json.dumps(metadata or {}),
             ),
         )
 
@@ -388,13 +388,14 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         new_message_id = str(uuid.uuid4())
         message_created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
-            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 new_message_id,
                 conversation_id,
                 parent_id,
                 edited_message.json(),
                 message_created_at,
+                json.dumps({"edited": True}),
             ),
         )
         # Link the new message to the new branch
@@ -761,10 +762,11 @@ class RunLoggingSingleton:
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
     ) -> str:
         async with cls.get_instance() as provider:
             return await provider.add_message(
-                conversation_id, content, parent_id
+                conversation_id, content, parent_id, metadata
             )
 
     @classmethod

@@ -1,4 +1,4 @@
-name: R2R Integration Configuration Tests
+name: R2R Deep-Dive Integration Tests
 
 on:
   push:
