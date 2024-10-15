@@ -241,6 +241,11 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         max_knowledge_triples = input.message["max_knowledge_triples"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
+
+        filter_out_existing_chunks = input.message.get(
+            "filter_out_existing_chunks", True
+        )
+
         logger = input.message.get("logger", logging.getLogger(__name__))
 
         logger.info(
@@ -262,6 +267,29 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 "results"
             ]
         ]
+
+        logger.info(
+            f"Found {len(extractions)} extractions for document {document_id}"
+        )
+
+        if filter_out_existing_chunks:
+            existing_extraction_ids = (
+                await self.kg_provider.get_existing_entity_extraction_ids(
+                    document_id=document_id
+                )
+            )
+            extractions = [
+                extraction
+                for extraction in extractions
+                if extraction.id not in existing_extraction_ids
+            ]
+            logger.info(
+                f"Filtered out {len(existing_extraction_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
+            )
+
+            if len(extractions) == 0:
+                logger.info(f"No extractions left for document {document_id}")
+                return
 
         logger.info(
             f"KGTriplesExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",

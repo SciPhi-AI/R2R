@@ -94,6 +94,13 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        """Abstract method to get existing entity extraction ids."""
+        pass
+
+    @abstractmethod
     async def get_entities(
         self,
         collection_id: UUID,
