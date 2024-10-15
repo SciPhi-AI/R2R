@@ -456,8 +456,10 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            index_creation_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            index_creation_timestamp = time.strftime("%Y%m%d%H%M%S")
             self.ingestion_service.providers.database.vector.create_index(
+                index_creation_timestamp=index_creation_timestamp,
+                logger=create_hatchet_logger(context.log),
                 **parsed_data
             )
 
@@ -481,15 +483,15 @@ def hatchet_ingestion_factory(
                 logger=create_hatchet_logger(context.log),
                 **parsed_data
             )
-            
-        @orchestration_provider.step(parents=["delete_previous_index"], timeout="60m")
-        async def delete_previous_index(self, context: Context) -> dict:
-            input_data = context.workflow_input()["request"]
-            parsed_data = (
-                IngestionServiceAdapter.parse_create_vector_index_input(
-                    input_data
-                )
-            )
+
+        # @orchestration_provider.step(parents=["delete_previous_index"], timeout="60m")
+        # async def delete_previous_index(self, context: Context) -> dict:
+        #     input_data = context.workflow_input()["request"]
+        #     parsed_data = (
+        #         IngestionServiceAdapter.parse_create_vector_index_input(
+        #             input_data
+        #         )
+        #     )
 
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)

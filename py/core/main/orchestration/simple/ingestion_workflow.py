@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 
 from core.base import DocumentExtraction, R2RException, increment_version
 from core.utils import (
@@ -251,7 +252,16 @@ def simple_ingestion_factory(service: IngestionService):
                 )
             )
 
-            service.providers.database.vector.create_index(**parsed_data)
+            index_creation_timestamp = time.strftime("%Y%m%d%H%M%S")
+            service.providers.database.vector.create_index(
+                index_creation_timestamp=index_creation_timestamp,
+                **parsed_data
+            )
+
+            service.providers.database.vector.check_index_creation_progress(
+                index_creation_timestamp=index_creation_timestamp,
+                **parsed_data
+            )
 
         except Exception as e:
             raise R2RException(

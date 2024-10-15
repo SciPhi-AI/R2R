@@ -884,6 +884,7 @@ class Collection:
 
     def create_index(
         self,
+        index_creation_timestamp: str,
         table_name: Optional[VectorTableName] = None,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
         method: IndexMethod = IndexMethod.auto,
@@ -986,21 +987,7 @@ class Collection:
 
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
-        # Drop existing index if needed (must be outside of transaction)
-        if self.index is not None and replace:
-            drop_index_sql = f'DROP INDEX {concurrently_sql} IF EXISTS {self.client.project_name}."{self.index}";'
-            try:
-                with self.client.engine.connect() as connection:
-                    connection = connection.execution_options(
-                        isolation_level="AUTOCOMMIT"
-                    )
-                    connection.execute(text(drop_index_sql))
-            except Exception as e:
-                raise Exception(f"Failed to drop existing index: {e}")
-            self._index = None
-
-        timestamp = time.strftime("%Y%m%d%H%M%S")
-        index_name = f"ix_{ops}_{method}__{timestamp}"
+        index_name = f"ix_{ops}_{method}__{index_creation_timestamp}"
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}

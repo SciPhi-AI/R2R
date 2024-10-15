@@ -295,6 +295,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
     def create_index(
         self,
+        index_creation_timestamp: str,
         table_name: Optional[VectorTableName] = None,
         index_method: IndexMethod = IndexMethod.hnsw,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
@@ -303,6 +304,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
         ] = None,
         replace: bool = True,
         concurrently: bool = True,
+        logger: Union[HatchetLogger, logging.Logger] = logging.getLogger(__name__),
+        **kwargs,
     ):
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
@@ -310,6 +313,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         start_time = time.time()
 
         self.collection.create_index(
+            index_creation_timestamp=index_creation_timestamp,
             table_name=table_name,
             method=index_method,
             measure=measure,
@@ -319,57 +323,55 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         end_time = time.time()
-        logger.info(f"Index creation took {end_time - start_time} seconds")
+        logger.info(f"Index creation took {end_time - start_time} seconds.")
 
     def check_index_creation_progress(
         self,
         table_name: Optional[VectorTableName] = None,
         index_name: Optional[str] = None,
         logger: Union[HatchetLogger, logging.Logger] = logging.getLogger(__name__),
+        **kwargs,
     ):
-
-        if table_name == VectorTableName.CHUNKS:
-            project_name, table_name = f"{self.client.project_name}.{self.table.name}"
-        elif table_name == VectorTableName.ENTITIES:
-            project_name, table_name = (
-                f"{self.client.project_name}.{VectorTableName.ENTITIES}"
-            )
-        elif table_name == VectorTableName.COMMUNITIES:
-            project_name, table_name = (
-                f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
-            )
-        else:
-            raise ValueError("Invalid table name")
-
         logger.info(f"Checking index creation progress for {table_name}")
 
+        if table_name == VectorTableName.CHUNKS:
+            table_name = self.project_name
+
         # Check if the index exists
-        index_exists_query = f"""
+        from sqlalchemy import text
+        index_exists_query = text("""
             SELECT 1
             FROM pg_indexes
-            WHERE schemaname = '{project_name}'
-            AND tablename = '{table_name}'
-            AND indexname = '{index_name}';
-        """
+            WHERE schemaname = :project_name
+            AND tablename = :table_name
+            AND indexname = :index_name;
+        """)
 
         with self.vx.Session() as sess:
-            result = sess.execute(index_exists_query).fetchone()
+            result = sess.execute(index_exists_query, {
+                "project_name": self.project_name,
+                "table_name": table_name,
+                "index_name": index_name
+            }).fetchone()
 
         if result:
             logger.info(f"Index {index_name} already exists for {table_name}")
             return True
 
         # getting relation id of the index
-        index_query = f"""
-            SELECT i.relid
+        index_query = text("""
+            SELECT i.oid
             FROM pg_class i
             JOIN pg_namespace n ON n.oid = i.relnamespace
-            WHERE n.nspname = '{project_name}'
-            AND i.relname = '{table_name}';
-        """
+            WHERE n.nspname = :project_name
+            AND i.relname = :table_name;
+        """)
 
         with self.vx.Session() as sess:
-            relation_id = sess.execute(index_query).fetchone()
+            relation_id = sess.execute(index_query, {
+                "project_name": self.project_name,
+                "table_name": table_name
+            }).fetchone()
 
         if not relation_id:
             raise ValueError(f"Table {table_name} does not exist")
@@ -382,14 +384,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
             if time.time() - start_time > timeout:
                 raise ValueError(f"Index {index_name} creation progress check timed out. Creation may still be in progress.")
 
-            table_query = f"""
+            table_query = text("""
                 SELECT pid, phase, relid, index_relid, blocks_total, blocks_done, tuples_total, tuples_done, partitions_total, partitions_done, %
                 from pg_stat_progress_create_index
-                where relid = {relation_id}
-            """
+                where relid = :relation_id
+            """)
 
             with self.vx.Session() as sess:
-                result = sess.execute(table_query).fetchall()
+                result = sess.execute(table_query, {"relation_id": relation_id}).fetchall()
 
                 if len(result) > 1:
                     logger.warning(f"More than one index creation process found: {len(result)}")
@@ -404,16 +406,20 @@ class PostgresVectorDBProvider(VectorDBProvider):
             time.sleep(0.1)
 
         # check if the index is created
-        index_query = f"""
+        index_query = text("""
             SELECT 1
             FROM pg_indexes
-            WHERE schemaname = '{project_name}'
-            AND tablename = '{table_name}'
-            AND indexname = '{index_name}';
-        """
+            WHERE schemaname = :project_name
+            AND tablename = :table_name
+            AND indexname = :index_name;
+        """)
 
         with self.vx.Session() as sess:
-            result = sess.execute(index_query).fetchone()
+            result = sess.execute(index_query, {
+                "project_name": self.project_name,
+                "table_name": table_name,
+                "index_name": index_name
+            }).fetchone()
 
         if result:
             logger.info(f"Index {index_name} created for {table_name}")
