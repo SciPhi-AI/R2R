@@ -127,6 +127,18 @@
                 "documentation/js-sdk/observability"
               ]
             },
+            {
+              "icon": "desktop",
+              "group": "CLI",
+              "pages": [
+                "documentation/cli/introduction",
+                "documentation/cli/server",
+                "documentation/cli/ingestion",
+                "documentation/cli/graph",
+                "documentation/cli/management"
+              ]
+            },
+
             "documentation/api-reference"
           ]
         },

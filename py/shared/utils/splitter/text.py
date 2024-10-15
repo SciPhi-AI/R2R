@@ -1038,7 +1038,7 @@ class HTMLHeaderTextSplitter:
             ]
 
 
-# should be in newer Python versions (3.10+)
+# should be in newer Python versions (3.11+)
 # @dataclass(frozen=True, kw_only=True, slots=True)
 @dataclass(frozen=True)
 class Tokenizer:

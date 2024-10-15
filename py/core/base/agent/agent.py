@@ -68,7 +68,7 @@ class AgentConfig(BaseModel):
             for k, v in kwargs.items()
             if k in base_args
         }
-        return cls(**filtered_kwargs)
+        return cls(**filtered_kwargs)  # type: ignore
 
 
 class Agent(ABC):

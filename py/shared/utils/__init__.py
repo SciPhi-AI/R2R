@@ -1,4 +1,7 @@
 from .base_utils import (
+    HatchetLogger,
+    _decorate_vector_type,
+    create_hatchet_logger,
     decrement_version,
     format_entity_types,
     format_relations,
@@ -41,7 +44,11 @@ __all__ = [
     "to_async_generator",
     "llm_cost_per_million_tokens",
     "validate_uuid",
+    "create_hatchet_logger",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
+    "HatchetLogger",
+    # Vector utils
+    "_decorate_vector_type",
 ]

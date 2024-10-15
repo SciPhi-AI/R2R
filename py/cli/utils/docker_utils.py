@@ -52,7 +52,7 @@ def remove_r2r_network():
         (
             network
             for network in networks
-            if network.startswith("r2r_") and "network" in network
+            if network.startswith("r2r") and "network" in network
         ),
         None,
     )

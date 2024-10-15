@@ -1,6 +1,8 @@
 import logging
 import math
-from typing import Any, AsyncGenerator, Optional
+import time
+from time import strftime
+from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
 from core.base import KGExtractionStatus, RunLoggingSingleton, RunManager
@@ -10,6 +12,7 @@ from core.base.abstractions import (
     KGEnrichmentSettings,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
+from shared.utils import HatchetLogger
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -57,11 +60,16 @@ class KgService(Service):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
         try:
 
-            logger.info(f"Processing document {document_id} for KG extraction")
+            logger.info(
+                f"KGService: Processing document {document_id} for KG extraction"
+            )
 
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
@@ -78,10 +86,15 @@ class KgService(Service):
                         "max_knowledge_triples": max_knowledge_triples,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
+                        "logger": logger,
                     }
                 ),
                 state=None,
                 run_manager=self.run_manager,
+            )
+
+            logger.info(
+                f"KGService: Finished processing document {document_id} for KG extraction"
             )
 
             result_gen = await self.pipes.kg_storage_pipe.run(
@@ -91,12 +104,13 @@ class KgService(Service):
             )
 
         except Exception as e:
-            logger.error(f"Error in kg_extraction: {e}")
+            logger.error(f"KGService: Error in kg_extraction: {e}")
             await self.providers.database.relational.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.FAILED,
             )
+            raise e
 
         return await _collect_results(result_gen)
 
@@ -114,7 +128,6 @@ class KgService(Service):
         ]
         if force_kg_creation:
             document_status_filter += [
-                KGExtractionStatus.SUCCESS,
                 KGExtractionStatus.PROCESSING,
             ]
 
@@ -131,12 +144,26 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
 
+        start_time = time.time()
+
+        logger.info(
+            f"KGService: Running kg_entity_description for document {document_id}"
+        )
+
         entity_count = await self.providers.kg.get_entity_count(
             document_id=document_id,
+            distinct=True,
             entity_table_name="entity_raw",
+        )
+
+        logger.info(
+            f"KGService: Found {entity_count} entities in document {document_id}"
         )
 
         # TODO - Do not hardcode the batch size,
@@ -147,7 +174,7 @@ class KgService(Service):
         all_results = []
         for i in range(num_batches):
             logger.info(
-                f"Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
+                f"KGService: Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
             node_descriptions = await self.pipes.kg_entity_description_pipe.run(
@@ -157,6 +184,7 @@ class KgService(Service):
                         "limit": 256,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
+                        "logger": logger,
                     }
                 ),
                 state=None,
@@ -165,10 +193,18 @@ class KgService(Service):
 
             all_results.append(await _collect_results(node_descriptions))
 
+            logger.info(
+                f"KGService: Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
+            )
+
         await self.providers.database.relational.set_workflow_status(
             id=document_id,
             status_type="kg_extraction_status",
             status=KGExtractionStatus.SUCCESS,
+        )
+
+        logger.info(
+            f"KGService: Completed kg_entity_description for document {document_id} in {time.time() - start_time:.2f} seconds",
         )
 
         return all_results
@@ -179,6 +215,9 @@ class KgService(Service):
         collection_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
@@ -187,6 +226,7 @@ class KgService(Service):
                     "collection_id": collection_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
+                    "logger": logger,
                 }
             ),
             state=None,
@@ -202,6 +242,9 @@ class KgService(Service):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
         **kwargs,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
@@ -212,6 +255,7 @@ class KgService(Service):
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
                     "collection_id": collection_id,
+                    "logger": logger,
                 }
             ),
             state=None,
@@ -237,6 +281,17 @@ class KgService(Service):
     ):
         return await self.providers.kg.delete_graph_for_collection(
             collection_id, cascade
+        )
+
+    @telemetry_event("delete_node_via_document_id")
+    async def delete_node_via_document_id(
+        self,
+        document_id: UUID,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.kg.delete_node_via_document_id(
+            collection_id, document_id
         )
 
     @telemetry_event("get_creation_estimate")

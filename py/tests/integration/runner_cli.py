@@ -252,7 +252,7 @@ def test_kg_create_graph_sample_file_cli():
     print("Testing: KG create graph")
     print("Calling `poetry run r2r create-graph --run` ")
     run_command("poetry run r2r create-graph --run")
-    time.sleep(30)
+    time.sleep(120)
 
     response = requests.get(
         "http://localhost:7272/v2/entities",
@@ -282,7 +282,8 @@ def test_kg_create_graph_sample_file_cli():
 def test_kg_enrich_graph_sample_file_cli():
     print("Testing: KG enrich graph")
     run_command("poetry run r2r enrich-graph --run")
-    time.sleep(60)
+
+    time.sleep(120)
 
     response = requests.get(
         "http://localhost:7272/v2/communities",

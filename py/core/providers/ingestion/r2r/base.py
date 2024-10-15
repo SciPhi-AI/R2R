@@ -31,23 +31,33 @@ class R2RIngestionConfig(IngestionConfig):
 
 
 class R2RIngestionProvider(IngestionProvider):
-    AVAILABLE_PARSERS = {
-        DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
-        DocumentType.DOCX: [parsers.DOCXParser],
-        DocumentType.HTML: [parsers.HTMLParser],
-        DocumentType.HTM: [parsers.HTMLParser],
-        DocumentType.JSON: [parsers.JSONParser],
-        DocumentType.MD: [parsers.MDParser],
-        DocumentType.PDF: [parsers.PDFParser, parsers.PDFParserUnstructured],
-        DocumentType.PPTX: [parsers.PPTParser],
-        DocumentType.TXT: [parsers.TextParser],
-        DocumentType.XLSX: [parsers.XLSXParser, parsers.XLSXParserAdvanced],
-        DocumentType.GIF: [parsers.ImageParser],
-        DocumentType.JPEG: [parsers.ImageParser],
-        DocumentType.JPG: [parsers.ImageParser],
-        DocumentType.PNG: [parsers.ImageParser],
-        DocumentType.SVG: [parsers.ImageParser],
-        DocumentType.MP3: [parsers.AudioParser],
+    DEFAULT_PARSERS = {
+        DocumentType.CSV: parsers.CSVParser,
+        DocumentType.DOCX: parsers.DOCXParser,
+        DocumentType.HTML: parsers.HTMLParser,
+        DocumentType.HTM: parsers.HTMLParser,
+        DocumentType.JSON: parsers.JSONParser,
+        DocumentType.MD: parsers.MDParser,
+        DocumentType.PDF: parsers.PDFParser,
+        DocumentType.PPTX: parsers.PPTParser,
+        DocumentType.TXT: parsers.TextParser,
+        DocumentType.XLSX: parsers.XLSXParser,
+        DocumentType.GIF: parsers.ImageParser,
+        DocumentType.JPEG: parsers.ImageParser,
+        DocumentType.JPG: parsers.ImageParser,
+        DocumentType.PNG: parsers.ImageParser,
+        DocumentType.SVG: parsers.ImageParser,
+        DocumentType.MP3: parsers.AudioParser,
+    }
+
+    EXTRA_PARSERS = {
+        DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},
+        DocumentType.PDF: {
+            "unstructured": parsers.PDFParserUnstructured,
+            "zerox": parsers.ZeroxPDFParser,
+            "marker": parsers.PDFParserMarker,
+        },
+        DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
     }
 
     IMAGE_TYPES = {
@@ -70,14 +80,14 @@ class R2RIngestionProvider(IngestionProvider):
         )
 
     def _initialize_parsers(self):
-        for doc_type, parser_infos in self.AVAILABLE_PARSERS.items():
-            for parser_info in parser_infos:
-                if (
-                    doc_type not in self.config.excluded_parsers
-                    and doc_type not in self.parsers
-                ):
-                    # will choose the first parser in the list
-                    self.parsers[doc_type] = parser_info()
+        for doc_type, parser in self.DEFAULT_PARSERS.items():
+            # will choose the first parser in the list
+            if doc_type not in self.config.excluded_parsers:
+                self.parsers[doc_type] = parser()
+        for doc_type, doc_parser_name in self.config.extra_parsers.items():
+            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
+                R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name]()
+            )
 
     def _build_text_splitter(
         self, ingestion_config_override: Optional[dict] = None
@@ -176,10 +186,31 @@ class R2RIngestionProvider(IngestionProvider):
             )
         else:
             t0 = time.time()
-
             contents = ""
-            async for text in self.parsers[document.type].ingest(file_content):
-                contents += text + "\n"
+            parser_overrides = ingestion_config_override.get(
+                "parser_overrides", {}
+            )
+            if document.type.value in parser_overrides:
+                logger.info(
+                    f"Using parser_override for {document.type} with input value {parser_overrides[document.type.value]}"
+                )
+                # TODO - Cleanup this approach to be less hardcoded
+                if (
+                    document.type != DocumentType.PDF
+                    or parser_overrides[DocumentType.PDF.value] != "zerox"
+                ):
+                    raise ValueError(
+                        "Only Zerox PDF parser override is available."
+                    )
+                async for text in self.parsers[
+                    f"zerox_{DocumentType.PDF.value}"
+                ].ingest(file_content, **ingestion_config_override):
+                    contents += text + "\n"
+            else:
+                async for text in self.parsers[document.type].ingest(
+                    file_content, **ingestion_config_override
+                ):
+                    contents += text + "\n"
 
             iteration = 0
             chunks = self.chunk(contents, ingestion_config_override)

@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.2.12"
+version = "3.2.13"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -21,7 +21,7 @@ packages = [
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.10,<3.13"
+python = ">=3.11,<3.13"
 
 asyncclick = "^8.1.7.2"
 click = "^8.0.0"
@@ -48,6 +48,7 @@ fsspec = { version = "^2024.6.0", optional = true }
 future = { version = "^1.0.0", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
 gunicorn = { version = "^21.2.0", optional = true }
+hatchet-sdk = { version = "^0.36.17", optional = true }
 litellm = { version = "^1.42.3", optional = true }
 networkx = { version = "^3.3", optional = true }
 ollama = { version = "^0.3.1", optional = true }
@@ -63,19 +64,19 @@ tokenizers = { version = "0.19", optional = true }
 uvicorn = { version = "^0.27.0.post1", optional = true }
 vecs = { version = "^0.4.0", optional = true }
 
-# Hatchet
-hatchet-sdk = { version = "^0.36.17", optional = true }
-
 # R2R Ingestion
+aiofiles = { version = "^24.1.0", optional = true }
+aioshutil = { version = "^1.5", optional = true }
+beautifulsoup4 = { version = "^4.12.3", optional = true }
+bs4 = { version = "^0.0.2", optional = true }
 numpy = { version = ">=1.22.4,<1.29.0", optional = true }
 markdown = { version = "^3.6", optional = true }
 openpyxl = { version = "^3.1.2", optional = true }
+pdf2image = { version = "^1.17.0", optional = true }
 pypdf = { version = "^4.2.0", optional = true }
+pypdf2 = { version = "^3.0.1", optional = true }
 python-pptx = { version = "^1.0.1", optional = true }
 python-docx = { version = "^1.1.0", optional = true }
-beautifulsoup4 = { version = "^4.12.3", optional = true }
-bs4 = "^0.0.2"
-
 
 [tool.poetry.extras]
 core = [
@@ -86,9 +87,11 @@ core = [
     "boto3",
     "deepdiff",
     "fire",
+    "fsspec",
     "future",
     "graspologic",
     "gunicorn",
+    "hatchet-sdk",
     "litellm",
     "networkx",
     "ollama",
@@ -104,17 +107,20 @@ core = [
     "uvicorn",
     "vecs",
     "python-multipart",
-    "hatchet-sdk",
 ]
-hatchet = ["hatchet-sdk"]
 ingestion-bundle = [
+    "aiofiles",
+    "aioshutil",
+    "beautifulsoup4",
+    "bs4",
     "numpy",
     "markdown",
     "openpyxl",
+    "pdf2image",
     "pypdf",
+    "pypdf2",
     "python-pptx",
     "python-docx",
-    "beautifulsoup4",
 ]
 
 [tool.poetry.group.dev.dependencies]
@@ -156,7 +162,7 @@ profile = "black"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
+exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"

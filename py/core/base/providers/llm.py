@@ -4,6 +4,7 @@ import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator, Generator, Optional
+from litellm import AuthenticationError
 
 from core.base.abstractions import (
     GenerationConfig,
@@ -56,6 +57,8 @@ class CompletionProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
+            except AuthenticationError as e:
+                raise
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"
@@ -77,6 +80,8 @@ class CompletionProvider(Provider):
                     async for chunk in await self._execute_task(task):
                         yield chunk
                 return  # Successful completion of the stream
+            except AuthenticationError as e:
+                raise
             except Exception as e:
                 logger.warning(
                     f"Streaming request failed (attempt {retries + 1}): {str(e)}"

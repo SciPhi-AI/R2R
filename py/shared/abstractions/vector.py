@@ -51,6 +51,14 @@ class IndexMeasure(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+    @property
+    def ops(self) -> str:
+        return {
+            IndexMeasure.cosine_distance: "_cosine_ops",
+            IndexMeasure.l2_distance: "_l2_ops",
+            IndexMeasure.max_inner_product: "_ip_ops",
+        }[self]
+
 
 class IndexArgsIVFFlat(R2RSerializable):
     """
@@ -84,14 +92,6 @@ class IndexArgsHNSW(R2RSerializable):
     ef_construction: Optional[int] = 64
 
 
-INDEX_MEASURE_TO_OPS = {
-    # Maps the IndexMeasure enum options to the SQL ops string required by
-    # the pgvector `create index` statement
-    IndexMeasure.cosine_distance: "vector_cosine_ops",
-    IndexMeasure.l2_distance: "vector_l2_ops",
-    IndexMeasure.max_inner_product: "vector_ip_ops",
-}
-
 INDEX_MEASURE_TO_SQLA_ACC = {
     IndexMeasure.cosine_distance: lambda x: x.cosine_distance,
     IndexMeasure.l2_distance: lambda x: x.l2_distance,
@@ -115,6 +115,42 @@ class VectorTableName(str, Enum):
 
     def __str__(self) -> str:
         return self.value
+
+
+class VectorQuantizationType(str, Enum):
+    """
+    An enum representing the types of quantization available for vectors.
+
+    Attributes:
+        FP32 (str): 32-bit floating point quantization.
+        FP16 (str): 16-bit floating point quantization.
+        INT1 (str): 1-bit integer quantization.
+        SPARSE (str): Sparse vector quantization.
+    """
+
+    FP32 = "FP32"
+    FP16 = "FP16"
+    INT1 = "INT1"
+    SPARSE = "SPARSE"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @property
+    def db_type(self) -> str:
+        db_type_mapping = {
+            "FP32": "vector",
+            "FP16": "halfvec",
+            "INT1": "bit",
+            "SPARSE": "sparsevec",
+        }
+        return db_type_mapping[self.value]
+
+
+class VectorQuantizationSettings(R2RSerializable):
+    quantization_type: VectorQuantizationType = Field(
+        default=VectorQuantizationType.FP32
+    )
 
 
 class Vector(R2RSerializable):

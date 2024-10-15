@@ -19,7 +19,9 @@ class XLSXParser(AsyncParser[DataType]):
                 "Error, `openpyxl` is required to run `XLSXParser`. Please install it using `pip install openpyxl`."
             )
 
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: bytes, *args, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest XLSX data and yield text from each row."""
         if isinstance(data, str):
             raise ValueError("XLSX data must be in bytes format.")
@@ -63,7 +65,7 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
             )
 
     async def ingest(
-        self, data: bytes, num_col_times_num_rows: int = 100
+        self, data: bytes, num_col_times_num_rows: int = 100, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest XLSX data and yield text from each connected component."""
         if isinstance(data, str):

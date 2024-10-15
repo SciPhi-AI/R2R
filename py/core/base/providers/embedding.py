@@ -4,6 +4,9 @@ import time
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Optional
+from litellm import AuthenticationError
+
+from shared.abstractions.vector import VectorQuantizationSettings
 
 from ..abstractions import (
     EmbeddingPurpose,
@@ -29,6 +32,9 @@ class EmbeddingConfig(ProviderConfig):
     max_retries: int = 8
     initial_backoff: float = 1
     max_backoff: float = 64.0
+    quantization_settings: VectorQuantizationSettings = (
+        VectorQuantizationSettings()
+    )
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
@@ -63,7 +69,8 @@ class EmbeddingProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
-            # TODO: Capture different error types and handle them accordingly
+            except AuthenticationError as e:
+                raise
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"
@@ -80,6 +87,8 @@ class EmbeddingProvider(Provider):
         while retries < self.config.max_retries:
             try:
                 return self._execute_task_sync(task)
+            except AuthenticationError as e:
+                raise
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"

@@ -94,6 +94,13 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        """Abstract method to get existing entity extraction ids."""
+        pass
+
+    @abstractmethod
     async def get_entities(
         self,
         collection_id: UUID,
@@ -196,6 +203,7 @@ class KGProvider(ABC):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        distinct: bool = False,
         entity_table_name: str = "entity_embedding",
     ) -> int:
         """Abstract method to get the entity count."""
@@ -206,6 +214,13 @@ class KGProvider(ABC):
         self, collection_id: UUID, cascade: bool
     ) -> None:
         """Abstract method to delete the graph for a collection."""
+        pass
+
+    @abstractmethod
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        """Abstract method to delete the node via document id."""
         pass
 
     @abstractmethod

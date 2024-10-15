@@ -3,7 +3,8 @@ import json
 import logging
 import re
 from typing import Any, AsyncGenerator, Optional, Union
-
+import time
+from shared.utils import HatchetLogger
 from core.base import (
     AsyncState,
     CompletionProvider,
@@ -82,6 +83,11 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         relation_types: list[str],
         retries: int = 5,
         delay: int = 2,
+        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
+            __name__
+        ),
+        task_id: Optional[int] = None,
+        total_tasks: Optional[int] = None,
     ) -> KGExtraction:
         """
         Extracts NER triples from a extraction with retries.
@@ -207,6 +213,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                     # raise e # you should raise an error.
         # add metadata to entities and triples
 
+        logger.info(
+            f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {extractions[0].document_id}",
+        )
+
         return KGExtraction(
             extraction_ids=[extraction.id for extraction in extractions],
             document_id=extractions[0].document_id,
@@ -222,7 +232,8 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
-        logger.info("Running KG Extraction Pipe")
+
+        start_time = time.time()
 
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
@@ -230,6 +241,17 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         max_knowledge_triples = input.message["max_knowledge_triples"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
+
+        filter_out_existing_chunks = input.message.get(
+            "filter_out_existing_chunks", True
+        )
+
+        logger = input.message.get("logger", logging.getLogger(__name__))
+
+        logger.info(
+            f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
+        )
+
         extractions = [
             DocumentExtraction(
                 id=extraction["extraction_id"],
@@ -246,6 +268,33 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             ]
         ]
 
+        logger.info(
+            f"Found {len(extractions)} extractions for document {document_id}"
+        )
+
+        if filter_out_existing_chunks:
+            existing_extraction_ids = (
+                await self.kg_provider.get_existing_entity_extraction_ids(
+                    document_id=document_id
+                )
+            )
+            extractions = [
+                extraction
+                for extraction in extractions
+                if extraction.id not in existing_extraction_ids
+            ]
+            logger.info(
+                f"Filtered out {len(existing_extraction_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
+            )
+
+            if len(extractions) == 0:
+                logger.info(f"No extractions left for document {document_id}")
+                return
+
+        logger.info(
+            f"KGTriplesExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
+        )
+
         # sort the extractions accroding to chunk_order field in metadata in ascending order
         extractions = sorted(
             extractions, key=lambda x: x.metadata["chunk_order"]
@@ -257,6 +306,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             for i in range(0, len(extractions), extraction_merge_count)
         ]
 
+        logger.info(
+            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)}, time from start: {time.time() - start_time:.2f} seconds",
+        )
+
         tasks = [
             asyncio.create_task(
                 self.extract_kg(
@@ -265,24 +318,36 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                     max_knowledge_triples=max_knowledge_triples,
                     entity_types=entity_types,
                     relation_types=relation_types,
+                    logger=logger,
+                    task_id=task_id,
+                    total_tasks=len(extractions_groups),
                 )
             )
-            for extractions_group in extractions_groups
+            for task_id, extractions_group in enumerate(extractions_groups)
         ]
 
         completed_tasks = 0
         total_tasks = len(tasks)
 
+        logger.info(
+            f"KGTriplesExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+        )
+
         for completed_task in asyncio.as_completed(tasks):
             try:
                 yield await completed_task
                 completed_tasks += 1
-                logger.info(
-                    f"Completed {completed_tasks}/{total_tasks} KG extraction tasks for document {document_id}"
-                )
+                if completed_tasks % 100 == 0:
+                    logger.info(
+                        f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                    )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Triples: {e}")
                 yield R2RDocumentProcessingError(
                     document_id=document_id,
                     error_message=str(e),
                 )
+
+        logger.info(
+            f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+        )

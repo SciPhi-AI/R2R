@@ -1,6 +1,7 @@
 # type: ignore
 import asyncio
 import logging
+import os
 import string
 import unicodedata
 from io import BytesIO
@@ -10,6 +11,7 @@ from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 
 logger = logging.getLogger(__name__)
+ZEROX_DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 
 class PDFParser(AsyncParser[DataType]):
@@ -25,7 +27,9 @@ class PDFParser(AsyncParser[DataType]):
                 "Error, `pypdf` is required to run `PyPDFParser`. Please install it using `pip install pypdf`."
             )
 
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: DataType, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest PDF data and yield text from each page."""
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
@@ -76,7 +80,7 @@ class PDFParserSix(AsyncParser[DataType]):
                 "Error, `pdfminer.six` is required to run `PDFParser`. Please install it using `pip install pdfminer.six`."
             )
 
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: bytes, **kwargs) -> AsyncGenerator[str, None]:
         """Ingest PDF data and yield text from each page."""
         if not isinstance(data, bytes):
             raise ValueError("PDF data must be in bytes format.")
@@ -156,7 +160,9 @@ class PDFParserMarker(AsyncParser[DataType]):
                 f"Error, marker is not installed {e}, please install using `pip install marker-pdf` "
             )
 
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: DataType, **kwargs
+    ) -> AsyncGenerator[str, None]:
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
 
@@ -164,3 +170,50 @@ class PDFParserMarker(AsyncParser[DataType]):
             BytesIO(data), PDFParserMarker.model_refs
         )
         yield text
+
+
+class ZeroxPDFParser(AsyncParser[DataType]):
+    """An advanced PDF parser using zerox."""
+
+    def __init__(self):
+        """
+        Use the zerox library to parse PDF data.
+
+        Args:
+            cleanup (bool, optional): Whether to clean up temporary files after processing. Defaults to True.
+            concurrency (int, optional): The number of concurrent processes to run. Defaults to 10.
+            file_data (Optional[str], optional): The file data to process. Defaults to an empty string.
+            maintain_format (bool, optional): Whether to maintain the format from the previous page. Defaults to False.
+            model (str, optional): The model to use for generating completions. Defaults to "gpt-4o-mini". Refer to LiteLLM Providers for the correct model name, as it may differ depending on the provider.
+            temp_dir (str, optional): The directory to store temporary files, defaults to some named folder in system's temp directory. If already exists, the contents will be deleted before zerox uses it.
+            custom_system_prompt (str, optional): The system prompt to use for the model, this overrides the default system prompt of zerox.Generally it is not required unless you want some specific behaviour. When set, it will raise a friendly warning. Defaults to None.
+            kwargs (dict, optional): Additional keyword arguments to pass to the litellm.completion method. Refer to the LiteLLM Documentation and Completion Input for details.
+
+        """
+        try:
+            # from pyzerox import zerox
+            from .pyzerox import zerox
+
+            self.zerox = zerox
+
+        except ImportError as e:
+            raise ValueError(
+                f"Error, zerox installation failed with Error='{e}', please install through the R2R ingestion bundle with `pip install r2r -E ingestion-bundle` "
+            )
+
+    async def ingest(
+        self, data: DataType, **kwargs
+    ) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("PDF data must be in bytes format.")
+
+        model = kwargs.get("zerox_parsing_model", ZEROX_DEFAULT_MODEL)
+        model = model.split("/")[-1]  # remove the provider prefix
+        result = await self.zerox(
+            file_data=data,
+            model=model,
+            verbose=True,
+        )
+
+        for page in result.pages:
+            yield page.content

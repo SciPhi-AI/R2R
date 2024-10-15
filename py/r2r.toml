@@ -44,6 +44,7 @@ batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
+quantization_settings = { quantization_type = "FP16" }
 
 [file]
 provider = "postgres"
@@ -54,6 +55,8 @@ chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
+  [ingestion.extra_parsers]
+    pdf = "zerox"
 
 [kg]
 provider = "postgres"
