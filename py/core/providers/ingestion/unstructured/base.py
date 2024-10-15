@@ -1,4 +1,5 @@
 # TODO - cleanup type issues in this file that relate to `bytes`
+import asyncio
 import base64
 import logging
 import os
@@ -172,19 +173,22 @@ class UnstructuredIngestionProvider(IngestionProvider):
         async for text in self.parsers[parser_name].ingest(file_content, **ingestion_config):  # type: ignore
             context += text + "\n\n"
         logging.info(f"Fallback ingestion with config = {ingestion_config}")
+
+        loop = asyncio.get_event_loop()
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=ingestion_config["new_after_n_chars"],
             chunk_overlap=ingestion_config["overlap"],
         )
+        chunks = await loop.run_in_executor(
+            None, splitter.create_documents, [context]
+        )
 
-        chunk_id = 0
-
-        for text_chunk in splitter.create_documents([context]):
+        for chunk_id, text_chunk in enumerate(chunks):
             yield FallbackElement(
                 text=text_chunk.page_content,
                 metadata={"chunk_id": chunk_id},
             )
-            chunk_id += 1
+            await asyncio.sleep(0)
 
     async def parse(
         self,

@@ -1,6 +1,7 @@
 # type: ignore
 import json
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
+import asyncio
 
 from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
@@ -20,14 +21,21 @@ class JSONParser(AsyncParser[DataType]):
         """
         if isinstance(data, bytes):
             data = data.decode("utf-8")
+
+        loop = asyncio.get_event_loop()
+        parsed_json = await loop.run_in_executor(None, json.loads, data)
+
         parsed_json = json.loads(data)
-        formatted_text = self._parse_json(parsed_json)
+        formatted_text = await loop.run_in_executor(
+            None, self._parse_json, parsed_json
+        )
 
         chunk_size = kwargs.get("chunk_size")
         if chunk_size and isinstance(chunk_size, int):
             # If chunk_size is provided and is an integer, yield the formatted text in chunks
             for i in range(0, len(formatted_text), chunk_size):
                 yield formatted_text[i : i + chunk_size]
+                await asyncio.sleep(0)
         else:
             # If no valid chunk_size is provided, yield the entire formatted text
             yield formatted_text

@@ -30,6 +30,7 @@
     "form-data": "^4.0.1",
     "posthog-js": "^1.155.4",
     "posthog-node": "^4.1.0",
+    "r2r-js": "^0.3.7",
     "rrweb-snapshot": "2.0.0-alpha.4",
     "uuid": "^10.0.0"
   },
