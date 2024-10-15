@@ -12,7 +12,7 @@ import toml
 from core.telemetry.events import ErrorEvent, FeatureUsageEvent
 from core.telemetry.posthog import telemetry_client
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class ProductTelemetryClient:

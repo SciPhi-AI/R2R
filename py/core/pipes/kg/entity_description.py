@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import random
+import time
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
@@ -12,13 +13,12 @@ from core.base import (
     EmbeddingProvider,
     KGProvider,
     PipeType,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
-import time
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGEntityDescriptionPipe(AsyncPipe):
@@ -35,7 +35,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,

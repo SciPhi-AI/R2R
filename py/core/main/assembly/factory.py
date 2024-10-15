@@ -23,7 +23,7 @@ from core.base import (
     OrchestrationConfig,
     PromptConfig,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
@@ -31,7 +31,7 @@ from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class R2RProviderFactory:
@@ -709,7 +709,7 @@ class R2RPipelineFactory:
         )
 
     def configure_logging(self):
-        RunLoggingSingleton.configure(self.config.logging)
+        R2RLoggingProvider.configure(self.config.logging)
 
 
 class R2RAgentFactory:

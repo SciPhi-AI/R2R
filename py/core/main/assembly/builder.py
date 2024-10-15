@@ -13,7 +13,7 @@ from core.base import (
     KGProvider,
     OrchestrationProvider,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     RunManager,
 )
 from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
@@ -37,7 +37,7 @@ from .factory import (
     R2RProviderFactory,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @dataclass
@@ -215,7 +215,7 @@ class R2RBuilder:
             overrides={"rag_agent": self.rag_agent_override}, *args, **kwargs
         )
 
-        run_singleton = RunLoggingSingleton()
+        run_singleton = R2RLoggingProvider()
         run_manager = RunManager(run_singleton)
 
         service_params = {

@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 import litellm
-from litellm import aembedding, embedding, AuthenticationError
+from litellm import AuthenticationError, aembedding, embedding
 
 from core.base import (
     EmbeddingConfig,
@@ -12,7 +12,7 @@ from core.base import (
     VectorSearchResult,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class LiteLLMEmbeddingProvider(EmbeddingProvider):

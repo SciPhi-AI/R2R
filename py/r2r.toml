@@ -82,7 +82,7 @@ batch_size = 256
     generation_config = { model = "openai/gpt-4o-mini" }
 
 [logging]
-provider = "local"
+provider = "r2r"
 log_table = "logs"
 log_info_table = "log_info"
 

@@ -4,7 +4,7 @@ import os
 import uuid
 from abc import abstractmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ from core.base import Message
 from ..providers.base import Provider, ProviderConfig
 from .base import RunType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 import uuid
 from typing import Dict, List, Optional, Tuple
@@ -83,7 +83,7 @@ class RunLoggingProvider(Provider):
         pass
 
 
-class LocalRunLoggingProvider(RunLoggingProvider):
+class SqlitePersistentLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -103,7 +103,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
             self.aiosqlite = aiosqlite
         except ImportError:
             raise ImportError(
-                "Please install aiosqlite to use the LocalRunLoggingProvider."
+                "Please install aiosqlite to use the SqlitePersistentLoggingProvider."
             )
 
     async def _init(self):
@@ -677,26 +677,59 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         return result
 
 
-class RunLoggingSingleton:
+class HatchetLogger:
+    def __init__(self, context: Any):
+        self.context = context
+
+    def _log(self, level: str, message: str, function: Optional[str] = None):
+        if function:
+            log_message = f"[{level}]: {function}: {message}"
+        else:
+            log_message = f"[{level}]: {message}"
+        self.context.log(log_message)
+
+    def debug(self, message: str, function: Optional[str] = None):
+        self._log("DEBUG", message, function)
+
+    def info(self, message: str, function: Optional[str] = None):
+        self._log("INFO", message, function)
+
+    def warning(self, message: str, function: Optional[str] = None):
+        self._log("WARNING", message, function)
+
+    def error(self, message: str, function: Optional[str] = None):
+        self._log("ERROR", message, function)
+
+    def critical(self, message: str, function: Optional[str] = None):
+        self._log("CRITICAL", message, function)
+
+
+class R2RLoggingProvider:
     _instance = None
     _is_configured = False
     _config: Optional[LoggingConfig] = None
 
-    SUPPORTED_PROVIDERS = {
-        "local": LocalRunLoggingProvider,
+    PERSISTENT_PROVIDERS = {
+        "r2r": SqlitePersistentLoggingProvider,
+        # TODO - Mark this as deprecated
+        "local": SqlitePersistentLoggingProvider,
     }
 
     @classmethod
-    def get_instance(cls):
-        return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
+    def get_persistent_logger(cls):
+        return cls.PERSISTENT_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
     def configure(cls, logging_config: LoggingConfig):
+        if logging_config.provider == "local":
+            logger.warning(
+                "Local logging provider is deprecated. Please use 'r2r' instead."
+            )
         if not cls._is_configured:
             cls._config = logging_config
             cls._is_configured = True
         else:
-            raise Exception("RunLoggingSingleton is already configured.")
+            raise Exception("R2RLoggingProvider is already configured.")
 
     @classmethod
     async def log(
@@ -706,7 +739,7 @@ class RunLoggingSingleton:
         value: str,
     ):
         try:
-            async with cls.get_instance() as provider:
+            async with cls.get_persistent_logger() as provider:
                 await provider.log(run_id, key, value)
         except Exception as e:
             logger.error(f"Error logging data {(run_id, key, value)}: {e}")
@@ -719,7 +752,7 @@ class RunLoggingSingleton:
         user_id: UUID,
     ):
         try:
-            async with cls.get_instance() as provider:
+            async with cls.get_persistent_logger() as provider:
                 await provider.info_log(run_id, run_type, user_id)
         except Exception as e:
             logger.error(
@@ -734,7 +767,7 @@ class RunLoggingSingleton:
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.get_info_logs(
                 offset=offset,
                 limit=limit,
@@ -748,12 +781,12 @@ class RunLoggingSingleton:
         run_ids: list[UUID],
         limit_per_run: int = 10,
     ) -> list:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.get_logs(run_ids, limit_per_run)
 
     @classmethod
     async def create_conversation(cls) -> str:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.create_conversation()
 
     @classmethod
@@ -764,7 +797,7 @@ class RunLoggingSingleton:
         parent_id: Optional[str] = None,
         metadata: Optional[Dict] = None,
     ) -> str:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.add_message(
                 conversation_id, content, parent_id, metadata
             )
@@ -773,37 +806,37 @@ class RunLoggingSingleton:
     async def edit_message(
         cls, message_id: str, new_content: str
     ) -> Tuple[str, str]:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.edit_message(message_id, new_content)
 
     @classmethod
     async def get_conversation(
         cls, conversation_id: str, branch_id: Optional[str] = None
     ) -> list[dict]:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.get_conversation(conversation_id, branch_id)
 
     @classmethod
     async def list_branches(cls, conversation_id: str) -> list[dict]:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.list_branches(conversation_id)
 
     @classmethod
     async def get_next_branch(cls, current_branch_id: str) -> Optional[str]:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.get_next_branch(current_branch_id)
 
     @classmethod
     async def get_prev_branch(cls, current_branch_id: str) -> Optional[str]:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.get_prev_branch(current_branch_id)
 
     @classmethod
     async def branch_at_message(cls, message_id: str) -> str:
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             return await provider.branch_at_message(message_id)
 
     @classmethod
     async def close(cls):
-        async with cls.get_instance() as provider:
+        async with cls.get_persistent_logger() as provider:
             await provider.close()

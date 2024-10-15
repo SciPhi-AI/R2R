@@ -11,7 +11,7 @@ from core.utils import (
 
 from ...services import IngestionService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def simple_ingestion_factory(service: IngestionService):

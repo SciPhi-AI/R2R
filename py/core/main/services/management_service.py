@@ -12,7 +12,7 @@ from core.base import (
     Message,
     Prompt,
     R2RException,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     RunManager,
     RunType,
 )
@@ -23,7 +23,7 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class ManagementService(Service):
@@ -35,7 +35,7 @@ class ManagementService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ):
         super().__init__(
             config,

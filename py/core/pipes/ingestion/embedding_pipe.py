@@ -8,13 +8,13 @@ from core.base import (
     EmbeddingProvider,
     PipeType,
     R2RDocumentProcessingError,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     Vector,
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class EmbeddingPipe(AsyncPipe[VectorEntry]):
@@ -30,7 +30,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         embedding_batch_size: int = 1,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,

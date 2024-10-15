@@ -11,8 +11,8 @@ from core.base import (
     DocumentType,
     IngestionStatus,
     R2RException,
+    R2RLoggingProvider,
     RawChunk,
-    RunLoggingSingleton,
     RunManager,
     VectorEntry,
     decrement_version,
@@ -29,7 +29,7 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100
@@ -45,7 +45,7 @@ class IngestionService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ) -> None:
         super().__init__(
             config,

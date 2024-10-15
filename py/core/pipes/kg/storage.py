@@ -9,12 +9,12 @@ from core.base import (
     KGExtraction,
     PipeType,
     R2RDocumentProcessingError,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers import KGProvider
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGStoragePipe(AsyncPipe):
@@ -27,7 +27,7 @@ class KGStoragePipe(AsyncPipe):
         kg_provider: KGProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 1,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,

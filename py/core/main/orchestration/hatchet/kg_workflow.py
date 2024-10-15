@@ -2,19 +2,18 @@ import asyncio
 import json
 import logging
 import math
-import uuid
 import time
+import uuid
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
 from shared.abstractions.document import KGExtractionStatus
+
 from ...services import KgService
 
-from shared.utils import create_hatchet_logger
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -59,6 +58,7 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extract(self, context: Context) -> dict:
+            logger.info("Initiating kg workflow, step: kg_extract")
 
             start_time = time.time()
 
@@ -71,11 +71,10 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
-                logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
-            context.log(
+            logger.info(
                 f"Successfully ran kg triples extraction for document {document_id}"
             )
 
@@ -95,11 +94,10 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_entity_description(
                 document_id=uuid.UUID(document_id),
-                logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
-            context.log(
+            logger.info(
                 f"Successfully ran kg node description for document {document_id}"
             )
 
@@ -113,7 +111,7 @@ def hatchet_kg_factory(
             document_id = request.get("document_id")
 
             if not document_id:
-                context.log(
+                logger.info(
                     "No document id was found in workflow input to mark a failure."
                 )
                 return
@@ -178,7 +176,7 @@ def hatchet_kg_factory(
             ]
             results = []
             for cnt, document_id in enumerate(document_ids):
-                context.log(
+                logger.info(
                     f"Running Graph Creation Workflow for document ID: {document_id}"
                 )
                 results.append(
@@ -204,12 +202,12 @@ def hatchet_kg_factory(
                 )
 
             if not document_ids:
-                context.log(
+                logger.info(
                     "No documents to process, either all graphs were created or in progress, or no documents were provided. Skipping graph creation."
                 )
                 return {"result": "No documents to process"}
 
-            context.log(f"Ran {len(results)} workflows for graph creation")
+            logger.info(f"Ran {len(results)} workflows for graph creation")
             results = await asyncio.gather(*results)
             return {
                 "result": f"successfully ran graph creation workflows for {len(results)} documents"
@@ -233,13 +231,9 @@ def hatchet_kg_factory(
 
             kg_clustering_results = await self.kg_service.kg_clustering(
                 collection_id=collection_id,
-                logger=create_hatchet_logger(context.log),
                 **input_data["kg_enrichment_settings"],
             )
 
-            context.log(
-                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)} in {time.time() - start_time:.2f} seconds"
-            )
             logger.info(
                 f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
             )
@@ -263,7 +257,7 @@ def hatchet_kg_factory(
             total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
 
-            context.log(
+            logger.info(
                 f"Running KG Community Summary for {num_communities} communities, spawning {total_workflows} workflows"
             )
 
@@ -308,10 +302,9 @@ def hatchet_kg_factory(
             )
 
             community_summary = await self.kg_service.kg_community_summary(
-                logger=create_hatchet_logger(context.log),
                 **input_data,
             )
-            context.log(
+            logger.info(
                 f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "
             )
             return {

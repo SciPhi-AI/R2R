@@ -9,7 +9,7 @@ from core.base import FileConfig, R2RException
 from core.base.providers import FileProvider
 from core.providers.database.postgres import PostgresDBProvider
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PostgresFileProvider(FileProvider):

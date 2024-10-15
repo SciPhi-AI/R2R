@@ -7,7 +7,7 @@ from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.parsers.media.openai_helpers import process_frame_with_openai
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class ImageParser(AsyncParser[DataType]):

@@ -5,20 +5,19 @@ from time import strftime
 from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
-from core.base import KGExtractionStatus, RunLoggingSingleton, RunManager
+from core.base import KGExtractionStatus, R2RLoggingProvider, RunManager
 from core.base.abstractions import (
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
-from shared.utils import HatchetLogger
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
@@ -39,7 +38,7 @@ class KgService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ):
         super().__init__(
             config,
@@ -60,9 +59,6 @@ class KgService(Service):
         max_knowledge_triples: int,
         entity_types: list[str],
         relation_types: list[str],
-        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
-            __name__
-        ),
         **kwargs,
     ):
         try:
@@ -144,9 +140,6 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
-        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
-            __name__
-        ),
         **kwargs,
     ):
 
@@ -171,6 +164,9 @@ class KgService(Service):
 
         # process 256 entities at a time
         num_batches = math.ceil(entity_count / 256)
+        logger.info(
+            f"Calling `kg_entity_description` on document {document_id} with an entity count of {entity_count} and total batches of {num_batches}"
+        )
         all_results = []
         for i in range(num_batches):
             logger.info(
@@ -215,9 +211,6 @@ class KgService(Service):
         collection_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
-        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
-            __name__
-        ),
         **kwargs,
     ):
         clustering_result = await self.pipes.kg_clustering_pipe.run(
@@ -242,9 +235,6 @@ class KgService(Service):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
-        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
-            __name__
-        ),
         **kwargs,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(

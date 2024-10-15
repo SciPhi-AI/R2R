@@ -11,7 +11,7 @@ from ..api.models import UserResponse
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class AuthConfig(ProviderConfig):
