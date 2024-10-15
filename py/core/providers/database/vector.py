@@ -343,40 +343,84 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         logger.info(f"Checking index creation progress for {table_name}")
 
+        # Check if the index exists
+        index_exists_query = f"""
+            SELECT 1
+            FROM pg_indexes
+            WHERE schemaname = '{project_name}'
+            AND tablename = '{table_name}'
+            AND indexname = '{index_name}';
+        """
 
-        # check if index exists
+        with self.vx.Session() as sess:
+            result = sess.execute(index_exists_query).fetchone()
+
+        if result:
+            logger.info(f"Index {index_name} already exists for {table_name}")
+            return True
+
+        # getting relation id of the index
         index_query = f"""
             SELECT i.relid
             FROM pg_class i
             JOIN pg_namespace n ON n.oid = i.relnamespace
             WHERE n.nspname = '{project_name}'
-            AND i.relname = '{index_name}';
+            AND i.relname = '{table_name}';
+        """
+
+        with self.vx.Session() as sess:
+            relation_id = sess.execute(index_query).fetchone()
+
+        if not relation_id:
+            raise ValueError(f"Table {table_name} does not exist")
+
+        # querying every 0.1 seconds to check if the index is created
+        timeout = 60 * 60 * 6 # 6 hours
+        start_time = time.time()
+        while True:
+            
+            if time.time() - start_time > timeout:
+                raise ValueError(f"Index {index_name} creation progress check timed out. Creation may still be in progress.")
+
+            table_query = f"""
+                SELECT pid, phase, relid, index_relid, blocks_total, blocks_done, tuples_total, tuples_done, partitions_total, partitions_done, %
+                from pg_stat_progress_create_index
+                where relid = {relation_id}
+            """
+
+            with self.vx.Session() as sess:
+                result = sess.execute(table_query).fetchall()
+
+                if len(result) > 1:
+                    logger.warning(f"More than one index creation process found: {len(result)}")
+
+                if len(result) == 0:
+                    logger.info(f"Index probably created for {table_name}")
+                    break
+
+                for row in result:
+                    logger.info(f"pid = {row[0]}, phase = {row[1]}, relid = {row[2]}, index_relid = {row[3]}, blocks_total = {row[4]}, blocks_done = {row[5]}, tuples_total = {row[6]}, tuples_done = {row[7]}, partitions_total = {row[8]}, partitions_done = {row[9]}, percentage_complete = {row[10]}")
+
+            time.sleep(0.1)
+
+        # check if the index is created
+        index_query = f"""
+            SELECT 1
+            FROM pg_indexes
+            WHERE schemaname = '{project_name}'
+            AND tablename = '{table_name}'
+            AND indexname = '{index_name}';
         """
 
         with self.vx.Session() as sess:
             result = sess.execute(index_query).fetchone()
 
-            if result == index_name:
-                return True
+        if result:
+            logger.info(f"Index {index_name} created for {table_name}")
+            return True
 
-
-        # check if table exists
-        table_query = f"""
-            SELECT c.oid AS relid
-            FROM pg_class c
-            JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = '{project_name}'
-            AND c.relname = '{table_name}';
-        """
-
-        with self.vx.Session() as sess:
-            result = sess.execute(table_query).fetchone()
-
-            if result:
-                return True
-
-
-        return result
+        logger.warning(f"Index {index_name} creation failed for {table_name}")
+        return False
 
     def delete(
         self,
