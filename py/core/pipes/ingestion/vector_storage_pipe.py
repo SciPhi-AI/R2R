@@ -6,7 +6,7 @@ from core.base import (
     AsyncState,
     DatabaseProvider,
     PipeType,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     StorageResult,
     VectorEntry,
 )
@@ -24,7 +24,7 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,

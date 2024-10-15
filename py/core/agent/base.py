@@ -135,14 +135,15 @@ class R2RStreamingAgent(R2RAgent):
             generation_config = self.get_generation_config(
                 messages_list[-1], stream=True
             )
-            stream = self.llm_provider.get_completion_stream(
+            stream = self.llm_provider.aget_completion_stream(
                 messages_list,
                 generation_config,
             )
-            async for chunk in self.process_llm_response(
-                stream, *args, **kwargs
-            ):
-                yield chunk
+            async for chunk in stream:
+                async for proc_chunk in self.process_llm_response(
+                    chunk, *args, **kwargs
+                ):
+                    yield proc_chunk
 
     def run(
         self, system_instruction, messages, *args, **kwargs

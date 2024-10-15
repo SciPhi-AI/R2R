@@ -8,7 +8,7 @@ from ..base.abstractions import (
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.logging.run_logger import RunLoggingSingleton
+from ..base.logging.run_logger import R2RLoggingProvider
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -21,7 +21,7 @@ class SearchPipeline(AsyncPipeline):
 
     def __init__(
         self,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)

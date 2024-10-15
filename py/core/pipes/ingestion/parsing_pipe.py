@@ -9,7 +9,7 @@ from core.base import (
     FileProvider,
     IngestionConfig,
     PipeType,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
@@ -29,7 +29,7 @@ class ParsingPipe(AsyncPipe):
         file_provider: FileProvider,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.INGESTOR,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):

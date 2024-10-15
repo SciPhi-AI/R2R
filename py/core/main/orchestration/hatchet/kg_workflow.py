@@ -2,17 +2,16 @@ import asyncio
 import json
 import logging
 import math
-import uuid
 import time
+import uuid
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
 from shared.abstractions.document import KGExtractionStatus
-from ...services import KgService
 
-from shared.utils import create_hatchet_logger
+from ...services import KgService
 
 logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
@@ -71,7 +70,6 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_triples_extraction(
                 document_id=uuid.UUID(document_id),
-                logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
@@ -95,7 +93,6 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_entity_description(
                 document_id=uuid.UUID(document_id),
-                logger=create_hatchet_logger(context.log),
                 **input_data["kg_creation_settings"],
             )
 
@@ -233,7 +230,6 @@ def hatchet_kg_factory(
 
             kg_clustering_results = await self.kg_service.kg_clustering(
                 collection_id=collection_id,
-                logger=create_hatchet_logger(context.log),
                 **input_data["kg_enrichment_settings"],
             )
 
@@ -308,7 +304,6 @@ def hatchet_kg_factory(
             )
 
             community_summary = await self.kg_service.kg_community_summary(
-                logger=create_hatchet_logger(context.log),
                 **input_data,
             )
             context.log(

@@ -7,9 +7,9 @@ from .log_processor import (
     LogProcessor,
 )
 from .run_logger import (
-    LocalRunLoggingProvider,
     LoggingConfig,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
+    SqlitePersistentLoggingProvider,
 )
 from .run_manager import RunManager, manage_run
 
@@ -22,9 +22,9 @@ __all__ = [
     "LogFilterCriteria",
     "LogProcessor",
     # Logging Providers
-    "LocalRunLoggingProvider",
+    "SqlitePersistentLoggingProvider",
     "LoggingConfig",
-    "RunLoggingSingleton",
+    "R2RLoggingProvider",
     # Run Manager
     "RunManager",
     "manage_run",

@@ -4,6 +4,7 @@ import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator, Generator, Optional
+
 from litellm import AuthenticationError
 
 from core.base.abstractions import (
@@ -147,20 +148,6 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         response = await self._execute_with_backoff_async(task)
-        return LLMChatCompletion(**response.dict())
-
-    def get_completion(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> LLMChatCompletion:
-        task = {
-            "messages": messages,
-            "generation_config": generation_config,
-            "kwargs": kwargs,
-        }
-        response = self._execute_with_backoff_sync(task)
         return LLMChatCompletion(**response.dict())
 
     async def aget_completion_stream(

@@ -58,7 +58,7 @@ class VectorSearchPipe(SearchPipe):
             search_settings.search_limit or self.config.search_limit
         )
         results = []
-        query_vector = self.embedding_provider.get_embedding(
+        query_vector = await self.embedding_provider.async_get_embedding(
             message,
             purpose=EmbeddingPurpose.QUERY,
         )

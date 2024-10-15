@@ -1,9 +1,10 @@
 import asyncio
 import json
 import logging
+import time
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
-import time
+
 from core.base import (
     AsyncPipe,
     AsyncState,
@@ -14,7 +15,7 @@ from core.base import (
     KGProvider,
     PipeType,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,

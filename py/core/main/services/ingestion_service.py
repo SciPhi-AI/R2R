@@ -11,8 +11,8 @@ from core.base import (
     DocumentType,
     IngestionStatus,
     R2RException,
+    R2RLoggingProvider,
     RawChunk,
-    RunLoggingSingleton,
     RunManager,
     VectorEntry,
     decrement_version,
@@ -45,7 +45,7 @@ class IngestionService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ) -> None:
         super().__init__(
             config,

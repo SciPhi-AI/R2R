@@ -7,7 +7,7 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     PipeType,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     VectorSearchResult,
 )
 
@@ -27,7 +27,7 @@ class SearchPipe(AsyncPipe[VectorSearchResult]):
         self,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.SEARCH,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):

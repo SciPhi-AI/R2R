@@ -91,8 +91,6 @@ def logs(ctx, run_type_filter, offset, limit):
 def docker_down(volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
 
-    remove_r2r_network()
-
     if not project_name:
         print("Bringing down the default R2R Docker setup(s)...")
         try:
@@ -121,6 +119,7 @@ def docker_down(volumes, remove_orphans, project_name):
             click.echo(
                 f"{project_name} Docker Compose setup has been successfully brought down."
             )
+    remove_r2r_network()
 
 
 @cli.command()

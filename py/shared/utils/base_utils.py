@@ -266,40 +266,6 @@ def update_settings_from_dict(server_settings, settings_dict: dict):
     return settings
 
 
-class HatchetLogger:
-    def __init__(self, hatchet_logger: Any):
-        self.hatchet_logger = hatchet_logger
-
-    def _log(self, level: str, message: str, function: Optional[str] = None):
-        if function:
-            log_message = f"[{level}]: {function}: {message}"
-        else:
-            log_message = f"[{level}]: {message}"
-        self.hatchet_logger(log_message)
-
-    def debug(self, message: str, function: Optional[str] = None):
-        self._log("DEBUG", message, function)
-
-    def info(self, message: str, function: Optional[str] = None):
-        self._log("INFO", message, function)
-
-    def warning(self, message: str, function: Optional[str] = None):
-        self._log("WARNING", message, function)
-
-    def error(self, message: str, function: Optional[str] = None):
-        self._log("ERROR", message, function)
-
-    def critical(self, message: str, function: Optional[str] = None):
-        self._log("CRITICAL", message, function)
-
-
-def create_hatchet_logger(hatchet_logger: Any) -> HatchetLogger:
-    """
-    Creates a HatchetLogger instance with different logging levels.
-    """
-    return HatchetLogger(hatchet_logger)
-
-
 def _decorate_vector_type(
     input_str: str,
     quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,

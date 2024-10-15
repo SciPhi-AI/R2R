@@ -11,7 +11,7 @@ from core.base import (
     KGProvider,
     PipeType,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.base.abstractions import (
     KGCommunityResult,
@@ -42,7 +42,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: GeneratorPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,
