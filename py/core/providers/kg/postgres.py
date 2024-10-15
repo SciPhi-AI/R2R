@@ -602,8 +602,7 @@ class PostgresKGProvider(KGProvider):
                 weight=triple.weight,
                 id=triple.id,
             )
-
-        start_time = time.time()
+            
         logger.info(f"Computing Leiden communities started.")
         hierarchical_communities = await self._compute_leiden_communities(
             G, leiden_params
