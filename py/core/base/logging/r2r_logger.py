@@ -704,54 +704,16 @@ class HatchetLogger:
         self._log("CRITICAL", message, function)
 
 
-# class EphemeralLoggingProvider:
-#     def __init__(self, config: LoggingConfig):
-#         self.provider = config.provider
-#         if self.provider == "r2r":
-#             self.logger = logging.getLogger("r2r")
-#             self.logger.setLevel(logging.getLevelName(config.level.upper()))
-#             handler = logging.StreamHandler()
-#             handler.setFormatter(logging.Formatter(config.format))
-#             self.logger.addHandler(handler)
-#         elif self.provider == "hatchet":
-
-#             self.logger = HatchetLogger()
-#         else:
-#             raise ValueError(f"Unsupported ephemeral logging provider: {self.provider}")
-
-#     async def __aenter__(self):
-#         return self
-
-#     async def __aexit__(self, exc_type, exc_val, exc_tb):
-#         pass
-
-#     async def log(self, message: str, level: str = "info"):
-#         if self.provider == "r2r":
-#             getattr(self.logger, level.lower())(message)
-#         elif self.provider == "hatchet":
-#             getattr(self.logger, level.lower())(message)
-
-
 class R2RLoggingProvider:
     _instance = None
     _is_configured = False
     _config: Optional[LoggingConfig] = None
 
-    # EPHEMERAL_PROVIDERS = {
-    #     "r2r": EphemeralLoggingProvider,
-    # }
-
     PERSISTENT_PROVIDERS = {
         "r2r": SqlitePersistentLoggingProvider,
+        # TODO - Mark this as deprecated
+        "local": SqlitePersistentLoggingProvider,
     }
-
-    def __init__(self):
-        self.logger = logging.getLogger("r2r")
-        self.hatchet_logger: Optional[HatchetLogger] = None
-
-    # @classmethod
-    # def get_ephemeral_logger(cls):
-    #     return cls.EPHEMERAL_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
     def get_persistent_logger(cls):
@@ -759,6 +721,10 @@ class R2RLoggingProvider:
 
     @classmethod
     def configure(cls, logging_config: LoggingConfig):
+        if logging_config.provider == "local":
+            logger.warning(
+                "Local logging provider is deprecated. Please use 'r2r' instead."
+            )
         if not cls._is_configured:
             cls._config = logging_config
             cls._is_configured = True
