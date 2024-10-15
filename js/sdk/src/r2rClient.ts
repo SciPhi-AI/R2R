@@ -787,29 +787,6 @@ export class r2rClient {
   }
 
   /**
-   * Assign a score to a message from an LLM completion. The score should be a float between -1.0 and 1.0.
-   * @param message_id The ID of the message to score.
-   * @param score The score to assign to the message.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("scoreCompletion")
-  async scoreCompletion(message_id: string, score: number): Promise<any> {
-    this._ensureAuthenticated();
-
-    const data = {
-      message_id,
-      score,
-    };
-
-    return this._makeRequest("POST", "score_completion", {
-      data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
-  /**
    * An overview of the users in the R2R deployment.
    * @param user_ids List of user IDs to get an overview for.
    * * @param offset The offset to start listing users from.

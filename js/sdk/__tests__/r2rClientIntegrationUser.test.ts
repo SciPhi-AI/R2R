@@ -35,7 +35,6 @@ const baseUrl = "http://localhost:7272";
  *     X analytics
  *     X logs
  *     - appSettings
- *     X scoreCompletion
  *     - usersOverview
  *     - delete
  *     X downloadFile

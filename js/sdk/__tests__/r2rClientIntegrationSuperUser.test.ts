@@ -39,7 +39,6 @@ let newCollectionId: string;
  *     - analytics
  *     - logs
  *     - appSettings
- *     - scoreCompletion
  *     - usersOverview
  *     - delete
  *     X downloadFile
@@ -164,15 +163,6 @@ describe("r2rClient Integration Tests", () => {
 
     await expect(client.agent(messages)).resolves.not.toThrow();
   }, 30000);
-
-  test("Score completion", async () => {
-    const message_id = "906bb0a8-e6f6-5474-a5d4-7d7f28937f41";
-    const score = 0.5;
-
-    await expect(
-      client.scoreCompletion(message_id, score),
-    ).resolves.not.toThrow();
-  });
 
   test("Agentic RAG response with streaming", async () => {
     const messages = [
