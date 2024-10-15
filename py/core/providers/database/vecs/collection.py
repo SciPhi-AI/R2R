@@ -36,13 +36,13 @@ from sqlalchemy.types import Float, UserDefinedType
 from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
 from shared.abstractions.vector import (
-    INDEX_MEASURE_TO_OPS,
     INDEX_MEASURE_TO_SQLA_ACC,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
     VectorTableName,
+    VectorQuantizationType,
 )
 
 from .adapter import Adapter, AdapterContext, NoOp, Record
@@ -54,19 +54,41 @@ from .exc import (
     MismatchedDimension,
 )
 
+from shared.utils import _decorate_vector_type
+
 if TYPE_CHECKING:
     from vecs.client import Client
+
+
+def index_measure_to_ops(
+    measure: IndexMeasure, quantization_type: VectorQuantizationType
+):
+    return _decorate_vector_type(measure.ops, quantization_type)
 
 
 class Vector(UserDefinedType):
     cache_ok = True
 
-    def __init__(self, dim=None):
+    def __init__(
+        self,
+        dim=None,
+        quantization_type: Optional[
+            VectorQuantizationType
+        ] = VectorQuantizationType.FP32,
+    ):
         super(UserDefinedType, self).__init__()
         self.dim = dim
+        self.quantization_type = quantization_type
 
     def get_col_spec(self, **kw):
-        return "VECTOR" if self.dim is None else f"VECTOR({self.dim})"
+        col_spec = ""
+        if self.dim is None:
+            col_spec = _decorate_vector_type("", self.quantization_type)
+        else:
+            col_spec = _decorate_vector_type(
+                f"({self.dim})", self.quantization_type
+            )
+        return col_spec
 
     def bind_processor(self, dialect):
         def process(value):
@@ -132,6 +154,7 @@ class Collection:
         self,
         name: str,
         dimension: int,
+        quantization_type: VectorQuantizationType,
         client: Client,
         adapter: Optional[Adapter] = None,
     ):
@@ -151,8 +174,13 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
+        self.quantization_type = quantization_type
         self.table = _build_table(
-            client.project_name, name, client.meta, dimension
+            client.project_name,
+            name,
+            client.meta,
+            dimension,
+            quantization_type,
         )
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
@@ -863,7 +891,7 @@ class Collection:
         if index_name is None:
             return False
 
-        ops = INDEX_MEASURE_TO_OPS.get(measure)
+        ops = index_measure_to_ops(measure, self.quantization_type)
         if ops is None:
             return False
 
@@ -892,6 +920,7 @@ class Collection:
         ] = None,
         replace: bool = True,
         concurrently: bool = True,
+        quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
     ) -> None:
         """
         Creates an index for the collection.
@@ -979,7 +1008,9 @@ class Collection:
                 "HNSW Unavailable. Upgrade your pgvector installation to > 0.5.0 to enable HNSW support"
             )
 
-        ops = INDEX_MEASURE_TO_OPS.get(measure)
+        ops = index_measure_to_ops(
+            measure, quantization_type=self.quantization_type
+        )
 
         if ops is None:
             raise ArgError("Unknown index measure")
@@ -987,6 +1018,7 @@ class Collection:
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
         # Drop existing index if needed (must be outside of transaction)
+        # Doesn't drop
         if self.index is not None and replace:
             drop_index_sql = f'DROP INDEX {concurrently_sql} IF EXISTS {self.client.project_name}."{self.index}";'
             try:
@@ -1028,9 +1060,12 @@ class Collection:
 
 
 def _build_table(
-    project_name: str, name: str, meta: MetaData, dimension: int
+    project_name: str,
+    name: str,
+    meta: MetaData,
+    dimension: int,
+    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ) -> Table:
-
     table = Table(
         name,
         meta,
@@ -1042,7 +1077,11 @@ def _build_table(
             postgresql.ARRAY(postgresql.UUID),
             server_default="{}",
         ),
-        Column("vec", Vector(dimension), nullable=False),
+        Column(
+            "vec",
+            Vector(dimension, quantization_type=quantization_type),
+            nullable=False,
+        ),
         Column("text", postgresql.TEXT, nullable=True),
         Column(
             "fts",

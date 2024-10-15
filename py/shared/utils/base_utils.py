@@ -20,6 +20,8 @@ from ..abstractions.search import (
     KGRelationshipResult,
 )
 
+from ..abstractions.vector import VectorQuantizationType
+
 logger = logging.getLogger(__name__)
 
 
@@ -302,3 +304,10 @@ def create_hatchet_logger(hatchet_logger: Any) -> HatchetLogger:
     Creates a HatchetLogger instance with different logging levels.
     """
     return HatchetLogger(hatchet_logger)
+
+
+def _decorate_vector_type(
+    input_str: str,
+    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
+) -> str:
+    return f"{quantization_type.db_type}{input_str}"

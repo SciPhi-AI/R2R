@@ -19,6 +19,7 @@ from .base_utils import (
     to_async_generator,
     validate_uuid,
     create_hatchet_logger,
+    _decorate_vector_type,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -48,4 +49,6 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "HatchetLogger",
+    # Vector utils
+    "_decorate_vector_type",
 ]

@@ -11,6 +11,8 @@ from ..abstractions import (
     default_embedding_prefixes,
 )
 
+from shared.abstractions.vector import VectorQuantizationSettings
+
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,9 @@ class EmbeddingConfig(ProviderConfig):
     max_retries: int = 8
     initial_backoff: float = 1
     max_backoff: float = 64.0
+    quantization_settings: VectorQuantizationSettings = (
+        VectorQuantizationSettings()
+    )
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
