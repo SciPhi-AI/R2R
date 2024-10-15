@@ -1,5 +1,7 @@
 from .base_utils import (
     HatchetLogger,
+    _decorate_vector_type,
+    create_hatchet_logger,
     decrement_version,
     format_entity_types,
     format_relations,
@@ -18,7 +20,6 @@ from .base_utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
-    create_hatchet_logger,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -48,4 +49,6 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "HatchetLogger",
+    # Vector utils
+    "_decorate_vector_type",
 ]

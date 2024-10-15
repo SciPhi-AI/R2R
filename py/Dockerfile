@@ -3,10 +3,12 @@ FROM python:3.11-slim AS builder
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
+    poppler-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 RUN pip install --no-cache-dir poetry
+
 
 # Add Rust to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"

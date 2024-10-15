@@ -4,6 +4,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
+from shared.abstractions.vector import VectorQuantizationType
+
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -69,7 +71,9 @@ class DatabaseConfig(ProviderConfig):
 
 class VectorDBProvider(Provider, ABC):
     @abstractmethod
-    def _initialize_vector_db(self, dimension: int) -> None:
+    def _initialize_vector_db(
+        self, dimension: int, quantization_type: VectorQuantizationType
+    ) -> None:
         pass
 
 

@@ -1,17 +1,12 @@
-from time import strftime
-from typing import Optional
 import asyncio
 import json
 import logging
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
-from copy import deepcopy
 
-from ..abstractions import R2RSerializable
 from ..abstractions.graph import EntityType, RelationshipType
-from ..abstractions import R2RSerializable
 from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
@@ -19,6 +14,7 @@ from ..abstractions.search import (
     KGGlobalResult,
     KGRelationshipResult,
 )
+from ..abstractions.vector import VectorQuantizationType
 
 logger = logging.getLogger(__name__)
 
@@ -302,3 +298,10 @@ def create_hatchet_logger(hatchet_logger: Any) -> HatchetLogger:
     Creates a HatchetLogger instance with different logging levels.
     """
     return HatchetLogger(hatchet_logger)
+
+
+def _decorate_vector_type(
+    input_str: str,
+    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
+) -> str:
+    return f"{quantization_type.db_type}{input_str}"

@@ -17,11 +17,12 @@ from core.base import (
     Triple,
 )
 from shared.abstractions import KGCreationSettings, KGEnrichmentSettings
+from shared.abstractions.vector import VectorQuantizationType
 from shared.api.models.kg.responses import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
 )
-from shared.utils import llm_cost_per_million_tokens
+from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,10 @@ class PostgresKGProvider(KGProvider):
         logger.info(
             f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
         )
-        await self.create_tables(project_name=self.db_provider.project_name)
+        await self.create_tables(
+            embedding_dim=self.embedding_provider.config.base_dimension,
+            quantization_type=self.embedding_provider.config.quantization_settings.quantization_type,
+        )
 
     async def execute_query(
         self, query: str, params: Optional[list[Any]] = None
@@ -79,9 +83,15 @@ class PostgresKGProvider(KGProvider):
     def _get_table_name(self, base_name: str) -> str:
         return self.db_provider._get_table_name(base_name)
 
-    async def create_tables(self, project_name: str):
+    async def create_tables(
+        self, embedding_dim: int, quantization_type: VectorQuantizationType
+    ):
         # raw entities table
         # create schema
+
+        vector_column_str = _decorate_vector_type(
+            f"({embedding_dim})", quantization_type
+        )
 
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_raw")} (
@@ -105,45 +115,12 @@ class PostgresKGProvider(KGProvider):
             object TEXT NOT NULL,
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
-            embedding vector({self.embedding_provider.config.base_dimension}),
+            embedding {vector_column_str},
             extraction_ids UUID[] NOT NULL,
             document_id UUID NOT NULL,
             attributes JSONB NOT NULL
         );
         """
-        await self.execute_query(query)
-
-        # entity description table, unique by document_id, category, name
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_description")} (
-            id SERIAL PRIMARY KEY,
-            document_id UUID NOT NULL,
-            category TEXT NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            description_embedding vector(1536),
-            extraction_ids UUID[] NOT NULL,
-            attributes JSONB NOT NULL,
-            UNIQUE (document_id, category, name)
-        );"""
-
-        await self.execute_query(query)
-
-        # triples table 2 # Relationship summaries by document ID
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_description")} (
-            id SERIAL PRIMARY KEY,
-            document_ids UUID[] NOT NULL,
-            subject TEXT NOT NULL,
-            predicate TEXT NOT NULL,
-            object TEXT NOT NULL,
-            weight FLOAT NOT NULL,
-            description TEXT NOT NULL,
-            extraction_ids UUID[] NOT NULL,
-            attributes JSONB NOT NULL,
-            UNIQUE (document_ids, subject, predicate, object)
-        );"""
-
         await self.execute_query(query)
 
         # embeddings tables
@@ -153,7 +130,7 @@ class PostgresKGProvider(KGProvider):
             name TEXT NOT NULL,
             description TEXT NOT NULL,
             extraction_ids UUID[] NOT NULL,
-            description_embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
+            description_embedding {vector_column_str} NOT NULL,
             document_id UUID NOT NULL,
             UNIQUE (name, document_id)
             );
@@ -188,7 +165,7 @@ class PostgresKGProvider(KGProvider):
             findings TEXT[] NOT NULL,
             rating FLOAT NOT NULL,
             rating_explanation TEXT NOT NULL,
-            embedding vector({self.embedding_provider.config.base_dimension}) NOT NULL,
+            embedding {vector_column_str} NOT NULL,
             attributes JSONB,
             UNIQUE (community_number, level, collection_id)
         );"""
@@ -223,7 +200,7 @@ class PostgresKGProvider(KGProvider):
             )
             for obj in objects
         ]
-        return await self.execute_many(QUERY, params)
+        return await self.execute_many(QUERY, params)  # type: ignore
 
     async def add_entities(
         self,
