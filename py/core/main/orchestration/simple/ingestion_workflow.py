@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+from litellm import AuthenticationError
+
 from core.base import DocumentExtraction, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
@@ -79,6 +81,15 @@ def simple_ingestion_factory(service: IngestionService):
                     f"Error during assigning document to collection: {str(e)}"
                 )
 
+        except AuthenticationError as e:
+            if document_info is not None:
+                await service.update_document_status(
+                    document_info, status=IngestionStatus.FAILED
+                )
+            raise R2RException(
+                status_code=401,
+                message="Authentication error: Invalid API key or credentials.",
+            )
         except Exception as e:
             if document_info is not None:
                 await service.update_document_status(
