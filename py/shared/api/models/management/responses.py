@@ -108,9 +108,6 @@ class DocumentChunkResponse(BaseModel):
     metadata: dict[str, Any]
 
 
-KnowledgeGraphResponse = str
-
-
 class CollectionResponse(BaseModel):
     collection_id: UUID
     name: str
@@ -147,7 +144,6 @@ WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]
-WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
 WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
 WrappedCollectionOverviewResponse = ResultsWrapper[
