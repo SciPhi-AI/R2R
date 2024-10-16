@@ -61,67 +61,34 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         Preparing the list of entities and triples to be summarized and created into a community summary.
         """
+        entities_info = "\n".join(
+            [
+                f"{entity['id']}, {entity['name']}, {entity['description']}"
+                for entity in entities
+            ]
+        )
 
-        await asyncio.sleep(20)
+        triples_info = "\n".join(
+            [
+                f"{triple['id']}, {triple['subject']}, {triple['object']}, {triple['predicate']}, {triple['description']}"
+                for triple in triples
+            ]
+        )
 
-        entity_map = {}
-        for entity in entities:
-            if not entity['name'] in entity_map:
-                entity_map[entity["name"]] = {'entities': [], 'triples': []}
-            entity_map[entity["name"]]['entities'].append(entity)
+        prompt = f"""
+        Entities:
+        {entities_info}
 
-        for triple in triples:
-            if not triple['subject'] in entity_map:
-                entity_map[triple['subject']] = {'entities': [], 'triples': []}
-            entity_map[triple['subject']]['triples'].append(triple)
+        Relationships:
+        {triples_info}
+        """
 
-        await asyncio.sleep(10)
-
-        # sort in descending order of triple count
-        sorted_entity_map = sorted(entity_map.items(), key=lambda x: len(x[1]['triples']), reverse=True)
-
-        await asyncio.sleep(10)
-
-        async def _get_entity_descriptions_string(entities: list, max_count: int = 100):
-            # randomly sample max_count entities if there are duplicates. This will become a map reduce job later.
-            sampled_entities = random.sample(entities, max_count) if len(entities) > max_count else entities
-            return "\n".join(
-                    f"{entity['id']},{entity['description']}"
-                    for entity in sampled_entities
-                )
-
-        await asyncio.sleep(10)
-        async def _get_triples_string(triples: list, max_count: int = 100):
-            sampled_triples = random.sample(triples, max_count) if len(triples) > max_count else triples
-            return "\n".join(
-                    f"{triple['id']},{triple['subject']},{triple['object']},{triple['predicate']},{triple['description']}"
-                    for triple in sampled_triples
-                )
+        if len(prompt) > max_summary_input_length:
+            logger.info(
+                f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
+            )
+            prompt = prompt[:max_summary_input_length]
         
-        await asyncio.sleep(10) 
-
-        prompt = ""
-        for entity_name, entity_data in sorted_entity_map:
-            entity_descriptions = await _get_entity_descriptions_string(entity_data['entities'])
-            triples = await _get_triples_string(entity_data['triples'])
-
-            prompt += f"""
-            Entity: {entity_name}
-            Descriptions: 
-                {entity_descriptions}
-            Triples: 
-                {triples}
-            """
-
-            if len(prompt) > max_summary_input_length:
-                await asyncio.sleep(10)
-                logger.info(
-                    f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
-                )
-                # open a file and write the prompt to it
-                prompt = prompt[:max_summary_input_length]
-                break
-
         return prompt
 
     async def process_community(
