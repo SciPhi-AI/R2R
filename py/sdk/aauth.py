@@ -2,15 +2,16 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 from uuid import UUID
 
+from .auth_helpers import process_login_response
 from .models import Token, UserResponse
 
 
 class AuthMixin(ABC):
     @abstractmethod
-    def _request(self, method: str, endpoint: str, **kwargs) -> Any:
+    async def _request(self, method: str, endpoint: str, **kwargs) -> Any:
         pass
 
-    def register(self, email: str, password: str) -> UserResponse:
+    async def register(self, email: str, password: str) -> UserResponse:
         """
         Registers a new user with the given email and password.
 
@@ -22,9 +23,10 @@ class AuthMixin(ABC):
             UserResponse: The response from the server.
         """
         data = {"email": email, "password": password}
-        return self._request("POST", "register", json=data)
+        response = await self._request("POST", "register", json=data)
+        return
 
-    def verify_email(self, verification_code: str) -> Dict[str, Any]:
+    async def verify_email(self, verification_code: str) -> Dict[str, Any]:
         """
         Verifies the email of a user with the given verification code.
 
@@ -33,7 +35,7 @@ class AuthMixin(ABC):
         """
         return self._request("POST", "verify_email", json={"code": verification_code})
 
-    def login(self, email: str, password: str) -> Dict[str, Token]:
+    async def login(self, email: str, password: str) -> Dict[str, Token]:
         """
         Attempts to log in a user with the given email and password.
 
@@ -45,12 +47,10 @@ class AuthMixin(ABC):
             dict[str, Token]: The access and refresh tokens from the server.
         """
         data = {"username": email, "password": password}
-        response = self._request("POST", "login", data=data)
-        self.access_token = response["results"]["access_token"]["token"]
-        self._refresh_token = response["results"]["refresh_token"]["token"]
-        return response
+        response = await self._request("POST", "login", data=data)
+        return process_login_response(self, response)
 
-    def logout(self) -> dict:
+    async def logout(self) -> dict:
         """
         Logs out the currently authenticated user.
 
@@ -62,7 +62,7 @@ class AuthMixin(ABC):
         self._refresh_token = None
         return response
 
-    def user(self) -> UserResponse:
+    async def user(self) -> UserResponse:
         """
         Retrieves the user information for the currently authenticated user.
 
@@ -71,7 +71,7 @@ class AuthMixin(ABC):
         """
         return self._request("GET", "user")
 
-    def update_user(
+    async def update_user(
         self,
         user_id: Union[str, UUID],
         email: Optional[str] = None,
@@ -105,7 +105,7 @@ class AuthMixin(ABC):
         data = {k: v for k, v in data.items() if v is not None}
         return self._request("PUT", "user", json=data)
 
-    def refresh_access_token(self) -> dict[str, Token]:
+    async def refresh_access_token(self) -> dict[str, Token]:
         """
         Refreshes the access token for the currently authenticated user.
 
@@ -119,7 +119,7 @@ class AuthMixin(ABC):
         self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
-    def change_password(
+    async def change_password(
         self, current_password: str, new_password: str
     ) -> dict:
         """
@@ -138,7 +138,7 @@ class AuthMixin(ABC):
         }
         return self._request("POST", "change_password", json=data)
 
-    def request_password_reset(self, email: str) -> dict:
+    async def request_password_reset(self, email: str) -> dict:
         """
         Requests a password reset for the user with the given email.
 
@@ -152,7 +152,7 @@ class AuthMixin(ABC):
             "POST", "request_password_reset", json=email
         )
 
-    def confirm_password_reset(
+    async def confirm_password_reset(
         self, reset_token: str, new_password: str
     ) -> dict:
         """
@@ -168,7 +168,7 @@ class AuthMixin(ABC):
         data = {"reset_token": reset_token, "new_password": new_password}
         return self._request("POST", "reset_password", json=data)
 
-    def login_with_token(
+    async def login_with_token(
         self,
         access_token: str,
     ) -> dict[str, Token]:

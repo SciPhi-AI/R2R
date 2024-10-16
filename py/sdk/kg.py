@@ -10,11 +10,9 @@ from .models import (
 )
 
 
-class KGMethods:
-
-    @staticmethod
+class KGMixins:
     async def create_graph(
-        client,
+        self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
@@ -36,11 +34,10 @@ class KGMethods:
             "kg_creation_settings": kg_creation_settings or {},
         }
 
-        return await client._make_request("POST", "create_graph", json=data)
+        return await self._make_request("POST", "create_graph", json=data) # type: ignore
 
-    @staticmethod
     async def enrich_graph(
-        client,
+        self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_enrichment_settings: Optional[
@@ -66,11 +63,10 @@ class KGMethods:
             "kg_enrichment_settings": kg_enrichment_settings or {},
         }
 
-        return await client._make_request("POST", "enrich_graph", json=data)
+        return await self._make_request("POST", "enrich_graph", json=data) # type: ignore
 
-    @staticmethod
     async def get_entities(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -96,11 +92,10 @@ class KGMethods:
         if entity_ids:
             params["entity_ids"] = ",".join(entity_ids)
 
-        return await client._make_request("GET", "entities", params=params)
+        return await self._make_request("GET", "entities", params=params) # type: ignore
 
-    @staticmethod
     async def get_triples(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -132,11 +127,10 @@ class KGMethods:
         if triple_ids:
             params["triple_ids"] = ",".join(triple_ids)
 
-        return await client._make_request("GET", "triples", params=params)
+        return await self._make_request("GET", "triples", params=params) # type: ignore
 
-    @staticmethod
     async def get_communities(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -167,4 +161,4 @@ class KGMethods:
         if community_numbers:
             params["community_numbers"] = community_numbers
 
-        return await client._make_request("GET", "communities", params=params)
+        return await self._make_request("GET", "communities", params=params) # type: ignore

@@ -3,10 +3,9 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 
-class ManagementMethods:
-    @staticmethod
+class ManagementMixins:
     async def update_prompt(
-        client,
+        self,
         name: str,
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
@@ -28,11 +27,10 @@ class ManagementMethods:
         if input_types is not None:
             data["input_types"] = input_types
 
-        return await client._make_request("POST", "update_prompt", json=data)
+        return await self._make_request("POST", "update_prompt", json=data) # type: ignore
 
-    @staticmethod
     async def add_prompt(
-        client,
+        self,
         name: str,
         template: str,
         input_types: dict[str, str],
@@ -53,11 +51,10 @@ class ManagementMethods:
             "template": template,
             "input_types": input_types,
         }
-        return await client._make_request("POST", "add_prompt", json=data)
+        return await self._make_request("POST", "add_prompt", json=data) # type: ignore
 
-    @staticmethod
     async def get_prompt(
-        client,
+        self,
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,
         prompt_override: Optional[str] = None,
@@ -78,22 +75,20 @@ class ManagementMethods:
             params["inputs"] = json.dumps(inputs)
         if prompt_override:
             params["prompt_override"] = prompt_override
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", f"get_prompt/{prompt_name}", params=params
         )
 
-    @staticmethod
-    async def get_all_prompts(client) -> dict:
+    async def get_all_prompts(self) -> dict:
         """
         Get all prompts from the system.
 
         Returns:
             dict: The response from the server containing all prompts.
         """
-        return await client._make_request("GET", "get_all_prompts")
+        return await self._make_request("GET", "get_all_prompts") # type: ignore
 
-    @staticmethod
-    async def delete_prompt(client, prompt_name: str) -> dict:
+    async def delete_prompt(self, prompt_name: str) -> dict:
         """
         Delete a prompt from the system.
 
@@ -103,13 +98,12 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "DELETE", f"delete_prompt/{prompt_name}"
         )
 
-    @staticmethod
     async def analytics(
-        client,
+        self,
         filter_criteria: Optional[Union[dict, str]] = None,
         analysis_types: Optional[Union[dict, str]] = None,
     ) -> dict:
@@ -135,21 +129,19 @@ class ManagementMethods:
             else:
                 params["analysis_types"] = analysis_types
 
-        return await client._make_request("GET", "analytics", params=params)
+        return await self._make_request("GET", "analytics", params=params) # type: ignore
 
-    @staticmethod
-    async def app_settings(client) -> dict:
+    async def app_settings(self) -> dict:
         """
         Get the configuration settings for the app.
 
         Returns:
             dict: The app settings.
         """
-        return await client._make_request("GET", "app_settings")
+        return await self._make_request("GET", "app_settings") # type: ignore
 
-    @staticmethod
     async def users_overview(
-        client,
+        self,
         user_ids: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -170,13 +162,12 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", "users_overview", params=params
         )
 
-    @staticmethod
     async def delete(
-        client,
+        self,
         filters: dict,
     ) -> dict:
         """
@@ -190,13 +181,12 @@ class ManagementMethods:
         """
         filters_json = json.dumps(filters)
 
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "DELETE", "delete", params={"filters": filters_json}
         ) or {"results": {}}
 
-    @staticmethod
     async def download_file(
-        client,
+        self,
         document_id: Union[str, UUID],
     ):
         """
@@ -208,13 +198,12 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", f"download_file/{str(document_id)}"
         )
 
-    @staticmethod
     async def documents_overview(
-        client,
+        self,
         document_ids: Optional[list[Union[UUID, str]]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -238,13 +227,12 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", "documents_overview", params=params
         )
 
-    @staticmethod
     async def document_chunks(
-        client,
+        self,
         document_id: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -264,17 +252,16 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         if not params:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "GET", f"document_chunks/{document_id}"
             )
         else:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "GET", f"document_chunks/{document_id}", params=params
             )
 
-    @staticmethod
     async def collections_overview(
-        client,
+        self,
         collection_ids: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -297,13 +284,12 @@ class ManagementMethods:
             params["offset"] = offset
         if limit:
             params["limit"] = limit
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", "collections_overview", params=params
         )
 
-    @staticmethod
     async def create_collection(
-        client,
+        self,
         name: str,
         description: Optional[str] = None,
     ) -> dict:
@@ -321,13 +307,12 @@ class ManagementMethods:
         if description is not None:
             data["description"] = description
 
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "POST", "create_collection", json=data
         )
 
-    @staticmethod
     async def get_collection(
-        client,
+        self,
         collection_id: Union[str, UUID],
     ) -> dict:
         """
@@ -339,13 +324,12 @@ class ManagementMethods:
         Returns:
             dict: The collection data.
         """
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", f"get_collection/{str(collection_id)}"
         )
 
-    @staticmethod
     async def update_collection(
-        client,
+        self,
         collection_id: Union[str, UUID],
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -367,13 +351,12 @@ class ManagementMethods:
         if description is not None:
             data["description"] = description
 
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "PUT", "update_collection", json=data
         )
 
-    @staticmethod
     async def delete_collection(
-        client,
+        self,
         collection_id: Union[str, UUID],
     ) -> dict:
         """
@@ -385,13 +368,12 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "DELETE", f"delete_collection/{str(collection_id)}"
         )
 
-    @staticmethod
     async def delete_user(
-        client,
+        self,
         user_id: str,
         password: Optional[str] = None,
         delete_vector_data: bool = False,
@@ -411,15 +393,14 @@ class ManagementMethods:
         if delete_vector_data:
             params["delete_vector_data"] = delete_vector_data
         if params == {}:
-            return await client._make_request("DELETE", f"user/{user_id}")
+            return await self._make_request("DELETE", f"user/{user_id}") # type: ignore
         else:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "DELETE", f"user/{user_id}", json=params
             )
 
-    @staticmethod
     async def list_collections(
-        client,
+        self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -438,13 +419,12 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", "list_collections", params=params
         )
 
-    @staticmethod
     async def add_user_to_collection(
-        client,
+        self,
         user_id: Union[str, UUID],
         collection_id: Union[str, UUID],
     ) -> dict:
@@ -462,13 +442,12 @@ class ManagementMethods:
             "user_id": str(user_id),
             "collection_id": str(collection_id),
         }
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "POST", "add_user_to_collection", json=data
         )
 
-    @staticmethod
     async def remove_user_from_collection(
-        client,
+        self,
         user_id: Union[str, UUID],
         collection_id: Union[str, UUID],
     ) -> dict:
@@ -486,13 +465,12 @@ class ManagementMethods:
             "user_id": str(user_id),
             "collection_id": str(collection_id),
         }
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "POST", "remove_user_from_collection", json=data
         )
 
-    @staticmethod
     async def get_users_in_collection(
-        client,
+        self,
         collection_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -513,15 +491,14 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET",
             f"get_users_in_collection/{str(collection_id)}",
             params=params,
         )
 
-    @staticmethod
     async def user_collections(
-        client,
+        self,
         user_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -541,17 +518,16 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         if not params:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "GET", f"user_collections/{str(user_id)}"
             )
         else:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "GET", f"user_collections/{str(user_id)}", params=params
             )
 
-    @staticmethod
     async def assign_document_to_collection(
-        client,
+        self,
         document_id: Union[str, UUID],
         collection_id: Union[str, UUID],
     ) -> dict:
@@ -569,14 +545,13 @@ class ManagementMethods:
             "document_id": str(document_id),
             "collection_id": str(collection_id),
         }
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "POST", "assign_document_to_collection", json=data
         )
 
     # TODO: Verify that this method is implemented, also, should be a PUT request
-    @staticmethod
     async def remove_document_from_collection(
-        client,
+        self,
         document_id: Union[str, UUID],
         collection_id: Union[str, UUID],
     ) -> dict:
@@ -594,13 +569,12 @@ class ManagementMethods:
             "document_id": str(document_id),
             "collection_id": str(collection_id),
         }
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "POST", "remove_document_from_collection", json=data
         )
 
-    @staticmethod
     async def document_collections(
-        client,
+        self,
         document_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -620,19 +594,18 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         if not params:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "GET",
                 f"document_collections/{str(document_id)}",
                 params=params,
             )
         else:
-            return await client._make_request(
+            return await self._make_request( # type: ignore
                 "GET", f"document_collections/{str(document_id)}"
             )
 
-    @staticmethod
     async def documents_in_collection(
-        client,
+        self,
         collection_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -653,13 +626,12 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", f"collection/{str(collection_id)}/documents", params=params
         )
 
-    @staticmethod
     async def get_conversation(
-        client,
+        self,
         conversation_id: Union[str, UUID],
         branch_id: Optional[str] = None,
     ) -> dict:
@@ -676,6 +648,6 @@ class ManagementMethods:
         params = {}
         if branch_id is not None:
             params["branch_id"] = branch_id
-        return await client._make_request(
+        return await self._make_request( # type: ignore
             "GET", f"conversations/{str(conversation_id)}", params=params
         )
