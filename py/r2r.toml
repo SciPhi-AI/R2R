@@ -21,7 +21,7 @@ provider = "litellm"
 concurrent_request_limit = 256
 
   [completion.generation_config]
-  model = "azure/gpt-4o"
+  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
@@ -69,11 +69,11 @@ batch_size = 256
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     max_knowledge_triples = 100
     max_description_input_length = 1024
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for triplet extraction
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
   [kg.kg_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports_prompt"
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = {}
 
   [kg.kg_search_settings]

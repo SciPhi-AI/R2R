@@ -53,21 +53,21 @@ graphrag_community_reports_prompt:
       Text:
 
       Entities
-      
+
       id,startup,description
       101,OpenAI,OpenAI is an AI research and deployment company.
       102,Stripe,Stripe is a technology company that builds economic infrastructure for the internet.
       103,Airbnb,Airbnb is an online marketplace for lodging and tourism experiences.
-      
+
       Relationships
-      
+
       id,source,target,description
       201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
       202,Stripe,Airbnb,Stripe provides payment processing services to Airbnb.
       203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
       204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
-      205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.      
-      
+      205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
+
       Output:
       {{
           "name": "OpenAI, Stripe, and Airbnb",

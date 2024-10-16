@@ -88,7 +88,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
             )
             prompt = prompt[:max_summary_input_length]
-        
+
         return prompt
 
     async def process_community(
@@ -234,7 +234,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
-            print(f"Completed community summary {completed_community_summary_jobs / len(community_summary_jobs) * 100:.2f}%...")
             completed_community_summary_jobs += 1
             if completed_community_summary_jobs % 50 == 0:
                 logger.info(
