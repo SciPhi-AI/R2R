@@ -227,7 +227,7 @@ class PostgresKGProvider(KGProvider):
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str = "triples",
+        table_name: str = "triple_raw",
     ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
@@ -399,16 +399,6 @@ class PostgresKGProvider(KGProvider):
         table_name = self._get_table_name("entities")
         query = QUERY.format(table_name)
         await self.execute_query(query, entities)
-
-    async def upsert_relationships(self, relationships: list[Triple]) -> None:
-        QUERY = """
-            INSERT INTO $1.$2 (source, target, relationship)
-            VALUES ($1, $2, $3)
-            """
-
-        table_name = self._get_table_name("triples")
-        query = QUERY.format(table_name)
-        await self.execute_query(query, relationships)
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
@@ -588,7 +578,6 @@ class PostgresKGProvider(KGProvider):
             weight_default: Union[int, float] = 1.0,
             check_directed: bool = True,
         """
-        settings: Dict[str, Any] = {}
 
         start_time = time.time()
         triples = await self.get_all_triples(collection_id)

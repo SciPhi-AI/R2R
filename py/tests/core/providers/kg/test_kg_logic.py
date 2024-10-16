@@ -60,25 +60,40 @@ def communities_list(entities_list, triples_raw_list):
     ]
 
 @pytest.fixture(scope="function")
+def community_table_info(collection_id):
+    return [
+        ("Entity1", 1, None, 0, False, [1,2], collection_id),
+        ("Entity2", 2, None, 0, False, [1,2], collection_id),
+    ]
+
+@pytest.fixture(scope="function")
 def kg_extractions(extraction_ids, entities_raw_list, triples_raw_list, document_id):
     return [KGExtraction(extraction_ids=extraction_ids, entities=entities_raw_list, triples=triples_raw_list, document_id=document_id)]
 
 @pytest.fixture(scope="function")
-def community_report_list(embedding_vectors):
+def community_report_list(embedding_vectors, collection_id):
     return [
         CommunityReport(
-            title="Community Report 1",
+            community_number=1,
+            level=0,
+            collection_id=collection_id,
+            name="Community Report 1",
             summary="Summary of the community report",
-            findings="Findings of the community report",
-            rank=1.0,
-            summary_embedding=embedding_vectors[0],
+            rating=8.0,
+            rating_explanation="Rating explanation of the community report",
+            findings=["Findings of the community report"],
+            embedding=embedding_vectors[0],
         ),
         CommunityReport(
-            title="Community Report",
+            community_number=2,
+            level=0,
+            collection_id=collection_id,
+            name="Community Report",
             summary="Summary of the community report",
-            findings="Findings of the community report",
-            rank=1.0,
-            summary_embedding=embedding_vectors[1],
+            rating=8.0,
+            rating_explanation="Rating explanation of the community report",
+            findings=["Findings of the community report"],
+            embedding=embedding_vectors[1],
         ),
     ]
 
@@ -127,7 +142,7 @@ async def test_add_kg_extractions(postgres_kg_provider, kg_extractions, collecti
 
     assert added_extractions == (2, 2)
 
-    entities = await postgres_kg_provider.get_entities(collection_id)
+    entities = await postgres_kg_provider.get_entities(collection_id, entity_table_name='entity_raw')
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
     assert len(entities["entities"]) == 2
@@ -139,22 +154,92 @@ async def test_add_kg_extractions(postgres_kg_provider, kg_extractions, collecti
     assert len(triples["triples"]) == 2
     assert triples["total_entries"] == 2
 
-# @pytest.mark.asyncio
-# async def test_get_entity_map(postgres_kg_provider, entities_list, document_id):
-#     await postgres_kg_provider.add_entities(entities_list, table_name='entity_raw')
-#     entity_map = await postgres_kg_provider.get_entity_map(0, 10, document_id)
-#     assert entity_map["entities"][0].name == "Entity1"
-#     assert entity_map["entities"][1].name == "Entity2"
-#     assert len(entity_map["entities"]) == 2
-#     assert entity_map["total_entries"] == 2
+@pytest.mark.asyncio
+async def test_get_entity_map(postgres_kg_provider, entities_raw_list, triples_raw_list, document_id):
+    await postgres_kg_provider.add_entities(entities_raw_list, table_name='entity_raw')
+    entity_map = await postgres_kg_provider.get_entity_map(0, 2, document_id)
+    assert entity_map['Entity1']["entities"][0].name == "Entity1"
+    assert entity_map['Entity2']["entities"][0].name == "Entity2"
+
+    await postgres_kg_provider.add_triples(triples_raw_list)
+    entity_map = await postgres_kg_provider.get_entity_map(0, 2, document_id)
+    assert entity_map['Entity1']["entities"][0].name == "Entity1"
+    assert entity_map['Entity2']["entities"][0].name == "Entity2"
+
+    assert entity_map['Entity1']["triples"][0].subject == "Entity1"
+    assert entity_map['Entity2']["triples"][0].subject == "Entity2"
 
 
-# @pytest.mark.asyncio
-# async def test_add_communities(postgres_kg_provider):
-#     await postgres_kg_provider.add_communities([Community(name="Community1"), Community(name="Community2")])
+@pytest.mark.asyncio
+async def test_upsert_embeddings(postgres_kg_provider, collection_id, entities_list):
+    table_name = 'entity_embedding'
 
-# @pytest.mark.asyncio
-# async def test_add_community_reports(postgres_kg_provider):
-#     await postgres_kg_provider.add_community_reports([CommunityReport(title="Community Report 1"), CommunityReport(title="Community Report 2")])
+    entities_list_to_upsert = [
+        (
+            entity.name,
+            entity.description,
+            str(entity.description_embedding),
+            entity.extraction_ids,
+            entity.document_id
+        )
+        for entity in entities_list
+    ]
+
+    await postgres_kg_provider.upsert_embeddings(entities_list_to_upsert, table_name)
+
+    entities = await postgres_kg_provider.get_entities(collection_id, entity_table_name=table_name)
+    assert entities["entities"][0].name == "Entity1"
+    assert entities["entities"][1].name == "Entity2"
+
+@pytest.mark.asyncio
+async def test_get_all_triples(postgres_kg_provider, collection_id, triples_raw_list):
+    await postgres_kg_provider.add_triples(triples_raw_list)    
+    triples = await postgres_kg_provider.get_triples(collection_id)
+    assert triples["triples"][0].subject == "Entity1"
+    assert triples["triples"][1].subject == "Entity2"
+    assert len(triples["triples"]) == 2
 
 
+@pytest.mark.asyncio
+async def test_get_communities(postgres_kg_provider, collection_id, community_report_list):
+    await postgres_kg_provider.add_community_report(community_report_list[0])
+    await postgres_kg_provider.add_community_report(community_report_list[1])
+    communities = await postgres_kg_provider.get_communities(collection_id)
+    assert communities["communities"][0].name == "Community Report 1"
+    assert len(communities["communities"]) == 2
+    assert communities["total_entries"] == 2
+
+
+@pytest.fixture(scope="function")
+def leiden_params_1():
+    return {
+        "resolution": 1.0,
+        'max_cluster_size': 1000,
+        "random_seed": 42,
+    }
+
+@pytest.mark.asyncio
+async def test_perform_graph_clustering(postgres_kg_provider, collection_id, leiden_params_1, entities_list, triples_raw_list):
+
+    # addd entities and triples
+    await postgres_kg_provider.add_entities(entities_list, table_name='entity_embedding')
+    await postgres_kg_provider.add_triples(triples_raw_list, table_name='triple_raw')
+
+    num_communities = await postgres_kg_provider.perform_graph_clustering(collection_id, leiden_params_1)
+    assert num_communities
+
+
+@pytest.mark.asyncio    
+async def test_get_community_details(postgres_kg_provider, entities_list, triples_raw_list, collection_id, community_report_list, community_table_info):
+
+    await postgres_kg_provider.add_entities(entities_list, table_name='entity_embedding')
+    await postgres_kg_provider.add_triples(triples_raw_list, table_name='triple_raw')
+    await postgres_kg_provider.add_communities(community_table_info)
+    await postgres_kg_provider.add_community_report(community_report_list[0])
+
+    community_level, entities, triples = await postgres_kg_provider.get_community_details(community_number=1)
+    
+    assert community_level == 0
+    # TODO: change these to objects
+    assert entities[0]['name'] == "Entity1"
+    assert triples[0]['subject'] == "Entity1"
