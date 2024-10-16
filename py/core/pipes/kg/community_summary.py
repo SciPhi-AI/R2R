@@ -112,7 +112,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             Triples: 
                 {triples}
             """
-    
+
             if len(prompt) > max_summary_input_length:
                 await asyncio.sleep(10)
                 logger.info(
@@ -147,8 +147,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
         for attempt in range(3):
-            
-            print("Running community summary...")
 
             description = (
                 (
@@ -171,8 +169,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 .choices[0]
                 .message.content
             )
-
-            print(f"Obtained description... {len(description)} characters")
 
             try:
                 if description and description.startswith("```json"):
@@ -197,8 +193,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         f"Failed to generate a summary for community {community_number} at level {community_level}."
                     ) from e
 
-        print(f"Obtained description... {len(description)} characters")
-
         community_report = CommunityReport(
             community_number=community_number,
             collection_id=collection_id,
@@ -216,10 +210,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        print(f"Adding community report to KG...")
         await self.kg_provider.add_community_report(community_report)
 
-        print(f"Community report added to KG...")
         return {
             "community_number": community_report.community_number,
             "name": community_report.name,
