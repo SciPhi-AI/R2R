@@ -1,4 +1,4 @@
-graphrag_community_reports_prompt:
+graphrag_community_reports:
   template: |
       You are an AI assistant that helps a human analyst perform information discovery within the ecosystem of Y Combinator startups. Information discovery is the process of identifying and assessing relevant information associated with certain startups and their interconnections within the Y Combinator network.
 
