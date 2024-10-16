@@ -1,3 +1,4 @@
+import random
 import asyncio
 import json
 import logging
@@ -60,33 +61,66 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         Preparing the list of entities and triples to be summarized and created into a community summary.
         """
-        entities_info = "\n".join(
-            [
-                f"{entity['id']}, {entity['name']}, {entity['description']}"
-                for entity in entities
-            ]
-        )
 
-        triples_info = "\n".join(
-            [
-                f"{triple['id']}, {triple['subject']}, {triple['object']}, {triple['predicate']}, {triple['description']}"
-                for triple in triples
-            ]
-        )
+        await asyncio.sleep(20)
 
-        prompt = f"""
-        Entities:
-        {entities_info}
+        entity_map = {}
+        for entity in entities:
+            if not entity['name'] in entity_map:
+                entity_map[entity["name"]] = {'entities': [], 'triples': []}
+            entity_map[entity["name"]]['entities'].append(entity)
 
-        Relationships:
-        {triples_info}
-        """
+        for triple in triples:
+            if not triple['subject'] in entity_map:
+                entity_map[triple['subject']] = {'entities': [], 'triples': []}
+            entity_map[triple['subject']]['triples'].append(triple)
 
-        if len(prompt) > max_summary_input_length:
-            logger.info(
-                f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
-            )
-            prompt = prompt[:max_summary_input_length]
+        await asyncio.sleep(10)
+
+        # sort in descending order of triple count
+        sorted_entity_map = sorted(entity_map.items(), key=lambda x: len(x[1]['triples']), reverse=True)
+
+        await asyncio.sleep(10)
+
+        async def _get_entity_descriptions_string(entities: list, max_count: int = 100):
+            # randomly sample max_count entities if there are duplicates. This will become a map reduce job later.
+            sampled_entities = random.sample(entities, max_count) if len(entities) > max_count else entities
+            return "\n".join(
+                    f"{entity['id']},{entity['description']}"
+                    for entity in sampled_entities
+                )
+
+        await asyncio.sleep(10)
+        async def _get_triples_string(triples: list, max_count: int = 100):
+            sampled_triples = random.sample(triples, max_count) if len(triples) > max_count else triples
+            return "\n".join(
+                    f"{triple['id']},{triple['subject']},{triple['object']},{triple['predicate']},{triple['description']}"
+                    for triple in sampled_triples
+                )
+        
+        await asyncio.sleep(10) 
+
+        prompt = ""
+        for entity_name, entity_data in sorted_entity_map:
+            entity_descriptions = await _get_entity_descriptions_string(entity_data['entities'])
+            triples = await _get_triples_string(entity_data['triples'])
+
+            prompt += f"""
+            Entity: {entity_name}
+            Descriptions: 
+                {entity_descriptions}
+            Triples: 
+                {triples}
+            """
+    
+            if len(prompt) > max_summary_input_length:
+                await asyncio.sleep(10)
+                logger.info(
+                    f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
+                )
+                # open a file and write the prompt to it
+                prompt = prompt[:max_summary_input_length]
+                break
 
         return prompt
 
@@ -113,6 +147,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
             )
 
         for attempt in range(3):
+            
+            print("Running community summary...")
 
             description = (
                 (
@@ -135,6 +171,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 .choices[0]
                 .message.content
             )
+
+            print(f"Obtained description... {len(description)} characters")
 
             try:
                 if description and description.startswith("```json"):
@@ -159,6 +197,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         f"Failed to generate a summary for community {community_number} at level {community_level}."
                     ) from e
 
+        print(f"Obtained description... {len(description)} characters")
+
         community_report = CommunityReport(
             community_number=community_number,
             collection_id=collection_id,
@@ -176,8 +216,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
+        print(f"Adding community report to KG...")
         await self.kg_provider.add_community_report(community_report)
 
+        print(f"Community report added to KG...")
         return {
             "community_number": community_report.community_number,
             "name": community_report.name,
@@ -233,6 +275,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
+            print(f"Completed community summary {completed_community_summary_jobs / len(community_summary_jobs) * 100:.2f}%...")
             completed_community_summary_jobs += 1
             if completed_community_summary_jobs % 50 == 0:
                 logger.info(

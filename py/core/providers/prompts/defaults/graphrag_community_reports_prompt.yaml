@@ -1,9 +1,9 @@
 graphrag_community_reports_prompt:
   template: |
-      You are an AI assistant that helps a human analyst perform information discovery within the ecosystem of Y Combinator startups. Information discovery is the process of identifying and assessing relevant information associated with certain startups and their interconnections within the Y Combinator network.
+      You are an AI assistant that helps a human analyst to perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network.
 
       # Goal
-      Write a comprehensive report of a Y Combinator community, given a list of startups that belong to the community, their relationships, and optional associated claims. The report will be used to inform decision-makers about information related to the startups and their potential impact. The content of this report includes an overview of the community's key startups, their funding status, technical capabilities, reputation, and noteworthy claims.
+      Write a comprehensive report of a community, given a list of entities that belong to the community as well as their relationships and optional associated claims. The report will be used to inform decision-makers about information associated with the community and their potential impact. The content of this report includes an overview of the community's key entities, their legal compliance, technical capabilities, reputation, and noteworthy claims.
 
       # Report Structure
 
@@ -23,7 +23,7 @@ graphrag_community_reports_prompt:
           "rating": <impact_severity_rating>,
           "rating_explanation": <rating_explanation>,
           "findings": [
-              "<finding1>",
+            "<finding1>",
               "<finding2>",
               "<finding3>",
               "<finding4>",
@@ -54,19 +54,29 @@ graphrag_community_reports_prompt:
 
       Entities
 
-      id,startup,description
-      101,OpenAI,OpenAI is an AI research and deployment company.
-      102,Stripe,Stripe is a technology company that builds economic infrastructure for the internet.
-      103,Airbnb,Airbnb is an online marketplace for lodging and tourism experiences.
+      Entity: OpenAI
+      descriptions: 
+        101,OpenAI is an AI research and deployment company.
+      triples:
+        201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
+        203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
+        204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
 
-      Relationships
+      Entity: Stripe
+      descriptions: 
+        102,Stripe is a technology company that builds economic infrastructure for the internet.
+      triples:
+        201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
+        202,Stripe,Airbnb,Stripe provides payment processing services to Airbnb.
+        204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
+        205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
 
-      id,source,target,description
-      201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
-      202,Stripe,Airbnb,Stripe provides payment processing services to Airbnb.
-      203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
-      204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
-      205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
+      Entity: Airbnb
+      descriptions: 
+        103,Airbnb is an online marketplace for lodging and tourism experiences.
+      triples:
+        203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
+        205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
 
       Output:
       {{

@@ -307,7 +307,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)}, time from start: {time.time() - start_time:.2f} seconds",
+            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)} tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         tasks = [
