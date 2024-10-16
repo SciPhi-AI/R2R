@@ -157,9 +157,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 break
             except Exception as e:
                 if attempt == 2:
-                    raise ValueError(
-                        f"Failed to generate a summary for community {community_number} at level {community_level}."
-                    ) from e
+                    return {
+                        "community_number": community_number,
+                        "name": "N/A",
+                        "error": str(e)
+                    }
 
         community_report = CommunityReport(
             community_number=community_number,
@@ -212,18 +214,18 @@ class KGCommunitySummaryPipe(AsyncPipe):
         logger.info(
             f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
-        community_numbers_exist = (
+        community_reports_exist = (
             await self.kg_provider.check_community_reports_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
         )
 
         logger.info(
-            f"KGCommunitySummaryPipe: Community summaries exist for communities {len(community_numbers_exist)}"
+            f"KGCommunitySummaryPipe: Community summaries exist for communities {len(community_reports_exist)}"
         )
 
         for community_number in range(offset, offset + limit):
-            if community_number not in community_numbers_exist:
+            if community_number not in community_reports_exist:
                 community_summary_jobs.append(
                     self.process_community(
                         community_number=community_number,

@@ -321,13 +321,27 @@ def hatchet_kg_factory(
             community_summary = await self.kg_service.kg_community_summary(
                 **input_data,
             )
-            logger.info(
-                f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "
-            )
-            return {
-                "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"
-            }
 
+            num_errors = 0
+            for summary in community_summary:
+                if "error" in summary:
+                    logger.error(
+                        f"Error in KGCommunitySummaryWorkflow: {summary['community_number']}: {summary['error']}"
+                    )
+                    num_errors += 1
+
+            if num_errors:
+                logger.info(
+                    f"Failed to run kg community summary for {num_errors} communities out of {len(community_summary)}, time taken: {time.time() - start_time:.2f} seconds"
+                )
+                return {
+                    "result": f"Failed to run kg community summary for {num_errors} communities out of {len(community_summary)}. Please rerun this job."
+                }
+
+            else:
+                return {
+                    "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds"
+                }
     return {
         "kg-extract": KGExtractDescribeEmbedWorkflow(service),
         "create-graph": CreateGraphWorkflow(service),
