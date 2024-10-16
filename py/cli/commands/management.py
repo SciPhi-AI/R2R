@@ -128,6 +128,7 @@ def documents_overview(ctx, document_ids, offset, limit):
 )
 @click.option(
     "--include-vectors",
+    is_flag=True,
     default=False,
     help="Should the vector be included in the response chunks",
 )
