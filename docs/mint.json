@@ -401,6 +401,7 @@
       "group": "General",
       "pages": [
         "cookbooks/walkthrough",
+        "cookbooks/ingestion",
         "cookbooks/hybrid-search",
         "cookbooks/graphrag",
         "cookbooks/advanced-rag",
