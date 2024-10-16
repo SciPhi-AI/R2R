@@ -79,7 +79,7 @@ batch_size = 256
   [kg.kg_search_settings]
     map_system_prompt = "graphrag_map_system_prompt"
     reduce_system_prompt = "graphrag_reduce_system_prompt"
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 [logging]
 provider = "local"

@@ -23,7 +23,7 @@ graphrag_community_reports_prompt:
           "rating": <impact_severity_rating>,
           "rating_explanation": <rating_explanation>,
           "findings": [
-            "<finding1>",
+              "<finding1>",
               "<finding2>",
               "<finding3>",
               "<finding4>",
