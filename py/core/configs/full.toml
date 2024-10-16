@@ -11,3 +11,6 @@ overlap = 256
 
 [orchestration]
 provider = "hatchet"
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 64
+kg_enrichment_concurrency_limit = 8

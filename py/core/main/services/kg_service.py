@@ -213,6 +213,10 @@ class KgService(Service):
         leiden_params: dict,
         **kwargs,
     ):
+
+        logger.info(
+            f"Running ClusteringPipe for collection {collection_id} with settings {leiden_params}"
+        )
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
