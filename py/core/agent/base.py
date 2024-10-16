@@ -12,7 +12,7 @@ from core.base.abstractions import (
 )
 from core.base.agent import Agent, Conversation
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):
@@ -135,14 +135,14 @@ class R2RStreamingAgent(R2RAgent):
             generation_config = self.get_generation_config(
                 messages_list[-1], stream=True
             )
-            stream = self.llm_provider.get_completion_stream(
+            stream = self.llm_provider.aget_completion_stream(
                 messages_list,
                 generation_config,
             )
-            async for chunk in self.process_llm_response(
+            async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs
             ):
-                yield chunk
+                yield proc_chunk
 
     def run(
         self, system_instruction, messages, *args, **kwargs
@@ -153,7 +153,7 @@ class R2RStreamingAgent(R2RAgent):
 
     async def process_llm_response(  # type: ignore
         self,
-        stream: Generator[LLMChatCompletionChunk, None, None],
+        stream: AsyncGenerator[LLMChatCompletionChunk, None],
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
@@ -161,7 +161,7 @@ class R2RStreamingAgent(R2RAgent):
         function_arguments = ""
         content_buffer = ""
 
-        for chunk in stream:
+        async for chunk in stream:
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:

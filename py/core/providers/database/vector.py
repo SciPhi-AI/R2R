@@ -26,7 +26,7 @@ from shared.abstractions.vector import (
 
 from .vecs import Client, Collection, create_client
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PostgresVectorDBProvider(VectorDBProvider):

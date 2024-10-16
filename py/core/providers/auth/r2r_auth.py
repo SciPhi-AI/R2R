@@ -21,7 +21,7 @@ from core.base.api.models import UserResponse
 DEFAULT_ACCESS_LIFETIME_IN_MINUTES = 3600
 DEFAULT_REFRESH_LIFETIME_IN_DAYS = 7
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 DEFAULT_R2R_SK = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"
@@ -188,7 +188,7 @@ class R2RAuthProvider(AuthProvider):
         return {"message": "Email verified successfully"}
 
     async def login(self, email: str, password: str) -> Dict[str, Token]:
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger()
         logger.debug(f"Attempting login for email: {email}")
 
         user = await self.db_provider.relational.get_user_by_email(email)

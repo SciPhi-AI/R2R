@@ -2,9 +2,10 @@ import random
 import asyncio
 import json
 import logging
+import time
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
-import time
+
 from core.base import (
     AsyncPipe,
     AsyncState,
@@ -15,10 +16,10 @@ from core.base import (
     KGProvider,
     PipeType,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGCommunitySummaryPipe(AsyncPipe):
@@ -33,7 +34,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,
@@ -204,7 +205,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
-        logger = input.message.get("logger", logging.getLogger(__name__))
+        logger = input.message.get("logger", logging.getLogger())
 
         # check which community summaries exist and don't run them again
 

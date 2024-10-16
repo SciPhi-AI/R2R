@@ -19,7 +19,7 @@ from core.base import (
 from core.base.abstractions import DocumentExtraction
 from core.utils import generate_extraction_id
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class R2RIngestionConfig(IngestionConfig):

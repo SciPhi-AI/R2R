@@ -5,7 +5,7 @@ import posthog
 
 from core.telemetry.events import BaseTelemetryEvent  # type: ignore
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PosthogClient:

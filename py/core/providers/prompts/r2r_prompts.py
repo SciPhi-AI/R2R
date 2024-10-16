@@ -10,7 +10,7 @@ import yaml
 from core.base import DatabaseProvider, Prompt, PromptConfig, PromptProvider
 from core.base.utils import generate_default_prompt_id
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class R2RPromptProvider(PromptProvider):
@@ -202,6 +202,7 @@ class R2RPromptProvider(PromptProvider):
         input_types: dict[str, str],
         modify_created_at: bool = False,
     ) -> None:
+        logger.info(f"Adding prompt '{name}' to the database.")
         prompt = Prompt(
             prompt_id=generate_default_prompt_id(name),
             name=name,

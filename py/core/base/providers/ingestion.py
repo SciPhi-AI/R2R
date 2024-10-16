@@ -4,7 +4,7 @@ from enum import Enum
 
 from .base import Provider, ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class IngestionConfig(ProviderConfig):

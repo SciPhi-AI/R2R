@@ -11,7 +11,7 @@ from pydantic import Field
 
 from .base import R2RSerializable
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 DataType = Union[str, bytes]
 

@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [windows-latest, macos-latest]
         test_category:
           - cli-ingestion
           - cli-retrieval

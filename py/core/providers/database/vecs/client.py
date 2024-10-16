@@ -25,7 +25,7 @@ from .exc import CollectionNotFound
 if TYPE_CHECKING:
     from core.providers.database.vecs.collection import Collection
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class Client:

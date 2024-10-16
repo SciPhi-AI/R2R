@@ -13,8 +13,8 @@ from core import (
     DatabaseConfig,
     EmbeddingConfig,
     FileConfig,
-    LocalRunLoggingProvider,
     LoggingConfig,
+    SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
 )
@@ -193,7 +193,7 @@ def litellm_completion_provider(app_config):
 async def local_logging_provider(app_config):
     unique_id = str(uuid.uuid4())
     logging_path = f"test_{unique_id}.sqlite"
-    provider = LocalRunLoggingProvider(
+    provider = SqlitePersistentLoggingProvider(
         LoggingConfig(logging_path=logging_path, app=app_config)
     )
     await provider._init()

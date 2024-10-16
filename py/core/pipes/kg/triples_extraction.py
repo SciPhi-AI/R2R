@@ -2,9 +2,9 @@ import asyncio
 import json
 import logging
 import re
-from typing import Any, AsyncGenerator, Optional, Union
 import time
-from shared.utils import HatchetLogger
+from typing import Any, AsyncGenerator, Optional, Union
+
 from core.base import (
     AsyncState,
     CompletionProvider,
@@ -18,12 +18,12 @@ from core.base import (
     PromptProvider,
     R2RDocumentProcessingError,
     R2RException,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     Triple,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
@@ -54,7 +54,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,
@@ -83,9 +83,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         relation_types: list[str],
         retries: int = 5,
         delay: int = 2,
-        logger: Union[logging.Logger, HatchetLogger] = logging.getLogger(
-            __name__
-        ),
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
     ) -> KGExtraction:
@@ -246,7 +243,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             "filter_out_existing_chunks", True
         )
 
-        logger = input.message.get("logger", logging.getLogger(__name__))
+        logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
             f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
@@ -318,7 +315,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                     max_knowledge_triples=max_knowledge_triples,
                     entity_types=entity_types,
                     relation_types=relation_types,
-                    logger=logger,
                     task_id=task_id,
                     total_tasks=len(extractions_groups),
                 )

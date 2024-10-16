@@ -25,7 +25,7 @@ from shared.api.models.kg.responses import (
 )
 from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PostgresKGProvider(KGProvider):

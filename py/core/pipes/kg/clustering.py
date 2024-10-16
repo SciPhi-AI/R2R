@@ -10,10 +10,10 @@ from core.base import (
     KGProvider,
     PipeType,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGClusteringPipe(AsyncPipe):
@@ -28,7 +28,7 @@ class KGClusteringPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,

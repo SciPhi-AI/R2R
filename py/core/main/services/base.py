@@ -1,6 +1,6 @@
 from abc import ABC
 
-from core.base import RunLoggingSingleton, RunManager
+from core.base import R2RLoggingProvider, RunManager
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -15,7 +15,7 @@ class Service(ABC):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ):
         self.config = config
         self.providers = providers

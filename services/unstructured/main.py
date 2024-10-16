@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from unstructured.partition.auto import partition
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 app = FastAPI()
 

@@ -278,17 +278,6 @@ twisted = ["twisted"]
 zookeeper = ["kazoo"]
 
 [[package]]
-name = "async-timeout"
-version = "4.0.3"
-description = "Timeout context manager for asyncio programs"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
-    {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
-]
-
-[[package]]
 name = "asyncclick"
 version = "8.1.7.2"
 description = "Composable command line interface toolkit, async version"
@@ -352,9 +341,6 @@ files = [
     {file = "asyncpg-0.29.0-cp39-cp39-win_amd64.whl", hash = "sha256:cce08a178858b426ae1aa8409b5cc171def45d4293626e7aa6510696d46decd8"},
     {file = "asyncpg-0.29.0.tar.gz", hash = "sha256:d1c49e1f44fffafd9a55e1a9b101590859d881d639ea2922516f5d9c512d354e"},
 ]
-
-[package.dependencies]
-async-timeout = {version = ">=4.0.3", markers = "python_version < \"3.12.0\""}
 
 [package.extras]
 docs = ["Sphinx (>=5.3.0,<5.4.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-asyncio (>=0.3.0,<0.4.0)"]
@@ -1846,13 +1832,13 @@ hyperframe = ">=6.0,<7"
 
 [[package]]
 name = "hatchet-sdk"
-version = "0.36.24"
+version = "0.38.3"
 description = ""
 optional = true
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "hatchet_sdk-0.36.24-py3-none-any.whl", hash = "sha256:0d633e7210d541ae3278717f451ad6af1a579b57b7cc0fcb2786536ac65162ed"},
-    {file = "hatchet_sdk-0.36.24.tar.gz", hash = "sha256:13ad42dec15a1c7da3dbba616e5f8ddc54b922e3a8420203f22533650ed1fe0d"},
+    {file = "hatchet_sdk-0.38.3-py3-none-any.whl", hash = "sha256:788a7a45a883808a7e30438eab8835d60d97ce73823c71d6cdabf598108b2fc5"},
+    {file = "hatchet_sdk-0.38.3.tar.gz", hash = "sha256:1437c15b8e271837a21c19c655c8b74e27ec5c6db06d250c42697765da11e14b"},
 ]
 
 [package.dependencies]
@@ -3191,10 +3177,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = [
-    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
-]
+numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
 tzdata = ">=2022.7"
@@ -5750,5 +5733,5 @@ ingestion-bundle = ["aiofiles", "aioshutil", "beautifulsoup4", "bs4", "markdown"
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.11,<3.13"
-content-hash = "ae304d2dee6e5258a0cae4cc0f414e4bc2be5d7fd7925ff32fad30cea94f5929"
+python-versions = ">=3.12,<3.13"
+content-hash = "d647a5f3523f38b18090aada3c6fad4b3ba01b42503901a056c7098534498694"
