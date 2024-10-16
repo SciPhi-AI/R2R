@@ -160,7 +160,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                     return {
                         "community_number": community_number,
                         "name": "N/A",
-                        "error": str(e)
+                        "error": str(e),
                     }
 
         community_report = CommunityReport(

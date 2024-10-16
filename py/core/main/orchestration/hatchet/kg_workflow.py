@@ -342,6 +342,7 @@ def hatchet_kg_factory(
                 return {
                     "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds"
                 }
+
     return {
         "kg-extract": KGExtractDescribeEmbedWorkflow(service),
         "create-graph": CreateGraphWorkflow(service),
