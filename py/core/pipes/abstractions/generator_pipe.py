@@ -8,7 +8,7 @@ from core.base import (
     CompletionRecord,
     PipeType,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
@@ -26,7 +26,7 @@ class GeneratorPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
@@ -47,7 +47,6 @@ class GeneratorPipe(AsyncPipe):
         state: AsyncState,
         run_id: UUID,
         rag_generation_config: GenerationConfig,
-        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:

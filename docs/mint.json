@@ -108,6 +108,7 @@
               "pages": [
                 "documentation/python-sdk/introduction",
                 "documentation/python-sdk/ingestion",
+                "documentation/python-sdk/graphrag",
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
                 "documentation/python-sdk/collections",
@@ -122,9 +123,22 @@
                 "documentation/js-sdk/ingestion",
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
+                "documentation/js-sdk/collections",
                 "documentation/js-sdk/observability"
               ]
             },
+            {
+              "icon": "desktop",
+              "group": "CLI",
+              "pages": [
+                "documentation/cli/introduction",
+                "documentation/cli/server",
+                "documentation/cli/ingestion",
+                "documentation/cli/graph",
+                "documentation/cli/management"
+              ]
+            },
+
             "documentation/api-reference"
           ]
         },
@@ -293,14 +307,18 @@
       "pages": [
         "api-reference/endpoint/ingest_files",
         "api-reference/endpoint/ingest_chunks",
-        "api-reference/endpoint/update_files"
+        "api-reference/endpoint/update_files",
+        "api-reference/endpoint/create_vector_index"
       ]
     },
     {
       "group": "Knowledge Graph",
       "pages": [
         "api-reference/endpoint/create_graph",
-        "api-reference/endpoint/enrich_graph"
+        "api-reference/endpoint/enrich_graph",
+        "api-reference/endpoint/entities",
+        "api-reference/endpoint/triples",
+        "api-reference/endpoint/communities"
       ]
     },
     {
@@ -308,7 +326,8 @@
       "pages": [
         "api-reference/endpoint/search",
         "api-reference/endpoint/rag",
-        "api-reference/endpoint/agent"
+        "api-reference/endpoint/agent",
+        "api-reference/endpoint/completion"
       ]
     },
     {
@@ -369,8 +388,7 @@
     {
       "group": "Analytics and Observability",
       "pages": [
-        "api-reference/endpoint/analytics",
-        "api-reference/endpoint/score_completion"
+        "api-reference/endpoint/analytics"
       ]
     },
     {
@@ -383,6 +401,7 @@
       "group": "General",
       "pages": [
         "cookbooks/walkthrough",
+        "cookbooks/ingestion",
         "cookbooks/hybrid-search",
         "cookbooks/graphrag",
         "cookbooks/advanced-rag",

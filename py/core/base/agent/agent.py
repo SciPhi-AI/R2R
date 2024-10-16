@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type, Union
 
@@ -14,6 +15,8 @@ from core.base.abstractions import (
 from core.base.providers import CompletionProvider, PromptProvider
 
 from .base import Tool, ToolResult
+
+logger = logging.getLogger()
 
 
 class Conversation:
@@ -42,7 +45,7 @@ class Conversation:
         async with self._lock:
             self.messages.append(message)
 
-    async def get_messages(self) -> List[Dict[str, Any]]:
+    async def get_messages(self) -> list[dict[str, Any]]:
         async with self._lock:
             return [
                 {**msg.model_dump(exclude_none=True), "role": str(msg.role)}
@@ -65,7 +68,7 @@ class AgentConfig(BaseModel):
             for k, v in kwargs.items()
             if k in base_args
         }
-        return cls(**filtered_kwargs)
+        return cls(**filtered_kwargs)  # type: ignore
 
 
 class Agent(ABC):
@@ -182,77 +185,58 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
-        (
-            (
-                await self.conversation.add_message(
-                    Message(
-                        role="assistant",
-                        tool_calls=[
-                            {
-                                "id": tool_id,
-                                "function": {
-                                    "name": function_name,
-                                    "arguments": function_arguments,
-                                },
-                            }
-                        ],
-                    )
-                )
-            )
-            if tool_id
-            else (
-                await self.conversation.add_message(
-                    Message(
-                        role="assistant",
-                        function_call={
-                            "name": function_name,
-                            "arguments": function_arguments,
-                        },
-                    )
-                )
+        await self.conversation.add_message(
+            Message(
+                role="assistant",
+                tool_calls=(
+                    [
+                        {
+                            "id": tool_id,
+                            "function": {
+                                "name": function_name,
+                                "arguments": function_arguments,
+                            },
+                        }
+                    ]
+                    if tool_id
+                    else None
+                ),
+                function_call=(
+                    {
+                        "name": function_name,
+                        "arguments": function_arguments,
+                    }
+                    if not tool_id
+                    else None
+                ),
             )
         )
 
-        # TODO - We always use tools, not functions
-        # Think of ways to make this clearer
         if tool := next(
             (t for t in self.tools if t.name == function_name), None
         ):
             merged_kwargs = {**kwargs, **json.loads(function_arguments)}
-
             raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
-
             tool_result = ToolResult(
                 raw_result=raw_result,
                 llm_formatted_result=llm_formatted_result,
             )
-
             if tool.stream_function:
                 tool_result.stream_result = tool.stream_function(raw_result)
-
-            (
-                (
-                    await self.conversation.add_message(
-                        Message(
-                            role="tool",
-                            content=str(tool_result.llm_formatted_result),
-                            name=function_name,
-                        )
-                    )
-                )
-                if tool_id
-                else (
-                    await self.conversation.add_message(
-                        Message(
-                            role="function",
-                            content=str(tool_result.llm_formatted_result),
-                            name=function_name,
-                        )
-                    )
-                )
+        else:
+            error_message = f"The requested tool '{function_name}' is not available. Available tools: {', '.join(t.name for t in self.tools)}"
+            tool_result = ToolResult(
+                raw_result=error_message,
+                llm_formatted_result=error_message,
             )
 
-            return tool_result
-        else:
-            raise ValueError(f"Tool {function_name} not found")
+        await self.conversation.add_message(
+            Message(
+                role="tool" if tool_id else "function",
+                content=str(tool_result.llm_formatted_result),
+                name=function_name,
+            )
+        )
+
+        return tool_result

@@ -1,9 +1,9 @@
-graphrag_community_reports_prompt:
+graphrag_community_reports:
   template: |
-      You are an AI assistant that helps a human analyst perform information discovery within the ecosystem of Y Combinator startups. Information discovery is the process of identifying and assessing relevant information associated with certain startups and their interconnections within the Y Combinator network.
+      You are an AI assistant that helps a human analyst to perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network.
 
       # Goal
-      Write a comprehensive report of a Y Combinator community, given a list of startups that belong to the community, their relationships, and optional associated claims. The report will be used to inform decision-makers about information related to the startups and their potential impact. The content of this report includes an overview of the community's key startups, their funding status, technical capabilities, reputation, and noteworthy claims.
+      Write a comprehensive report of a community, given a list of entities that belong to the community as well as their relationships and optional associated claims. The report will be used to inform decision-makers about information associated with the community and their potential impact. The content of this report includes an overview of the community's key entities, their legal compliance, technical capabilities, reputation, and noteworthy claims.
 
       # Report Structure
 

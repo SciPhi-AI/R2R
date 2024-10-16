@@ -1,8 +1,10 @@
 import asyncio
 import logging
+import uuid
 from typing import TYPE_CHECKING
 
-from hatchet_sdk import Context
+from hatchet_sdk import ConcurrencyLimitStrategy, Context
+from litellm import AuthenticationError
 
 from core.base import (
     DocumentExtraction,
@@ -19,7 +21,7 @@ from ...services import IngestionService, IngestionServiceAdapter
 if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def hatchet_ingestion_factory(
@@ -33,111 +35,146 @@ def hatchet_ingestion_factory(
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.ingestion_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context: Context) -> str:
+            # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+                    input_data
+                )
+                return str(parsed_data["user"].id)
+            except Exception as e:
+                return str(uuid.uuid4())
+
         @orchestration_provider.step(timeout="60m")
         async def parse(self, context: Context) -> dict:
-            input_data = context.workflow_input()["request"]
-            parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
-                input_data
-            )
+            try:
+                logger.info("Initiating ingestion workflow, step: parse")
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
+                    input_data
+                )
 
-            ingestion_result = (
-                await self.ingestion_service.ingest_file_ingress(**parsed_data)
-            )
+                ingestion_result = (
+                    await self.ingestion_service.ingest_file_ingress(
+                        **parsed_data
+                    )
+                )
 
-            document_info = ingestion_result["info"]
+                document_info = ingestion_result["info"]
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.PARSING,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.PARSING,
+                )
 
-            ingestion_config = parsed_data["ingestion_config"] or {}
-            extractions_generator = await self.ingestion_service.parse_file(
-                document_info, ingestion_config
-            )
+                ingestion_config = parsed_data["ingestion_config"] or {}
+                extractions_generator = (
+                    await self.ingestion_service.parse_file(
+                        document_info, ingestion_config
+                    )
+                )
 
-            extractions = []
-            async for extraction in extractions_generator:
-                extractions.append(extraction)
+                extractions = []
+                async for extraction in extractions_generator:
+                    extractions.append(extraction)
 
-            serializable_extractions = [
-                extraction.to_dict() for extraction in extractions
-            ]
+                # serializable_extractions = [
+                #     extraction.to_dict() for extraction in extractions
+                # ]
 
-            return {
-                "status": "Successfully extracted data",
-                "extractions": serializable_extractions,
-                "document_info": document_info.to_dict(),
-            }
+                # return {
+                #     "status": "Successfully extracted data",
+                #     "extractions": serializable_extractions,
+                #     "document_info": document_info.to_dict(),
+                # }
 
-        @orchestration_provider.step(parents=["parse"], timeout="60m")
-        async def embed(self, context: Context) -> dict:
-            document_info_dict = context.step_output("parse")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+                # @orchestration_provider.step(parents=["parse"], timeout="60m")
+                # async def embed(self, context: Context) -> dict:
+                #     document_info_dict = context.step_output("parse")["document_info"]
+                #     document_info = DocumentInfo(**document_info_dict)
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.EMBEDDING,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.EMBEDDING,
+                )
 
-            extractions = context.step_output("parse")["extractions"]
+                # extractions = context.step_output("parse")["extractions"]
 
-            embedding_generator = await self.ingestion_service.embed_document(
-                extractions
-            )
+                embedding_generator = (
+                    await self.ingestion_service.embed_document(
+                        [extraction.to_dict() for extraction in extractions]
+                    )
+                )
 
-            embeddings = []
-            async for embedding in embedding_generator:
-                embeddings.append(embedding)
+                embeddings = []
+                async for embedding in embedding_generator:
+                    embeddings.append(embedding)
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.STORING,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.STORING,
+                )
 
-            storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
-                embeddings
-            )
+                storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
+                    embeddings
+                )
 
-            async for _ in storage_generator:
-                pass
+                async for _ in storage_generator:
+                    pass
 
-            #     return {
-            #         "document_info": document_info.to_dict(),
-            #     }
+                #     return {
+                #         "document_info": document_info.to_dict(),
+                #     }
 
-            # @orchestration_provider.step(parents=["embed"], timeout="60m")
-            # async def finalize(self, context: Context) -> dict:
-            #     document_info_dict = context.step_output("embed")["document_info"]
-            #     print("Calling finalize for document_info_dict = ", document_info_dict)
-            #     document_info = DocumentInfo(**document_info_dict)
+                # @orchestration_provider.step(parents=["embed"], timeout="60m")
+                # async def finalize(self, context: Context) -> dict:
+                #     document_info_dict = context.step_output("embed")["document_info"]
+                #     print("Calling finalize for document_info_dict = ", document_info_dict)
+                #     document_info = DocumentInfo(**document_info_dict)
 
-            is_update = context.workflow_input()["request"].get("is_update")
+                is_update = context.workflow_input()["request"].get(
+                    "is_update"
+                )
 
-            await self.ingestion_service.finalize_ingestion(
-                document_info, is_update=is_update
-            )
+                await self.ingestion_service.finalize_ingestion(
+                    document_info, is_update=is_update
+                )
 
-            await self.ingestion_service.update_document_status(
-                document_info,
-                status=IngestionStatus.SUCCESS,
-            )
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.SUCCESS,
+                )
 
-            collection_id = await service.providers.database.relational.assign_document_to_collection(
-                document_id=document_info.id,
-                collection_id=generate_default_user_collection_id(
-                    document_info.user_id
-                ),
-            )
+                collection_id = await service.providers.database.relational.assign_document_to_collection(
+                    document_id=document_info.id,
+                    collection_id=generate_default_user_collection_id(
+                        document_info.user_id
+                    ),
+                )
 
-            service.providers.database.vector.assign_document_to_collection(
-                document_id=document_info.id, collection_id=collection_id
-            )
+                service.providers.database.vector.assign_document_to_collection(
+                    document_id=document_info.id, collection_id=collection_id
+                )
 
-            return {
-                "status": "Successfully finalized ingestion",
-                "document_info": document_info.to_dict(),
-            }
+                return {
+                    "status": "Successfully finalized ingestion",
+                    "document_info": document_info.to_dict(),
+                }
+            except AuthenticationError as e:
+                raise R2RException(
+                    status_code=401,
+                    message="Authentication error: Invalid API key or credentials.",
+                )
+            except Exception as e:
+                raise R2RException(
+                    status_code=500,
+                    message=f"Error during ingestion: {str(e)}",
+                )
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
@@ -421,11 +458,38 @@ def hatchet_ingestion_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
+    @orchestration_provider.workflow(
+        name="create-vector-index", timeout="360m"
+    )
+    class HatchetCreateVectorIndexWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="60m")
+        async def create_vector_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_create_vector_index_input(
+                    input_data
+                )
+            )
+
+            self.ingestion_service.providers.database.vector.create_index(
+                **parsed_data
+            )
+
+            return {
+                "status": "Vector index creation queued successfully.",
+            }
+
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
+    create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
+
     return {
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
+        "create_vector_index": create_vector_index_workflow,
     }

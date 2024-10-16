@@ -1,8 +1,14 @@
-# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-
-name: R2R Full Python Integration Test
+name: R2R Full Python Integration Test (ubuntu)
 
 on:
+  push:
+    branches:
+      - dev
+      - dev-minor
+  pull_request:
+    branches:
+      - dev
+      - dev-minor
   workflow_dispatch:
 
 jobs:
@@ -11,7 +17,6 @@ jobs:
 
     strategy:
       matrix:
-#        os: [ubuntu-latest, windows-latest, macos-latest]
         os: [ubuntu-latest]
         test_category:
           - cli-ingestion
@@ -38,8 +43,10 @@ jobs:
 
       - name: Setup and start Docker
         uses: ./.github/actions/setup-docker
+
+      - name: Login Docker
+        uses: ./.github/actions/login-docker
         with:
-          os: ${{ matrix.os }}
           docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 

@@ -4,7 +4,7 @@ import logging
 
 import requests
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def process_frame_with_openai(

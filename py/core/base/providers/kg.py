@@ -17,7 +17,7 @@ from ..abstractions import (
 )
 from .base import ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 # TODO - Bolt down types for KGConfig
@@ -89,8 +89,15 @@ class KGProvider(ABC):
         limit: int,
         levels: list[int] | None = None,
         community_numbers: list[int] | None = None,
-    ) -> list[CommunityReport]:
+    ) -> dict:
         """Abstract method to get communities."""
+        pass
+
+    @abstractmethod
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        """Abstract method to get existing entity extraction ids."""
         pass
 
     @abstractmethod
@@ -100,7 +107,7 @@ class KGProvider(ABC):
         offset: int,
         limit: int,
         entity_ids: list[str] | None = None,
-        with_description: bool = False,
+        entity_table_name: str = "entity_embedding",
     ) -> dict:
         """Abstract method to get entities."""
         pass
@@ -111,6 +118,7 @@ class KGProvider(ABC):
         collection_id: UUID,
         offset: int,
         limit: int,
+        entity_names: list[str] | None = None,
         triple_ids: list[str] | None = None,
     ) -> dict:
         """Abstract method to get triples."""
@@ -195,6 +203,8 @@ class KGProvider(ABC):
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
+        distinct: bool = False,
+        entity_table_name: str = "entity_embedding",
     ) -> int:
         """Abstract method to get the entity count."""
         pass
@@ -204,6 +214,13 @@ class KGProvider(ABC):
         self, collection_id: UUID, cascade: bool
     ) -> None:
         """Abstract method to delete the graph for a collection."""
+        pass
+
+    @abstractmethod
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        """Abstract method to delete the node via document id."""
         pass
 
     @abstractmethod
@@ -235,6 +252,11 @@ class KGProvider(ABC):
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
         """Abstract method to check if community reports exist."""
+        pass
+
+    @abstractmethod
+    async def get_community_count(self, collection_id: UUID) -> int:
+        """Abstract method to get the community count."""
         pass
 
 

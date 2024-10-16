@@ -1,4 +1,5 @@
 from .base_utils import (
+    _decorate_vector_type,
     decrement_version,
     format_entity_types,
     format_relations,
@@ -16,6 +17,7 @@ from .base_utils import (
     llm_cost_per_million_tokens,
     run_pipeline,
     to_async_generator,
+    validate_uuid,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -39,7 +41,10 @@ __all__ = [
     "run_pipeline",
     "to_async_generator",
     "llm_cost_per_million_tokens",
+    "validate_uuid",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
+    # Vector utils
+    "_decorate_vector_type",
 ]

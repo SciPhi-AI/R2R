@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import random
+import time
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
@@ -12,12 +13,13 @@ from core.base import (
     EmbeddingProvider,
     KGProvider,
     PipeType,
-    RunLoggingSingleton,
+    PromptProvider,
+    R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGEntityDescriptionPipe(AsyncPipe):
@@ -32,9 +34,10 @@ class KGEntityDescriptionPipe(AsyncPipe):
         self,
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
+        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,
@@ -46,6 +49,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         )
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
+        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def _run_logic(  # type: ignore
@@ -60,24 +64,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         Extracts description from the input.
         """
 
-        # TODO - Move this to a .yaml file and load it as we do in triples extraction
-        summarization_content = """
-            Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
-
-            Entity Info:
-            {entity_info}
-            Triples:
-            {triples_txt}
-
-            Your summary should:
-            1. Clearly define the entity's core concept or purpose
-            2. Highlight key relationships or attributes from the triples
-            3. Integrate any relevant information from the existing description
-            4. Maintain a neutral, factual tone
-            5. Be approximately 2-3 sentences long
-
-            Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
-        """
+        start_time = time.time()
 
         def truncate_info(info_list, max_length):
             random.shuffle(info_list)
@@ -119,21 +106,19 @@ class KGEntityDescriptionPipe(AsyncPipe):
             out_entity.description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": summarization_content.format(
-                                    entity_info=truncate_info(
-                                        entity_info,
-                                        max_description_input_length,
-                                    ),
-                                    triples_txt=truncate_info(
-                                        triples_txt,
-                                        max_description_input_length,
-                                    ),
+                        messages=self.prompt_provider._get_message_payload(
+                            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_entity_description_prompt,
+                            task_inputs={
+                                "entity_info": truncate_info(
+                                    entity_info,
+                                    max_description_input_length,
                                 ),
-                            }
-                        ],
+                                "triples_txt": truncate_info(
+                                    triples_txt,
+                                    max_description_input_length,
+                                ),
+                            },
+                        ),
                         generation_config=self.kg_provider.config.kg_creation_settings.generation_config,
                     )
                 )
@@ -167,16 +152,23 @@ class KGEntityDescriptionPipe(AsyncPipe):
         offset = input.message["offset"]
         limit = input.message["limit"]
         document_id = input.message["document_id"]
+        logger = input.message["logger"]
+
+        logger.info(
+            f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
+        )
+
         entity_map = await self.kg_provider.get_entity_map(
             offset, limit, document_id
         )
-
         total_entities = len(entity_map)
+
         logger.info(
-            f"Processing {total_entities} entities for document {document_id}"
+            f"KGEntityDescriptionPipe: Got entity map for document {document_id}, total entities: {total_entities}, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         workflows = []
+
         for i, (entity_name, entity_info) in enumerate(entity_map.items()):
             try:
                 workflows.append(
@@ -190,9 +182,15 @@ class KGEntityDescriptionPipe(AsyncPipe):
             except Exception as e:
                 logger.error(f"Error processing entity {entity_name}: {e}")
 
+        completed_entities = 0
         for result in asyncio.as_completed(workflows):
+            if completed_entities % 100 == 0:
+                logger.info(
+                    f"KGEntityDescriptionPipe: Completed {completed_entities+1} of {total_entities} entities for document {document_id}",
+                )
             yield await result
+            completed_entities += 1
 
         logger.info(
-            f"Processed {total_entities} entities for document {document_id}"
+            f"KGEntityDescriptionPipe: Processed {total_entities} entities for document {document_id}, time from start: {time.time() - start_time:.2f} seconds",
         )

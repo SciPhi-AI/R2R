@@ -8,10 +8,10 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base.logging import RunType
-from core.base.logging.run_logger import RunLoggingSingleton
+from core.base.logging.r2r_logger import R2RLoggingProvider
 from core.base.logging.run_manager import RunManager, manage_run
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PipeType(Enum):
@@ -92,12 +92,12 @@ class AsyncPipe(Generic[T]):
         self,
         config: PipeConfig,
         type: PipeType = PipeType.OTHER,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         run_manager: Optional[RunManager] = None,
     ):
         self._config = config or self.PipeConfig()
         self._type = type
-        self.pipe_logger = pipe_logger or RunLoggingSingleton()
+        self.pipe_logger = pipe_logger or R2RLoggingProvider()
         self.log_queue: asyncio.Queue = asyncio.Queue()
         self.log_worker_task = None
         self._run_manager = run_manager or RunManager(self.pipe_logger)
@@ -139,13 +139,13 @@ class AsyncPipe(Generic[T]):
         state = state or AsyncState()
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
-            async with manage_run(run_manager, RunType.UNSPECIFIED) as run_id:
+            async with manage_run(run_manager, RunType.UNSPECIFIED) as run_id:  # type: ignore
                 self.log_worker_task = asyncio.create_task(  # type: ignore
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
                 try:
                     async for result in self._run_logic(  # type: ignore
-                        input, state, run_id, *args, **kwargs
+                        input, state, run_id, *args, **kwargs  # type: ignore
                     ):
                         yield result
                 finally:

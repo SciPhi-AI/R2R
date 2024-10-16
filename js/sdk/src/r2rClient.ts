@@ -22,6 +22,7 @@ import {
   VectorSearchSettings,
   KGSearchSettings,
   GenerationConfig,
+  RawChunk,
 } from "./models";
 
 function handleRequestError(response: AxiosResponse): void {
@@ -644,6 +645,26 @@ export class r2rClient {
     });
   }
 
+  @feature("ingestChunks")
+  async ingestChunks(
+    chunks: RawChunk[],
+    documentId?: string,
+    metadata?: Record<string, any>,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    return await this._makeRequest("POST", "ingest_chunks", {
+      data: {
+        chunks: chunks,
+        document_id: documentId,
+        metadata: metadata,
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
   // -----------------------------------------------------------------------------
   //
   // Management
@@ -763,29 +784,6 @@ export class r2rClient {
     this._ensureAuthenticated();
 
     return this._makeRequest("GET", "app_settings");
-  }
-
-  /**
-   * Assign a score to a message from an LLM completion. The score should be a float between -1.0 and 1.0.
-   * @param message_id The ID of the message to score.
-   * @param score The score to assign to the message.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("scoreCompletion")
-  async scoreCompletion(message_id: string, score: number): Promise<any> {
-    this._ensureAuthenticated();
-
-    const data = {
-      message_id,
-      score,
-    };
-
-    return this._makeRequest("POST", "score_completion", {
-      data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
   }
 
   /**

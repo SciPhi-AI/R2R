@@ -5,9 +5,13 @@ from uuid import UUID
 
 import pytest
 
-from core import LocalRunLoggingProvider, LoggingConfig, generate_run_id
+from core import (
+    LoggingConfig,
+    SqlitePersistentLoggingProvider,
+    generate_run_id,
+)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @pytest.mark.asyncio

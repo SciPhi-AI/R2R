@@ -83,11 +83,9 @@ __all__ = [
     "LogFilterCriteria",
     "LogProcessor",
     # Logging Providers
-    "LocalRunLoggingProvider",
+    "SqlitePersistentLoggingProvider",
     "LoggingConfig",
-    "PostgresLoggingConfig",
-    "PostgresRunLoggingProvider",
-    "RunLoggingSingleton",
+    "R2RLoggingProvider",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -144,6 +142,7 @@ __all__ = [
     "to_async_generator",
     "format_search_results_for_llm",
     "format_search_results_for_stream",
+    "validate_uuid",
     # ID generation
     "generate_run_id",
     "generate_document_id",

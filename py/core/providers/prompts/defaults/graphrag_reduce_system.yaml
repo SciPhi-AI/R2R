@@ -1,4 +1,4 @@
-graphrag_reduce_system_prompt:
+graphrag_reduce_system:
   template: |
     ---Role---
     You are a helpful assistant responding to questions about a dataset by synthesizing perspectives from multiple analysts.

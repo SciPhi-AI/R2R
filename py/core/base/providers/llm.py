@@ -5,6 +5,8 @@ from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator, Generator, Optional
 
+from litellm import AuthenticationError
+
 from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
@@ -13,7 +15,7 @@ from core.base.abstractions import (
 
 from .base import Provider, ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class CompletionConfig(ProviderConfig):
@@ -56,6 +58,8 @@ class CompletionProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
+            except AuthenticationError as e:
+                raise
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"
@@ -77,6 +81,8 @@ class CompletionProvider(Provider):
                     async for chunk in await self._execute_task(task):
                         yield chunk
                 return  # Successful completion of the stream
+            except AuthenticationError as e:
+                raise
             except Exception as e:
                 logger.warning(
                     f"Streaming request failed (attempt {retries + 1}): {str(e)}"
@@ -142,20 +148,6 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         response = await self._execute_with_backoff_async(task)
-        return LLMChatCompletion(**response.dict())
-
-    def get_completion(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> LLMChatCompletion:
-        task = {
-            "messages": messages,
-            "generation_config": generation_config,
-            "kwargs": kwargs,
-        }
-        response = self._execute_with_backoff_sync(task)
         return LLMChatCompletion(**response.dict())
 
     async def aget_completion_stream(

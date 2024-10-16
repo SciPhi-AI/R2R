@@ -12,7 +12,7 @@ from core.base.providers import OrchestrationProvider
 
 from ..services.base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class BaseRouter:

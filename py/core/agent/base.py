@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
@@ -10,6 +11,8 @@ from core.base.abstractions import (
     syncable,
 )
 from core.base.agent import Agent, Conversation
+
+logger = logging.getLogger()
 
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):
@@ -45,11 +48,12 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
     @syncable
     async def arun(
         self,
+        messages: list[Message],
         system_instruction: Optional[str] = None,
-        messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
     ) -> list[dict]:
+        # TODO - Make this method return a list of messages.
         self._reset()
         await self._setup(system_instruction)
 
@@ -66,7 +70,22 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
             )
             await self.process_llm_response(response, *args, **kwargs)
 
-        return await self.conversation.get_messages()
+        # Get the output messages
+        all_messages: list[dict] = await self.conversation.get_messages()
+        all_messages.reverse()
+
+        output_messages = []
+        for message_2 in all_messages:
+            if (
+                message_2.get("content")
+                and message_2.get("content") != messages[-1].content
+            ):
+                output_messages.append(message_2)
+            else:
+                break
+        output_messages.reverse()
+
+        return output_messages
 
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
@@ -116,14 +135,14 @@ class R2RStreamingAgent(R2RAgent):
             generation_config = self.get_generation_config(
                 messages_list[-1], stream=True
             )
-            stream = self.llm_provider.get_completion_stream(
+            stream = self.llm_provider.aget_completion_stream(
                 messages_list,
                 generation_config,
             )
-            async for chunk in self.process_llm_response(
+            async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs
             ):
-                yield chunk
+                yield proc_chunk
 
     def run(
         self, system_instruction, messages, *args, **kwargs
@@ -134,7 +153,7 @@ class R2RStreamingAgent(R2RAgent):
 
     async def process_llm_response(  # type: ignore
         self,
-        stream: Generator[LLMChatCompletionChunk, None, None],
+        stream: AsyncGenerator[LLMChatCompletionChunk, None],
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
@@ -142,22 +161,21 @@ class R2RStreamingAgent(R2RAgent):
         function_arguments = ""
         content_buffer = ""
 
-        for chunk in stream:
+        async for chunk in stream:
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
                     if not tool_call.function:
-                        raise ValueError(
-                            "Tool function not found in tool call."
-                        )
+                        logger.info("Tool function not found in tool call.")
+                        continue
                     name = tool_call.function.name
                     if not name:
-                        raise ValueError("Tool name not found in tool call.")
+                        logger.info("Tool name not found in tool call.")
+                        continue
                     arguments = tool_call.function.arguments
                     if not arguments:
-                        raise ValueError(
-                            "Tool arguments not found in tool call."
-                        )
+                        logger.info("Tool arguments not found in tool call.")
+                        continue
 
                     results = await self.handle_function_or_tool_call(
                         name,
@@ -170,7 +188,7 @@ class R2RStreamingAgent(R2RAgent):
                     yield "<tool_call>"
                     yield f"<name>{name}</name>"
                     yield f"<arguments>{arguments}</arguments>"
-                    yield f"<results>{results}</results>"
+                    yield f"<results>{results.llm_formatted_result}</results>"
                     yield "</tool_call>"
 
             if delta.function_call:
@@ -186,9 +204,8 @@ class R2RStreamingAgent(R2RAgent):
 
             if chunk.choices[0].finish_reason == "function_call":
                 if not function_name:
-                    raise ValueError(
-                        "Function name not found in function call."
-                    )
+                    logger.info("Function name not found in function call.")
+                    continue
 
                 yield "<function_call>"
                 yield f"<name>{function_name}</name>"
@@ -206,8 +223,6 @@ class R2RStreamingAgent(R2RAgent):
                 function_name = None
                 function_arguments = ""
 
-                self.arun(*args, **kwargs)
-
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
                     await self.conversation.add_message(
@@ -215,3 +230,11 @@ class R2RStreamingAgent(R2RAgent):
                     )
                 self._completed = True
                 yield "</completion>"
+
+        # Handle any remaining content after the stream ends
+        if content_buffer and not self._completed:
+            await self.conversation.add_message(
+                Message(role="assistant", content=content_buffer)
+            )
+            self._completed = True
+            yield "</completion>"

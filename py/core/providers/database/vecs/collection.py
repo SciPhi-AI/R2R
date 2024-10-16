@@ -8,6 +8,7 @@ All public classes, enums, and functions are re-exported by the top level `vecs`
 from __future__ import annotations
 
 import math
+import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -33,6 +34,16 @@ from sqlalchemy.types import Float, UserDefinedType
 
 from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
+from shared.abstractions.vector import (
+    INDEX_MEASURE_TO_SQLA_ACC,
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
+    VectorQuantizationType,
+    VectorTableName,
+)
+from shared.utils import _decorate_vector_type
 
 from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
@@ -47,97 +58,35 @@ if TYPE_CHECKING:
     from vecs.client import Client
 
 
-class IndexMethod(str, Enum):
-    """
-    An enum representing the index methods available.
-
-    This class currently only supports the 'ivfflat' method but may
-    expand in the future.
-
-    Attributes:
-        auto (str): Automatically choose the best available index method.
-        ivfflat (str): The ivfflat index method.
-        hnsw (str): The hnsw index method.
-    """
-
-    auto = "auto"
-    ivfflat = "ivfflat"
-    hnsw = "hnsw"
-
-
-class IndexMeasure(str, Enum):
-    """
-    An enum representing the types of distance measures available for indexing.
-
-    Attributes:
-        cosine_distance (str): The cosine distance measure for indexing.
-        l2_distance (str): The Euclidean (L2) distance measure for indexing.
-        max_inner_product (str): The maximum inner product measure for indexing.
-    """
-
-    cosine_distance = "cosine_distance"
-    l2_distance = "l2_distance"
-    max_inner_product = "max_inner_product"
-
-
-@dataclass
-class IndexArgsIVFFlat:
-    """
-    A class for arguments that can optionally be supplied to the index creation
-    method when building an IVFFlat type index.
-
-    Attributes:
-        nlist (int): The number of IVF centroids that the index should use
-    """
-
-    n_lists: int
-
-
-@dataclass
-class IndexArgsHNSW:
-    """
-    A class for arguments that can optionally be supplied to the index creation
-    method when building an HNSW type index.
-
-    Ref: https://github.com/pgvector/pgvector#index-options
-
-    Both attributes are Optional in case the user only wants to specify one and
-    leave the other as default
-
-    Attributes:
-        m (int): Maximum number of connections per node per layer (default: 16)
-        ef_construction (int): Size of the dynamic candidate list for
-            constructing the graph (default: 64)
-    """
-
-    m: Optional[int] = 16
-    ef_construction: Optional[int] = 64
-
-
-INDEX_MEASURE_TO_OPS = {
-    # Maps the IndexMeasure enum options to the SQL ops string required by
-    # the pgvector `create index` statement
-    IndexMeasure.cosine_distance: "vector_cosine_ops",
-    IndexMeasure.l2_distance: "vector_l2_ops",
-    IndexMeasure.max_inner_product: "vector_ip_ops",
-}
-
-INDEX_MEASURE_TO_SQLA_ACC = {
-    IndexMeasure.cosine_distance: lambda x: x.cosine_distance,
-    IndexMeasure.l2_distance: lambda x: x.l2_distance,
-    IndexMeasure.max_inner_product: lambda x: x.max_inner_product,
-}
+def index_measure_to_ops(
+    measure: IndexMeasure, quantization_type: VectorQuantizationType
+):
+    return _decorate_vector_type(measure.ops, quantization_type)
 
 
 class Vector(UserDefinedType):
     cache_ok = True
 
-    def __init__(self, dim=None):
+    def __init__(
+        self,
+        dim=None,
+        quantization_type: Optional[
+            VectorQuantizationType
+        ] = VectorQuantizationType.FP32,
+    ):
         super(UserDefinedType, self).__init__()
         self.dim = dim
+        self.quantization_type = quantization_type
 
     def get_col_spec(self, **kw):
-        return "VECTOR" if self.dim is None else f"VECTOR({self.dim})"
+        col_spec = ""
+        if self.dim is None:
+            col_spec = _decorate_vector_type("", self.quantization_type)
+        else:
+            col_spec = _decorate_vector_type(
+                f"({self.dim})", self.quantization_type
+            )
+        return col_spec
 
     def bind_processor(self, dialect):
         def process(value):
@@ -203,6 +152,7 @@ class Collection:
         self,
         name: str,
         dimension: int,
+        quantization_type: VectorQuantizationType,
         client: Client,
         adapter: Optional[Adapter] = None,
     ):
@@ -222,8 +172,13 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
+        self.quantization_type = quantization_type
         self.table = _build_table(
-            client.project_name, name, client.meta, dimension
+            client.project_name,
+            name,
+            client.meta,
+            dimension,
+            quantization_type,
         )
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
@@ -934,7 +889,7 @@ class Collection:
         if index_name is None:
             return False
 
-        ops = INDEX_MEASURE_TO_OPS.get(measure)
+        ops = index_measure_to_ops(measure, self.quantization_type)
         if ops is None:
             return False
 
@@ -955,13 +910,15 @@ class Collection:
 
     def create_index(
         self,
+        table_name: Optional[VectorTableName] = None,
         measure: IndexMeasure = IndexMeasure.cosine_distance,
         method: IndexMethod = IndexMethod.auto,
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
-        replace=True,
-        concurrently=True,
+        replace: bool = True,
+        concurrently: bool = True,
+        quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
     ) -> None:
         """
         Creates an index for the collection.
@@ -990,11 +947,26 @@ class Collection:
             method (IndexMethod, optional): The indexing method to use. Defaults to 'auto'.
             index_arguments: (IndexArgsIVFFlat | IndexArgsHNSW, optional): Index type specific arguments
             replace (bool, optional): Whether to replace the existing index. Defaults to True.
-
+            concurrently (bool, optional): Whether to create the index concurrently. Defaults to True.
         Raises:
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
+        if table_name == VectorTableName.CHUNKS:
+            table_name = f"{self.client.project_name}.{self.table.name}"
+            col_name = "vec"
+        elif table_name == VectorTableName.ENTITIES:
+            table_name = (
+                f"{self.client.project_name}.{VectorTableName.ENTITIES}"
+            )
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.COMMUNITIES:
+            table_name = (
+                f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
+            )
+            col_name = "embedding"
+        else:
+            raise ArgError("invalid table name")
         if method not in (
             IndexMethod.ivfflat,
             IndexMethod.hnsw,
@@ -1034,13 +1006,17 @@ class Collection:
                 "HNSW Unavailable. Upgrade your pgvector installation to > 0.5.0 to enable HNSW support"
             )
 
-        ops = INDEX_MEASURE_TO_OPS.get(measure)
+        ops = index_measure_to_ops(
+            measure, quantization_type=self.quantization_type
+        )
+
         if ops is None:
             raise ArgError("Unknown index measure")
 
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
         # Drop existing index if needed (must be outside of transaction)
+        # Doesn't drop
         if self.index is not None and replace:
             drop_index_sql = f'DROP INDEX {concurrently_sql} IF EXISTS {self.client.project_name}."{self.index}";'
             try:
@@ -1053,13 +1029,13 @@ class Collection:
                 raise Exception(f"Failed to drop existing index: {e}")
             self._index = None
 
-        unique_string = str(uuid4()).replace("-", "_")[0:7]
-        index_name = f"ix_{ops}_{method}__{unique_string}"
+        timestamp = time.strftime("%Y%m%d%H%M%S")
+        index_name = f"ix_{ops}_{method}__{timestamp}"
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
-        ON {self.client.project_name}."{self.table.name}"
-        USING {method} (vec {ops}) {self._get_index_options(method, index_arguments)};
+        ON {table_name}
+        USING {method} ({col_name} {ops}) {self._get_index_options(method, index_arguments)};
         """
 
         try:
@@ -1082,8 +1058,13 @@ class Collection:
 
 
 def _build_table(
-    project_name: str, name: str, meta: MetaData, dimension: int
+    project_name: str,
+    name: str,
+    meta: MetaData,
+    dimension: int,
+    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ) -> Table:
+
     table = Table(
         name,
         meta,
@@ -1095,7 +1076,11 @@ def _build_table(
             postgresql.ARRAY(postgresql.UUID),
             server_default="{}",
         ),
-        Column("vec", Vector(dimension), nullable=False),
+        Column(
+            "vec",
+            Vector(dimension, quantization_type=quantization_type),
+            nullable=False,
+        ),
         Column("text", postgresql.TEXT, nullable=True),
         Column(
             "fts",

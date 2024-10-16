@@ -38,7 +38,7 @@ class ProviderConfig(BaseModel, ABC):
             for k, v in kwargs.items()
             if k in base_args
         }
-        instance = cls(**filtered_kwargs)
+        instance = cls(**filtered_kwargs)  # type: ignore
         for k, v in kwargs.items():
             if k not in base_args:
                 instance.extra_fields[k] = v

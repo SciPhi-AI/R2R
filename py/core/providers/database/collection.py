@@ -14,7 +14,7 @@ from core.utils import (
 
 from .base import DatabaseMixin
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class CollectionMixin(DatabaseMixin):

@@ -4,12 +4,13 @@ from enum import Enum
 
 from .base import Provider, ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class IngestionConfig(ProviderConfig):
     provider: str = "r2r"
     excluded_parsers: list[str] = ["mp4"]
+    extra_parsers: dict[str, str] = {}
 
     @property
     def supported_providers(self) -> list[str]:

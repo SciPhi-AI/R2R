@@ -16,7 +16,7 @@ class CSVParser(AsyncParser[DataType]):
         self.StringIO = StringIO
 
     async def ingest(
-        self, data: Union[str, bytes]
+        self, data: Union[str, bytes], *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):
@@ -53,7 +53,11 @@ class CSVParserAdvanced(AsyncParser[DataType]):
         return sniffer.sniff(data, delimiters=",;").delimiter
 
     async def ingest(
-        self, data: Union[str, bytes], num_col_times_num_rows: int = 100
+        self,
+        data: Union[str, bytes],
+        num_col_times_num_rows: int = 100,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):

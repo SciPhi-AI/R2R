@@ -10,7 +10,7 @@ runs:
     - name: Set up Python environment
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
 
     - name: Install Poetry and dependencies on Ubuntu and macOS
       if: inputs.os == 'ubuntu-latest' || inputs.os == 'macos-latest'

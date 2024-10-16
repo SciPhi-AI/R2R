@@ -23,7 +23,7 @@ from core.base import (
     OrchestrationConfig,
     PromptConfig,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
@@ -31,7 +31,7 @@ from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class R2RProviderFactory:
@@ -148,11 +148,17 @@ class R2RProviderFactory:
             )
 
         vector_db_dimension = self.config.embedding.base_dimension
+        quantization_type = (
+            self.config.embedding.quantization_settings.quantization_type
+        )
         if db_config.provider == "postgres":
             from core.providers import PostgresDBProvider
 
             database_provider = PostgresDBProvider(
-                db_config, vector_db_dimension, crypto_provider=crypto_provider
+                db_config,
+                vector_db_dimension,
+                crypto_provider=crypto_provider,
+                quantization_type=quantization_type,
             )
             await database_provider.initialize()
             return database_provider
@@ -298,7 +304,6 @@ class R2RProviderFactory:
                 self.config.embedding, *args, **kwargs
             )
         )
-        print("self.config.ingestion = ", self.config.ingestion)
         ingestion_provider = (
             ingestion_provider_override
             or self.create_ingestion_provider(
@@ -704,7 +709,7 @@ class R2RPipelineFactory:
         )
 
     def configure_logging(self):
-        RunLoggingSingleton.configure(self.config.logging)
+        R2RLoggingProvider.configure(self.config.logging)
 
 
 class R2RAgentFactory:

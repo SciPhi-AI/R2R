@@ -5,6 +5,7 @@ from .pdf_parser import (  # type: ignore
     PDFParser,
     PDFParserMarker,
     PDFParserUnstructured,
+    ZeroxPDFParser,
 )
 from .ppt_parser import PPTParser
 
@@ -14,6 +15,7 @@ __all__ = [
     "ImageParser",
     "PDFParser",
     "PDFParserUnstructured",
+    "ZeroxPDFParser",
     "PDFParserMarker",
     "PPTParser",
 ]

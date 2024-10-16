@@ -14,7 +14,7 @@ class IngestionResponse(BaseModel):
         description="A message describing the result of the ingestion request.",
     )
     task_id: Optional[UUID] = Field(
-        ...,
+        None,
         description="The task ID of the ingestion request.",
     )
     document_id: UUID = Field(
@@ -38,7 +38,7 @@ class UpdateResponse(BaseModel):
         description="A message describing the result of the ingestion request.",
     )
     task_id: Optional[UUID] = Field(
-        ...,
+        None,
         description="The task ID of the ingestion request.",
     )
     document_ids: list[UUID] = Field(
@@ -56,5 +56,13 @@ class UpdateResponse(BaseModel):
         }
 
 
+class CreateVectorIndexResponse(BaseModel):
+    message: str = Field(
+        ...,
+        description="Vector index creation queued successfully.",
+    )
+
+
 WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
+WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]

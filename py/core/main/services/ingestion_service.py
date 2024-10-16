@@ -11,20 +11,25 @@ from core.base import (
     DocumentType,
     IngestionStatus,
     R2RException,
+    R2RLoggingProvider,
     RawChunk,
-    RunLoggingSingleton,
     RunManager,
     VectorEntry,
     decrement_version,
 )
 from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
+from shared.abstractions.vector import (
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100
@@ -40,7 +45,7 @@ class IngestionService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ) -> None:
         super().__init__(
             config,
@@ -65,60 +70,70 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        if not file_data:
+        try:
+            if not file_data:
+                raise R2RException(
+                    status_code=400, message="No files provided for ingestion."
+                )
+
+            if not file_data.get("filename"):
+                raise R2RException(
+                    status_code=400, message="File name not provided."
+                )
+
+            metadata = metadata or {}
+
+            version = version or STARTING_VERSION
+            document_info = self._create_document_info_from_file(
+                document_id,
+                user,
+                file_data["filename"],
+                metadata,
+                version,
+                size_in_bytes,
+            )
+
+            existing_document_info = (
+                await self.providers.database.relational.get_documents_overview(
+                    filter_user_ids=[user.id],
+                    filter_document_ids=[document_id],
+                )
+            )["results"]
+
+            if len(existing_document_info) > 0:
+                existing_doc = existing_document_info[0]
+                if not is_update:
+                    if (
+                        existing_doc.version >= version
+                        and existing_doc.ingestion_status
+                        == IngestionStatus.SUCCESS
+                    ):
+                        raise R2RException(
+                            status_code=409,
+                            message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
+                        )
+                    elif (
+                        existing_doc.ingestion_status != IngestionStatus.FAILED
+                    ):
+                        raise R2RException(
+                            status_code=409,
+                            message=f"Document {document_id} was already ingested and is not in a failed state.",
+                        )
+
+            await self.providers.database.relational.upsert_documents_overview(
+                document_info
+            )
+
+            return {
+                "info": document_info,
+            }
+        except R2RException as e:
+            logger.error(f"R2RException in ingest_file_ingress: {str(e)}")
+            raise
+        except Exception as e:
             raise R2RException(
-                status_code=400, message="No files provided for ingestion."
+                status_code=500, message=f"Error during ingestion: {str(e)}"
             )
-
-        if not file_data.get("filename"):
-            raise R2RException(
-                status_code=400, message="File name not provided."
-            )
-
-        metadata = metadata or {}
-
-        version = version or STARTING_VERSION
-        document_info = self._create_document_info_from_file(
-            document_id,
-            user,
-            file_data["filename"],
-            metadata,
-            version,
-            size_in_bytes,
-        )
-
-        existing_document_info = (
-            await self.providers.database.relational.get_documents_overview(
-                filter_user_ids=[user.id],
-                filter_document_ids=[document_id],
-            )
-        )["results"]
-
-        if len(existing_document_info) > 0:
-            existing_doc = existing_document_info[0]
-            if not is_update:
-                if (
-                    existing_doc.version >= version
-                    and existing_doc.ingestion_status
-                    == IngestionStatus.SUCCESS
-                ):
-                    raise R2RException(
-                        status_code=409,
-                        message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
-                    )
-                elif existing_doc.ingestion_status != IngestionStatus.FAILED:
-                    raise R2RException(
-                        status_code=409,
-                        message=f"Document {document_id} was already ingested and is not in a failed state.",
-                    )
-
-        await self.providers.database.relational.upsert_documents_overview(
-            document_info
-        )
-
-        return {
-            "info": document_info,
-        }
 
     def _create_document_info_from_file(
         self,
@@ -376,4 +391,15 @@ class IngestionServiceAdapter:
             "ingestion_config": data["ingestion_config"],
             "file_sizes_in_bytes": data["file_sizes_in_bytes"],
             "file_datas": data["file_datas"],
+        }
+
+    @staticmethod
+    def parse_create_vector_index_input(data: dict) -> dict:
+        return {
+            "table_name": VectorTableName(data["table_name"]),
+            "index_method": IndexMethod(data["index_method"]),
+            "measure": IndexMeasure(data["measure"]),
+            "index_arguments": data["index_arguments"],
+            "replace": data["replace"],
+            "concurrently": data["concurrently"],
         }

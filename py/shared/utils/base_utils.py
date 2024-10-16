@@ -1,8 +1,9 @@
 import asyncio
 import json
 import logging
+from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
@@ -13,8 +14,9 @@ from ..abstractions.search import (
     KGGlobalResult,
     KGRelationshipResult,
 )
+from ..abstractions.vector import VectorQuantizationType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def format_search_results_for_llm(results: AggregateSearchResult) -> str:
@@ -239,3 +241,33 @@ def llm_cost_per_million_tokens(
             * input_output_ratio
             * cost_dict["gpt-4o"][1]
         ) / (1 + input_output_ratio)
+
+
+def validate_uuid(uuid_str: str) -> UUID:
+    return UUID(uuid_str)
+
+
+def update_settings_from_dict(server_settings, settings_dict: dict):
+    """
+    Updates a settings object with values from a dictionary.
+    """
+    settings = deepcopy(server_settings)
+    for key, value in settings_dict.items():
+        if value is not None:
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    if isinstance(getattr(settings, key), dict):
+                        getattr(settings, key)[k] = v
+                    else:
+                        setattr(getattr(settings, key), k, v)
+            else:
+                setattr(settings, key, value)
+
+    return settings
+
+
+def _decorate_vector_type(
+    input_str: str,
+    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
+) -> str:
+    return f"{quantization_type.db_type}{input_str}"

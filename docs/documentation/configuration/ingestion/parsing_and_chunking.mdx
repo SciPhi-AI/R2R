@@ -10,6 +10,20 @@ provider = "r2r" # or "unstructured_local" or "unstructured_api"
 # ... provider-specific settings ...
 ```
 
+### Runtime Configuration
+
+In addition to configuring parsing and chunking settings in the `r2r.toml` file, you can also customize these settings at runtime when ingesting files using the Python SDK. This allows for more flexibility and control over the ingestion process on a per-file or per-request basis.
+
+Some of the configurable options include:
+
+- Chunking strategy (e.g., "recursive", "by_title", "basic")
+- Chunk size and overlap
+- Excluded parsers
+- Provider-specific settings (e.g., max characters, overlap, languages)
+
+For a comprehensive list of available runtime configuration options and examples of how to use them, refer to the [Python SDK Ingestion Documentation](/documentation/python-sdk/ingestion).
+
+
 ### Supported Providers
 
 R2R offers two main parsing and chunking providers:

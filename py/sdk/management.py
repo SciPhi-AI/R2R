@@ -148,27 +148,6 @@ class ManagementMethods:
         return await client._make_request("GET", "app_settings")
 
     @staticmethod
-    async def score_completion(
-        client,
-        message_id: str,
-        score: float = 0.0,
-    ) -> dict:
-        """
-        Assign a score to a message from an LLM completion. The score should be a float between -1.0 and 1.0.
-
-        Args:
-            message_id (str): The ID of the message to score.
-            score (float): The score to assign to the message.
-
-        Returns:
-            dict: The response from the server.
-        """
-        data = {"message_id": message_id, "score": score}
-        return await client._make_request(
-            "POST", "score_completion", json=data
-        )
-
-    @staticmethod
     async def users_overview(
         client,
         user_ids: Optional[list[str]] = None,
@@ -676,4 +655,27 @@ class ManagementMethods:
             params["limit"] = limit
         return await client._make_request(
             "GET", f"collection/{str(collection_id)}/documents", params=params
+        )
+
+    @staticmethod
+    async def get_conversation(
+        client,
+        conversation_id: Union[str, UUID],
+        branch_id: Optional[str] = None,
+    ) -> dict:
+        """
+        Get a conversation by its ID.
+
+        Args:
+            conversation_id (str): The ID of the conversation to retrieve.
+            branch_id (Optional[str]): The ID of a specific branch to retrieve.
+
+        Returns:
+            dict: The conversation data.
+        """
+        params = {}
+        if branch_id is not None:
+            params["branch_id"] = branch_id
+        return await client._make_request(
+            "GET", f"conversations/{str(conversation_id)}", params=params
         )

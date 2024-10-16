@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from core.base import R2RException, RunLoggingSingleton, RunManager, Token
+from core.base import R2RException, R2RLoggingProvider, RunManager, Token
 from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -20,7 +20,7 @@ class AuthService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ):
         super().__init__(
             config,

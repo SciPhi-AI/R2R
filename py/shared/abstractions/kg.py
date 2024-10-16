@@ -16,14 +16,16 @@ class KGRunType(str, Enum):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    run_mode: KGRunType = Field(
-        default=KGRunType.ESTIMATE,  # or run
-        description="Run an estimate for the full graph creation process.",
-    )
-
     kg_triples_extraction_prompt: str = Field(
         default="graphrag_triples_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",
+        alias="graphrag_triples_extraction_few_shot_prompt",  # TODO - mark deprecated & remove
+    )
+
+    kg_entity_description_prompt: str = Field(
+        default="graphrag_entity_description",
+        description="The prompt to use for entity description generation.",
+        alias="graphrag_entity_description_prompt",  # TODO - mark deprecated & remove
     )
 
     force_kg_creation: bool = Field(
@@ -65,24 +67,15 @@ class KGCreationSettings(R2RSerializable):
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
-    run_mode: str = Field(
-        default="estimate",  # or run
-        description="Run an estimate for the full graph enrichment process.",
-    )
-
-    skip_clustering: bool = Field(
-        default=False,
-        description="Whether to skip leiden clustering on the graph or not.",
-    )
-
     force_kg_enrichment: bool = Field(
         default=False,
         description="Force run the enrichment step even if graph creation is still in progress for some documents.",
     )
 
     community_reports_prompt: str = Field(
-        default="graphrag_community_reports_prompt",
+        default="graphrag_community_reports",
         description="The prompt to use for knowledge graph enrichment.",
+        alias="community_reports_prompt",  # TODO - mark deprecated & remove
     )
 
     max_summary_input_length: int = Field(

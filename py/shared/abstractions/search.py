@@ -317,13 +317,13 @@ class KGSearchSettings(R2RSerializable):
         description="Collection IDs to search for",
     )
 
-    graphrag_map_system_prompt: str = Field(
-        default="graphrag_map_system_prompt",
+    graphrag_map_system: str = Field(
+        default="graphrag_map_system",
         description="The system prompt for the graphrag map prompt.",
     )
 
-    graphrag_reduce_system_prompt: str = Field(
-        default="graphrag_reduce_system_prompt",
+    graphrag_reduce_system: str = Field(
+        default="graphrag_reduce_system",
         description="The system prompt for the graphrag reduce prompt.",
     )
 

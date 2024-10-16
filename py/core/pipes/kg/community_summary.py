@@ -1,6 +1,8 @@
+import random
 import asyncio
 import json
 import logging
+import time
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
@@ -14,10 +16,10 @@ from core.base import (
     KGProvider,
     PipeType,
     PromptProvider,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class KGCommunitySummaryPipe(AsyncPipe):
@@ -32,7 +34,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[RunLoggingSingleton] = None,
+        pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,
@@ -51,7 +53,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
-    def community_summary_prompt(
+    async def community_summary_prompt(
         self,
         entities: list,
         triples: list,
@@ -120,10 +122,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         messages=self.prompt_provider._get_message_payload(
                             task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
                             task_inputs={
-                                "input_text": self.community_summary_prompt(
-                                    entities,
-                                    triples,
-                                    max_summary_input_length,
+                                "input_text": (
+                                    await self.community_summary_prompt(
+                                        entities,
+                                        triples,
+                                        max_summary_input_length,
+                                    )
                                 ),
                             },
                         ),
@@ -193,18 +197,29 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Executes the KG community summary pipe: summarizing communities.
         """
 
+        start_time = time.time()
+
         offset = input.message["offset"]
         limit = input.message["limit"]
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message["collection_id"]
         community_summary_jobs = []
+        logger = input.message.get("logger", logging.getLogger())
 
         # check which community summaries exist and don't run them again
+
+        logger.info(
+            f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
+        )
         community_numbers_exist = (
             await self.kg_provider.check_community_reports_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
+        )
+
+        logger.info(
+            f"KGCommunitySummaryPipe: Community summaries exist for communities {len(community_numbers_exist)}"
         )
 
         for community_number in range(offset, offset + limit):
@@ -218,5 +233,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
                     )
                 )
 
+        completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
+            completed_community_summary_jobs += 1
+            if completed_community_summary_jobs % 50 == 0:
+                logger.info(
+                    f"KGCommunitySummaryPipe: {completed_community_summary_jobs}/{len(community_summary_jobs)} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
+                )
             yield await community_summary

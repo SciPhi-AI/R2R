@@ -6,7 +6,7 @@ from core import GenerationConfig
 
 from ...services import KgService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def simple_kg_factory(service: KgService):
@@ -40,15 +40,22 @@ def simple_kg_factory(service: KgService):
 
         for _, document_id in enumerate(document_ids):
             # Extract triples from the document
-            await service.kg_triples_extraction(
-                document_id=document_id,
-                **input_data["kg_creation_settings"],
-            )
-            # Describe the entities in the graph
-            await service.kg_entity_description(
-                document_id=document_id,
-                **input_data["kg_creation_settings"],
-            )
+
+            try:
+                await service.kg_triples_extraction(
+                    document_id=document_id,
+                    **input_data["kg_creation_settings"],
+                )
+                # Describe the entities in the graph
+                await service.kg_entity_description(
+                    document_id=document_id,
+                    **input_data["kg_creation_settings"],
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"Error in creating graph for document {document_id}: {e}"
+                )
 
     async def enrich_graph(input_data):
 

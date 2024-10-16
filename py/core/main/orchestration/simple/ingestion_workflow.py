@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+from litellm import AuthenticationError
+
 from core.base import DocumentExtraction, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
@@ -9,7 +11,7 @@ from core.utils import (
 
 from ...services import IngestionService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def simple_ingestion_factory(service: IngestionService):
@@ -79,6 +81,15 @@ def simple_ingestion_factory(service: IngestionService):
                     f"Error during assigning document to collection: {str(e)}"
                 )
 
+        except AuthenticationError as e:
+            if document_info is not None:
+                await service.update_document_status(
+                    document_info, status=IngestionStatus.FAILED
+                )
+            raise R2RException(
+                status_code=401,
+                message="Authentication error: Invalid API key or credentials.",
+            )
         except Exception as e:
             if document_info is not None:
                 await service.update_document_status(
@@ -168,6 +179,7 @@ def simple_ingestion_factory(service: IngestionService):
         await asyncio.gather(*results)
 
     async def ingest_chunks(input_data):
+        document_info = None
         try:
             from core.base import IngestionStatus
             from core.main import IngestionServiceAdapter
@@ -239,8 +251,28 @@ def simple_ingestion_factory(service: IngestionService):
                 message=f"Error during chunk ingestion: {str(e)}",
             )
 
+    async def create_vector_index(input_data):
+
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_create_vector_index_input(
+                    input_data
+                )
+            )
+
+            service.providers.database.vector.create_index(**parsed_data)
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during vector index creation: {str(e)}",
+            )
+
     return {
         "ingest-files": ingest_files,
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
+        "create-vector-index": create_vector_index,
     }

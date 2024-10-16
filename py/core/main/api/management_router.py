@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Optional, Set
+from typing import Any, Optional, Set
 from uuid import UUID
 
 import psutil
@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedCollectionListResponse,
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedConversationResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -25,7 +26,6 @@ from core.base.api.models import (
     WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
-    WrappedScoreCompletionResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
@@ -33,6 +33,7 @@ from core.base.api.models import (
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 from core.base.providers import OrchestrationProvider
+from shared.abstractions.kg import KGRunType
 
 from ..services.management_service import ManagementService
 from .base_router import BaseRouter, RunType
@@ -224,18 +225,6 @@ class ManagementRouter(BaseRouter):
                 )
             return await self.service.app_settings()
 
-        @self.router.post("/score_completion")
-        @self.base_endpoint
-        async def score_completion(
-            message_id: str = Body(..., description="Message ID"),
-            score: float = Body(..., description="Completion score"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedScoreCompletionResponse:
-            message_uuid = UUID(message_id)
-            return await self.service.score_completion(
-                message_id=message_uuid, score=score
-            )
-
         @self.router.get("/users_overview")
         @self.base_endpoint
         async def users_overview_app(
@@ -268,8 +257,26 @@ class ManagementRouter(BaseRouter):
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
-            filters_dict = json.loads(filters) if filters else None
-            return await self.service.delete(filters=filters_dict)  # type: ignore
+            try:
+                filters_dict = json.loads(filters)
+            except json.JSONDecodeError:
+                raise R2RException(
+                    status_code=422, message="Invalid JSON in filters"
+                )
+
+            if not isinstance(filters_dict, dict):
+                raise R2RException(
+                    status_code=422, message="Filters must be a JSON object"
+                )
+
+            for key, value in filters_dict.items():
+                if not isinstance(value, dict):
+                    raise R2RException(
+                        status_code=422,
+                        message=f"Invalid filter format for key: {key}",
+                    )
+
+            return await self.service.delete(filters=filters_dict)
 
         @self.router.get(
             "/download_file/{document_id}", response_class=StreamingResponse
@@ -288,7 +295,7 @@ class ManagementRouter(BaseRouter):
                 document_uuid = UUID(document_id)
             except ValueError:
                 raise R2RException(
-                    status_code=400, message="Invalid document ID format."
+                    status_code=422, message="Invalid document ID format."
                 )
 
             file_tuple = await self.service.download_file(document_uuid)
@@ -333,13 +340,18 @@ class ManagementRouter(BaseRouter):
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
+
+            filter_collection_ids = (
+                None if auth_user.is_superuser else auth_user.collection_ids
+            )
+
             document_uuids = [
                 UUID(document_id) for document_id in document_ids
             ]
             documents_overview_response = (
                 await self.service.documents_overview(
                     user_ids=request_user_ids,
-                    collection_ids=auth_user.collection_ids,
+                    collection_ids=filter_collection_ids,
                     document_ids=document_uuids,
                     offset=offset,
                     limit=limit,
@@ -677,6 +689,14 @@ class ManagementRouter(BaseRouter):
             document_id: str = Body(..., description="Document ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
+            run_type: Optional[KGRunType] = Body(
+                default=KGRunType.ESTIMATE,
+                description="Run type for the graph enrichment process.",
+            ),
+            kg_enrichment_settings: Optional[dict] = Body(
+                default=None,
+                description="Settings for the graph enrichment process.",
+            ),
         ) -> WrappedDeleteResponse:
             collection_uuid = UUID(collection_id)
             document_uuid = UUID(document_id)
@@ -689,9 +709,36 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            await self.service.remove_document_from_collection(
+            enrichment = await self.service.remove_document_from_collection(
                 document_uuid, collection_uuid
             )
+            if enrichment:
+                if not run_type:
+                    run_type = KGRunType.ESTIMATE
+
+                server_kg_enrichment_settings = (
+                    self.service.providers.kg.config.kg_enrichment_settings
+                )
+                if run_type is KGRunType.ESTIMATE:
+
+                    return await self.service.providers.kg.get_enrichment_estimate(
+                        collection_id, server_kg_enrichment_settings
+                    )
+
+                if kg_enrichment_settings:
+                    for key, value in kg_enrichment_settings.items():
+                        if value is not None:
+                            setattr(server_kg_enrichment_settings, key, value)
+
+                workflow_input = {
+                    "collection_id": str(collection_id),
+                    "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
+                await self.orchestration_provider.run_workflow(
+                    "enrich-graph", {"request": workflow_input}, {}
+                )
+
             return None  # type: ignore
 
         @self.router.get("/document_collections/{document_id}")
@@ -746,3 +793,15 @@ class ManagementRouter(BaseRouter):
                     "total_entries"
                 ]
             }
+
+        @self.router.get("/conversations/{conversation_id}")
+        @self.base_endpoint
+        async def get_conversation(
+            conversation_id: str = Path(..., description="Conversation ID"),
+            branch_id: str = Query(None, description="Branch ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedConversationResponse:
+            result = await self.service.get_conversation(
+                conversation_id, branch_id, auth_user
+            )
+            return result

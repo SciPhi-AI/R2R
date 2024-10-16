@@ -1,4 +1,3 @@
-import json
 import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple
@@ -10,19 +9,21 @@ from core.base import (
     AnalysisTypes,
     LogFilterCriteria,
     LogProcessor,
+    Message,
     Prompt,
     R2RException,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     RunManager,
     RunType,
 )
+from core.base.utils import validate_uuid
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class ManagementService(Service):
@@ -34,7 +35,7 @@ class ManagementService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ):
         super().__init__(
             config,
@@ -194,55 +195,6 @@ class ManagementService(Service):
             "prompts": prompts,
         }
 
-    @telemetry_event("ScoreCompletion")
-    async def score_completion(
-        self,
-        message_id: UUID,
-        score: float = 0.0,
-        run_type_filter: Optional[RunType] = None,
-        max_runs: int = 100,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        try:
-            if self.logging_connection is None:
-                raise R2RException(
-                    status_code=404, message="Logging provider not found."
-                )
-
-            run_info = await self.logging_connection.get_info_logs(
-                limit=max_runs,
-                run_type_filter=run_type_filter,
-            )
-            run_ids = [run.run_id for run in run_info]
-
-            logs = await self.logging_connection.get_logs(run_ids)
-
-            for log in logs:
-                if log["key"] != "completion_record":
-                    continue
-                completion_record = log["value"]
-                try:
-                    completion_dict = json.loads(completion_record)
-                except json.JSONDecodeError as e:
-                    logger.error(f"Error processing completion record: {e}")
-                    continue
-
-                if completion_dict.get("message_id") == str(message_id):
-                    bounded_score = round(min(max(score, -1.00), 1.00), 2)
-                    updated = await RunLoggingSingleton.score_completion(
-                        log["run_id"], message_id, bounded_score
-                    )
-                    if not updated:
-                        logger.error(
-                            f"Error updating completion record for message_id: {message_id}"
-                        )
-
-        except Exception as e:
-            logger.error(f"An error occurred in ascore_completion: {e}")
-
-        return {"message": "Completion scored successfully"}
-
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,
@@ -273,6 +225,45 @@ class ManagementService(Service):
         NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
         NOTE: This method assumes that filters delete entire contents of any touched documents.
         """
+
+        def validate_filters(filters: dict[str, Any]) -> None:
+            ALLOWED_FILTERS = {"document_id", "user_id", "collection_ids"}
+
+            if not filters:
+                raise R2RException(
+                    status_code=422, message="No filters provided"
+                )
+
+            for field in filters:
+                if field not in ALLOWED_FILTERS:
+                    raise R2RException(
+                        status_code=422,
+                        message=f"Invalid filter field: {field}",
+                    )
+
+            for field in ["document_id", "user_id"]:
+                if field in filters:
+                    op = next(iter(filters[field].keys()))
+                    try:
+                        validate_uuid(filters[field][op])
+                    except ValueError:
+                        raise R2RException(
+                            status_code=422,
+                            message=f"Invalid UUID: {filters[field][op]}",
+                        )
+
+            if "collection_ids" in filters:
+                op = next(iter(filters["collection_ids"].keys()))
+                for id_str in filters["collection_ids"][op]:
+                    try:
+                        validate_uuid(id_str)
+                    except ValueError:
+                        raise R2RException(
+                            status_code=422, message=f"Invalid UUID: {id_str}"
+                        )
+
+        validate_filters(filters)
+
         logger.info(f"Deleting entries with filters: {filters}")
 
         try:
@@ -297,17 +288,14 @@ class ManagementService(Service):
         relational_filters = {}
         if "document_id" in filters:
             relational_filters["filter_document_ids"] = [
-                UUID(filters["document_id"]["$eq"])
+                filters["document_id"]["$eq"]
             ]
         if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [
-                UUID(filters["user_id"]["$eq"])
-            ]
+            relational_filters["filter_user_ids"] = [filters["user_id"]["$eq"]]
         if "collection_ids" in filters:
-            relational_filters["filter_collection_ids"] = [
-                UUID(collection_id)
-                for collection_id in filters["collection_ids"]["$in"]
-            ]
+            relational_filters["filter_collection_ids"] = list(
+                filters["collection_ids"]["$in"]
+            )
 
         try:
             documents_overview = (
@@ -398,7 +386,7 @@ class ManagementService(Service):
 
     @telemetry_event("RemoveDocumentFromCollection")
     async def remove_document_from_collection(
-        self, document_id: str, collection_id: UUID
+        self, document_id: UUID, collection_id: UUID
     ):
         await self.providers.database.relational.remove_document_from_collection(
             document_id, collection_id
@@ -406,7 +394,10 @@ class ManagementService(Service):
         self.providers.database.vector.remove_document_from_collection(
             document_id, collection_id
         )
-        return {"message": "Document removed from collection successfully"}
+        await self.providers.kg.delete_node_via_document_id(
+            document_id, collection_id
+        )
+        return None
 
     @telemetry_event("DocumentCollections")
     async def document_collections(
@@ -663,3 +654,14 @@ class ManagementService(Service):
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
+
+    @telemetry_event("GetConversation")
+    async def get_conversation(
+        self,
+        conversation_id: str,
+        branch_id: Optional[str] = None,
+        auth_user=None,
+    ) -> list[dict]:
+        return await self.logging_connection.get_conversation(
+            conversation_id, branch_id
+        )

@@ -55,7 +55,7 @@ import requests
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import NotRequired
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 TS = TypeVar("TS", bound="TextSplitter")
 
@@ -1038,7 +1038,7 @@ class HTMLHeaderTextSplitter:
             ]
 
 
-# should be in newer Python versions (3.10+)
+# should be in newer Python versions (3.11+)
 # @dataclass(frozen=True, kw_only=True, slots=True)
 @dataclass(frozen=True)
 class Tokenizer:

@@ -4,19 +4,28 @@ from typing import Any, Callable, Optional
 
 from core.base import OrchestrationConfig, OrchestrationProvider, Workflow
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class HatchetOrchestrationProvider(OrchestrationProvider):
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         try:
-            from hatchet_sdk import Hatchet
+            from hatchet_sdk import ClientConfig, Hatchet
         except ImportError:
             raise ImportError(
                 "Hatchet SDK not installed. Please install it using `pip install hatchet-sdk`."
             )
-        self.orchestrator = Hatchet()
+        logging.basicConfig(level=logging.INFO)
+        root_logger = logging.getLogger()
+
+        self.orchestrator = Hatchet(
+            debug=True,
+            config=ClientConfig(
+                logger=root_logger,
+            ),
+        )
+        self.root_logger = root_logger
         self.config: OrchestrationConfig = config  # for type hinting
         self.messages: dict[str, str] = {}
 
@@ -29,10 +38,10 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     def failure(self, *args, **kwargs) -> Callable:
         return self.orchestrator.on_failure_step(*args, **kwargs)
 
-    def get_worker(self, name: str, max_threads: Optional[int] = None) -> Any:
-        if not max_threads:
-            max_threads = self.config.max_threads
-        self.worker = self.orchestrator.worker(name, max_threads)
+    def get_worker(self, name: str, max_runs: Optional[int] = None) -> Any:
+        if not max_runs:
+            max_runs = self.config.max_runs
+        self.worker = self.orchestrator.worker(name, max_runs)
         return self.worker
 
     def concurrency(self, *args, **kwargs) -> Callable:

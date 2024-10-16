@@ -12,8 +12,10 @@ class Workflow(Enum):
 
 class OrchestrationConfig(ProviderConfig):
     provider: str
-    max_threads: int = 256
-    kg_creation_concurrency_limit: int = 16
+    max_runs: int = 2_048
+    kg_creation_concurrency_limit: int = 32
+    ingestion_concurrency_limit: int = 64
+    kg_enrichment_concurrency_limit: int = 8
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
@@ -35,7 +37,7 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def get_worker(self, name: str, max_threads: int) -> Any:
+    def get_worker(self, name: str, max_runs: int) -> Any:
         pass
 
     @abstractmethod
