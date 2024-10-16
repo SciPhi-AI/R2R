@@ -107,7 +107,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 (
                     await self.llm_provider.aget_completion(
                         messages=self.prompt_provider._get_message_payload(
-                            task_prompt_name=self.kg_provider.config.kg_creation_settings.entity_description_prompt_name,
+                            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_entity_description_prompt,
                             task_inputs={
                                 "entity_info": truncate_info(
                                     entity_info,
