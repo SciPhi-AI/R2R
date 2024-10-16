@@ -115,7 +115,7 @@ services:
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${R2R_PORT:-7272}/r2r-api
+      - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
     networks:
       - r2r-network
     ports:
