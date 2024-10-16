@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
+import time
 
 import asyncpg
 
@@ -584,9 +585,11 @@ class PostgresKGProvider(KGProvider):
             check_directed: bool = True,
         """
         settings: Dict[str, Any] = {}
+
+        start_time = time.time()
         triples = await self.get_all_triples(collection_id)
 
-        logger.info(f"Clustering with settings: {str(settings)}")
+        logger.info(f"Clustering with settings: {str(leiden_params)}")
 
         G = self.nx.Graph()
         for triple in triples:
@@ -597,17 +600,36 @@ class PostgresKGProvider(KGProvider):
                 id=triple.id,
             )
 
+        logger.info(f"Computing Leiden communities started.")
+
         hierarchical_communities = await self._compute_leiden_communities(
             G, leiden_params
         )
 
-        def triple_ids(node: int) -> list[int]:
-            # TODO: convert this to objects
-            return [
-                triple.id or i
-                for i, triple in enumerate(triples)
-                if triple.subject == node or triple.object == node
-            ]
+        logger.info(
+            f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
+        )
+
+        # caching the triple ids
+        triple_ids_cache = dict[str, list[int]]()
+        for triple in triples:
+            if triple.subject not in triple_ids_cache:
+                if triple.subject is not None:
+                    triple_ids_cache[triple.subject] = []
+            if triple.object not in triple_ids_cache:
+                if triple.object is not None:
+                    triple_ids_cache[triple.object] = []
+            if triple.subject is not None and triple.id is not None:
+                triple_ids_cache[triple.subject].append(triple.id)
+            if triple.object is not None and triple.id is not None:
+                triple_ids_cache[triple.object].append(triple.id)
+
+        def triple_ids(node: str) -> list[int]:
+            return triple_ids_cache.get(node, [])
+
+        logger.info(
+            f"Cached {len(triple_ids_cache)} triple ids, time {time.time() - start_time:.2f} seconds."
+        )
 
         # upsert the communities into the database.
         inputs = [
@@ -629,6 +651,10 @@ class PostgresKGProvider(KGProvider):
             set([item.cluster for item in hierarchical_communities])
         )
 
+        logger.info(
+            f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
+        )
+
         return num_communities
 
     async def _compute_leiden_communities(
@@ -645,8 +671,16 @@ class PostgresKGProvider(KGProvider):
                     7272  # add seed to control randomness
                 )
 
+            start_time = time.time()
+            logger.info(
+                f"Running Leiden clustering with params: {leiden_params}"
+            )
+
             community_mapping = hierarchical_leiden(graph, **leiden_params)
 
+            logger.info(
+                f"Leiden clustering completed in {time.time() - start_time:.2f} seconds."
+            )
             return community_mapping
 
         except ImportError as e:

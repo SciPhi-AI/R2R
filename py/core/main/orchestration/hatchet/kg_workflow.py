@@ -229,6 +229,10 @@ def hatchet_kg_factory(
             )
             collection_id = input_data["collection_id"]
 
+            logger.info(
+                f"Running KG Clustering for collection {collection_id} with settings {input_data['kg_enrichment_settings']}"
+            )
+
             kg_clustering_results = await self.kg_service.kg_clustering(
                 collection_id=collection_id,
                 **input_data["kg_enrichment_settings"],
@@ -291,6 +295,19 @@ def hatchet_kg_factory(
     class KGCommunitySummaryWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
+
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.kg_enrichment_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context: Context) -> str:
+            # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
+            try:
+                return str(
+                    context.workflow_input()["request"]["collection_id"]
+                )
+            except Exception as e:
+                return str(uuid.uuid4())
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_community_summary(self, context: Context) -> dict:

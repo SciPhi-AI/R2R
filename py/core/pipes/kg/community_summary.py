@@ -1,3 +1,4 @@
+import random
 import asyncio
 import json
 import logging
@@ -52,7 +53,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
-    def community_summary_prompt(
+    async def community_summary_prompt(
         self,
         entities: list,
         triples: list,
@@ -121,10 +122,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         messages=self.prompt_provider._get_message_payload(
                             task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
                             task_inputs={
-                                "input_text": self.community_summary_prompt(
-                                    entities,
-                                    triples,
-                                    max_summary_input_length,
+                                "input_text": (
+                                    await self.community_summary_prompt(
+                                        entities,
+                                        triples,
+                                        max_summary_input_length,
+                                    )
                                 ),
                             },
                         ),
