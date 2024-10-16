@@ -621,8 +621,10 @@ class ManagementService(Service):
     ) -> dict:
         try:
             return {
-                "message": self.providers.prompt.get_prompt(
-                    prompt_name, inputs, prompt_override
+                "message": (
+                    await self.providers.prompt.get_prompt(
+                        prompt_name, inputs, prompt_override
+                    )
                 )
             }
         except ValueError as e:

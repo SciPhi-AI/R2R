@@ -39,7 +39,7 @@ class PromptProvider(Provider):
         pass
 
     @abstractmethod
-    def get_prompt(
+    async def get_prompt(
         self,
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,
@@ -64,7 +64,7 @@ class PromptProvider(Provider):
     async def delete_prompt(self, name: str) -> None:
         pass
 
-    def _get_message_payload(
+    async def _get_message_payload(
         self,
         system_prompt_name: Optional[str] = None,
         system_role: str = "system",
@@ -75,20 +75,29 @@ class PromptProvider(Provider):
         task_inputs: dict = {},
         task_prompt_override: Optional[str] = None,
     ) -> list[dict]:
-        system_prompt = system_prompt_override or self.get_prompt(
-            system_prompt_name or self.config.default_system_name,
-            system_inputs,
-            prompt_override=system_prompt_override,
-        )
-        task_prompt = self.get_prompt(
+
+        if system_prompt_override:
+            system_prompt = system_prompt_override
+        else:
+            system_prompt = await self.get_prompt(
+                system_prompt_name or self.config.default_system_name,
+                system_inputs,
+                prompt_override=system_prompt_override,
+            )
+
+        task_prompt = await self.get_prompt(
             task_prompt_name or self.config.default_task_name,
             task_inputs,
             prompt_override=task_prompt_override,
         )
+
         return [
             {
                 "role": system_role,
                 "content": system_prompt,
             },
-            {"role": task_role, "content": task_prompt},
+            {
+                "role": task_role,
+                "content": task_prompt,
+            },
         ]
