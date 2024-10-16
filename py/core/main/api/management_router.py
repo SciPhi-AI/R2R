@@ -367,12 +367,13 @@ class ManagementRouter(BaseRouter):
             document_id: str = Path(...),
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=0),
+            include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
             document_uuid = UUID(document_id)
 
             document_chunks = await self.service.document_chunks(
-                document_uuid, offset, limit
+                document_uuid, offset, limit, include_vectors
             )
 
             document_chunks_result = document_chunks["results"]

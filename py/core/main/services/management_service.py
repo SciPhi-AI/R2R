@@ -365,11 +365,15 @@ class ManagementService(Service):
         document_id: UUID,
         offset: int = 0,
         limit: int = 100,
+        include_vectors: bool = False,
         *args,
         **kwargs,
     ):
         return self.providers.database.vector.get_document_chunks(
-            document_id, offset=offset, limit=limit
+            document_id,
+            offset=offset,
+            limit=limit,
+            include_vectors=include_vectors,
         )
 
     @telemetry_event("AssignDocumentToCollection")
