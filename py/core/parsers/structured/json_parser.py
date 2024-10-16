@@ -1,7 +1,7 @@
 # type: ignore
+import asyncio
 import json
 from typing import AsyncGenerator
-import asyncio
 
 from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
