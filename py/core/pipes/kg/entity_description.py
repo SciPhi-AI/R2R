@@ -13,6 +13,7 @@ from core.base import (
     EmbeddingProvider,
     KGProvider,
     PipeType,
+    PromptProvider,
     R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
@@ -33,6 +34,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         self,
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
+        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -47,6 +49,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         )
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
+        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def _run_logic(  # type: ignore
@@ -62,25 +65,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
         """
 
         start_time = time.time()
-
-        # TODO - Move this to a .yaml file and load it as we do in triples extraction
-        summarization_content = """
-            Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
-
-            Entity Info:
-            {entity_info}
-            Triples:
-            {triples_txt}
-
-            Your summary should:
-            1. Clearly define the entity's core concept or purpose
-            2. Highlight key relationships or attributes from the triples
-            3. Integrate any relevant information from the existing description
-            4. Maintain a neutral, factual tone
-            5. Be approximately 2-3 sentences long
-
-            Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
-        """
 
         def truncate_info(info_list, max_length):
             random.shuffle(info_list)
@@ -122,21 +106,19 @@ class KGEntityDescriptionPipe(AsyncPipe):
             out_entity.description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": summarization_content.format(
-                                    entity_info=truncate_info(
-                                        entity_info,
-                                        max_description_input_length,
-                                    ),
-                                    triples_txt=truncate_info(
-                                        triples_txt,
-                                        max_description_input_length,
-                                    ),
+                        messages=self.prompt_provider._get_message_payload(
+                            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_entity_description_prompt,
+                            task_inputs={
+                                "entity_info": truncate_info(
+                                    entity_info,
+                                    max_description_input_length,
                                 ),
-                            }
-                        ],
+                                "triples_txt": truncate_info(
+                                    triples_txt,
+                                    max_description_input_length,
+                                ),
+                            },
+                        ),
                         generation_config=self.kg_provider.config.kg_creation_settings.generation_config,
                     )
                 )
