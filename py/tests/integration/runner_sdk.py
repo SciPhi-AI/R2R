@@ -1109,9 +1109,10 @@ def test_pagination_and_filtering():
     client.ingest_files(["core/examples/data/aristotle.txt"])
     client.ingest_files(["core/examples/data/uber_2021.pdf"])
 
-    time.sleep(40)
+    time.sleep(65)
 
     documents_overview = client.documents_overview()["results"]
+    print("documents_overview = ", documents_overview)
     client.assign_document_to_collection(
         documents_overview[0]["id"], collection_id
     )
