@@ -6,7 +6,7 @@ from core import GenerationConfig
 
 from ...services import KgService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def simple_kg_factory(service: KgService):

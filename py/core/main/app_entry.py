@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .assembly import R2RBuilder, R2RConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 # Global scheduler
 scheduler = AsyncIOScheduler()

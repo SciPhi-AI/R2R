@@ -10,7 +10,7 @@ from typing import AsyncGenerator
 from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 ZEROX_DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 

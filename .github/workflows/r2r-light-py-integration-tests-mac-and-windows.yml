@@ -1,13 +1,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-name: R2R Light Python Integration Test (ubuntu)
+name: R2R Light Python Integration Test (macOS / windows)
 
 on:
   push:
-    branches:
-      - dev
-      - dev-minor
-  pull_request:
     branches:
       - dev
       - dev-minor
@@ -19,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, macos-latest]
         test_category:
           - cli-ingestion
           - cli-retrieval

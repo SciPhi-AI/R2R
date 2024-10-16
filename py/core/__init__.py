@@ -10,7 +10,7 @@ from .pipelines import *
 from .pipes import *
 from .providers import *
 
-logger = logging.getLogger("core")
+logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Create a console handler and set the level to info
@@ -110,9 +110,9 @@ __all__ = [
     "LogFilterCriteria",
     "LogProcessor",
     # Logging Providers
-    "LocalRunLoggingProvider",
+    "SqlitePersistentLoggingProvider",
     "LoggingConfig",
-    "RunLoggingSingleton",
+    "R2RLoggingProvider",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -243,7 +243,6 @@ __all__ = [
     "PostgresDBProvider",
     # Embeddings
     "LiteLLMEmbeddingProvider",
-    "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     # KG
     "PostgresKGProvider",

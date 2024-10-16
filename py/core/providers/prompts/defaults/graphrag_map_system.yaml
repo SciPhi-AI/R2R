@@ -1,4 +1,4 @@
-graphrag_map_system_prompt:
+graphrag_map_system:
   template : |
     ---Role---
     You are a helpful assistant responding to questions about data in the tables provided.

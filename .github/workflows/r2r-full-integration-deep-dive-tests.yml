@@ -5,10 +5,6 @@ on:
     branches:
       - dev
       - dev-minor
-  pull_request:
-    branches:
-      - dev
-      - dev-minor
   workflow_dispatch:
 
 jobs:

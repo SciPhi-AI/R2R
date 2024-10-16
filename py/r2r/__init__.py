@@ -6,7 +6,7 @@ import toml
 from sdk import *
 from shared import *
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
 pyproject_data = toml.load(pyproject_path)

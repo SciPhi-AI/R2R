@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
-from ..base.logging.run_logger import LoggingConfig
+from ..base.logging.r2r_logger import LoggingConfig
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
@@ -22,7 +22,7 @@ from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
 from ..base.providers.prompt import PromptConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class R2RConfig:

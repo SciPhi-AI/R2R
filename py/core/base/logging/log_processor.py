@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class LogFilterCriteria(BaseModel):

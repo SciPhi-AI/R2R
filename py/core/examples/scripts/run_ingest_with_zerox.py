@@ -12,4 +12,4 @@ if __name__ == "__main__":
         file_paths=[sample_file],
         ingestion_config={"parser_overrides": {"pdf": "zerox"}},
     )
-    time.sleep(30)
+    time.sleep(60)

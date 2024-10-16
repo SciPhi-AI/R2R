@@ -8,7 +8,7 @@ from shared.abstractions.vector import VectorQuantizationType
 
 from .base import Provider, ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PostgresConfigurationSettings(BaseModel):

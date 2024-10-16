@@ -7,7 +7,7 @@ from core.base.abstractions import Prompt
 
 from .base import Provider, ProviderConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class PromptConfig(ProviderConfig):

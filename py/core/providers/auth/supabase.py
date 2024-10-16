@@ -16,10 +16,10 @@ from core.base import (
 )
 from core.base.api.models import UserResponse
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 

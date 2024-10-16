@@ -13,7 +13,7 @@ from core.base import (
     Message,
     MessageType,
     R2RException,
-    RunLoggingSingleton,
+    R2RLoggingProvider,
     RunManager,
     RunType,
     VectorSearchSettings,
@@ -28,7 +28,7 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class RetrievalService(Service):
@@ -40,7 +40,7 @@ class RetrievalService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: RunLoggingSingleton,
+        logging_connection: R2RLoggingProvider,
     ):
         super().__init__(
             config,
