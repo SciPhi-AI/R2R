@@ -1,11 +1,7 @@
-name: R2R Full Python Integration Test
+name: R2R Full Python Integration Test (macOS / windows)
 
 on:
   push:
-    branches:
-      - dev
-      - dev-minor
-  pull_request:
     branches:
       - dev
       - dev-minor
