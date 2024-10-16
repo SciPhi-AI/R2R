@@ -102,9 +102,10 @@ def test_reingest_sample_file_sdk():
     file_paths = ["core/examples/data/uber_2021.pdf"]
     try:
         results = client.ingest_files(file_paths=file_paths)
+        print("results = ", results)
         time.sleep(30)
 
-        if "task_id" not in results["results"]:
+        if "task_id" not in results["results"][0]:
             print(
                 "Re-ingestion test failed: Expected an error but ingestion succeeded"
             )
