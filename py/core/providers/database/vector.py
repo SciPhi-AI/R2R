@@ -1,5 +1,6 @@
 import concurrent.futures
 import copy
+import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -504,7 +505,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         select_clause = "SELECT extraction_id, document_id, user_id, collection_ids, text, metadata"
         if include_vectors:
-            select_clause += ", vector"
+            select_clause += ", vec"
 
         query = text(
             f"""
@@ -536,7 +537,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     "collection_ids": result[3],
                     "text": result[4],
                     "metadata": result[5],
-                    "vector": result[6] if include_vectors else None,
+                    "vector": (
+                        json.loads(result[6]) if include_vectors else None
+                    ),
                 }
                 for result in results
             ]

@@ -158,5 +158,7 @@ def document_chunks(ctx, document_id, offset, limit, include_vectors):
             click.echo(f"Extraction ID: {chunk.get('id', 'N/A')}")
             click.echo(f"Text: {chunk.get('text', '')[:100]}...")
             click.echo(f"Metadata: {chunk.get('metadata', {})}")
+            if include_vectors:
+                click.echo(f"Vector: {chunk.get('vector', 'N/A')}")
         else:
             click.echo(f"Unexpected chunk format: {chunk}")
