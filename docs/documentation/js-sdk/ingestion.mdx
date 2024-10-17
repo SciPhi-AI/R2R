@@ -10,6 +10,22 @@ Occasionally this SDK documentation falls out of date, cross-check with the auto
 
 ## Document Ingestion and Management
 
+<Note>
+
+As of version `3.2.13`, we have expanded the options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs by passing the following in your ingestion configuration:
+
+```json
+{
+  "parser_overrides": {
+    "pdf": "zerox"
+  }
+}
+```
+
+We recommend this method for achieving the highest quality ingestion results.
+
+</Note>
+
 ### Ingest Files
 
 Ingest files or directories into your R2R system:

@@ -21,6 +21,161 @@ Some of the configurable options include:
 - Excluded parsers
 - Provider-specific settings (e.g., max characters, overlap, languages)
 
+
+An exhaustive list of runtime ingestion inputs to the `ingest-files` endpoint is shown below:
+
+<ParamField path="file_paths" type="list[str]" required>
+  A list of file paths or directory paths to ingest. If a directory path is provided, all files within the directory and its subdirectories will be ingested.
+</ParamField>
+
+<ParamField path="metadatas" type="Optional[list[dict]]">
+  An optional list of metadata dictionaries corresponding to each file. If provided, the length should match the number of files being ingested.
+</ParamField>
+
+<ParamField path="document_ids" type="Optional[list[Union[UUID, str]]]">
+  An optional list of document IDs to assign to the ingested files. If provided, the length should match the number of files being ingested.
+</ParamField>
+
+<ParamField path="versions" type="Optional[list[str]]">
+  An optional list of version strings for the ingested files. If provided, the length should match the number of files being ingested.
+</ParamField>
+
+<ParamField path="ingestion_config" type="Optional[Union[dict, IngestionConfig]]">
+  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime. Learn more about [configuration here](/documentation/configuration/ingestion/parsing_and_chunking).
+  <Expandable title="Other Provider Options">
+    <ParamField path="provider" type="str" default="r2r">
+      Which R2R ingestion provider to use. Options are "r2r".
+    </ParamField>
+    <ParamField path="chunking_strategy" type="str" default="recursive">
+      Only `recursive` is currently supported.
+    </ParamField>
+    <ParamField path="chunk_size" type="number" default="1_024">
+      The target size for output chunks.
+    </ParamField>
+    <ParamField path="chunk_overlap" type="number" default="512">
+      The target overlap fraction for output chunks
+    </ParamField>
+    <ParamField path="excluded_parsers" type="list[str]" default="['mp4']">
+      Which parsers to exclude from inside R2R.
+    </ParamField>
+  </Expandable>
+
+  <Expandable title="Unstructured Provider Options">
+    <ParamField path="provider" type="str" default="unstructured_local">
+      Which unstructured ingestion provider to use. Options are "unstructured_local", or "unstructured_api".
+    </ParamField>
+
+    <ParamField path="max_chunk_size" type="Optional[int]" default="None">
+      Sets a maximum size on output chunks.
+    </ParamField>
+
+    <ParamField path="combine_under_n_chars" type="Optional[int]">
+      Combine chunks smaller than this number of characters.
+    </ParamField>
+
+    <ParamField path="max_characters" type="Optional[int]">
+      Maximum number of characters per chunk.
+    </ParamField>
+
+    <ParamField path="coordinates" type="bool" default="False">
+      Whether to include coordinates in the output.
+    </ParamField>
+
+    <ParamField path="encoding" type="Optional[str]">
+      Encoding to use for text files.
+    </ParamField>
+
+    <ParamField path="extract_image_block_types" type="Optional[list[str]]">
+      Types of image blocks to extract.
+    </ParamField>
+
+    <ParamField path="gz_uncompressed_content_type" type="Optional[str]">
+      Content type for uncompressed gzip files.
+    </ParamField>
+
+    <ParamField path="hi_res_model_name" type="Optional[str]">
+      Name of the high-resolution model to use.
+    </ParamField>
+
+    <ParamField path="include_orig_elements" type="Optional[bool]" default="False">
+      Whether to include original elements in the output.
+    </ParamField>
+
+    <ParamField path="include_page_breaks" type="bool">
+      Whether to include page breaks in the output.
+    </ParamField>
+
+    <ParamField path="languages" type="Optional[list[str]]">
+      List of languages to consider for text processing.
+    </ParamField>
+
+    <ParamField path="multipage_sections" type="bool" default="True">
+      Whether to allow sections to span multiple pages.
+    </ParamField>
+
+    <ParamField path="new_after_n_chars" type="Optional[int]">
+      Start a new chunk after this many characters.
+    </ParamField>
+
+    <ParamField path="ocr_languages" type="Optional[list[str]]">
+      Languages to use for OCR.
+    </ParamField>
+
+    <ParamField path="output_format" type="str" default="application/json">
+      Format of the output.
+    </ParamField>
+
+    <ParamField path="overlap" type="int" default="0">
+      Number of characters to overlap between chunks.
+    </ParamField>
+
+    <ParamField path="overlap_all" type="bool" default="False">
+      Whether to overlap all chunks.
+    </ParamField>
+
+    <ParamField path="pdf_infer_table_structure" type="bool" default="True">
+      Whether to infer table structure in PDFs.
+    </ParamField>
+
+    <ParamField path="similarity_threshold" type="Optional[float]">
+      Threshold for considering chunks similar.
+    </ParamField>
+
+    <ParamField path="skip_infer_table_types" type="Optional[list[str]]">
+      Types of tables to skip inferring.
+    </ParamField>
+
+    <ParamField path="split_pdf_concurrency_level" type="int" default="5">
+      Concurrency level for splitting PDFs.
+    </ParamField>
+
+    <ParamField path="split_pdf_page" type="bool" default="True">
+      Whether to split PDFs by page.
+    </ParamField>
+
+    <ParamField path="starting_page_number" type="Optional[int]">
+      Page number to start processing from.
+    </ParamField>
+
+    <ParamField path="strategy" type="str" default="auto">
+      Strategy for processing. Options are "auto", "fast", or "hi_res".
+    </ParamField>
+
+    <ParamField path="chunking_strategy" type="Optional[str]" default="by_title">
+      Strategy for chunking. Options are "by_title" or "basic".
+    </ParamField>
+
+    <ParamField path="unique_element_ids" type="bool" default="False">
+      Whether to generate unique IDs for elements.
+    </ParamField>
+
+    <ParamField path="xml_keep_tags" type="bool" default="False">
+      Whether to keep XML tags in the output.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+
 For a comprehensive list of available runtime configuration options and examples of how to use them, refer to the [Python SDK Ingestion Documentation](/documentation/python-sdk/ingestion).
 
 
