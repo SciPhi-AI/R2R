@@ -831,11 +831,11 @@ class ManagementRouter(BaseRouter):
         ) -> dict:
             return await self.service.create_conversation()
 
-        @self.router.post("/conversations/{conversation_id}/messages")
+        @self.router.post("/add_message/{conversation_id}")
         @self.base_endpoint
         async def add_message(
             conversation_id: str = Path(..., description="Conversation ID"),
-            content: Message = Body(..., description="Message content"),
+            message: Message = Body(..., description="Message content"),
             parent_id: Optional[str] = Body(
                 None, description="Parent message ID"
             ),
@@ -843,35 +843,35 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
             message_id = await self.service.add_message(
-                conversation_id, content, parent_id, metadata
+                conversation_id, message, parent_id, metadata
             )
             return {"message_id": message_id}
 
-        @self.router.put("/messages/{message_id}")
+        @self.router.put("/update_message/{message_id}")
         @self.base_endpoint
         async def edit_message(
             message_id: str = Path(..., description="Message ID"),
-            new_content: str = Body(..., description="New content"),
+            message: str = Body(..., description="New content"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
             new_message_id, new_branch_id = await self.service.edit_message(
-                message_id, new_content
+                message_id, message
             )
             return {
                 "new_message_id": new_message_id,
                 "new_branch_id": new_branch_id,
             }
 
-        @self.router.get("/conversations/{conversation_id}/branches")
+        @self.router.get("/branches_overview/{conversation_id}")
         @self.base_endpoint
-        async def list_branches(
+        async def branches_overview(
             conversation_id: str = Path(..., description="Conversation ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
-            branches = await self.service.list_branches(conversation_id)
+            branches = await self.service.branches_overview(conversation_id)
             return {"branches": branches}
 
-        @self.router.get("/branches/{branch_id}/next")
+        @self.router.get("/get_next_branch/{branch_id}")
         @self.base_endpoint
         async def get_next_branch(
             branch_id: str = Path(..., description="Current branch ID"),
@@ -880,7 +880,7 @@ class ManagementRouter(BaseRouter):
             next_branch_id = await self.service.get_next_branch(branch_id)
             return {"next_branch_id": next_branch_id}
 
-        @self.router.get("/branches/{branch_id}/prev")
+        @self.router.get("/get_previous_branch/{branch_id}")
         @self.base_endpoint
         async def get_prev_branch(
             branch_id: str = Path(..., description="Current branch ID"),
@@ -889,7 +889,7 @@ class ManagementRouter(BaseRouter):
             prev_branch_id = await self.service.get_prev_branch(branch_id)
             return {"prev_branch_id": prev_branch_id}
 
-        @self.router.post("/messages/{message_id}/branch")
+        @self.router.post("/branch_at_message/{message_id}")
         @self.base_endpoint
         async def branch_at_message(
             message_id: str = Path(..., description="Message ID"),

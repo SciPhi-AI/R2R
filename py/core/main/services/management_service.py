@@ -699,11 +699,13 @@ class ManagementService(Service):
             message_id, new_content
         )
 
-    @telemetry_event("ListBranches")
-    async def list_branches(
+    @telemetry_event("BranchesOverview")
+    async def branches_overview(
         self, conversation_id: str, auth_user=None
     ) -> list[Dict]:
-        return await self.logging_connection.list_branches(conversation_id)
+        return await self.logging_connection.get_branches_overview(
+            conversation_id
+        )
 
     @telemetry_event("GetNextBranch")
     async def get_next_branch(

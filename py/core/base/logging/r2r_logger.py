@@ -539,7 +539,7 @@ class SqlitePersistentLoggingProvider(RunLoggingProvider):
             rows = await cursor.fetchall()
             return [(row[0], Message.parse_raw(row[1])) for row in rows]
 
-    async def list_branches(self, conversation_id: str) -> list[dict]:
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
@@ -874,9 +874,9 @@ class R2RLoggingProvider:
             return await provider.get_conversation(conversation_id, branch_id)
 
     @classmethod
-    async def list_branches(cls, conversation_id: str) -> list[dict]:
+    async def get_branches_overview(cls, conversation_id: str) -> list[dict]:
         async with cls.get_persistent_logger() as provider:
-            return await provider.list_branches(conversation_id)
+            return await provider.get_branches_overview(conversation_id)
 
     @classmethod
     async def get_next_branch(cls, current_branch_id: str) -> Optional[str]:
