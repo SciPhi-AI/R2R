@@ -671,3 +671,70 @@ class ManagementService(Service):
         return await self.logging_connection.get_conversation(
             conversation_id, branch_id
         )
+
+    @telemetry_event("CreateConversation")
+    async def create_conversation(self, auth_user=None) -> str:
+        return await self.logging_connection.create_conversation()
+
+    @telemetry_event("ConversationsOverview")
+    async def conversations_overview(
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
+        auth_user=None,
+    ) -> list[Dict]:
+        return await self.logging_connection.get_conversations_overview(
+            conversation_ids=conversation_ids,
+            offset=offset,
+            limit=limit,
+        )
+
+    @telemetry_event("AddMessage")
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: Message,
+        parent_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        auth_user=None,
+    ) -> str:
+        return await self.logging_connection.add_message(
+            conversation_id, content, parent_id, metadata
+        )
+
+    @telemetry_event("EditMessage")
+    async def edit_message(
+        self, message_id: str, new_content: str, auth_user=None
+    ) -> Tuple[str, str]:
+        return await self.logging_connection.edit_message(
+            message_id, new_content
+        )
+
+    @telemetry_event("BranchesOverview")
+    async def branches_overview(
+        self, conversation_id: str, auth_user=None
+    ) -> list[Dict]:
+        return await self.logging_connection.get_branches_overview(
+            conversation_id
+        )
+
+    @telemetry_event("GetNextBranch")
+    async def get_next_branch(
+        self, current_branch_id: str, auth_user=None
+    ) -> Optional[str]:
+        return await self.logging_connection.get_next_branch(current_branch_id)
+
+    @telemetry_event("GetPrevBranch")
+    async def get_prev_branch(
+        self, current_branch_id: str, auth_user=None
+    ) -> Optional[str]:
+        return await self.logging_connection.get_prev_branch(current_branch_id)
+
+    @telemetry_event("BranchAtMessage")
+    async def branch_at_message(self, message_id: str, auth_user=None) -> str:
+        return await self.logging_connection.branch_at_message(message_id)
+
+    @telemetry_event("DeleteConversation")
+    async def delete_conversation(self, conversation_id: str, auth_user=None):
+        await self.logging_connection.delete_conversation(conversation_id)

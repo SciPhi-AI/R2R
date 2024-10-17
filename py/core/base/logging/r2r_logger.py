@@ -4,7 +4,7 @@ import os
 import uuid
 from abc import abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,9 +15,6 @@ from ..providers.base import Provider, ProviderConfig
 from .base import RunType
 
 logger = logging.getLogger()
-
-import uuid
-from typing import Dict, List, Optional, Tuple
 
 
 class RunInfoLog(BaseModel):
@@ -279,12 +276,70 @@ class SqlitePersistentLoggingProvider(RunLoggingProvider):
         await self.conn.commit()
         return conversation_id
 
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> dict[str, Union[list[dict], int]]:
+        """Get an overview of conversations, optionally filtered by conversation IDs, with pagination."""
+        query = """
+            WITH conversation_overview AS (
+                SELECT c.id, c.created_at
+                FROM conversations c
+                {where_clause}
+            ),
+            counted_overview AS (
+                SELECT *, COUNT(*) OVER() AS total_entries
+                FROM conversation_overview
+            )
+            SELECT * FROM counted_overview
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """
+
+        where_clause = (
+            f"WHERE c.id IN ({','.join(['?' for _ in conversation_ids])})"
+            if conversation_ids
+            else ""
+        )
+        query = query.format(where_clause=where_clause)
+
+        params: list = []
+        if conversation_ids:
+            params.extend(conversation_ids)
+        params.extend((limit if limit != -1 else -1, offset))
+
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        async with self.conn.execute(query, params) as cursor:
+            results = await cursor.fetchall()
+
+        if not results:
+            logger.info("No conversations found.")
+            return {"results": [], "total_entries": 0}
+
+        conversations = [
+            {
+                "conversation_id": row[0],
+                "created_at": row[1],
+            }
+            for row in results
+        ]
+
+        total_entries = results[0][-1] if results else 0
+
+        return {"results": conversations, "total_entries": total_entries}
+
     async def add_message(
         self,
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[dict] = None,
     ) -> str:
         if not self.conn:
             raise ValueError(
@@ -482,10 +537,9 @@ class SqlitePersistentLoggingProvider(RunLoggingProvider):
             (branch_id, branch_id),
         ) as cursor:
             rows = await cursor.fetchall()
-            messages = [(row[0], Message.parse_raw(row[1])) for row in rows]
-            return messages
+            return [(row[0], Message.parse_raw(row[1])) for row in rows]
 
-    async def list_branches(self, conversation_id: str) -> List[Dict]:
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
@@ -603,12 +657,6 @@ class SqlitePersistentLoggingProvider(RunLoggingProvider):
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
-            )
-
-        # Ensure the connection is initialized
-        if not self.conn:
-            raise ValueError(
-                "Initialize the connection pool before attempting to delete."
             )
 
         # Begin a transaction
@@ -790,12 +838,26 @@ class R2RLoggingProvider:
             return await provider.create_conversation()
 
     @classmethod
+    async def get_conversations_overview(
+        cls,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[dict]:
+        async with cls.get_persistent_logger() as provider:
+            return await provider.get_conversations_overview(
+                conversation_ids=conversation_ids,
+                offset=offset,
+                limit=limit,
+            )
+
+    @classmethod
     async def add_message(
         cls,
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[dict] = None,
     ) -> str:
         async with cls.get_persistent_logger() as provider:
             return await provider.add_message(
@@ -817,9 +879,9 @@ class R2RLoggingProvider:
             return await provider.get_conversation(conversation_id, branch_id)
 
     @classmethod
-    async def list_branches(cls, conversation_id: str) -> list[dict]:
+    async def get_branches_overview(cls, conversation_id: str) -> list[dict]:
         async with cls.get_persistent_logger() as provider:
-            return await provider.list_branches(conversation_id)
+            return await provider.get_branches_overview(conversation_id)
 
     @classmethod
     async def get_next_branch(cls, current_branch_id: str) -> Optional[str]:
@@ -835,6 +897,11 @@ class R2RLoggingProvider:
     async def branch_at_message(cls, message_id: str) -> str:
         async with cls.get_persistent_logger() as provider:
             return await provider.branch_at_message(message_id)
+
+    @classmethod
+    async def delete_conversation(cls, conversation_id: str):
+        async with cls.get_persistent_logger() as provider:
+            await provider.delete_conversation(conversation_id)
 
     @classmethod
     async def close(cls):

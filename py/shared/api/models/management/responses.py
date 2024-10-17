@@ -109,9 +109,6 @@ class DocumentChunkResponse(BaseModel):
     vector: Optional[list[float]] = None
 
 
-KnowledgeGraphResponse = str
-
-
 class CollectionResponse(BaseModel):
     collection_id: UUID
     name: str
@@ -128,6 +125,11 @@ class CollectionOverviewResponse(BaseModel):
     updated_at: datetime
     user_count: int
     document_count: int
+
+
+class ConversationOverviewResponse(BaseModel):
+    conversation_id: UUID
+    created_at: datetime
 
 
 class AddUserResponse(BaseModel):
@@ -148,7 +150,6 @@ WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]
-WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
 WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
 WrappedCollectionOverviewResponse = ResultsWrapper[
@@ -163,3 +164,6 @@ WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
+WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
+    list[ConversationOverviewResponse]
+]
