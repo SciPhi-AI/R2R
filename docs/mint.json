@@ -112,7 +112,8 @@
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
                 "documentation/python-sdk/collections",
-                "documentation/python-sdk/observability"
+                "documentation/python-sdk/observability",
+                "documentation/python-sdk/conversations"
               ]
             },
             {

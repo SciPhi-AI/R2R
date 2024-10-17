@@ -839,11 +839,16 @@ class R2RLoggingProvider:
 
     @classmethod
     async def get_conversations_overview(
-        cls, offset: int = 0, limit: int = 100
+        cls,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
     ) -> list[dict]:
         async with cls.get_persistent_logger() as provider:
             return await provider.get_conversations_overview(
-                offset=offset, limit=limit
+                conversation_ids=conversation_ids,
+                offset=offset,
+                limit=limit,
             )
 
     @classmethod

@@ -1253,12 +1253,16 @@ export class r2rClient {
    */
   @feature("conversationsOverview")
   async conversationsOverview(
+    conversation_ids?: string[],
     offset?: number,
     limit?: number,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
-    const params: Record<string, number> = {};
+    let params: Record<string, any> = {};
+    if (conversation_ids && conversation_ids.length > 0) {
+      params.conversation_ids = conversation_ids;
+    }
     if (offset !== undefined) {
       params.offset = offset;
     }
@@ -1272,12 +1276,20 @@ export class r2rClient {
   /**
    * Get a conversation by its ID.
    * @param conversationId The ID of the conversation to get.
+   * @param branchId The ID of the branch (optional).
    * @returns A promise that resolves to the response from the server.
    */
   @feature("getConversation")
-  async getConversation(conversationId: string): Promise<Record<string, any>> {
+  async getConversation(
+    conversationId: string,
+    branchId?: string,
+  ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    return this._makeRequest("GET", `get_conversation/${conversationId}`);
+    const queryParams = branchId ? `?branch_id=${branchId}` : "";
+    return this._makeRequest(
+      "GET",
+      `get_conversation/${conversationId}${queryParams}`,
+    );
   }
 
   /**

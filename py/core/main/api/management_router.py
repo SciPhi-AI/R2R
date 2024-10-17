@@ -797,13 +797,19 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/conversations_overview")
         @self.base_endpoint
         async def conversations_overview_app(
+            conversation_ids: list[str] = Query([]),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedConversationsOverviewResponse:
+            conversation_uuids = [
+                UUID(conversation_id) for conversation_id in conversation_ids
+            ]
             conversations_overview_response = (
                 await self.service.conversations_overview(
-                    offset=offset, limit=limit
+                    conversation_ids=conversation_uuids,
+                    offset=offset,
+                    limit=limit,
                 )
             )
 
@@ -821,7 +827,8 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedConversationResponse:
             result = await self.service.get_conversation(
-                conversation_id, branch_id
+                conversation_id,
+                branch_id,
             )
             return result
 

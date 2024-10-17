@@ -17,25 +17,30 @@ Occasionally this SDK documentation falls out of date, cross-check with the auto
 
 Retrieve an overview of existing conversations:
 
-```javascript
-const offset = 0;
-const limit = 10;
-const overviewResponse = await client.conversationsOverview(offset, limit);
+```python
+conversation_ids = ['123e4567-e89b-12d3-a456-426614174000', '987f6543-e21b-12d3-a456-426614174000']
+offset = 0
+limit = 10
+overview_response = await client.conversations_overview(conversation_ids, offset, limit)
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response containing an overview of conversations.
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="offset" type="number">
+<ParamField path="conversation_ids" type="list[str]">
+  Optional list of conversation UUIDs to retrieve.
+</ParamField>
+
+<ParamField path="offset" type="int">
   The offset to start listing conversations from.
 </ParamField>
 
-<ParamField path="limit" type="number">
+<ParamField path="limit" type="int">
   The maximum number of conversations to return.
 </ParamField>
 
@@ -43,34 +48,39 @@ const overviewResponse = await client.conversationsOverview(offset, limit);
 
 Fetch a specific conversation by its UUID:
 
-```javascript
-const conversationId = '123e4567-e89b-12d3-a456-426614174000';
-const conversation = await client.getConversation(conversationId);
+```python
+conversation_id = '123e4567-e89b-12d3-a456-426614174000'
+branch_id = 'optional-branch-id'
+conversation = await client.get_conversation(conversation_id, branch_id)
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response containing the requested conversation details.
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="conversationId" type="string" required>
+<ParamField path="conversation_id" type="str" required>
   The UUID of the conversation to retrieve.
+</ParamField>
+
+<ParamField path="branch_id" type="str">
+  Optional ID of a specific branch to retrieve.
 </ParamField>
 
 ### Create Conversation
 
 Create a new conversation:
 
-```javascript
-const newConversation = await client.createConversation();
+```python
+new_conversation = await client.create_conversation()
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response containing details of the newly created conversation.
     </ResponseField>
   </Accordion>
@@ -80,63 +90,63 @@ const newConversation = await client.createConversation();
 
 Add a message to an existing conversation:
 
-```javascript
-const conversationId = '123e4567-e89b-12d3-a456-426614174000';
-const message = { text: 'Hello, world!' };
-const parentId = '98765432-e21b-12d3-a456-426614174000';
-const metadata = { key: 'value' };
+```python
+conversation_id = '123e4567-e89b-12d3-a456-426614174000'
+message = Message(text='Hello, world!')
+parent_id = '98765432-e21b-12d3-a456-426614174000'
+metadata = {'key': 'value'}
 
-const addMessageResponse = await client.addMessage(conversationId, message, parentId, metadata);
+add_message_response = await client.add_message(conversation_id, message, parent_id, metadata)
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response after adding the message to the conversation.
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="conversationId" type="string" required>
+<ParamField path="conversation_id" type="str" required>
   The UUID of the conversation to add the message to.
 </ParamField>
 
-<ParamField path="message" type="object" required>
+<ParamField path="message" type="Message" required>
   The message object to add to the conversation.
 </ParamField>
 
-<ParamField path="parentId" type="string">
+<ParamField path="parent_id" type="str">
   An optional UUID of the parent message.
 </ParamField>
 
-<ParamField path="metadata" type="object">
-  An optional metadata object for the message.
+<ParamField path="metadata" type="dict">
+  An optional metadata dictionary for the message.
 </ParamField>
 
 ### Update Message
 
 Update an existing message in a conversation:
 
-```javascript
-const messageId = '98765432-e21b-12d3-a456-426614174000';
-const updatedMessage = { text: 'Updated message content' };
+```python
+message_id = '98765432-e21b-12d3-a456-426614174000'
+updated_message = Message(text='Updated message content')
 
-const updateMessageResponse = await client.updateMessage(messageId, updatedMessage);
+update_message_response = await client.update_message(message_id, updated_message)
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response after updating the message.
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="messageId" type="string" required>
+<ParamField path="message_id" type="str" required>
   The UUID of the message to update.
 </ParamField>
 
-<ParamField path="message" type="object" required>
+<ParamField path="message" type="Message" required>
   The updated message object.
 </ParamField>
 
@@ -144,20 +154,20 @@ const updateMessageResponse = await client.updateMessage(messageId, updatedMessa
 
 Retrieve an overview of branches in a conversation:
 
-```javascript
-const conversationId = '123e4567-e89b-12d3-a456-426614174000';
-const branchesOverview = await client.branchesOverview(conversationId);
+```python
+conversation_id = '123e4567-e89b-12d3-a456-426614174000'
+branches_overview = await client.branches_overview(conversation_id)
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response containing an overview of branches in the conversation.
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="conversationId" type="string" required>
+<ParamField path="conversation_id" type="str" required>
   The UUID of the conversation to get branches for.
 </ParamField>
 
@@ -165,19 +175,19 @@ const branchesOverview = await client.branchesOverview(conversationId);
 
 Delete a conversation by its UUID:
 
-```javascript
-const conversationId = '123e4567-e89b-12d3-a456-426614174000';
-const deleteResponse = await client.deleteConversation(conversationId);
+```python
+conversation_id = '123e4567-e89b-12d3-a456-426614174000'
+delete_response = await client.delete_conversation(conversation_id)
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
-    <ResponseField name="response" type="object">
+    <ResponseField name="response" type="dict">
       The response after deleting the conversation.
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="conversationId" type="string" required>
+<ParamField path="conversation_id" type="str" required>
   The UUID of the conversation to delete.
 </ParamField>

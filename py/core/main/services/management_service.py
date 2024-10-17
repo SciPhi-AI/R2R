@@ -672,10 +672,16 @@ class ManagementService(Service):
 
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
-        self, offset: int = 0, limit: int = 100, auth_user=None
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
+        auth_user=None,
     ) -> list[Dict]:
         return await self.logging_connection.get_conversations_overview(
-            offset=offset, limit=limit
+            conversation_ids=conversation_ids,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("AddMessage")
