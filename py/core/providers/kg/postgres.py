@@ -220,7 +220,7 @@ class PostgresKGProvider(KGProvider):
         """
         for entity in entities:
             if entity.description_embedding is not None:
-                entity.description_embedding = str(
+                entity.description_embedding = str( # type: ignore # TODO: find a better way to handle this, preferrably in postgres directly
                     entity.description_embedding
                 )
 

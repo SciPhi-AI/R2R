@@ -62,7 +62,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length: int,
     ):
 
-        entity_map = {}
+        entity_map = dict[str, dict[str, list[Any]]]
         for entity in entities:
             if not entity.name in entity_map:
                 entity_map[entity.name] = {"entities": [], "triples": []}
