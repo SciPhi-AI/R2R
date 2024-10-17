@@ -119,7 +119,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=self.prompt_provider._get_message_payload(
+                        messages=await self.prompt_provider._get_message_payload(
                             task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
                             task_inputs={
                                 "input_text": (

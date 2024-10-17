@@ -95,8 +95,10 @@ class Agent(ABC):
             Message(
                 role="system",
                 content=system_instruction
-                or self.prompt_provider.get_prompt(
-                    self.config.system_instruction_name
+                or (
+                    await self.prompt_provider.get_prompt(
+                        self.config.system_instruction_name
+                    )
                 ),
             )
         )
