@@ -1,8 +1,8 @@
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
-import time
 
 import asyncpg
 
@@ -441,6 +441,7 @@ class PostgresKGProvider(KGProvider):
                 or search_type == "__Relationship__"
             ):
                 filter_query = "WHERE document_id = ANY($3)"
+                # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
                 query = f"""
                     SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
                 """
