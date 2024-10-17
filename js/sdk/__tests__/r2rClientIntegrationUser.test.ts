@@ -2,7 +2,7 @@ import { r2rClient } from "../src/index";
 const fs = require("fs");
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
-const baseUrl = "http://localhost:7276";
+const baseUrl = "http://localhost:7272";
 
 /**
  * raskolnikov.txt should have an id of `91662726-7271-51a5-a0ae-34818509e1fd`
@@ -55,10 +55,10 @@ const baseUrl = "http://localhost:7276";
  *     X removeDocumentFromCollection
  *     X getDocumentCollections
  *     X getDocumentsInCollection
- *     X conversationsOverview
- *     X getConversation
- *     X createConversation
- *     X addMessage
+ *     - conversationsOverview
+ *     - getConversation
+ *     - createConversation
+ *     - addMessage
  *     X updateMessage
  *     X branchesOverview
  *     X getNextBranch
@@ -77,6 +77,7 @@ const baseUrl = "http://localhost:7276";
 
 describe("r2rClient Integration Tests", () => {
   let client: r2rClient;
+  let createdConversationId: any;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -196,6 +197,45 @@ describe("r2rClient Integration Tests", () => {
 
   test("Get documents overview", async () => {
     await expect(client.documentsOverview()).resolves.not.toThrow();
+  });
+
+  test("Get conversations overview", async () => {
+    await expect(client.conversationsOverview()).resolves.not.toThrow();
+  });
+
+  test("Create conversation", async () => {
+    const createConversationResponse = await client.createConversation();
+    createdConversationId = createConversationResponse.results;
+    expect(createdConversationId).toBeDefined();
+  });
+
+  test("Get conversation", async () => {
+    await expect(
+      client.getConversation(createdConversationId),
+    ).resolves.not.toThrow();
+  });
+
+  test("Add message to conversation", async () => {
+    const message = {
+      role: "user",
+      content: "Hello, world!",
+    };
+
+    await expect(
+      client.addMessage(createdConversationId, message),
+    ).resolves.not.toThrow();
+  });
+
+  test("Branches overview", async () => {
+    await expect(
+      client.branchesOverview(createdConversationId),
+    ).resolves.not.toThrow();
+  });
+
+  test("Delete conversation", async () => {
+    await expect(
+      client.deleteConversation(createdConversationId),
+    ).resolves.not.toThrow();
   });
 
   test("Logout", async () => {

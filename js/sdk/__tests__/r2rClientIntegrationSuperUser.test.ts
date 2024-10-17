@@ -2,7 +2,7 @@ import { r2rClient } from "../src/index";
 const fs = require("fs");
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
-const baseUrl = "http://localhost:7276";
+const baseUrl = "http://localhost:7272";
 let newCollectionId: string;
 
 /**
