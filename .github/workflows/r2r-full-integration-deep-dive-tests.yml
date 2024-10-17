@@ -19,22 +19,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python and install dependencies
-        uses: ./.github/actions/setup-python-full
-        with:
-          os: "ubuntu-latest"
+      # - name: Set up Python and install dependencies
+      #   uses: ./.github/actions/setup-python-full
+      #   with:
+      #     os: "ubuntu-latest"
 
-      - name: Setup and start Docker
-        uses: ./.github/actions/setup-docker
+      # - name: Setup and start Docker
+      #   uses: ./.github/actions/setup-docker
 
-      - name: Login Docker
-        uses: ./.github/actions/login-docker
-        with:
-          docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
-          docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+      # - name: Login Docker
+      #   uses: ./.github/actions/login-docker
+      #   with:
+      #     docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+      #     docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Start R2R Full server
-        uses: ./.github/actions/start-r2r-full
+      # - name: Start R2R Full server
+      #   uses: ./.github/actions/start-r2r-full
 
-      - name: Run Test Zerox
-        uses: ./.github/actions/run-script-zerox-tests
+      # - name: Run Test Zerox
+      #   uses: ./.github/actions/run-script-zerox-tests

@@ -43,9 +43,22 @@ runs:
         # Install Visual Studio Build Tools
         choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
 
+        # Create the Temp directory if it doesn't exist
+        mkdir -Force "C:\Users\RUNNER~1\AppData\Local\Temp"
+
         # Set up environment for building pgvector
         $vcvars64Path = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+        
+        # Echo the temp directory
+        echo "Temp directory: $env:TEMP"
+
         cmd.exe /c "call `"$vcvars64Path`" && set > %temp%\vcvars.txt"
+        
+        # Echo the content of vcvars.txt
+        echo "Content of vcvars.txt:"
+        type "$env:TEMP\vcvars.txt"
+
+        # Set up environment for building pgvector  
         cmd.exe /c "call `"$vcvars64Path`" && set > C:\Users\RUNNER~1\AppData\Local\Temp\vcvars.txt"
         Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
           if ($_ -match "^(.*?)=(.*)$") {
