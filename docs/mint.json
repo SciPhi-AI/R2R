@@ -124,7 +124,8 @@
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
                 "documentation/js-sdk/collections",
-                "documentation/js-sdk/observability"
+                "documentation/js-sdk/observability",
+                "documentation/js-sdk/conversations"
               ]
             },
             {

@@ -68,7 +68,7 @@ let newCollectionId: string;
  *     X getNextBranch
  *     X getPreviousBranch
  *     X branchAtMessage
- *     X deleteConversation
+ *     - deleteConversation
  *    Restructure:
  *     X enrichGraph
  *    Retrieval:
