@@ -126,6 +126,11 @@ class CollectionOverviewResponse(BaseModel):
     document_count: int
 
 
+class ConversationOverviewResponse(BaseModel):
+    conversation_id: UUID
+    created_at: datetime
+
+
 class AddUserResponse(BaseModel):
     result: bool
 
@@ -158,3 +163,6 @@ WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
+WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
+    list[ConversationOverviewResponse]
+]

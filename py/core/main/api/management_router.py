@@ -29,6 +29,7 @@ from core.base.api.models import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
+    WrappedConversationsOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 from core.base.providers import OrchestrationProvider
@@ -799,7 +800,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> dict:
+        ) -> WrappedConversationsOverviewResponse:
             conversations_overview_response = (
                 await self.service.conversations_overview(
                     offset=offset, limit=limit
@@ -871,32 +872,35 @@ class ManagementRouter(BaseRouter):
             branches = await self.service.branches_overview(conversation_id)
             return {"branches": branches}
 
-        @self.router.get("/get_next_branch/{branch_id}")
-        @self.base_endpoint
-        async def get_next_branch(
-            branch_id: str = Path(..., description="Current branch ID"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> dict:
-            next_branch_id = await self.service.get_next_branch(branch_id)
-            return {"next_branch_id": next_branch_id}
+        # TODO: Publish this endpoint once more testing is done
+        # @self.router.get("/get_next_branch/{branch_id}")
+        # @self.base_endpoint
+        # async def get_next_branch(
+        #     branch_id: str = Path(..., description="Current branch ID"),
+        #     auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        # ) -> dict:
+        #     next_branch_id = await self.service.get_next_branch(branch_id)
+        #     return {"next_branch_id": next_branch_id}
 
-        @self.router.get("/get_previous_branch/{branch_id}")
-        @self.base_endpoint
-        async def get_prev_branch(
-            branch_id: str = Path(..., description="Current branch ID"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> dict:
-            prev_branch_id = await self.service.get_prev_branch(branch_id)
-            return {"prev_branch_id": prev_branch_id}
+        # TODO: Publish this endpoint once more testing is done
+        # @self.router.get("/get_previous_branch/{branch_id}")
+        # @self.base_endpoint
+        # async def get_prev_branch(
+        #     branch_id: str = Path(..., description="Current branch ID"),
+        #     auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        # ) -> dict:
+        #     prev_branch_id = await self.service.get_prev_branch(branch_id)
+        #     return {"prev_branch_id": prev_branch_id}
 
-        @self.router.post("/branch_at_message/{message_id}")
-        @self.base_endpoint
-        async def branch_at_message(
-            message_id: str = Path(..., description="Message ID"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> dict:
-            branch_id = await self.service.branch_at_message(message_id)
-            return {"branch_id": branch_id}
+        # TODO: Publish this endpoint once more testing is done
+        # @self.router.post("/branch_at_message/{message_id}")
+        # @self.base_endpoint
+        # async def branch_at_message(
+        #     message_id: str = Path(..., description="Message ID"),
+        #     auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        # ) -> dict:
+        #     branch_id = await self.service.branch_at_message(message_id)
+        #     return {"branch_id": branch_id}
 
         @self.router.delete("/delete_conversation/{conversation_id}")
         @self.base_endpoint

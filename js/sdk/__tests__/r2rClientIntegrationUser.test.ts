@@ -2,7 +2,7 @@ import { r2rClient } from "../src/index";
 const fs = require("fs");
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
-const baseUrl = "http://localhost:7272";
+const baseUrl = "http://localhost:7276";
 
 /**
  * raskolnikov.txt should have an id of `91662726-7271-51a5-a0ae-34818509e1fd`
@@ -55,6 +55,16 @@ const baseUrl = "http://localhost:7272";
  *     X removeDocumentFromCollection
  *     X getDocumentCollections
  *     X getDocumentsInCollection
+ *     X conversationsOverview
+ *     X getConversation
+ *     X createConversation
+ *     X addMessage
+ *     X updateMessage
+ *     X branchesOverview
+ *     X getNextBranch
+ *     X getPreviousBranch
+ *     X branchAtMessage
+ *     X deleteConversation
  *    Restructure:
  *     X enrichGraph
  *    Retrieval:

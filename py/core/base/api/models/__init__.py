@@ -34,6 +34,7 @@ from shared.api.models.management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
+    ConversationOverviewResponse,
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -51,6 +52,7 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
+    WrappedConversationsOverviewResponse,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
@@ -93,6 +95,7 @@ __all__ = [
     "DocumentChunkResponse",
     "CollectionResponse",
     "CollectionOverviewResponse",
+    "ConversationOverviewResponse",
     "WrappedPromptMessageResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
@@ -113,6 +116,7 @@ __all__ = [
     "WrappedDocumentChunkResponse",
     "WrappedCollectionOverviewResponse",
     "WrappedDeleteResponse",
+    "WrappedConversationsOverviewResponse",
     # Retrieval Responses
     "SearchResponse",
     "RAGResponse",

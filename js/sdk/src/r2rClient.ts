@@ -1300,11 +1300,18 @@ export class r2rClient {
   async addMessage(
     conversationId: string,
     message: Message,
+    parent_id?: string,
+    metadata?: Record<string, any>,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    return this._makeRequest("POST", `add_message/${conversationId}`, {
-      data: message,
-    });
+    const data: any = { message }; // Nest message under 'message' key
+    if (parent_id !== undefined) {
+      data.parent_id = parent_id;
+    }
+    if (metadata !== undefined) {
+      data.metadata = metadata;
+    }
+    return this._makeRequest("POST", `add_message/${conversationId}`, { data });
   }
 
   /**
@@ -1335,45 +1342,46 @@ export class r2rClient {
     return this._makeRequest("GET", `branches_overview/${conversationId}`);
   }
 
-  /**
-   * Get the next branch in a conversation.
-   * @param branchId The ID of the branch to get the next branch for.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getNextBranch")
-  async getNextBranch(branchId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("GET", `get_next_branch/${branchId}`);
-  }
+  // TODO: Publish these methods once more testing is done
+  // /**
+  //  * Get the next branch in a conversation.
+  //  * @param branchId The ID of the branch to get the next branch for.
+  //  * @returns A promise that resolves to the response from the server.
+  //  */
+  // @feature("getNextBranch")
+  // async getNextBranch(branchId: string): Promise<Record<string, any>> {
+  //   this._ensureAuthenticated();
+  //   return this._makeRequest("GET", `get_next_branch/${branchId}`);
+  // }
 
-  /**
-   * Get the previous branch in a conversation.
-   * @param branchId The ID of the branch to get the previous branch for.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getPreviousBranch")
-  async getPreviousBranch(branchId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("GET", `get_previous_branch/${branchId}`);
-  }
+  // /**
+  //  * Get the previous branch in a conversation.
+  //  * @param branchId The ID of the branch to get the previous branch for.
+  //  * @returns A promise that resolves to the response from the server.
+  //  */
+  // @feature("getPreviousBranch")
+  // async getPreviousBranch(branchId: string): Promise<Record<string, any>> {
+  //   this._ensureAuthenticated();
+  //   return this._makeRequest("GET", `get_previous_branch/${branchId}`);
+  // }
 
-  /**
-   * Branch at a specific message in a conversation.
-   * @param conversationId The ID of the conversation to branch.
-   * @param message_id The ID of the message to branch at.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("branchAtMessage")
-  async branchAtMessage(
-    conversationId: string,
-    message_id: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest(
-      "POST",
-      `branch_at_message/${conversationId}/${message_id}`,
-    );
-  }
+  // /**
+  //  * Branch at a specific message in a conversation.
+  //  * @param conversationId The ID of the conversation to branch.
+  //  * @param message_id The ID of the message to branch at.
+  //  * @returns A promise that resolves to the response from the server.
+  //  */
+  // @feature("branchAtMessage")
+  // async branchAtMessage(
+  //   conversationId: string,
+  //   message_id: string,
+  // ): Promise<Record<string, any>> {
+  //   this._ensureAuthenticated();
+  //   return this._makeRequest(
+  //     "POST",
+  //     `branch_at_message/${conversationId}/${message_id}`,
+  //   );
+  // }
 
   /**
    * Delete a conversation by its ID.
