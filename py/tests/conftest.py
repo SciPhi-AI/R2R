@@ -22,7 +22,7 @@ from core import (
     VectorEntry,
 )
 
-from core.base import (
+from core.base import (    
     DocumentInfo,
     DocumentType,
     IngestionStatus,
@@ -37,11 +37,11 @@ from core.providers import (
     PostgresDBProvider,
     PostgresFileProvider,
     R2RAuthProvider,
+    R2RPromptProvider,
     PostgresKGProvider,
 )
 
 from shared.abstractions.vector import VectorQuantizationType
-
 
 # Vectors
 @pytest.fixture(scope="function")
@@ -222,28 +222,18 @@ async def local_logging_provider(app_config):
 def kg_config_temporary(app_config):
     return KGConfig(provider="postgres", app=app_config)
 
-
 # KG
-
 
 @pytest.fixture(scope="function")
 def embedding_dimension():
     return 128
 
-
 @pytest.fixture(scope="function")
 def vector_quantization_type():
     return VectorQuantizationType.FP32
 
-
 @pytest.fixture(scope="function")
-async def postgres_kg_provider(
-    kg_config_temporary,
-    temporary_postgres_db_provider,
-    litellm_provider,
-    embedding_dimension,
-    vector_quantization_type,
-):
+async def postgres_kg_provider(kg_config_temporary, temporary_postgres_db_provider, litellm_provider, embedding_dimension, vector_quantization_type):
 
     # upsert into documents_overview
     document_info = DocumentInfo(

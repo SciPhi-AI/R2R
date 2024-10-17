@@ -218,6 +218,10 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
+        for entity in entities:
+            if entity.description_embedding is not None:
+                entity.description_embedding = str(entity.description_embedding)
+
         return await self._add_objects(entities, table_name)
 
     async def add_triples(
@@ -1051,7 +1055,8 @@ class PostgresKGProvider(KGProvider):
         entities = [Entity(**entity) for entity in results]
 
         total_entries = await self.get_entity_count(
-            collection_id=collection_id
+            collection_id=collection_id,
+            entity_table_name=entity_table_name
         )
 
         return {"entities": entities, "total_entries": total_entries}
