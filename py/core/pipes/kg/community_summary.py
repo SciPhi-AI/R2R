@@ -62,7 +62,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length: int,
     ):
 
-        entity_map = dict[str, dict[str, list[Any]]]
+        entity_map: dict[str, dict[str, list[Any]]] = {}
         for entity in entities:
             if not entity.name in entity_map:
                 entity_map[entity.name] = {"entities": [], "triples": []}
@@ -70,7 +70,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         for triple in triples:
             if not triple.subject in entity_map:
-                entity_map[triple.subject] = {"entities": [], "triples": []}
+                entity_map[triple.subject] = {
+                    "entities": [],
+                    "triples": [],
+                }
             entity_map[triple.subject]["triples"].append(triple)
 
         # sort in descending order of triple count
