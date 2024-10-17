@@ -43,8 +43,14 @@ runs:
         # Install Visual Studio Build Tools
         choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
         
-        # Call vcvars64.bat
-        call "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+        # Use PowerShell to set up Visual Studio environment
+        $vcvarsall = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+        $vcvars = & "${env:COMSPEC}" /c "`"$vcvarsall`" && set"
+        foreach ($line in $vcvars) {
+            if ($line -match '^([^=]+)=(.*)$') {
+                [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2])
+            }
+        }
 
         # Clone and build pgvector
         $env:PGROOT = "C:\Program Files\PostgreSQL\15"
