@@ -126,8 +126,14 @@ def documents_overview(ctx, document_ids, offset, limit):
     default=None,
     help="The maximum number of nodes to return. Defaults to 100.",
 )
+@click.option(
+    "--include-vectors",
+    is_flag=True,
+    default=False,
+    help="Should the vector be included in the response chunks",
+)
 @pass_context
-def document_chunks(ctx, document_id, offset, limit):
+def document_chunks(ctx, document_id, offset, limit, include_vectors):
     """Get chunks of a specific document."""
     client = ctx.obj
     if not document_id:
@@ -135,7 +141,9 @@ def document_chunks(ctx, document_id, offset, limit):
         return
 
     with timer():
-        chunks_data = client.document_chunks(document_id, offset, limit)
+        chunks_data = client.document_chunks(
+            document_id, offset, limit, include_vectors
+        )
 
     chunks = chunks_data["results"]
     if not chunks:
@@ -150,5 +158,7 @@ def document_chunks(ctx, document_id, offset, limit):
             click.echo(f"Extraction ID: {chunk.get('id', 'N/A')}")
             click.echo(f"Text: {chunk.get('text', '')[:100]}...")
             click.echo(f"Metadata: {chunk.get('metadata', {})}")
+            if include_vectors:
+                click.echo(f"Vector: {chunk.get('vector', 'N/A')}")
         else:
             click.echo(f"Unexpected chunk format: {chunk}")

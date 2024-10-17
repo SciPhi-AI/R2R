@@ -106,6 +106,7 @@ class DocumentChunkResponse(BaseModel):
     collection_ids: list[UUID]
     text: str
     metadata: dict[str, Any]
+    vector: Optional[list[float]] = None
 
 
 KnowledgeGraphResponse = str

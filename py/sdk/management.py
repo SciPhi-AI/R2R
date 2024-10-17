@@ -248,6 +248,7 @@ class ManagementMethods:
         document_id: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        include_vectors: Optional[bool] = False,
     ) -> dict:
         """
         Get the chunks for a document.
@@ -263,6 +264,8 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
+        if include_vectors:
+            params["include_vectors"] = include_vectors
         if not params:
             return await client._make_request(
                 "GET", f"document_chunks/{document_id}"
