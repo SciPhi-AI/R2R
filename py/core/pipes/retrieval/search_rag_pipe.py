@@ -64,7 +64,7 @@ class SearchRAGPipe(GeneratorPipe):
             context += context_piece
             search_iteration += 1
 
-        messages = self.prompt_provider._get_message_payload(
+        messages = await self.prompt_provider._get_message_payload(
             system_prompt_name=self.config.system_prompt,
             task_prompt_name=self.config.task_prompt,
             task_inputs={"query": sel_query, "context": context},

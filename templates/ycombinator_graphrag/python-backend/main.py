@@ -100,8 +100,8 @@ def update_prompts():
 
 def ingest():
     update_prompts()
-    # ingest_data()
-    # create_graph()
+    ingest_data()
+    create_graph()
     enrich_graph()
 
 def ask():

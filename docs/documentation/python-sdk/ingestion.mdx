@@ -10,7 +10,24 @@ Occasionally this SDK documentation falls out of date, cross-check with the auto
 
 ## Document Ingestion and Management
 
+<Note>
+
+As of version `3.2.13`, we have expanded the options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs by passing the following in your ingestion configuration:
+
+```json
+{
+  "parser_overrides": {
+    "pdf": "zerox"
+  }
+}
+```
+
+We recommend this method for achieving the highest quality ingestion results.
+
+</Note>
+
 ### Ingest Files
+
 
 
 Ingest files or directories into your R2R system:
@@ -67,7 +84,7 @@ Refer to the [ingestion configuration](/documentation/configuration/ingestion/pa
 
 
 <ParamField path="ingestion_config" type="Optional[Union[dict, IngestionConfig]]">
-  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
+  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime. Learn more about [configuration here](/documentation/configuration/ingestion/parsing_and_chunking).
   <Expandable title="Other Provider Options">
     <ParamField path="provider" type="str" default="r2r">
       Which R2R ingestion provider to use. Options are "r2r".
@@ -287,7 +304,7 @@ The ingestion configuration can be customized analogously to the ingest files en
 
 
 <ParamField path="ingestion_config" type="Optional[Union[dict, IngestionConfig]]">
-  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime.
+  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime. Learn more about [configuration here](/documentation/configuration/ingestion/parsing_and_chunking).
   <Expandable title="Other Provider Options">
     <ParamField path="provider" type="str" default="r2r">
       Which R2R ingestion provider to use. Options are "r2r".
@@ -458,6 +475,13 @@ documents_overview = client.documents_overview()
 <ParamField path="document_ids" type="Optional[list[Union[UUID, str]]]">
   An optional list of document IDs to filter the overview.
 </ParamField>
+<ParamField path="offset" type="Optional[int]">
+  An optional value to offset the starting point of fetched results, defaults to `0`.
+</ParamField>
+<ParamField path="limit" type="Optional[int]">
+  An optional value to limit the fetched results, defaults to `100`.
+</ParamField>
+
 
 ### Document Chunks
 
@@ -493,6 +517,16 @@ chunks = client.document_chunks(document_id)
 <ParamField path="document_id" type="str" required>
   The ID of the document to retrieve chunks for.
 </ParamField>
+<ParamField path="offset" type="Optional[int]">
+  An optional value to offset the starting point of fetched results, defaults to `0`.
+</ParamField>
+<ParamField path="limit" type="Optional[int]">
+  An optional value to limit the fetched results, defaults to `100`.
+</ParamField>
+<ParamField path="include_vectors" type="Optional[bool]">
+  An optional value to return the vectors associated with each chunk, defaults to `False`.
+</ParamField>
+
 
 ### Delete Documents
 
