@@ -43,22 +43,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # - name: Set up Python and install dependencies
-      #   uses: ./.github/actions/setup-python-light
-      #   with:
-      #     os: ${{ matrix.os }}
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-light
+        with:
+          os: ${{ matrix.os }}
 
-      # - name: Setup and start PostgreSQL
-      #   uses: ./.github/actions/setup-postgres-ext
-      #   with:
-      #     os: ${{ matrix.os }}
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ${{ matrix.os }}
 
-      # - name: Start R2R Light server
-      #   uses: ./.github/actions/start-r2r-light
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
 
-      # - name: Run CLI Ingestion Tests
-      #   if: matrix.test_category == 'cli-ingestion'
-      #   uses: ./.github/actions/run-cli-ingestion-tests
+      - name: Run CLI Ingestion Tests
+        if: matrix.test_category == 'cli-ingestion'
+        uses: ./.github/actions/run-cli-ingestion-tests
 
       # - name: Run CLI Retrieval Tests
       #   if: matrix.test_category == 'cli-retrieval'
