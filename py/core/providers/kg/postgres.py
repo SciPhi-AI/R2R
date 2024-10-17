@@ -1,8 +1,8 @@
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
-import time
 
 import asyncpg
 
@@ -218,12 +218,6 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        for entity in entities:
-            if entity.description_embedding is not None:
-                entity.description_embedding = str( # type: ignore # TODO: find a better way to handle this, preferrably in postgres directly
-                    entity.description_embedding
-                )
-
         return await self._add_objects(entities, table_name)
 
     async def add_triples(
@@ -437,6 +431,7 @@ class PostgresKGProvider(KGProvider):
                 or search_type == "__Relationship__"
             ):
                 filter_query = "WHERE document_id = ANY($3)"
+                # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
                 query = f"""
                     SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
                 """
@@ -1056,7 +1051,7 @@ class PostgresKGProvider(KGProvider):
         entities = [Entity(**entity) for entity in results]
 
         total_entries = await self.get_entity_count(
-            collection_id=collection_id, entity_table_name=entity_table_name
+            collection_id=collection_id
         )
 
         return {"entities": entities, "total_entries": total_entries}

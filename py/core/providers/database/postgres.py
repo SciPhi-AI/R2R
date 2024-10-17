@@ -50,9 +50,7 @@ class PostgresDBProvider(DatabaseProvider):
         config: DatabaseConfig,
         dimension: int,
         crypto_provider: CryptoProvider,
-        quantization_type: Optional[
-            VectorQuantizationType
-        ] = VectorQuantizationType.FP32,
+        quantization_type: Optional[VectorQuantizationType] = VectorQuantizationType.FP32,
         *args,
         **kwargs,
     ):
