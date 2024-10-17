@@ -218,12 +218,16 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
+        for entity in entities:
+            if entity.description_embedding is not None:
+                entity.description_embedding = str(entity.description_embedding)
+
         return await self._add_objects(entities, table_name)
 
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str = "triples",
+        table_name: str = "triple_raw",
     ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
@@ -395,16 +399,6 @@ class PostgresKGProvider(KGProvider):
         table_name = self._get_table_name("entities")
         query = QUERY.format(table_name)
         await self.execute_query(query, entities)
-
-    async def upsert_relationships(self, relationships: list[Triple]) -> None:
-        QUERY = """
-            INSERT INTO $1.$2 (source, target, relationship)
-            VALUES ($1, $2, $3)
-            """
-
-        table_name = self._get_table_name("triples")
-        query = QUERY.format(table_name)
-        await self.execute_query(query, relationships)
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
@@ -585,7 +579,6 @@ class PostgresKGProvider(KGProvider):
             weight_default: Union[int, float] = 1.0,
             check_directed: bool = True,
         """
-        settings: Dict[str, Any] = {}
 
         start_time = time.time()
         triples = await self.get_all_triples(collection_id)
@@ -1060,7 +1053,8 @@ class PostgresKGProvider(KGProvider):
         entities = [Entity(**entity) for entity in results]
 
         total_entries = await self.get_entity_count(
-            collection_id=collection_id
+            collection_id=collection_id,
+            entity_table_name=entity_table_name
         )
 
         return {"entities": entities, "total_entries": total_entries}
