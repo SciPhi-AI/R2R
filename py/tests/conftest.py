@@ -13,33 +13,31 @@ from core import (
     CompletionConfig,
     DatabaseConfig,
     EmbeddingConfig,
-    KGConfig,
     FileConfig,
+    KGConfig,
     LoggingConfig,
     SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
 )
-
-from core.base import (    
+from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
 )
-
 from core.providers import (
     BCryptProvider,
     LiteCompletionProvider,
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
     PostgresFileProvider,
-    R2RAuthProvider,
     PostgresKGProvider,
+    R2RAuthProvider,
 )
-
 from shared.abstractions.vector import VectorQuantizationType
+
 
 # Vectors
 @pytest.fixture(scope="function")
@@ -220,18 +218,28 @@ async def local_logging_provider(app_config):
 def kg_config_temporary(app_config):
     return KGConfig(provider="postgres", app=app_config)
 
+
 # KG
+
 
 @pytest.fixture(scope="function")
 def embedding_dimension():
     return 128
 
+
 @pytest.fixture(scope="function")
 def vector_quantization_type():
     return VectorQuantizationType.FP32
 
+
 @pytest.fixture(scope="function")
-async def postgres_kg_provider(kg_config_temporary, temporary_postgres_db_provider, litellm_provider, embedding_dimension, vector_quantization_type):
+async def postgres_kg_provider(
+    kg_config_temporary,
+    temporary_postgres_db_provider,
+    litellm_provider,
+    embedding_dimension,
+    vector_quantization_type,
+):
 
     # upsert into documents_overview
     document_info = DocumentInfo(
@@ -251,6 +259,10 @@ async def postgres_kg_provider(kg_config_temporary, temporary_postgres_db_provid
         document_info
     )
 
-    kg_provider = PostgresKGProvider(kg_config_temporary, temporary_postgres_db_provider, litellm_provider)
-    await kg_provider.create_tables(embedding_dimension, vector_quantization_type)
+    kg_provider = PostgresKGProvider(
+        kg_config_temporary, temporary_postgres_db_provider, litellm_provider
+    )
+    await kg_provider.create_tables(
+        embedding_dimension, vector_quantization_type
+    )
     yield kg_provider

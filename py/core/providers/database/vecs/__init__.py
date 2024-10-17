@@ -1,13 +1,13 @@
 from . import exc
 from .client import Client
-from .collection import Collection
+from .vector_collection import VectorCollection
 
 __project__ = "vecs"
 __version__ = "0.4.2"
 
 
 __all__ = [
-    "Collection",
+    "VectorCollection",
     "Client",
     "exc",
 ]

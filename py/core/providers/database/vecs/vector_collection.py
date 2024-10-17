@@ -7,11 +7,8 @@ All public classes, enums, and functions are re-exported by the top level `vecs`
 
 from __future__ import annotations
 
-import math
 import time
 import warnings
-from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Union
 from uuid import UUID, uuid4
 
@@ -120,7 +117,7 @@ class Vector(UserDefinedType):
             return self.op("<=>", return_type=Float)(other)
 
 
-class Collection:
+class VectorCollection:
     """
     The `vecs.Collection` class represents a collection of vectors within a PostgreSQL database with pgvector support.
     It provides methods to manage (create, delete, fetch, upsert), index, and perform similarity searches on these vector collections.
@@ -180,7 +177,6 @@ class Collection:
             dimension,
             quantization_type,
         )
-        self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
 
         reported_dimensions = set(
@@ -670,7 +666,7 @@ class Collection:
             raise FilterError("filters must be a dict")
 
         def parse_condition(key, value):
-            if key in Collection.COLUMN_VARS:
+            if key in VectorCollection.COLUMN_VARS:
                 # Handle column-based filters
                 column = getattr(self.table.c, key)
                 if isinstance(value, dict):
@@ -784,43 +780,6 @@ class Collection:
         return parse_filter(filters)
 
     @classmethod
-    def _list_collections(cls, client: "Client") -> list["Collection"]:
-        """
-        PRIVATE
-
-        Retrieves all collections from the database.
-
-        Args:
-            client (Client): The database client.
-
-        Returns:
-            list[Collection]: A list of all existing collections.
-        """
-
-        query = text(
-            """
-        select
-            relname as table_name,
-            atttypmod as embedding_dim
-        from
-            pg_class pc
-            join pg_attribute pa
-                on pc.oid = pa.attrelid
-        where
-            pc.relnamespace = '{client.project_name}'::regnamespace
-            and pc.relkind = 'r'
-            and pa.attname = 'vec'
-            and not pc.relname ^@ '_'
-        """
-        )
-        xc = []
-        with client.Session() as sess:
-            for name, dimension in sess.execute(query):
-                existing_collection = cls(name, dimension, client)
-                xc.append(existing_collection)
-        return xc
-
-    @classmethod
     def _does_collection_exist(cls, client: "Client", name: str) -> bool:
         """
         PRIVATE
@@ -841,63 +800,6 @@ class Collection:
         except CollectionNotFound:
             return False
 
-    @property
-    def index(self) -> Optional[str]:
-        """
-        PRIVATE
-
-        Note:
-            The `index` property is private and expected to undergo refactoring.
-            Do not rely on it's output.
-
-        Retrieves the SQL name of the collection's vector index, if it exists.
-
-        Returns:
-            Optional[str]: The name of the index, or None if no index exists.
-        """
-
-        if self._index is None:
-            query = text(
-                f"""
-            select
-                relname as table_name
-            from
-                pg_class pc
-            where
-                pc.relnamespace = '{self.client.project_name}'::regnamespace
-                and relname ilike 'ix_vector%'
-                and pc.relkind = 'i'
-            """
-            )
-            with self.client.Session() as sess:
-                ix_name = sess.execute(query).scalar()
-            self._index = ix_name
-        return self._index
-
-    def is_indexed_for_measure(self, measure: IndexMeasure):
-        """
-        Checks if the collection is indexed for a specific measure.
-
-        Args:
-            measure (IndexMeasure): The measure to check for.
-
-        Returns:
-            bool: True if the collection is indexed for the measure, False otherwise.
-        """
-
-        index_name = self.index
-        if index_name is None:
-            return False
-
-        ops = index_measure_to_ops(measure, self.quantization_type)
-        if ops is None:
-            return False
-
-        if ops in index_name:
-            return True
-
-        return False
-
     def close(self):
         """
         Closes the database connection associated with this collection.
@@ -916,9 +818,8 @@ class Collection:
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
-        replace: bool = True,
+        index_name: Optional[str] = None,
         concurrently: bool = True,
-        quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
     ) -> None:
         """
         Creates an index for the collection.
@@ -1015,22 +916,9 @@ class Collection:
 
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
-        # Drop existing index if needed (must be outside of transaction)
-        # Doesn't drop
-        if self.index is not None and replace:
-            drop_index_sql = f'DROP INDEX {concurrently_sql} IF EXISTS {self.client.project_name}."{self.index}";'
-            try:
-                with self.client.engine.connect() as connection:
-                    connection = connection.execution_options(
-                        isolation_level="AUTOCOMMIT"
-                    )
-                    connection.execute(text(drop_index_sql))
-            except Exception as e:
-                raise Exception(f"Failed to drop existing index: {e}")
-            self._index = None
-
-        timestamp = time.strftime("%Y%m%d%H%M%S")
-        index_name = f"ix_{ops}_{method}__{timestamp}"
+        index_name = (
+            index_name or f"ix_{ops}_{method}__{time.strftime('%Y%m%d%H%M%S')}"
+        )
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
@@ -1051,8 +939,6 @@ class Collection:
                     sess.commit()
         except Exception as e:
             raise Exception(f"Failed to create index: {e}")
-
-        self._index = index_name
 
         return None
 

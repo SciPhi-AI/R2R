@@ -25,7 +25,7 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
-from .vecs import Client, Collection, create_client
+from .vecs import Client, VectorCollection, create_client
 
 logger = logging.getLogger()
 
@@ -33,7 +33,7 @@ logger = logging.getLogger()
 class PostgresVectorDBProvider(VectorDBProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
-        self.collection: Optional[Collection] = None
+        self.collection: Optional[VectorCollection] = None
         self.project_name = kwargs.get("project_name", None)
         connection_string = kwargs.get("connection_string", None)
         if not connection_string:
@@ -305,7 +305,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         index_arguments: Optional[
             Union[IndexArgsHNSW, IndexArgsIVFFlat]
         ] = None,
-        replace: bool = True,
+        index_name: Optional[str] = None,
         concurrently: bool = True,
     ):
         if self.collection is None:
@@ -318,7 +318,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             method=index_method,
             measure=measure,
             index_arguments=index_arguments,
-            replace=replace,
+            index_name=index_name,
             concurrently=concurrently,
         )
 

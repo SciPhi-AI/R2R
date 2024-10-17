@@ -23,7 +23,7 @@ from .adapter import Adapter
 from .exc import CollectionNotFound
 
 if TYPE_CHECKING:
-    from core.providers.database.vecs.collection import Collection
+    from core.providers.database.vecs.vector_collection import VectorCollection
 
 logger = logging.getLogger()
 
@@ -159,7 +159,7 @@ class Client:
         dimension: Optional[int] = None,
         adapter: Optional[Adapter] = None,
         quantization_type: Optional[VectorQuantizationType] = None,
-    ) -> Collection:
+    ) -> VectorCollection:
         """
         Get a vector collection by name, or create it if no collection with
         *name* exists.
@@ -177,11 +177,13 @@ class Client:
         Raises:
             CollectionAlreadyExists: If a collection with the same name already exists
         """
-        from core.providers.database.vecs.collection import Collection
+        from core.providers.database.vecs.vector_collection import (
+            VectorCollection,
+        )
 
         adapter_dimension = adapter.exported_dimension if adapter else None
 
-        collection = Collection(
+        collection = VectorCollection(
             name=name,
             dimension=dimension or adapter_dimension,  # type: ignore
             quantization_type=quantization_type,
@@ -192,7 +194,7 @@ class Client:
         return collection._create_if_not_exists()
 
     @deprecated("use Client.get_or_create_vector_table")
-    def create_collection(self, name: str, dimension: int) -> Collection:
+    def create_collection(self, name: str, dimension: int) -> VectorCollection:
         """
         Create a new vector collection.
 
@@ -206,12 +208,14 @@ class Client:
         Raises:
             CollectionAlreadyExists: If a collection with the same name already exists
         """
-        from core.providers.database.vecs.collection import Collection
+        from core.providers.database.vecs.vector_collection import (
+            VectorCollection,
+        )
 
-        return Collection(name, dimension, self)._create()
+        return VectorCollection(name, dimension, self)._create()
 
     @deprecated("use Client.get_or_create_vector_table")
-    def get_collection(self, name: str) -> Collection:
+    def get_collection(self, name: str) -> VectorCollection:
         """
         Retrieve an existing vector collection.
 
@@ -224,7 +228,9 @@ class Client:
         Raises:
             CollectionNotFound: If no collection with the given name exists.
         """
-        from core.providers.database.vecs.collection import Collection
+        from core.providers.database.vecs.vector_collection import (
+            VectorCollection,
+        )
 
         query = text(
             f"""
@@ -252,22 +258,24 @@ class Client:
                 )
 
             name, dimension = query_result
-            return Collection(
+            return VectorCollection(
                 name,
                 dimension,
                 self,
             )
 
-    def list_collections(self) -> List["Collection"]:
+    def list_collections(self) -> List["VectorCollection"]:
         """
         List all vector collections.
 
         Returns:
             list[Collection]: A list of all collections.
         """
-        from core.providers.database.vecs.collection import Collection
+        from core.providers.database.vecs.vector_collection import (
+            VectorCollection,
+        )
 
-        return Collection._list_collections(self)
+        return VectorCollection._list_collections(self)
 
     def delete_collection(self, name: str) -> None:
         """
@@ -281,9 +289,11 @@ class Client:
         Returns:
             None
         """
-        from core.providers.database.vecs.collection import Collection
+        from core.providers.database.vecs.vector_collection import (
+            VectorCollection,
+        )
 
-        Collection(name, -1, self)._drop()
+        VectorCollection(name, -1, self)._drop()
         return
 
     def disconnect(self) -> None:
