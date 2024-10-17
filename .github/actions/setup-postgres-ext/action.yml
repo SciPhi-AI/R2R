@@ -32,39 +32,60 @@ runs:
 
     - name: Setup PostgreSQL on Windows
       if: inputs.os == 'windows-latest'
-      shell: pwsh
+      shell: cmd
       run: |
-        choco install postgresql15 --params '/Password:postgres' --force
 
-        $env:PATH += ";C:\Program Files\PostgreSQL\15\bin"
-        $env:PGPASSWORD = 'postgres'
+        echo Starting PostgreSQL setup and pgvector installation...
+
+        echo Installing PostgreSQL...
+        choco install postgresql15 --params "/Password:postgres" --force
+
+        echo Updating PATH and setting PGPASSWORD...
+        set PATH=%PATH%;C:\Program Files\PostgreSQL\15\bin
+        set PGPASSWORD=postgres
+        echo PATH updated and PGPASSWORD set.
+
+        echo Altering PostgreSQL user password...
         psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+        echo PostgreSQL user password altered.
 
-        # Install Visual Studio Build Tools
+        echo Installing Visual Studio Build Tools...
         choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
+        echo Visual Studio Build Tools installed.
 
-        # Set up environment for building pgvector
-        $vcvars64Path = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-        cmd.exe /c "call `"$vcvars64Path`" && set > %temp%\vcvars.txt"
-        Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
-          if ($_ -match "^(.*?)=(.*)$") {
-            Set-Content "env:\$($matches[1])" $matches[2]
-          }
-        }
+        echo Setting up Visual Studio environment...
+        call "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+        echo Visual Studio environment set up.
 
-        # Clone and build pgvector
-        $env:PGROOT = "C:\Program Files\PostgreSQL\15"
-        Set-Location -Path $env:TEMP
+        echo Cloning and building pgvector...
+        set PGROOT=C:\Program Files\PostgreSQL\15
+        cd /d %TEMP%
         git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
-        Set-Location -Path "$env:TEMP\pgvector"
-        nmake /F Makefile.win
-        nmake /F Makefile.win install
+        cd pgvector
+        echo pgvector cloned.
 
+        echo Creating vector extension...
         psql -U postgres -c "CREATE EXTENSION vector;"
+        echo Vector extension created.
 
-        # Set max_connections to 1024
-        Add-Content -Path "C:\Program Files\PostgreSQL\15\data\postgresql.conf" -Value "max_connections = 1024"
-        Restart-Service postgresql-x64-15
+        echo Building pgvector...
+        nmake /F Makefile.win
+        echo pgvector built.
+
+        echo Installing pgvector...
+        nmake /F Makefile.win install
+        echo pgvector installed.
+
+        echo Setting max_connections to 1024...
+        echo max_connections = 1024 >> "C:\Program Files\PostgreSQL\15\data\postgresql.conf"
+        echo max_connections set.
+
+        echo Restarting PostgreSQL service...
+        net stop postgresql-x64-15
+        net start postgresql-x64-15
+        echo PostgreSQL service restarted.
+
+        echo Setup complete!
 
     - name: Setup PostgreSQL on macOS
       if: inputs.os == 'macos-latest'
