@@ -19,6 +19,8 @@ from core.base import (
     R2RLoggingProvider,
 )
 
+from shared.abstractions.graph import Entity, Triple
+
 logger = logging.getLogger()
 
 
@@ -55,50 +57,66 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def community_summary_prompt(
         self,
-        entities: list,
-        triples: list,
+        entities: list[Entity],
+        triples: list[Triple],
         max_summary_input_length: int,
     ):
-        
+
         entity_map = {}
         for entity in entities:
-            if not entity['name'] in entity_map:
-                entity_map[entity["name"]] = {'entities': [], 'triples': []}
-            entity_map[entity["name"]]['entities'].append(entity)
+            if not entity.name in entity_map:
+                entity_map[entity.name] = {"entities": [], "triples": []}
+            entity_map[entity.name]["entities"].append(entity)
 
         for triple in triples:
-            if not triple['subject'] in entity_map:
-                entity_map[triple['subject']] = {'entities': [], 'triples': []}
-            entity_map[triple['subject']]['triples'].append(triple)
+            if not triple.subject in entity_map:
+                entity_map[triple.subject] = {"entities": [], "triples": []}
+            entity_map[triple.subject]["triples"].append(triple)
 
         # sort in descending order of triple count
-        sorted_entity_map = sorted(entity_map.items(), key=lambda x: len(x[1]['triples']), reverse=True)
+        sorted_entity_map = sorted(
+            entity_map.items(),
+            key=lambda x: len(x[1]["triples"]),
+            reverse=True,
+        )
 
-        async def _get_entity_descriptions_string(entities: list, max_count: int = 100):
+        async def _get_entity_descriptions_string(
+            entities: list, max_count: int = 100
+        ):
             # randomly sample max_count entities if there are duplicates. This will become a map reduce job later.
-            sampled_entities = random.sample(entities, max_count) if len(entities) > max_count else entities
+            sampled_entities = (
+                random.sample(entities, max_count)
+                if len(entities) > max_count
+                else entities
+            )
             return "\n".join(
-                    f"{entity['id']},{entity['description']}"
-                    for entity in sampled_entities
-                )
+                f"{entity.id},{entity.description}"
+                for entity in sampled_entities
+            )
 
         async def _get_triples_string(triples: list, max_count: int = 100):
-            sampled_triples = random.sample(triples, max_count) if len(triples) > max_count else triples
+            sampled_triples = (
+                random.sample(triples, max_count)
+                if len(triples) > max_count
+                else triples
+            )
             return "\n".join(
-                    f"{triple['id']},{triple['subject']},{triple['object']},{triple['predicate']},{triple['description']}"
-                    for triple in sampled_triples
-                )
+                f"{triple.id},{triple.subject},{triple.object},{triple.predicate},{triple.description}"
+                for triple in sampled_triples
+            )
 
         prompt = ""
         for entity_name, entity_data in sorted_entity_map:
-            entity_descriptions = await _get_entity_descriptions_string(entity_data['entities'])
-            triples = await _get_triples_string(entity_data['triples'])
+            entity_descriptions = await _get_entity_descriptions_string(
+                entity_data["entities"]
+            )
+            triples = await _get_triples_string(entity_data["triples"])
 
             prompt += f"""
             Entity: {entity_name}
-            Descriptions: 
+            Descriptions:
                 {entity_descriptions}
-            Triples: 
+            Triples:
                 {triples}
             """
 
