@@ -249,6 +249,7 @@ class PostgresKGProvider(KGProvider):
             result: asyncpg.Record: result of the upsert operation
         """
         for entity in entities:
+
             if getattr(entity, embedding_col_name, None) is not None:
                 setattr(entity, embedding_col_name, str(  # type: ignore
                     getattr(entity, embedding_col_name)
