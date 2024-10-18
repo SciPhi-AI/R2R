@@ -11,11 +11,6 @@ from core.base import (
     PostgresConfigurationSettings,
     VectorQuantizationType,
 )
-
-from .base import SemaphoreConnectionPool,     DatabaseMixin
-
-
-
 from core.providers.database.collection import CollectionMixin
 from core.providers.database.document import DocumentMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
@@ -23,8 +18,10 @@ from core.providers.database.user import UserMixin
 from core.providers.database.vector import VectorDBMixin
 from shared.abstractions.vector import VectorQuantizationType
 
+from .base import DatabaseMixin, SemaphoreConnectionPool
 
 logger = logging.getLogger()
+
 
 def get_env_var(new_var, old_var, config_value):
     value = config_value or os.getenv(new_var) or os.getenv(old_var)
@@ -42,8 +39,7 @@ class PostgresDBProvider(
     BlacklistedTokensMixin,
     UserMixin,
     VectorDBMixin,
-
-    ):
+):
     user: str
     password: str
     host: str
@@ -112,7 +108,7 @@ class PostgresDBProvider(
             logger.info("Connecting to Postgres via TCP/IP")
 
         self.dimension = dimension
-        self.vector_db_quantization_type = quantization_type
+        self.quantization_type = quantization_type
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
@@ -123,6 +119,7 @@ class PostgresDBProvider(
         self.default_collection_description = (
             config.default_collection_description
         )
+        self.enable_fts = config.enable_fts
 
         self.pool: Optional[SemaphoreConnectionPool] = None
 
@@ -224,9 +221,9 @@ class PostgresDBProvider(
 
     async def fetch_query(self, query, params=None):
         async with self.pool.get_connection() as conn:
-            print('query', query)
-            print('params', params)
-            
+            print("query", query)
+            print("params", params)
+
             async with conn.transaction():
                 return (
                     await conn.fetch(query, *params)

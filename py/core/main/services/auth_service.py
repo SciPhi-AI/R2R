@@ -45,8 +45,10 @@ class AuthService(Service):
                 status_code=400, message="Email verification is not required"
             )
 
-        user_id = await self.providers.database.get_user_id_by_verification_code(
-            verification_code
+        user_id = (
+            await self.providers.database.get_user_id_by_verification_code(
+                verification_code
+            )
         )
         if not user_id:
             raise R2RException(
@@ -123,8 +125,8 @@ class AuthService(Service):
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
     ) -> UserResponse:
-        user: UserResponse = (
-            await self.providers.database.get_user_by_id(str(user_id))
+        user: UserResponse = await self.providers.database.get_user_by_id(
+            str(user_id)
         )
         if not user:
             raise R2RException(status_code=404, message="User not found")

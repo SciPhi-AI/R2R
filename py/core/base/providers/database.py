@@ -53,6 +53,7 @@ class DatabaseConfig(ProviderConfig):
     ] = None
     default_collection_name: str = "Default"
     default_collection_description: str = "Your default collection."
+    enable_fts: bool = False
 
     def __post_init__(self):
         self.validate_config()

@@ -68,7 +68,9 @@ def simple_ingestion_factory(service: IngestionService):
 
             try:
                 # TODO - Move logic onto management service
-                collection_id=generate_default_user_collection_id(str(document_info.user_id))                
+                collection_id = generate_default_user_collection_id(
+                    str(document_info.user_id)
+                )
                 await service.providers.database.assign_document_to_collection_relational(
                     document_id=document_info.id,
                     collection_id=collection_id,
@@ -228,7 +230,9 @@ def simple_ingestion_factory(service: IngestionService):
 
             try:
                 # TODO - Move logic onto management service
-                collection_id=generate_default_user_collection_id(str(document_info.user_id))                
+                collection_id = generate_default_user_collection_id(
+                    str(document_info.user_id)
+                )
                 await service.providers.database.assign_document_to_collection_relational(
                     document_id=document_info.id,
                     collection_id=collection_id,

@@ -5,7 +5,7 @@ import time
 import uuid
 from typing import Any, Optional, Tuple, TypedDict, Union
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 
 from core.base import VectorEntry, VectorQuantizationType, VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
@@ -48,9 +48,6 @@ class VectorDBMixin(DatabaseMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.project_name = kwargs.get("project_name")
-        self.dimension = kwargs.get("dimension")
-        self.quantization_type = kwargs.get("quantization_type")
 
     async def create_table(self):
         # TODO - Move ids to `UUID` type
@@ -64,12 +61,18 @@ class VectorDBMixin(DatabaseMixin):
             vec vector({self.dimension}),
             text TEXT,
             metadata JSONB
+            {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
         );
         CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(self.project_name)} (document_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(self.project_name)} (user_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(self.project_name)} USING GIN (collection_ids);
         CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(self.project_name)} USING GIN (to_tsvector('english', text));
         """
+        if self.enable_fts:
+            query += f"""
+            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(self.project_name)} USING GIN (to_tsvector('english', text));
+            """
+
         await self.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
@@ -125,44 +128,61 @@ class VectorDBMixin(DatabaseMixin):
         ]
         await self.execute_many(query, params)
 
-    # async def semantic_search(
-    #     self, query_vector: list[float], search_settings: VectorSearchSettings
-    # ) -> list[VectorSearchResult]:
-    #     try:
-    #         imeasure_obj = IndexMeasure(search_settings.index_measure)
-    #     except ValueError:
-    #         raise ValueError("Invalid index measure")
-
-    #     distance_func = self._get_distance_function(imeasure_obj)
-
-    #     cols = [
-    #         f"{self._get_table_name(self.project_name)}.extraction_id",
-    #         f"{self._get_table_name(self.project_name)}.document_id",
-    #         f"{self._get_table_name(self.project_name)}.user_id",
-    #         f"{self._get_table_name(self.project_name)}.collection_ids",
-    #         f"{self._get_table_name(self.project_name)}.text",
-    #     ]
-
-    #     if search_settings.include_values:
-    #         cols.append(f"{self._get_table_name(self.project_name)}.vec {distance_func} :vec AS distance")
-
-    #     if search_settings.include_metadatas:
-    #         cols.append(f"{self._get_table_name(self.project_name)}.metadata")
-
-    #     select_clause = ", ".join(cols)
-
-    #     where_clause = "TRUE"
-    #     if search_settings.filters:
-    #         where_clause = self._build_filters(search_settings.filters)
-
+    # async def upsert(self, entry: VectorEntry) -> None:
     #     query = f"""
-    #     SELECT {select_clause}
-    #     FROM {self._get_table_name(self.project_name)}
-    #     WHERE {where_clause}
-    #     ORDER BY {self._get_table_name(self.project_name)}.vec {distance_func} :vec
-    #     OFFSET :offset
-    #     LIMIT :limit
+    #     INSERT INTO {self._get_table_name(self.project_name)}
+    #     {"(extraction_id, document_id, user_id, collection_ids, vec, text, metadata)" if not self.enable_fts else "(extraction_id, document_id, user_id, collection_ids, vec, text, metadata, fts)"}
+    #     VALUES {"($1, $2, $3, $4, $5, $6, $7)" if not self.enable_fts else "($1, $2, $3, $4, $5, $6, $7, $8)"}
+    #     ON CONFLICT (extraction_id) DO UPDATE SET
+    #     document_id = EXCLUDED.document_id,
+    #     user_id = EXCLUDED.user_id,
+    #     collection_ids = EXCLUDED.collection_ids,
+    #     vec = EXCLUDED.vec,
+    #     text = EXCLUDED.text,
+    #     metadata = EXCLUDED.metadata;
     #     """
+    #     await self.execute_query(
+    #         query,
+    #         (
+    #             entry.extraction_id,
+    #             entry.document_id,
+    #             entry.user_id,
+    #             entry.collection_ids,
+    #             str(entry.vector.data),
+    #             entry.text,
+    #             json.dumps(entry.metadata),
+    #             func.ts_vector(entry.text) if self.enable_fts else None,
+    #         ),
+    #     )
+
+    # async def upsert_entries(self, entries: list[VectorEntry]) -> None:
+    #     query = f"""
+    #     INSERT INTO {self._get_table_name(self.project_name)}
+    #     {"(extraction_id, document_id, user_id, collection_ids, vec, text, metadata)" if not self.enable_fts else "(extraction_id, document_id, user_id, collection_ids, vec, text, metadata, fts)"}
+    #     VALUES {"($1, $2, $3, $4, $5, $6, $7)" if not self.enable_fts else "($1, $2, $3, $4, $5, $6, $7, $8)"}
+    #     ON CONFLICT (extraction_id) DO UPDATE SET
+    #     document_id = EXCLUDED.document_id,
+    #     user_id = EXCLUDED.user_id,
+    #     collection_ids = EXCLUDED.collection_ids,
+    #     vec = EXCLUDED.vec,
+    #     text = EXCLUDED.text,
+    #     metadata = EXCLUDED.metadata;
+    #     """
+    #     params = [
+    #         (
+    #             entry.extraction_id,
+    #             entry.document_id,
+    #             entry.user_id,
+    #             entry.collection_ids,
+    #             str(entry.vector.data),
+    #             entry.text,
+    #             json.dumps(entry.metadata),
+    #             func.ts_vector(entry.text) if self.enable_fts else None,
+    #         )
+    #         for entry in entries
+    #     ]
+    #     await self.execute_many(query, params)
+
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
@@ -182,7 +202,9 @@ class VectorDBMixin(DatabaseMixin):
         ]
 
         if search_settings.include_values:
-            cols.append(f"{self._get_table_name(self.project_name)}.vec {distance_func} $1 AS distance")
+            cols.append(
+                f"{self._get_table_name(self.project_name)}.vec {distance_func} $1 AS distance"
+            )
 
         if search_settings.include_metadatas:
             cols.append(f"{self._get_table_name(self.project_name)}.metadata")
@@ -191,7 +213,9 @@ class VectorDBMixin(DatabaseMixin):
 
         where_clause = ""
         if search_settings.filters:
-            where_clause = f"WHERE {self._build_filters(search_settings.filters)}"
+            where_clause = (
+                f"WHERE {self._build_filters(search_settings.filters)}"
+            )
 
         query = f"""
         SELECT {select_clause}
@@ -202,23 +226,14 @@ class VectorDBMixin(DatabaseMixin):
         OFFSET $3
         """
 
-        # params = {
-        #     "vec_1": query_vector,
-        #     "param_1": search_settings.search_limit,
-        #     "param_2": search_settings.offset,
-        # }
-        print('raw query = ', query)
-
-        # Set index-specific session parameters
-        # await self.execute_query(
-        #     "SET LOCAL ivfflat.probes = :probes", {"probes": search_settings.probes}
-        # )
-        # await self.execute_query(
-        #     "SET LOCAL hnsw.ef_search = :ef_search",
-        #     {"ef_search": max(search_settings.ef_search, search_settings.search_limit)},
-        # )
-        
-        results = await self.fetch_query(query, (str(query_vector), search_settings.search_limit, search_settings.offset)) # , params)
+        results = await self.fetch_query(
+            query,
+            (
+                str(query_vector),
+                search_settings.search_limit,
+                search_settings.offset,
+            ),
+        )  # , params)
 
         return [
             VectorSearchResult(
@@ -227,127 +242,137 @@ class VectorDBMixin(DatabaseMixin):
                 user_id=result["user_id"],
                 collection_ids=result["collection_ids"],
                 text=result["text"],
-                score=(1-float(result["distance"])) if search_settings.include_values else None,
-                metadata=json.loads(result["metadata"]) if search_settings.include_metadatas else None,
+                score=(
+                    (1 - float(result["distance"]))
+                    if search_settings.include_values
+                    else None
+                ),
+                metadata=(
+                    json.loads(result["metadata"])
+                    if search_settings.include_metadatas
+                    else None
+                ),
             )
             for result in results
         ]
-
-#     async def semantic_search(
-#         self, query_vector: list[float], search_settings: VectorSearchSettings
-#     ) -> list[VectorSearchResult]:
-#         try:
-#             imeasure_obj = IndexMeasure(search_settings.index_measure)
-#         except ValueError:
-#             raise ValueError("Invalid index measure")
-
-#         distance_func = self._get_distance_function(imeasure_obj)
-
-#         cols = [
-#             "extraction_id",
-#             "document_id",
-#             "user_id",
-#             "collection_ids",
-#             "text",
-#         ]
-
-#         if search_settings.include_values:
-#             cols.append(f"{distance_func}(vec, $1::vector) as distance")
-
-#         if search_settings.include_metadatas:
-#             cols.append("metadata")
-
-#         select_clause = ", ".join(cols)
-
-#         where_clause = "TRUE"
-#         if search_settings.filters:
-#             where_clause = self._build_filters(search_settings.filters)
-
-# #         query = f"""
-# #         SELECT {select_clause}
-# #         FROM {self._get_table_name(self.project_name)
-# # }
-# #         WHERE {where_clause}
-# #         ORDER BY {distance_func}(vec, $1::vector)
-# #         OFFSET $2
-# #         LIMIT $3
-# #         """
-#         vector_str = f"ARRAY[{','.join(map(str, query_vector))}]::vector"
-
-#         query = f"""
-#             SELECT {select_clause}
-#             FROM {self._get_table_name(self.project_name)}
-#             WHERE {where_clause}
-#             ORDER BY {distance_func}(vec, {vector_str})
-#             OFFSET $1
-#             LIMIT $2
-#             """
-#         params = [
-#             query_vector,
-#             search_settings.offset,
-#             search_settings.search_limit,
-#         ]
-#         print('query = ', query)
-#         print('params = ', params)
-
-#         # Set index-specific session parameters
-#         await self.execute_query(
-#             "SET LOCAL ivfflat.probes = $1", [search_settings.probes]
-#         )
-#         await self.execute_query(
-#             "SET LOCAL hnsw.ef_search = $1",
-#             [max(search_settings.ef_search, search_settings.search_limit)],
-#         )
-        
-#         results = await self.fetch_query(query, params)
-
-#         return [
-#             VectorSearchResult(
-#                 extraction_id=result["extraction_id"],
-#                 document_id=result["document_id"],
-#                 user_id=result["user_id"],
-#                 collection_ids=result["collection_ids"],
-#                 text=result["text"],
-#                 score=float(result["rank"]),
-#                 metadata=result["metadata"],
-#             )
-#             for result in results
-#         ]
 
     async def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
+        if not self.enable_fts:
+            raise ValueError(
+                "Full-text search is not enabled for this collection."
+            )
+
         query = f"""
-        SELECT extraction_id, document_id, user_id, collection_ids, text,
-               ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
-               metadata
-        FROM {self._get_table_name(self.project_name)}
-        WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
-        ORDER BY rank DESC
-        LIMIT $3 OFFSET $4;
+            SELECT
+                extraction_id, document_id, user_id, collection_ids, text, metadata,
+                ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
+            FROM {self._get_table_name(self.project_name)}
+            WHERE fts @@ websearch_to_tsquery('english', $1)
         """
-        results = await self.fetch_query(
-            query,
-            (
-                query_text,
-                search_settings.selected_collection_ids,
-                search_settings.search_limit,
+        # AND collection_ids && $2
+
+        # if search_settings.filters:
+        #     filter_clause, filter_params = self._build_filters(search_settings.filters)
+        #     query += f" AND {filter_clause}"
+        #     params = [query_text, search_settings.selected_collection_ids] + filter_params
+        # else:
+        params = [query_text]  # , search_settings.selected_collection_ids]
+
+        query += """
+            ORDER BY rank DESC
+            OFFSET $2 LIMIT $3
+        """
+        params.extend(
+            [
                 search_settings.offset,
-            ),
+                search_settings.hybrid_search_settings.full_text_limit,
+            ]
         )
 
+        results = await self.fetch_query(query, params)
         return [
             VectorSearchResult(
-                extraction_id=result["extraction_id"],
-                document_id=result["document_id"],
-                user_id=result["user_id"],
-                collection_ids=result["collection_ids"],
-                text=result["text"],
-                score=float(result["rank"]),
-                metadata=result["metadata"],
+                extraction_id=str(r["extraction_id"]),
+                document_id=str(r["document_id"]),
+                user_id=str(r["user_id"]),
+                collection_ids=r["collection_ids"],
+                text=r["text"],
+                score=float(r["rank"]),
+                metadata=json.loads(r["metadata"]),
             )
-            for result in results
+            for r in results
         ]
+
+    # async def full_text_search(
+    #     self, query_text: str, search_settings: VectorSearchSettings
+    # ) -> list[VectorSearchResult]:
+    #     if not self.enable_fts:
+    #         raise ValueError("Full-text search is not enabled for this collection.")
+    #     query = f"""
+    #     SELECT extraction_id, document_id, user_id, collection_ids, text,
+    #            ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
+    #            metadata
+    #     FROM {self._get_table_name(self.project_name)}
+    #     WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
+    #     ORDER BY rank DESC
+    #     LIMIT $3 OFFSET $4;
+    #     """
+    #     results = await self.fetch_query(
+    #         query,
+    #         (
+    #             query_text,
+    #             search_settings.selected_collection_ids,
+    #             search_settings.search_limit,
+    #             search_settings.offset,
+    #         ),
+    #     )
+
+    #     return [
+    #         VectorSearchResult(
+    #             extraction_id=result["extraction_id"],
+    #             document_id=result["document_id"],
+    #             user_id=result["user_id"],
+    #             collection_ids=result["collection_ids"],
+    #             text=result["text"],
+    #             score=float(result["rank"]),
+    #             metadata=result["metadata"],
+    #         )
+    #         for result in results
+    #     ]
+
+    # query = f"""
+    # SELECT extraction_id, document_id, user_id, collection_ids, text,
+    #        ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
+    #        metadata
+    # FROM {self._get_table_name(self.project_name)}
+    # WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
+    # ORDER BY rank DESC
+    # LIMIT $3 OFFSET $4;
+    # """
+    # results = await self.fetch_query(
+    #     query,
+    #     (
+    #         query_text,
+    #         search_settings.selected_collection_ids,
+    #         search_settings.search_limit,
+    #         search_settings.offset,
+    #     ),
+    # )
+
+    # return [
+    #     VectorSearchResult(
+    #         extraction_id=result["extraction_id"],
+    #         document_id=result["document_id"],
+    #         user_id=result["user_id"],
+    #         collection_ids=result["collection_ids"],
+    #         text=result["text"],
+    #         score=float(result["rank"]),
+    #         metadata=result["metadata"],
+    #     )
+    #     for result in results
+    # ]
 
     async def hybrid_search(
         self,
@@ -531,7 +556,7 @@ class VectorDBMixin(DatabaseMixin):
         OFFSET $2
         {limit_clause};
         """
-        
+
         params = [document_id, offset]
 
         results = await self.fetch_query(query, params)

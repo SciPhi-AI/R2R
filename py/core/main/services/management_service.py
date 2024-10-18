@@ -267,9 +267,7 @@ class ManagementService(Service):
         logger.info(f"Deleting entries with filters: {filters}")
 
         try:
-            vector_delete_results = self.providers.database.delete(
-                filters
-            )
+            vector_delete_results = self.providers.database.delete(filters)
         except Exception as e:
             logger.error(f"Error deleting from vector database: {e}")
             vector_delete_results = {}
@@ -508,9 +506,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetCollection")
     async def get_collection(self, collection_id: UUID) -> Optional[dict]:
-        return await self.providers.database.get_collection(
-            collection_id
-        )
+        return await self.providers.database.get_collection(collection_id)
 
     @telemetry_event("UpdateCollection")
     async def update_collection(
@@ -528,9 +524,7 @@ class ManagementService(Service):
         await self.providers.database.delete_collection_relational(
             collection_id
         )
-        await self.providers.database.delete_collection_vector(
-            collection_id
-        )
+        await self.providers.database.delete_collection_vector(collection_id)
         return True
 
     @telemetry_event("ListCollections")
@@ -553,10 +547,8 @@ class ManagementService(Service):
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return (
-            await self.providers.database.remove_user_from_collection(
-                user_id, collection_id
-            )
+        return await self.providers.database.remove_user_from_collection(
+            user_id, collection_id
         )
 
     @telemetry_event("GetUsersInCollection")

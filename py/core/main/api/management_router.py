@@ -414,7 +414,6 @@ class ManagementRouter(BaseRouter):
                 "total_entries": document_chunks["total_entries"]
             }
 
-
         @self.router.get("/collections_overview")
         @self.base_endpoint
         async def collections_overview_app(

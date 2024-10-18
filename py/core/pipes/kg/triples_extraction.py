@@ -260,9 +260,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             )
             for extraction in await self.database_provider.get_document_chunks(
                 document_id=document_id
-            )[
-                "results"
-            ]
+            )["results"]
         ]
 
         logger.info(

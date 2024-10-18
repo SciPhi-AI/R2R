@@ -339,9 +339,7 @@ class IngestionService(Service):
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
 
-        await self.providers.database.upsert_documents_overview(
-            document_info
-        )
+        await self.providers.database.upsert_documents_overview(document_info)
 
         return document_info
 

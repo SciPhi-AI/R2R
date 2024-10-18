@@ -114,9 +114,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
         token_data = await self.decode_token(token)
-        user = await self.db_provider.get_user_by_email(
-            token_data.email
-        )
+        user = await self.db_provider.get_user_by_email(token_data.email)
         if user is None:
             raise R2RException(
                 status_code=401, message="Invalid authentication credentials"
@@ -133,10 +131,8 @@ class R2RAuthProvider(AuthProvider):
     async def register(self, email: str, password: str) -> Dict[str, str]:
         # Create new user and give them a default collection
         new_user = await self.db_provider.create_user(email, password)
-        default_collection = (
-            await self.db_provider.create_default_collection(
-                new_user.id,
-            )
+        default_collection = await self.db_provider.create_default_collection(
+            new_user.id,
         )
 
         await self.db_provider.add_user_to_collection(
@@ -168,19 +164,15 @@ class R2RAuthProvider(AuthProvider):
     async def verify_email(
         self, email: str, verification_code: str
     ) -> dict[str, str]:
-        user_id = (
-            await self.db_provider.get_user_id_by_verification_code(
-                verification_code
-            )
+        user_id = await self.db_provider.get_user_id_by_verification_code(
+            verification_code
         )
         if not user_id:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
         await self.db_provider.mark_user_as_verified(user_id)
-        await self.db_provider.remove_verification_code(
-            verification_code
-        )
+        await self.db_provider.remove_verification_code(verification_code)
         return {"message": "Email verified successfully"}
 
     async def login(self, email: str, password: str) -> Dict[str, Token]:
@@ -292,9 +284,7 @@ class R2RAuthProvider(AuthProvider):
 
         reset_token = self.crypto_provider.generate_verification_code()
         expiry = datetime.now(timezone.utc) + timedelta(hours=1)
-        await self.db_provider.store_reset_token(
-            user.id, reset_token, expiry
-        )
+        await self.db_provider.store_reset_token(user.id, reset_token, expiry)
 
         # TODO: Integrate with email provider to send reset link
         # self.email_provider.send_reset_email(email, reset_token)
