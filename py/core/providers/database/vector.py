@@ -5,8 +5,6 @@ import time
 import uuid
 from typing import Any, Optional, Tuple, TypedDict, Union
 
-from sqlalchemy import func, text
-
 from core.base import VectorEntry, VectorQuantizationType, VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
 from shared.abstractions.vector import (

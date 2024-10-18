@@ -1,11 +1,9 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import asyncpg
-from sqlalchemy import TextClause, text
-
 
 logger = logging.getLogger()
 
@@ -108,7 +106,7 @@ class DatabaseMixin:
 
     def execute_query(
         self,
-        query: Union[str, TextClause],
+        query: str,
         params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
         isolation_level: Optional[str] = None,
     ):
@@ -119,14 +117,14 @@ class DatabaseMixin:
 
     def fetch_query(
         self,
-        query: Union[str, TextClause],
+        query: str,
         params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
     ):
         raise NotImplementedError("Subclasses must implement this method")
 
     def fetchrow_query(
         self,
-        query: Union[str, TextClause],
+        query: str,
         params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
     ):
         raise NotImplementedError("Subclasses must implement this method")

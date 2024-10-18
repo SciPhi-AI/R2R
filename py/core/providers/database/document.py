@@ -5,17 +5,6 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 import asyncpg
-from sqlalchemy import (
-    ARRAY,
-    JSON,
-    Column,
-    DateTime,
-    Integer,
-    MetaData,
-    String,
-    Table,
-)
-from sqlalchemy.dialects.postgresql import UUID as SqlUUID
 
 from core.base import (
     DocumentInfo,
@@ -34,24 +23,6 @@ logger = logging.getLogger()
 class DocumentMixin(DatabaseMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.metadata = MetaData()
-        self.document_info_table = Table(
-            self._get_table_name("document_info"),
-            self.metadata,
-            Column("document_id", SqlUUID, primary_key=True),
-            Column("collection_ids", ARRAY(SqlUUID)),
-            Column("user_id", SqlUUID),
-            Column("type", String),
-            Column("metadata", JSON),
-            Column("title", String),
-            Column("version", String),
-            Column("size_in_bytes", Integer),
-            Column("ingestion_status", String),
-            Column("kg_extraction_status", String),
-            Column("created_at", DateTime),
-            Column("updated_at", DateTime),
-            Column("ingestion_attempt_number", Integer, default=0),
-        )
 
     async def create_table(self):
         query = f"""
