@@ -63,18 +63,22 @@ class VectorSearchPipe(SearchPipe):
             purpose=EmbeddingPurpose.QUERY,
         )
 
-        search_results = await (
-             self.database_provider.hybrid_search(
-                query_vector=query_vector,
-                query_text=message,
-                search_settings=search_settings,
-            )
-            if search_settings.use_hybrid_search
-            else self.database_provider.semantic_search(
-                query_vector=query_vector,
-                search_settings=search_settings,
-            )
+        search_results = await self.database_provider.semantic_search(
+            query_vector=query_vector,
+            search_settings=search_settings,
         )
+        # search_results = await (
+        #      self.database_provider.hybrid_search(
+        #         query_vector=query_vector,
+        #         query_text=message,
+        #         search_settings=search_settings,
+        #     )
+        #     if search_settings.use_hybrid_search
+        #     else self.database_provider.semantic_search(
+        #         query_vector=query_vector,
+        #         search_settings=search_settings,
+        #     )
+        # )
         reranked_results = self.embedding_provider.rerank(
             query=message,
             results=search_results,

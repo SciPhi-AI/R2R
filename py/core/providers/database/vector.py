@@ -56,7 +56,7 @@ class VectorDBMixin(DatabaseMixin):
         # TODO - Move ids to `UUID` type
         # Create the vector table if it doesn't exist
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(self.project_name)} (
             extraction_id UUID PRIMARY KEY,
             document_id UUID,
             user_id UUID,
@@ -65,16 +65,16 @@ class VectorDBMixin(DatabaseMixin):
             text TEXT,
             metadata JSONB
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} USING GIN (to_tsvector('english', text));
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(self.project_name)} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(self.project_name)} (user_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(self.project_name)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(self.project_name)} USING GIN (to_tsvector('english', text));
         """
         await self.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
         query = f"""
-        INSERT INTO {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        INSERT INTO {self._get_table_name(self.project_name)}
         (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE SET
@@ -100,7 +100,7 @@ class VectorDBMixin(DatabaseMixin):
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
         query = f"""
-        INSERT INTO {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        INSERT INTO {self._get_table_name(self.project_name)}
         (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE SET
@@ -125,6 +125,44 @@ class VectorDBMixin(DatabaseMixin):
         ]
         await self.execute_many(query, params)
 
+    # async def semantic_search(
+    #     self, query_vector: list[float], search_settings: VectorSearchSettings
+    # ) -> list[VectorSearchResult]:
+    #     try:
+    #         imeasure_obj = IndexMeasure(search_settings.index_measure)
+    #     except ValueError:
+    #         raise ValueError("Invalid index measure")
+
+    #     distance_func = self._get_distance_function(imeasure_obj)
+
+    #     cols = [
+    #         f"{self._get_table_name(self.project_name)}.extraction_id",
+    #         f"{self._get_table_name(self.project_name)}.document_id",
+    #         f"{self._get_table_name(self.project_name)}.user_id",
+    #         f"{self._get_table_name(self.project_name)}.collection_ids",
+    #         f"{self._get_table_name(self.project_name)}.text",
+    #     ]
+
+    #     if search_settings.include_values:
+    #         cols.append(f"{self._get_table_name(self.project_name)}.vec {distance_func} :vec AS distance")
+
+    #     if search_settings.include_metadatas:
+    #         cols.append(f"{self._get_table_name(self.project_name)}.metadata")
+
+    #     select_clause = ", ".join(cols)
+
+    #     where_clause = "TRUE"
+    #     if search_settings.filters:
+    #         where_clause = self._build_filters(search_settings.filters)
+
+    #     query = f"""
+    #     SELECT {select_clause}
+    #     FROM {self._get_table_name(self.project_name)}
+    #     WHERE {where_clause}
+    #     ORDER BY {self._get_table_name(self.project_name)}.vec {distance_func} :vec
+    #     OFFSET :offset
+    #     LIMIT :limit
+    #     """
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
@@ -136,62 +174,51 @@ class VectorDBMixin(DatabaseMixin):
         distance_func = self._get_distance_function(imeasure_obj)
 
         cols = [
-            "extraction_id",
-            "document_id",
-            "user_id",
-            "collection_ids",
-            "text",
+            f"{self._get_table_name(self.project_name)}.extraction_id",
+            f"{self._get_table_name(self.project_name)}.document_id",
+            f"{self._get_table_name(self.project_name)}.user_id",
+            f"{self._get_table_name(self.project_name)}.collection_ids",
+            f"{self._get_table_name(self.project_name)}.text",
         ]
 
         if search_settings.include_values:
-            cols.append(f"{distance_func}(vec, $1::vector) as distance")
+            cols.append(f"{self._get_table_name(self.project_name)}.vec {distance_func} $1 AS distance")
 
         if search_settings.include_metadatas:
-            cols.append("metadata")
+            cols.append(f"{self._get_table_name(self.project_name)}.metadata")
 
         select_clause = ", ".join(cols)
 
-        where_clause = "TRUE"
+        where_clause = ""
         if search_settings.filters:
-            where_clause = self._build_filters(search_settings.filters)
-
-#         query = f"""
-#         SELECT {select_clause}
-#         FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)
-# }
-#         WHERE {where_clause}
-#         ORDER BY {distance_func}(vec, $1::vector)
-#         OFFSET $2
-#         LIMIT $3
-#         """
-        vector_str = f"ARRAY[{','.join(map(str, query_vector))}]::vector"
+            where_clause = f"WHERE {self._build_filters(search_settings.filters)}"
 
         query = f"""
-            SELECT {select_clause}
-            FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
-            WHERE {where_clause}
-            ORDER BY {distance_func}(vec, {vector_str})
-            OFFSET $1
-            LIMIT $2
-            """
-        params = [
-            query_vector,
-            search_settings.offset,
-            search_settings.search_limit,
-        ]
-        print('query = ', query)
-        print('params = ', params)
+        SELECT {select_clause}
+        FROM {self._get_table_name(self.project_name)}
+        {where_clause}
+        ORDER BY {self._get_table_name(self.project_name)}.vec {distance_func} $1
+        LIMIT $2
+        OFFSET $3
+        """
+
+        # params = {
+        #     "vec_1": query_vector,
+        #     "param_1": search_settings.search_limit,
+        #     "param_2": search_settings.offset,
+        # }
+        print('raw query = ', query)
 
         # Set index-specific session parameters
-        await self.execute_query(
-            "SET LOCAL ivfflat.probes = $1", [search_settings.probes]
-        )
-        await self.execute_query(
-            "SET LOCAL hnsw.ef_search = $1",
-            [max(search_settings.ef_search, search_settings.search_limit)],
-        )
+        # await self.execute_query(
+        #     "SET LOCAL ivfflat.probes = :probes", {"probes": search_settings.probes}
+        # )
+        # await self.execute_query(
+        #     "SET LOCAL hnsw.ef_search = :ef_search",
+        #     {"ef_search": max(search_settings.ef_search, search_settings.search_limit)},
+        # )
         
-        results = await self.fetch_query(query, params)
+        results = await self.fetch_query(query, (str(query_vector), search_settings.search_limit, search_settings.offset)) # , params)
 
         return [
             VectorSearchResult(
@@ -200,11 +227,92 @@ class VectorDBMixin(DatabaseMixin):
                 user_id=result["user_id"],
                 collection_ids=result["collection_ids"],
                 text=result["text"],
-                score=float(result["rank"]),
-                metadata=result["metadata"],
+                score=(1-float(result["distance"])) if search_settings.include_values else None,
+                metadata=json.loads(result["metadata"]) if search_settings.include_metadatas else None,
             )
             for result in results
         ]
+
+#     async def semantic_search(
+#         self, query_vector: list[float], search_settings: VectorSearchSettings
+#     ) -> list[VectorSearchResult]:
+#         try:
+#             imeasure_obj = IndexMeasure(search_settings.index_measure)
+#         except ValueError:
+#             raise ValueError("Invalid index measure")
+
+#         distance_func = self._get_distance_function(imeasure_obj)
+
+#         cols = [
+#             "extraction_id",
+#             "document_id",
+#             "user_id",
+#             "collection_ids",
+#             "text",
+#         ]
+
+#         if search_settings.include_values:
+#             cols.append(f"{distance_func}(vec, $1::vector) as distance")
+
+#         if search_settings.include_metadatas:
+#             cols.append("metadata")
+
+#         select_clause = ", ".join(cols)
+
+#         where_clause = "TRUE"
+#         if search_settings.filters:
+#             where_clause = self._build_filters(search_settings.filters)
+
+# #         query = f"""
+# #         SELECT {select_clause}
+# #         FROM {self._get_table_name(self.project_name)
+# # }
+# #         WHERE {where_clause}
+# #         ORDER BY {distance_func}(vec, $1::vector)
+# #         OFFSET $2
+# #         LIMIT $3
+# #         """
+#         vector_str = f"ARRAY[{','.join(map(str, query_vector))}]::vector"
+
+#         query = f"""
+#             SELECT {select_clause}
+#             FROM {self._get_table_name(self.project_name)}
+#             WHERE {where_clause}
+#             ORDER BY {distance_func}(vec, {vector_str})
+#             OFFSET $1
+#             LIMIT $2
+#             """
+#         params = [
+#             query_vector,
+#             search_settings.offset,
+#             search_settings.search_limit,
+#         ]
+#         print('query = ', query)
+#         print('params = ', params)
+
+#         # Set index-specific session parameters
+#         await self.execute_query(
+#             "SET LOCAL ivfflat.probes = $1", [search_settings.probes]
+#         )
+#         await self.execute_query(
+#             "SET LOCAL hnsw.ef_search = $1",
+#             [max(search_settings.ef_search, search_settings.search_limit)],
+#         )
+        
+#         results = await self.fetch_query(query, params)
+
+#         return [
+#             VectorSearchResult(
+#                 extraction_id=result["extraction_id"],
+#                 document_id=result["document_id"],
+#                 user_id=result["user_id"],
+#                 collection_ids=result["collection_ids"],
+#                 text=result["text"],
+#                 score=float(result["rank"]),
+#                 metadata=result["metadata"],
+#             )
+#             for result in results
+#         ]
 
     async def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
@@ -213,7 +321,7 @@ class VectorDBMixin(DatabaseMixin):
         SELECT extraction_id, document_id, user_id, collection_ids, text,
                ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
                metadata
-        FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        FROM {self._get_table_name(self.project_name)}
         WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
         ORDER BY rank DESC
         LIMIT $3 OFFSET $4;
@@ -362,7 +470,7 @@ class VectorDBMixin(DatabaseMixin):
 
         where_clause = " AND ".join(conditions)
         query = f"""
-        DELETE FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        DELETE FROM {self._get_table_name(self.project_name)}
         WHERE {where_clause}
         RETURNING extraction_id;
         """
@@ -376,7 +484,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        UPDATE {self._get_table_name(self.project_name)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
@@ -386,7 +494,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        UPDATE {self._get_table_name(self.project_name)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
@@ -394,14 +502,14 @@ class VectorDBMixin(DatabaseMixin):
 
     async def delete_user_vector(self, user_id: str) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        DELETE FROM {self._get_table_name(self.project_name)}
         WHERE user_id = $1;
         """
         await self.execute_query(query, (user_id,))
 
     async def delete_collection_vector(self, collection_id: str) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        DELETE FROM {self._get_table_name(self.project_name)}
         WHERE $1 = ANY(collection_ids);
         """
         await self.execute_query(query, (collection_id,))
@@ -417,9 +525,8 @@ class VectorDBMixin(DatabaseMixin):
         limit_clause = f"LIMIT {limit}" if limit > -1 else ""
 
         query = f"""
-        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
-        {vector_select}
-        FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
+        FROM {self._get_table_name(self.project_name)}
         WHERE document_id = $1
         OFFSET $2
         {limit_clause};
@@ -743,7 +850,7 @@ class VectorDBMixin(DatabaseMixin):
 
     def _get_distance_function(self, imeasure_obj: IndexMeasure) -> str:
         if imeasure_obj == IndexMeasure.cosine_distance:
-            return "cosine_distance"
+            return "<=>"
         elif imeasure_obj == IndexMeasure.l2_distance:
             return "l2_distance"
         elif imeasure_obj == IndexMeasure.max_inner_product:
