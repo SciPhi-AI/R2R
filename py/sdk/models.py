@@ -19,10 +19,12 @@ from shared.abstractions import (
     Token,
     VectorSearchResult,
     VectorSearchSettings,
+    KGEntityDeduplicationSettings,
 )
 from shared.api.models import (
     KGCreationResponse,
     KGEnrichmentResponse,
+    KGEntityDeduplicationResponse,
     RAGResponse,
     SearchResponse,
     UserResponse,
@@ -48,6 +50,8 @@ __all__ = [
     "Token",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "KGEntityDeduplicationSettings",
+    "KGEntityDeduplicationResponse",
     "KGCreationResponse",
     "KGEnrichmentResponse",
     "RAGResponse",

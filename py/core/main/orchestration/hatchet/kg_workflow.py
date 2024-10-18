@@ -212,6 +212,77 @@ def hatchet_kg_factory(
             return {
                 "result": f"successfully ran graph creation workflows for {len(results)} documents"
             }
+        
+    @orchestration_provider.workflow(name="entity-deduplication", timeout="360m")
+    class EntityDeduplicationWorkflow:
+        def __init__(self, kg_service: KgService):
+            self.kg_service = kg_service
+
+        @orchestration_provider.step(retries=0, timeout="360m")
+        async def kg_entity_deduplication_setup(self, context: Context) -> dict:
+
+            input_data = get_input_data_dict(
+                context.workflow_input()["request"]
+            )
+
+            collection_id = input_data["collection_id"]
+
+            logger.info(f"Running KG Entity Deduplication for collection {collection_id}")
+            logger.info(f"Input data: {input_data}")
+            logger.info(f"KG Entity Deduplication Settings: {input_data['kg_entity_deduplication_settings']}")
+
+            number_of_distinct_entities = await self.kg_service.kg_entity_deduplication(
+                collection_id=collection_id,
+                **input_data["kg_entity_deduplication_settings"],
+            )
+
+            # run 100 entities in one workflow
+            total_workflows = math.ceil(number_of_distinct_entities / 100)
+            workflows = []
+            for i in range(total_workflows):
+                offset = i * 100
+                workflows.append(
+                    context.aio.spawn_workflow(
+                        "entity-deduplication-part",
+                        {
+                            "request": {
+                                "collection_id": collection_id,
+                                "offset": offset,
+                                "limit": 100,
+                                **input_data["kg_entity_deduplication_settings"],
+                            }
+                        },
+                        key=f"{i}/{total_workflows}_entity_deduplication_part"
+                    )
+                )
+            await asyncio.gather(*workflows)
+
+            return {
+                "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
+            }
+        
+    @orchestration_provider.workflow(name="entity-deduplication-summary", timeout="360m")
+    class EntityDeduplicationSummaryWorkflow:
+        def __init__(self, kg_service: KgService):
+            self.kg_service = kg_service
+
+        @orchestration_provider.step(retries=0, timeout="360m")
+        async def kg_entity_deduplication_summary(self, context: Context) -> dict:
+            input_data = get_input_data_dict(
+                context.workflow_input()["request"]
+            )
+            collection_id = input_data["collection_id"]
+
+            await self.kg_service.kg_entity_deduplication_summary(
+                collection_id=collection_id,
+                offset=input_data["offset"],
+                limit=input_data["limit"],
+                **input_data["kg_entity_deduplication_settings"],
+            )
+
+            return {
+                "result": f"successfully queued kg entity deduplication summary for collection {collection_id}"
+            }
 
     @orchestration_provider.workflow(name="enrich-graph", timeout="360m")
     class EnrichGraphWorkflow:
@@ -333,4 +404,6 @@ def hatchet_kg_factory(
         "create-graph": CreateGraphWorkflow(service),
         "enrich-graph": EnrichGraphWorkflow(service),
         "kg-community-summary": KGCommunitySummaryWorkflow(service),
+        "kg-entity-deduplication": EntityDeduplicationWorkflow(service),
+        "kg-entity-deduplication-summary": EntityDeduplicationSummaryWorkflow(service),
     }

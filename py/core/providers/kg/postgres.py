@@ -139,6 +139,21 @@ class PostgresKGProvider(KGProvider):
 
         await self.execute_query(query)
 
+        # deduplicated entities table
+        query = f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_deduplicated")} (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            extraction_ids UUID[] NOT NULL,
+            document_ids UUID[] NOT NULL,
+            collection_id UUID NOT NULL,
+            description_embedding {vector_column_str},
+            attributes JSONB
+        );"""
+
+        await self.execute_query(query)
+
         # communities table, result of the Leiden algorithm
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
@@ -192,6 +207,8 @@ class PostgresKGProvider(KGProvider):
             VALUES ({placeholders})
         """
 
+        logger.info(f"Upserting {len(objects)} objects into {table_name}")
+
         # Filter out null values for each object
         params = [
             tuple(
@@ -201,12 +218,16 @@ class PostgresKGProvider(KGProvider):
             )
             for obj in objects
         ]
+
+        logger.info(f"Upserting {len(params)} params into {table_name}")
+
         return await self.execute_many(QUERY, params)  # type: ignore
 
     async def add_entities(
         self,
         entities: list[Entity],
         table_name: str,
+        embedding_col_name: str = "description_embedding",
     ) -> asyncpg.Record:
         """
         Upsert entities into the entities_raw table. These are raw entities extracted from the document.
@@ -219,10 +240,12 @@ class PostgresKGProvider(KGProvider):
             result: asyncpg.Record: result of the upsert operation
         """
         for entity in entities:
-            if entity.description_embedding is not None:
-                entity.description_embedding = str(  # type: ignore
-                    entity.description_embedding
-                )
+            if getattr(entity, embedding_col_name, None) is not None:
+                setattr(entity, embedding_col_name, str(  # type: ignore
+                    getattr(entity, embedding_col_name)
+                ))
+
+        logger.info(f"Upserting {len(entities)} entities into {table_name}")
 
         return await self._add_objects(entities, table_name)
 
@@ -401,6 +424,7 @@ class PostgresKGProvider(KGProvider):
         table_name = self._get_table_name("entities")
         query = QUERY.format(table_name)
         await self.execute_query(query, entities)
+
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 

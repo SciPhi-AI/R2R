@@ -65,6 +65,58 @@ def create_graph(
 @click.option(
     "--collection-id",
     required=False,
+    help="Collection ID to deduplicate entities for.",
+)
+@click.option(
+    "--run",
+    is_flag=True,
+    help="Run the deduplication process.",
+)
+@click.option(
+    "--force-deduplication",
+    is_flag=True,
+    help="Force the deduplication process.",
+)
+@click.option(
+    "--deduplication-settings",
+    required=False,
+    help="Settings for the deduplication process.",
+)
+@pass_context
+def deduplicate_entities(ctx, collection_id, run, force_deduplication, deduplication_settings):
+    """
+    Deduplicate entities in the knowledge graph.
+    """
+    client = ctx.obj
+
+    if deduplication_settings:
+        try:
+            deduplication_settings = json.loads(deduplication_settings)
+        except json.JSONDecodeError:
+            click.echo(
+                "Error: deduplication-settings must be a valid JSON string"
+            )
+            return
+    else:
+        deduplication_settings = {}
+
+    run_type = "run" if run else "estimate"
+
+    if force_deduplication:
+        deduplication_settings = {"force_deduplication": True}
+
+    with timer():
+        response = client.deduplicate_entities(
+            collection_id, run_type, deduplication_settings
+        )
+
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.option(
+    "--collection-id",
+    required=False,
     default="",
     help="Collection ID to enrich graph for.",
 )

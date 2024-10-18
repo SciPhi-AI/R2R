@@ -7,6 +7,8 @@ from .models import (
     KGEnrichmentResponse,
     KGEnrichmentSettings,
     KGRunType,
+    KGEntityDeduplicationResponse,
+    KGEntityDeduplicationSettings,
 )
 
 
@@ -37,6 +39,33 @@ class KGMethods:
         }
 
         return await client._make_request("POST", "create_graph", json=data)
+
+    @staticmethod
+    async def deduplicate_entities(
+        client,
+        collection_id: Optional[Union[UUID, str]] = None,
+        run_type: Optional[Union[str, KGRunType]] = None,
+        deduplication_settings: Optional[Union[dict, KGEntityDeduplicationSettings]] = None,
+    ) -> KGEntityDeduplicationResponse:
+        """
+        Deduplicate entities in the knowledge graph.
+
+        Args:
+            collection_id (Optional[Union[UUID, str]]): The ID of the collection to deduplicate entities for.
+            run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
+            deduplication_settings (Optional[Union[dict, KGEntityDeduplicationSettings]]): Settings for the deduplication process.
+        """
+        if isinstance(deduplication_settings, KGEntityDeduplicationSettings):
+            deduplication_settings = deduplication_settings.model_dump()
+
+        data = {
+            "collection_id": str(collection_id) if collection_id else None,
+            "run_type": str(run_type) if run_type else None,
+            "deduplication_settings": deduplication_settings or {},
+        }
+
+        return await client._make_request("POST", "deduplicate_entities", json=data)
+
 
     @staticmethod
     async def enrich_graph(

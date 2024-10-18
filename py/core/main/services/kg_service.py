@@ -8,9 +8,12 @@ from uuid import UUID
 from core.base import KGExtractionStatus, R2RLoggingProvider, RunManager
 from core.base.abstractions import (
     GenerationConfig,
+    KGEntityDeduplicationType,
     KGCreationSettings,
     KGEnrichmentSettings,
 )
+
+
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -364,3 +367,46 @@ class KgService(Service):
             levels,
             community_numbers,
         )
+
+    @telemetry_event("kg_entity_deduplication")
+    async def kg_entity_deduplication(
+        self,
+        collection_id: UUID,
+        kg_entity_deduplication_type: KGEntityDeduplicationType,
+        kg_entity_deduplication_prompt: str,
+        generation_config: GenerationConfig,
+        **kwargs,
+    ):
+        deduplication_results = await self.pipes.kg_entity_deduplication_pipe.run(
+            input=self.pipes.kg_entity_deduplication_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
+                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "generation_config": generation_config,
+                    **kwargs,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+        return await _collect_results(deduplication_results)
+
+    @telemetry_event("kg_entity_deduplication_summary")
+    async def kg_entity_deduplication_summary(
+        self,
+        collection_id: UUID,
+        offset: int,
+        limit: int,
+        **kwargs,
+    ):
+        return await self.pipes.kg_entity_deduplication_summary_pipe.run(
+            input=self.pipes.kg_entity_deduplication_summary_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "offset": offset,
+                    "limit": limit,
+                }
+            ),
+        )
+
