@@ -6,18 +6,9 @@ description: 'Manage and observe your R2R system.'
 ## Analytics and Observability
 R2R provides various tools for analytics and observability to help you monitor and improve the performance of your RAG system.
 
-### Completion Scores
-Scores act as an observability metric and are attached to RAG completions in R2R.
-
-Scores are bound to values between -1 (a strong negative association) and 1 (a strong positive association), where:
-- A score close to 1 may indicate a highly relevant and accurate completion
-- A score close to 0 may indicate a neutral or uncertain quality
-- A score close to -1 may indicate a potentially irrelevant or incorrect completion
-
 ```javascript
 const scoringResponse = await client.login("message_id_here", "password123");
 ```
-
 
 <AccordionGroup>
   <Accordion title="Response">
