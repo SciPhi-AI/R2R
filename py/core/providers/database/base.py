@@ -15,6 +15,10 @@ class SemaphoreConnectionPool:
 
     async def initialize(self):
         try:
+            logger.info(
+                f"Connecting with {int(self.postgres_configuration_settings.max_connections * 0.9)} connections to `asyncpg.create_pool`."
+            )
+
             self.semaphore = asyncio.Semaphore(
                 int(self.postgres_configuration_settings.max_connections * 0.9)
             )
@@ -37,6 +41,9 @@ class SemaphoreConnectionPool:
         async with self.semaphore:
             async with self.pool.acquire() as conn:
                 yield conn
+
+    async def close(self):
+        await self.pool.close()
 
 
 class QueryBuilder:

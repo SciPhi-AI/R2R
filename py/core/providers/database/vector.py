@@ -36,7 +36,8 @@ class HybridSearchIntermediateResult(TypedDict):
 
 
 class VectorDBMixin(DatabaseMixin):
-    COLUMN_NAME = "vecs"
+    TABLE_NAME = "vector"
+
     COLUMN_VARS = [
         "extraction_id",
         "document_id",
@@ -51,7 +52,7 @@ class VectorDBMixin(DatabaseMixin):
         # TODO - Move ids to `UUID` type
         # Create the vector table if it doesn't exist
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(self.project_name)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(VectorDBMixin.TABLE_NAME)} (
             extraction_id UUID PRIMARY KEY,
             document_id UUID,
             user_id UUID,
@@ -61,21 +62,21 @@ class VectorDBMixin(DatabaseMixin):
             metadata JSONB
             {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(self.project_name)} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(self.project_name)} (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(self.project_name)} USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(self.project_name)} USING GIN (to_tsvector('english', text));
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} (user_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} USING GIN (to_tsvector('english', text));
         """
         if self.enable_fts:
             query += f"""
-            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(self.project_name)} USING GIN (to_tsvector('english', text));
+            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} USING GIN (to_tsvector('english', text));
             """
 
         await self.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
         query = f"""
-        INSERT INTO {self._get_table_name(self.project_name)}
+        INSERT INTO {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE SET
@@ -101,7 +102,7 @@ class VectorDBMixin(DatabaseMixin):
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
         query = f"""
-        INSERT INTO {self._get_table_name(self.project_name)}
+        INSERT INTO {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE SET
@@ -126,61 +127,6 @@ class VectorDBMixin(DatabaseMixin):
         ]
         await self.execute_many(query, params)
 
-    # async def upsert(self, entry: VectorEntry) -> None:
-    #     query = f"""
-    #     INSERT INTO {self._get_table_name(self.project_name)}
-    #     {"(extraction_id, document_id, user_id, collection_ids, vec, text, metadata)" if not self.enable_fts else "(extraction_id, document_id, user_id, collection_ids, vec, text, metadata, fts)"}
-    #     VALUES {"($1, $2, $3, $4, $5, $6, $7)" if not self.enable_fts else "($1, $2, $3, $4, $5, $6, $7, $8)"}
-    #     ON CONFLICT (extraction_id) DO UPDATE SET
-    #     document_id = EXCLUDED.document_id,
-    #     user_id = EXCLUDED.user_id,
-    #     collection_ids = EXCLUDED.collection_ids,
-    #     vec = EXCLUDED.vec,
-    #     text = EXCLUDED.text,
-    #     metadata = EXCLUDED.metadata;
-    #     """
-    #     await self.execute_query(
-    #         query,
-    #         (
-    #             entry.extraction_id,
-    #             entry.document_id,
-    #             entry.user_id,
-    #             entry.collection_ids,
-    #             str(entry.vector.data),
-    #             entry.text,
-    #             json.dumps(entry.metadata),
-    #             func.ts_vector(entry.text) if self.enable_fts else None,
-    #         ),
-    #     )
-
-    # async def upsert_entries(self, entries: list[VectorEntry]) -> None:
-    #     query = f"""
-    #     INSERT INTO {self._get_table_name(self.project_name)}
-    #     {"(extraction_id, document_id, user_id, collection_ids, vec, text, metadata)" if not self.enable_fts else "(extraction_id, document_id, user_id, collection_ids, vec, text, metadata, fts)"}
-    #     VALUES {"($1, $2, $3, $4, $5, $6, $7)" if not self.enable_fts else "($1, $2, $3, $4, $5, $6, $7, $8)"}
-    #     ON CONFLICT (extraction_id) DO UPDATE SET
-    #     document_id = EXCLUDED.document_id,
-    #     user_id = EXCLUDED.user_id,
-    #     collection_ids = EXCLUDED.collection_ids,
-    #     vec = EXCLUDED.vec,
-    #     text = EXCLUDED.text,
-    #     metadata = EXCLUDED.metadata;
-    #     """
-    #     params = [
-    #         (
-    #             entry.extraction_id,
-    #             entry.document_id,
-    #             entry.user_id,
-    #             entry.collection_ids,
-    #             str(entry.vector.data),
-    #             entry.text,
-    #             json.dumps(entry.metadata),
-    #             func.ts_vector(entry.text) if self.enable_fts else None,
-    #         )
-    #         for entry in entries
-    #     ]
-    #     await self.execute_many(query, params)
-
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
@@ -189,55 +135,53 @@ class VectorDBMixin(DatabaseMixin):
         except ValueError:
             raise ValueError("Invalid index measure")
 
-        distance_func = self._get_distance_function(imeasure_obj)
-
+        table_name = self._get_table_name(VectorDBMixin.TABLE_NAME)
         cols = [
-            f"{self._get_table_name(self.project_name)}.extraction_id",
-            f"{self._get_table_name(self.project_name)}.document_id",
-            f"{self._get_table_name(self.project_name)}.user_id",
-            f"{self._get_table_name(self.project_name)}.collection_ids",
-            f"{self._get_table_name(self.project_name)}.text",
+            f"{table_name}.extraction_id",
+            f"{table_name}.document_id",
+            f"{table_name}.user_id",
+            f"{table_name}.collection_ids",
+            f"{table_name}.text",
         ]
 
+        # Use cosine distance calculation
+        distance_calc = f"{table_name}.vec <=> $1::vector"
+
         if search_settings.include_values:
-            cols.append(
-                f"{self._get_table_name(self.project_name)}.vec {distance_func} $1 AS distance"
-            )
+            cols.append(f"({distance_calc}) AS distance")
 
         if search_settings.include_metadatas:
-            cols.append(f"{self._get_table_name(self.project_name)}.metadata")
+            cols.append(f"{table_name}.metadata")
 
         select_clause = ", ".join(cols)
 
         where_clause = ""
+        params = [str(query_vector)]
         if search_settings.filters:
-            where_clause = (
-                f"WHERE {self._build_filters(search_settings.filters)}"
-            )
+            where_clause = self._build_filters(search_settings.filters, params)
+            where_clause = f"WHERE {where_clause}"
 
         query = f"""
         SELECT {select_clause}
-        FROM {self._get_table_name(self.project_name)}
+        FROM {table_name}
         {where_clause}
-        ORDER BY {self._get_table_name(self.project_name)}.vec {distance_func} $1
-        LIMIT $2
-        OFFSET $3
+        ORDER BY {distance_calc}
+        LIMIT ${len(params) + 1}
+        OFFSET ${len(params) + 2}
         """
 
-        results = await self.fetch_query(
-            query,
-            (
-                str(query_vector),
-                search_settings.search_limit,
-                search_settings.offset,
-            ),
-        )  # , params)
+        params.extend([search_settings.search_limit, search_settings.offset])
+
+        print("Generated SQL query:", query)
+        print("Query parameters:", params)
+
+        results = await self.fetch_query(query, params)
 
         return [
             VectorSearchResult(
-                extraction_id=result["extraction_id"],
-                document_id=result["document_id"],
-                user_id=result["user_id"],
+                extraction_id=str(result["extraction_id"]),
+                document_id=str(result["document_id"]),
+                user_id=str(result["user_id"]),
                 collection_ids=result["collection_ids"],
                 text=result["text"],
                 score=(
@@ -262,21 +206,20 @@ class VectorDBMixin(DatabaseMixin):
                 "Full-text search is not enabled for this collection."
             )
 
+        where_clause = ""
+        params = [query_text]
+        if search_settings.filters:
+            where_clause = self._build_filters(search_settings.filters, params)
+            where_clause = f"WHERE {where_clause}"
+
         query = f"""
             SELECT
                 extraction_id, document_id, user_id, collection_ids, text, metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
-            FROM {self._get_table_name(self.project_name)}
+            FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
             WHERE fts @@ websearch_to_tsquery('english', $1)
+            {where_clause}
         """
-        # AND collection_ids && $2
-
-        # if search_settings.filters:
-        #     filter_clause, filter_params = self._build_filters(search_settings.filters)
-        #     query += f" AND {filter_clause}"
-        #     params = [query_text, search_settings.selected_collection_ids] + filter_params
-        # else:
-        params = [query_text]  # , search_settings.selected_collection_ids]
 
         query += """
             ORDER BY rank DESC
@@ -302,75 +245,6 @@ class VectorDBMixin(DatabaseMixin):
             )
             for r in results
         ]
-
-    # async def full_text_search(
-    #     self, query_text: str, search_settings: VectorSearchSettings
-    # ) -> list[VectorSearchResult]:
-    #     if not self.enable_fts:
-    #         raise ValueError("Full-text search is not enabled for this collection.")
-    #     query = f"""
-    #     SELECT extraction_id, document_id, user_id, collection_ids, text,
-    #            ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
-    #            metadata
-    #     FROM {self._get_table_name(self.project_name)}
-    #     WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
-    #     ORDER BY rank DESC
-    #     LIMIT $3 OFFSET $4;
-    #     """
-    #     results = await self.fetch_query(
-    #         query,
-    #         (
-    #             query_text,
-    #             search_settings.selected_collection_ids,
-    #             search_settings.search_limit,
-    #             search_settings.offset,
-    #         ),
-    #     )
-
-    #     return [
-    #         VectorSearchResult(
-    #             extraction_id=result["extraction_id"],
-    #             document_id=result["document_id"],
-    #             user_id=result["user_id"],
-    #             collection_ids=result["collection_ids"],
-    #             text=result["text"],
-    #             score=float(result["rank"]),
-    #             metadata=result["metadata"],
-    #         )
-    #         for result in results
-    #     ]
-
-    # query = f"""
-    # SELECT extraction_id, document_id, user_id, collection_ids, text,
-    #        ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
-    #        metadata
-    # FROM {self._get_table_name(self.project_name)}
-    # WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
-    # ORDER BY rank DESC
-    # LIMIT $3 OFFSET $4;
-    # """
-    # results = await self.fetch_query(
-    #     query,
-    #     (
-    #         query_text,
-    #         search_settings.selected_collection_ids,
-    #         search_settings.search_limit,
-    #         search_settings.offset,
-    #     ),
-    # )
-
-    # return [
-    #     VectorSearchResult(
-    #         extraction_id=result["extraction_id"],
-    #         document_id=result["document_id"],
-    #         user_id=result["user_id"],
-    #         collection_ids=result["collection_ids"],
-    #         text=result["text"],
-    #         score=float(result["rank"]),
-    #         metadata=result["metadata"],
-    #     )
-    #     for result in results
-    # ]
 
     async def hybrid_search(
         self,
@@ -485,21 +359,27 @@ class VectorDBMixin(DatabaseMixin):
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
-        conditions = []
         params = []
-        for key, value in filters.items():
-            conditions.append(f"{key} = ${len(params) + 1}")
-            params.append(value)
+        where_clause = self._build_filters(filters, params)
 
-        where_clause = " AND ".join(conditions)
         query = f"""
-        DELETE FROM {self._get_table_name(self.project_name)}
+        DELETE FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         WHERE {where_clause}
-        RETURNING extraction_id;
+        RETURNING extraction_id, document_id, text;
         """
+
+        print("Generated DELETE SQL query:", query)
+        print("Query parameters:", params)
+
         results = await self.fetch_query(query, params)
+
         return {
-            result["extraction_id"]: {"status": "deleted"}
+            str(result["extraction_id"]): {
+                "status": "deleted",
+                "extraction_id": str(result["extraction_id"]),
+                "document_id": str(result["document_id"]),
+                "text": result["text"],
+            }
             for result in results
         }
 
@@ -507,7 +387,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(self.project_name)}
+        UPDATE {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
@@ -517,7 +397,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(self.project_name)}
+        UPDATE {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
@@ -525,17 +405,22 @@ class VectorDBMixin(DatabaseMixin):
 
     async def delete_user_vector(self, user_id: str) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(self.project_name)}
+        DELETE FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         WHERE user_id = $1;
         """
         await self.execute_query(query, (user_id,))
 
     async def delete_collection_vector(self, collection_id: str) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(self.project_name)}
-        WHERE $1 = ANY(collection_ids);
-        """
-        await self.execute_query(query, (collection_id,))
+         DELETE FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+         WHERE $1 = ANY(collection_ids)
+         RETURNING collection_ids
+         """
+        results = await self.fetchrow_query(query, (collection_id,))
+        print("results = ", results)
+        deleted_count = len(results)
+        print("deleted_count", deleted_count)
+        return deleted_count
 
     async def get_document_chunks(
         self,
@@ -549,7 +434,7 @@ class VectorDBMixin(DatabaseMixin):
 
         query = f"""
         SELECT extraction_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
-        FROM {self._get_table_name(self.project_name)}
+        FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
         WHERE document_id = $1
         OFFSET $2
         {limit_clause};
@@ -699,27 +584,12 @@ class VectorDBMixin(DatabaseMixin):
 
         return None
 
-    def build_filters(self, filters: dict) -> Tuple[str, list[Any]]:
-        """
-        Builds filters for SQL query based on provided dictionary.
-
-        Args:
-            filters (dict): The dictionary specifying filter conditions.
-
-        Raises:
-            FilterError: If filter conditions are not correctly formatted.
-
-        Returns:
-            A tuple containing the SQL WHERE clause string and a list of parameters.
-        """
-        if not isinstance(filters, dict):
-            raise FilterError("filters must be a dict")
-
-        conditions = []
-        parameters = []
+    def _build_filters(
+        self, filters: dict, parameters: list[dict]
+    ) -> Tuple[str, list[Any]]:
 
         def parse_condition(key: str, value: Any) -> str:
-            nonlocal parameters
+            # nonlocal parameters
             if key in self.COLUMN_VARS:
                 # Handle column-based filters
                 if isinstance(value, dict):
@@ -754,8 +624,6 @@ class VectorDBMixin(DatabaseMixin):
                         )
                 else:
                     # Handle direct equality
-                    if isinstance(value, str):
-                        value = uuid.UUID(value)
                     parameters.append(value)
                     return f"{key} = ${len(parameters)}"
             else:
@@ -764,10 +632,8 @@ class VectorDBMixin(DatabaseMixin):
                 if key.startswith("metadata."):
                     key = key.split("metadata.")[1]
                 if isinstance(value, dict):
-                    if len(value) > 1:
-                        raise FilterError("only one operator permitted")
-                    operator, clause = next(iter(value.items()))
-                    if operator not in (
+                    op, clause = next(iter(value.items()))
+                    if op not in (
                         "$eq",
                         "$ne",
                         "$lt",
@@ -779,42 +645,44 @@ class VectorDBMixin(DatabaseMixin):
                     ):
                         raise FilterError("unknown operator")
 
-                    if operator == "$eq" and not hasattr(clause, "__len__"):
-                        parameters.append(json.dumps({key: clause}))
-                        return f"{json_col} @> ${len(parameters)}::jsonb"
-
-                    if operator == "$in":
+                    if op == "$eq":
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
+                        )
+                    elif op == "$ne":
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
+                        )
+                    elif op == "$lt":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
+                    elif op == "$lte":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
+                    elif op == "$gt":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
+                    elif op == "$gte":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
+                    elif op == "$in":
                         if not isinstance(clause, list):
                             raise FilterError(
                                 "argument to $in filter must be a list"
                             )
-                        for elem in clause:
-                            if not isinstance(elem, (int, str, float)):
-                                raise FilterError(
-                                    "argument to $in filter must be a list of scalars"
-                                )
-                        parameters.append(clause)
-                        return f"{json_col}->>{key} = ANY(${len(parameters)})"
-
-                    parameters.append(json.dumps(clause))
-                    if operator == "$contains":
-                        if not isinstance(clause, (int, str, float)):
+                        parameters.append(json.dumps(clause))
+                        return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
+                    elif op == "$contains":
+                        if not isinstance(clause, (int, str, float, list)):
                             raise FilterError(
-                                "argument to $contains filter must be a scalar"
+                                "argument to $contains filter must be a scalar or array"
                             )
-                        return f"{json_col}->{key} @> ${len(parameters)}::jsonb AND jsonb_typeof({json_col}->{key}) = 'array'"
-
-                    return {
-                        "$eq": f"{json_col}->>{key} = ${len(parameters)}",
-                        "$ne": f"{json_col}->>{key} != ${len(parameters)}",
-                        "$lt": f"{json_col}->>{key} < ${len(parameters)}",
-                        "$lte": f"{json_col}->>{key} <= ${len(parameters)}",
-                        "$gt": f"{json_col}->>{key} > ${len(parameters)}",
-                        "$gte": f"{json_col}->>{key} >= ${len(parameters)}",
-                    }[operator]
-                else:
-                    parameters.append(json.dumps({key: value}))
-                    return f"{json_col} @> ${len(parameters)}::jsonb"
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
+                        )
 
         def parse_filter(filter_dict: dict) -> str:
             filter_conditions = []
@@ -832,7 +700,7 @@ class VectorDBMixin(DatabaseMixin):
             return " AND ".join(filter_conditions)
 
         where_clause = parse_filter(filters)
-        return where_clause, parameters
+        return where_clause
 
     def _get_index_options(
         self,

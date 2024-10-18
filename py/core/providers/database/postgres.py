@@ -221,9 +221,6 @@ class PostgresDBProvider(
 
     async def fetch_query(self, query, params=None):
         async with self.pool.get_connection() as conn:
-            print("query", query)
-            print("params", params)
-
             async with conn.transaction():
                 return (
                     await conn.fetch(query, *params)

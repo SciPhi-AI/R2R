@@ -36,6 +36,7 @@ from core.providers import (
     PostgresFileProvider,
     PostgresKGProvider,
     R2RAuthProvider,
+    R2RPromptProvider,
 )
 from shared.abstractions.vector import VectorQuantizationType
 
@@ -107,7 +108,7 @@ async def postgres_db_provider(
         db_config, dimension=dimension, crypto_provider=crypto_provider
     )
     await db.initialize()
-    db.vector.upsert_entries(sample_entries)
+    await db.upsert_entries(sample_entries)
     yield db
     # Teardown
     # TODO - Add teardown methods
@@ -134,12 +135,12 @@ async def temporary_postgres_db_provider(
         crypto_provider=crypto_provider,
     )
     await db.initialize()
-    db.vector.upsert_entries(sample_entries)
+    await db.upsert_entries(sample_entries)
     try:
         yield db
     finally:
-        await db.relational.close()
-        db.vector.close()
+        await db.close()
+        # db.vector.close()
 
 
 # Auth
@@ -256,7 +257,7 @@ async def postgres_kg_provider(
         kg_extraction_status=KGExtractionStatus.PENDING,
     )
 
-    await temporary_postgres_db_provider.relational.upsert_documents_overview(
+    await temporary_postgres_db_provider.upsert_documents_overview(
         document_info
     )
 

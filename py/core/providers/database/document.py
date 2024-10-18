@@ -21,12 +21,14 @@ logger = logging.getLogger()
 
 
 class DocumentMixin(DatabaseMixin):
+    TABLE_NAME = "document_info"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def create_table(self):
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name('document_info')} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(DocumentMixin.TABLE_NAME)} (
             document_id UUID PRIMARY KEY,
             collection_ids UUID[],
             user_id UUID,
@@ -42,7 +44,7 @@ class DocumentMixin(DatabaseMixin):
             ingestion_attempt_number INT DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
-        ON {self._get_table_name('document_info')} USING GIN (collection_ids);
+        ON {self._get_table_name(DocumentMixin.TABLE_NAME)} USING GIN (collection_ids);
         """
         await self.execute_query(query)
 
@@ -62,7 +64,7 @@ class DocumentMixin(DatabaseMixin):
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
-                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name('document_info')}
+                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(DocumentMixin.TABLE_NAME)}
                             WHERE document_id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
@@ -95,7 +97,7 @@ class DocumentMixin(DatabaseMixin):
                                 )
 
                                 update_query = f"""
-                                UPDATE {self._get_table_name('document_info')}
+                                UPDATE {self._get_table_name(DocumentMixin.TABLE_NAME)}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11
@@ -118,7 +120,7 @@ class DocumentMixin(DatabaseMixin):
                                 )
                             else:
                                 insert_query = f"""
-                                INSERT INTO {self._get_table_name('document_info')}
+                                INSERT INTO {self._get_table_name(DocumentMixin.TABLE_NAME)}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, kg_extraction_status, created_at,
                                 updated_at, ingestion_attempt_number)
@@ -160,7 +162,7 @@ class DocumentMixin(DatabaseMixin):
         self, document_id: str, version: Optional[str] = None
     ) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name('document_info')}
+        DELETE FROM {self._get_table_name(DocumentMixin.TABLE_NAME)}
         WHERE document_id = $1
         """
 
@@ -357,7 +359,7 @@ class DocumentMixin(DatabaseMixin):
             param_index += 1
 
         base_query = f"""
-            FROM {self._get_table_name('document_info')}
+            FROM {self._get_table_name(DocumentMixin.TABLE_NAME)}
         """
 
         if conditions:
