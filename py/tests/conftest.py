@@ -16,6 +16,7 @@ from core import (
     FileConfig,
     KGConfig,
     LoggingConfig,
+    PromptConfig,
     SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
@@ -266,3 +267,17 @@ async def postgres_kg_provider(
         embedding_dimension, vector_quantization_type
     )
     yield kg_provider
+
+
+@pytest.fixture(scope="function")
+def prompt_config(app_config):
+    return PromptConfig(provider="r2r", app=app_config)
+
+
+@pytest.fixture(scope="function")
+async def r2r_prompt_provider(prompt_config, temporary_postgres_db_provider):
+    prompt_provider = R2RPromptProvider(
+        prompt_config, temporary_postgres_db_provider
+    )
+    await prompt_provider.initialize()
+    yield prompt_provider

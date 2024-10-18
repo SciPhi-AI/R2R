@@ -59,6 +59,16 @@ let newCollectionId: string;
  *     X removeDocumentFromCollection
  *     X getDocumentCollections
  *     X getDocumentsInCollection
+ *     - conversationsOverview
+ *     - getConversation
+ *     - createConversation
+ *     - addMessage
+ *     X updateMessage
+ *     X branchesOverview
+ *     X getNextBranch
+ *     X getPreviousBranch
+ *     X branchAtMessage
+ *     - deleteConversation
  *    Restructure:
  *     X enrichGraph
  *    Retrieval:
@@ -71,6 +81,7 @@ let newCollectionId: string;
 
 describe("r2rClient Integration Tests", () => {
   let client: r2rClient;
+  let createdConversationId: any;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -293,6 +304,45 @@ describe("r2rClient Integration Tests", () => {
         10,
         10,
       ),
+    ).resolves.not.toThrow();
+  });
+
+  test("Get conversations overview", async () => {
+    await expect(client.conversationsOverview()).resolves.not.toThrow();
+  });
+
+  test("Create conversation", async () => {
+    const createConversationResponse = await client.createConversation();
+    createdConversationId = createConversationResponse.results;
+    expect(createdConversationId).toBeDefined();
+  });
+
+  test("Get conversation", async () => {
+    await expect(
+      client.getConversation(createdConversationId),
+    ).resolves.not.toThrow();
+  });
+
+  test("Add message to conversation", async () => {
+    const message = {
+      role: "user",
+      content: "Hello, world!",
+    };
+
+    await expect(
+      client.addMessage(createdConversationId, message),
+    ).resolves.not.toThrow();
+  });
+
+  test("Branches overview", async () => {
+    await expect(
+      client.branchesOverview(createdConversationId),
+    ).resolves.not.toThrow();
+  });
+
+  test("Delete conversation", async () => {
+    await expect(
+      client.deleteConversation(createdConversationId),
     ).resolves.not.toThrow();
   });
 

@@ -61,14 +61,14 @@ async def test_edit_message(local_logging_provider):
 
 
 @pytest.mark.asyncio
-async def test_list_branches(local_logging_provider):
+async def test_branches_overview(local_logging_provider):
     conversation_id = await local_logging_provider.create_conversation()
     message_id = await local_logging_provider.add_message(
         conversation_id, Message(role="user", content="Hello")
     )
     await local_logging_provider.edit_message(message_id, "Hello, edited")
 
-    branches = await local_logging_provider.list_branches(conversation_id)
+    branches = await local_logging_provider.branches_overview(conversation_id)
     assert len(branches) == 2
     assert branches[0]["branch_point_id"] is None
     assert branches[1]["branch_point_id"] == message_id
@@ -269,7 +269,7 @@ async def test_navigate_between_branches(local_logging_provider):
 #     )
 
 #     # List all branches
-#     branches = await local_logging_provider.list_branches(conversation_id)
+#     branches = await local_logging_provider.branches_overview(conversation_id)
 
 #     # Collect messages at the branching point
 #     messages_at_branch_point = []
