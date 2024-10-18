@@ -140,8 +140,6 @@ __all__ = [
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

@@ -113,8 +113,6 @@ __all__ = [
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
     "PostgresConfigurationSettings",
     # Embedding provider
     "EmbeddingConfig",

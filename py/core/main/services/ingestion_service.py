@@ -94,7 +94,7 @@ class IngestionService(Service):
             )
 
             existing_document_info = (
-                await self.providers.database.relational.get_documents_overview(
+                await self.providers.database.handle.get_documents_overview(
                     filter_user_ids=[user.id],
                     filter_document_ids=[document_id],
                 )
@@ -120,7 +120,7 @@ class IngestionService(Service):
                             message=f"Document {document_id} was already ingested and is not in a failed state.",
                         )
 
-            await self.providers.database.relational.upsert_documents_overview(
+            await self.providers.database.handle.upsert_documents_overview(
                 document_info
             )
 
@@ -256,7 +256,7 @@ class IngestionService(Service):
         is_update: bool = False,
     ) -> None:
         if is_update:
-            self.providers.database.vector.delete(
+            self.providers.database.handle.delete(
                 filters={
                     "$and": [
                         {"document_id": {"$eq": document_info.id}},
@@ -284,7 +284,7 @@ class IngestionService(Service):
 
     async def _update_document_status_in_db(self, document_info: DocumentInfo):
         try:
-            await self.providers.database.relational.upsert_documents_overview(
+            await self.providers.database.handle.upsert_documents_overview(
                 document_info
             )
         except Exception as e:
@@ -325,7 +325,7 @@ class IngestionService(Service):
         )
 
         existing_document_info = (
-            await self.providers.database.relational.get_documents_overview(
+            await self.providers.database.handle.get_documents_overview(
                 filter_user_ids=[user.id],
                 filter_document_ids=[document_id],
             )
@@ -339,7 +339,7 @@ class IngestionService(Service):
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
 
-        await self.providers.database.relational.upsert_documents_overview(
+        await self.providers.database.handle.upsert_documents_overview(
             document_info
         )
 

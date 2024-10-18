@@ -1,23 +1,21 @@
 import logging
+from typing import Optional
 
 import asyncpg
 
-from core.base import RelationalDBProvider, CryptoProvider, DatabaseConfig
-from core.providers.database.vector import VectorDBMixin
+from core.base import CryptoProvider, DatabaseConfig
 from core.providers.database.base import DatabaseMixin
 from core.providers.database.collection import CollectionMixin
 from core.providers.database.document import DocumentMixin
 from core.providers.database.tokens import BlacklistedTokensMixin
 from core.providers.database.user import UserMixin
-from typing import Optional
-
+from core.providers.database.vector import VectorDBMixin
 from shared.abstractions.vector import VectorQuantizationType
 
 logger = logging.getLogger()
 
 
 class PostgresDBHandle(
-    # RelationalDBProvider,
     DocumentMixin,
     CollectionMixin,
     BlacklistedTokensMixin,
@@ -46,9 +44,7 @@ class PostgresDBHandle(
         return f"{self.project_name}.{base_name}"
 
     async def initialize(self, pool: asyncpg.pool.Pool):
-        logger.info(
-            "Initializing `PostgresRelationalDBProvider` with connection pool."
-        )
+        logger.info("Initializing `PostgresDBHandle` with connection pool.")
 
         self.pool = pool
 
@@ -62,7 +58,7 @@ class PostgresDBHandle(
 
         await self.initialize_vector_db()
 
-        logger.info("Successfully initialized `PostgresRelationalDBProvider`")
+        logger.info("Successfully initialized `PostgresDBHandle`")
 
     async def close(self):
         if self.pool:

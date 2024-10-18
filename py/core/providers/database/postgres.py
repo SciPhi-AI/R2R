@@ -13,13 +13,10 @@ from core.base import (
     DatabaseConfig,
     DatabaseProvider,
     PostgresConfigurationSettings,
-    RelationalDBProvider,
-    VectorDBProvider,
     VectorQuantizationType,
 )
 
 from .handle import PostgresDBHandle
-from .vector import PostgresVectorDBProvider
 
 logger = logging.getLogger()
 
@@ -145,6 +142,8 @@ class PostgresDBProvider(DatabaseProvider):
             config.default_collection_description
         )
 
+        self.handle: Optional[PostgresDBHandle] = None
+
     def _get_table_name(self, base_name: str) -> str:
         return f"{self.project_name}.{base_name}"
 
@@ -155,9 +154,8 @@ class PostgresDBProvider(DatabaseProvider):
         await shared_pool.initialize()
 
         self.handle = await self._initialize_handle(shared_pool)
-        # self.relational = await self._initialize_relational_db(shared_pool)
 
-    async def _initialize_handle(self) -> VectorDBProvider:
+    async def _initialize_handle(self) -> PostgresDBHandle:
         handle = PostgresDBHandle(
             self.config,
             connection_string=self.connection_string,
@@ -167,16 +165,6 @@ class PostgresDBProvider(DatabaseProvider):
         )
         await handle.initialize()
         return handle
-
-    # async def _initialize_relational_db(self) -> RelationalDBProvider:
-    #     relational_db = PostgresRelationalDBProvider(
-    #         self.config,
-    #         connection_string=self.connection_string,
-    #         crypto_provider=self.crypto_provider,
-    #         project_name=self.project_name,
-    #     )
-    #     await relational_db.initialize()
-    #     return relational_db
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

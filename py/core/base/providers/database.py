@@ -69,18 +69,6 @@ class DatabaseConfig(ProviderConfig):
         return ["postgres"]
 
 
-# class VectorDBProvider(Provider, ABC):
-#     @abstractmethod
-#     def _initialize_vector_db(self) -> None:
-#         pass
-
-
-# class RelationalDBProvider(Provider, ABC):
-#     @abstractmethod
-#     async def _initialize_relational_db(self) -> None:
-#         pass
-
-
 class DatabaseProvider(Provider):
     def __init__(self, config: DatabaseConfig):
         if not isinstance(config, DatabaseConfig):
@@ -89,18 +77,6 @@ class DatabaseProvider(Provider):
             )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
-
-        # # remove later to re-introduce typing...
-        # self.vector: Any = None
-        # self.relational: Any = None
-
-    # @abstractmethod
-    # async def _initialize_vector_db(self) -> VectorDBProvider:
-    #     pass
-
-    # @abstractmethod
-    # async def _initialize_relational_db(self) -> RelationalDBProvider:
-    #     pass
 
     @abstractmethod
     def _get_table_name(self, base_name: str) -> str:
