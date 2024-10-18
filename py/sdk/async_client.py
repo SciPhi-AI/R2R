@@ -1,5 +1,6 @@
 import httpx
 import json
+from typing import AsyncGenerator, Any
 from .base.base_client import BaseClient
 from shared.abstractions import R2RException
 from .mixins import (
@@ -21,6 +22,16 @@ class R2RAsyncClient(
     RetrievalMixins,
     ServerMixins,
 ):
+    """
+    Asynchronous client for interacting with the R2R API.
+
+    Args:
+        base_url (str, optional): The base URL of the R2R API. Defaults to "http://localhost:7272".
+        prefix (str, optional): The prefix for the API. Defaults to "/v2".
+        custom_client (httpx.AsyncClient, optional): A custom HTTP client. Defaults to None.
+        timeout (float, optional): The timeout for requests. Defaults to 300.0.
+    """
+
     def __init__(
         self,
         base_url: str = "http://localhost:7272",
@@ -39,7 +50,7 @@ class R2RAsyncClient(
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.request(method, url, **request_args)
                 await self._handle_response(response)
-                return await response.json() if response.content else None
+                return response.json() if response.content else None
         except httpx.RequestError as e:
             raise R2RException(
                 status_code=500, message=f"Request failed: {str(e)}"
@@ -47,25 +58,29 @@ class R2RAsyncClient(
 
     async def _make_streaming_request(
         self, method: str, endpoint: str, **kwargs
-    ):
+    ) -> AsyncGenerator[Any, None]:
         url = self._get_full_url(endpoint)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             async with client.stream(method, url, **request_args) as response:
                 await self._handle_response(response)
-                async for chunk in response.aiter_text():
-                    yield chunk
+                async for line in response.aiter_lines():
+                    if line.strip():  # Ignore empty lines
+                        try:
+                            yield json.loads(line)
+                        except json.JSONDecodeError:
+                            yield line
 
     async def _handle_response(self, response):
         if response.status_code >= 400:
             try:
-                error_content = await response.json()
+                error_content = response.json()
                 message = error_content.get("detail", {}).get(
                     "message", str(error_content)
                 )
             except json.JSONDecodeError:
-                message = await response.text()
+                message = response.text()
 
             raise R2RException(
                 status_code=response.status_code, message=message
