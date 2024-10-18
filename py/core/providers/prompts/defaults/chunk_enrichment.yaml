@@ -1,0 +1,21 @@
+chunk_enrichment:
+  template: >
+    ## Task:
+
+    You are given a chunk of text. Your task is to enrich it with additional context from additional chunks that form the context of the chunk.
+
+    Please make sure that the additional context you provide is relevant to the chunk.
+
+    ## Context Chunks:
+    {context_chunks}
+    
+    ## Chunk:
+    {chunk}
+
+    Note that: 
+    - You will make the chunk extremely precise and useful 
+
+    ## Response:
+  input_types:
+    chunk: str
+    context_chunks: str

@@ -24,6 +24,7 @@ from shared.abstractions.vector import (
     VectorQuantizationType,
     VectorTableName,
 )
+from uuid import UUID
 
 from .vecs import Client, Collection, create_client
 
@@ -546,6 +547,46 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         return {"results": chunks, "total_entries": total}
 
+
+    def get_semantic_neighbors(
+        self,
+        document_id: UUID,
+        chunk_id: UUID,
+        limit: int = 10,
+        similarity_threshold: float = 0.7,
+    ) -> list[dict[str, Any]]:
+        if self.collection is None:
+            raise ValueError("Collection is not initialized.")
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            WITH target_vector AS (
+                SELECT vec FROM {self.project_name}."{table_name}"
+                WHERE document_id = :document_id AND extraction_id = :chunk_id
+            )
+            SELECT t.*, (t.vec <=> tv.vec) AS similarity 
+            FROM {self.project_name}."{table_name}" t, target_vector tv
+            WHERE (t.vec <=> tv.vec) < :similarity_threshold
+                AND t.document_id != :document_id
+            ORDER BY similarity ASC
+            LIMIT :limit
+            """
+        )
+
+        with self.vx.Session() as sess:
+            results = sess.execute(
+                query, 
+                {
+                    "document_id": document_id, 
+                    "chunk_id": chunk_id, 
+                    "similarity_threshold": similarity_threshold,
+                    "limit": limit
+                }
+            ).fetchall()
+
+        return [dict(r) for r in results]
+
     def close(self) -> None:
         if self.vx:
             with self.vx.Session() as sess:
@@ -554,3 +595,5 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     sess.bind.dispose()  # type: ignore
 
         logger.info("Closed PGVectorDB connection.")
+
+
