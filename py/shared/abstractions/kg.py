@@ -84,6 +84,11 @@ class KGEntityDeduplicationSettings(R2RSerializable):
         description="The type of entity deduplication to use.",
     )
 
+    max_description_input_length: int = Field(
+        default=65536,
+        description="The maximum length of the description for a node in the graph.",
+    )
+
     kg_entity_deduplication_prompt: str = Field(
         default="graphrag_entity_deduplication",
         description="The prompt to use for knowledge graph entity deduplication.",

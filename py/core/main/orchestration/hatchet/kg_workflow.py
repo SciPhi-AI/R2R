@@ -231,10 +231,10 @@ def hatchet_kg_factory(
             logger.info(f"Input data: {input_data}")
             logger.info(f"KG Entity Deduplication Settings: {input_data['kg_entity_deduplication_settings']}")
 
-            number_of_distinct_entities = await self.kg_service.kg_entity_deduplication(
+            number_of_distinct_entities = (await self.kg_service.kg_entity_deduplication(
                 collection_id=collection_id,
                 **input_data["kg_entity_deduplication_settings"],
-            )
+            ))[0]["num_entities"]
 
             # run 100 entities in one workflow
             total_workflows = math.ceil(number_of_distinct_entities / 100)

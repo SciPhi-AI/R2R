@@ -82,7 +82,8 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         await self.kg_provider.add_entities(deduplicated_entities_list, table_name="entity_deduplicated")
 
         return {
-            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}"
+            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
+            "num_entities": len(deduplicated_entities)
         }
 
     async def _run_logic(self, input: AsyncPipe.Input, state: AsyncState, run_id: UUID, *args: Any, **kwargs: Any) -> AsyncGenerator[dict, None]:
