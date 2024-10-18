@@ -86,7 +86,7 @@ class CollectionMixin(DatabaseMixin):
         ]
 
         try:
-            async with self.pool.acquire() as conn:  # type: ignore
+            async with self.pool.get_connection() as conn:  # type: ignore
                 row = await conn.fetchrow(query, *params)
 
             if not row:
@@ -176,7 +176,7 @@ class CollectionMixin(DatabaseMixin):
         )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
-        async with self.pool.acquire() as conn:  # type: ignore
+        async with self.pool.get_connection() as conn:  # type: ignore
             async with conn.transaction():
                 try:
                     # Remove collection_id from users

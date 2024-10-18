@@ -87,7 +87,7 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.pool.acquire() as conn:  # type: ignore
+                    async with self.pool.get_connection() as conn:  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""

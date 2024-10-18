@@ -80,6 +80,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "HybridSearchSettings",
     # User abstractions
     "Token",
     "TokenData",

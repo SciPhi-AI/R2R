@@ -1,12 +1,8 @@
 # TODO: Clean this up and make it more congruent across the vector database and the relational database.
-import asyncio
 import logging
 import os
 import warnings
-from contextlib import asynccontextmanager
 from typing import Any, Optional
-
-import asyncpg
 
 from core.base import (
     CryptoProvider,
@@ -16,6 +12,7 @@ from core.base import (
     VectorQuantizationType,
 )
 
+from .base import SemaphoreConnectionPool
 from .handle import PostgresHandle
 
 logger = logging.getLogger()
@@ -28,37 +25,6 @@ def get_env_var(new_var, old_var, config_value):
             f"{old_var} is deprecated and support for it will be removed in release 3.5.0. Use {new_var} instead."
         )
     return value
-
-
-class SemaphoreConnectionPool(asyncpg.Pool):
-    def __init__(self, connection_string, postgres_configuration_settings):
-        self.connection_string = connection_string
-        self.postgres_configuration_settings = postgres_configuration_settings
-
-    async def initialize(self):
-        try:
-            self.semaphore = asyncio.Semaphore(
-                int(self.postgres_configuration_settings.max_connections * 0.9)
-            )
-
-            self.pool = await asyncpg.create_pool(
-                self.connection_string,
-                max_size=self.postgres_configuration_settings.max_connections,
-            )
-
-            logger.info(
-                "Successfully connected to Postgres database and created connection pool."
-            )
-        except Exception as e:
-            raise ValueError(
-                f"Error {e} occurred while attempting to connect to relational database."
-            ) from e
-
-    @asynccontextmanager
-    async def get_connection(self):
-        async with self.semaphore:
-            async with self.pool.acquire() as conn:
-                yield conn
 
 
 class PostgresDBProvider(DatabaseProvider):
@@ -148,20 +114,21 @@ class PostgresDBProvider(DatabaseProvider):
         return f"{self.project_name}.{base_name}"
 
     async def initialize(self):
-        shared_pool = SemaphoreConnectionPool(
+        pool = SemaphoreConnectionPool(
             self.connection_string, self.postgres_configuration_settings
         )
-        await shared_pool.initialize()
+        await pool.initialize()
 
         handle = PostgresHandle(
             self.config,
             connection_string=self.connection_string,
+            crypto_provider=self.crypto_provider,
             project_name=self.project_name,
             dimension=self.vector_db_dimension,
             quantization_type=self.vector_db_quantization_type,
         )
-        await handle.initialize(shared_pool)
-
+        await handle.initialize(pool)
+        self.pool = pool
         self.handle = handle
 
     def _get_postgres_configuration_settings(

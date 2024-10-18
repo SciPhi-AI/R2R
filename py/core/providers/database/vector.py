@@ -2,7 +2,8 @@ import copy
 import json
 import logging
 import time
-from typing import Any, Optional, Union
+import uuid
+from typing import Any, Optional, Tuple, TypedDict, Union
 
 from sqlalchemy import text
 
@@ -17,7 +18,7 @@ from shared.abstractions.vector import (
 )
 
 from .base import DatabaseMixin
-from .vecs.exc import ArgError
+from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
 from shared.utils import _decorate_vector_type
@@ -29,8 +30,21 @@ def index_measure_to_ops(
     return _decorate_vector_type(measure.ops, quantization_type)
 
 
+class HybridSearchIntermediateResult(TypedDict):
+    semantic_rank: int
+    full_text_rank: int
+    data: VectorSearchResult
+    rrf_score: float
+
+
 class VectorDBMixin(DatabaseMixin):
     COLUMN_NAME = "vecs"
+    COLUMN_VARS = [
+        "extraction_id",
+        "document_id",
+        "user_id",
+        "collection_ids",
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,10 +52,10 @@ class VectorDBMixin(DatabaseMixin):
         self.dimension = kwargs.get("dimension")
         self.quantization_type = kwargs.get("quantization_type")
 
-    async def initialize_vector_db(self):
+    async def create_table(self):
         # Create the vector table if it doesn't exist
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self.project_name}.{VectorDBMixin.COLUMN_NAME} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (
             extraction_id TEXT PRIMARY KEY,
             document_id TEXT,
             user_id TEXT,
@@ -50,20 +64,25 @@ class VectorDBMixin(DatabaseMixin):
             text TEXT,
             metadata JSONB
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} USING GIN (to_tsvector('english', text));
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (user_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(VectorDBMixin.COLUMN_NAME)} USING GIN (to_tsvector('english', text));
         """
         await self.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
         query = f"""
-        INSERT INTO {self.project_name}.{VectorDBMixin.COLUMN_NAME}
-        (extraction_id, document_id, user_id, collection_ids, vector, text, metadata)
+        INSERT INTO {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (extraction_id) DO UPDATE
-        SET document_id = $2, user_id = $3, collection_ids = $4, vector = $5, text = $6, metadata = $7;
+        ON CONFLICT (extraction_id) DO UPDATE SET
+        document_id = EXCLUDED.document_id,
+        user_id = EXCLUDED.user_id,
+        collection_ids = EXCLUDED.collection_ids,
+        vec = EXCLUDED.vec,
+        text = EXCLUDED.text,
+        metadata = EXCLUDED.metadata;
         """
         await self.execute_query(
             query,
@@ -80,11 +99,16 @@ class VectorDBMixin(DatabaseMixin):
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
         query = f"""
-        INSERT INTO {self.project_name}.{VectorDBMixin.COLUMN_NAME}
-        (extraction_id, document_id, user_id, collection_ids, vector, text, metadata)
+        INSERT INTO {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+        (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (extraction_id) DO UPDATE
-        SET document_id = $2, user_id = $3, collection_ids = $4, vector = $5, text = $6, metadata = $7;
+        ON CONFLICT (extraction_id) DO UPDATE SET
+        document_id = EXCLUDED.document_id,
+        user_id = EXCLUDED.user_id,
+        collection_ids = EXCLUDED.collection_ids,
+        vec = EXCLUDED.vec,
+        text = EXCLUDED.text,
+        metadata = EXCLUDED.metadata;
         """
         params = [
             (
@@ -103,23 +127,59 @@ class VectorDBMixin(DatabaseMixin):
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
+        try:
+            imeasure_obj = IndexMeasure(search_settings.index_measure)
+        except ValueError:
+            raise ValueError("Invalid index measure")
+
+        distance_func = self._get_distance_function(imeasure_obj)
+
+        cols = [
+            "extraction_id",
+            "document_id",
+            "user_id",
+            "collection_ids",
+            "text",
+        ]
+
+        if search_settings.include_values:
+            cols.append(f"{distance_func}(vec, $1::vector) as distance")
+
+        if search_settings.include_metadatas:
+            cols.append("metadata")
+
+        select_clause = ", ".join(cols)
+
+        where_clause = "TRUE"
+        if search_settings.filters:
+            where_clause = self._build_filters(search_settings.filters)
+
         query = f"""
-        SELECT extraction_id, document_id, user_id, collection_ids, text,
-               1 - (vector <=> $1::vector) as similarity, metadata
-        FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
-        WHERE collection_ids && $2
-        ORDER BY similarity DESC
-        LIMIT $3 OFFSET $4;
+        SELECT {select_clause}
+        FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)
+}
+        WHERE {where_clause}
+        ORDER BY {distance_func}(vec, $1::vector)
+        OFFSET $2
+        LIMIT $3
         """
-        results = await self.fetch_query(
-            query,
-            (
-                query_vector,
-                search_settings.collection_ids,
-                search_settings.search_limit,
-                search_settings.offset,
-            ),
+
+        params = [
+            query_vector,
+            search_settings.offset,
+            search_settings.search_limit,
+        ]
+
+        # Set index-specific session parameters
+        await self.execute_query(
+            "SET LOCAL ivfflat.probes = $1", [search_settings.probes]
         )
+        await self.execute_query(
+            "SET LOCAL hnsw.ef_search = $1",
+            [max(search_settings.ef_search, search_settings.search_limit)],
+        )
+
+        results = await self.fetch_query(query, params)
 
         return [
             VectorSearchResult(
@@ -128,7 +188,7 @@ class VectorDBMixin(DatabaseMixin):
                 user_id=result["user_id"],
                 collection_ids=result["collection_ids"],
                 text=result["text"],
-                score=float(result["similarity"]),
+                score=float(result["rank"]),
                 metadata=result["metadata"],
             )
             for result in results
@@ -141,7 +201,7 @@ class VectorDBMixin(DatabaseMixin):
         SELECT extraction_id, document_id, user_id, collection_ids, text,
                ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
                metadata
-        FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
         ORDER BY rank DESC
         LIMIT $3 OFFSET $4;
@@ -150,7 +210,7 @@ class VectorDBMixin(DatabaseMixin):
             query,
             (
                 query_text,
-                search_settings.collection_ids,
+                search_settings.selected_collection_ids,
                 search_settings.search_limit,
                 search_settings.offset,
             ),
@@ -197,11 +257,11 @@ class VectorDBMixin(DatabaseMixin):
             search_settings.offset
         )
 
-        semantic_results = await self.semantic_search(
-            query_vector, semantic_settings
+        semantic_results: list[VectorSearchResult] = (
+            await self.semantic_search(query_vector, semantic_settings)
         )
-        full_text_results = await self.full_text_search(
-            query_text, full_text_settings
+        full_text_results: list[VectorSearchResult] = (
+            await self.full_text_search(query_text, full_text_settings)
         )
 
         semantic_limit = search_settings.search_limit
@@ -216,14 +276,15 @@ class VectorDBMixin(DatabaseMixin):
         )
         rrf_k = search_settings.hybrid_search_settings.rrf_k
 
-        combined_results = {
-            result.extraction_id: {
+        combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {}
+
+        for rank, result in enumerate(semantic_results, 1):
+            combined_results[result.extraction_id] = {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
+                "rrf_score": 0.0,  # Initialize with 0, will be calculated later
             }
-            for rank, result in enumerate(semantic_results, 1)
-        }
 
         for rank, result in enumerate(full_text_results, 1):
             if result.extraction_id in combined_results:
@@ -233,6 +294,7 @@ class VectorDBMixin(DatabaseMixin):
                     "semantic_rank": semantic_limit,
                     "full_text_rank": rank,
                     "data": result,
+                    "rrf_score": 0.0,  # Initialize with 0, will be calculated later
                 }
 
         combined_results = {
@@ -242,10 +304,10 @@ class VectorDBMixin(DatabaseMixin):
             and v["full_text_rank"] <= full_text_limit * 2
         }
 
-        for result in combined_results.values():
-            semantic_score = 1 / (rrf_k + result["semantic_rank"])
-            full_text_score = 1 / (rrf_k + result["full_text_rank"])
-            result["rrf_score"] = (
+        for hyb_result in combined_results.values():
+            semantic_score = 1 / (rrf_k + hyb_result["semantic_rank"])
+            full_text_score = 1 / (rrf_k + hyb_result["full_text_rank"])
+            hyb_result["rrf_score"] = (
                 semantic_score * semantic_weight
                 + full_text_score * full_text_weight
             ) / (semantic_weight + full_text_weight)
@@ -277,20 +339,6 @@ class VectorDBMixin(DatabaseMixin):
             for result in offset_results
         ]
 
-    async def create_index(
-        self,
-        table_name: Optional[VectorTableName] = None,
-        index_method: IndexMethod = IndexMethod.hnsw,
-        measure: IndexMeasure = IndexMeasure.cosine_distance,
-        index_arguments: Optional[
-            Union[IndexArgsHNSW, IndexArgsIVFFlat]
-        ] = None,
-        index_name: Optional[str] = None,
-        concurrently: bool = True,
-    ):
-        # This method needs to be implemented based on your specific indexing requirements
-        pass
-
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
@@ -302,7 +350,7 @@ class VectorDBMixin(DatabaseMixin):
 
         where_clause = " AND ".join(conditions)
         query = f"""
-        DELETE FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        DELETE FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         WHERE {where_clause}
         RETURNING extraction_id;
         """
@@ -316,7 +364,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        UPDATE {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
@@ -326,7 +374,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        UPDATE {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
@@ -334,14 +382,14 @@ class VectorDBMixin(DatabaseMixin):
 
     async def delete_user_vector(self, user_id: str) -> None:
         query = f"""
-        DELETE FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        DELETE FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         WHERE user_id = $1;
         """
         await self.execute_query(query, (user_id,))
 
     async def delete_collection_vector(self, collection_id: str) -> None:
         query = f"""
-        DELETE FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        DELETE FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         WHERE $1 = ANY(collection_ids);
         """
         await self.execute_query(query, (collection_id,))
@@ -359,7 +407,7 @@ class VectorDBMixin(DatabaseMixin):
         query = f"""
         SELECT extraction_id, document_id, user_id, collection_ids, text, metadata
         {vector_select}
-        FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
+        FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         WHERE document_id = $1
         OFFSET $2
         {limit_clause};
@@ -431,13 +479,15 @@ class VectorDBMixin(DatabaseMixin):
         """
 
         if table_name == VectorTableName.CHUNKS:
-            table_name = f"{self.project_name}.{self.table.name}"
+            table_name_str = f"{self.project_name}.{self.project_name}"  # TODO - Fix bug in vector table naming convention
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES:
-            table_name = f"{self.project_name}.{VectorTableName.ENTITIES}"
+            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
-            table_name = f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            )
             col_name = "embedding"
         else:
             raise ArgError("invalid table name")
@@ -487,7 +537,7 @@ class VectorDBMixin(DatabaseMixin):
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
-        ON {table_name}
+        ON {table_name_str}
         USING {method} ({col_name} {ops}) {self._get_index_options(method, index_arguments)};
         """
 
@@ -503,6 +553,141 @@ class VectorDBMixin(DatabaseMixin):
             raise Exception(f"Failed to create index: {e}")
 
         return None
+
+    def build_filters(self, filters: dict) -> Tuple[str, list[Any]]:
+        """
+        Builds filters for SQL query based on provided dictionary.
+
+        Args:
+            filters (dict): The dictionary specifying filter conditions.
+
+        Raises:
+            FilterError: If filter conditions are not correctly formatted.
+
+        Returns:
+            A tuple containing the SQL WHERE clause string and a list of parameters.
+        """
+        if not isinstance(filters, dict):
+            raise FilterError("filters must be a dict")
+
+        conditions = []
+        parameters = []
+
+        def parse_condition(key: str, value: Any) -> str:
+            nonlocal parameters
+            if key in self.COLUMN_VARS:
+                # Handle column-based filters
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        parameters.append(clause)
+                        return f"{key} = ${len(parameters)}"
+                    elif op == "$ne":
+                        parameters.append(clause)
+                        return f"{key} != ${len(parameters)}"
+                    elif op == "$in":
+                        parameters.append(clause)
+                        return f"{key} = ANY(${len(parameters)})"
+                    elif op == "$nin":
+                        parameters.append(clause)
+                        return f"{key} != ALL(${len(parameters)})"
+                    elif op == "$overlap":
+                        parameters.append(clause)
+                        return f"{key} && ${len(parameters)}"
+                    elif op == "$contains":
+                        parameters.append(clause)
+                        return f"{key} @> ${len(parameters)}"
+                    elif op == "$any":
+                        if key == "collection_ids":
+                            parameters.append(f"%{clause}%")
+                            return f"array_to_string({key}, ',') LIKE ${len(parameters)}"
+                        parameters.append(clause)
+                        return f"${len(parameters)} = ANY({key})"
+                    else:
+                        raise FilterError(
+                            f"Unsupported operator for column {key}: {op}"
+                        )
+                else:
+                    # Handle direct equality
+                    if isinstance(value, str):
+                        value = uuid.UUID(value)
+                    parameters.append(value)
+                    return f"{key} = ${len(parameters)}"
+            else:
+                # Handle JSON-based filters
+                json_col = "metadata"
+                if key.startswith("metadata."):
+                    key = key.split("metadata.")[1]
+                if isinstance(value, dict):
+                    if len(value) > 1:
+                        raise FilterError("only one operator permitted")
+                    operator, clause = next(iter(value.items()))
+                    if operator not in (
+                        "$eq",
+                        "$ne",
+                        "$lt",
+                        "$lte",
+                        "$gt",
+                        "$gte",
+                        "$in",
+                        "$contains",
+                    ):
+                        raise FilterError("unknown operator")
+
+                    if operator == "$eq" and not hasattr(clause, "__len__"):
+                        parameters.append(json.dumps({key: clause}))
+                        return f"{json_col} @> ${len(parameters)}::jsonb"
+
+                    if operator == "$in":
+                        if not isinstance(clause, list):
+                            raise FilterError(
+                                "argument to $in filter must be a list"
+                            )
+                        for elem in clause:
+                            if not isinstance(elem, (int, str, float)):
+                                raise FilterError(
+                                    "argument to $in filter must be a list of scalars"
+                                )
+                        parameters.append(clause)
+                        return f"{json_col}->>{key} = ANY(${len(parameters)})"
+
+                    parameters.append(json.dumps(clause))
+                    if operator == "$contains":
+                        if not isinstance(clause, (int, str, float)):
+                            raise FilterError(
+                                "argument to $contains filter must be a scalar"
+                            )
+                        return f"{json_col}->{key} @> ${len(parameters)}::jsonb AND jsonb_typeof({json_col}->{key}) = 'array'"
+
+                    return {
+                        "$eq": f"{json_col}->>{key} = ${len(parameters)}",
+                        "$ne": f"{json_col}->>{key} != ${len(parameters)}",
+                        "$lt": f"{json_col}->>{key} < ${len(parameters)}",
+                        "$lte": f"{json_col}->>{key} <= ${len(parameters)}",
+                        "$gt": f"{json_col}->>{key} > ${len(parameters)}",
+                        "$gte": f"{json_col}->>{key} >= ${len(parameters)}",
+                    }[operator]
+                else:
+                    parameters.append(json.dumps({key: value}))
+                    return f"{json_col} @> ${len(parameters)}::jsonb"
+
+        def parse_filter(filter_dict: dict) -> str:
+            filter_conditions = []
+            for key, value in filter_dict.items():
+                if key == "$and":
+                    filter_conditions.append(
+                        f"({' AND '.join([parse_filter(f) for f in value])})"
+                    )
+                elif key == "$or":
+                    filter_conditions.append(
+                        f"({' OR '.join([parse_filter(f) for f in value])})"
+                    )
+                else:
+                    filter_conditions.append(parse_condition(key, value))
+            return " AND ".join(filter_conditions)
+
+        where_clause = parse_filter(filters)
+        return where_clause, parameters
 
     def _get_index_options(
         self,
@@ -523,3 +708,28 @@ class VectorDBMixin(DatabaseMixin):
                 return "WITH (m=16, ef_construction=64)"
         else:
             return ""  # No options for other methods
+
+    def _get_index_type(self, method: IndexMethod) -> str:
+        if method == IndexMethod.ivfflat:
+            return "ivfflat"
+        elif method == IndexMethod.hnsw:
+            return "hnsw"
+        elif method == IndexMethod.auto:
+            # Here you might want to implement logic to choose between ivfflat and hnsw
+            return "hnsw"
+
+    def _get_index_operator(self, measure: IndexMeasure) -> str:
+        if measure == IndexMeasure.l2_distance:
+            return "vector_l2_ops"
+        elif measure == IndexMeasure.max_inner_product:
+            return "vector_ip_ops"
+        elif measure == IndexMeasure.cosine_distance:
+            return "vector_cosine_ops"
+
+    def _get_distance_function(self, imeasure_obj: IndexMeasure) -> str:
+        if imeasure_obj == IndexMeasure.cosine_distance:
+            return "cosine_distance"
+        elif imeasure_obj == IndexMeasure.l2_distance:
+            return "l2_distance"
+        elif imeasure_obj == IndexMeasure.max_inner_product:
+            return "max_inner_product"

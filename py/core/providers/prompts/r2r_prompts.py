@@ -9,6 +9,7 @@ import yaml
 
 from core.base import DatabaseProvider, Prompt, PromptConfig, PromptProvider
 from core.base.utils import generate_default_prompt_id
+from core.providers.database.postgres import SemaphoreConnectionPool
 
 logger = logging.getLogger()
 
@@ -33,16 +34,11 @@ class R2RPromptProvider(PromptProvider):
             await self.pool.close()
             self.pool = None
 
-    async def initialize(self):
+    async def initialize(self, pool: SemaphoreConnectionPool):
         try:
-            self.pool = await asyncpg.create_pool(
-                self.db_provider.connection_string
-            )
-            logger.info(
-                "R2RPromptProvider successfully connected to Postgres database."
-            )
+            self.pool = pool
 
-            async with self.pool.acquire() as conn:
+            async with self.pool.get_connection() as conn:
                 await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
 
             await self.create_table()
@@ -78,7 +74,7 @@ class R2RPromptProvider(PromptProvider):
     ) -> Any:
         if not self.pool:
             raise ConnectionError("Database pool is not initialized.")
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 if params:
                     return await conn.execute(query, *params)
@@ -89,7 +85,7 @@ class R2RPromptProvider(PromptProvider):
     ) -> Any:
         if not self.pool:
             raise ConnectionError("Database pool is not initialized.")
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 return (
                     await conn.fetch(query, *params)

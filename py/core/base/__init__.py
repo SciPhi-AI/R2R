@@ -48,6 +48,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",

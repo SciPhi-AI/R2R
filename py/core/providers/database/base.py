@@ -1,6 +1,47 @@
-from typing import Any, Optional, Sequence, Union
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
+import asyncpg
 from sqlalchemy import TextClause, text
+
+if TYPE_CHECKING:
+    from core.providers.database.handle import PostgresHandle
+
+
+logger = logging.getLogger()
+
+
+class SemaphoreConnectionPool:
+    def __init__(self, connection_string, postgres_configuration_settings):
+        self.connection_string = connection_string
+        self.postgres_configuration_settings = postgres_configuration_settings
+
+    async def initialize(self):
+        try:
+            self.semaphore = asyncio.Semaphore(
+                int(self.postgres_configuration_settings.max_connections * 0.9)
+            )
+
+            self.pool = await asyncpg.create_pool(
+                self.connection_string,
+                max_size=self.postgres_configuration_settings.max_connections,
+            )
+
+            logger.info(
+                "Successfully connected to Postgres database and created connection pool."
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Error {e} occurred while attempting to connect to relational database."
+            ) from e
+
+    @asynccontextmanager
+    async def get_connection(self):
+        async with self.semaphore:
+            async with self.pool.acquire() as conn:
+                yield conn
 
 
 class QueryBuilder:
