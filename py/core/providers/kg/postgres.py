@@ -222,6 +222,12 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
+        for entity in entities:
+            if entity.description_embedding is not None:
+                entity.description_embedding = str(
+                    entity.description_embedding
+                )
+
         return await self._add_objects(entities, table_name)
 
     async def add_triples(
