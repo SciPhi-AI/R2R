@@ -306,7 +306,6 @@ class KGRouter(BaseRouter):
                 community_numbers,
             )
 
-
         @self.router.post("/deduplicate_entities")
         @self.base_endpoint
         async def deduplicate_entities(
@@ -335,14 +334,18 @@ class KGRouter(BaseRouter):
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
-            server_deduplication_settings = self.service.providers.kg.config.kg_entity_deduplication_settings.dict()    
+            server_deduplication_settings = (
+                self.service.providers.kg.config.kg_entity_deduplication_settings.dict()
+            )
 
             if deduplication_settings:
                 server_deduplication_settings = update_settings_from_dict(
                     server_deduplication_settings, deduplication_settings
                 )
 
-            logger.info(f"Running deduplicate_entities on collection {collection_id}")
+            logger.info(
+                f"Running deduplicate_entities on collection {collection_id}"
+            )
             logger.info(f"Input data: {server_deduplication_settings}")
 
             workflow_input = {

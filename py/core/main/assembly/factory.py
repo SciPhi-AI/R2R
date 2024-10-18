@@ -428,7 +428,9 @@ class R2RPipeFactory:
             kg_entity_deduplication_pipe=kg_entity_deduplication_pipe
             or self.create_kg_entity_deduplication_pipe(*args, **kwargs),
             kg_entity_deduplication_summary_pipe=kg_entity_deduplication_summary_pipe
-            or self.create_kg_entity_deduplication_summary_pipe(*args, **kwargs),
+            or self.create_kg_entity_deduplication_summary_pipe(
+                *args, **kwargs
+            ),
             kg_community_summary_pipe=kg_community_summary_pipe
             or self.create_kg_community_summary_pipe(*args, **kwargs),
         )
@@ -660,7 +662,9 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
         )
 
-    def create_kg_entity_deduplication_summary_pipe(self, *args, **kwargs) -> Any:
+    def create_kg_entity_deduplication_summary_pipe(
+        self, *args, **kwargs
+    ) -> Any:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
@@ -668,8 +672,11 @@ class R2RPipeFactory:
             prompt_provider=self.providers.prompt,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_entity_deduplication_summary_pipe"),
+            config=AsyncPipe.PipeConfig(
+                name="kg_entity_deduplication_summary_pipe"
+            ),
         )
+
 
 class R2RPipelineFactory:
     def __init__(self, config: R2RConfig, pipes: R2RPipes):

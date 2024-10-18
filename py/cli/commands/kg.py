@@ -83,7 +83,9 @@ def create_graph(
     help="Settings for the deduplication process.",
 )
 @pass_context
-def deduplicate_entities(ctx, collection_id, run, force_deduplication, deduplication_settings):
+def deduplicate_entities(
+    ctx, collection_id, run, force_deduplication, deduplication_settings
+):
     """
     Deduplicate entities in the knowledge graph.
     """

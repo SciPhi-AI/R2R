@@ -35,7 +35,9 @@ class KGConfig(ProviderConfig):
     kg_store_path: Optional[str] = None
     kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
     kg_creation_settings: KGCreationSettings = KGCreationSettings()
-    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = KGEntityDeduplicationSettings()
+    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
+        KGEntityDeduplicationSettings()
+    )
     kg_search_settings: KGSearchSettings = KGSearchSettings()
 
     def validate_config(self) -> None:

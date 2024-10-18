@@ -18,7 +18,7 @@ graphrag_entity_deduplication:
     Return the summary in the following format. Do not output anything else.
 
     $$<Entity Description>$$
-    
+
   input_types:
     entity_name: str
     entity_descriptions: str

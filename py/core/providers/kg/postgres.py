@@ -189,7 +189,10 @@ class PostgresKGProvider(KGProvider):
         await self.execute_query(query)
 
     async def _add_objects(
-        self, objects: list[Any], table_name: str, conflict_columns: list[str] = []
+        self,
+        objects: list[Any],
+        table_name: str,
+        conflict_columns: list[str] = [],
     ) -> asyncpg.Record:
         """
         Upsert objects into the specified table.
@@ -204,7 +207,10 @@ class PostgresKGProvider(KGProvider):
 
         if conflict_columns:
             conflict_columns_str = ", ".join(conflict_columns)
-            replace_columns_str = ", ".join(f"{column} = EXCLUDED.{column}" for column in non_null_attrs.keys())
+            replace_columns_str = ", ".join(
+                f"{column} = EXCLUDED.{column}"
+                for column in non_null_attrs.keys()
+            )
             on_conflict_query = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {replace_columns_str}"
         else:
             on_conflict_query = ""
@@ -251,9 +257,11 @@ class PostgresKGProvider(KGProvider):
         for entity in entities:
 
             if getattr(entity, embedding_col_name, None) is not None:
-                setattr(entity, embedding_col_name, str(  # type: ignore
-                    getattr(entity, embedding_col_name)
-                ))
+                setattr(
+                    entity,
+                    embedding_col_name,
+                    str(getattr(entity, embedding_col_name)),  # type: ignore
+                )
 
         logger.info(f"Upserting {len(entities)} entities into {table_name}")
 
@@ -434,7 +442,6 @@ class PostgresKGProvider(KGProvider):
         table_name = self._get_table_name("entities")
         query = QUERY.format(table_name)
         await self.execute_query(query, entities)
-
 
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
@@ -1103,7 +1110,7 @@ class PostgresKGProvider(KGProvider):
             ORDER BY id
             OFFSET ${len(params) - 1} LIMIT ${len(params)}
         """
-            
+
         results = await self.fetch_query(query, params)
 
         entities = [Entity(**entity) for entity in results]
@@ -1189,7 +1196,9 @@ class PostgresKGProvider(KGProvider):
         if entity_table_name == "entity_deduplicated":
 
             if document_id:
-                raise ValueError("document_id is not supported for entity_deduplicated table")
+                raise ValueError(
+                    "document_id is not supported for entity_deduplicated table"
+                )
 
             if collection_id:
                 conditions.append("collection_id = $1")

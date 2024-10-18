@@ -403,8 +403,10 @@ class KgService(Service):
         generation_config: GenerationConfig,
         **kwargs,
     ):
-        
-        logger.info(f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}")
+
+        logger.info(
+            f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}"
+        )
         deduplication_summary_results = await self.pipes.kg_entity_deduplication_summary_pipe.run(
             input=self.pipes.kg_entity_deduplication_summary_pipe.Input(
                 message={

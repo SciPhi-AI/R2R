@@ -259,7 +259,6 @@ class KGEntityDeduplicationResponse(R2RSerializable):
         }
 
 
-
 WrappedKGCreationResponse = ResultsWrapper[
     Union[KGCreationResponse, KGCreationEstimationResponse]
 ]
@@ -269,4 +268,6 @@ WrappedKGEnrichmentResponse = ResultsWrapper[
 WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
 WrappedKGTriplesResponse = ResultsWrapper[KGTriplesResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
-WrappedKGEntityDeduplicationResponse = ResultsWrapper[KGEntityDeduplicationResponse]
+WrappedKGEntityDeduplicationResponse = ResultsWrapper[
+    KGEntityDeduplicationResponse
+]

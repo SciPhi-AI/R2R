@@ -15,6 +15,7 @@ class KGRunType(str, Enum):
     def __str__(self):
         return self.value
 
+
 class KGEntityDeduplicationType(str, Enum):
     """Type of KG entity deduplication."""
 

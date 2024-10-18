@@ -212,14 +212,18 @@ def hatchet_kg_factory(
             return {
                 "result": f"successfully ran graph creation workflows for {len(results)} documents"
             }
-        
-    @orchestration_provider.workflow(name="entity-deduplication", timeout="360m")
+
+    @orchestration_provider.workflow(
+        name="entity-deduplication", timeout="360m"
+    )
     class EntityDeduplicationWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=0, timeout="360m")
-        async def kg_entity_deduplication_setup(self, context: Context) -> dict:
+        async def kg_entity_deduplication_setup(
+            self, context: Context
+        ) -> dict:
 
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
@@ -227,14 +231,20 @@ def hatchet_kg_factory(
 
             collection_id = input_data["collection_id"]
 
-            logger.info(f"Running KG Entity Deduplication for collection {collection_id}")
+            logger.info(
+                f"Running KG Entity Deduplication for collection {collection_id}"
+            )
             logger.info(f"Input data: {input_data}")
-            logger.info(f"KG Entity Deduplication Settings: {input_data['kg_entity_deduplication_settings']}")
+            logger.info(
+                f"KG Entity Deduplication Settings: {input_data['kg_entity_deduplication_settings']}"
+            )
 
-            number_of_distinct_entities = (await self.kg_service.kg_entity_deduplication(
-                collection_id=collection_id,
-                **input_data["kg_entity_deduplication_settings"],
-            ))[0]["num_entities"]
+            number_of_distinct_entities = (
+                await self.kg_service.kg_entity_deduplication(
+                    collection_id=collection_id,
+                    **input_data["kg_entity_deduplication_settings"],
+                )
+            )[0]["num_entities"]
 
             # run 100 entities in one workflow
             total_workflows = math.ceil(number_of_distinct_entities / 100)
@@ -249,10 +259,12 @@ def hatchet_kg_factory(
                                 "collection_id": collection_id,
                                 "offset": offset,
                                 "limit": 100,
-                                "kg_entity_deduplication_settings": input_data["kg_entity_deduplication_settings"],
+                                "kg_entity_deduplication_settings": input_data[
+                                    "kg_entity_deduplication_settings"
+                                ],
                             }
                         },
-                        key=f"{i}/{total_workflows}_entity_deduplication_part"
+                        key=f"{i}/{total_workflows}_entity_deduplication_part",
                     )
                 )
             await asyncio.gather(*workflows)
@@ -260,14 +272,18 @@ def hatchet_kg_factory(
             return {
                 "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
             }
-        
-    @orchestration_provider.workflow(name="kg-entity-deduplication-summary", timeout="360m")
+
+    @orchestration_provider.workflow(
+        name="kg-entity-deduplication-summary", timeout="360m"
+    )
     class EntityDeduplicationSummaryWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=0, timeout="360m")
-        async def kg_entity_deduplication_summary(self, context: Context) -> dict:
+        async def kg_entity_deduplication_summary(
+            self, context: Context
+        ) -> dict:
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -405,5 +421,7 @@ def hatchet_kg_factory(
         "enrich-graph": EnrichGraphWorkflow(service),
         "kg-community-summary": KGCommunitySummaryWorkflow(service),
         "kg-entity-deduplication": EntityDeduplicationWorkflow(service),
-        "kg-entity-deduplication-summary": EntityDeduplicationSummaryWorkflow(service),
+        "kg-entity-deduplication-summary": EntityDeduplicationSummaryWorkflow(
+            service
+        ),
     }
