@@ -2,22 +2,6 @@ from typing import Any, Optional, Sequence, Union
 
 from sqlalchemy import TextClause, text
 
-from .vecs import Client
-
-
-# TODO: This should be defined at the mixin, not here
-def execute_query(
-    vx: Client,
-    query: Union[str, TextClause],
-    params: Optional[dict[str, Any]] = None,
-):
-    with vx.Session() as sess:
-        if isinstance(query, str):
-            query = text(query)
-        result = sess.execute(query, params or {})
-        sess.commit()
-        return result
-
 
 class QueryBuilder:
     def __init__(self, table_name: str):

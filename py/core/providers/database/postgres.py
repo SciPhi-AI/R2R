@@ -1,9 +1,12 @@
 # TODO: Clean this up and make it more congruent across the vector database and the relational database.
-
+import asyncio
 import logging
 import os
 import warnings
+from contextlib import asynccontextmanager
 from typing import Any, Optional
+
+import asyncpg
 
 from core.base import (
     CryptoProvider,
@@ -12,10 +15,10 @@ from core.base import (
     PostgresConfigurationSettings,
     RelationalDBProvider,
     VectorDBProvider,
+    VectorQuantizationType,
 )
-from shared.abstractions.vector import VectorQuantizationType
 
-from .relational import PostgresRelationalDBProvider
+from .handle import PostgresDBHandle
 from .vector import PostgresVectorDBProvider
 
 logger = logging.getLogger()
@@ -28,6 +31,37 @@ def get_env_var(new_var, old_var, config_value):
             f"{old_var} is deprecated and support for it will be removed in release 3.5.0. Use {new_var} instead."
         )
     return value
+
+
+class SemaphoreConnectionPool(asyncpg.Pool):
+    def __init__(self, connection_string, postgres_configuration_settings):
+        self.connection_string = connection_string
+        self.postgres_configuration_settings = postgres_configuration_settings
+
+    async def initialize(self):
+        try:
+            self.semaphore = asyncio.Semaphore(
+                int(self.postgres_configuration_settings.max_connections * 0.9)
+            )
+
+            self.pool = await asyncpg.create_pool(
+                self.connection_string,
+                max_size=self.postgres_configuration_settings.max_connections,
+            )
+
+            logger.info(
+                "Successfully connected to Postgres database and created connection pool."
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Error {e} occurred while attempting to connect to relational database."
+            ) from e
+
+    @asynccontextmanager
+    async def get_connection(self):
+        async with self.semaphore:
+            async with self.pool.acquire() as conn:
+                yield conn
 
 
 class PostgresDBProvider(DatabaseProvider):
@@ -115,28 +149,34 @@ class PostgresDBProvider(DatabaseProvider):
         return f"{self.project_name}.{base_name}"
 
     async def initialize(self):
-        self.vector = self._initialize_vector_db()
-        self.relational = await self._initialize_relational_db()
+        shared_pool = SemaphoreConnectionPool(
+            self.connection_string, self.postgres_configuration_settings
+        )
+        await shared_pool.initialize()
 
-    def _initialize_vector_db(self) -> VectorDBProvider:
-        return PostgresVectorDBProvider(
+        self.handle = await self._initialize_handle(shared_pool)
+        # self.relational = await self._initialize_relational_db(shared_pool)
+
+    async def _initialize_handle(self) -> VectorDBProvider:
+        handle = PostgresDBHandle(
             self.config,
             connection_string=self.connection_string,
             project_name=self.project_name,
             dimension=self.vector_db_dimension,
             quantization_type=self.vector_db_quantization_type,
         )
+        await handle.initialize()
+        return handle
 
-    async def _initialize_relational_db(self) -> RelationalDBProvider:
-        relational_db = PostgresRelationalDBProvider(
-            self.config,
-            connection_string=self.connection_string,
-            crypto_provider=self.crypto_provider,
-            project_name=self.project_name,
-            postgres_configuration_settings=self.postgres_configuration_settings,
-        )
-        await relational_db.initialize()
-        return relational_db
+    # async def _initialize_relational_db(self) -> RelationalDBProvider:
+    #     relational_db = PostgresRelationalDBProvider(
+    #         self.config,
+    #         connection_string=self.connection_string,
+    #         crypto_provider=self.crypto_provider,
+    #         project_name=self.project_name,
+    #     )
+    #     await relational_db.initialize()
+    #     return relational_db
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig
