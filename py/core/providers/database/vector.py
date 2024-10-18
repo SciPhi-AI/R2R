@@ -512,3 +512,23 @@ class VectorDBMixin(DatabaseMixin):
             raise Exception(f"Failed to create index: {e}")
 
         return None
+
+    def _get_index_options(
+        self,
+        method: IndexMethod,
+        index_arguments: Optional[Union[IndexArgsIVFFlat, IndexArgsHNSW]],
+    ) -> str:
+        if method == IndexMethod.ivfflat:
+            if isinstance(index_arguments, IndexArgsIVFFlat):
+                return f"WITH (lists={index_arguments.n_lists})"
+            else:
+                # Default value if no arguments provided
+                return "WITH (lists=100)"
+        elif method == IndexMethod.hnsw:
+            if isinstance(index_arguments, IndexArgsHNSW):
+                return f"WITH (m={index_arguments.m}, ef_construction={index_arguments.ef_construction})"
+            else:
+                # Default values if no arguments provided
+                return "WITH (m=16, ef_construction=64)"
+        else:
+            return ""  # No options for other methods
