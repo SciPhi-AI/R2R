@@ -18,9 +18,11 @@ logger = logging.getLogger()
 
 
 class CollectionMixin(DatabaseMixin):
+    TABLE_NAME = "collections"
+
     async def create_table(self) -> None:
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name('collections')} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(CollectionMixin.TABLE_NAME)} (
             collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
@@ -59,7 +61,7 @@ class CollectionMixin(DatabaseMixin):
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
         query = f"""
-            SELECT 1 FROM {self._get_table_name('collections')}
+            SELECT 1 FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
             WHERE collection_id = $1
         """
         result = await self.fetchrow_query(query, [collection_id])
@@ -73,7 +75,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> CollectionResponse:
         current_time = datetime.utcnow()
         query = f"""
-            INSERT INTO {self._get_table_name('collections')} (collection_id, name, description, created_at, updated_at)
+            INSERT INTO {self._get_table_name(CollectionMixin.TABLE_NAME)} (collection_id, name, description, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING collection_id, name, description, created_at, updated_at
         """
@@ -86,7 +88,7 @@ class CollectionMixin(DatabaseMixin):
         ]
 
         try:
-            async with self.pool.acquire() as conn:  # type: ignore
+            async with self.pool.get_connection() as conn:  # type: ignore
                 row = await conn.fetchrow(query, *params)
 
             if not row:
@@ -114,7 +116,7 @@ class CollectionMixin(DatabaseMixin):
 
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
-            FROM {self._get_table_name('collections')}
+            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
             WHERE collection_id = $1
         """
         result = await self.fetchrow_query(query, [collection_id])
@@ -157,7 +159,7 @@ class CollectionMixin(DatabaseMixin):
         params.append(collection_id)
 
         query = f"""
-            UPDATE {self._get_table_name('collections')}
+            UPDATE {self._get_table_name(CollectionMixin.TABLE_NAME)}
             SET {', '.join(update_fields)}
             WHERE collection_id = ${len(params)}
             RETURNING collection_id, name, description, created_at, updated_at
@@ -175,8 +177,8 @@ class CollectionMixin(DatabaseMixin):
             updated_at=result["updated_at"],
         )
 
-    async def delete_collection(self, collection_id: UUID) -> None:
-        async with self.pool.acquire() as conn:  # type: ignore
+    async def delete_collection_relational(self, collection_id: UUID) -> None:
+        async with self.pool.get_connection() as conn:  # type: ignore
             async with conn.transaction():
                 try:
                     # Remove collection_id from users
@@ -204,11 +206,12 @@ class CollectionMixin(DatabaseMixin):
 
                     # Delete the collection
                     delete_query = f"""
-                        DELETE FROM {self._get_table_name('collections')}
+                        DELETE FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
                         WHERE collection_id = $1
                         RETURNING collection_id
                     """
                     deleted = await conn.fetchrow(delete_query, collection_id)
+                    print("deleted = ", deleted)
 
                     if not deleted:
                         raise R2RException(
@@ -230,7 +233,7 @@ class CollectionMixin(DatabaseMixin):
         """List collections with pagination."""
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('collections')}
+            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
             ORDER BY name
             OFFSET $1
         """
@@ -346,7 +349,7 @@ class CollectionMixin(DatabaseMixin):
                 SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
                     COUNT(DISTINCT u.user_id) AS user_count,
                     COUNT(DISTINCT d.document_id) AS document_count
-                FROM {self._get_table_name('collections')} g
+                FROM {self._get_table_name(CollectionMixin.TABLE_NAME)} g
                 LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
                 LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
                 {' WHERE g.collection_id = ANY($1)' if collection_ids else ''}
@@ -397,7 +400,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('collections')} g
+            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)} g
             JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
             WHERE u.user_id = $1
             ORDER BY g.name
@@ -425,7 +428,7 @@ class CollectionMixin(DatabaseMixin):
 
         return {"results": collections, "total_entries": total_entries}
 
-    async def assign_document_to_collection(
+    async def assign_document_to_collection_relational(
         self,
         document_id: UUID,
         collection_id: UUID,
@@ -495,7 +498,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('collections')} g
+            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)} g
             JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
             WHERE d.document_id = $1
             ORDER BY g.name
@@ -524,7 +527,7 @@ class CollectionMixin(DatabaseMixin):
 
         return {"results": collections, "total_entries": total_entries}
 
-    async def remove_document_from_collection(
+    async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         """

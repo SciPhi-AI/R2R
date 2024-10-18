@@ -80,6 +80,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "HybridSearchSettings",
     # User abstractions
     "Token",
     "TokenData",
@@ -140,8 +141,6 @@ __all__ = [
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

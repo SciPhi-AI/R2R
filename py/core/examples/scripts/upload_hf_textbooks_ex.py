@@ -25,7 +25,6 @@ def remove_file(file_path):
 async def process_batch(client, batch):
     results = await client.ingest_files(batch)
     print(f"Submitted {len(results['results'])} files for processing")
-    print("results = ", results["results"])
     # Remove the processed files
     for file_path in batch:
         remove_file(file_path)

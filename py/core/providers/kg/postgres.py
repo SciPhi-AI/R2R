@@ -40,7 +40,7 @@ class PostgresKGProvider(KGProvider):
     ) -> None:
         super().__init__(config, *args, **kwargs)
 
-        self.db_provider = db_provider.relational
+        self.db_provider = db_provider
         self.embedding_provider = embedding_provider
 
         try:
@@ -195,7 +195,11 @@ class PostgresKGProvider(KGProvider):
         # Filter out null values for each object
         params = [
             tuple(
-                json.dumps(v) if isinstance(v, dict) else v
+                (
+                    json.dumps(v)
+                    if isinstance(v, dict)
+                    else (str(v) if v is not None else None)
+                )
                 for v in obj.__dict__.values()
                 if v is not None
             )
@@ -218,12 +222,6 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        for entity in entities:
-            if entity.description_embedding is not None:
-                entity.description_embedding = str(  # type: ignore
-                    entity.description_embedding
-                )
-
         return await self._add_objects(entities, table_name)
 
     async def add_triples(

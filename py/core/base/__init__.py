@@ -48,6 +48,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
@@ -113,8 +114,6 @@ __all__ = [
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
     "PostgresConfigurationSettings",
     # Embedding provider
     "EmbeddingConfig",
