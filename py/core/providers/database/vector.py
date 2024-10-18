@@ -309,7 +309,7 @@ class VectorDBMixin(DatabaseMixin):
             for result in results
         }
 
-    async def assign_document_to_collection(
+    async def assign_document_to_collection_vector(
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
@@ -319,7 +319,7 @@ class VectorDBMixin(DatabaseMixin):
         """
         await self.execute_query(query, (collection_id, document_id))
 
-    async def remove_document_from_collection(
+    async def remove_document_from_collection_vector(
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
@@ -329,24 +329,14 @@ class VectorDBMixin(DatabaseMixin):
         """
         await self.execute_query(query, (collection_id, document_id))
 
-    async def remove_collection_from_documents(
-        self, collection_id: str
-    ) -> None:
-        query = f"""
-        UPDATE {self.project_name}.vectors
-        SET collection_ids = array_remove(collection_ids, $1)
-        WHERE $1 = ANY(collection_ids);
-        """
-        await self.execute_query(query, (collection_id,))
-
-    async def delete_user(self, user_id: str) -> None:
+    async def delete_user_vector(self, user_id: str) -> None:
         query = f"""
         DELETE FROM {self.project_name}.vectors
         WHERE user_id = $1;
         """
         await self.execute_query(query, (user_id,))
 
-    async def delete_collection(self, collection_id: str) -> None:
+    async def delete_collection_vector(self, collection_id: str) -> None:
         query = f"""
         DELETE FROM {self.project_name}.vectors
         WHERE $1 = ANY(collection_ids);

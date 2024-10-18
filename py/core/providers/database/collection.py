@@ -175,7 +175,7 @@ class CollectionMixin(DatabaseMixin):
             updated_at=result["updated_at"],
         )
 
-    async def delete_collection(self, collection_id: UUID) -> None:
+    async def delete_collection_relational(self, collection_id: UUID) -> None:
         async with self.pool.acquire() as conn:  # type: ignore
             async with conn.transaction():
                 try:
@@ -425,7 +425,7 @@ class CollectionMixin(DatabaseMixin):
 
         return {"results": collections, "total_entries": total_entries}
 
-    async def assign_document_to_collection(
+    async def assign_document_to_collection_relational(
         self,
         document_id: UUID,
         collection_id: UUID,
@@ -524,7 +524,7 @@ class CollectionMixin(DatabaseMixin):
 
         return {"results": collections, "total_entries": total_entries}
 
-    async def remove_document_from_collection(
+    async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         """

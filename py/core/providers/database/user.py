@@ -198,7 +198,7 @@ class UserMixin(DatabaseMixin):
             collection_ids=result["collection_ids"],
         )
 
-    async def delete_user(self, user_id: UUID) -> None:
+    async def delete_user_relational(self, user_id: UUID) -> None:
         # Get the collections the user belongs to
         collection_query = f"""
             SELECT collection_ids FROM {self._get_table_name('users')}

@@ -153,9 +153,6 @@ class PostgresDBProvider(DatabaseProvider):
         )
         await shared_pool.initialize()
 
-        self.handle = await self._initialize_handle(shared_pool)
-
-    async def _initialize_handle(self) -> PostgresDBHandle:
         handle = PostgresDBHandle(
             self.config,
             connection_string=self.connection_string,
@@ -163,8 +160,9 @@ class PostgresDBProvider(DatabaseProvider):
             dimension=self.vector_db_dimension,
             quantization_type=self.vector_db_quantization_type,
         )
-        await handle.initialize()
-        return handle
+        await handle.initialize(shared_pool)
+
+        self.handle = handle
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

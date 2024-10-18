@@ -72,6 +72,7 @@ class DatabaseMixin:
         self,
         query: Union[str, TextClause],
         params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+        isolation_level: Optional[str] = None,
     ):
         raise NotImplementedError("Subclasses must implement this method")
 

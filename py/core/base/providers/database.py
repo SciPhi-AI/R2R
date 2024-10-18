@@ -71,11 +71,9 @@ class DatabaseConfig(ProviderConfig):
 
 class DatabaseProvider(Provider):
     def __init__(self, config: DatabaseConfig):
-        if not isinstance(config, DatabaseConfig):
-            raise ValueError(
-                "DatabaseProvider must be initialized with a `DatabaseConfig`."
-            )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
+        
+        self.handle: Any = None # TODO - Type this properly, we later use it as a PostgresDBHandle
         super().__init__(config)
 
     @abstractmethod

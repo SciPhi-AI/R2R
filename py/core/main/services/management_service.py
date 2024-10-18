@@ -380,10 +380,10 @@ class ManagementService(Service):
     async def assign_document_to_collection(
         self, document_id: str, collection_id: UUID
     ):
-        await self.providers.database.handle.assign_document_to_collection(
+        await self.providers.database.handle.assign_document_to_collection_vector(
             document_id, collection_id
         )
-        self.providers.database.handle.assign_document_to_collection(
+        await self.providers.database.handle.assign_document_to_collection_relational(
             document_id, collection_id
         )
         return {"message": "Document assigned to collection successfully"}
@@ -392,10 +392,10 @@ class ManagementService(Service):
     async def remove_document_from_collection(
         self, document_id: UUID, collection_id: UUID
     ):
-        await self.providers.database.handle.remove_document_from_collection(
+        await self.providers.database.handle.remove_document_from_collection_relational(
             document_id, collection_id
         )
-        self.providers.database.handle.remove_document_from_collection(
+        await self.providers.database.handle.remove_document_from_collection_vector(
             document_id, collection_id
         )
         await self.providers.kg.delete_node_via_document_id(
@@ -525,8 +525,8 @@ class ManagementService(Service):
 
     @telemetry_event("DeleteCollection")
     async def delete_collection(self, collection_id: UUID) -> bool:
-        await self.providers.database.handle.delete_collection(collection_id)
-        self.providers.database.handle.delete_collection(collection_id)
+        await self.providers.database.handle.delete_collection_relational(collection_id)
+        await self.providers.database.handle.delete_collection_vector(collection_id)
         return True
 
     @telemetry_event("ListCollections")
