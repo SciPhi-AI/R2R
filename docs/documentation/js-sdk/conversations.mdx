@@ -1,0 +1,183 @@
+---
+title: 'Conversations'
+description: 'Managing conversations with R2R.'
+---
+
+<Warning>
+This feature is currently in beta. Functionality may change, and we value your feedback around these features.
+</Warning>
+
+<Note>
+Occasionally this SDK documentation falls out of date, cross-check with the automatically generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+</Note>
+
+## Conversation Management
+
+### Get Conversations Overview
+
+Retrieve an overview of existing conversations:
+
+```javascript
+const offset = 0;
+const limit = 10;
+const overviewResponse = await client.conversationsOverview(offset, limit);
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response containing an overview of conversations.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="offset" type="number">
+  The offset to start listing conversations from.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  The maximum number of conversations to return.
+</ParamField>
+
+### Get Conversation
+
+Fetch a specific conversation by its UUID:
+
+```javascript
+const conversationId = '123e4567-e89b-12d3-a456-426614174000';
+const conversation = await client.getConversation(conversationId);
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response containing the requested conversation details.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="conversationId" type="string" required>
+  The UUID of the conversation to retrieve.
+</ParamField>
+
+### Create Conversation
+
+Create a new conversation:
+
+```javascript
+const newConversation = await client.createConversation();
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response containing details of the newly created conversation.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+### Add Message
+
+Add a message to an existing conversation:
+
+```javascript
+const conversationId = '123e4567-e89b-12d3-a456-426614174000';
+const message = { text: 'Hello, world!' };
+const parentId = '98765432-e21b-12d3-a456-426614174000';
+const metadata = { key: 'value' };
+
+const addMessageResponse = await client.addMessage(conversationId, message, parentId, metadata);
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response after adding the message to the conversation.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="conversationId" type="string" required>
+  The UUID of the conversation to add the message to.
+</ParamField>
+
+<ParamField path="message" type="object" required>
+  The message object to add to the conversation.
+</ParamField>
+
+<ParamField path="parentId" type="string">
+  An optional UUID of the parent message.
+</ParamField>
+
+<ParamField path="metadata" type="object">
+  An optional metadata object for the message.
+</ParamField>
+
+### Update Message
+
+Update an existing message in a conversation:
+
+```javascript
+const messageId = '98765432-e21b-12d3-a456-426614174000';
+const updatedMessage = { text: 'Updated message content' };
+
+const updateMessageResponse = await client.updateMessage(messageId, updatedMessage);
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response after updating the message.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="messageId" type="string" required>
+  The UUID of the message to update.
+</ParamField>
+
+<ParamField path="message" type="object" required>
+  The updated message object.
+</ParamField>
+
+### Get Branches Overview
+
+Retrieve an overview of branches in a conversation:
+
+```javascript
+const conversationId = '123e4567-e89b-12d3-a456-426614174000';
+const branchesOverview = await client.branchesOverview(conversationId);
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response containing an overview of branches in the conversation.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="conversationId" type="string" required>
+  The UUID of the conversation to get branches for.
+</ParamField>
+
+### Delete Conversation
+
+Delete a conversation by its UUID:
+
+```javascript
+const conversationId = '123e4567-e89b-12d3-a456-426614174000';
+const deleteResponse = await client.deleteConversation(conversationId);
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response after deleting the conversation.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="conversationId" type="string" required>
+  The UUID of the conversation to delete.
+</ParamField>
