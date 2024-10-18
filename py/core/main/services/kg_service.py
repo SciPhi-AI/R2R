@@ -398,15 +398,26 @@ class KgService(Service):
         collection_id: UUID,
         offset: int,
         limit: int,
+        kg_entity_deduplication_type: KGEntityDeduplicationType,
+        kg_entity_deduplication_prompt: str,
+        generation_config: GenerationConfig,
         **kwargs,
     ):
-        return await self.pipes.kg_entity_deduplication_summary_pipe.run(
+        
+        logger.info(f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}")
+        deduplication_summary_results = await self.pipes.kg_entity_deduplication_summary_pipe.run(
             input=self.pipes.kg_entity_deduplication_summary_pipe.Input(
                 message={
                     "collection_id": collection_id,
                     "offset": offset,
                     "limit": limit,
+                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
+                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "generation_config": generation_config,
                 }
             ),
+            state=None,
+            run_manager=self.run_manager,
         )
 
+        return await _collect_results(deduplication_summary_results)

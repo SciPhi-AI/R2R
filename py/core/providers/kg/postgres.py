@@ -1108,6 +1108,9 @@ class PostgresKGProvider(KGProvider):
 
         entities = [Entity(**entity) for entity in results]
 
+        logger.info(f"Params: {params}")
+        logger.info(f"Entities: {entities}")
+
         total_entries = await self.get_entity_count(
             collection_id=collection_id, entity_table_name=entity_table_name
         )
@@ -1183,19 +1186,29 @@ class PostgresKGProvider(KGProvider):
         conditions = []
         params = []
 
-        if collection_id:
-            conditions.append(
-                f"""
-                document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-                """
-            )
-            params.append(str(collection_id))
+        if entity_table_name == "entity_deduplicated":
+
+            if document_id:
+                raise ValueError("document_id is not supported for entity_deduplicated table")
+
+            if collection_id:
+                conditions.append("collection_id = $1")
+                params.append(str(collection_id))
+
         else:
-            conditions.append("document_id = $1")
-            params.append(str(document_id))
+            if collection_id:
+                conditions.append(
+                    f"""
+                    document_id = ANY(
+                        SELECT document_id FROM {self._get_table_name("document_info")}
+                        WHERE $1 = ANY(collection_ids)
+                    )
+                    """
+                )
+                params.append(str(collection_id))
+            else:
+                conditions.append("document_id = $1")
+                params.append(str(document_id))
 
         if distinct:
             count_value = "DISTINCT name"

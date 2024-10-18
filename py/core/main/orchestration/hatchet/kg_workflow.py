@@ -243,13 +243,13 @@ def hatchet_kg_factory(
                 offset = i * 100
                 workflows.append(
                     context.aio.spawn_workflow(
-                        "entity-deduplication-part",
+                        "kg-entity-deduplication-summary",
                         {
                             "request": {
                                 "collection_id": collection_id,
                                 "offset": offset,
                                 "limit": 100,
-                                **input_data["kg_entity_deduplication_settings"],
+                                "kg_entity_deduplication_settings": input_data["kg_entity_deduplication_settings"],
                             }
                         },
                         key=f"{i}/{total_workflows}_entity_deduplication_part"
@@ -261,7 +261,7 @@ def hatchet_kg_factory(
                 "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
             }
         
-    @orchestration_provider.workflow(name="entity-deduplication-summary", timeout="360m")
+    @orchestration_provider.workflow(name="kg-entity-deduplication-summary", timeout="360m")
     class EntityDeduplicationSummaryWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
