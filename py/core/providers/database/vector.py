@@ -16,7 +16,7 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
-from .base import DatabaseMixin, QueryBuilder
+from .base import DatabaseMixin
 from .vecs.exc import ArgError
 
 logger = logging.getLogger()
@@ -30,15 +30,18 @@ def index_measure_to_ops(
 
 
 class VectorDBMixin(DatabaseMixin):
+    COLUMN_NAME = "vecs"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.project_name = kwargs.get("project_name")
         self.dimension = kwargs.get("dimension")
         self.quantization_type = kwargs.get("quantization_type")
 
     async def initialize_vector_db(self):
         # Create the vector table if it doesn't exist
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self.project_name}.vectors (
+        CREATE TABLE IF NOT EXISTS {self.project_name}.{VectorDBMixin.COLUMN_NAME} (
             extraction_id TEXT PRIMARY KEY,
             document_id TEXT,
             user_id TEXT,
@@ -47,16 +50,16 @@ class VectorDBMixin(DatabaseMixin):
             text TEXT,
             metadata JSONB
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self.project_name}.vectors (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self.project_name}.vectors (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self.project_name}.vectors USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self.project_name}.vectors USING GIN (to_tsvector('english', text));
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} (user_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self.project_name}.{VectorDBMixin.COLUMN_NAME} USING GIN (to_tsvector('english', text));
         """
         await self.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
         query = f"""
-        INSERT INTO {self.project_name}.vectors
+        INSERT INTO {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         (extraction_id, document_id, user_id, collection_ids, vector, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE
@@ -77,7 +80,7 @@ class VectorDBMixin(DatabaseMixin):
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
         query = f"""
-        INSERT INTO {self.project_name}.vectors
+        INSERT INTO {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         (extraction_id, document_id, user_id, collection_ids, vector, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE
@@ -103,7 +106,7 @@ class VectorDBMixin(DatabaseMixin):
         query = f"""
         SELECT extraction_id, document_id, user_id, collection_ids, text,
                1 - (vector <=> $1::vector) as similarity, metadata
-        FROM {self.project_name}.vectors
+        FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         WHERE collection_ids && $2
         ORDER BY similarity DESC
         LIMIT $3 OFFSET $4;
@@ -138,7 +141,7 @@ class VectorDBMixin(DatabaseMixin):
         SELECT extraction_id, document_id, user_id, collection_ids, text,
                ts_rank_cd(to_tsvector('english', text), plainto_tsquery('english', $1)) as rank,
                metadata
-        FROM {self.project_name}.vectors
+        FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         WHERE collection_ids && $2 AND to_tsvector('english', text) @@ plainto_tsquery('english', $1)
         ORDER BY rank DESC
         LIMIT $3 OFFSET $4;
@@ -299,7 +302,7 @@ class VectorDBMixin(DatabaseMixin):
 
         where_clause = " AND ".join(conditions)
         query = f"""
-        DELETE FROM {self.project_name}.vectors
+        DELETE FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         WHERE {where_clause}
         RETURNING extraction_id;
         """
@@ -313,7 +316,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self.project_name}.vectors
+        UPDATE {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
@@ -323,7 +326,7 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self.project_name}.vectors
+        UPDATE {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
@@ -331,14 +334,14 @@ class VectorDBMixin(DatabaseMixin):
 
     async def delete_user_vector(self, user_id: str) -> None:
         query = f"""
-        DELETE FROM {self.project_name}.vectors
+        DELETE FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         WHERE user_id = $1;
         """
         await self.execute_query(query, (user_id,))
 
     async def delete_collection_vector(self, collection_id: str) -> None:
         query = f"""
-        DELETE FROM {self.project_name}.vectors
+        DELETE FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         WHERE $1 = ANY(collection_ids);
         """
         await self.execute_query(query, (collection_id,))
@@ -356,7 +359,7 @@ class VectorDBMixin(DatabaseMixin):
         query = f"""
         SELECT extraction_id, document_id, user_id, collection_ids, text, metadata
         {vector_select}
-        FROM {self.project_name}.vectors
+        FROM {self.project_name}.{VectorDBMixin.COLUMN_NAME}
         WHERE document_id = $1
         OFFSET $2
         {limit_clause};
@@ -428,17 +431,13 @@ class VectorDBMixin(DatabaseMixin):
         """
 
         if table_name == VectorTableName.CHUNKS:
-            table_name = f"{self.client.project_name}.{self.table.name}"
+            table_name = f"{self.project_name}.{self.table.name}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES:
-            table_name = (
-                f"{self.client.project_name}.{VectorTableName.ENTITIES}"
-            )
+            table_name = f"{self.project_name}.{VectorTableName.ENTITIES}"
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
-            table_name = (
-                f"{self.client.project_name}.{VectorTableName.COMMUNITIES}"
-            )
+            table_name = f"{self.project_name}.{VectorTableName.COMMUNITIES}"
             col_name = "embedding"
         else:
             raise ArgError("invalid table name")
@@ -471,15 +470,7 @@ class VectorDBMixin(DatabaseMixin):
                 )
 
         if method == IndexMethod.auto:
-            if self.client._supports_hnsw():
-                method = IndexMethod.hnsw
-            else:
-                method = IndexMethod.ivfflat
-
-        if method == IndexMethod.hnsw and not self.client._supports_hnsw():
-            raise ArgError(
-                "HNSW Unavailable. Upgrade your pgvector installation to > 0.5.0 to enable HNSW support"
-            )
+            method = IndexMethod.hnsw
 
         ops = index_measure_to_ops(
             measure, quantization_type=self.quantization_type

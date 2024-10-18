@@ -76,6 +76,9 @@ class DatabaseMixin:
     ):
         raise NotImplementedError("Subclasses must implement this method")
 
+    async def execute_many(self, query, params=None, batch_size=1000):
+        raise NotImplementedError("Subclasses must implement this method")
+
     def fetch_query(
         self,
         query: Union[str, TextClause],

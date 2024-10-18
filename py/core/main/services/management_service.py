@@ -525,8 +525,12 @@ class ManagementService(Service):
 
     @telemetry_event("DeleteCollection")
     async def delete_collection(self, collection_id: UUID) -> bool:
-        await self.providers.database.handle.delete_collection_relational(collection_id)
-        await self.providers.database.handle.delete_collection_vector(collection_id)
+        await self.providers.database.handle.delete_collection_relational(
+            collection_id
+        )
+        await self.providers.database.handle.delete_collection_vector(
+            collection_id
+        )
         return True
 
     @telemetry_event("ListCollections")

@@ -16,7 +16,7 @@ from core.base import (
     VectorQuantizationType,
 )
 
-from .handle import PostgresDBHandle
+from .handle import PostgresHandle
 
 logger = logging.getLogger()
 
@@ -142,7 +142,7 @@ class PostgresDBProvider(DatabaseProvider):
             config.default_collection_description
         )
 
-        self.handle: Optional[PostgresDBHandle] = None
+        self.handle: Optional[PostgresHandle] = None
 
     def _get_table_name(self, base_name: str) -> str:
         return f"{self.project_name}.{base_name}"
@@ -153,7 +153,7 @@ class PostgresDBProvider(DatabaseProvider):
         )
         await shared_pool.initialize()
 
-        handle = PostgresDBHandle(
+        handle = PostgresHandle(
             self.config,
             connection_string=self.connection_string,
             project_name=self.project_name,

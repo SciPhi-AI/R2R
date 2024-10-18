@@ -132,9 +132,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def register(self, email: str, password: str) -> Dict[str, str]:
         # Create new user and give them a default collection
-        new_user = await self.db_provider.handle.create_user(
-            email, password
-        )
+        new_user = await self.db_provider.handle.create_user(email, password)
         default_collection = (
             await self.db_provider.handle.create_default_collection(
                 new_user.id,
@@ -163,9 +161,7 @@ class R2RAuthProvider(AuthProvider):
             await self.db_provider.handle.store_verification_code(
                 new_user.id, None, None
             )
-            await self.db_provider.handle.mark_user_as_verified(
-                new_user.id
-            )
+            await self.db_provider.handle.mark_user_as_verified(new_user.id)
 
         return new_user
 

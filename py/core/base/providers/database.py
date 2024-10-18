@@ -72,8 +72,10 @@ class DatabaseConfig(ProviderConfig):
 class DatabaseProvider(Provider):
     def __init__(self, config: DatabaseConfig):
         logger.info(f"Initializing DatabaseProvider with config {config}.")
-        
-        self.handle: Any = None # TODO - Type this properly, we later use it as a PostgresDBHandle
+
+        self.handle: Any = (
+            None  # TODO - Type this properly, we later use it as a PostgresHandle
+        )
         super().__init__(config)
 
     @abstractmethod

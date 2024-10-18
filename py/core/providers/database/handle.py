@@ -15,7 +15,7 @@ from shared.abstractions.vector import VectorQuantizationType
 logger = logging.getLogger()
 
 
-class PostgresDBHandle(
+class PostgresHandle(
     DocumentMixin,
     CollectionMixin,
     BlacklistedTokensMixin,
@@ -44,7 +44,7 @@ class PostgresDBHandle(
         return f"{self.project_name}.{base_name}"
 
     async def initialize(self, pool: asyncpg.pool.Pool):
-        logger.info("Initializing `PostgresDBHandle` with connection pool.")
+        logger.info("Initializing `PostgresHandle` with connection pool.")
 
         self.pool = pool
 
@@ -58,7 +58,7 @@ class PostgresDBHandle(
 
         await self.initialize_vector_db()
 
-        logger.info("Successfully initialized `PostgresDBHandle`")
+        logger.info("Successfully initialized `PostgresHandle`")
 
     async def close(self):
         if self.pool:
