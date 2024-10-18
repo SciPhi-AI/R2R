@@ -32,9 +32,10 @@ add_command_with_telemetry(management.users_overview)
 add_command_with_telemetry(management.documents_overview)
 add_command_with_telemetry(management.document_chunks)
 
-# Restructure
+# Knowledge Graph
 add_command_with_telemetry(kg.create_graph)
 add_command_with_telemetry(kg.enrich_graph)
+add_command_with_telemetry(kg.deduplicate_entities)
 
 # Retrieval
 add_command_with_telemetry(retrieval.search)

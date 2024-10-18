@@ -16,11 +16,13 @@ from shared.api.models.ingestion.responses import (
 from shared.api.models.kg.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
+    KGEntityDeduplicationResponse,
     WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
     WrappedKGTriplesResponse,
+    WrappedKGEntityDeduplicationResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -78,11 +80,13 @@ __all__ = [
     "WrappedUpdateResponse",
     "CreateVectorIndexResponse",
     "WrappedCreateVectorIndexResponse",
-    # Restructure Responses
+    # Knowledge Graph Responses
     "KGCreationResponse",
     "WrappedKGCreationResponse",
     "KGEnrichmentResponse",
     "WrappedKGEnrichmentResponse",
+    "KGEntityDeduplicationResponse",
+    "WrappedKGEntityDeduplicationResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",
