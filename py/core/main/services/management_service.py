@@ -204,7 +204,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return await self.providers.database.handle.get_users_overview(
+        return await self.providers.database.get_users_overview(
             [str(ele) for ele in user_ids] if user_ids else None,
             offset=offset,
             limit=limit,
@@ -267,7 +267,7 @@ class ManagementService(Service):
         logger.info(f"Deleting entries with filters: {filters}")
 
         try:
-            vector_delete_results = self.providers.database.handle.delete(
+            vector_delete_results = self.providers.database.delete(
                 filters
             )
         except Exception as e:
@@ -299,7 +299,7 @@ class ManagementService(Service):
 
         try:
             documents_overview = (
-                await self.providers.database.handle.get_documents_overview(
+                await self.providers.database.get_documents_overview(
                     **relational_filters
                 )
             )["results"]
@@ -319,7 +319,7 @@ class ManagementService(Service):
 
         for document_id in document_ids_to_purge:
             try:
-                await self.providers.database.handle.delete_from_documents_overview(
+                await self.providers.database.delete_from_documents_overview(
                     str(document_id)
                 )
                 logger.info(
@@ -351,7 +351,7 @@ class ManagementService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        return await self.providers.database.handle.get_documents_overview(
+        return await self.providers.database.get_documents_overview(
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
@@ -369,7 +369,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.handle.get_document_chunks(
+        return await self.providers.database.get_document_chunks(
             document_id,
             offset=offset,
             limit=limit,
@@ -380,10 +380,10 @@ class ManagementService(Service):
     async def assign_document_to_collection(
         self, document_id: str, collection_id: UUID
     ):
-        await self.providers.database.handle.assign_document_to_collection_vector(
+        await self.providers.database.assign_document_to_collection_vector(
             document_id, collection_id
         )
-        await self.providers.database.handle.assign_document_to_collection_relational(
+        await self.providers.database.assign_document_to_collection_relational(
             document_id, collection_id
         )
         return {"message": "Document assigned to collection successfully"}
@@ -392,10 +392,10 @@ class ManagementService(Service):
     async def remove_document_from_collection(
         self, document_id: UUID, collection_id: UUID
     ):
-        await self.providers.database.handle.remove_document_from_collection_relational(
+        await self.providers.database.remove_document_from_collection_relational(
             document_id, collection_id
         )
-        await self.providers.database.handle.remove_document_from_collection_vector(
+        await self.providers.database.remove_document_from_collection_vector(
             document_id, collection_id
         )
         await self.providers.kg.delete_node_via_document_id(
@@ -407,7 +407,7 @@ class ManagementService(Service):
     async def document_collections(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
-        return await self.providers.database.handle.document_collections(
+        return await self.providers.database.document_collections(
             document_id, offset=offset, limit=limit
         )
 
@@ -502,13 +502,13 @@ class ManagementService(Service):
     async def create_collection(
         self, name: str, description: str = ""
     ) -> UUID:
-        return await self.providers.database.handle.create_collection(
+        return await self.providers.database.create_collection(
             name, description
         )
 
     @telemetry_event("GetCollection")
     async def get_collection(self, collection_id: UUID) -> Optional[dict]:
-        return await self.providers.database.handle.get_collection(
+        return await self.providers.database.get_collection(
             collection_id
         )
 
@@ -519,16 +519,16 @@ class ManagementService(Service):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> bool:
-        return await self.providers.database.handle.update_collection(
+        return await self.providers.database.update_collection(
             collection_id, name, description
         )
 
     @telemetry_event("DeleteCollection")
     async def delete_collection(self, collection_id: UUID) -> bool:
-        await self.providers.database.handle.delete_collection_relational(
+        await self.providers.database.delete_collection_relational(
             collection_id
         )
-        await self.providers.database.handle.delete_collection_vector(
+        await self.providers.database.delete_collection_vector(
             collection_id
         )
         return True
@@ -537,7 +537,7 @@ class ManagementService(Service):
     async def list_collections(
         self, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.handle.list_collections(
+        return await self.providers.database.list_collections(
             offset=offset, limit=limit
         )
 
@@ -545,7 +545,7 @@ class ManagementService(Service):
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return await self.providers.database.handle.add_user_to_collection(
+        return await self.providers.database.add_user_to_collection(
             user_id, collection_id
         )
 
@@ -554,7 +554,7 @@ class ManagementService(Service):
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
         return (
-            await self.providers.database.handle.remove_user_from_collection(
+            await self.providers.database.remove_user_from_collection(
                 user_id, collection_id
             )
         )
@@ -563,7 +563,7 @@ class ManagementService(Service):
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.handle.get_users_in_collection(
+        return await self.providers.database.get_users_in_collection(
             collection_id, offset=offset, limit=limit
         )
 
@@ -571,7 +571,7 @@ class ManagementService(Service):
     async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.handle.get_collections_for_user(
+        return await self.providers.database.get_collections_for_user(
             user_id, offset, limit
         )
 
@@ -584,7 +584,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return await self.providers.database.handle.get_collections_overview(
+        return await self.providers.database.get_collections_overview(
             ([str(ele) for ele in collection_ids] if collection_ids else None),
             offset=offset,
             limit=limit,
@@ -594,7 +594,7 @@ class ManagementService(Service):
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return await self.providers.database.handle.documents_in_collection(
+        return await self.providers.database.documents_in_collection(
             collection_id, offset=offset, limit=limit
         )
 

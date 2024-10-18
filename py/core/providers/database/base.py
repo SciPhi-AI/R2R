@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 import asyncpg
 from sqlalchemy import TextClause, text
 
-if TYPE_CHECKING:
-    from core.providers.database.handle import PostgresHandle
-
 
 logger = logging.getLogger()
 

@@ -40,7 +40,7 @@ class PostgresKGProvider(KGProvider):
     ) -> None:
         super().__init__(config, *args, **kwargs)
 
-        self.db_provider = db_provider.handle
+        self.db_provider = db_provider
         self.embedding_provider = embedding_provider
 
         try:

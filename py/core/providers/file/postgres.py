@@ -19,11 +19,11 @@ class PostgresFileProvider(FileProvider):
     def __init__(self, config: FileConfig, db_provider: PostgresDBProvider):
         super().__init__(config)
         self.config: FileConfig = config
-        self.db_provider = db_provider.pool
-        self.pool = None
+        self.db_provider = db_provider
+        self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
 
-    async def initialize(self, pool: SemaphoreConnectionPool):
-        self.pool = pool
+    async def initialize(self):
+        self.pool = self.db_provider.pool
 
         async with self.pool.get_connection() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')

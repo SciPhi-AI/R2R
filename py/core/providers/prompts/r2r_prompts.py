@@ -20,7 +20,7 @@ class R2RPromptProvider(PromptProvider):
         self.prompts: dict[str, Prompt] = {}
         self.config: PromptConfig = config
         self.db_provider = db_provider
-        self.pool: Optional[asyncpg.pool.Pool] = None  # Initialize pool
+        self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
 
     async def __aenter__(self):
         await self.initialize()
@@ -34,9 +34,9 @@ class R2RPromptProvider(PromptProvider):
             await self.pool.close()
             self.pool = None
 
-    async def initialize(self, pool: SemaphoreConnectionPool):
+    async def initialize(self):
         try:
-            self.pool = pool
+            self.pool = self.db_provider.pool
 
             async with self.pool.get_connection() as conn:
                 await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')

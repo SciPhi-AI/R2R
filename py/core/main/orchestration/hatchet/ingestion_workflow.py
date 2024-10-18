@@ -150,14 +150,13 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                collection_id = await service.providers.database.handle.assign_document_to_collection(
+                # TODO: Move logic onto the `management service`
+                collection_id=generate_default_user_collection_id(str(document_info.user_id))                
+                await service.providers.database.assign_document_to_collection_relational(
                     document_id=document_info.id,
-                    collection_id=generate_default_user_collection_id(
-                        document_info.user_id
-                    ),
+                    collection_id=collection_id,
                 )
-
-                service.providers.database.handle.assign_document_to_collection(
+                await service.providers.database.assign_document_to_collection_vector(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
@@ -189,7 +188,7 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.handle.get_documents_overview(
+                    await self.ingestion_service.providers.database.get_documents_overview(
                         filter_document_ids=[document_id]
                     )
                 )["results"]
@@ -248,7 +247,7 @@ def hatchet_ingestion_factory(
                 )
 
             documents_overview = (
-                await self.ingestion_service.providers.database.handle.get_documents_overview(
+                await self.ingestion_service.providers.database.get_documents_overview(
                     filter_document_ids=document_ids,
                     filter_user_ids=None if user.is_superuser else [user.id],
                 )
@@ -400,13 +399,13 @@ def hatchet_ingestion_factory(
             )
 
             try:
-                collection_id = await self.ingestion_service.providers.database.handle.assign_document_to_collection(
+                # TODO - Move logic onto the `management service`
+                collection_id = generate_default_user_collection_id(document_info.user_id)
+                await self.ingestion_service.providers.database.assign_document_to_collection_relational(
                     document_id=document_info.id,
-                    collection_id=generate_default_user_collection_id(
-                        document_info.user_id
-                    ),
+                    collection_id=collection_id,
                 )
-                self.ingestion_service.providers.database.handle.assign_document_to_collection(
+                await self.ingestion_service.providers.database.assign_document_to_collection_vector(
                     document_id=document_info.id, collection_id=collection_id
                 )
             except Exception as e:
@@ -432,7 +431,7 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.handle.get_documents_overview(
+                    await self.ingestion_service.providers.database.get_documents_overview(
                         filter_document_ids=[document_id]
                     )
                 )["results"]
@@ -474,7 +473,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            self.ingestion_service.providers.database.handle.create_index(
+            self.ingestion_service.providers.database.create_index(
                 **parsed_data
             )
 

@@ -53,14 +53,15 @@ class VectorDBMixin(DatabaseMixin):
         self.quantization_type = kwargs.get("quantization_type")
 
     async def create_table(self):
+        # TODO - Move ids to `UUID` type
         # Create the vector table if it doesn't exist
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(VectorDBMixin.COLUMN_NAME)} (
-            extraction_id TEXT PRIMARY KEY,
-            document_id TEXT,
-            user_id TEXT,
-            collection_ids TEXT[],
-            vector vector({self.dimension}),
+            extraction_id UUID PRIMARY KEY,
+            document_id UUID,
+            user_id UUID,
+            collection_ids UUID[],
+            vec vector({self.dimension}),
             text TEXT,
             metadata JSONB
         );
@@ -91,9 +92,9 @@ class VectorDBMixin(DatabaseMixin):
                 entry.document_id,
                 entry.user_id,
                 entry.collection_ids,
-                entry.vector.data,
+                str(entry.vector.data),
                 entry.text,
-                entry.metadata,
+                json.dumps(entry.metadata),
             ),
         )
 
@@ -116,9 +117,9 @@ class VectorDBMixin(DatabaseMixin):
                 entry.document_id,
                 entry.user_id,
                 entry.collection_ids,
-                entry.vector.data,
+                str(entry.vector.data),
                 entry.text,
-                entry.metadata,
+                json.dumps(entry.metadata),
             )
             for entry in entries
         ]
@@ -154,21 +155,32 @@ class VectorDBMixin(DatabaseMixin):
         if search_settings.filters:
             where_clause = self._build_filters(search_settings.filters)
 
-        query = f"""
-        SELECT {select_clause}
-        FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)
-}
-        WHERE {where_clause}
-        ORDER BY {distance_func}(vec, $1::vector)
-        OFFSET $2
-        LIMIT $3
-        """
+#         query = f"""
+#         SELECT {select_clause}
+#         FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)
+# }
+#         WHERE {where_clause}
+#         ORDER BY {distance_func}(vec, $1::vector)
+#         OFFSET $2
+#         LIMIT $3
+#         """
+        vector_str = f"ARRAY[{','.join(map(str, query_vector))}]::vector"
 
+        query = f"""
+            SELECT {select_clause}
+            FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
+            WHERE {where_clause}
+            ORDER BY {distance_func}(vec, {vector_str})
+            OFFSET $1
+            LIMIT $2
+            """
         params = [
             query_vector,
             search_settings.offset,
             search_settings.search_limit,
         ]
+        print('query = ', query)
+        print('params = ', params)
 
         # Set index-specific session parameters
         await self.execute_query(
@@ -178,7 +190,7 @@ class VectorDBMixin(DatabaseMixin):
             "SET LOCAL hnsw.ef_search = $1",
             [max(search_settings.ef_search, search_settings.search_limit)],
         )
-
+        
         results = await self.fetch_query(query, params)
 
         return [
@@ -368,7 +380,7 @@ class VectorDBMixin(DatabaseMixin):
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
-        await self.execute_query(query, (collection_id, document_id))
+        await self.execute_query(query, (str(collection_id), str(document_id)))
 
     async def remove_document_from_collection_vector(
         self, document_id: str, collection_id: str
@@ -401,39 +413,42 @@ class VectorDBMixin(DatabaseMixin):
         limit: int = -1,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
-        vector_select = ", vector" if include_vectors else ""
+        vector_select = ", vec" if include_vectors else ""
         limit_clause = f"LIMIT {limit}" if limit > -1 else ""
 
         query = f"""
-        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata
+        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
         {vector_select}
         FROM {self._get_table_name(VectorDBMixin.COLUMN_NAME)}
         WHERE document_id = $1
         OFFSET $2
         {limit_clause};
         """
+        
         params = [document_id, offset]
-        if limit > -1:
-            params.append(limit)
 
         results = await self.fetch_query(query, params)
 
-        return {
-            "chunks": [
+        chunks = []
+        total = 0
+        if results:
+            total = results[0].get("total", 0)
+            chunks = [
                 {
                     "extraction_id": result["extraction_id"],
                     "document_id": result["document_id"],
                     "user_id": result["user_id"],
                     "collection_ids": result["collection_ids"],
                     "text": result["text"],
-                    "metadata": result["metadata"],
-                    **(
-                        {"vector": result["vector"]} if include_vectors else {}
+                    "metadata": json.loads(result["metadata"]),
+                    "vector": (
+                        json.loads(result["vec"]) if include_vectors else None
                     ),
                 }
                 for result in results
             ]
-        }
+
+        return {"results": chunks, "total_entries": total}
 
     async def create_index(
         self,
