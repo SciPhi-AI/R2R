@@ -5,10 +5,9 @@ from typing import Optional, Union
 from uuid import UUID
 
 
-class IngestionMethods:
-    @staticmethod
+class IngestionMixins:
     async def ingest_files(
-        client,
+        self,
         file_paths: list[str],
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
@@ -69,13 +68,12 @@ class IngestionMethods:
             if ingestion_config:
                 data["ingestion_config"] = json.dumps(ingestion_config)
 
-            return await client._make_request(
+            return await self._make_request(  # type: ignore
                 "POST", "ingest_files", data=data, files=files_tuples
             )
 
-    @staticmethod
     async def update_files(
-        client,
+        self,
         file_paths: list[str],
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
@@ -125,13 +123,12 @@ class IngestionMethods:
             if ingestion_config:
                 data["ingestion_config"] = json.dumps(ingestion_config)
 
-            return await client._make_request(
+            return await self._make_request(  # type: ignore
                 "POST", "update_files", data=data, files=files
             )
 
-    @staticmethod
     async def ingest_chunks(
-        client,
+        self,
         chunks: list[dict],
         document_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
@@ -153,4 +150,4 @@ class IngestionMethods:
             "document_id": document_id,
             "metadata": metadata,
         }
-        return await client._make_request("POST", "ingest_chunks", json=data)
+        return await self._make_request("POST", "ingest_chunks", json=data)  # type: ignore

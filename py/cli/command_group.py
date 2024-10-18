@@ -2,7 +2,7 @@ import asyncclick as click
 from asyncclick import pass_context
 from asyncclick.exceptions import Exit
 
-from sdk.client import R2RClient
+from r2r import R2RAsyncClient
 
 
 @click.group()
@@ -13,7 +13,7 @@ from sdk.client import R2RClient
 async def cli(ctx, base_url):
     """R2R CLI for all core operations."""
 
-    ctx.obj = R2RClient(base_url=base_url)
+    ctx.obj = R2RAsyncClient(base_url=base_url)
 
     # Override the default exit behavior
     def silent_exit(self, code=0):

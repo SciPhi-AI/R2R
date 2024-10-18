@@ -1518,9 +1518,9 @@ export class r2rClient {
   /**
    * Performs a single turn in a conversation with a RAG agent.
    * @param messages The messages to send to the agent.
+   * @param rag_generation_config RAG generation configuration.
    * @param vector_search_settings Vector search settings.
    * @param kg_search_settings KG search settings.
-   * @param rag_generation_config RAG generation configuration.
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
    * @returns A promise that resolves to the response from the server.
@@ -1528,11 +1528,13 @@ export class r2rClient {
   @feature("agent")
   async agent(
     messages: Message[],
+    rag_generation_config?: GenerationConfig | Record<string, any>,
     vector_search_settings?: VectorSearchSettings | Record<string, any>,
     kg_search_settings?: KGSearchSettings | Record<string, any>,
-    rag_generation_config?: GenerationConfig | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
+    conversation_id?: string,
+    branch_id?: string,
   ): Promise<any | AsyncGenerator<string, void, unknown>> {
     this._ensureAuthenticated();
 
@@ -1543,6 +1545,8 @@ export class r2rClient {
       rag_generation_config,
       task_prompt_override,
       include_title_if_available,
+      conversation_id,
+      branch_id,
     };
 
     Object.keys(json_data).forEach(

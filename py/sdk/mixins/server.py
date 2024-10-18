@@ -1,24 +1,21 @@
 from typing import Optional
 
 
-class ServerMethods:
-    @staticmethod
+class ServerMixins:
     async def health(self) -> dict:
-        return await self._make_request("GET", "health")
+        return await self._make_request("GET", "health")  # type: ignore
 
-    @staticmethod
-    async def server_stats(client) -> dict:
+    async def server_stats(self) -> dict:
         """
         Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
 
         Returns:
             dict: The server statistics.
         """
-        return await client._make_request("GET", "server_stats")
+        return await self._make_request("GET", "server_stats")  # type: ignore
 
-    @staticmethod
     async def logs(
-        client,
+        self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         run_type_filter: Optional[str] = None,
@@ -43,4 +40,4 @@ class ServerMethods:
             }.items()
             if value is not None
         }
-        return await client._make_request("GET", "logs", params=params)
+        return await self._make_request("GET", "logs", params=params)  # type: ignore
