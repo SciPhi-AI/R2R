@@ -362,7 +362,7 @@ class IngestionService(Service):
         chunk_enrichment_settings: ChunkEnrichmentSettings,
         document_chunks: list[dict],
         document_chunks_dict: dict,
-    ) -> str:
+    ) -> VectorEntry:
         # get chunks in context
 
         context_chunk_ids = []
@@ -394,7 +394,7 @@ class IngestionService(Service):
                 for neighbor in semantic_neighbors:
                     context_chunk_ids.append(neighbor["extraction_id"])
 
-        context_chunk_ids = set(context_chunk_ids)
+        context_chunk_ids = list(set(context_chunk_ids))
 
         context_chunk_texts = []
         for context_chunk_id in context_chunk_ids:
@@ -437,7 +437,7 @@ class IngestionService(Service):
                 chunk["metadata"]["chunk_enrichment_status"] = "success"
 
         data = await self.providers.embedding.async_get_embedding(
-            updated_chunk_text
+            updated_chunk_text or chunk["text"]
         )
 
         chunk["metadata"]["original_text"] = chunk["text"]
@@ -450,19 +450,19 @@ class IngestionService(Service):
             document_id=document_id,
             user_id=chunk["user_id"],
             collection_ids=chunk["collection_ids"],
-            text=updated_chunk_text,
+            text=updated_chunk_text or chunk["text"],
             metadata=chunk["metadata"],
         )
 
         return vector_entry_new
 
-    async def chunk_enrichment(self, document_id: UUID) -> None:
+    async def chunk_enrichment(self, document_id: UUID) -> int:
         # just call the pipe on every chunk of the document
 
+        # TODO: Why is the config not recognized as an ingestionconfig but as a providerconfig?
         chunk_enrichment_settings = (
-            self.providers.ingestion.config.chunk_enrichment_settings
+            self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
         )
-
         # get all document_chunks
         document_chunks = self.providers.database.vector.get_document_chunks(
             document_id=document_id,
