@@ -14,7 +14,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",
@@ -150,7 +149,6 @@ __all__ = [
     "generate_default_user_collection_id",
     "generate_collection_id_from_name",
     "generate_user_id",
-    "generate_message_id",
     "increment_version",
     "EntityType",
     "RelationshipType",

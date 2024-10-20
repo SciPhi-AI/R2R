@@ -1,5 +1,5 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
-from shared.abstractions.completion import CompletionRecord, MessageType
+from shared.abstractions.llm import MessageType
 from shared.abstractions.document import (
     DataType,
     Document,
@@ -71,7 +71,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",

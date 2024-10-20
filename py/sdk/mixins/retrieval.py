@@ -1,7 +1,7 @@
 import logging
 from typing import AsyncGenerator, Optional, Union
 
-from .models import (
+from ..models import (
     GenerationConfig,
     KGSearchSettings,
     Message,
@@ -13,10 +13,9 @@ from .models import (
 logger = logging.getLogger()
 
 
-class RetrievalMethods:
-    @staticmethod
+class RetrievalMixins:
     async def search(
-        client,
+        self,
         query: str,
         vector_search_settings: Optional[
             Union[dict, VectorSearchSettings]
@@ -46,11 +45,10 @@ class RetrievalMethods:
             "vector_search_settings": vector_search_settings,
             "kg_search_settings": kg_search_settings,
         }
-        return await client._make_request("POST", "search", json=data)
+        return await self._make_request("POST", "search", json=data)  # type: ignore
 
-    @staticmethod
     async def completion(
-        client,
+        self,
         messages: list[Union[dict, Message]],
         generation_config: Optional[Union[dict, GenerationConfig]] = None,
     ):
@@ -67,11 +65,10 @@ class RetrievalMethods:
             "generation_config": generation_config,
         }
 
-        return await client._make_request("POST", "completion", json=data)
+        return await self._make_request("POST", "completion", json=data)  # type: ignore
 
-    @staticmethod
     async def rag(
-        client,
+        self,
         query: str,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         vector_search_settings: Optional[
@@ -118,13 +115,12 @@ class RetrievalMethods:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return client._make_streaming_request("POST", "rag", json=data)
+            return self._make_streaming_request("POST", "rag", json=data)  # type: ignore
         else:
-            return await client._make_request("POST", "rag", json=data)
+            return await self._make_request("POST", "rag", json=data)  # type: ignore
 
-    @staticmethod
     async def agent(
-        client,
+        self,
         message: Optional[Union[dict, Message]] = None,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         vector_search_settings: Optional[
@@ -196,6 +192,6 @@ class RetrievalMethods:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return client._make_streaming_request("POST", "agent", json=data)
+            return self._make_streaming_request("POST", "agent", json=data)  # type: ignore
         else:
-            return await client._make_request("POST", "agent", json=data)
+            return await self._make_request("POST", "agent", json=data)  # type: ignore

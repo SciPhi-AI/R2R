@@ -1,5 +1,5 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
-from .completion import CompletionRecord, MessageType
+from .llm import MessageType
 from .document import (
     DataType,
     Document,
@@ -59,7 +59,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",

@@ -56,16 +56,13 @@ from cli.utils.timer import timer
     help="Max community description length",
 )
 @click.option(
-    "--max-llm-queries-for-global-search", type=JSON, help="Max community size"
-)
-@click.option(
     "--search-strategy",
     type=str,
     help="Vanilla search or complex search method like query fusion or HyDE.",
 )
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
 @pass_context
-def search(ctx, query, **kwargs):
+async def search(ctx, query, **kwargs):
     """Perform a search query."""
     client = ctx.obj
     vector_search_settings = {
@@ -95,14 +92,13 @@ def search(ctx, query, **kwargs):
             "entity_types",
             "relationships",
             "max_community_description_length",
-            "max_llm_queries_for_global_search",
             "local_search_limits",
         ]
         and v is not None
     }
 
     with timer():
-        results = client.search(
+        results = await client.search(
             query,
             vector_search_settings,
             kg_search_settings,
@@ -166,9 +162,6 @@ def search(ctx, query, **kwargs):
     help="Max community description length",
 )
 @click.option(
-    "--max-llm-queries-for-global-search", type=int, help="Max community size"
-)
-@click.option(
     "--search-strategy",
     type=str,
     default="vanilla",
@@ -176,7 +169,7 @@ def search(ctx, query, **kwargs):
 )
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
 @pass_context
-def rag(ctx, query, **kwargs):
+async def rag(ctx, query, **kwargs):
     """Perform a RAG query."""
     client = ctx.obj
     rag_generation_config = {
@@ -212,7 +205,6 @@ def rag(ctx, query, **kwargs):
             "entity_types",
             "relationships",
             "max_community_description_length",
-            "max_llm_queries_for_global_search",
             "local_search_limits",
         ]
         and v is not None
@@ -224,7 +216,7 @@ def rag(ctx, query, **kwargs):
         }
 
     with timer():
-        response = client.rag(
+        response = await client.rag(
             query,
             rag_generation_config,
             vector_search_settings,
@@ -232,7 +224,7 @@ def rag(ctx, query, **kwargs):
         )
 
         if rag_generation_config.get("stream"):
-            for chunk in response:
+            async for chunk in response:
                 click.echo(chunk, nl=False)
             click.echo()
         else:

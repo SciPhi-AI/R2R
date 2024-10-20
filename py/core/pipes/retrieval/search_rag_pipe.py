@@ -6,7 +6,6 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     CompletionProvider,
-    CompletionRecord,
     PipeType,
     PromptProvider,
 )
