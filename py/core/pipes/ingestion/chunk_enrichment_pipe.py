@@ -9,7 +9,6 @@
 # )
 
 
-
 # class ChunkEnrichmentPipe(AsyncPipe):
 #     """
 #     Enriches chunks using a specified embedding model.
@@ -24,7 +23,3 @@
 
 #     async def run(self, input: Input, state: Optional[AsyncState] = None, run_manager: Optional[RunManager] = None) -> AsyncGenerator[DocumentExtraction, None]:
 #         pass
-
-
-
-    

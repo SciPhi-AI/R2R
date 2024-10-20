@@ -3,13 +3,16 @@ from abc import ABC
 from enum import Enum
 from .base import Provider, ProviderConfig
 from shared.abstractions.ingestion import ChunkEnrichmentSettings
+
 logger = logging.getLogger()
 
 
 class IngestionConfig(ProviderConfig):
     provider: str = "r2r"
     excluded_parsers: list[str] = ["mp4"]
-    chunk_enrichment_settings: ChunkEnrichmentSettings = ChunkEnrichmentSettings()
+    chunk_enrichment_settings: ChunkEnrichmentSettings = (
+        ChunkEnrichmentSettings()
+    )
     extra_parsers: dict[str, str] = {}
 
     @property

@@ -141,19 +141,14 @@ def hatchet_ingestion_factory(
                     "is_update"
                 )
 
-                
                 # add contextual chunks
                 await self.ingestion_service.chunk_enrichment(
-                    document_id = document_info.id,
+                    document_id=document_info.id,
                 )
 
+                # delete original chunks
 
-                    # delete original chunks
-
-
-                    # delete original chunk vectors
-
-
+                # delete original chunk vectors
 
                 await self.ingestion_service.finalize_ingestion(
                     document_info, is_update=is_update

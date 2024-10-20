@@ -547,7 +547,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         return {"results": chunks, "total_entries": total}
 
-
     def get_semantic_neighbors(
         self,
         document_id: UUID,
@@ -558,9 +557,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
 
-        
-        logger.info(f"Getting semantic neighbors for document_id: {document_id} and chunk_id: {chunk_id}")
-
         table_name = self.collection.table.name
         query = text(
             f"""
@@ -568,7 +564,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 SELECT vec FROM {self.project_name}."{table_name}"
                 WHERE document_id = :document_id AND extraction_id = :chunk_id
             )
-            SELECT t.extraction_id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity 
+            SELECT t.extraction_id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
             FROM {self.project_name}."{table_name}" t, target_vector tv
             WHERE (t.vec <=> tv.vec) >= :similarity_threshold
                 AND t.document_id = :document_id
@@ -580,16 +576,25 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as sess:
             results = sess.execute(
-                query, 
+                query,
                 {
-                    "document_id": document_id, 
-                    "chunk_id": chunk_id, 
+                    "document_id": document_id,
+                    "chunk_id": chunk_id,
                     "similarity_threshold": similarity_threshold,
-                    "limit": limit
-                }
+                    "limit": limit,
+                },
             ).fetchall()
 
-        return [{"extraction_id": r[0], "text": r[1], "metadata": r[2], "document_id": r[3], "similarity": r[4]} for r in results]
+        return [
+            {
+                "extraction_id": r[0],
+                "text": r[1],
+                "metadata": r[2],
+                "document_id": r[3],
+                "similarity": r[4],
+            }
+            for r in results
+        ]
 
     def close(self) -> None:
         if self.vx:

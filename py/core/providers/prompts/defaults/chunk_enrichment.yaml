@@ -8,12 +8,12 @@ chunk_enrichment:
 
     ## Context Chunks:
     {context_chunks}
-    
+
     ## Chunk:
     {chunk}
 
-    Note that: 
-    - You will make the chunk extremely precise and useful 
+    Note that:
+    - You will make the chunk extremely precise and useful
 
     ## Response:
   input_types:
