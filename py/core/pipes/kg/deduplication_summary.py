@@ -52,15 +52,17 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
 
         # find the index until the length is less than 1024
         index = 0
+        description_length = 0
         while index < len(entity_descriptions):
             if (
-                len(entity_descriptions[index]) + len(description)
+                len(entity_descriptions[index]) + description_length
                 > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
             ):
                 break
             index += 1
+            description_length += len(entity_descriptions[index])
 
-        description = await self.llm_provider.aget_completion(
+        completion = await self.llm_provider.aget_completion(
             messages=await self.prompt_provider._get_message_payload(
                 task_prompt_name=self.kg_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
                 task_inputs={
@@ -75,7 +77,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
 
         # get the $$description$$
         try:
-            description = description.choices[0].message.content
+            description = completion.choices[0].message.content or ""
             description = description.split("$$")[1]
         except:
             logger.error(
@@ -93,26 +95,28 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
 
         # TODO: Expose this as a hyperparameter
         if len(entity_descriptions) <= 5:
-            return Entity(name=entity_name, description="\n".join(entity_descriptions))
+            return Entity(
+                name=entity_name, description="\n".join(entity_descriptions)
+            )
         else:
             return await self._merge_entity_descriptions_llm_prompt(
                 entity_name, entity_descriptions, generation_config
             )
 
     async def _prepare_and_upsert_entities(
-        self, entities_batch: list[dict], collection_id: str
-    ) -> list[dict]:
+        self, entities_batch: list[Entity], collection_id: UUID
+    ) -> Any:
 
         embeddings = await self.embedding_provider.async_get_embeddings(
-            [entity.description for entity in entities_batch]
+            [entity.description or "" for entity in entities_batch]
         )
 
         for i, entity in enumerate(entities_batch):
-            entity.description_embedding = str(embeddings[i]) # type: ignore    
+            entity.description_embedding = str(embeddings[i])  # type: ignore
             entity.collection_id = collection_id
             entity.attributes = {}
 
-        result = await self.kg_provider.add_entity_descriptions(
+        result = await self.kg_provider.update_entity_descriptions(
             entities_batch,
         )
 
@@ -129,7 +133,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[dict, None]:
+    ) -> AsyncGenerator[Any, None]:
 
         collection_id = input.message["collection_id"]
         offset = input.message["offset"]
@@ -155,7 +159,6 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
             )
         )["entities"]
 
-
         logger.info(f"Entities: {entities}")
 
         logger.info(
@@ -170,13 +173,15 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
 
         entity_descriptions = (
             await self.kg_provider.get_entities(
-                collection_id,                
+                collection_id,
                 entity_names=entity_names,
                 entity_table_name="entity_embedding",
             )
         )["entities"]
 
-        entity_descriptions_names = [entity.name for entity in entity_descriptions]
+        entity_descriptions_names = [
+            entity.name for entity in entity_descriptions
+        ]
 
         logger.info(
             f"Retrieved {entity_descriptions_names} entity descriptions names for collection {collection_id}"
@@ -186,7 +191,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
             f"Retrieved {len(entity_descriptions)} entity descriptions for collection {collection_id}"
         )
 
-        entity_descriptions_dict = {}
+        entity_descriptions_dict: dict[str, list[str]] = {}
         for entity_description in entity_descriptions:
             if not entity_description.name in entity_descriptions_dict:
                 entity_descriptions_dict[entity_description.name] = []
@@ -217,6 +222,8 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         entities_batch = []
         for async_result in asyncio.as_completed(tasks):
             result = await async_result
+            yield result
+
             entities_batch.append(result)
 
             if len(entities_batch) == 32:
@@ -229,8 +236,3 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
             await self._prepare_and_upsert_entities(
                 entities_batch, collection_id
             )
-
-        yield {
-            "result": f"successfully deduplicated {len(entities)} entities for collection {collection_id}",
-            "num_entities": len(entities),
-        }

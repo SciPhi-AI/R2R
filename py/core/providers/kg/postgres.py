@@ -1090,7 +1090,9 @@ class PostgresKGProvider(KGProvider):
 
         if limit != -1:
             params.extend([offset, limit])
-            offset_limit_clause = f"OFFSET ${len(params) - 1} LIMIT ${len(params)}"
+            offset_limit_clause = (
+                f"OFFSET ${len(params) - 1} LIMIT ${len(params)}"
+            )
         else:
             params.append(offset)
             offset_limit_clause = f"OFFSET ${len(params)}"
@@ -1271,17 +1273,22 @@ class PostgresKGProvider(KGProvider):
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]
 
-    async def add_entity_descriptions(self, entities: list[Entity]):
-        
+    async def update_entity_descriptions(self, entities: list[Entity]):
+
         query = f"""
-            UPDATE {self._get_table_name("entity_deduplicated")} 
+            UPDATE {self._get_table_name("entity_deduplicated")}
             SET description = $3, description_embedding = $4
             WHERE name = $1 AND collection_id = $2
         """
 
         inputs = [
-            (entity.name, entity.collection_id, entity.description, entity.description_embedding)
+            (
+                entity.name,
+                entity.collection_id,
+                entity.description,
+                entity.description_embedding,
+            )
             for entity in entities
         ]
 
-        await self.execute_many(query, inputs)
+        await self.execute_many(query, inputs)  # type: ignore

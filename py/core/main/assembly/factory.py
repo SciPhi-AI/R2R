@@ -635,7 +635,7 @@ class R2RPipeFactory:
         return KGEntityDeduplicationSummaryPipe(
             kg_provider=self.providers.kg,
             prompt_provider=self.providers.prompt,
-            completion_provider=self.providers.llm,
+            llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_deduplication_summary_pipe"),
         )

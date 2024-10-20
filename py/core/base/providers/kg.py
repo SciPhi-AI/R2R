@@ -108,8 +108,8 @@ class KGProvider(ABC):
     async def get_entities(
         self,
         collection_id: UUID,
-        offset: int,
-        limit: int,
+        offset: int = 0,
+        limit: int = -1,
         entity_ids: list[str] | None = None,
         entity_names: list[str] | None = None,
         entity_table_name: str = "entity_embedding",
@@ -262,6 +262,11 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_community_count(self, collection_id: UUID) -> int:
         """Abstract method to get the community count."""
+        pass
+
+    @abstractmethod
+    async def update_entity_descriptions(self, entities: list[Entity]):
+        """Abstract method to update entity descriptions."""
         pass
 
 
