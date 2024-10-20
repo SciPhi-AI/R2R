@@ -1270,3 +1270,18 @@ class PostgresKGProvider(KGProvider):
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]
+
+    async def add_entity_descriptions(self, entities: list[Entity]):
+        
+        query = f"""
+            UPDATE {self._get_table_name("entity_deduplicated")} 
+            SET description = $3, description_embedding = $4
+            WHERE name = $1 AND collection_id = $2
+        """
+
+        inputs = [
+            (entity.name, entity.collection_id, entity.description, entity.description_embedding)
+            for entity in entities
+        ]
+
+        await self.execute_many(query, inputs)

@@ -116,7 +116,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         logger.info(
             f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
         )
-        await self.kg_provider.add_entities(
+        await self.kg_provider.add_entity_descriptions(
             deduplicated_entities_list,
             table_name="entity_deduplicated",
             conflict_columns=["name", "collection_id", 'attributes'],
