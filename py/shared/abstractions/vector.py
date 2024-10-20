@@ -109,6 +109,7 @@ class VectorTableName(str, Enum):
 
     CHUNKS = "chunks"
     ENTITIES = "entity_embedding"
+    ENTITIES_DEDUPLICATED = "entity_deduplicated"
     # TODO: Add support for triples
     # TRIPLES = "triple_raw"
     COMMUNITIES = "community_report"
