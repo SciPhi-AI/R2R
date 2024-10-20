@@ -108,6 +108,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 collection_id=collection_id,
                 extraction_ids=entity["extraction_ids"],
                 document_ids=entity["document_ids"],
+                attributes={},
             )
             for name, entity in deduplicated_entities.items()
         ]
@@ -118,7 +119,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         await self.kg_provider.add_entities(
             deduplicated_entities_list,
             table_name="entity_deduplicated",
-            # conflict_columns=["name", "collection_id"],
+            conflict_columns=["name", "collection_id", 'attributes'],
         )
 
         return {

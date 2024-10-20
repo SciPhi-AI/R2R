@@ -110,13 +110,14 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         for i, entity in enumerate(entities_batch):
             entity.description_embedding = embeddings[i]
             entity.collection_id = collection_id
-            entity.extraction_ids = []
-            entity.document_ids = []
+            entity.attributes = {}
+
+        print(entities_batch)
 
         result = await self.kg_provider.add_entities(
             entities_batch,
             table_name="entity_deduplicated",
-            # conflict_columns=["name", "collection_id"],
+            conflict_columns=["name", "collection_id", 'attributes'],
         )
 
         logger.info(
