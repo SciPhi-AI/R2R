@@ -111,6 +111,7 @@ class KGProvider(ABC):
         offset: int,
         limit: int,
         entity_ids: list[str] | None = None,
+        entity_names: list[str] | None = None,
         entity_table_name: str = "entity_embedding",
     ) -> dict:
         """Abstract method to get entities."""

@@ -48,7 +48,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         entity_name: str,
         entity_descriptions: list[str],
         generation_config: GenerationConfig,
-    ) -> str:
+    ) -> Entity:
 
         # find the index until the length is less than 1024
         index = 0
@@ -89,11 +89,11 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         entity_name: str,
         entity_descriptions: list[str],
         generation_config: GenerationConfig,
-    ) -> str:
+    ) -> Entity:
 
         # TODO: Expose this as a hyperparameter
         if len(entity_descriptions) <= 5:
-            return "\n".join(entity_descriptions)
+            return Entity(name=entity_name, description="\n".join(entity_descriptions))
         else:
             return await self._merge_entity_descriptions_llm_prompt(
                 entity_name, entity_descriptions, generation_config
@@ -103,18 +103,20 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         self, entities_batch: list[dict], collection_id: str
     ) -> list[dict]:
 
-        embeddings = await self.embedding_provider.get_embeddings(
-            [description["description"] for description in entities_batch]
+        embeddings = await self.embedding_provider.async_get_embeddings(
+            [entity.description for entity in entities_batch]
         )
 
         for i, entity in enumerate(entities_batch):
             entity.description_embedding = embeddings[i]
             entity.collection_id = collection_id
+            entity.extraction_ids = []
+            entity.document_ids = []
 
         result = await self.kg_provider.add_entities(
             entities_batch,
-            entity_table_name="entity_deduplicated",
-            conflict_columns=["name", "collection_id"],
+            table_name="entity_deduplicated",
+            # conflict_columns=["name", "collection_id"],
         )
 
         logger.info(
@@ -156,6 +158,9 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
             )
         )["entities"]
 
+
+        logger.info(f"Entities: {entities}")
+
         logger.info(
             f"Retrieved {len(entities)} entities for collection {collection_id}"
         )
@@ -168,15 +173,19 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
 
         entity_descriptions = (
             await self.kg_provider.get_entities(
-                collection_id,
+                collection_id,                
                 offset,
-                limit,
+                -1,
                 entity_names=entity_names,
                 entity_table_name="entity_embedding",
             )
         )["entities"]
 
-        logger.info(f"Entity descriptions: {entity_descriptions}")
+        entity_descriptions_names = [entity.name for entity in entity_descriptions]
+
+        logger.info(
+            f"Retrieved {entity_descriptions_names} entity descriptions names for collection {collection_id}"
+        )
 
         logger.info(
             f"Retrieved {len(entity_descriptions)} entity descriptions for collection {collection_id}"
@@ -193,6 +202,8 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         logger.info(
             f"Merging entity descriptions for collection {collection_id}"
         )
+
+        logger.info(f"Entity descriptions dict: {entity_descriptions_dict}")
 
         tasks = []
         for entity in entities:

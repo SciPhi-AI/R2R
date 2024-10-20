@@ -149,7 +149,8 @@ class PostgresKGProvider(KGProvider):
             document_ids UUID[] NOT NULL,
             collection_id UUID NOT NULL,
             description_embedding {vector_column_str},
-            attributes JSONB
+            attributes JSONB,
+            UNIQUE (name, collection_id, attributes)
         );"""
 
         await self.execute_query(query)
@@ -220,6 +221,8 @@ class PostgresKGProvider(KGProvider):
             VALUES ({placeholders})
             {on_conflict_query}
         """
+
+        logger.info(f"Query: {QUERY}")
 
         logger.info(f"Upserting {len(objects)} objects into {table_name}")
 
@@ -1069,7 +1072,7 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: UUID,
         offset: int = 0,
-        limit: int = 100,
+        limit: int = -1,
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "entity_embedding",
@@ -1085,7 +1088,12 @@ class PostgresKGProvider(KGProvider):
             conditions.append(f"name = ANY(${len(params) + 1})")
             params.append(entity_names)
 
-        params.extend([offset, limit])
+        if limit != -1:
+            params.extend([offset, limit])
+            offset_limit_clause = f"OFFSET ${len(params) - 1} LIMIT ${len(params)}"
+        else:
+            params.append(offset)
+            offset_limit_clause = f"OFFSET ${len(params)}"
 
         if entity_table_name == "entity_deduplicated":
             # entity deduplicated table has document_ids, not document_id.
@@ -1096,7 +1104,7 @@ class PostgresKGProvider(KGProvider):
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY id
-            OFFSET ${len(params) - 1} LIMIT ${len(params)}
+            {offset_limit_clause}
             """
         else:
             query = f"""
@@ -1108,7 +1116,7 @@ class PostgresKGProvider(KGProvider):
             )
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY id
-            OFFSET ${len(params) - 1} LIMIT ${len(params)}
+            {offset_limit_clause}
         """
 
         results = await self.fetch_query(query, params)
