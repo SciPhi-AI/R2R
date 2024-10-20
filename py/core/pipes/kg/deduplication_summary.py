@@ -59,20 +59,20 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
                 > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
             ):
                 break
-            index += 1
             description_length += len(entity_descriptions[index])
+            index += 1
 
         completion = await self.llm_provider.aget_completion(
             messages=await self.prompt_provider._get_message_payload(
                 task_prompt_name=self.kg_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
                 task_inputs={
-                    "entity_name": (entity_name,),
-                    "entity_descriptions": (
-                        "\n".join(entity_descriptions[:index]),
+                    "entity_name": entity_name,
+                    "entity_descriptions": "\n".join(
+                        entity_descriptions[:index]
                     ),
                 },
             ),
-            generation_config=generation_config,
+            generation_config=GenerationConfig(**generation_config),  # type: ignore
         )
 
         # get the $$description$$
