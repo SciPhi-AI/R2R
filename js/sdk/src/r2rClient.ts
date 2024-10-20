@@ -1523,6 +1523,8 @@ export class r2rClient {
    * @param kg_search_settings KG search settings.
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
+   * @param conversation_id The ID of the conversation, if not a new conversation.
+   * @param branch_id The ID of the branch to use, if not a new branch.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("agent")
