@@ -174,8 +174,6 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         entity_descriptions = (
             await self.kg_provider.get_entities(
                 collection_id,                
-                offset,
-                -1,
                 entity_names=entity_names,
                 entity_table_name="entity_embedding",
             )
