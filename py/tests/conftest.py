@@ -191,7 +191,7 @@ async def postgres_file_provider(file_config, temporary_postgres_db_provider):
     )
     await file_provider.initialize()
     yield file_provider
-    await file_provider._close_connection()
+    # await file_provider._close_connection()
 
 
 # LLM provider

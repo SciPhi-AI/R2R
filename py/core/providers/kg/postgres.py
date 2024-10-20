@@ -199,9 +199,7 @@ class PostgresKGProvider(KGProvider):
         Upsert objects into the specified table.
         """
         # Get non-null attributes from the first object
-        non_null_attrs = {
-            k: v for k, v in objects[0].__dict__.items() if v is not None
-        }
+        non_null_attrs = {k: v for k, v in objects[0].items() if v is not None}
         columns = ", ".join(non_null_attrs.keys())
 
         placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
@@ -229,17 +227,12 @@ class PostgresKGProvider(KGProvider):
         # Filter out null values for each object
         params = [
             tuple(
-                (
-                    json.dumps(v)
-                    if isinstance(v, dict)
-                    else (str(v) if v is not None else None)
-                )
-                for v in obj.__dict__.values()
+                (json.dumps(v) if isinstance(v, dict) else v)
+                for v in obj.values()
                 if v is not None
             )
             for obj in objects
         ]
-
         logger.info(f"Upserting {len(params)} params into {table_name}")
 
         return await self.execute_many(QUERY, params)  # type: ignore
@@ -249,7 +242,6 @@ class PostgresKGProvider(KGProvider):
         entities: list[Entity],
         table_name: str,
         conflict_columns: list[str] = [],
-        embedding_col_name: str = "description_embedding",
     ) -> asyncpg.Record:
         """
         Upsert entities into the entities_raw table. These are raw entities extracted from the document.
@@ -261,18 +253,48 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
+        cleaned_entities = []
         for entity in entities:
+            entity_dict = entity.to_dict()
 
-            if getattr(entity, embedding_col_name, None) is not None:
-                setattr(
-                    entity,
-                    embedding_col_name,
-                    str(getattr(entity, embedding_col_name)),  # type: ignore
-                )
+            entity_dict["extraction_ids"] = (
+                entity_dict["extraction_ids"]
+                if entity_dict.get("extraction_ids")
+                else []
+            )
+            entity_dict["description_embedding"] = (
+                str(entity_dict["description_embedding"])
+                if entity_dict.get("description_embedding")
+                else None
+            )
+            # entity_dict["extraction_ids"] = (
+            #     [str(ele) for ele in entity_dict["extraction_ids"]]
+            #     if entity_dict.get("extraction_ids")
+            #     else []
+            # )
+            # entity_dict["description_embedding"] = (
+            #     str(entity_dict["description_embedding"])
+            #     if entity_dict.get("description_embedding")
+            #     else None
+            # )
 
+            # entity_dict["extraction_ids"] = (
+            #     json.dumps([str(ele) for ele in entity_dict["extraction_ids"]])
+            #     if entity_dict.get("extraction_ids")
+            #     else json.dumps([])
+            # )
+            # entity_dict["description_embedding"] = (
+            #     str(entity_dict["description_embedding"])
+            #     if entity_dict.get("description_embedding")
+            #     else None
+            # )
+            cleaned_entities.append(entity_dict)
+        print("entity_dict = ", entity_dict)
         logger.info(f"Upserting {len(entities)} entities into {table_name}")
 
-        return await self._add_objects(entities, table_name, conflict_columns)
+        return await self._add_objects(
+            cleaned_entities, table_name, conflict_columns
+        )
 
     async def add_triples(
         self,
@@ -289,7 +311,9 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        return await self._add_objects(triples, table_name)
+        return await self._add_objects(
+            [ele.to_dict() for ele in triples], table_name
+        )
 
     async def add_kg_extractions(
         self,
