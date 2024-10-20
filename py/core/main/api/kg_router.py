@@ -12,6 +12,7 @@ from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
+    WrappedKGEntityDeduplicationResponse,
     WrappedKGTriplesResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
@@ -303,4 +304,57 @@ class KGRouter(BaseRouter):
                 limit,
                 levels,
                 community_numbers,
+            )
+
+        @self.router.post("/deduplicate_entities")
+        @self.base_endpoint
+        async def deduplicate_entities(
+            collection_id: Optional[UUID] = Body(
+                None, description="Collection ID to deduplicate entities for."
+            ),
+            run_type: Optional[KGRunType] = Body(
+                None, description="Run type for the deduplication process."
+            ),
+            deduplication_settings: Optional[dict] = Body(
+                None, description="Settings for the deduplication process."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedKGEntityDeduplicationResponse:
+            """
+            Deduplicate entities in the knowledge graph.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            server_deduplication_settings = (
+                self.service.providers.kg.config.kg_entity_deduplication_settings.dict()
+            )
+
+            if deduplication_settings:
+                server_deduplication_settings = update_settings_from_dict(
+                    server_deduplication_settings, deduplication_settings
+                )
+
+            logger.info(
+                f"Running deduplicate_entities on collection {collection_id}"
+            )
+            logger.info(f"Input data: {server_deduplication_settings}")
+
+            workflow_input = {
+                "collection_id": str(collection_id),
+                "run_type": run_type,
+                "kg_entity_deduplication_settings": server_deduplication_settings,
+                "user": auth_user.json(),
+            }
+
+            return await self.orchestration_provider.run_workflow(  # type: ignore
+                "entity-deduplication", {"request": workflow_input}, {}
             )

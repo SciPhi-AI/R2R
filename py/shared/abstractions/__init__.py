@@ -22,7 +22,12 @@ from .graph import (
     RelationshipType,
     Triple,
 )
-from .kg import KGCreationSettings, KGEnrichmentSettings, KGRunType
+from .kg import (
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    KGRunType,
+)
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,

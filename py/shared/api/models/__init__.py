@@ -14,8 +14,10 @@ from shared.api.models.ingestion.responses import (
 from shared.api.models.kg.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
+    KGEntityDeduplicationResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
+    WrappedKGEntityDeduplicationResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,

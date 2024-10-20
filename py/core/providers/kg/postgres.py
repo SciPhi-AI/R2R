@@ -139,6 +139,22 @@ class PostgresKGProvider(KGProvider):
 
         await self.execute_query(query)
 
+        # deduplicated entities table
+        query = f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_deduplicated")} (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            extraction_ids UUID[] NOT NULL,
+            document_ids UUID[] NOT NULL,
+            collection_id UUID NOT NULL,
+            description_embedding {vector_column_str},
+            attributes JSONB,
+            UNIQUE (name, collection_id, attributes)
+        );"""
+
+        await self.execute_query(query)
+
         # communities table, result of the Leiden algorithm
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
@@ -174,7 +190,10 @@ class PostgresKGProvider(KGProvider):
         await self.execute_query(query)
 
     async def _add_objects(
-        self, objects: list[Any], table_name: str
+        self,
+        objects: list[Any],
+        table_name: str,
+        conflict_columns: list[str] = [],
     ) -> asyncpg.Record:
         """
         Upsert objects into the specified table.
@@ -187,10 +206,25 @@ class PostgresKGProvider(KGProvider):
 
         placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
 
+        if conflict_columns:
+            conflict_columns_str = ", ".join(conflict_columns)
+            replace_columns_str = ", ".join(
+                f"{column} = EXCLUDED.{column}"
+                for column in non_null_attrs.keys()
+            )
+            on_conflict_query = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {replace_columns_str}"
+        else:
+            on_conflict_query = ""
+
         QUERY = f"""
             INSERT INTO {self._get_table_name(table_name)} ({columns})
             VALUES ({placeholders})
+            {on_conflict_query}
         """
+
+        logger.info(f"Query: {QUERY}")
+
+        logger.info(f"Upserting {len(objects)} objects into {table_name}")
 
         # Filter out null values for each object
         params = [
@@ -205,12 +239,17 @@ class PostgresKGProvider(KGProvider):
             )
             for obj in objects
         ]
+
+        logger.info(f"Upserting {len(params)} params into {table_name}")
+
         return await self.execute_many(QUERY, params)  # type: ignore
 
     async def add_entities(
         self,
         entities: list[Entity],
         table_name: str,
+        conflict_columns: list[str] = [],
+        embedding_col_name: str = "description_embedding",
     ) -> asyncpg.Record:
         """
         Upsert entities into the entities_raw table. These are raw entities extracted from the document.
@@ -222,7 +261,18 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        return await self._add_objects(entities, table_name)
+        for entity in entities:
+
+            if getattr(entity, embedding_col_name, None) is not None:
+                setattr(
+                    entity,
+                    embedding_col_name,
+                    str(getattr(entity, embedding_col_name)),  # type: ignore
+                )
+
+        logger.info(f"Upserting {len(entities)} entities into {table_name}")
+
+        return await self._add_objects(entities, table_name, conflict_columns)
 
     async def add_triples(
         self,
@@ -411,7 +461,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_embedding"
+            table_name = "entity_deduplicated"
         elif search_type == "__Relationship__":
             table_name = "triple_raw"
         elif search_type == "__Community__":
@@ -1026,8 +1076,9 @@ class PostgresKGProvider(KGProvider):
         self,
         collection_id: UUID,
         offset: int = 0,
-        limit: int = 100,
+        limit: int = -1,
         entity_ids: Optional[List[str]] = None,
+        entity_names: Optional[List[str]] = None,
         entity_table_name: str = "entity_embedding",
     ) -> dict:
         conditions = []
@@ -1037,9 +1088,32 @@ class PostgresKGProvider(KGProvider):
             conditions.append(f"id = ANY(${len(params) + 1})")
             params.append(entity_ids)
 
-        params.extend([offset, limit])
+        if entity_names:
+            conditions.append(f"name = ANY(${len(params) + 1})")
+            params.append(entity_names)
 
-        query = f"""
+        if limit != -1:
+            params.extend([offset, limit])
+            offset_limit_clause = (
+                f"OFFSET ${len(params) - 1} LIMIT ${len(params)}"
+            )
+        else:
+            params.append(offset)
+            offset_limit_clause = f"OFFSET ${len(params)}"
+
+        if entity_table_name == "entity_deduplicated":
+            # entity deduplicated table has document_ids, not document_id.
+            # we directly use the collection_id to get the entities list.
+            query = f"""
+            SELECT id, name, description, extraction_ids, document_ids
+            FROM {self._get_table_name(entity_table_name)}
+            WHERE collection_id = $1
+            {" AND " + " AND ".join(conditions) if conditions else ""}
+            ORDER BY id
+            {offset_limit_clause}
+            """
+        else:
+            query = f"""
             SELECT id, name, description, extraction_ids, document_id
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
@@ -1048,11 +1122,15 @@ class PostgresKGProvider(KGProvider):
             )
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY id
-            OFFSET ${len(params) - 1} LIMIT ${len(params)}
+            {offset_limit_clause}
         """
+
         results = await self.fetch_query(query, params)
 
         entities = [Entity(**entity) for entity in results]
+
+        logger.info(f"Params: {params}")
+        logger.info(f"Entities: {entities}")
 
         total_entries = await self.get_entity_count(
             collection_id=collection_id, entity_table_name=entity_table_name
@@ -1129,19 +1207,31 @@ class PostgresKGProvider(KGProvider):
         conditions = []
         params = []
 
-        if collection_id:
-            conditions.append(
-                f"""
-                document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
+        if entity_table_name == "entity_deduplicated":
+
+            if document_id:
+                raise ValueError(
+                    "document_id is not supported for entity_deduplicated table"
                 )
-                """
-            )
-            params.append(str(collection_id))
+
+            if collection_id:
+                conditions.append("collection_id = $1")
+                params.append(str(collection_id))
+
         else:
-            conditions.append("document_id = $1")
-            params.append(str(document_id))
+            if collection_id:
+                conditions.append(
+                    f"""
+                    document_id = ANY(
+                        SELECT document_id FROM {self._get_table_name("document_info")}
+                        WHERE $1 = ANY(collection_ids)
+                    )
+                    """
+                )
+                params.append(str(collection_id))
+            else:
+                conditions.append("document_id = $1")
+                params.append(str(document_id))
 
         if distinct:
             count_value = "DISTINCT name"
@@ -1186,3 +1276,23 @@ class PostgresKGProvider(KGProvider):
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]
+
+    async def update_entity_descriptions(self, entities: list[Entity]):
+
+        query = f"""
+            UPDATE {self._get_table_name("entity_deduplicated")}
+            SET description = $3, description_embedding = $4
+            WHERE name = $1 AND collection_id = $2
+        """
+
+        inputs = [
+            (
+                entity.name,
+                entity.collection_id,
+                entity.description,
+                entity.description_embedding,
+            )
+            for entity in entities
+        ]
+
+        await self.execute_many(query, inputs)  # type: ignore

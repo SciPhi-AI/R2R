@@ -53,6 +53,9 @@ jobs:
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
 
+      - name: Run Pytest Ingestion Tests
+        run: poetry run pytest
+
       - name: Run CLI Ingestion Tests
         if: matrix.test_category == 'cli-ingestion'
         uses: ./.github/actions/run-cli-ingestion-tests

@@ -162,7 +162,6 @@ async def test_community_summary_prompt(
     summary = await kg_community_summary_pipe.community_summary_prompt(
         entities_list, triples_raw_list, max_summary_input_length
     )
-    print("summary = ", summary)
     expected_summary = """
             Entity: Entity1
             Descriptions:

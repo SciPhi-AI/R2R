@@ -4,6 +4,7 @@ import logging
 import time
 import uuid
 from typing import Any, Optional, Tuple, TypedDict, Union
+from uuid import UUID
 
 from core.base import VectorEntry, VectorQuantizationType, VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
