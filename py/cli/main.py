@@ -1,13 +1,5 @@
 from cli.command_group import cli
-from cli.commands import (
-    auth,
-    ingestion,
-    kg,
-    management,
-    retrieval,
-    server,
-    templates,
-)
+from cli.commands import auth, ingestion, kg, management, retrieval, server
 from cli.utils.telemetry import posthog, telemetry
 
 
@@ -51,13 +43,10 @@ add_command_with_telemetry(server.serve)
 add_command_with_telemetry(server.update)
 add_command_with_telemetry(server.version)
 
-# Templates
-add_command_with_telemetry(templates.clone)
-
 
 def main():
     try:
-        cli(_anyio_backend="asyncio")
+        cli()
     except SystemExit:
         # Silently exit without printing the traceback
         pass

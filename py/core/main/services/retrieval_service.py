@@ -1,17 +1,14 @@
 import json
 import logging
 import time
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 from core import R2RStreamingRAGAgent
 from core.base import (
-    CompletionRecord,
     GenerationConfig,
     KGSearchSettings,
     Message,
-    MessageType,
     R2RException,
     R2RLoggingProvider,
     RunManager,
@@ -22,7 +19,6 @@ from core.base import (
 )
 from core.base.api.models import RAGResponse, SearchResponse, UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
-from core.utils import generate_message_id
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -279,6 +275,14 @@ class RetrievalService(Service):
                                 conversation_id, branch_id
                             )
                         )
+                        if not conversation:
+                            logger.error(
+                                f"No conversation found for ID: {conversation_id}"
+                            )
+                            raise R2RException(
+                                status_code=404,
+                                message=f"Conversation not found: {conversation_id}",
+                            )
                         messages = [conv[1] for conv in conversation] + [
                             message
                         ]
@@ -302,12 +306,13 @@ class RetrievalService(Service):
                                     conversation_id, inner_message, parent_id
                                 )
                             )
-                        message = messages[-1]
+
+                current_message = messages[-1]
 
                 # Save the new message to the conversation
                 message_id = await self.logging_connection.add_message(
                     conversation_id,  # type: ignore
-                    message,  # type: ignore
+                    current_message,  # type: ignore
                     parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
                 )
 

@@ -46,7 +46,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",

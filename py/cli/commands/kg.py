@@ -30,7 +30,7 @@ from cli.utils.timer import timer
     help="Force the graph creation process.",
 )
 @pass_context
-def create_graph(
+async def create_graph(
     ctx, collection_id, run, kg_creation_settings, force_kg_creation
 ):
     client = ctx.obj
@@ -52,7 +52,7 @@ def create_graph(
         kg_creation_settings = {"force_kg_creation": True}
 
     with timer():
-        response = client.create_graph(
+        response = await client.create_graph(
             collection_id=collection_id,
             run_type=run_type,
             kg_creation_settings=kg_creation_settings,
@@ -138,7 +138,7 @@ def deduplicate_entities(
     help="Settings for the graph enrichment process.",
 )
 @pass_context
-def enrich_graph(
+async def enrich_graph(
     ctx, collection_id, run, force_kg_enrichment, kg_enrichment_settings
 ):
     """
@@ -163,7 +163,7 @@ def enrich_graph(
         kg_enrichment_settings = {"force_kg_enrichment": True}
 
     with timer():
-        response = client.enrich_graph(
+        response = await client.enrich_graph(
             collection_id, run_type, kg_enrichment_settings
         )
 
@@ -193,20 +193,15 @@ def enrich_graph(
     multiple=True,
     help="Entity IDs to filter by.",
 )
-@click.option(
-    "--with-description",
-    is_flag=True,
-    help="Include entity descriptions in the response.",
-)
 @pass_context
-def get_entities(ctx, collection_id, offset, limit, entity_ids):
+async def get_entities(ctx, collection_id, offset, limit, entity_ids):
     """
     Retrieve entities from the knowledge graph.
     """
     client = ctx.obj
 
     with timer():
-        response = client.get_entities(
+        response = await client.get_entities(
             collection_id,
             offset,
             limit,
@@ -245,14 +240,16 @@ def get_entities(ctx, collection_id, offset, limit, entity_ids):
     help="Entity names to filter by.",
 )
 @pass_context
-def get_triples(ctx, collection_id, offset, limit, triple_ids, entity_names):
+async def get_triples(
+    ctx, collection_id, offset, limit, triple_ids, entity_names
+):
     """
     Retrieve triples from the knowledge graph.
     """
     client = ctx.obj
 
     with timer():
-        response = client.get_triples(
+        response = await client.get_triples(
             collection_id,
             offset,
             limit,

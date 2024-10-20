@@ -39,6 +39,7 @@ __all__ = [
     "KGEntityResult",
     "KGGlobalResult",
     "KGRelationshipResult",
+    "KGRunType",
     "KGSearchMethod",
     "KGSearchResult",
     "KGSearchResultType",

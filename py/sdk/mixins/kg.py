@@ -1,10 +1,8 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from .models import (
-    KGCreationResponse,
+from ..models import (
     KGCreationSettings,
-    KGEnrichmentResponse,
     KGEnrichmentSettings,
     KGEntityDeduplicationResponse,
     KGEntityDeduplicationSettings,
@@ -12,15 +10,13 @@ from .models import (
 )
 
 
-class KGMethods:
-
-    @staticmethod
+class KGMixins:
     async def create_graph(
-        client,
+        self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
-    ) -> KGCreationResponse:
+    ) -> dict:
         """
         Create a graph from the given settings.
 
@@ -38,47 +34,16 @@ class KGMethods:
             "kg_creation_settings": kg_creation_settings or {},
         }
 
-        return await client._make_request("POST", "create_graph", json=data)
+        return await self._make_request("POST", "create_graph", json=data)  # type: ignore
 
-    @staticmethod
-    async def deduplicate_entities(
-        client,
-        collection_id: Optional[Union[UUID, str]] = None,
-        run_type: Optional[Union[str, KGRunType]] = None,
-        deduplication_settings: Optional[
-            Union[dict, KGEntityDeduplicationSettings]
-        ] = None,
-    ) -> KGEntityDeduplicationResponse:
-        """
-        Deduplicate entities in the knowledge graph.
-
-        Args:
-            collection_id (Optional[Union[UUID, str]]): The ID of the collection to deduplicate entities for.
-            run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
-            deduplication_settings (Optional[Union[dict, KGEntityDeduplicationSettings]]): Settings for the deduplication process.
-        """
-        if isinstance(deduplication_settings, KGEntityDeduplicationSettings):
-            deduplication_settings = deduplication_settings.model_dump()
-
-        data = {
-            "collection_id": str(collection_id) if collection_id else None,
-            "run_type": str(run_type) if run_type else None,
-            "deduplication_settings": deduplication_settings or {},
-        }
-
-        return await client._make_request(
-            "POST", "deduplicate_entities", json=data
-        )
-
-    @staticmethod
     async def enrich_graph(
-        client,
+        self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
-    ) -> KGEnrichmentResponse:
+    ) -> dict:
         """
         Perform graph enrichment over the entire graph.
 
@@ -98,11 +63,10 @@ class KGMethods:
             "kg_enrichment_settings": kg_enrichment_settings or {},
         }
 
-        return await client._make_request("POST", "enrich_graph", json=data)
+        return await self._make_request("POST", "enrich_graph", json=data)  # type: ignore
 
-    @staticmethod
     async def get_entities(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -128,11 +92,10 @@ class KGMethods:
         if entity_ids:
             params["entity_ids"] = ",".join(entity_ids)
 
-        return await client._make_request("GET", "entities", params=params)
+        return await self._make_request("GET", "entities", params=params)  # type: ignore
 
-    @staticmethod
     async def get_triples(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -164,11 +127,11 @@ class KGMethods:
         if triple_ids:
             params["triple_ids"] = ",".join(triple_ids)
 
-        return await client._make_request("GET", "triples", params=params)
+        return await self._make_request("GET", "triples", params=params)  # type: ignore
+        return await self._make_request("GET", "triples", params=params)  # type: ignore
 
-    @staticmethod
     async def get_communities(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -199,4 +162,4 @@ class KGMethods:
         if community_numbers:
             params["community_numbers"] = community_numbers
 
-        return await client._make_request("GET", "communities", params=params)
+        return await self._make_request("GET", "communities", params=params)  # type: ignore

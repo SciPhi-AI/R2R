@@ -2,7 +2,7 @@ import argparse
 import sys
 import time
 
-from r2r import Message, R2RClient, R2RException
+from r2r import R2RClient, R2RException
 
 
 def compare_result_fields(result, expected_fields):

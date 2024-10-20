@@ -1,5 +1,4 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
-from .completion import CompletionRecord, MessageType
 from .document import (
     DataType,
     Document,
@@ -33,6 +32,7 @@ from .llm import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     RAGCompletion,
 )
 from .prompt import Prompt
@@ -59,7 +59,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",
