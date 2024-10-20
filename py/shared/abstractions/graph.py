@@ -55,6 +55,7 @@ class Entity(R2RSerializable):
     extraction_ids: Optional[list[UUID]] = None
     collection_id: Optional[UUID] = None
     document_id: Optional[UUID] = None
+    document_ids: Optional[list[UUID]] = None
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
     # graph_embedding: Optional[list[float]] = None

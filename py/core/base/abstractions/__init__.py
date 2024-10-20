@@ -31,6 +31,8 @@ from shared.abstractions.graph import (
 from shared.abstractions.kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    KGEntityDeduplicationType,
     KGRunType,
 )
 from shared.abstractions.llm import (
@@ -115,9 +117,11 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     "HybridSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGEntityDeduplicationSettings",
+    "KGEntityDeduplicationType",
     "KGRunType",
     # User abstractions
     "Token",

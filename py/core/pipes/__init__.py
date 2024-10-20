@@ -15,6 +15,8 @@ from .retrieval.routing_search_pipe import RoutingSearchPipe
 from .retrieval.search_rag_pipe import SearchRAGPipe
 from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
 from .retrieval.vector_search_pipe import VectorSearchPipe
+from .kg.deduplication import KGEntityDeduplicationPipe
+from .kg.deduplication_summary import KGEntityDeduplicationSummaryPipe
 
 __all__ = [
     "SearchPipe",
@@ -34,4 +36,6 @@ __all__ = [
     "MultiSearchPipe",
     "KGCommunitySummaryPipe",
     "RoutingSearchPipe",
+    "KGEntityDeduplicationPipe",
+    "KGEntityDeduplicationSummaryPipe",
 ]
