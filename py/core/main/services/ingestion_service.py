@@ -15,7 +15,9 @@ from core.base import (
     R2RLoggingProvider,
     RawChunk,
     RunManager,
+    Vector,
     VectorEntry,
+    VectorType,
     decrement_version,
 )
 from core.base.api.models import UserResponse
@@ -351,6 +353,10 @@ class IngestionService(Service):
     async def chunk_enrichment(self, document_id: UUID) -> None:
         # just call the pipe on every chunk of the document
         
+        logger.info(f"Calling chunk enrichment on document_id: {document_id}")
+
+        logger.info(f"Chunk enrichment settings: {self.providers.ingestion.config.chunk_enrichment_settings}")
+
         chunk_enrichment_settings = self.providers.ingestion.config.chunk_enrichment_settings
 
         # get all document_chunks
@@ -361,6 +367,10 @@ class IngestionService(Service):
         new_vector_entries = []
         document_chunks_dict = {chunk['extraction_id']: chunk for chunk in document_chunks}
 
+        logger.info(f"Enriching {len(document_chunks)} chunks for document {document_id}")
+
+        logger.info(f"Document chunks: {document_chunks}")
+
         for chunk_idx, chunk in enumerate(document_chunks):
 
             # get chunks in context
@@ -369,10 +379,10 @@ class IngestionService(Service):
                 if enrichment_strategy == ChunkEnrichmentStrategy.NEIGHBORHOOD:
                     for prev in range(1, chunk_enrichment_settings.backward_chunks + 1):
                         if chunk_idx - prev >= 0:
-                            context_chunk_ids.append(document_chunks[chunk_idx - prev].extraction_id)
+                            context_chunk_ids.append(document_chunks[chunk_idx - prev]['extraction_id'])
                     for next in range(1, chunk_enrichment_settings.forward_chunks + 1):
                         if chunk_idx + next < len(document_chunks):
-                            context_chunk_ids.append(document_chunks[chunk_idx + next].extraction_id)
+                            context_chunk_ids.append(document_chunks[chunk_idx + next]['extraction_id'])
 
                 elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
                     semantic_neighbors = self.providers.database.vector.get_semantic_neighbors(
@@ -381,14 +391,18 @@ class IngestionService(Service):
                         limit=chunk_enrichment_settings.semantic_neighbors,
                         similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
                     )
+
+                    logger.info(f"Semantic neighbors: {semantic_neighbors}")
                     for neighbor in semantic_neighbors:
                         context_chunk_ids.append(neighbor['extraction_id'])
 
             context_chunk_ids = set(context_chunk_ids)
 
+            logger.info(f"Context chunk ids: {context_chunk_ids}")
+
             context_chunk_texts = []
             for context_chunk_id in context_chunk_ids:
-                context_chunk_texts.append(document_chunks_dict[context_chunk_id].text)
+                context_chunk_texts.append(document_chunks_dict[context_chunk_id]['text'])
 
             # enrich chunk
             # get prompt and call LLM on it. Then finally embed and store it. 
@@ -397,7 +411,7 @@ class IngestionService(Service):
             updated_chunk_text = (
                 (
                     await self.providers.llm.aget_completion(
-                        messages=await self.providers.prompt._aget_message_payload(
+                        messages=await self.providers.prompt._get_message_payload(
                             task_prompt_name='chunk_enrichment',
                             task_inputs={
                                 "context_chunks": (
@@ -413,9 +427,14 @@ class IngestionService(Service):
                 .message.content
             )
 
+
+            data = (await self.providers.embedding.async_get_embedding(updated_chunk_text))
+
+            chunk['metadata']['original_text'] = chunk['text']
+
             vector_entry_new = VectorEntry(
                 extraction_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk['extraction_id'])),
-                vector = (await self.providers.embedding.async_get_embedding(updated_chunk_text)),
+                vector = Vector(data=data, type=VectorType.FIXED, length=len(data)),
                 document_id=document_id,
                 user_id=chunk['user_id'],
                 collection_ids=chunk['collection_ids'],
@@ -427,14 +446,14 @@ class IngestionService(Service):
 
          # delete old chunks from document_chunk_dics
 
-        await self.providers.database.vector.delete(
+        self.providers.database.vector.delete(
             filters = {
                 "document_id": document_id,
             },
         )
 
         # embed and store the enriched chunk
-        await self.providers.database.vector.upsert_entries(new_vector_entries)
+        self.providers.database.vector.upsert_entries(new_vector_entries)
 
         return len(new_vector_entries)
 
