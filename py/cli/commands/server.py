@@ -203,7 +203,9 @@ def generate_report():
 
 @cli.command()
 @click.option("--host", default=None, help="Host to run the server on")
-@click.option("--port", default=None, help="Port to run the server on")
+@click.option(
+    "--port", default=None, type=int, help="Port to run the server on"
+)
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
     "--full",

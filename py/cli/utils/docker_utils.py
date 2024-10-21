@@ -334,7 +334,7 @@ def get_compose_files():
     return compose_files
 
 
-def find_available_port(start_port):
+def find_available_port(start_port: int):
     port = start_port
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
