@@ -173,8 +173,9 @@ class VectorDBMixin(DatabaseMixin):
 
         params.extend([search_settings.search_limit, search_settings.offset])
 
-        print("Generated SQL query:", query)
-        print("Query parameters:", params)
+        print('query = ', query)
+        print('params = ', params)
+
 
         results = await self.fetch_query(query, params)
 
@@ -232,6 +233,9 @@ class VectorDBMixin(DatabaseMixin):
                 search_settings.hybrid_search_settings.full_text_limit,
             ]
         )
+
+        print('query = ', query)
+        print('params = ', params)
 
         results = await self.fetch_query(query, params)
         return [
@@ -368,9 +372,6 @@ class VectorDBMixin(DatabaseMixin):
         WHERE {where_clause}
         RETURNING extraction_id, document_id, text;
         """
-
-        print("Generated DELETE SQL query:", query)
-        print("Query parameters:", params)
 
         results = await self.fetch_query(query, params)
 
@@ -586,7 +587,7 @@ class VectorDBMixin(DatabaseMixin):
         return None
 
     def _build_filters(
-        self, filters: dict, parameters: list
+        self, filters: dict, parameters: list[dict]
     ) -> Tuple[str, list[Any]]:
 
         def parse_condition(key: str, value: Any) -> str:
@@ -689,18 +690,45 @@ class VectorDBMixin(DatabaseMixin):
             filter_conditions = []
             for key, value in filter_dict.items():
                 if key == "$and":
-                    filter_conditions.append(
-                        f"({' AND '.join([parse_filter(f) for f in value])})"
-                    )
+                    and_conditions = [parse_filter(f) for f in value if f]  # Skip empty dictionaries
+                    if and_conditions:
+                        filter_conditions.append(f"({' AND '.join(and_conditions)})")
                 elif key == "$or":
-                    filter_conditions.append(
-                        f"({' OR '.join([parse_filter(f) for f in value])})"
-                    )
+                    or_conditions = [parse_filter(f) for f in value if f]  # Skip empty dictionaries
+                    if or_conditions:
+                        filter_conditions.append(f"({' OR '.join(or_conditions)})")
                 else:
                     filter_conditions.append(parse_condition(key, value))
-            return " AND ".join(filter_conditions)
+            
+            # Check if there is only a single condition
+            if len(filter_conditions) == 1:
+                return filter_conditions[0]
+            else:
+                return " AND ".join(filter_conditions)
+        # def parse_filter(filter_dict: dict) -> str:
+        #     filter_conditions = []
+        #     for key, value in filter_dict.items():
+        #         if key == "$and":
+        #             filter_conditions.append(
+        #                 f"({' AND '.join([parse_filter(f) for f in value])})"
+        #             )
+        #         elif key == "$or":
+        #             filter_conditions.append(
+        #                 f"({' OR '.join([parse_filter(f) for f in value])})"
+        #             )
+        #         else:
+        #             filter_conditions.append(parse_condition(key, value))
+            
+        #     # Check if there is only a single condition
+        #     if len(filter_conditions) == 1:
+        #         return filter_conditions[0]
+        #     else:
+        #         return " AND ".join(filter_conditions)
 
+        print('filters = ', filters)
         where_clause = parse_filter(filters)
+        print('where_clause = ', where_clause)
+
         return where_clause
 
     async def get_semantic_neighbors(

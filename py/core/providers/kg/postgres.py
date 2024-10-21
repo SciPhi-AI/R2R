@@ -256,7 +256,6 @@ class PostgresKGProvider(KGProvider):
         cleaned_entities = []
         for entity in entities:
             entity_dict = entity.to_dict()
-
             entity_dict["extraction_ids"] = (
                 entity_dict["extraction_ids"]
                 if entity_dict.get("extraction_ids")
@@ -267,27 +266,6 @@ class PostgresKGProvider(KGProvider):
                 if entity_dict.get("description_embedding")
                 else None
             )
-            # entity_dict["extraction_ids"] = (
-            #     [str(ele) for ele in entity_dict["extraction_ids"]]
-            #     if entity_dict.get("extraction_ids")
-            #     else []
-            # )
-            # entity_dict["description_embedding"] = (
-            #     str(entity_dict["description_embedding"])
-            #     if entity_dict.get("description_embedding")
-            #     else None
-            # )
-
-            # entity_dict["extraction_ids"] = (
-            #     json.dumps([str(ele) for ele in entity_dict["extraction_ids"]])
-            #     if entity_dict.get("extraction_ids")
-            #     else json.dumps([])
-            # )
-            # entity_dict["description_embedding"] = (
-            #     str(entity_dict["description_embedding"])
-            #     if entity_dict.get("description_embedding")
-            #     else None
-            # )
             cleaned_entities.append(entity_dict)
         print("entity_dict = ", entity_dict)
         logger.info(f"Upserting {len(entities)} entities into {table_name}")
