@@ -294,7 +294,7 @@ def test_kg_deduplicate_entities_sample_file_cli():
         time.sleep(60)
 
     response = requests.get(
-        "http://localhost:7272/v2/communities",
+        "http://localhost:7272/v2/entities",
         params={
             "collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
             "entity_level": "collection",
@@ -304,6 +304,8 @@ def test_kg_deduplicate_entities_sample_file_cli():
     if response.status_code != 200:
         print("KG deduplicate entities test failed: Communities not created")
         sys.exit(1)
+
+    print(response.json())
 
     entities = response.json()["results"]["entities"]
     assert len(entities) >= 1
