@@ -83,7 +83,7 @@ async def create_graph(
     help="Settings for the deduplication process.",
 )
 @pass_context
-def deduplicate_entities(
+async def deduplicate_entities(
     ctx, collection_id, run, force_deduplication, deduplication_settings
 ):
     """
@@ -108,7 +108,7 @@ def deduplicate_entities(
         deduplication_settings = {"force_deduplication": True}
 
     with timer():
-        response = client.deduplicate_entities(
+        response = await client.deduplicate_entities(
             collection_id, run_type, deduplication_settings
         )
 
@@ -193,8 +193,15 @@ async def enrich_graph(
     multiple=True,
     help="Entity IDs to filter by.",
 )
+@click.option(
+    "--entity-level",
+    default="collection",
+    help="Entity level to filter by.",
+)
 @pass_context
-async def get_entities(ctx, collection_id, offset, limit, entity_ids):
+async def get_entities(
+    ctx, collection_id, offset, limit, entity_ids, entity_level
+):
     """
     Retrieve entities from the knowledge graph.
     """
@@ -202,6 +209,7 @@ async def get_entities(ctx, collection_id, offset, limit, entity_ids):
 
     with timer():
         response = await client.get_entities(
+            entity_level,
             collection_id,
             offset,
             limit,

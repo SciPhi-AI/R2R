@@ -18,6 +18,7 @@ from core.base.api.models import (
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
 from shared.abstractions.kg import KGRunType
+from shared.abstractions.graph import EntityLevel
 from shared.utils.base_utils import update_settings_from_dict
 
 from ..services.kg_service import KgService
@@ -54,11 +55,19 @@ class KGRouter(BaseRouter):
             workflow_messages["enrich-graph"] = (
                 "Graph enrichment task queued successfully."
             )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication task queued successfully."
+            )
         else:
             workflow_messages["create-graph"] = (
                 "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
             )
-            workflow_messages["enrich-graph"] = "Graph enriched successfully."
+            workflow_messages["enrich-graph"] = (
+                "Graph enriched successfully. You can view the communities at http://localhost:7272/v2/communities"
+            )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication completed successfully."
+            )
 
         self.orchestration_provider.register_workflows(
             Workflow.KG,
@@ -202,6 +211,10 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
+            entity_level: Optional[EntityLevel] = Query(
+                default=EntityLevel.COLLECTION,
+                description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
+            ),
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve entities from."
             ),
@@ -225,11 +238,19 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
+            if entity_level == EntityLevel.CHUNK:
+                entity_table_name = "entity_raw"
+            elif entity_level == EntityLevel.DOCUMENT:
+                entity_table_name = "entity_embedding"
+            else:
+                entity_table_name = "entity_collection"
+
             return await self.service.get_entities(
                 collection_id,
                 offset,
                 limit,
                 entity_ids,
+                entity_table_name,
             )
 
         @self.router.get("/triples")

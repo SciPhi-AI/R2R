@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Optional, Union
 from uuid import UUID
 
@@ -41,6 +42,15 @@ class RelationshipType(R2RSerializable):
     id: str
     name: str
     description: str | None = None
+
+
+class EntityLevel(str, Enum):
+    COLLECTION = "collection"
+    DOCUMENT = "document"
+    CHUNK = "chunk"
+
+    def __str__(self):
+        return self.value
 
 
 class Entity(R2RSerializable):

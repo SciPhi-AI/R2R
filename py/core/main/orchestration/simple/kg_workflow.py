@@ -101,8 +101,27 @@ def simple_kg_factory(service: KgService):
             **input_data["kg_enrichment_settings"],
         )
 
+    async def entity_deduplication_workflow(input_data):
+
+        collection_id = input_data["collection_id"]
+
+        number_of_distinct_entities = (
+            await service.kg_entity_deduplication(
+                collection_id=collection_id,
+                **input_data["kg_entity_deduplication_settings"],
+            )
+        )[0]["num_entities"]
+
+        await service.kg_entity_deduplication_summary(
+            collection_id=collection_id,
+            offset=0,
+            limit=number_of_distinct_entities,
+            **input_data["kg_entity_deduplication_settings"],
+        )
+
     return {
         "create-graph": create_graph,
         "enrich-graph": enrich_graph,
         "kg-community-summary": kg_community_summary,
+        "entity-deduplication": entity_deduplication_workflow,
     }

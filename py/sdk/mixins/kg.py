@@ -70,6 +70,7 @@ class KGMixins:
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
+        entity_level: Optional[str] = "collection",
         entity_ids: Optional[list[str]] = None,
     ) -> dict:
         """
@@ -79,12 +80,14 @@ class KGMixins:
             collection_id (str): The ID of the collection to retrieve entities from.
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
+            entity_level (Optional[str]): The level of entity to filter by.
             entity_ids (Optional[List[str]]): Optional list of entity IDs to filter by.
 
         Returns:
             dict: A dictionary containing the retrieved entities and total count.
         """
         params = {
+            "entity_level": entity_level,
             "collection_id": collection_id,
             "offset": offset,
             "limit": limit,
@@ -128,7 +131,6 @@ class KGMixins:
             params["triple_ids"] = ",".join(triple_ids)
 
         return await self._make_request("GET", "triples", params=params)  # type: ignore
-        return await self._make_request("GET", "triples", params=params)  # type: ignore
 
     async def get_communities(
         self,
@@ -163,3 +165,32 @@ class KGMixins:
             params["community_numbers"] = community_numbers
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
+
+
+    async def deduplicate_entities(
+        self,
+        collection_id: Optional[Union[UUID, str]] = None,
+        run_type: Optional[Union[str, KGRunType]] = None,
+        deduplication_settings: Optional[
+            Union[dict, KGEntityDeduplicationSettings]
+        ] = None,
+    ) -> KGEntityDeduplicationResponse:
+        """
+        Deduplicate entities in the knowledge graph.
+        Args:
+            collection_id (Optional[Union[UUID, str]]): The ID of the collection to deduplicate entities for.
+            run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
+            deduplication_settings (Optional[Union[dict, KGEntityDeduplicationSettings]]): Settings for the deduplication process.
+        """
+        if isinstance(deduplication_settings, KGEntityDeduplicationSettings):
+            deduplication_settings = deduplication_settings.model_dump()
+
+        data = {
+            "collection_id": str(collection_id) if collection_id else None,
+            "run_type": str(run_type) if run_type else None,
+            "deduplication_settings": deduplication_settings or {},
+        }
+
+        return await self._make_request(  # type: ignore
+            "POST", "deduplicate_entities", json=data
+        )

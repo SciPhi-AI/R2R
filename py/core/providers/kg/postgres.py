@@ -141,7 +141,7 @@ class PostgresKGProvider(KGProvider):
 
         # deduplicated entities table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_deduplicated")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_collection")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
@@ -463,7 +463,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_deduplicated"
+            table_name = "entity_collection"
         elif search_type == "__Relationship__":
             table_name = "triple_raw"
         elif search_type == "__Community__":
@@ -754,7 +754,7 @@ class PostgresKGProvider(KGProvider):
                 e.name AS name,
                 e.description AS description
             FROM node_triple_ids nti
-            JOIN {self._get_table_name("entity_embedding")} e ON e.name = nti.node;
+            JOIN {self._get_table_name("entity_collection")} e ON e.name = nti.node;
         """
         entities = await self.fetch_query(QUERY, [community_number])
         entities = [Entity(**entity) for entity in entities]
@@ -1103,7 +1103,7 @@ class PostgresKGProvider(KGProvider):
             params.append(offset)
             offset_limit_clause = f"OFFSET ${len(params)}"
 
-        if entity_table_name == "entity_deduplicated":
+        if entity_table_name == "entity_collection":
             # entity deduplicated table has document_ids, not document_id.
             # we directly use the collection_id to get the entities list.
             query = f"""
@@ -1130,9 +1130,6 @@ class PostgresKGProvider(KGProvider):
         results = await self.fetch_query(query, params)
 
         entities = [Entity(**entity) for entity in results]
-
-        logger.info(f"Params: {params}")
-        logger.info(f"Entities: {entities}")
 
         total_entries = await self.get_entity_count(
             collection_id=collection_id, entity_table_name=entity_table_name
@@ -1209,11 +1206,11 @@ class PostgresKGProvider(KGProvider):
         conditions = []
         params = []
 
-        if entity_table_name == "entity_deduplicated":
+        if entity_table_name == "entity_collection":
 
             if document_id:
                 raise ValueError(
-                    "document_id is not supported for entity_deduplicated table"
+                    "document_id is not supported for entity_collection table"
                 )
 
             if collection_id:
@@ -1282,7 +1279,7 @@ class PostgresKGProvider(KGProvider):
     async def update_entity_descriptions(self, entities: list[Entity]):
 
         query = f"""
-            UPDATE {self._get_table_name("entity_deduplicated")}
+            UPDATE {self._get_table_name("entity_collection")}
             SET description = $3, description_embedding = $4
             WHERE name = $1 AND collection_id = $2
         """
