@@ -137,7 +137,7 @@ class Handler(ABC):
         self.connection_manager = connection_manager
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{self.project_name}_{base_name}"
+        return f"{self.project_name}.{base_name}"
 
     @abstractmethod
     def create_table(self):
