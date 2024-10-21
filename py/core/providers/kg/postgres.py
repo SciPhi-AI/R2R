@@ -87,7 +87,9 @@ class PostgresKGProvider(KGProvider):
         query: str,
         params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
-        return await self.db_provider.connection_manager.fetch_query(query, params)
+        return await self.db_provider.connection_manager.fetch_query(
+            query, params
+        )
 
     async def create_tables(
         self, embedding_dim: int, quantization_type: VectorQuantizationType

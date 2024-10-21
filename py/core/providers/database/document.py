@@ -30,6 +30,9 @@ class PostgresDocumentHandler(DocumentHandler):
         super().__init__(project_name, connection_manager)
 
     async def create_table(self):
+        logger.info(
+            f"Creating table, if not exists: {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}"
+        )
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} (
             document_id UUID PRIMARY KEY,
@@ -276,10 +279,8 @@ class PostgresDocumentHandler(DocumentHandler):
             The workflow status for the given document or list of documents.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = (
-            self._get_status_model_and_table_name(
-                status_type
-            )
+        out_model, table_name = self._get_status_model_and_table_name(
+            status_type
         )
         result = list(
             map(
@@ -305,10 +306,8 @@ class PostgresDocumentHandler(DocumentHandler):
             status (str): The status to set.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = (
-            self._get_status_model_and_table_name(
-                status_type
-            )
+        out_model, table_name = self._get_status_model_and_table_name(
+            status_type
         )
         return await self.connection_manager._set_status_in_table(
             ids, status, table_name, status_type
@@ -332,10 +331,8 @@ class PostgresDocumentHandler(DocumentHandler):
         if isinstance(status, str):
             status = [status]
 
-        out_model, table_name = (
-            self._get_status_model_and_table_name(
-                status_type
-            )
+        out_model, table_name = self._get_status_model_and_table_name(
+            status_type
         )
         result = await self._get_ids_from_table(
             status, table_name, status_type, collection_id

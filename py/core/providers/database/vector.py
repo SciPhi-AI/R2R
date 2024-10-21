@@ -390,7 +390,7 @@ class PostgresVectorHandler(VectorHandler):
         RETURNING extraction_id, document_id, text;
         """
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         return {
             str(result["extraction_id"]): {

@@ -155,7 +155,7 @@ class DocumentHandler(Handler):
 
     @abstractmethod
     async def delete_from_documents_overview(
-        self, document_id: str, version: Optional[str] = None
+        self, document_id: UUID, version: Optional[str] = None
     ) -> None:
         pass
 
@@ -465,28 +465,28 @@ class VectorHandler(Handler):
 
     @abstractmethod
     async def assign_document_to_collection_vector(
-        self, document_id: str, collection_id: str
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         pass
 
     @abstractmethod
     async def remove_document_from_collection_vector(
-        self, document_id: str, collection_id: str
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         pass
 
     @abstractmethod
-    async def delete_user_vector(self, user_id: str) -> None:
+    async def delete_user_vector(self, user_id: UUID) -> None:
         pass
 
     @abstractmethod
-    async def delete_collection_vector(self, collection_id: str) -> None:
+    async def delete_collection_vector(self, collection_id: UUID) -> None:
         pass
 
     @abstractmethod
     async def get_document_chunks(
         self,
-        document_id: str,
+        document_id: UUID,
         offset: int = 0,
         limit: int = -1,
         include_vectors: bool = False,
@@ -548,7 +548,7 @@ class DatabaseProvider(Provider):
         )
 
     async def delete_from_documents_overview(
-        self, document_id: str, version: Optional[str] = None
+        self, document_id: UUID, version: Optional[str] = None
     ) -> None:
         return await self.document_handler.delete_from_documents_overview(
             document_id, version
@@ -853,14 +853,14 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.delete(filters)
 
     async def assign_document_to_collection_vector(
-        self, document_id: str, collection_id: str
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         return await self.vector_handler.assign_document_to_collection_vector(
             document_id, collection_id
         )
 
     async def remove_document_from_collection_vector(
-        self, document_id: str, collection_id: str
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         return (
             await self.vector_handler.remove_document_from_collection_vector(

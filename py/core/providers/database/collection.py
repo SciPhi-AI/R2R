@@ -195,7 +195,7 @@ class PostgresCollectionHandler(CollectionHandler):
             WHERE $1 = ANY(collection_ids)
         """
         await self.connection_manager.execute_query(
-            user_update_query, collection_id
+            user_update_query, [collection_id]
         )
 
         # Remove collection_id from documents
@@ -209,7 +209,7 @@ class PostgresCollectionHandler(CollectionHandler):
             SELECT COUNT(*) AS affected_rows FROM updated
         """
         await self.connection_manager.fetchrow_query(
-            document_update_query, collection_id
+            document_update_query, [collection_id]
         )
 
         # Delete the collection
@@ -219,7 +219,7 @@ class PostgresCollectionHandler(CollectionHandler):
             RETURNING collection_id
         """
         deleted = await self.connection_manager.fetchrow_query(
-            delete_query, collection_id
+            delete_query, [collection_id]
         )
 
         if not deleted:
