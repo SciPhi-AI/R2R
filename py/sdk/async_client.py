@@ -1,8 +1,11 @@
-import httpx
 import json
-from typing import AsyncGenerator, Any
-from .base.base_client import BaseClient
+from typing import Any, AsyncGenerator
+
+import httpx
+
 from shared.abstractions import R2RException
+
+from .base.base_client import BaseClient
 from .mixins import (
     AuthMixins,
     IngestionMixins,

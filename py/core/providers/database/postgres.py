@@ -1,5 +1,4 @@
 # TODO: Clean this up and make it more congruent across the vector database and the relational database.
-
 import logging
 import os
 import warnings
@@ -10,13 +9,16 @@ from core.base import (
     DatabaseConfig,
     DatabaseProvider,
     PostgresConfigurationSettings,
-    RelationalDBProvider,
-    VectorDBProvider,
+    VectorQuantizationType,
 )
+from core.providers.database.collection import CollectionMixin
+from core.providers.database.document import DocumentMixin
+from core.providers.database.tokens import BlacklistedTokensMixin
+from core.providers.database.user import UserMixin
+from core.providers.database.vector import VectorDBMixin
 from shared.abstractions.vector import VectorQuantizationType
 
-from .relational import PostgresRelationalDBProvider
-from .vector import PostgresVectorDBProvider
+from .base import DatabaseMixin, SemaphoreConnectionPool
 
 logger = logging.getLogger()
 
@@ -30,7 +32,14 @@ def get_env_var(new_var, old_var, config_value):
     return value
 
 
-class PostgresDBProvider(DatabaseProvider):
+class PostgresDBProvider(
+    DatabaseProvider,
+    DocumentMixin,
+    CollectionMixin,
+    BlacklistedTokensMixin,
+    UserMixin,
+    VectorDBMixin,
+):
     user: str
     password: str
     host: str
@@ -38,7 +47,7 @@ class PostgresDBProvider(DatabaseProvider):
     db_name: str
     project_name: str
     connection_string: str
-    vector_db_dimension: int
+    dimension: int
     conn: Optional[Any]
     crypto_provider: CryptoProvider
     postgres_configuration_settings: PostgresConfigurationSettings
@@ -98,8 +107,8 @@ class PostgresDBProvider(DatabaseProvider):
             self.connection_string = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
             logger.info("Connecting to Postgres via TCP/IP")
 
-        self.vector_db_dimension = dimension
-        self.vector_db_quantization_type = quantization_type
+        self.dimension = dimension
+        self.quantization_type = quantization_type
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
@@ -110,33 +119,36 @@ class PostgresDBProvider(DatabaseProvider):
         self.default_collection_description = (
             config.default_collection_description
         )
+        self.enable_fts = config.enable_fts
+
+        self.pool: Optional[SemaphoreConnectionPool] = None
 
     def _get_table_name(self, base_name: str) -> str:
         return f"{self.project_name}.{base_name}"
 
     async def initialize(self):
-        self.vector = self._initialize_vector_db()
-        self.relational = await self._initialize_relational_db()
-
-    def _initialize_vector_db(self) -> VectorDBProvider:
-        return PostgresVectorDBProvider(
-            self.config,
-            connection_string=self.connection_string,
-            project_name=self.project_name,
-            dimension=self.vector_db_dimension,
-            quantization_type=self.vector_db_quantization_type,
+        logger.info("Initializing `PostgresDBProvider`.")
+        self.pool = SemaphoreConnectionPool(
+            self.connection_string, self.postgres_configuration_settings
         )
+        await self.pool.initialize()
 
-    async def _initialize_relational_db(self) -> RelationalDBProvider:
-        relational_db = PostgresRelationalDBProvider(
-            self.config,
-            connection_string=self.connection_string,
-            crypto_provider=self.crypto_provider,
-            project_name=self.project_name,
-            postgres_configuration_settings=self.postgres_configuration_settings,
-        )
-        await relational_db.initialize()
-        return relational_db
+        async with self.pool.get_connection() as conn:
+            await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
+
+            # Create schema if it doesn't exist
+            await conn.execute(
+                f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";'
+            )
+
+            # Call create_table for each mixin
+            for base_class in self.__class__.__bases__:
+                if issubclass(base_class, DatabaseMixin):
+                    await base_class.create_table(self)
+        logger.info("Successfully initialized `PostgresDBProvider`")
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig
@@ -178,3 +190,55 @@ class PostgresDBProvider(DatabaseProvider):
                 setattr(settings, setting, value)
 
         return settings
+
+    async def close(self):
+        if self.pool:
+            await self.pool.close()
+
+    async def execute_query(self, query, params=None, isolation_level=None):
+        async with self.pool.get_connection() as conn:
+            if isolation_level:
+                async with conn.transaction(isolation=isolation_level):
+                    if params:
+                        return await conn.execute(query, *params)
+                    else:
+                        return await conn.execute(query)
+            else:
+                if params:
+                    return await conn.execute(query, *params)
+                else:
+                    return await conn.execute(query)
+
+    async def execute_many(self, query, params=None, batch_size=1000):
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    for i in range(0, len(params), batch_size):
+                        param_batch = params[i : i + batch_size]
+                        await conn.executemany(query, param_batch)
+                else:
+                    await conn.executemany(query)
+
+    async def fetch_query(self, query, params=None):
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                return (
+                    await conn.fetch(query, *params)
+                    if params
+                    else await conn.fetch(query)
+                )
+
+    async def fetchrow_query(self, query, params=None):
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    return await conn.fetchrow(query, *params)
+                else:
+                    return await conn.fetchrow(query)
+
+    async def __aenter__(self):
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()

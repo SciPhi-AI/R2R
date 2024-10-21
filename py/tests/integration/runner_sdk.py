@@ -67,7 +67,7 @@ def test_ingest_sample_file_with_config_sdk():
     ingest_response = client.ingest_files(
         file_paths=file_paths, ingestion_config={"chunk_size": 4_096}
     )
-    time.sleep(10)
+    time.sleep(30)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
@@ -102,7 +102,6 @@ def test_reingest_sample_file_sdk():
     file_paths = ["core/examples/data/uber_2021.pdf"]
     try:
         results = client.ingest_files(file_paths=file_paths)
-        print("results = ", results)
         time.sleep(30)
 
         if "task_id" not in results["results"][0]:
@@ -923,7 +922,7 @@ def test_user_collection_document_management():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -997,7 +996,7 @@ def test_user_removes_document_from_collection():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1049,7 +1048,7 @@ def test_user_lists_documents_in_collection():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1411,7 +1410,7 @@ def test_user_gets_collections_for_document():
 
     # Ingest a document
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1480,7 +1479,7 @@ def test_collection_user_interactions():
     # Ingest a document
     client.login("collection_owner@example.com", "password123")
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1533,7 +1532,7 @@ def test_collection_document_interactions():
 
     # Ingest a document
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 

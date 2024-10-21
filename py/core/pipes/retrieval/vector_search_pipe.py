@@ -63,14 +63,14 @@ class VectorSearchPipe(SearchPipe):
             purpose=EmbeddingPurpose.QUERY,
         )
 
-        search_results = (
-            self.database_provider.vector.hybrid_search(
+        search_results = await (
+            self.database_provider.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
                 search_settings=search_settings,
             )
             if search_settings.use_hybrid_search
-            else self.database_provider.vector.semantic_search(
+            else self.database_provider.semantic_search(
                 query_vector=query_vector,
                 search_settings=search_settings,
             )

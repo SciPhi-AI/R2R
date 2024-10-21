@@ -249,15 +249,15 @@ class VectorSearchSettings(R2RSerializable):
         default=True,
         description="Whether to include element metadata in the search results",
     )
-    probes: Optional[int] = Field(
+    probes: int = Field(
         default=10,
         description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
     )
-    ef_search: Optional[int] = Field(
+    ef_search: int = Field(
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
-    hybrid_search_settings: Optional[HybridSearchSettings] = Field(
+    hybrid_search_settings: HybridSearchSettings = Field(
         default=HybridSearchSettings(),
         description="Settings for hybrid search",
     )
