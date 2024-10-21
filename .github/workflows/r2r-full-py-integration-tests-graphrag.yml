@@ -19,12 +19,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         test_category:
-          - cli-ingestion
-          - cli-retrieval
-          - sdk-ingestion
-          - sdk-retrieval
-          - sdk-auth
-          - sdk-collections
+          - cli-graphrag
+          - sdk-graphrag
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: 'false'

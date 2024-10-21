@@ -739,6 +739,201 @@ class PostgresVectorHandler(VectorHandler):
 
         return where_clause
 
+    async def list_indices(
+        self, table_name: Optional[VectorTableName] = None
+    ) -> list[dict]:
+        """
+        Lists all vector indices for the specified table.
+
+        Args:
+            table_name (VectorTableName, optional): The table to list indices for.
+                If None, defaults to RAW_CHUNKS table.
+
+        Returns:
+            List[dict]: List of indices with their properties
+
+        Raises:
+            ArgError: If an invalid table name is provided
+        """
+        if table_name == VectorTableName.RAW_CHUNKS:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
+            )
+            col_name = "vec"
+        elif table_name == VectorTableName.ENTITIES:
+            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.COMMUNITIES:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            )
+            col_name = "embedding"
+        else:
+            raise ArgError("invalid table name")
+
+        query = """
+        SELECT
+            i.indexname as name,
+            i.indexdef as definition,
+            am.amname as method,
+            pg_relation_size(i.indexrelid) as size_in_bytes,
+            idx_scan as number_of_scans,
+            idx_tup_read as tuples_read,
+            idx_tup_fetch as tuples_fetched
+        FROM pg_indexes i
+        JOIN pg_class c ON c.relname = i.indexname
+        JOIN pg_am am ON c.relam = am.oid
+        LEFT JOIN pg_stat_all_indexes s ON s.indexrelid = c.oid
+        WHERE i.tablename = $1
+        AND i.indexdef LIKE $2
+        """
+
+        # Look for indices on the vector column
+        results = await self.connection_manager.fetch_query(
+            query, (table_name_str, f"%({col_name}%")
+        )
+
+        return [
+            {
+                "name": result["name"],
+                "definition": result["definition"],
+                "method": result["method"],
+                "size_in_bytes": result["size_in_bytes"],
+                "number_of_scans": result["number_of_scans"],
+                "tuples_read": result["tuples_read"],
+                "tuples_fetched": result["tuples_fetched"],
+            }
+            for result in results
+        ]
+
+    async def delete_index(
+        self,
+        index_name: str,
+        table_name: Optional[VectorTableName] = None,
+        concurrently: bool = True,
+    ) -> None:
+        """
+        Deletes a vector index.
+
+        Args:
+            index_name (str): Name of the index to delete
+            table_name (VectorTableName, optional): Table the index belongs to
+            concurrently (bool): Whether to drop the index concurrently
+
+        Raises:
+            ArgError: If table name is invalid or index doesn't exist
+            Exception: If index deletion fails
+        """
+        # Validate table name and get column name
+        if table_name == VectorTableName.RAW_CHUNKS:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
+            )
+            col_name = "vec"
+        elif table_name == VectorTableName.ENTITIES:
+            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.COMMUNITIES:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            )
+            col_name = "embedding"
+        else:
+            raise ArgError("invalid table name")
+
+        # Verify index exists and is a vector index
+        query = """
+        SELECT indexdef
+        FROM pg_indexes
+        WHERE indexname = $1
+        AND tablename = $2
+        AND indexdef LIKE $3
+        """
+
+        result = await self.connection_manager.fetchrow_query(
+            query, (index_name, table_name_str, f"%({col_name}%")
+        )
+
+        if not result:
+            raise ArgError(
+                f"Vector index '{index_name}' does not exist on table {table_name_str}"
+            )
+
+        # Drop the index
+        concurrently_sql = "CONCURRENTLY" if concurrently else ""
+        drop_query = f"DROP INDEX {concurrently_sql} {index_name}"
+
+        try:
+            if concurrently:
+                await self.connection_manager.execute_query(
+                    drop_query, isolation_level="AUTOCOMMIT"
+                )
+            else:
+                await self.connection_manager.execute_query(drop_query)
+        except Exception as e:
+            raise Exception(f"Failed to delete index: {e}")
+
+    async def select_index(
+        self, index_name: str, table_name: Optional[VectorTableName] = None
+    ) -> None:
+        """
+        Updates planner statistics to prefer using the specified index.
+        Note: This is a best-effort operation as PostgreSQL's query planner
+        ultimately decides which index to use.
+
+        Args:
+            index_name (str): Name of the index to prefer
+            table_name (VectorTableName, optional): Table the index belongs to
+
+        Raises:
+            ArgError: If table name is invalid or index doesn't exist
+        """
+        # Validate table name and get column name
+        if table_name == VectorTableName.RAW_CHUNKS:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
+            )
+            col_name = "vec"
+        elif table_name == VectorTableName.ENTITIES:
+            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.COMMUNITIES:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            )
+            col_name = "embedding"
+        else:
+            raise ArgError("invalid table name")
+
+        # Verify index exists and is a vector index
+        query = """
+        SELECT indexdef
+        FROM pg_indexes
+        WHERE indexname = $1
+        AND tablename = $2
+        AND indexdef LIKE $3
+        """
+
+        result = await self.connection_manager.fetchrow_query(
+            query, (index_name, table_name_str, f"%({col_name}%")
+        )
+
+        if not result:
+            raise ArgError(
+                f"Vector index '{index_name}' does not exist on table {table_name_str}"
+            )
+
+        # Update statistics to encourage use of this index
+        # Note: This doesn't guarantee the index will be used
+        await self.connection_manager.execute_query(
+            f"ALTER INDEX {index_name} SET STATISTICS 1000;"
+        )
+
+        # Analyze the table to update planner statistics
+        await self.connection_manager.execute_query(
+            f"ANALYZE {table_name_str};"
+        )
+
     async def get_semantic_neighbors(
         self,
         document_id: UUID,
