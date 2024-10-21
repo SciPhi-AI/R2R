@@ -193,8 +193,15 @@ async def enrich_graph(
     multiple=True,
     help="Entity IDs to filter by.",
 )
+@click.option(
+    "--entity-level",
+    default="collection",
+    help="Entity level to filter by.",
+)
 @pass_context
-async def get_entities(ctx, collection_id, offset, limit, entity_ids):
+async def get_entities(
+    ctx, collection_id, offset, limit, entity_ids, entity_level
+):
     """
     Retrieve entities from the knowledge graph.
     """
@@ -202,6 +209,7 @@ async def get_entities(ctx, collection_id, offset, limit, entity_ids):
 
     with timer():
         response = await client.get_entities(
+            entity_level,
             collection_id,
             offset,
             limit,

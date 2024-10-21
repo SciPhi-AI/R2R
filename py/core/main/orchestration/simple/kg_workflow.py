@@ -101,9 +101,8 @@ def simple_kg_factory(service: KgService):
             **input_data["kg_enrichment_settings"],
         )
 
-
     async def entity_deduplication_workflow(input_data):
-    
+
         collection_id = input_data["collection_id"]
 
         number_of_distinct_entities = (

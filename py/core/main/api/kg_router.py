@@ -17,7 +17,8 @@ from core.base.api.models import (
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
-from shared.abstractions.kg import KGRunType, EntityType
+from shared.abstractions.kg import KGRunType
+from shared.abstractions.graph import EntityLevel
 from shared.utils.base_utils import update_settings_from_dict
 
 from ..services.kg_service import KgService
@@ -210,8 +211,8 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
-            entities_type: Optional[EntityType] = Query(
-                default=EntityType.DEDUP_COLLECTION,
+            entity_level: Optional[EntityLevel] = Query(
+                default=EntityLevel.COLLECTION,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
             ),
             collection_id: Optional[UUID] = Query(
@@ -237,9 +238,9 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            if entities_type == EntityType.RAW:
+            if entity_level == EntityLevel.CHUNK:
                 entity_table_name = "entity_raw"
-            elif entities_type == EntityType.DEDUP_DOCUMENT:
+            elif entity_level == EntityLevel.DOCUMENT:
                 entity_table_name = "entity_embedding"
             else:
                 entity_table_name = "entity_collection"

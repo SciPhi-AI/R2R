@@ -690,17 +690,44 @@ def test_kg_create_graph_sample_file_sdk():
         time.sleep(60)
 
     result = client.get_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", limit=1000
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        limit=1000,
+        entity_level="document",
     )
 
     entities_list = [ele["name"] for ele in result["results"]["entities"]]
 
     print(entities_list)
 
+    # TODO: Add entity_type to the get_entities endpoint
+    # assert len(entities_list) >= 1
+    # assert "ARISTOTLE" in entities_list
+
+    print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_deduplicate_entities_sample_file_sdk():
+    print("Testing: KG deduplicate entities")
+
+    entities_deduplication_result = client.deduplicate_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    if "queued" in entities_deduplication_result["results"]["message"]:
+        time.sleep(60)
+
+    response = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        limit=1000,
+        entity_level="collection",
+    )
+
+    entities_list = [ele["name"] for ele in response["results"]["entities"]]
     assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
 
-    print("KG create graph test passed")
+    print("KG deduplicate entities test passed")
     print("~" * 100)
 
 

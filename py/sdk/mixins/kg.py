@@ -9,6 +9,7 @@ from ..models import (
     KGEntityDeduplicationSettings,
 )
 
+
 class KGMixins:
     async def create_graph(
         self,
@@ -69,6 +70,7 @@ class KGMixins:
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
+        entity_level: Optional[str] = "collection",
         entity_ids: Optional[list[str]] = None,
     ) -> dict:
         """
@@ -78,12 +80,14 @@ class KGMixins:
             collection_id (str): The ID of the collection to retrieve entities from.
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
+            entity_level (Optional[str]): The level of entity to filter by.
             entity_ids (Optional[List[str]]): Optional list of entity IDs to filter by.
 
         Returns:
             dict: A dictionary containing the retrieved entities and total count.
         """
         params = {
+            "entity_level": entity_level,
             "collection_id": collection_id,
             "offset": offset,
             "limit": limit,
