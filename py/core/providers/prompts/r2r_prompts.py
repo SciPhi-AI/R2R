@@ -219,7 +219,7 @@ class R2RPromptProvider(PromptProvider):
             logger.error(f"Failed to add/update prompt '{name}': {e}")
             raise
 
-    def get_prompt(
+    async def get_prompt(
         self,
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,

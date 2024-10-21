@@ -25,7 +25,8 @@ response = client.search("query", vector_search_settings=vector_search_settings)
 
 1. `use_vector_search` (bool): Whether to use vector search
 2. `use_hybrid_search` (bool): Whether to perform a hybrid search (combining vector and keyword search)
-3. `filters` (dict): Filters to apply to the vector search
+3. `filters` (dict): Alias for filters
+3. `search_filters` (dict): Filters to apply to the vector search
 4. `search_limit` (int): Maximum number of results to return (1-1000)
 5. `selected_collection_ids` (list[UUID]): Collection Ids to search for
 6. `index_measure` (IndexMeasure): The distance measure to use for indexing (cosine_distance, l2_distance, or max_inner_product)

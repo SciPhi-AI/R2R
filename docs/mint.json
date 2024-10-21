@@ -112,7 +112,8 @@
                 "documentation/python-sdk/retrieval",
                 "documentation/python-sdk/auth",
                 "documentation/python-sdk/collections",
-                "documentation/python-sdk/observability"
+                "documentation/python-sdk/observability",
+                "documentation/python-sdk/conversations"
               ]
             },
             {
@@ -124,7 +125,8 @@
                 "documentation/js-sdk/retrieval",
                 "documentation/js-sdk/auth",
                 "documentation/js-sdk/collections",
-                "documentation/js-sdk/observability"
+                "documentation/js-sdk/observability",
+                "documentation/js-sdk/conversations"
               ]
             },
             {

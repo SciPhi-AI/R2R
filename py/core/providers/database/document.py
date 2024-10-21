@@ -75,24 +75,6 @@ class DocumentMixin(DatabaseMixin):
         """
         await self.execute_query(query)
 
-        # TODO - Remove this after the next release
-        # Additional query to check and add the column if it doesn't exist
-        # add_column_query = f"""
-        # DO $$
-        # BEGIN
-        #     IF NOT EXISTS (
-        #         SELECT 1
-        #         FROM information_schema.columns
-        #         WHERE table_name = '{self._get_table_name("document_info")}'
-        #         AND column_name = 'ingestion_attempt_number'
-        #     ) THEN
-        #         ALTER TABLE {self._get_table_name("document_info")}
-        #         ADD COLUMN ingestion_attempt_number INT DEFAULT 0;
-        #     END IF;
-        # END $$;
-        # """
-        # await self.execute_query(add_column_query)
-
     async def upsert_documents_overview(
         self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
     ) -> None:

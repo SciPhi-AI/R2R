@@ -251,8 +251,10 @@ def test_rag_response_stream_sample_file_cli():
 def test_kg_create_graph_sample_file_cli():
     print("Testing: KG create graph")
     print("Calling `poetry run r2r create-graph --run` ")
-    run_command("poetry run r2r create-graph --run")
-    time.sleep(120)
+    output = run_command("poetry run r2r create-graph --run")
+
+    if "queued" in output:
+        time.sleep(60)
 
     response = requests.get(
         "http://localhost:7272/v2/entities",
@@ -281,9 +283,10 @@ def test_kg_create_graph_sample_file_cli():
 
 def test_kg_enrich_graph_sample_file_cli():
     print("Testing: KG enrich graph")
-    run_command("poetry run r2r enrich-graph --run")
+    output = run_command("poetry run r2r enrich-graph --run")
 
-    time.sleep(120)
+    if "queued" in output:
+        time.sleep(60)
 
     response = requests.get(
         "http://localhost:7272/v2/communities",

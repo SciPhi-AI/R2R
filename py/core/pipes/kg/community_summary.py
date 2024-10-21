@@ -19,6 +19,8 @@ from core.base import (
     R2RLoggingProvider,
 )
 
+from shared.abstractions.graph import Entity, Triple
+
 logger = logging.getLogger()
 
 
@@ -55,40 +57,79 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def community_summary_prompt(
         self,
-        entities: list,
-        triples: list,
+        entities: list[Entity],
+        triples: list[Triple],
         max_summary_input_length: int,
     ):
-        """
-        Preparing the list of entities and triples to be summarized and created into a community summary.
-        """
-        entities_info = "\n".join(
-            [
-                f"{entity['id']}, {entity['name']}, {entity['description']}"
-                for entity in entities
-            ]
+
+        entity_map: dict[str, dict[str, list[Any]]] = {}
+        for entity in entities:
+            if not entity.name in entity_map:
+                entity_map[entity.name] = {"entities": [], "triples": []}
+            entity_map[entity.name]["entities"].append(entity)
+
+        for triple in triples:
+            if not triple.subject in entity_map:
+                entity_map[triple.subject] = {
+                    "entities": [],
+                    "triples": [],
+                }
+            entity_map[triple.subject]["triples"].append(triple)
+
+        # sort in descending order of triple count
+        sorted_entity_map = sorted(
+            entity_map.items(),
+            key=lambda x: len(x[1]["triples"]),
+            reverse=True,
         )
 
-        triples_info = "\n".join(
-            [
-                f"{triple['id']}, {triple['subject']}, {triple['object']}, {triple['predicate']}, {triple['description']}"
-                for triple in triples
-            ]
-        )
-
-        prompt = f"""
-        Entities:
-        {entities_info}
-
-        Relationships:
-        {triples_info}
-        """
-
-        if len(prompt) > max_summary_input_length:
-            logger.info(
-                f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
+        async def _get_entity_descriptions_string(
+            entities: list, max_count: int = 100
+        ):
+            # randomly sample max_count entities if there are duplicates. This will become a map reduce job later.
+            sampled_entities = (
+                random.sample(entities, max_count)
+                if len(entities) > max_count
+                else entities
             )
-            prompt = prompt[:max_summary_input_length]
+            return "\n".join(
+                f"{entity.id},{entity.description}"
+                for entity in sampled_entities
+            )
+
+        async def _get_triples_string(triples: list, max_count: int = 100):
+            sampled_triples = (
+                random.sample(triples, max_count)
+                if len(triples) > max_count
+                else triples
+            )
+            return "\n".join(
+                f"{triple.id},{triple.subject},{triple.object},{triple.predicate},{triple.description}"
+                for triple in sampled_triples
+            )
+
+        prompt = ""
+        for entity_name, entity_data in sorted_entity_map:
+            entity_descriptions = await _get_entity_descriptions_string(
+                entity_data["entities"]
+            )
+            triples = await _get_triples_string(entity_data["triples"])
+
+            prompt += f"""
+            Entity: {entity_name}
+            Descriptions:
+                {entity_descriptions}
+            Triples:
+                {triples}
+            """
+
+            if len(prompt) > max_summary_input_length:
+                logger.info(
+                    f"Community summary prompt was created of length {len(prompt)}, trimming to {max_summary_input_length} characters."
+                )
+                # open a file and write the prompt to it
+                prompt = prompt[:max_summary_input_length]
+                break
 
         return prompt
 
@@ -119,7 +160,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=self.prompt_provider._get_message_payload(
+                        messages=await self.prompt_provider._get_message_payload(
                             task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
                             task_inputs={
                                 "input_text": (
@@ -208,7 +249,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
         logger = input.message.get("logger", logging.getLogger())
 
         # check which community summaries exist and don't run them again
-
         logger.info(
             f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )

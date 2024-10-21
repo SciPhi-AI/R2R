@@ -2,6 +2,8 @@ import json
 from typing import Any, Optional, Union
 from uuid import UUID
 
+from shared.abstractions.llm import Message
+
 
 class ManagementMethods:
     @staticmethod
@@ -248,6 +250,7 @@ class ManagementMethods:
         document_id: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        include_vectors: Optional[bool] = False,
     ) -> dict:
         """
         Get the chunks for a document.
@@ -263,6 +266,8 @@ class ManagementMethods:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
+        if include_vectors:
+            params["include_vectors"] = include_vectors
         if not params:
             return await client._make_request(
                 "GET", f"document_chunks/{document_id}"
@@ -658,6 +663,35 @@ class ManagementMethods:
         )
 
     @staticmethod
+    async def conversations_overview(
+        client,
+        conversation_ids: Optional[list[Union[UUID, str]]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> dict:
+        """
+        Get an overview of existing conversations.
+
+        Args:
+            conversation_ids (Optional[list[Union[UUID, str]]]): list of conversation IDs to retrieve.
+            offset (Optional[int]): The offset to start listing conversations from.
+            limit (Optional[int]): The maximum number of conversations to return.
+
+        Returns:
+            dict[str, any]: The overview of conversations in the system.
+        """
+        params: dict = {}
+        if conversation_ids:
+            params["conversation_ids"] = [str(cid) for cid in conversation_ids]
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+        return await client._make_request(
+            "GET", "conversations_overview", params=params
+        )
+
+    @staticmethod
     async def get_conversation(
         client,
         conversation_id: Union[str, UUID],
@@ -667,15 +701,153 @@ class ManagementMethods:
         Get a conversation by its ID.
 
         Args:
-            conversation_id (str): The ID of the conversation to retrieve.
+            conversation_id (Union[str, UUID]): The ID of the conversation to retrieve.
             branch_id (Optional[str]): The ID of a specific branch to retrieve.
 
         Returns:
             dict: The conversation data.
         """
-        params = {}
-        if branch_id is not None:
-            params["branch_id"] = branch_id
+        query_params = f"?branch_id={branch_id}" if branch_id else ""
         return await client._make_request(
-            "GET", f"conversations/{str(conversation_id)}", params=params
+            "GET", f"get_conversation/{str(conversation_id)}{query_params}"
+        )
+
+    @staticmethod
+    async def create_conversation(client) -> dict:
+        """
+        Create a new conversation.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request("POST", "create_conversation")
+
+    @staticmethod
+    async def add_message(
+        client,
+        conversation_id: Union[str, UUID],
+        message: Message,
+        parent_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> dict:
+        """
+        Add a message to an existing conversation.
+
+        Args:
+            conversation_id (Union[str, UUID]): The ID of the conversation.
+            message (Message): The message to add.
+            parent_id (Optional[str]): The ID of the parent message.
+            metadata (Optional[dict[str, Any]]): Additional metadata for the message.
+
+        Returns:
+            dict: The response from the server.
+        """
+        data: dict = {"message": message}
+        if parent_id is not None:
+            data["parent_id"] = parent_id
+        if metadata is not None:
+            data["metadata"] = metadata
+        return await client._make_request(
+            "POST", f"add_message/{str(conversation_id)}", data=data
+        )
+
+    @staticmethod
+    async def update_message(
+        client,
+        message_id: str,
+        message: Message,
+    ) -> dict:
+        """
+        Update a message in an existing conversation.
+
+        Args:
+            message_id (str): The ID of the message to update.
+            message (Message): The updated message.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request(
+            "PUT", f"update_message/{message_id}", data=message
+        )
+
+    @staticmethod
+    async def branches_overview(
+        client,
+        conversation_id: Union[str, UUID],
+    ) -> dict:
+        """
+        Get an overview of branches in a conversation.
+
+        Args:
+            conversation_id (Union[str, UUID]): The ID of the conversation to get branches for.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request(
+            "GET", f"branches_overview/{str(conversation_id)}"
+        )
+
+    # TODO: Publish these methods once more testing is done
+    # @staticmethod
+    # async def get_next_branch(client, branch_id: str) -> dict:
+    #     """
+    #     Get the next branch in a conversation.
+    #
+    #     Args:
+    #         branch_id (str): The ID of the branch to get the next branch for.
+    #
+    #     Returns:
+    #         dict: The response from the server.
+    #     """
+    #     return await client._make_request("GET", f"get_next_branch/{branch_id}")
+    #
+    # @staticmethod
+    # async def get_previous_branch(client, branch_id: str) -> dict:
+    #     """
+    #     Get the previous branch in a conversation.
+    #
+    #     Args:
+    #         branch_id (str): The ID of the branch to get the previous branch for.
+    #
+    #     Returns:
+    #         dict: The response from the server.
+    #     """
+    #     return await client._make_request("GET", f"get_previous_branch/{branch_id}")
+    #
+    # @staticmethod
+    # async def branch_at_message(
+    #     client,
+    #     conversation_id: Union[str, UUID],
+    #     message_id: str,
+    # ) -> dict:
+    #     """
+    #     Branch at a specific message in a conversation.
+    #
+    #     Args:
+    #         conversation_id (Union[str, UUID]): The ID of the conversation to branch.
+    #         message_id (str): The ID of the message to branch at.
+    #
+    #     Returns:
+    #         dict: The response from the server.
+    #     """
+    #     return await client._make_request("POST", f"branch_at_message/{str(conversation_id)}/{message_id}")
+
+    @staticmethod
+    async def delete_conversation(
+        client,
+        conversation_id: Union[str, UUID],
+    ) -> dict:
+        """
+        Delete a conversation by its ID.
+
+        Args:
+            conversation_id (Union[str, UUID]): The ID of the conversation to delete.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await client._make_request(
+            "DELETE", f"delete_conversation/{str(conversation_id)}"
         )

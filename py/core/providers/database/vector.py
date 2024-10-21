@@ -1,5 +1,6 @@
 import concurrent.futures
 import copy
+import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -490,16 +491,25 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 raise
 
     def get_document_chunks(
-        self, document_id: str, offset: int = 0, limit: int = -1
+        self,
+        document_id: str,
+        offset: int = 0,
+        limit: int = -1,
+        include_vectors: bool = False,
     ) -> dict[str, Any]:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 
         limit_clause = f"LIMIT {limit}" if limit != -1 else ""
         table_name = self.collection.table.name
+
+        select_clause = "SELECT extraction_id, document_id, user_id, collection_ids, text, metadata"
+        if include_vectors:
+            select_clause += ", vec"
+
         query = text(
             f"""
-            SELECT extraction_id, document_id, user_id, collection_ids, text, metadata, COUNT(*) OVER() AS total
+            {select_clause}, COUNT(*) OVER() AS total
             FROM {self.project_name}."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
@@ -518,7 +528,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         total = 0
 
         if results:
-            total = results[0][6]
+            total = results[0][-1]  # Get the total count from the last column
             chunks = [
                 {
                     "extraction_id": result[0],
@@ -527,6 +537,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     "collection_ids": result[3],
                     "text": result[4],
                     "metadata": result[5],
+                    "vector": (
+                        json.loads(result[6]) if include_vectors else None
+                    ),
                 }
                 for result in results
             ]

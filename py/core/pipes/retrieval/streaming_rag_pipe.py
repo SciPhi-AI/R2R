@@ -67,7 +67,7 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             gen_context = format_search_results_for_llm(search_results)
             context += gen_context
 
-        messages = self.prompt_provider._get_message_payload(
+        messages = await self.prompt_provider._get_message_payload(
             system_prompt_name=self.config.system_prompt,
             task_prompt_name=self.config.task_prompt,
             task_inputs={"query": query, "context": context},

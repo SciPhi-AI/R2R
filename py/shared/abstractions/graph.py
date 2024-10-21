@@ -83,13 +83,13 @@ class Triple(BaseModel):
 
     id: Optional[int] = None
 
-    subject: str | None = None
+    subject: str
     """The source entity name."""
 
-    predicate: str | None = None
+    predicate: str
     """A description of the relationship (optional)."""
 
-    object: str | None = None
+    object: str
     """The target entity name."""
 
     weight: float | None = 1.0

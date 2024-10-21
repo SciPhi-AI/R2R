@@ -65,7 +65,15 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="filters" type="Record<string, any>" default="{}">
-    Filters to apply to the vector search.
+      Commonly seen filters include operations include the following:
+
+      `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+      `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+      `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+      `{"$and": {"$document_id": ..., "collection_ids": ...}}`
     </ParamField>
 
     <ParamField path="search_limit" type="number" default="10">
@@ -101,9 +109,25 @@ const searchResponse = await client.search("What was Uber's profit in 2020?");
 
   <Expandable title="properties">
 
-    <ParamField path="filters" type="dict[str, Any]">
-      Filters to apply to the vector search. This field is deprecated in favor of `filters`.
+    <ParamField path="filters" type="dict[str, Any]" default="{}">
+      Alias for `search_filters`, now `deprecated`.
     </ParamField>
+
+    <ParamField path="search_filters" type="dict[str, Any]" default="{}">
+      Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+      Commonly seen filters include operations include the following:
+
+        `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+        `{"$and": {"$document_id": ..., "collection_ids": ...}}`
+    </ParamField>
+
+
 
     <ParamField path="selected_collection_ids" type="list[UUID]">
       Collection IDs to search for.
@@ -277,7 +301,21 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
     </ParamField>
 
     <ParamField path="filters" type="dict[str, Any]" default="{}">
-    Filters to apply to the vector search.
+    Alias for `search_filters`, now `deprecated`.
+    </ParamField>
+
+    <ParamField path="search_filters" type="dict[str, Any]" default="{}">
+      Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+      Commonly seen filters include operations include the following:
+
+        `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+        `{"$and": {"$document_id": ..., "collection_ids": ...}}`
     </ParamField>
 
     <ParamField path="search_limit" type="int" default="10">
@@ -337,9 +375,23 @@ const ragResponse = await client.rag("What was Uber's profit in 2020?");
 
   The `KGSearchSettings` class allows you to configure the knowledge graph search settings for your R2R system. Here are the available options:
 
-  <ParamField path="filters" type="dict[str, Any]">
-    Filters to apply to the vector search. This field is deprecated in favor of `filters`.
-  </ParamField>
+    <ParamField path="filters" type="dict[str, Any]" default="{}">
+      Alias for `search_filters`, now `deprecated`.
+    </ParamField>
+
+    <ParamField path="search_filters" type="dict[str, Any]" default="{}">
+      Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+      Commonly seen filters include operations include the following:
+
+        `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+        `{"$and": {"$document_id": ..., "collection_ids": ...}}`
+    </ParamField>
 
   <ParamField path="selected_collection_ids" type="list[UUID]">
     Collection IDs to search for.

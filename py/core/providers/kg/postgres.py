@@ -1,8 +1,8 @@
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
-import time
 
 import asyncpg
 
@@ -218,12 +218,18 @@ class PostgresKGProvider(KGProvider):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
+        for entity in entities:
+            if entity.description_embedding is not None:
+                entity.description_embedding = str(  # type: ignore
+                    entity.description_embedding
+                )
+
         return await self._add_objects(entities, table_name)
 
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str = "triples",
+        table_name: str = "triple_raw",
     ) -> None:
         """
         Upsert triples into the triple_raw table. These are raw triples extracted from the document.
@@ -396,16 +402,6 @@ class PostgresKGProvider(KGProvider):
         query = QUERY.format(table_name)
         await self.execute_query(query, entities)
 
-    async def upsert_relationships(self, relationships: list[Triple]) -> None:
-        QUERY = """
-            INSERT INTO $1.$2 (source, target, relationship)
-            VALUES ($1, $2, $3)
-            """
-
-        table_name = self._get_table_name("triples")
-        query = QUERY.format(table_name)
-        await self.execute_query(query, relationships)
-
     async def vector_query(self, query: str, **kwargs: Any) -> Any:
 
         query_embedding = kwargs.get("query_embedding", None)
@@ -441,6 +437,7 @@ class PostgresKGProvider(KGProvider):
                 or search_type == "__Relationship__"
             ):
                 filter_query = "WHERE document_id = ANY($3)"
+                # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
                 query = f"""
                     SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
                 """
@@ -584,7 +581,6 @@ class PostgresKGProvider(KGProvider):
             weight_default: Union[int, float] = 1.0,
             check_directed: bool = True,
         """
-        settings: Dict[str, Any] = {}
 
         start_time = time.time()
         triples = await self.get_all_triples(collection_id)
@@ -711,6 +707,7 @@ class PostgresKGProvider(KGProvider):
             JOIN {self._get_table_name("entity_embedding")} e ON e.name = nti.node;
         """
         entities = await self.fetch_query(QUERY, [community_number])
+        entities = [Entity(**entity) for entity in entities]
 
         QUERY = f"""
             WITH node_triple_ids AS (
@@ -725,6 +722,7 @@ class PostgresKGProvider(KGProvider):
             JOIN {self._get_table_name("triple_raw")} t ON t.id = ANY(nti.triple_ids);
         """
         triples = await self.fetch_query(QUERY, [community_number])
+        triples = [Triple(**triple) for triple in triples]
 
         return level, entities, triples
 
@@ -1059,7 +1057,7 @@ class PostgresKGProvider(KGProvider):
         entities = [Entity(**entity) for entity in results]
 
         total_entries = await self.get_entity_count(
-            collection_id=collection_id
+            collection_id=collection_id, entity_table_name=entity_table_name
         )
 
         return {"entities": entities, "total_entries": total_entries}

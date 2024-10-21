@@ -93,7 +93,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         # combine all extractions into a single string
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
-        messages = self.prompt_provider._get_message_payload(
+        messages = await self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_triples_extraction_prompt,
             task_inputs={
                 "input": combined_extraction,

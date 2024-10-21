@@ -63,8 +63,23 @@ search_response = client.search("What was Uber's profit in 2020?")
     Whether to perform a hybrid search (combining vector and keyword search).
     </ParamField>
 
+
     <ParamField path="filters" type="dict[str, Any]" default="{}">
-    Filters to apply to the vector search.
+      Alias for `search_filters`, now `deprecated`.
+    </ParamField>
+
+    <ParamField path="search_filters" type="dict[str, Any]" default="{}">
+      Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+      Commonly seen filters include operations include the following:
+
+        `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+        `{"$and": {"$document_id": ..., "collection_ids": ...}}`
     </ParamField>
 
     <ParamField path="search_limit" type="int" default="10">
@@ -326,8 +341,23 @@ rag_response = client.rag("What was Uber's profit in 2020?")
     Whether to perform a hybrid search (combining vector and keyword search).
     </ParamField>
 
+
     <ParamField path="filters" type="dict[str, Any]" default="{}">
-    Filters to apply to the vector search.
+      Alias for `search_filters`, now `deprecated`.
+    </ParamField>
+
+    <ParamField path="search_filters" type="dict[str, Any]" default="{}">
+      Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+      Commonly seen filters include operations include the following:
+
+        `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+        `{"$and": {"$document_id": ..., "collection_ids": ...}}`
     </ParamField>
 
     <ParamField path="search_limit" type="int" default="10">
@@ -637,7 +667,21 @@ Note that any of the customization seen in AI powered search and RAG documentati
     </ParamField>
 
     <ParamField path="filters" type="dict[str, Any]" default="{}">
-    Filters to apply to the vector search.
+      Alias for `search_filters`, now `deprecated`.
+    </ParamField>
+
+    <ParamField path="search_filters" type="dict[str, Any]" default="{}">
+      Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+      Commonly seen filters include operations include the following:
+
+        `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+        `{"$and": {"$document_id": ..., "collection_ids": ...}}`
     </ParamField>
 
     <ParamField path="search_limit" type="int" default="10">

@@ -10,7 +10,7 @@ from fastapi import Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import Json
 
-from core.base import R2RException
+from core.base import R2RException, Message
 from core.base.api.models import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
@@ -23,13 +23,13 @@ from core.base.api.models import (
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedGetPromptsResponse,
-    WrappedKnowledgeGraphResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
+    WrappedConversationsOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 from core.base.providers import OrchestrationProvider
@@ -367,12 +367,13 @@ class ManagementRouter(BaseRouter):
             document_id: str = Path(...),
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=0),
+            include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
             document_uuid = UUID(document_id)
 
             document_chunks = await self.service.document_chunks(
-                document_uuid, offset, limit
+                document_uuid, offset, limit, include_vectors
             )
 
             document_chunks_result = document_chunks["results"]
@@ -794,7 +795,32 @@ class ManagementRouter(BaseRouter):
                 ]
             }
 
-        @self.router.get("/conversations/{conversation_id}")
+        @self.router.get("/conversations_overview")
+        @self.base_endpoint
+        async def conversations_overview_app(
+            conversation_ids: list[str] = Query([]),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedConversationsOverviewResponse:
+            conversation_uuids = [
+                UUID(conversation_id) for conversation_id in conversation_ids
+            ]
+            conversations_overview_response = (
+                await self.service.conversations_overview(
+                    conversation_ids=conversation_uuids,
+                    offset=offset,
+                    limit=limit,
+                )
+            )
+
+            return conversations_overview_response["results"], {  # type: ignore
+                "total_entries": conversations_overview_response[
+                    "total_entries"
+                ]
+            }
+
+        @self.router.get("/get_conversation/{conversation_id}")
         @self.base_endpoint
         async def get_conversation(
             conversation_id: str = Path(..., description="Conversation ID"),
@@ -802,6 +828,93 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedConversationResponse:
             result = await self.service.get_conversation(
-                conversation_id, branch_id, auth_user
+                conversation_id,
+                branch_id,
             )
             return result
+
+        @self.router.post("/create_conversation")
+        @self.base_endpoint
+        async def create_conversation(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> dict:
+            return await self.service.create_conversation()
+
+        @self.router.post("/add_message/{conversation_id}")
+        @self.base_endpoint
+        async def add_message(
+            conversation_id: str = Path(..., description="Conversation ID"),
+            message: Message = Body(..., description="Message content"),
+            parent_id: Optional[str] = Body(
+                None, description="Parent message ID"
+            ),
+            metadata: Optional[dict] = Body(None, description="Metadata"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> dict:
+            message_id = await self.service.add_message(
+                conversation_id, message, parent_id, metadata
+            )
+            return {"message_id": message_id}
+
+        @self.router.put("/update_message/{message_id}")
+        @self.base_endpoint
+        async def edit_message(
+            message_id: str = Path(..., description="Message ID"),
+            message: str = Body(..., description="New content"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> dict:
+            new_message_id, new_branch_id = await self.service.edit_message(
+                message_id, message
+            )
+            return {
+                "new_message_id": new_message_id,
+                "new_branch_id": new_branch_id,
+            }
+
+        @self.router.get("/branches_overview/{conversation_id}")
+        @self.base_endpoint
+        async def branches_overview(
+            conversation_id: str = Path(..., description="Conversation ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> dict:
+            branches = await self.service.branches_overview(conversation_id)
+            return {"branches": branches}
+
+        # TODO: Publish this endpoint once more testing is done
+        # @self.router.get("/get_next_branch/{branch_id}")
+        # @self.base_endpoint
+        # async def get_next_branch(
+        #     branch_id: str = Path(..., description="Current branch ID"),
+        #     auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        # ) -> dict:
+        #     next_branch_id = await self.service.get_next_branch(branch_id)
+        #     return {"next_branch_id": next_branch_id}
+
+        # TODO: Publish this endpoint once more testing is done
+        # @self.router.get("/get_previous_branch/{branch_id}")
+        # @self.base_endpoint
+        # async def get_prev_branch(
+        #     branch_id: str = Path(..., description="Current branch ID"),
+        #     auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        # ) -> dict:
+        #     prev_branch_id = await self.service.get_prev_branch(branch_id)
+        #     return {"prev_branch_id": prev_branch_id}
+
+        # TODO: Publish this endpoint once more testing is done
+        # @self.router.post("/branch_at_message/{message_id}")
+        # @self.base_endpoint
+        # async def branch_at_message(
+        #     message_id: str = Path(..., description="Message ID"),
+        #     auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        # ) -> dict:
+        #     branch_id = await self.service.branch_at_message(message_id)
+        #     return {"branch_id": branch_id}
+
+        @self.router.delete("/delete_conversation/{conversation_id}")
+        @self.base_endpoint
+        async def delete_conversation(
+            conversation_id: str = Path(..., description="Conversation ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedDeleteResponse:
+            await self.service.delete_conversation(conversation_id)
+            return None  # type: ignore

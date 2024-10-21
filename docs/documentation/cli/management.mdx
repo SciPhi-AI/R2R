@@ -119,5 +119,10 @@ r2r document-chunks --document-id doc1 --offset 0 --limit 10
     <ParamField path="--limit" type="int">
       The maximum number of nodes to return. Defaults to 100.
     </ParamField>
+
+    <ParamField path="include_vectors" type="Optional[bool]">
+      An optional value to return the vectors associated with each chunk, defaults to `False`.
+    </ParamField>
+
   </Accordion>
 </AccordionGroup>

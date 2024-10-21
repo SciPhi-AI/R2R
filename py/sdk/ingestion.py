@@ -140,10 +140,9 @@ class IngestionMethods:
         Ingest files into your R2R deployment
 
         Args:
-            file_paths (List[str]): List of file paths to ingest.
-            document_ids (Optional[List[str]]): List of document IDs.
-            metadatas (Optional[List[dict]]): List of metadata dictionaries for each file.
-            ingestion_config (Optional[Union[dict]]): Custom chunking configuration.
+            chunks (List[dict]): List of dictionaries containing chunk data.
+            document_id (Optional[UUID]): The ID of the document to ingest chunks into.
+            metadata (Optional[dict]): Metadata dictionary for the document
 
         Returns:
             dict: Ingestion results containing processed, failed, and skipped documents.

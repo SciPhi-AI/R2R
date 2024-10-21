@@ -20,7 +20,7 @@ from cli.utils.timer import timer
 @click.option(
     "--filters",
     type=JSON,
-    help="Filters to apply to the vector search as a JSON",
+    help="""Filters to apply to the vector search as a JSON, e.g. --filters='{"document_id":{"$in":["9fbe403b-c11c-5aae-8ade-ef22980c3ad1", "3e157b3a-8469-51db-90d9-52e7d896b49b"]}}'""",
 )
 @click.option(
     "--search-limit", default=None, help="Number of search results to return"
