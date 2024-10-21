@@ -5,8 +5,7 @@ from .database import (
     DatabaseConfig,
     DatabaseProvider,
     PostgresConfigurationSettings,
-    RelationalDBProvider,
-    VectorDBProvider,
+    VectorQuantizationType,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
@@ -35,8 +34,7 @@ __all__ = [
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
+    "VectorQuantizationType",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

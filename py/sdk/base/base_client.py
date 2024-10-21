@@ -1,4 +1,5 @@
 from typing import Optional
+
 from shared.abstractions import R2RException
 
 

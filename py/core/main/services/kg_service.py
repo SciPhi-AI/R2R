@@ -8,12 +8,10 @@ from uuid import UUID
 from core.base import KGExtractionStatus, R2RLoggingProvider, RunManager
 from core.base.abstractions import (
     GenerationConfig,
-    KGEntityDeduplicationType,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationType,
 )
-
-
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -70,7 +68,7 @@ class KgService(Service):
                 f"KGService: Processing document {document_id} for KG extraction"
             )
 
-            await self.providers.database.relational.set_workflow_status(
+            await self.providers.database.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.PROCESSING,
@@ -104,7 +102,7 @@ class KgService(Service):
 
         except Exception as e:
             logger.error(f"KGService: Error in kg_extraction: {e}")
-            await self.providers.database.relational.set_workflow_status(
+            await self.providers.database.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.FAILED,
@@ -130,10 +128,12 @@ class KgService(Service):
                 KGExtractionStatus.PROCESSING,
             ]
 
-        document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_extraction_status",
-            status=document_status_filter,
-            collection_id=collection_id,
+        document_ids = (
+            await self.providers.database.get_document_ids_by_status(
+                status_type="kg_extraction_status",
+                status=document_status_filter,
+                collection_id=collection_id,
+            )
         )
 
         return document_ids
@@ -196,7 +196,7 @@ class KgService(Service):
                 f"KGService: Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
-        await self.providers.database.relational.set_workflow_status(
+        await self.providers.database.set_workflow_status(
             id=document_id,
             status_type="kg_extraction_status",
             status=KGExtractionStatus.SUCCESS,

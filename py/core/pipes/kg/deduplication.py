@@ -1,11 +1,10 @@
 import logging
-from typing import Optional
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base.pipes import AsyncPipe, PipeType
 from core.base import AsyncState
-from typing import Any, AsyncGenerator
-
+from core.base.logging import R2RLoggingProvider
+from core.base.pipes import AsyncPipe, PipeType
 from core.base.providers import (
     CompletionProvider,
     EmbeddingProvider,
@@ -13,8 +12,6 @@ from core.base.providers import (
     PromptProvider,
 )
 from shared.abstractions.graph import Entity
-from core.base.logging import R2RLoggingProvider
-
 from shared.abstractions.kg import KGEntityDeduplicationType
 
 logger = logging.getLogger()

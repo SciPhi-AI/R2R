@@ -1,12 +1,5 @@
 from cli.command_group import cli
-from cli.commands import (
-    auth,
-    ingestion,
-    kg,
-    management,
-    retrieval,
-    server,
-)
+from cli.commands import auth, ingestion, kg, management, retrieval, server
 from cli.utils.telemetry import posthog, telemetry
 
 

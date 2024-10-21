@@ -67,14 +67,16 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
             try:
-                collection_id = await service.providers.database.relational.assign_document_to_collection(
-                    document_id=document_info.id,
-                    collection_id=generate_default_user_collection_id(
-                        str(document_info.user_id)
-                    ),
+                # TODO - Move logic onto management service
+                collection_id = generate_default_user_collection_id(
+                    str(document_info.user_id)
                 )
-                service.providers.database.vector.assign_document_to_collection(
-                    document_id=document_info.id, collection_id=collection_id
+                await service.providers.database.assign_document_to_collection_relational(
+                    document_id=document_info.id,
+                    collection_id=collection_id,
+                )
+                await service.providers.database.assign_document_to_collection_vector(
+                    document_info.id, collection_id
                 )
             except Exception as e:
                 logger.error(
@@ -125,7 +127,7 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
         documents_overview = (
-            await service.providers.database.relational.get_documents_overview(
+            await service.providers.database.get_documents_overview(
                 filter_document_ids=document_ids,
                 filter_user_ids=None if user.is_superuser else [user.id],
             )
@@ -227,13 +229,15 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
             try:
-                collection_id = await service.providers.database.relational.assign_document_to_collection(
-                    document_id=document_info.id,
-                    collection_id=generate_default_user_collection_id(
-                        str(document_info.user_id)
-                    ),
+                # TODO - Move logic onto management service
+                collection_id = generate_default_user_collection_id(
+                    str(document_info.user_id)
                 )
-                service.providers.database.vector.assign_document_to_collection(
+                await service.providers.database.assign_document_to_collection_relational(
+                    document_id=document_info.id,
+                    collection_id=collection_id,
+                )
+                await service.providers.database.assign_document_to_collection_vector(
                     document_id=document_info.id, collection_id=collection_id
                 )
             except Exception as e:
@@ -262,7 +266,7 @@ def simple_ingestion_factory(service: IngestionService):
                 )
             )
 
-            service.providers.database.vector.create_index(**parsed_data)
+            service.providers.database.create_index(**parsed_data)
 
         except Exception as e:
             raise R2RException(

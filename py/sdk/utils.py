@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import inspect
-from typing import Callable, Any
+from typing import Any, Callable
 
 
 def sync_wrapper(async_func: Callable) -> Callable:

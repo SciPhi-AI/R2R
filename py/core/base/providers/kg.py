@@ -10,11 +10,11 @@ from ..abstractions import (
     Entity,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
     KGExtraction,
     KGSearchSettings,
     RelationshipType,
     Triple,
-    KGEntityDeduplicationSettings,
 )
 from .base import ProviderConfig
 

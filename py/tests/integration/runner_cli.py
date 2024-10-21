@@ -36,7 +36,7 @@ def run_command(command):
 def test_ingest_sample_file_cli():
     print("Testing: Ingest sample file CLI")
     run_command("poetry run r2r ingest-sample-file")
-    time.sleep(10)
+    time.sleep(30)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -47,7 +47,7 @@ def test_ingest_sample_file_2_cli():
     """
     print("Testing: Ingest sample file CLI 2")
     run_command("poetry run r2r ingest-sample-file --v2")
-    time.sleep(10)
+    time.sleep(30)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -255,8 +255,8 @@ def test_kg_create_graph_sample_file_cli():
         "poetry run r2r create-graph --run"
     )
 
-    if "queued" in output:
-        time.sleep(60)
+    # if "queued" in output:
+    time.sleep(60)
 
     response = requests.get(
         "http://localhost:7272/v2/entities/",
@@ -277,6 +277,8 @@ def test_kg_create_graph_sample_file_cli():
 
     print(entities_list)
 
+    documents_overview = run_command("poetry run r2r documents-overview")
+    print(documents_overview)
     assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
 

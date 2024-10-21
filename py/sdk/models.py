@@ -4,6 +4,7 @@ from shared.abstractions import (
     KGCommunityResult,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
@@ -19,7 +20,6 @@ from shared.abstractions import (
     Token,
     VectorSearchResult,
     VectorSearchSettings,
-    KGEntityDeduplicationSettings,
 )
 from shared.api.models import (
     KGCreationResponse,

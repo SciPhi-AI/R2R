@@ -117,7 +117,7 @@ def hatchet_kg_factory(
                 return
 
             try:
-                await self.kg_service.providers.database.relational.set_workflow_status(
+                await self.kg_service.providers.database.set_workflow_status(
                     id=uuid.UUID(document_id),
                     status_type="kg_extraction_status",
                     status=KGExtractionStatus.FAILED,

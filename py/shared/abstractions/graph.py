@@ -89,7 +89,7 @@ class Entity(R2RSerializable):
                 pass
 
 
-class Triple(BaseModel):
+class Triple(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: Optional[int] = None

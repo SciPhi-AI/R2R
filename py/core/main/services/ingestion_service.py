@@ -1,8 +1,8 @@
+import asyncio
 import json
 import logging
 import uuid
 from datetime import datetime
-import asyncio
 from typing import Any, AsyncGenerator, Optional, Sequence, Union
 from uuid import UUID
 
@@ -11,6 +11,7 @@ from core.base import (
     DocumentExtraction,
     DocumentInfo,
     DocumentType,
+    IngestionConfig,
     IngestionStatus,
     R2RException,
     R2RLoggingProvider,
@@ -23,17 +24,16 @@ from core.base import (
 )
 from core.base.api.models import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
+from shared.abstractions.ingestion import (
+    ChunkEnrichmentSettings,
+    ChunkEnrichmentStrategy,
+)
 from shared.abstractions.vector import (
     IndexMeasure,
     IndexMethod,
     VectorTableName,
 )
 
-from shared.abstractions.ingestion import (
-    ChunkEnrichmentStrategy,
-    ChunkEnrichmentSettings,
-)
-from core.base import IngestionConfig
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
@@ -103,7 +103,7 @@ class IngestionService(Service):
             )
 
             existing_document_info = (
-                await self.providers.database.relational.get_documents_overview(
+                await self.providers.database.get_documents_overview(
                     filter_user_ids=[user.id],
                     filter_document_ids=[document_id],
                 )
@@ -129,7 +129,7 @@ class IngestionService(Service):
                             message=f"Document {document_id} was already ingested and is not in a failed state.",
                         )
 
-            await self.providers.database.relational.upsert_documents_overview(
+            await self.providers.database.upsert_documents_overview(
                 document_info
             )
 
@@ -265,7 +265,7 @@ class IngestionService(Service):
         is_update: bool = False,
     ) -> None:
         if is_update:
-            self.providers.database.vector.delete(
+            self.providers.database.delete(
                 filters={
                     "$and": [
                         {"document_id": {"$eq": document_info.id}},
@@ -293,7 +293,7 @@ class IngestionService(Service):
 
     async def _update_document_status_in_db(self, document_info: DocumentInfo):
         try:
-            await self.providers.database.relational.upsert_documents_overview(
+            await self.providers.database.upsert_documents_overview(
                 document_info
             )
         except Exception as e:
@@ -334,7 +334,7 @@ class IngestionService(Service):
         )
 
         existing_document_info = (
-            await self.providers.database.relational.get_documents_overview(
+            await self.providers.database.get_documents_overview(
                 filter_user_ids=[user.id],
                 filter_document_ids=[document_id],
             )
@@ -348,9 +348,7 @@ class IngestionService(Service):
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
 
-        await self.providers.database.relational.upsert_documents_overview(
-            document_info
-        )
+        await self.providers.database.upsert_documents_overview(document_info)
 
         return document_info
 
@@ -384,7 +382,7 @@ class IngestionService(Service):
                         )
 
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
-                semantic_neighbors = self.providers.database.vector.get_semantic_neighbors(
+                semantic_neighbors = await self.providers.database.get_semantic_neighbors(
                     document_id=document_id,
                     chunk_id=chunk["extraction_id"],
                     limit=chunk_enrichment_settings.semantic_neighbors,
@@ -464,8 +462,10 @@ class IngestionService(Service):
             self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
         )
         # get all document_chunks
-        document_chunks = self.providers.database.vector.get_document_chunks(
-            document_id=document_id,
+        document_chunks = (
+            await self.providers.database.get_document_chunks(
+                document_id=document_id,
+            )
         )["results"]
 
         new_vector_entries = []
@@ -501,14 +501,14 @@ class IngestionService(Service):
         )
 
         # delete old chunks from vector db
-        self.providers.database.vector.delete(
+        self.providers.database.delete(
             filters={
                 "document_id": document_id,
             },
         )
 
         # embed and store the enriched chunk
-        self.providers.database.vector.upsert_entries(new_vector_entries)
+        self.providers.database.upsert_entries(new_vector_entries)
 
         return len(new_vector_entries)
 

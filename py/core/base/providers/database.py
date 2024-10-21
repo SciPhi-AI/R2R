@@ -1,9 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Union, Sequence
 
 from pydantic import BaseModel
-
+from uuid import UUID
 from shared.abstractions.vector import VectorQuantizationType
 
 from .base import Provider, ProviderConfig
@@ -53,6 +53,7 @@ class DatabaseConfig(ProviderConfig):
     ] = None
     default_collection_name: str = "Default"
     default_collection_description: str = "Your default collection."
+    enable_fts: bool = False
 
     def __post_init__(self):
         self.validate_config()
@@ -69,41 +70,41 @@ class DatabaseConfig(ProviderConfig):
         return ["postgres"]
 
 
-class VectorDBProvider(Provider, ABC):
-    @abstractmethod
-    def _initialize_vector_db(
-        self, dimension: int, quantization_type: VectorQuantizationType
-    ) -> None:
-        pass
-
-
-class RelationalDBProvider(Provider, ABC):
-    @abstractmethod
-    async def _initialize_relational_db(self) -> None:
-        pass
-
-
 class DatabaseProvider(Provider):
     def __init__(self, config: DatabaseConfig):
-        if not isinstance(config, DatabaseConfig):
-            raise ValueError(
-                "DatabaseProvider must be initialized with a `DatabaseConfig`."
-            )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
+
         super().__init__(config)
-
-        # remove later to re-introduce typing...
-        self.vector: Any = None
-        self.relational: Any = None
-
-    @abstractmethod
-    def _initialize_vector_db(self) -> VectorDBProvider:
-        pass
-
-    @abstractmethod
-    async def _initialize_relational_db(self) -> RelationalDBProvider:
-        pass
 
     @abstractmethod
     def _get_table_name(self, base_name: str) -> str:
+        pass
+
+    @abstractmethod
+    def execute_query(
+        self,
+        query: str,
+        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+        isolation_level: Optional[str] = None,
+    ):
+        pass
+
+    @abstractmethod
+    async def execute_many(self, query, params=None, batch_size=1000):
+        pass
+
+    @abstractmethod
+    def fetch_query(
+        self,
+        query: str,
+        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+    ):
+        pass
+
+    @abstractmethod
+    def fetchrow_query(
+        self,
+        query: str,
+        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+    ):
         pass
