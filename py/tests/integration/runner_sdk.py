@@ -42,7 +42,7 @@ def test_ingest_sample_file_2_sdk():
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
-    
+
     time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
@@ -725,7 +725,7 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     )
 
     entities_list = [ele["name"] for ele in response["results"]["entities"]]
-    
+
     assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
 

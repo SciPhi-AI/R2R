@@ -65,7 +65,7 @@ class SupabaseAuthProvider(AuthProvider):
             "decode_token is not used with Supabase authentication"
         )
 
-    async def register(self, email: str, password: str) -> dict[str, str]:
+    async def register(self, email: str, password: str) -> dict[str, str]:  # type: ignore
         # Use Supabase client to create a new user
         user = self.supabase.auth.sign_up(email=email, password=password)
 

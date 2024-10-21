@@ -15,6 +15,7 @@ from core.providers.database.postgres import (
 logger = logging.getLogger()
 
 
+# Refactor this to be a `PostgresFileHandler`
 class PostgresFileProvider(FileProvider):
     def __init__(self, config: FileConfig, db_provider: PostgresDBProvider):
         super().__init__(config)
@@ -31,7 +32,7 @@ class PostgresFileProvider(FileProvider):
         await self.create_table()
 
     def _get_table_name(self, base_name: str) -> str:
-        return self.db_provider._get_table_name(base_name)
+        return f"{self.db_provider.project_name}_{base_name}"
 
     async def create_table(self):
         query = f"""

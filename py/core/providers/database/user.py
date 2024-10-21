@@ -2,19 +2,29 @@ from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID
 
+from core.base import CryptoProvider, UserHandler
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models import UserResponse
 from core.utils import generate_user_id
 
-from .base import DatabaseMixin, QueryBuilder
+from .base import PostgresConnectionManager, QueryBuilder
 
 
-class UserMixin(DatabaseMixin):
+class PostgresUserHandler(UserHandler):
     TABLE_NAME = "users"
+
+    def __init__(
+        self,
+        project_name: str,
+        connection_manager: PostgresConnectionManager,
+        crypto_provider: CryptoProvider,
+    ):
+        super().__init__(project_name, connection_manager)
+        self.crypto_provider = crypto_provider
 
     async def create_table(self):
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(UserMixin.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresUserHandler.TABLE_NAME)} (
             user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             email TEXT UNIQUE NOT NULL,
             hashed_password TEXT NOT NULL,
@@ -33,9 +43,9 @@ class UserMixin(DatabaseMixin):
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        await self.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
-    async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
+    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
             .select(
@@ -57,10 +67,10 @@ class UserMixin(DatabaseMixin):
             .where("user_id = $1")
             .build()
         )
-        result = await self.fetchrow_query(query, [user_id])
+        result = await self.connection_manager.fetchrow_query(query, [user_id])
 
         if not result:
-            return None
+            raise R2RException(status_code=404, message="User not found")
 
         return UserResponse(
             id=result["user_id"],
@@ -99,7 +109,7 @@ class UserMixin(DatabaseMixin):
             .where("email = $1")
             .build()
         )
-        result = await self.fetchrow_query(query, [email])
+        result = await self.connection_manager.fetchrow_query(query, [email])
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
@@ -131,12 +141,12 @@ class UserMixin(DatabaseMixin):
 
         hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query = f"""
-            INSERT INTO {self._get_table_name(UserMixin.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             (email, user_id, hashed_password, collection_ids)
             VALUES ($1, $2, $3, $4)
             RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
         """
-        result = await self.fetchrow_query(
+        result = await self.connection_manager.fetchrow_query(
             query, [email, generate_user_id(email), hashed_password, []]
         )
 
@@ -159,13 +169,13 @@ class UserMixin(DatabaseMixin):
 
     async def update_user(self, user: UserResponse) -> UserResponse:
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
                 name = $5, profile_picture = $6, bio = $7, collection_ids = $8
             WHERE user_id = $9
             RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
         """
-        result = await self.fetchrow_query(
+        result = await self.connection_manager.fetchrow_query(
             query,
             [
                 user.email,
@@ -202,10 +212,10 @@ class UserMixin(DatabaseMixin):
     async def delete_user_relational(self, user_id: UUID) -> None:
         # Get the collections the user belongs to
         collection_query = f"""
-            SELECT collection_ids FROM {self._get_table_name(UserMixin.TABLE_NAME)}
+            SELECT collection_ids FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE user_id = $1
         """
-        collection_result = await self.fetchrow_query(
+        collection_result = await self.connection_manager.fetchrow_query(
             collection_query, [user_id]
         )
 
@@ -218,15 +228,19 @@ class UserMixin(DatabaseMixin):
             SET user_id = NULL
             WHERE user_id = $1
         """
-        await self.execute_query(doc_update_query, [user_id])
+        await self.connection_manager.execute_query(
+            doc_update_query, [user_id]
+        )
 
         # Delete the user
         delete_query = f"""
-            DELETE FROM {self._get_table_name(UserMixin.TABLE_NAME)}
+            DELETE FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE user_id = $1
             RETURNING user_id
         """
-        result = await self.fetchrow_query(delete_query, [user_id])
+        result = await self.connection_manager.fetchrow_query(
+            delete_query, [user_id]
+        )
 
         if not result:
             raise R2RException(status_code=404, message="User not found")
@@ -235,18 +249,20 @@ class UserMixin(DatabaseMixin):
         self, user_id: UUID, new_hashed_password: str
     ):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET hashed_password = $1, updated_at = NOW()
             WHERE user_id = $2
         """
-        await self.execute_query(query, [new_hashed_password, user_id])
+        await self.connection_manager.execute_query(
+            query, [new_hashed_password, user_id]
+        )
 
     async def get_all_users(self) -> list[UserResponse]:
         query = f"""
             SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
-            FROM {self._get_table_name(UserMixin.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
         """
-        results = await self.fetch_query(query)
+        results = await self.connection_manager.fetch_query(query)
 
         return [
             UserResponse(
@@ -267,20 +283,24 @@ class UserMixin(DatabaseMixin):
         self, user_id: UUID, verification_code: str, expiry: datetime
     ):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET verification_code = $1, verification_code_expiry = $2
             WHERE user_id = $3
         """
-        await self.execute_query(query, [verification_code, expiry, user_id])
+        await self.connection_manager.execute_query(
+            query, [verification_code, expiry, user_id]
+        )
 
     async def verify_user(self, verification_code: str) -> None:
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
             RETURNING user_id
         """
-        result = await self.fetchrow_query(query, [verification_code])
+        result = await self.connection_manager.fetchrow_query(
+            query, [verification_code]
+        )
 
         if not result:
             raise R2RException(
@@ -289,55 +309,59 @@ class UserMixin(DatabaseMixin):
 
     async def remove_verification_code(self, verification_code: str):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET verification_code = NULL, verification_code_expiry = NULL
             WHERE verification_code = $1
         """
-        await self.execute_query(query, [verification_code])
+        await self.connection_manager.execute_query(query, [verification_code])
 
     async def expire_verification_code(self, user_id: UUID):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET verification_code_expiry = NOW() - INTERVAL '1 day'
             WHERE user_id = $1
         """
-        await self.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [user_id])
 
     async def store_reset_token(
         self, user_id: UUID, reset_token: str, expiry: datetime
     ):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET reset_token = $1, reset_token_expiry = $2
             WHERE user_id = $3
         """
-        await self.execute_query(query, [reset_token, expiry, user_id])
+        await self.connection_manager.execute_query(
+            query, [reset_token, expiry, user_id]
+        )
 
     async def get_user_id_by_reset_token(
         self, reset_token: str
     ) -> Optional[UUID]:
         query = f"""
-            SELECT user_id FROM {self._get_table_name(UserMixin.TABLE_NAME)}
+            SELECT user_id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE reset_token = $1 AND reset_token_expiry > NOW()
         """
-        result = await self.fetchrow_query(query, [reset_token])
+        result = await self.connection_manager.fetchrow_query(
+            query, [reset_token]
+        )
         return result["user_id"] if result else None
 
     async def remove_reset_token(self, user_id: UUID):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET reset_token = NULL, reset_token_expiry = NULL
             WHERE user_id = $1
         """
-        await self.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [user_id])
 
     async def remove_user_from_all_collections(self, user_id: UUID):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET collection_ids = ARRAY[]::UUID[]
             WHERE user_id = $1
         """
-        await self.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [user_id])
 
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
@@ -346,12 +370,12 @@ class UserMixin(DatabaseMixin):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET collection_ids = array_append(collection_ids, $1)
             WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
             RETURNING user_id
         """
-        result = await self.fetchrow_query(
+        result = await self.connection_manager.fetchrow_query(
             query, [collection_id, user_id]
         )  # fetchrow instead of execute_query
         if not result:
@@ -367,12 +391,14 @@ class UserMixin(DatabaseMixin):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE user_id = $2 AND $1 = ANY(collection_ids)
             RETURNING user_id
         """
-        result = await self.fetchrow_query(query, [collection_id, user_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [collection_id, user_id]
+        )
         if not result:
             raise R2RException(
                 status_code=400,
@@ -404,7 +430,7 @@ class UserMixin(DatabaseMixin):
             SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
                 u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture,
                 COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name(UserMixin.TABLE_NAME)} u
+            FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
             WHERE $1 = ANY(u.collection_ids)
             ORDER BY u.name
             OFFSET $2
@@ -415,7 +441,7 @@ class UserMixin(DatabaseMixin):
             query += " LIMIT $3"
             conditions.append(limit)
 
-        results = await self.fetch_query(query, conditions)
+        results = await self.connection_manager.fetch_query(query, conditions)
 
         users = [
             UserResponse(
@@ -442,20 +468,22 @@ class UserMixin(DatabaseMixin):
 
     async def mark_user_as_superuser(self, user_id: UUID):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
             WHERE user_id = $1
         """
-        await self.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [user_id])
 
     async def get_user_id_by_verification_code(
         self, verification_code: str
     ) -> Optional[UUID]:
         query = f"""
-            SELECT user_id FROM {self._get_table_name(UserMixin.TABLE_NAME)}
+            SELECT user_id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
         """
-        result = await self.fetchrow_query(query, [verification_code])
+        result = await self.connection_manager.fetchrow_query(
+            query, [verification_code]
+        )
 
         if not result:
             raise R2RException(
@@ -466,11 +494,11 @@ class UserMixin(DatabaseMixin):
 
     async def mark_user_as_verified(self, user_id: UUID):
         query = f"""
-            UPDATE {self._get_table_name(UserMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
             WHERE user_id = $1
         """
-        await self.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [user_id])
 
     async def get_users_overview(
         self,
@@ -493,7 +521,7 @@ class UserMixin(DatabaseMixin):
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids,
                     COUNT(*) OVER() AS total_entries
-                FROM {self._get_table_name(UserMixin.TABLE_NAME)} u
+                FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
                 {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
                 GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids
@@ -513,7 +541,7 @@ class UserMixin(DatabaseMixin):
         if user_ids:
             params.append(user_ids)
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         users = [
             UserStats(
