@@ -1,5 +1,4 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
-from shared.abstractions.llm import MessageType
 from shared.abstractions.document import (
     DataType,
     Document,
@@ -40,6 +39,7 @@ from shared.abstractions.llm import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt

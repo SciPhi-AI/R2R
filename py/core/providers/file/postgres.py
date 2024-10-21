@@ -1,13 +1,16 @@
 import io
 import logging
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, Union
 from uuid import UUID
 
 import asyncpg
 
 from core.base import FileConfig, R2RException
 from core.base.providers import FileProvider
-from core.providers.database.postgres import PostgresDBProvider
+from core.providers.database.postgres import (
+    PostgresDBProvider,
+    SemaphoreConnectionPool,
+)
 
 logger = logging.getLogger()
 
@@ -17,29 +20,12 @@ class PostgresFileProvider(FileProvider):
         super().__init__(config)
         self.config: FileConfig = config
         self.db_provider = db_provider
-        self.pool = None
-
-    async def __aenter__(self):
-        await self.initialize()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self._close_connection()
-
-    async def _close_connection(self):
-        if self.pool:
-            await self.pool.close()
-            self.pool = None
+        self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
 
     async def initialize(self):
-        self.pool = await asyncpg.create_pool(
-            self.db_provider.connection_string
-        )
-        logger.info(
-            "File provider successfully connected to Postgres database."
-        )
+        self.pool = self.db_provider.pool
 
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
 
         await self.create_table()
@@ -59,7 +45,7 @@ class PostgresFileProvider(FileProvider):
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 await conn.execute(query)
 
@@ -88,7 +74,7 @@ class PostgresFileProvider(FileProvider):
             file_type = EXCLUDED.file_type,
             updated_at = NOW();
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 await conn.execute(
                     query,
@@ -109,7 +95,7 @@ class PostgresFileProvider(FileProvider):
             )
 
         file_size = file_content.getbuffer().nbytes
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 oid = await conn.fetchval("SELECT lo_create(0)")
                 await self._write_lobject(conn, oid, file_content)
@@ -159,7 +145,7 @@ class PostgresFileProvider(FileProvider):
         FROM {self._get_table_name('file_storage')}
         WHERE document_id = $1
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 result = await conn.fetchrow(query, document_id)
                 if not result:
@@ -231,7 +217,7 @@ class PostgresFileProvider(FileProvider):
         SELECT file_oid FROM {self._get_table_name('file_storage')}
         WHERE document_id = $1
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 result = await conn.fetchval(query, document_id)
                 if not result:
@@ -267,7 +253,7 @@ class PostgresFileProvider(FileProvider):
             )
 
         conditions = []
-        params = []
+        params: list[Union[str, list[str], int]] = []
         query = f"""
         SELECT document_id, file_name, file_oid, file_size, file_type, created_at, updated_at
         FROM {self._get_table_name('file_storage')}
@@ -287,7 +273,7 @@ class PostgresFileProvider(FileProvider):
         query += f" ORDER BY created_at DESC OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}"
         params.extend([offset, limit])
 
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 results = await conn.fetch(query, *params)
 

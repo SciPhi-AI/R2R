@@ -1,8 +1,10 @@
 import logging
 from abc import ABC
 from enum import Enum
-from .base import Provider, ProviderConfig
+
 from shared.abstractions.ingestion import ChunkEnrichmentSettings
+
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger()
 

@@ -1,5 +1,4 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
-from .llm import MessageType
 from .document import (
     DataType,
     Document,
@@ -25,14 +24,15 @@ from .graph import (
 from .kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGRunType,
     KGEntityDeduplicationSettings,
+    KGRunType,
 )
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     RAGCompletion,
 )
 from .prompt import Prompt

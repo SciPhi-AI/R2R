@@ -147,7 +147,7 @@ class R2RProviderFactory:
                 "Embedding config must have a base dimension to initialize database."
             )
 
-        vector_db_dimension = self.config.embedding.base_dimension
+        dimension = self.config.embedding.base_dimension
         quantization_type = (
             self.config.embedding.quantization_settings.quantization_type
         )
@@ -156,7 +156,7 @@ class R2RProviderFactory:
 
             database_provider = PostgresDBProvider(
                 db_config,
-                vector_db_dimension,
+                dimension,
                 crypto_provider=crypto_provider,
                 quantization_type=quantization_type,
             )

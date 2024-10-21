@@ -4,9 +4,9 @@ from uuid import UUID
 from ..models import (
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGRunType,
     KGEntityDeduplicationResponse,
     KGEntityDeduplicationSettings,
+    KGRunType,
 )
 
 
@@ -165,6 +165,7 @@ class KGMixins:
             params["community_numbers"] = community_numbers
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
+
 
     async def deduplicate_entities(
         self,
