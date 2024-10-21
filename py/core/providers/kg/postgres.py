@@ -54,11 +54,11 @@ class PostgresKGProvider(KGProvider):
             ) from exc
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{self.db_provider.project_name}_{base_name}"
+        return f"{self.db_provider.config.project_name}_{base_name}"
 
     async def initialize(self):
         logger.info(
-            f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
+            f"Initializing PostgresKGProvider for project {self.db_provider.config.project_name}"
         )
         await self.create_tables(
             embedding_dim=self.embedding_provider.config.base_dimension,
@@ -87,10 +87,7 @@ class PostgresKGProvider(KGProvider):
         query: str,
         params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
-        return await self.db_provider.fetch_query(query, params)
-
-    def _get_table_name(self, base_name: str) -> str:
-        return f"{self.db_provider.project_name}_{base_name}"
+        return await self.db_provider.connection_manager.fetch_query(query, params)
 
     async def create_tables(
         self, embedding_dim: int, quantization_type: VectorQuantizationType

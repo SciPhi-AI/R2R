@@ -277,7 +277,7 @@ class PostgresDocumentHandler(DocumentHandler):
         """
         ids = [id] if isinstance(id, UUID) else id
         out_model, table_name = (
-            self.connection_manager._get_status_model_and_table_name(
+            self._get_status_model_and_table_name(
                 status_type
             )
         )
@@ -306,7 +306,7 @@ class PostgresDocumentHandler(DocumentHandler):
         """
         ids = [id] if isinstance(id, UUID) else id
         out_model, table_name = (
-            self.connection_manager._get_status_model_and_table_name(
+            self._get_status_model_and_table_name(
                 status_type
             )
         )
@@ -333,11 +333,11 @@ class PostgresDocumentHandler(DocumentHandler):
             status = [status]
 
         out_model, table_name = (
-            self.connection_manager._get_status_model_and_table_name(
+            self._get_status_model_and_table_name(
                 status_type
             )
         )
-        result = await self.connection_manager._get_ids_from_table(
+        result = await self._get_ids_from_table(
             status, table_name, status_type, collection_id
         )
         return result

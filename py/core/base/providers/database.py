@@ -525,6 +525,7 @@ class DatabaseProvider(Provider):
     token_handler: TokenHandler
     user_handler: UserHandler
     vector_handler: VectorHandler
+    config: DatabaseConfig
 
     def __init__(self, config: DatabaseConfig):
         logger.info(f"Initializing DatabaseProvider with config {config}.")
