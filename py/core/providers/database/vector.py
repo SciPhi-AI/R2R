@@ -173,9 +173,8 @@ class VectorDBMixin(DatabaseMixin):
 
         params.extend([search_settings.search_limit, search_settings.offset])
 
-        print('query = ', query)
-        print('params = ', params)
-
+        print("query = ", query)
+        print("params = ", params)
 
         results = await self.fetch_query(query, params)
 
@@ -234,8 +233,8 @@ class VectorDBMixin(DatabaseMixin):
             ]
         )
 
-        print('query = ', query)
-        print('params = ', params)
+        print("query = ", query)
+        print("params = ", params)
 
         results = await self.fetch_query(query, params)
         return [
@@ -690,21 +689,30 @@ class VectorDBMixin(DatabaseMixin):
             filter_conditions = []
             for key, value in filter_dict.items():
                 if key == "$and":
-                    and_conditions = [parse_filter(f) for f in value if f]  # Skip empty dictionaries
+                    and_conditions = [
+                        parse_filter(f) for f in value if f
+                    ]  # Skip empty dictionaries
                     if and_conditions:
-                        filter_conditions.append(f"({' AND '.join(and_conditions)})")
+                        filter_conditions.append(
+                            f"({' AND '.join(and_conditions)})"
+                        )
                 elif key == "$or":
-                    or_conditions = [parse_filter(f) for f in value if f]  # Skip empty dictionaries
+                    or_conditions = [
+                        parse_filter(f) for f in value if f
+                    ]  # Skip empty dictionaries
                     if or_conditions:
-                        filter_conditions.append(f"({' OR '.join(or_conditions)})")
+                        filter_conditions.append(
+                            f"({' OR '.join(or_conditions)})"
+                        )
                 else:
                     filter_conditions.append(parse_condition(key, value))
-            
+
             # Check if there is only a single condition
             if len(filter_conditions) == 1:
                 return filter_conditions[0]
             else:
                 return " AND ".join(filter_conditions)
+
         # def parse_filter(filter_dict: dict) -> str:
         #     filter_conditions = []
         #     for key, value in filter_dict.items():
@@ -718,16 +726,16 @@ class VectorDBMixin(DatabaseMixin):
         #             )
         #         else:
         #             filter_conditions.append(parse_condition(key, value))
-            
+
         #     # Check if there is only a single condition
         #     if len(filter_conditions) == 1:
         #         return filter_conditions[0]
         #     else:
         #         return " AND ".join(filter_conditions)
 
-        print('filters = ', filters)
+        print("filters = ", filters)
         where_clause = parse_filter(filters)
-        print('where_clause = ', where_clause)
+        print("where_clause = ", where_clause)
 
         return where_clause
 

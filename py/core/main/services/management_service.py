@@ -267,7 +267,9 @@ class ManagementService(Service):
         logger.info(f"Deleting entries with filters: {filters}")
 
         try:
-            vector_delete_results = self.providers.database.delete(filters)
+            vector_delete_results = await self.providers.database.delete(
+                filters
+            )
         except Exception as e:
             logger.error(f"Error deleting from vector database: {e}")
             vector_delete_results = {}

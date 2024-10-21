@@ -79,7 +79,7 @@ class DatabaseProvider(Provider):
     @abstractmethod
     def _get_table_name(self, base_name: str) -> str:
         pass
-    
+
     @abstractmethod
     def execute_query(
         self,
@@ -301,7 +301,6 @@ class DatabaseProvider(Provider):
     #     collection_id: Union[str, UUID],
     # ) -> dict:
     #     pass
-
 
     # # TODO: Verify that this method is implemented, also, should be a PUT request
     # @abstractmethod
