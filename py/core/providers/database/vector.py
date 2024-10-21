@@ -509,8 +509,8 @@ class VectorDBMixin(DatabaseMixin):
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        if table_name == VectorTableName.CHUNKS:
-            table_name_str = f"{self.project_name}.{self.project_name}"  # TODO - Fix bug in vector table naming convention
+        if table_name == VectorTableName.RAW_CHUNKS:
+            table_name_str = f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"  # TODO - Fix bug in vector table naming convention
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES:
             table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
@@ -586,7 +586,7 @@ class VectorDBMixin(DatabaseMixin):
         return None
 
     def _build_filters(
-        self, filters: dict, parameters: list[dict]
+        self, filters: dict, parameters: list
     ) -> Tuple[str, list[Any]]:
 
         def parse_condition(key: str, value: Any) -> str:
@@ -702,6 +702,45 @@ class VectorDBMixin(DatabaseMixin):
 
         where_clause = parse_filter(filters)
         return where_clause
+
+    async def get_semantic_neighbors(
+        self,
+        document_id: UUID,
+        chunk_id: UUID,
+        limit: int = 10,
+        similarity_threshold: float = 0.5,
+    ) -> list[dict[str, Any]]:
+
+        table_name = self._get_table_name(VectorDBMixin.TABLE_NAME)
+        query = f"""
+        WITH target_vector AS (
+            SELECT vec FROM {table_name}
+            WHERE document_id = $1 AND extraction_id = $2
+        )
+        SELECT t.extraction_id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
+        FROM {table_name} t, target_vector tv
+        WHERE (t.vec <=> tv.vec) >= $3
+            AND t.document_id = $1
+            AND t.extraction_id != $2
+        ORDER BY similarity ASC
+        LIMIT $4
+        """
+
+        results = await self.fetch_query(
+            query,
+            (str(document_id), str(chunk_id), similarity_threshold, limit),
+        )
+
+        return [
+            {
+                "extraction_id": str(r["extraction_id"]),
+                "text": r["text"],
+                "metadata": json.loads(r["metadata"]),
+                "document_id": str(r["document_id"]),
+                "similarity": float(r["similarity"]),
+            }
+            for r in results
+        ]
 
     def _get_index_options(
         self,

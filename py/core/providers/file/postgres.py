@@ -1,6 +1,6 @@
 import io
 import logging
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, Union
 from uuid import UUID
 
 import asyncpg
@@ -253,7 +253,7 @@ class PostgresFileProvider(FileProvider):
             )
 
         conditions = []
-        params = []
+        params: list[Union[str, list[str], int]] = []
         query = f"""
         SELECT document_id, file_name, file_oid, file_size, file_type, created_at, updated_at
         FROM {self._get_table_name('file_storage')}

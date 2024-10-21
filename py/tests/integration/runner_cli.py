@@ -36,7 +36,7 @@ def run_command(command):
 def test_ingest_sample_file_cli():
     print("Testing: Ingest sample file CLI")
     run_command("poetry run r2r ingest-sample-file")
-    time.sleep(10)
+    time.sleep(30)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -47,7 +47,7 @@ def test_ingest_sample_file_2_cli():
     """
     print("Testing: Ingest sample file CLI 2")
     run_command("poetry run r2r ingest-sample-file --v2")
-    time.sleep(10)
+    time.sleep(30)
     print("Ingestion successful")
     print("~" * 100)
 

@@ -382,7 +382,7 @@ class IngestionService(Service):
                         )
 
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
-                semantic_neighbors = self.providers.database.vector.get_semantic_neighbors(
+                semantic_neighbors = await self.providers.database.get_semantic_neighbors(
                     document_id=document_id,
                     chunk_id=chunk["extraction_id"],
                     limit=chunk_enrichment_settings.semantic_neighbors,
@@ -462,8 +462,10 @@ class IngestionService(Service):
             self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
         )
         # get all document_chunks
-        document_chunks = self.providers.database.vector.get_document_chunks(
-            document_id=document_id,
+        document_chunks = (
+            await self.providers.database.get_document_chunks(
+                document_id=document_id,
+            )
         )["results"]
 
         new_vector_entries = []
@@ -499,14 +501,14 @@ class IngestionService(Service):
         )
 
         # delete old chunks from vector db
-        self.providers.database.vector.delete(
+        self.providers.database.delete(
             filters={
                 "document_id": document_id,
             },
         )
 
         # embed and store the enriched chunk
-        self.providers.database.vector.upsert_entries(new_vector_entries)
+        self.providers.database.upsert_entries(new_vector_entries)
 
         return len(new_vector_entries)
 
