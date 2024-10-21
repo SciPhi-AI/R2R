@@ -1,4 +1,3 @@
-import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -126,7 +125,7 @@ class DatabaseConnectionManager(ABC):
         pass
 
     @abstractmethod
-    async def initialize(self):
+    async def initialize(self, pool: Any):
         pass
 
 
@@ -313,7 +312,7 @@ class UserHandler(Handler):
     TABLE_NAME = "users"
 
     @abstractmethod
-    async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
+    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
         pass
 
     @abstractmethod
@@ -707,7 +706,7 @@ class DatabaseProvider(Provider):
         )
 
     # User handler methods
-    async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
+    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
         return await self.user_handler.get_user_by_id(user_id)
 
     async def get_user_by_email(self, email: str) -> UserResponse:
@@ -868,17 +867,17 @@ class DatabaseProvider(Provider):
             )
         )
 
-    async def delete_user_vector(self, user_id: str) -> None:
+    async def delete_user_vector(self, user_id: UUID) -> None:
         return await self.vector_handler.delete_user_vector(user_id)
 
-    async def delete_collection_vector(self, collection_id: str) -> None:
+    async def delete_collection_vector(self, collection_id: UUID) -> None:
         return await self.vector_handler.delete_collection_vector(
             collection_id
         )
 
     async def get_document_chunks(
         self,
-        document_id: str,
+        document_id: UUID,
         offset: int = 0,
         limit: int = -1,
         include_vectors: bool = False,

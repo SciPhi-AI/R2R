@@ -45,7 +45,7 @@ class PostgresUserHandler(UserHandler):
         """
         await self.connection_manager.execute_query(query)
 
-    async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
+    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
             .select(
@@ -70,7 +70,7 @@ class PostgresUserHandler(UserHandler):
         result = await self.connection_manager.fetchrow_query(query, [user_id])
 
         if not result:
-            return None
+            raise R2RException(status_code=404, message="User not found")
 
         return UserResponse(
             id=result["user_id"],

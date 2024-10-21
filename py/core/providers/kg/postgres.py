@@ -922,7 +922,7 @@ class PostgresKGProvider(KGProvider):
         document_ids = [
             doc.id
             for doc in (
-                await self.db_provider.documents_in_collection(collection_id)
+                await self.db_provider.documents_in_collection(collection_id)  # type: ignore
             )["results"]
         ]
 
@@ -1008,7 +1008,7 @@ class PostgresKGProvider(KGProvider):
         document_ids = [
             doc.id
             for doc in (
-                await self.db_provider.documents_in_collection(collection_id)
+                await self.db_provider.documents_in_collection(collection_id)  # type: ignore
             )["results"]
         ]
 

@@ -265,7 +265,7 @@ class IngestionService(Service):
         is_update: bool = False,
     ) -> None:
         if is_update:
-            self.providers.database.delete(
+            await self.providers.database.delete(
                 filters={
                     "$and": [
                         {"document_id": {"$eq": document_info.id}},
@@ -501,14 +501,14 @@ class IngestionService(Service):
         )
 
         # delete old chunks from vector db
-        self.providers.database.delete(
+        await self.providers.database.delete(
             filters={
                 "document_id": document_id,
             },
         )
 
         # embed and store the enriched chunk
-        self.providers.database.upsert_entries(new_vector_entries)
+        await self.providers.database.upsert_entries(new_vector_entries)
 
         return len(new_vector_entries)
 

@@ -165,18 +165,18 @@ class PostgresDocumentHandler(DocumentHandler):
                         await asyncio.sleep(wait_time)
 
     async def delete_from_documents_overview(
-        self, document_id: str, version: Optional[str] = None
+        self, document_id: UUID, version: Optional[str] = None
     ) -> None:
         query = f"""
         DELETE FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
         WHERE document_id = $1
         """
 
-        params = [document_id]
+        params = [str(document_id)]
 
         if version:
             query += " AND version = $2"
-            params = [document_id, version]
+            params = [str(document_id), version]
 
         await self.connection_manager.execute_query(query, params)
 
@@ -285,7 +285,7 @@ class PostgresDocumentHandler(DocumentHandler):
         result = list(
             map(
                 (
-                    await self.connection_manager._get_status_from_table(
+                    await self._get_status_from_table(
                         ids, table_name, status_type
                     )
                 ),
@@ -309,7 +309,7 @@ class PostgresDocumentHandler(DocumentHandler):
         out_model, table_name = self._get_status_model_and_table_name(
             status_type
         )
-        return await self.connection_manager._set_status_in_table(
+        return await self._set_status_in_table(
             ids, status, table_name, status_type
         )
 

@@ -130,7 +130,7 @@ class Triple(R2RSerializable):
                 self.attributes = self.attributes
 
     @classmethod
-    def from_dict(
+    def from_dict(  # type: ignore
         cls,
         d: dict[str, Any],
         id_key: str = "id",

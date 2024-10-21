@@ -161,7 +161,7 @@ def hatchet_ingestion_factory(
 
                 # TODO: Move logic onto the `management service`
                 collection_id = generate_default_user_collection_id(
-                    str(document_info.user_id)
+                    document_info.user_id
                 )
                 await service.providers.database.assign_document_to_collection_relational(
                     document_id=document_info.id,

@@ -29,7 +29,8 @@ from shared.utils import _decorate_vector_type
 
 
 def index_measure_to_ops(
-    measure: IndexMeasure, quantization_type: VectorQuantizationType
+    measure: IndexMeasure,
+    quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ):
     return _decorate_vector_type(measure.ops, quantization_type)
 
@@ -170,7 +171,7 @@ class PostgresVectorHandler(VectorHandler):
         select_clause = ", ".join(cols)
 
         where_clause = ""
-        params = [str(query_vector)]
+        params: list[Union[str, int]] = [str(query_vector)]
         if search_settings.filters:
             where_clause = self._build_filters(search_settings.filters, params)
             where_clause = f"WHERE {where_clause}"
@@ -190,20 +191,20 @@ class PostgresVectorHandler(VectorHandler):
 
         return [
             VectorSearchResult(
-                extraction_id=str(result["extraction_id"]),
-                document_id=str(result["document_id"]),
-                user_id=str(result["user_id"]),
+                extraction_id=UUID(str(result["extraction_id"])),
+                document_id=UUID(str(result["document_id"])),
+                user_id=UUID(str(result["user_id"])),
                 collection_ids=result["collection_ids"],
                 text=result["text"],
                 score=(
                     (1 - float(result["distance"]))
                     if search_settings.include_values
-                    else None
+                    else -1
                 ),
                 metadata=(
                     json.loads(result["metadata"])
                     if search_settings.include_metadatas
-                    else None
+                    else {}
                 ),
             )
             for result in results
@@ -218,7 +219,7 @@ class PostgresVectorHandler(VectorHandler):
             )
 
         where_clauses = []
-        params = [query_text]
+        params: list[Union[str, int]] = [query_text]
 
         if search_settings.filters:
             filters_clause = self._build_filters(
@@ -257,9 +258,9 @@ class PostgresVectorHandler(VectorHandler):
         results = await self.connection_manager.fetch_query(query, params)
         return [
             VectorSearchResult(
-                extraction_id=str(r["extraction_id"]),
-                document_id=str(r["document_id"]),
-                user_id=str(r["user_id"]),
+                extraction_id=UUID(str(r["extraction_id"])),
+                document_id=UUID(str(r["document_id"])),
+                user_id=UUID(str(r["user_id"])),
                 collection_ids=r["collection_ids"],
                 text=r["text"],
                 score=float(r["rank"]),
@@ -381,7 +382,7 @@ class PostgresVectorHandler(VectorHandler):
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
-        params = []
+        params: list[Union[str, int]] = []
         where_clause = self._build_filters(filters, params)
 
         query = f"""
@@ -403,7 +404,7 @@ class PostgresVectorHandler(VectorHandler):
         }
 
     async def assign_document_to_collection_vector(
-        self, document_id: str, collection_id: str
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         query = f"""
         UPDATE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
@@ -415,7 +416,7 @@ class PostgresVectorHandler(VectorHandler):
         )
 
     async def remove_document_from_collection_vector(
-        self, document_id: str, collection_id: str
+        self, document_id: UUID, collection_id: UUID
     ) -> None:
         query = f"""
         UPDATE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
@@ -426,14 +427,14 @@ class PostgresVectorHandler(VectorHandler):
             query, (collection_id, document_id)
         )
 
-    async def delete_user_vector(self, user_id: str) -> None:
+    async def delete_user_vector(self, user_id: UUID) -> None:
         query = f"""
         DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE user_id = $1;
         """
         await self.connection_manager.execute_query(query, (user_id,))
 
-    async def delete_collection_vector(self, collection_id: str) -> None:
+    async def delete_collection_vector(self, collection_id: UUID) -> None:
         query = f"""
          DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
          WHERE $1 = ANY(collection_ids)
@@ -442,12 +443,11 @@ class PostgresVectorHandler(VectorHandler):
         results = await self.connection_manager.fetchrow_query(
             query, (collection_id,)
         )
-        deleted_count = len(results)
-        return deleted_count
+        return None
 
     async def get_document_chunks(
         self,
-        document_id: str,
+        document_id: UUID,
         offset: int = 0,
         limit: int = -1,
         include_vectors: bool = False,
@@ -576,7 +576,7 @@ class PostgresVectorHandler(VectorHandler):
             method = IndexMethod.hnsw
 
         ops = index_measure_to_ops(
-            measure, quantization_type=self.quantization_type
+            measure  # , quantization_type=self.quantization_type
         )
 
         if ops is None:
@@ -608,10 +608,10 @@ class PostgresVectorHandler(VectorHandler):
         return None
 
     def _build_filters(
-        self, filters: dict, parameters: list[dict]
-    ) -> Tuple[str, list[Any]]:
+        self, filters: dict, parameters: list[Union[str, int]]
+    ) -> str:
 
-        def parse_condition(key: str, value: Any) -> str:
+        def parse_condition(key: str, value: Any) -> str:  # type: ignore
             # nonlocal parameters
             if key in self.COLUMN_VARS:
                 # Handle column-based filters
