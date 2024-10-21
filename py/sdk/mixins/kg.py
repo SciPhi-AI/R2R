@@ -166,7 +166,6 @@ class KGMixins:
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
 
-
     async def deduplicate_entities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,

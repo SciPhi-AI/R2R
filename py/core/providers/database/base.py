@@ -5,6 +5,8 @@ from typing import Any, Optional, Sequence, Union
 
 import asyncpg
 
+from core.base import DatabaseConnectionManager
+
 logger = logging.getLogger()
 
 
@@ -102,39 +104,59 @@ class QueryBuilder:
         return query, self.params
 
 
-class DatabaseMixin:
-    def get_config(self):
-        if hasattr(self, "config"):
-            return self.config
-        raise AttributeError("Config not set in the provider class")
+class PostgresConnectionManager(DatabaseConnectionManager):
 
-    def _get_table_name(self, base_name: str) -> str:
-        raise NotImplementedError("Subclasses must implement this method")
+    def __init__(self):
+        self.pool: Optional[SemaphoreConnectionPool] = None
 
-    def execute_query(
-        self,
-        query: str,
-        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
-        isolation_level: Optional[str] = None,
-    ):
-        raise NotImplementedError("Subclasses must implement this method")
+    async def initialize(self, pool: SemaphoreConnectionPool):
+        self.pool = pool
+
+    async def execute_query(self, query, params=None, isolation_level=None):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            if isolation_level:
+                async with conn.transaction(isolation=isolation_level):
+                    if params:
+                        return await conn.execute(query, *params)
+                    else:
+                        return await conn.execute(query)
+            else:
+                if params:
+                    return await conn.execute(query, *params)
+                else:
+                    return await conn.execute(query)
 
     async def execute_many(self, query, params=None, batch_size=1000):
-        raise NotImplementedError("Subclasses must implement this method")
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    for i in range(0, len(params), batch_size):
+                        param_batch = params[i : i + batch_size]
+                        await conn.executemany(query, param_batch)
+                else:
+                    await conn.executemany(query)
 
-    def fetch_query(
-        self,
-        query: str,
-        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
-    ):
-        raise NotImplementedError("Subclasses must implement this method")
+    async def fetch_query(self, query, params=None):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                return (
+                    await conn.fetch(query, *params)
+                    if params
+                    else await conn.fetch(query)
+                )
 
-    def fetchrow_query(
-        self,
-        query: str,
-        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
-    ):
-        raise NotImplementedError("Subclasses must implement this method")
-
-    def create_table(self):
-        raise NotImplementedError("Subclasses must implement this method")
+    async def fetchrow_query(self, query, params=None):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    return await conn.fetchrow(query, *params)
+                else:
+                    return await conn.fetchrow(query)

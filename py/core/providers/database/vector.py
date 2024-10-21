@@ -6,7 +6,12 @@ import uuid
 from typing import Any, Optional, Tuple, TypedDict, Union
 from uuid import UUID
 
-from core.base import VectorEntry, VectorQuantizationType, VectorSearchResult
+from core.base import (
+    VectorEntry,
+    VectorHandler,
+    VectorQuantizationType,
+    VectorSearchResult,
+)
 from core.base.abstractions import VectorSearchSettings
 from shared.abstractions.vector import (
     IndexArgsHNSW,
@@ -16,7 +21,7 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
-from .base import DatabaseMixin
+from .base import PostgresConnectionManager
 from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
@@ -36,7 +41,7 @@ class HybridSearchIntermediateResult(TypedDict):
     rrf_score: float
 
 
-class VectorDBMixin(DatabaseMixin):
+class PostgresVectorHandler(VectorHandler):
     TABLE_NAME = "vector"
 
     COLUMN_VARS = [
@@ -46,14 +51,22 @@ class VectorDBMixin(DatabaseMixin):
         "collection_ids",
     ]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        project_name: str,
+        connection_manager: PostgresConnectionManager,
+        dimension: int,
+        enable_fts: bool = False,
+    ):
+        super().__init__(project_name, connection_manager)
+        self.dimension = dimension
+        self.enable_fts = enable_fts
 
     async def create_table(self):
         # TODO - Move ids to `UUID` type
         # Create the vector table if it doesn't exist
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(VectorDBMixin.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (
             extraction_id UUID PRIMARY KEY,
             document_id UUID,
             user_id UUID,
@@ -63,21 +76,21 @@ class VectorDBMixin(DatabaseMixin):
             metadata JSONB
             {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} USING GIN (to_tsvector('english', text));
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (user_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
         """
         if self.enable_fts:
             query += f"""
-            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(VectorDBMixin.TABLE_NAME)} USING GIN (to_tsvector('english', text));
+            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
             """
 
-        await self.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
         query = f"""
-        INSERT INTO {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE SET
@@ -88,7 +101,7 @@ class VectorDBMixin(DatabaseMixin):
         text = EXCLUDED.text,
         metadata = EXCLUDED.metadata;
         """
-        await self.execute_query(
+        await self.connection_manager.execute_query(
             query,
             (
                 entry.extraction_id,
@@ -103,7 +116,7 @@ class VectorDBMixin(DatabaseMixin):
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
         query = f"""
-        INSERT INTO {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (extraction_id) DO UPDATE SET
@@ -126,7 +139,7 @@ class VectorDBMixin(DatabaseMixin):
             )
             for entry in entries
         ]
-        await self.execute_many(query, params)
+        await self.connection_manager.execute_many(query, params)
 
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
@@ -136,7 +149,7 @@ class VectorDBMixin(DatabaseMixin):
         except ValueError:
             raise ValueError("Invalid index measure")
 
-        table_name = self._get_table_name(VectorDBMixin.TABLE_NAME)
+        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
         cols = [
             f"{table_name}.extraction_id",
             f"{table_name}.document_id",
@@ -173,7 +186,7 @@ class VectorDBMixin(DatabaseMixin):
 
         params.extend([search_settings.search_limit, search_settings.offset])
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         return [
             VectorSearchResult(
@@ -208,11 +221,17 @@ class VectorDBMixin(DatabaseMixin):
         params = [query_text]
 
         if search_settings.filters:
-            filters_clause = self._build_filters(search_settings.filters, params)
+            filters_clause = self._build_filters(
+                search_settings.filters, params
+            )
             where_clauses.append(filters_clause)
 
         if where_clauses:
-            where_clause = "WHERE " + " AND ".join(where_clauses) + " AND fts @@ websearch_to_tsquery('english', $1)"
+            where_clause = (
+                "WHERE "
+                + " AND ".join(where_clauses)
+                + " AND fts @@ websearch_to_tsquery('english', $1)"
+            )
         else:
             where_clause = "WHERE fts @@ websearch_to_tsquery('english', $1)"
 
@@ -220,7 +239,7 @@ class VectorDBMixin(DatabaseMixin):
             SELECT
                 extraction_id, document_id, user_id, collection_ids, text, metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
-            FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
             {where_clause}
         """
 
@@ -235,7 +254,7 @@ class VectorDBMixin(DatabaseMixin):
             ]
         )
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
         return [
             VectorSearchResult(
                 extraction_id=str(r["extraction_id"]),
@@ -366,7 +385,7 @@ class VectorDBMixin(DatabaseMixin):
         where_clause = self._build_filters(filters, params)
 
         query = f"""
-        DELETE FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE {where_clause}
         RETURNING extraction_id, document_id, text;
         """
@@ -387,36 +406,42 @@ class VectorDBMixin(DatabaseMixin):
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        UPDATE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
-        await self.execute_query(query, (str(collection_id), str(document_id)))
+        await self.connection_manager.execute_query(
+            query, (str(collection_id), str(document_id))
+        )
 
     async def remove_document_from_collection_vector(
         self, document_id: str, collection_id: str
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        UPDATE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
-        await self.execute_query(query, (collection_id, document_id))
+        await self.connection_manager.execute_query(
+            query, (collection_id, document_id)
+        )
 
     async def delete_user_vector(self, user_id: str) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE user_id = $1;
         """
-        await self.execute_query(query, (user_id,))
+        await self.connection_manager.execute_query(query, (user_id,))
 
     async def delete_collection_vector(self, collection_id: str) -> None:
         query = f"""
-         DELETE FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+         DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
          WHERE $1 = ANY(collection_ids)
          RETURNING collection_ids
          """
-        results = await self.fetchrow_query(query, (collection_id,))
+        results = await self.connection_manager.fetchrow_query(
+            query, (collection_id,)
+        )
         deleted_count = len(results)
         return deleted_count
 
@@ -432,7 +457,7 @@ class VectorDBMixin(DatabaseMixin):
 
         query = f"""
         SELECT extraction_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
-        FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE document_id = $1
         OFFSET $2
         {limit_clause};
@@ -440,7 +465,7 @@ class VectorDBMixin(DatabaseMixin):
 
         params = [document_id, offset]
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         chunks = []
         total = 0
@@ -572,11 +597,11 @@ class VectorDBMixin(DatabaseMixin):
         try:
             if concurrently:
                 # For concurrent index creation, we need to execute outside a transaction
-                await self.execute_query(
+                await self.connection_manager.execute_query(
                     create_index_sql, isolation_level="AUTOCOMMIT"
                 )
             else:
-                await self.execute_query(create_index_sql)
+                await self.connection_manager.execute_query(create_index_sql)
         except Exception as e:
             raise Exception(f"Failed to create index: {e}")
 
@@ -722,7 +747,7 @@ class VectorDBMixin(DatabaseMixin):
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
 
-        table_name = self._get_table_name(VectorDBMixin.TABLE_NAME)
+        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
         query = f"""
         WITH target_vector AS (
             SELECT vec FROM {table_name}
@@ -737,7 +762,7 @@ class VectorDBMixin(DatabaseMixin):
         LIMIT $4
         """
 
-        results = await self.fetch_query(
+        results = await self.connection_manager.fetch_query(
             query,
             (str(document_id), str(chunk_id), similarity_threshold, limit),
         )

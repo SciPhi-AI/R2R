@@ -7,6 +7,7 @@ from uuid import UUID
 import asyncpg
 
 from core.base import (
+    DocumentHandler,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
@@ -15,20 +16,22 @@ from core.base import (
     R2RException,
 )
 
-from .base import DatabaseMixin
+from .base import PostgresConnectionManager
 
 logger = logging.getLogger()
 
 
-class DocumentMixin(DatabaseMixin):
+class PostgresDocumentHandler(DocumentHandler):
     TABLE_NAME = "document_info"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, project_name: str, connection_manager: PostgresConnectionManager
+    ):
+        super().__init__(project_name, connection_manager)
 
     async def create_table(self):
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(DocumentMixin.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} (
             document_id UUID PRIMARY KEY,
             collection_ids UUID[],
             user_id UUID,
@@ -44,9 +47,9 @@ class DocumentMixin(DatabaseMixin):
             ingestion_attempt_number INT DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
-        ON {self._get_table_name(DocumentMixin.TABLE_NAME)} USING GIN (collection_ids);
+        ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} USING GIN (collection_ids);
         """
-        await self.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
     async def upsert_documents_overview(
         self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
@@ -60,11 +63,11 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.pool.get_connection() as conn:  # type: ignore
+                    async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
-                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(DocumentMixin.TABLE_NAME)}
+                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                             WHERE document_id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
@@ -97,7 +100,7 @@ class DocumentMixin(DatabaseMixin):
                                 )
 
                                 update_query = f"""
-                                UPDATE {self._get_table_name(DocumentMixin.TABLE_NAME)}
+                                UPDATE {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11
@@ -120,7 +123,7 @@ class DocumentMixin(DatabaseMixin):
                                 )
                             else:
                                 insert_query = f"""
-                                INSERT INTO {self._get_table_name(DocumentMixin.TABLE_NAME)}
+                                INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, kg_extraction_status, created_at,
                                 updated_at, ingestion_attempt_number)
@@ -162,7 +165,7 @@ class DocumentMixin(DatabaseMixin):
         self, document_id: str, version: Optional[str] = None
     ) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(DocumentMixin.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
         WHERE document_id = $1
         """
 
@@ -172,7 +175,7 @@ class DocumentMixin(DatabaseMixin):
             query += " AND version = $2"
             params = [document_id, version]
 
-        await self.execute_query(query, params)
+        await self.connection_manager.execute_query(query, params)
 
     async def _get_status_from_table(
         self, ids: list[UUID], table_name: str, status_type: str
@@ -192,7 +195,7 @@ class DocumentMixin(DatabaseMixin):
             SELECT {status_type} FROM {self._get_table_name(table_name)}
             WHERE document_id = ANY($1)
         """
-        return await self.fetch_query(query, [ids])
+        return await self.connection_manager.fetch_query(query, [ids])
 
     async def _get_ids_from_table(
         self,
@@ -213,7 +216,9 @@ class DocumentMixin(DatabaseMixin):
             SELECT document_id FROM {self._get_table_name(table_name)}
             WHERE {status_type} = ANY($1) and $2 = ANY(collection_ids)
         """
-        records = await self.fetch_query(query, [status, collection_id])
+        records = await self.connection_manager.fetch_query(
+            query, [status, collection_id]
+        )
         document_ids = [record["document_id"] for record in records]
         return document_ids
 
@@ -234,7 +239,7 @@ class DocumentMixin(DatabaseMixin):
             SET {status_type} = $1
             WHERE document_id = Any($2)
         """
-        await self.execute_query(query, [status, ids])
+        await self.connection_manager.execute_query(query, [status, ids])
 
     def _get_status_model_and_table_name(self, status_type: str):
         """
@@ -271,13 +276,15 @@ class DocumentMixin(DatabaseMixin):
             The workflow status for the given document or list of documents.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = self._get_status_model_and_table_name(
-            status_type
+        out_model, table_name = (
+            self.connection_manager._get_status_model_and_table_name(
+                status_type
+            )
         )
         result = list(
             map(
                 (
-                    await self._get_status_from_table(
+                    await self.connection_manager._get_status_from_table(
                         ids, table_name, status_type
                     )
                 ),
@@ -298,10 +305,12 @@ class DocumentMixin(DatabaseMixin):
             status (str): The status to set.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = self._get_status_model_and_table_name(
-            status_type
+        out_model, table_name = (
+            self.connection_manager._get_status_model_and_table_name(
+                status_type
+            )
         )
-        return await self._set_status_in_table(
+        return await self.connection_manager._set_status_in_table(
             ids, status, table_name, status_type
         )
 
@@ -323,10 +332,12 @@ class DocumentMixin(DatabaseMixin):
         if isinstance(status, str):
             status = [status]
 
-        out_model, table_name = self._get_status_model_and_table_name(
-            status_type
+        out_model, table_name = (
+            self.connection_manager._get_status_model_and_table_name(
+                status_type
+            )
         )
-        result = await self._get_ids_from_table(
+        result = await self.connection_manager._get_ids_from_table(
             status, table_name, status_type, collection_id
         )
         return result
@@ -359,7 +370,7 @@ class DocumentMixin(DatabaseMixin):
             param_index += 1
 
         base_query = f"""
-            FROM {self._get_table_name(DocumentMixin.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
         """
 
         if conditions:
@@ -382,7 +393,7 @@ class DocumentMixin(DatabaseMixin):
             param_index += 1
 
         try:
-            results = await self.fetch_query(query, params)
+            results = await self.connection_manager.fetch_query(query, params)
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = [

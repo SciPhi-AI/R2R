@@ -4,7 +4,12 @@ from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from core.base import R2RException, generate_default_user_collection_id
+from core.base import (
+    CollectionHandler,
+    DatabaseConfig,
+    R2RException,
+    generate_default_user_collection_id,
+)
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
 from core.utils import (
@@ -12,17 +17,26 @@ from core.utils import (
     generate_default_user_collection_id,
 )
 
-from .base import DatabaseMixin
+from .base import PostgresConnectionManager
 
 logger = logging.getLogger()
 
 
-class CollectionMixin(DatabaseMixin):
+class PostgresCollectionHandler(CollectionHandler):
     TABLE_NAME = "collections"
+
+    def __init__(
+        self,
+        project_name: str,
+        connection_manager: PostgresConnectionManager,
+        config: DatabaseConfig,
+    ):
+        self.config = config
+        super().__init__(project_name, connection_manager)
 
     async def create_table(self) -> None:
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(CollectionMixin.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} (
             collection_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
@@ -31,13 +45,12 @@ class CollectionMixin(DatabaseMixin):
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        await self.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
     async def create_default_collection(
         self, user_id: Optional[UUID] = None
     ) -> CollectionResponse:
         """Create a default collection if it doesn't exist."""
-        config = self.get_config()
 
         if user_id:
             default_collection_uuid = generate_default_user_collection_id(
@@ -45,26 +58,32 @@ class CollectionMixin(DatabaseMixin):
             )
         else:
             default_collection_uuid = generate_collection_id_from_name(
-                config.default_collection_name
+                self.config.default_collection_name
             )
 
-        if not await self.collection_exists(default_collection_uuid):
+        if not await self.connection_manager.collection_exists(
+            default_collection_uuid
+        ):
             logger.info("Initializing a new default collection...")
-            return await self.create_collection(
-                name=config.default_collection_name,
-                description=config.default_collection_description,
+            return await self.connection_manager.create_collection(
+                name=self.config.default_collection_name,
+                description=self.config.default_collection_description,
                 collection_id=default_collection_uuid,
             )
 
-        return await self.get_collection(default_collection_uuid)
+        return await self.connection_manager.get_collection(
+            default_collection_uuid
+        )
 
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
         query = f"""
-            SELECT 1 FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
+            SELECT 1 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             WHERE collection_id = $1
         """
-        result = await self.fetchrow_query(query, [collection_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [collection_id]
+        )
         return result is not None
 
     async def create_collection(
@@ -75,7 +94,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> CollectionResponse:
         current_time = datetime.utcnow()
         query = f"""
-            INSERT INTO {self._get_table_name(CollectionMixin.TABLE_NAME)} (collection_id, name, description, created_at, updated_at)
+            INSERT INTO {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} (collection_id, name, description, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING collection_id, name, description, created_at, updated_at
         """
@@ -88,7 +107,7 @@ class CollectionMixin(DatabaseMixin):
         ]
 
         try:
-            async with self.pool.get_connection() as conn:  # type: ignore
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 row = await conn.fetchrow(query, *params)
 
             if not row:
@@ -111,15 +130,17 @@ class CollectionMixin(DatabaseMixin):
 
     async def get_collection(self, collection_id: UUID) -> CollectionResponse:
         """Get a collection by its ID."""
-        if not await self.collection_exists(collection_id):
+        if not await self.connection_manager.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at
-            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             WHERE collection_id = $1
         """
-        result = await self.fetchrow_query(query, [collection_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [collection_id]
+        )
         if not result:
             raise R2RException(status_code=404, message="Collection not found")
 
@@ -138,7 +159,7 @@ class CollectionMixin(DatabaseMixin):
         description: Optional[str] = None,
     ) -> CollectionResponse:
         """Update an existing collection."""
-        if not await self.collection_exists(collection_id):
+        if not await self.connection_manager.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
         update_fields = []
@@ -159,13 +180,13 @@ class CollectionMixin(DatabaseMixin):
         params.append(collection_id)
 
         query = f"""
-            UPDATE {self._get_table_name(CollectionMixin.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             SET {', '.join(update_fields)}
             WHERE collection_id = ${len(params)}
             RETURNING collection_id, name, description, created_at, updated_at
         """
 
-        result = await self.fetchrow_query(query, params)
+        result = await self.connection_manager.fetchrow_query(query, params)
         if not result:
             raise R2RException(status_code=404, message="Collection not found")
 
@@ -178,7 +199,7 @@ class CollectionMixin(DatabaseMixin):
         )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
-        async with self.pool.get_connection() as conn:  # type: ignore
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             async with conn.transaction():
                 try:
                     # Remove collection_id from users
@@ -206,7 +227,7 @@ class CollectionMixin(DatabaseMixin):
 
                     # Delete the collection
                     delete_query = f"""
-                        DELETE FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
+                        DELETE FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
                         WHERE collection_id = $1
                         RETURNING collection_id
                     """
@@ -233,7 +254,7 @@ class CollectionMixin(DatabaseMixin):
         """List collections with pagination."""
         query = f"""
             SELECT collection_id, name, description, created_at, updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             ORDER BY name
             OFFSET $1
         """
@@ -243,7 +264,7 @@ class CollectionMixin(DatabaseMixin):
             query += " LIMIT $2"
             conditions.append(limit)
 
-        results = await self.fetch_query(query, conditions)
+        results = await self.connection_manager.fetch_query(query, conditions)
         if not results:
             logger.info("No collections found.")
             return {"results": [], "total_entries": 0}
@@ -270,7 +291,9 @@ class CollectionMixin(DatabaseMixin):
             FROM {self._get_table_name("collections")}
             WHERE collection_id = ANY($1)
         """
-        results = await self.fetch_query(query, [collection_ids])
+        results = await self.connection_manager.fetch_query(
+            query, [collection_ids]
+        )
         if len(results) != len(collection_ids):
             raise R2RException(
                 status_code=404,
@@ -301,7 +324,7 @@ class CollectionMixin(DatabaseMixin):
         Raises:
             R2RException: If the collection doesn't exist.
         """
-        if not await self.collection_exists(collection_id):
+        if not await self.connection_manager.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at, COUNT(*) OVER() AS total_entries
@@ -316,7 +339,7 @@ class CollectionMixin(DatabaseMixin):
             query += " LIMIT $3"
             conditions.append(limit)
 
-        results = await self.fetch_query(query, conditions)
+        results = await self.connection_manager.fetch_query(query, conditions)
         documents = [
             DocumentInfo(
                 id=row["document_id"],
@@ -349,7 +372,7 @@ class CollectionMixin(DatabaseMixin):
                 SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
                     COUNT(DISTINCT u.user_id) AS user_count,
                     COUNT(DISTINCT d.document_id) AS document_count
-                FROM {self._get_table_name(CollectionMixin.TABLE_NAME)} g
+                FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} g
                 LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
                 LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
                 {' WHERE g.collection_id = ANY($1)' if collection_ids else ''}
@@ -372,7 +395,7 @@ class CollectionMixin(DatabaseMixin):
         if limit != -1:
             params.append(limit)
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         if not results:
             logger.info("No collections found.")
@@ -400,7 +423,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)} g
+            FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} g
             JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
             WHERE u.user_id = $1
             ORDER BY g.name
@@ -412,7 +435,7 @@ class CollectionMixin(DatabaseMixin):
             query += " LIMIT $3"
             params.append(limit)
 
-        results = await self.fetch_query(query, params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         collections = [
             CollectionResponse(
@@ -445,7 +468,9 @@ class CollectionMixin(DatabaseMixin):
                         or if there's a database error.
         """
         try:
-            if not await self.collection_exists(collection_id):
+            if not await self.connection_manager.collection_exists(
+                collection_id
+            ):
                 raise R2RException(
                     status_code=404, message="Collection not found"
                 )
@@ -455,7 +480,7 @@ class CollectionMixin(DatabaseMixin):
                 SELECT 1 FROM {self._get_table_name('document_info')}
                 WHERE document_id = $1
             """
-            document_exists = await self.fetchrow_query(
+            document_exists = await self.connection_manager.fetchrow_query(
                 document_check_query, [document_id]
             )
 
@@ -471,7 +496,7 @@ class CollectionMixin(DatabaseMixin):
                 WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING document_id
             """
-            result = await self.fetchrow_query(
+            result = await self.connection_manager.fetchrow_query(
                 assign_query, [collection_id, document_id]
             )
 
@@ -498,7 +523,7 @@ class CollectionMixin(DatabaseMixin):
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name(CollectionMixin.TABLE_NAME)} g
+            FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} g
             JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
             WHERE d.document_id = $1
             ORDER BY g.name
@@ -510,7 +535,7 @@ class CollectionMixin(DatabaseMixin):
             query += " LIMIT $3"
             conditions.append(limit)
 
-        results = await self.fetch_query(query, conditions)
+        results = await self.connection_manager.fetch_query(query, conditions)
 
         collections = [
             CollectionResponse(
@@ -540,7 +565,7 @@ class CollectionMixin(DatabaseMixin):
         Raises:
             R2RException: If the collection doesn't exist or if the document is not in the collection.
         """
-        if not await self.collection_exists(collection_id):
+        if not await self.connection_manager.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
@@ -549,7 +574,9 @@ class CollectionMixin(DatabaseMixin):
             WHERE document_id = $2 AND $1 = ANY(collection_ids)
             RETURNING document_id
         """
-        result = await self.fetchrow_query(query, [collection_id, document_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [collection_id, document_id]
+        )
 
         if not result:
             raise R2RException(

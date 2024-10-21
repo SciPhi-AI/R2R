@@ -49,7 +49,7 @@ class R2RPromptProvider(PromptProvider):
             raise
 
     def _get_table_name(self, base_name: str) -> str:
-        return self.db_provider._get_table_name(base_name)
+        return f"{self.db_provider.project_name}_{base_name}"
 
     async def create_table(self):
         query = f"""
