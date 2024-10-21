@@ -173,9 +173,6 @@ class VectorDBMixin(DatabaseMixin):
 
         params.extend([search_settings.search_limit, search_settings.offset])
 
-        print("query = ", query)
-        print("params = ", params)
-
         results = await self.fetch_query(query, params)
 
         return [
@@ -226,10 +223,10 @@ class VectorDBMixin(DatabaseMixin):
             FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
             {where_clause}
         """
-        
-        query += """
+
+        query += f"""
             ORDER BY rank DESC
-            OFFSET $2 LIMIT $3
+            OFFSET ${len(params)+1} LIMIT ${len(params)+2}
         """
         params.extend(
             [
@@ -237,9 +234,6 @@ class VectorDBMixin(DatabaseMixin):
                 search_settings.hybrid_search_settings.full_text_limit,
             ]
         )
-
-        print("query = ", query)
-        print("params = ", params)
 
         results = await self.fetch_query(query, params)
         return [
@@ -423,9 +417,7 @@ class VectorDBMixin(DatabaseMixin):
          RETURNING collection_ids
          """
         results = await self.fetchrow_query(query, (collection_id,))
-        print("results = ", results)
         deleted_count = len(results)
-        print("deleted_count", deleted_count)
         return deleted_count
 
     async def get_document_chunks(
@@ -718,29 +710,7 @@ class VectorDBMixin(DatabaseMixin):
             else:
                 return " AND ".join(filter_conditions)
 
-        # def parse_filter(filter_dict: dict) -> str:
-        #     filter_conditions = []
-        #     for key, value in filter_dict.items():
-        #         if key == "$and":
-        #             filter_conditions.append(
-        #                 f"({' AND '.join([parse_filter(f) for f in value])})"
-        #             )
-        #         elif key == "$or":
-        #             filter_conditions.append(
-        #                 f"({' OR '.join([parse_filter(f) for f in value])})"
-        #             )
-        #         else:
-        #             filter_conditions.append(parse_condition(key, value))
-
-        #     # Check if there is only a single condition
-        #     if len(filter_conditions) == 1:
-        #         return filter_conditions[0]
-        #     else:
-        #         return " AND ".join(filter_conditions)
-
-        print("filters = ", filters)
         where_clause = parse_filter(filters)
-        print("where_clause = ", where_clause)
 
         return where_clause
 
