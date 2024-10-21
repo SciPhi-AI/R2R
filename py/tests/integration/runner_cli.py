@@ -305,8 +305,6 @@ def test_kg_deduplicate_entities_sample_file_cli():
         print("KG deduplicate entities test failed: Communities not created")
         sys.exit(1)
 
-    print(response.json())
-
     entities = response.json()["results"]["entities"]
     assert len(entities) >= 1
 

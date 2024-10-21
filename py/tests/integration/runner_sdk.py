@@ -36,12 +36,13 @@ def test_ingest_sample_file_sdk():
 
 def test_ingest_sample_file_2_sdk():
     print("Testing: Ingest sample file SDK 2")
-    file_paths = ["core/examples/data/aristotle_v2.txt"]
+    file_paths = [f"core/examples/data_dedup/a{i}.txt" for i in range(1, 11)]
     ingest_response = client.ingest_files(file_paths=file_paths)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
+    
     time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
@@ -685,6 +686,8 @@ def test_kg_create_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
     )
 
+    print(create_graph_result)
+
     if "queued" in create_graph_result["results"]["message"]:
         time.sleep(60)
 
@@ -698,9 +701,8 @@ def test_kg_create_graph_sample_file_sdk():
 
     print(entities_list)
 
-    # TODO: Add entity_type to the get_entities endpoint
-    # assert len(entities_list) >= 1
-    # assert "ARISTOTLE" in entities_list
+    assert len(entities_list) >= 1
+    assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
     print("~" * 100)
@@ -714,7 +716,7 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     )
 
     if "queued" in entities_deduplication_result["results"]["message"]:
-        time.sleep(60)
+        time.sleep(30)
 
     response = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
@@ -723,8 +725,12 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     )
 
     entities_list = [ele["name"] for ele in response["results"]["entities"]]
+    
     assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
+
+    # Check that there are no duplicates
+    assert sorted(entities_list) == sorted(list(set(entities_list)))
 
     print("KG deduplicate entities test passed")
     print("~" * 100)
