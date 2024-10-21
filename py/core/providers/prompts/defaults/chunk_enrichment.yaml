@@ -18,6 +18,7 @@ chunk_enrichment:
     5. Do not incorporate specific information or details from other chunks into this one.
     6. Focus on making the chunk more informative and precise within its own scope.
     7. Maintain the original meaning and intent of the chunk while improving its clarity and usefulness.
+    8. Just output the enriched chunk. Do not include any other text.
 
     ## Enriched Chunk:
 
