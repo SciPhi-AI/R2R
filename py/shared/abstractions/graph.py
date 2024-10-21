@@ -31,18 +31,6 @@ class Named(Identified):
     """The name/title of the item."""
 
 
-class EntityType(R2RSerializable):
-    id: str
-    name: str
-    description: str | None = None
-
-
-class RelationshipType(R2RSerializable):
-    id: str
-    name: str
-    description: str | None = None
-
-
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 

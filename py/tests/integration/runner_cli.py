@@ -257,7 +257,7 @@ def test_kg_create_graph_sample_file_cli():
         time.sleep(60)
 
     response = requests.get(
-        "http://localhost:7272/v2/entities",
+        "http://localhost:7272/v2/entities/",
         params={
             "collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
             "limit": 1000,
@@ -278,6 +278,22 @@ def test_kg_create_graph_sample_file_cli():
     assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_deduplicate_entities_sample_file_cli():
+    print("Testing: KG deduplicate entities")
+    output = run_command("poetry run r2r deduplicate-entities --run")
+
+    if "queued" in output:
+        time.sleep(60)
+
+    response = requests.get(
+        "http://localhost:7272/v2/communities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    print("KG deduplicate entities test passed")
     print("~" * 100)
 
 
