@@ -267,7 +267,7 @@ class PostgresKGProvider(KGProvider):
                 else None
             )
             cleaned_entities.append(entity_dict)
-        print("entity_dict = ", entity_dict)
+
         logger.info(f"Upserting {len(entities)} entities into {table_name}")
 
         return await self._add_objects(

@@ -408,5 +408,5 @@ async def test_get_community_details(
 
     assert community_level == 0
     # TODO: change these to objects
-    assert entities[0]["name"] == "Entity1"
-    assert triples[0]["subject"] == "Entity1"
+    assert entities[0].name == "Entity1"
+    assert triples[0].subject == "Entity1"
