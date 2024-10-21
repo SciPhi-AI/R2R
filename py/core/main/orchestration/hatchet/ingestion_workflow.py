@@ -486,7 +486,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            self.ingestion_service.providers.database.create_index(
+            await self.ingestion_service.providers.database.create_index(
                 **parsed_data
             )
 

@@ -519,7 +519,6 @@ class VectorHandler(Handler):
 
 
 class DatabaseProvider(Provider):
-
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
     collection_handler: CollectionHandler
@@ -550,7 +549,7 @@ class DatabaseProvider(Provider):
     async def delete_from_documents_overview(
         self, document_id: str, version: Optional[str] = None
     ) -> None:
-        return await self.document_handler.upsert_documents_overview(
+        return await self.document_handler.delete_from_documents_overview(
             document_id, version
         )
 
@@ -573,12 +572,12 @@ class DatabaseProvider(Provider):
     async def get_workflow_status(
         self, id: Union[UUID, list[UUID]], status_type: str
     ):
-        return self.document_handler.get_workflow_status(id, status_type)
+        return await self.document_handler.get_workflow_status(id, status_type)
 
     async def set_workflow_status(
         self, id: Union[UUID, list[UUID]], status_type: str, status: str
     ):
-        return self.document_handler.set_workflow_status(
+        return await self.document_handler.set_workflow_status(
             id, status_type, status
         )
 
@@ -588,12 +587,11 @@ class DatabaseProvider(Provider):
         status: Union[str, list[str]],
         collection_id: Optional[UUID] = None,
     ):
-        self.document_handler.get_document_ids_by_status(
+        return await self.document_handler.get_document_ids_by_status(
             status_type, status, collection_id
         )
 
     # Collection handler methods
-
     async def create_default_collection(
         self, user_id: Optional[UUID] = None
     ) -> CollectionResponse:
@@ -633,7 +631,6 @@ class DatabaseProvider(Provider):
     async def list_collections(
         self, offset: int = 0, limit: int = -1
     ) -> dict[str, Union[list[CollectionResponse], int]]:
-        """List collections with pagination."""
         return await self.collection_handler.list_collections(offset, limit)
 
     async def get_collections_by_ids(
@@ -686,14 +683,11 @@ class DatabaseProvider(Provider):
     async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
-        self.collection_handler.remove_document_from_collection_relational(
+        return await self.collection_handler.remove_document_from_collection_relational(
             document_id, collection_id
         )
 
     # Token handler methods
-    async def create_token_table(self):
-        return await self.token_handler.create_table()
-
     async def blacklist_token(
         self, token: str, current_time: Optional[datetime] = None
     ):
@@ -712,23 +706,55 @@ class DatabaseProvider(Provider):
         )
 
     # User handler methods
-    async def create_user_table(self):
-        return await self.user_handler.create_table()
-
-    async def create_user(self, email: str, password: str) -> UUID:
-        return await self.user_handler.create_user(email, password)
-
     async def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
         return await self.user_handler.get_user_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> Optional[UserResponse]:
+    async def get_user_by_email(self, email: str) -> UserResponse:
         return await self.user_handler.get_user_by_email(email)
 
-    async def update_user(self, user_id: UUID, user_data: dict) -> None:
-        return await self.user_handler.update_user(user_id, user_data)
+    async def create_user(self, email: str, password: str) -> UserResponse:
+        return await self.user_handler.create_user(email, password)
 
-    async def delete_user(self, user_id: UUID) -> None:
-        return await self.user_handler.delete_user(user_id)
+    async def update_user(self, user: UserResponse) -> UserResponse:
+        return await self.user_handler.update_user(user)
+
+    async def delete_user_relational(self, user_id: UUID) -> None:
+        return await self.user_handler.delete_user_relational(user_id)
+
+    async def update_user_password(
+        self, user_id: UUID, new_hashed_password: str
+    ):
+        return await self.user_handler.update_user_password(
+            user_id, new_hashed_password
+        )
+
+    async def get_all_users(self) -> list[UserResponse]:
+        return await self.user_handler.get_all_users()
+
+    async def store_verification_code(
+        self, user_id: UUID, verification_code: str, expiry: datetime
+    ):
+        return await self.user_handler.store_verification_code(
+            user_id, verification_code, expiry
+        )
+
+    async def verify_user(self, verification_code: str) -> None:
+        return await self.user_handler.verify_user(verification_code)
+
+    async def remove_verification_code(self, verification_code: str):
+        return await self.user_handler.remove_verification_code(
+            verification_code
+        )
+
+    async def expire_verification_code(self, user_id: UUID):
+        return await self.user_handler.expire_verification_code(user_id)
+
+    async def store_reset_token(
+        self, user_id: UUID, reset_token: str, expiry: datetime
+    ):
+        return await self.user_handler.store_reset_token(
+            user_id, reset_token, expiry
+        )
 
     async def get_user_id_by_reset_token(
         self, reset_token: str
@@ -788,32 +814,24 @@ class DatabaseProvider(Provider):
         )
 
     # Vector handler methods
+    async def upsert(self, entry: VectorEntry) -> None:
+        return await self.vector_handler.upsert(entry)
 
-    async def upsert_vectors(
-        self, vectors: Union[VectorEntry, list[VectorEntry]]
-    ) -> None:
-        return await self.vector_handler.upsert_vectors(vectors)
+    async def upsert_entries(self, entries: list[VectorEntry]) -> None:
+        return await self.vector_handler.upsert_entries(entries)
 
-    async def get_vectors(
-        self,
-        filters: dict[str, Any],
-        offset: int = 0,
-        limit: int = -1,
-        include_vectors: bool = False,
-    ) -> dict[str, Any]:
-        return await self.vector_handler.get_vectors(
-            filters, offset, limit, include_vectors
+    async def semantic_search(
+        self, query_vector: list[float], search_settings: VectorSearchSettings
+    ) -> list[VectorSearchResult]:
+        return await self.vector_handler.semantic_search(
+            query_vector, search_settings
         )
 
-    async def search(
-        self,
-        query_vector: list[float],
-        search_settings: VectorSearchSettings,
-        *args,
-        **kwargs,
+    async def full_text_search(
+        self, query_text: str, search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
-        return await self.vector_handler.search(
-            query_vector, search_settings, *args, **kwargs
+        return await self.vector_handler.full_text_search(
+            query_text, search_settings
         )
 
     async def hybrid_search(
@@ -868,17 +886,6 @@ class DatabaseProvider(Provider):
             document_id, offset, limit, include_vectors
         )
 
-    async def get_semantic_neighbors(
-        self,
-        document_id: UUID,
-        chunk_id: UUID,
-        limit: int = 10,
-        similarity_threshold: float = 0.5,
-    ) -> list[dict[str, Any]]:
-        return await self.vector_handler.get_semantic_neighbors(
-            document_id, chunk_id, limit, similarity_threshold
-        )
-
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
@@ -897,4 +904,15 @@ class DatabaseProvider(Provider):
             index_arguments,
             index_name,
             concurrently,
+        )
+
+    async def get_semantic_neighbors(
+        self,
+        document_id: UUID,
+        chunk_id: UUID,
+        limit: int = 10,
+        similarity_threshold: float = 0.5,
+    ) -> list[dict[str, Any]]:
+        return await self.vector_handler.get_semantic_neighbors(
+            document_id, chunk_id, limit, similarity_threshold
         )
