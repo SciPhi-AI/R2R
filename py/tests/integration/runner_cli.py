@@ -253,8 +253,8 @@ def test_kg_create_graph_sample_file_cli():
     print("Calling `poetry run r2r create-graph --run`")
     output = run_command("poetry run r2r create-graph --run")
 
-    # if "queued" in output:
-    time.sleep(60)
+    if "queued" in output:
+        time.sleep(120)
 
     response = requests.get(
         "http://localhost:7272/v2/entities/",

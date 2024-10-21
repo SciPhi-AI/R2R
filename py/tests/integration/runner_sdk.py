@@ -689,7 +689,7 @@ def test_kg_create_graph_sample_file_sdk():
     print(create_graph_result)
 
     if "queued" in create_graph_result["results"]["message"]:
-        time.sleep(60)
+        time.sleep(120)
 
     result = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
