@@ -207,21 +207,26 @@ class VectorDBMixin(DatabaseMixin):
                 "Full-text search is not enabled for this collection."
             )
 
-        where_clause = ""
+        where_clauses = []
         params = [query_text]
+
         if search_settings.filters:
-            where_clause = self._build_filters(search_settings.filters, params)
-            where_clause = f"WHERE {where_clause}"
+            filters_clause = self._build_filters(search_settings.filters, params)
+            where_clauses.append(filters_clause)
+
+        if where_clauses:
+            where_clause = "WHERE " + " AND ".join(where_clauses) + " AND fts @@ websearch_to_tsquery('english', $1)"
+        else:
+            where_clause = "WHERE fts @@ websearch_to_tsquery('english', $1)"
 
         query = f"""
             SELECT
                 extraction_id, document_id, user_id, collection_ids, text, metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
             FROM {self._get_table_name(VectorDBMixin.TABLE_NAME)}
-            WHERE fts @@ websearch_to_tsquery('english', $1)
             {where_clause}
         """
-
+        
         query += """
             ORDER BY rank DESC
             OFFSET $2 LIMIT $3
