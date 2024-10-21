@@ -30,7 +30,7 @@ from cli.utils.timer import timer
     help="Force the graph creation process.",
 )
 @pass_context
-def create_graph(
+async def create_graph(
     ctx, collection_id, run, kg_creation_settings, force_kg_creation
 ):
     client = ctx.obj
@@ -52,10 +52,64 @@ def create_graph(
         kg_creation_settings = {"force_kg_creation": True}
 
     with timer():
-        response = client.create_graph(
+        response = await client.create_graph(
             collection_id=collection_id,
             run_type=run_type,
             kg_creation_settings=kg_creation_settings,
+        )
+
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.option(
+    "--collection-id",
+    required=False,
+    help="Collection ID to deduplicate entities for.",
+)
+@click.option(
+    "--run",
+    is_flag=True,
+    help="Run the deduplication process.",
+)
+@click.option(
+    "--force-deduplication",
+    is_flag=True,
+    help="Force the deduplication process.",
+)
+@click.option(
+    "--deduplication-settings",
+    required=False,
+    help="Settings for the deduplication process.",
+)
+@pass_context
+async def deduplicate_entities(
+    ctx, collection_id, run, force_deduplication, deduplication_settings
+):
+    """
+    Deduplicate entities in the knowledge graph.
+    """
+    client = ctx.obj
+
+    if deduplication_settings:
+        try:
+            deduplication_settings = json.loads(deduplication_settings)
+        except json.JSONDecodeError:
+            click.echo(
+                "Error: deduplication-settings must be a valid JSON string"
+            )
+            return
+    else:
+        deduplication_settings = {}
+
+    run_type = "run" if run else "estimate"
+
+    if force_deduplication:
+        deduplication_settings = {"force_deduplication": True}
+
+    with timer():
+        response = await client.deduplicate_entities(
+            collection_id, run_type, deduplication_settings
         )
 
     click.echo(json.dumps(response, indent=2))
@@ -84,7 +138,7 @@ def create_graph(
     help="Settings for the graph enrichment process.",
 )
 @pass_context
-def enrich_graph(
+async def enrich_graph(
     ctx, collection_id, run, force_kg_enrichment, kg_enrichment_settings
 ):
     """
@@ -109,7 +163,7 @@ def enrich_graph(
         kg_enrichment_settings = {"force_kg_enrichment": True}
 
     with timer():
-        response = client.enrich_graph(
+        response = await client.enrich_graph(
             collection_id, run_type, kg_enrichment_settings
         )
 
@@ -140,19 +194,22 @@ def enrich_graph(
     help="Entity IDs to filter by.",
 )
 @click.option(
-    "--with-description",
-    is_flag=True,
-    help="Include entity descriptions in the response.",
+    "--entity-level",
+    default="collection",
+    help="Entity level to filter by.",
 )
 @pass_context
-def get_entities(ctx, collection_id, offset, limit, entity_ids):
+async def get_entities(
+    ctx, collection_id, offset, limit, entity_ids, entity_level
+):
     """
     Retrieve entities from the knowledge graph.
     """
     client = ctx.obj
 
     with timer():
-        response = client.get_entities(
+        response = await client.get_entities(
+            entity_level,
             collection_id,
             offset,
             limit,
@@ -191,14 +248,16 @@ def get_entities(ctx, collection_id, offset, limit, entity_ids):
     help="Entity names to filter by.",
 )
 @pass_context
-def get_triples(ctx, collection_id, offset, limit, triple_ids, entity_names):
+async def get_triples(
+    ctx, collection_id, offset, limit, triple_ids, entity_names
+):
     """
     Retrieve triples from the knowledge graph.
     """
     client = ctx.obj
 
     with timer():
-        response = client.get_triples(
+        response = await client.get_triples(
             collection_id,
             offset,
             limit,

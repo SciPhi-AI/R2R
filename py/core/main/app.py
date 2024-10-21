@@ -60,9 +60,11 @@ class R2RApp:
             allow_headers=["*"],
         )
 
-    def serve(self, host: str = "0.0.0.0", port: int = 7272):
+    async def serve(self, host: str = "0.0.0.0", port: int = 7272):
         # Start the Hatchet worker in a separate thread
         import uvicorn
 
         # Run the FastAPI app
-        uvicorn.run(self.app, host=host, port=port)
+        config = uvicorn.Config(self.app, host=host, port=port)
+        server = uvicorn.Server(config)
+        await server.serve()

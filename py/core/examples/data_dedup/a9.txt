@@ -1,0 +1,37 @@
+Aristotle's elements[41]
+Element	Hot/Cold	Wet/Dry	Motion	Modern state
+of matter
+Earth	Cold	Dry	Down	Solid
+Water	Cold	Wet	Down	Liquid
+Air	Hot	Wet	Up	Gas
+Fire	Hot	Dry	Up	Plasma
+Aether	(divine
+substance)	—	Circular
+(in heavens)	Vacuum
+Motion
+Further information: History of classical mechanics
+Aristotle describes two kinds of motion: "violent" or "unnatural motion", such as that of a thrown stone, in the Physics (254b10), and "natural motion", such as of a falling object, in On the Heavens (300a20). In violent motion, as soon as the agent stops causing it, the motion stops also: in other words, the natural state of an object is to be at rest,[42][G] since Aristotle does not address friction.[43] With this understanding, it can be observed that, as Aristotle stated, heavy objects (on the ground, say) require more force to make them move; and objects pushed with greater force move faster.[44][H] This would imply the equation[44]
+
+𝐹
+=
+𝑚
+𝑣
+{\displaystyle F=mv},
+incorrect in modern physics.[44]
+
+Natural motion depends on the element concerned: the aether naturally moves in a circle around the heavens,[I] while the 4 Empedoclean elements move vertically up (like fire, as is observed) or down (like earth) towards their natural resting places.[45][43][J]
+
+
+Aristotle's laws of motion. In Physics he states that objects fall at a speed proportional to their weight and inversely proportional to the density of the fluid they are immersed in.[43] This is a correct approximation for objects in Earth's gravitational field moving in air or water.[45]
+In the Physics (215a25), Aristotle effectively states a quantitative law, that the speed, v, of a falling body is proportional (say, with constant c) to its weight, W, and inversely proportional to the density,[K] ρ, of the fluid in which it is falling:;[45][43]
+
+𝑣
+=
+𝑐
+𝑊
+𝜌{\displaystyle v=c{\frac {W}{\rho }}}
+Aristotle implies that in a vacuum the speed of fall would become infinite, and concludes from this apparent absurdity that a vacuum is not possible.[45][43] Opinions have varied on whether Aristotle intended to state quantitative laws. Henri Carteron held the "extreme view"[43] that Aristotle's concept of force was basically qualitative,[46] but other authors reject this.[43]
+
+Archimedes corrected Aristotle's theory that bodies move towards their natural resting places; metal boats can float if they displace enough water; floating depends in Archimedes' scheme on the mass and volume of the object, not, as Aristotle thought, its elementary composition.[45]
+
+Aristotle's writings on motion remained influential until the Early Modern period. John Philoponus (in Late antiquity) and Galileo (in Early modern period) are said to have shown by experiment that Aristotle's claim that a heavier object falls faster than a lighter object is incorrect.[40] A contrary opinion is given by Carlo Rovelli, who argues that Aristotle's physics of motion is correct within its domain of validity, that of objects in the Earth's gravitational field immersed in a fluid such as air. In this system, heavy bodies in steady fall indeed travel faster than light ones (whether friction is ignored, or not[45]), and they do fall more slowly in a denser medium.[44][L]

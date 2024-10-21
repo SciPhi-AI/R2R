@@ -14,7 +14,7 @@ from core.base import (
 
 @pytest.mark.asyncio
 async def test_create_table(temporary_postgres_db_provider):
-    await temporary_postgres_db_provider.relational.create_table()
+    await temporary_postgres_db_provider.create_table()
     # Verify that the table is created with the expected columns and constraints
     # You can execute a query to check the table structure or use a database inspection tool
 
@@ -33,15 +33,13 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
         ingestion_status=IngestionStatus.PENDING,
         kg_extraction_status=KGExtractionStatus.PENDING,
     )
-    await temporary_postgres_db_provider.relational.upsert_documents_overview(
+    await temporary_postgres_db_provider.upsert_documents_overview(
         document_info
     )
 
     # Verify that the document is inserted correctly
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            filter_document_ids=[document_info.id]
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        filter_document_ids=[document_info.id]
     )
     assert len(result["results"]) == 1
     inserted_document = result["results"][0]
@@ -62,14 +60,12 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
     # Update the document and verify the changes
     document_info.title = "Updated Test Document"
     document_info.ingestion_status = IngestionStatus.SUCCESS
-    await temporary_postgres_db_provider.relational.upsert_documents_overview(
+    await temporary_postgres_db_provider.upsert_documents_overview(
         document_info
     )
 
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            filter_document_ids=[document_info.id]
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        filter_document_ids=[document_info.id]
     )
     assert len(result["results"]) == 1
     updated_document = result["results"][0]
@@ -91,19 +87,17 @@ async def test_delete_from_documents_overview(temporary_postgres_db_provider):
         ingestion_status=IngestionStatus.PENDING,
         kg_extraction_status=KGExtractionStatus.PENDING,
     )
-    await temporary_postgres_db_provider.relational.upsert_documents_overview(
+    await temporary_postgres_db_provider.upsert_documents_overview(
         document_info
     )
 
-    await temporary_postgres_db_provider.relational.delete_from_documents_overview(
+    await temporary_postgres_db_provider.delete_from_documents_overview(
         document_info.id
     )
 
     # Verify that the document is deleted
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            filter_document_ids=[document_info.id]
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        filter_document_ids=[document_info.id]
     )
     assert len(result["results"]) == 0
 
@@ -134,24 +128,20 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         ingestion_status=IngestionStatus.SUCCESS,
         kg_extraction_status=KGExtractionStatus.PENDING,
     )
-    await temporary_postgres_db_provider.relational.upsert_documents_overview(
+    await temporary_postgres_db_provider.upsert_documents_overview(
         [document_info1, document_info2]
     )
 
     # Test filtering by user ID
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            filter_user_ids=[UUID("00000000-0000-0000-0000-000000000003")]
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        filter_user_ids=[UUID("00000000-0000-0000-0000-000000000003")]
     )
     assert len(result["results"]) == 2
     assert result["total_entries"] == 2
 
     # Test filtering by document ID
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            filter_document_ids=[UUID("00000000-0000-0000-0000-000000000001")]
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        filter_document_ids=[UUID("00000000-0000-0000-0000-000000000001")]
     )
     assert len(result["results"]) == 1
     assert result["results"][0].id == UUID(
@@ -159,21 +149,15 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
     )
 
     # Test filtering by collection ID
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            filter_collection_ids=[
-                UUID("00000000-0000-0000-0000-000000000002")
-            ]
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        filter_collection_ids=[UUID("00000000-0000-0000-0000-000000000002")]
     )
     assert len(result["results"]) == 2
     assert result["total_entries"] == 2
 
     # Test pagination
-    result = (
-        await temporary_postgres_db_provider.relational.get_documents_overview(
-            offset=1, limit=1
-        )
+    result = await temporary_postgres_db_provider.get_documents_overview(
+        offset=1, limit=1
     )
     assert len(result["results"]) == 1
     assert result["total_entries"] == 2

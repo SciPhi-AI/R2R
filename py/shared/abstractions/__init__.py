@@ -1,5 +1,4 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
-from .completion import CompletionRecord, MessageType
 from .document import (
     DataType,
     Document,
@@ -22,12 +21,18 @@ from .graph import (
     RelationshipType,
     Triple,
 )
-from .kg import KGCreationSettings, KGEnrichmentSettings, KGRunType
+from .kg import (
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    KGRunType,
+)
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     RAGCompletion,
 )
 from .prompt import Prompt
@@ -54,7 +59,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",

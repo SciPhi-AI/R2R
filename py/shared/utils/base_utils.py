@@ -2,8 +2,7 @@ import asyncio
 import json
 import logging
 from copy import deepcopy
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
@@ -151,15 +150,6 @@ def generate_user_id(email: str) -> UUID:
     Generates a unique user id from a given email
     """
     return _generate_id_from_label(email)
-
-
-def generate_message_id(query: str, completion_start_time: datetime) -> UUID:
-    """
-    Generates a unique message id from a given query and completion start time
-    """
-    return _generate_id_from_label(
-        f"{query}-{completion_start_time.isoformat()}"
-    )
 
 
 def generate_default_prompt_id(prompt_name: str) -> UUID:

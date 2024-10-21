@@ -14,14 +14,17 @@ from shared.api.models.ingestion.responses import (
 from shared.api.models.kg.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
+    KGEntityDeduplicationResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
+    WrappedKGEntityDeduplicationResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
     CollectionOverviewResponse,
     CollectionResponse,
+    ConversationOverviewResponse,
     DocumentChunkResponse,
     DocumentOverviewResponse,
     LogResponse,
@@ -29,7 +32,6 @@ from shared.api.models.management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
-    ConversationOverviewResponse,
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -37,6 +39,7 @@ from shared.api.models.management.responses import (
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
     WrappedConversationResponse,
+    WrappedConversationsOverviewResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedGetPromptsResponse,
@@ -46,7 +49,6 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-    WrappedConversationsOverviewResponse,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,

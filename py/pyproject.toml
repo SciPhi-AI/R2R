@@ -12,11 +12,11 @@ authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 include = ["r2r.toml", "compose.yaml", "compose.full.yaml", "pyproject.toml"]
 packages = [
-    { include = "r2r", from = "." },
-    { include = "core", from = "." },
-    { include = "cli", from = "." },
+    { include = "r2r" },
     { include = "sdk", from = "." },
     { include = "shared", from = "." },
+    { include = "core", from = "." },
+    { include = "cli", from = "." },
 ]
 
 [tool.poetry.dependencies]

@@ -1,12 +1,11 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from .models import Token, UserResponse
+from ..models import Token, UserResponse
 
 
-class AuthMethods:
-    @staticmethod
-    async def register(client, email: str, password: str) -> UserResponse:
+class AuthMixins:
+    async def register(self, email: str, password: str) -> UserResponse:
         """
         Registers a new user with the given email and password.
 
@@ -18,10 +17,9 @@ class AuthMethods:
             UserResponse: The response from the server.
         """
         data = {"email": email, "password": password}
-        return await client._make_request("POST", "register", json=data)
+        return await self._make_request("POST", "register", json=data)  # type: ignore
 
-    @staticmethod
-    async def verify_email(client, verification_code: str) -> dict:
+    async def verify_email(self, verification_code: str) -> dict:
         """
         Verifies the email of a user with the given verification code.
 
@@ -29,14 +27,13 @@ class AuthMethods:
             verification_code (str): The verification code to verify the email with.
 
         """
-        return await client._make_request(
+        return await self._make_request(  # type: ignore
             "POST",
             "verify_email",
             json=verification_code,
         )
 
-    @staticmethod
-    async def login(client, email: str, password: str) -> dict[str, Token]:
+    async def login(self, email: str, password: str) -> dict[str, Token]:
         """
         Attempts to log in a user with the given email and password.
 
@@ -48,37 +45,34 @@ class AuthMethods:
             dict[str, Token]: The access and refresh tokens from the server.
         """
         data = {"username": email, "password": password}
-        response = await client._make_request("POST", "login", data=data)
-        client.access_token = response["results"]["access_token"]["token"]
-        client._refresh_token = response["results"]["refresh_token"]["token"]
+        response = await self._make_request("POST", "login", data=data)  # type: ignore
+        self.access_token = response["results"]["access_token"]["token"]
+        self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
-    @staticmethod
-    async def logout(client) -> dict:
+    async def logout(self) -> dict:
         """
         Logs out the currently authenticated user.
 
         Returns:
             dict: The response from the server.
         """
-        response = await client._make_request("POST", "logout")
-        client.access_token = None
-        client._refresh_token = None
+        response = await self._make_request("POST", "logout")  # type: ignore
+        self.access_token = None
+        self._refresh_token = None
         return response
 
-    @staticmethod
-    async def user(client) -> UserResponse:
+    async def user(self) -> UserResponse:
         """
         Retrieves the user information for the currently authenticated user.
 
         Returns:
             UserResponse: The response from the server.
         """
-        return await client._make_request("GET", "user")
+        return await self._make_request("GET", "user")  # type: ignore
 
-    @staticmethod
     async def update_user(
-        client,
+        self,
         user_id: Union[str, UUID],
         email: Optional[str] = None,
         is_superuser: Optional[bool] = None,
@@ -109,26 +103,24 @@ class AuthMethods:
             "profile_picture": profile_picture,
         }
         data = {k: v for k, v in data.items() if v is not None}
-        return await client._make_request("PUT", "user", json=data)
+        return await self._make_request("PUT", "user", json=data)  # type: ignore
 
-    @staticmethod
-    async def refresh_access_token(client) -> dict[str, Token]:
+    async def refresh_access_token(self) -> dict[str, Token]:
         """
         Refreshes the access token for the currently authenticated user.
 
         Returns:
             dict[str, Token]: The access and refresh tokens from the server.
         """
-        response = await client._make_request(
-            "POST", "refresh_access_token", json=client._refresh_token
+        response = await self._make_request(  # type: ignore
+            "POST", "refresh_access_token", json=self._refresh_token
         )
-        client.access_token = response["results"]["access_token"]["token"]
-        client._refresh_token = response["results"]["refresh_token"]["token"]
+        self.access_token = response["results"]["access_token"]["token"]
+        self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
-    @staticmethod
     async def change_password(
-        client, current_password: str, new_password: str
+        self, current_password: str, new_password: str
     ) -> dict:
         """
         Changes the password of the currently authenticated user.
@@ -144,10 +136,9 @@ class AuthMethods:
             "current_password": current_password,
             "new_password": new_password,
         }
-        return await client._make_request("POST", "change_password", json=data)
+        return await self._make_request("POST", "change_password", json=data)  # type: ignore
 
-    @staticmethod
-    async def request_password_reset(client, email: str) -> dict:
+    async def request_password_reset(self, email: str) -> dict:
         """
         Requests a password reset for the user with the given email.
 
@@ -157,13 +148,12 @@ class AuthMethods:
         Returns:
             dict: The response from the server.
         """
-        return await client._make_request(
+        return await self._make_request(  # type: ignore
             "POST", "request_password_reset", json=email
         )
 
-    @staticmethod
     async def confirm_password_reset(
-        client, reset_token: str, new_password: str
+        self, reset_token: str, new_password: str
     ) -> dict:
         """
         Confirms a password reset for the user with the given reset token.
@@ -176,11 +166,10 @@ class AuthMethods:
             dict: The response from the server.
         """
         data = {"reset_token": reset_token, "new_password": new_password}
-        return await client._make_request("POST", "reset_password", json=data)
+        return await self._make_request("POST", "reset_password", json=data)  # type: ignore
 
-    @staticmethod
     async def login_with_token(
-        client,
+        self,
         access_token: str,
     ) -> dict[str, Token]:
         """
@@ -193,10 +182,10 @@ class AuthMethods:
         Returns:
             dict[str, Token]: The access and refresh tokens from the server.
         """
-        client.access_token = access_token
+        self.access_token = access_token
         # Verify the tokens by making a request to the user endpoint
         try:
-            await client._make_request("GET", "user")
+            await self._make_request("GET", "user")  # type: ignore
             return {
                 "access_token": Token(
                     token=access_token, token_type="access_token"
@@ -204,6 +193,6 @@ class AuthMethods:
             }
         except Exception:
             # If the request fails, clear the tokens and raise an exception
-            client.access_token = None
-            client._refresh_token = None
+            self.access_token = None
+            self._refresh_token = None
             raise ValueError("Invalid tokens provided")

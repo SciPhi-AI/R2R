@@ -1,0 +1,31 @@
+Newton's "forced" motion corresponds to Aristotle's "violent" motion with its external agent, but Aristotle's assumption that the agent's effect stops immediately it stops acting (e.g., the ball leaves the thrower's hand) has awkward consequences: he has to suppose that surrounding fluid helps to push the ball along to make it continue to rise even though the hand is no longer acting on it, resulting in the Medieval theory of impetus.[45]
+
+Four causes
+Main article: Four causes
+
+Aristotle argued by analogy with woodwork that a thing takes its form from four causes: in the case of a table, the wood used (material cause), its design (formal cause), the tools and techniques used (efficient cause), and its decorative or practical purpose (final cause).[47]
+Aristotle suggested that the reason for anything coming about can be attributed to four different types of simultaneously active factors. His term aitia is traditionally translated as "cause", but it does not always refer to temporal sequence; it might be better translated as "explanation", but the traditional rendering will be employed here.[48][49]
+
+Material cause describes the material out of which something is composed. Thus the material cause of a table is wood. It is not about action. It does not mean that one domino knocks over another domino.[48]
+The formal cause is its form, i.e., the arrangement of that matter. It tells one what a thing is, that a thing is determined by the definition, form, pattern, essence, whole, synthesis or archetype. It embraces the account of causes in terms of fundamental principles or general laws, as the whole (i.e., macrostructure) is the cause of its parts, a relationship known as the whole-part causation. Plainly put, the formal cause is the idea in the mind of the sculptor that brings the sculpture into being. A simple example of the formal cause is the mental image or idea that allows an artist, architect, or engineer to create a drawing.[48]
+The efficient cause is "the primary source", or that from which the change under consideration proceeds. It identifies 'what makes of what is made and what causes change of what is changed' and so suggests all sorts of agents, non-living or living, acting as the sources of change or movement or rest. Representing the current understanding of causality as the relation of cause and effect, this covers the modern definitions of "cause" as either the agent or agency or particular events or states of affairs. In the case of two dominoes, when the first is knocked over it causes the second also to fall over.[48] In the case of animals, this agency is a combination of how it develops from the egg, and how its body functions.[50]
+The final cause (telos) is its purpose, the reason why a thing exists or is done, including both purposeful and instrumental actions and activities. The final cause is the purpose or function that something is supposed to serve. This covers modern ideas of motivating causes, such as volition.[48] In the case of living things, it implies adaptation to a particular way of life.[50]
+Optics
+Further information: History of optics
+Aristotle describes experiments in optics using a camera obscura in Problems, book 15. The apparatus consisted of a dark chamber with a small aperture that let light in. With it, he saw that whatever shape he made the hole, the sun's image always remained circular. He also noted that increasing the distance between the aperture and the image surface magnified the image.[51]
+
+Chance and spontaneity
+Further information: Accident (philosophy)
+According to Aristotle, spontaneity and chance are causes of some things, distinguishable from other types of cause such as simple necessity. Chance as an incidental cause lies in the realm of accidental things, "from what is spontaneous". There is also more a specific kind of chance, which Aristotle names "luck", that only applies to people's moral choices.[52][53]
+
+Astronomy
+Further information: History of astronomy
+In astronomy, Aristotle refuted Democritus's claim that the Milky Way was made up of "those stars which are shaded by the earth from the sun's rays," pointing out partly correctly that if "the size of the sun is greater than that of the earth and the distance of the stars from the earth many times greater than that of the sun, then... the sun shines on all the stars and the earth screens none of them."[54] He also wrote descriptions of comets, including the Great Comet of 371 BC.[55]
+
+Geology and natural sciences
+Further information: History of geology
+
+Aristotle noted that the ground level of the Aeolian islands changed before a volcanic eruption.
+Aristotle was one of the first people to record any geological observations. He stated that geological change was too slow to be observed in one person's lifetime.[56][57] The geologist Charles Lyell noted that Aristotle described such change, including "lakes that had dried up" and "deserts that had become watered by rivers", giving as examples the growth of the Nile delta since the time of Homer, and "the upheaving of one of the Aeolian islands, previous to a volcanic eruption."'[58]
+
+Meteorologica lends its name to the modern study of meteorology, but its modern usage diverges from the content of Aristotle's ancient treatise on meteors. The ancient Greeks did use the term for a range of atmospheric phenomena, but also for earthquakes and volcanic eruptions. Aristotle proposed that the cause of earthquakes was a gas or vapor (anathymiaseis) that was trapped inside the earth and trying to escape, following other Greek authors Anaxagoras, Empedocles and Democritus.[59]

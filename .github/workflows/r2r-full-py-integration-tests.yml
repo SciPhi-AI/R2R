@@ -83,4 +83,4 @@ jobs:
 
       - name: Run SDK GraphRAG Tests
         if: matrix.test_category == 'sdk-graphrag'
-        uses: ./.github/actions/run-cli-graphrag-tests
+        uses: ./.github/actions/run-sdk-graphrag-tests

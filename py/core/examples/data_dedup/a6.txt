@@ -1,0 +1,29 @@
+One of Aristotle's types of syllogism[D]
+In words	In
+terms[E]	In equations[F]
+    All men are mortal.
+
+    All Greeks are men.
+
+∴ All Greeks are mortal.	M a P
+
+S a M
+
+S a P
+What is today called Aristotelian logic with its types of syllogism (methods of logical argument),[32] Aristotle himself would have labelled "analytics". The term "logic" he reserved to mean dialectics.
+
+Metaphysics
+Main article: Metaphysics (Aristotle)
+The word "metaphysics" appears to have been coined by the first century AD editor who assembled various small selections of Aristotle's works to the treatise we know by the name Metaphysics.[34] Aristotle called it "first philosophy", and distinguished it from mathematics and natural science (physics) as the contemplative (theoretikē) philosophy which is "theological" and studies the divine. He wrote in his Metaphysics (1026a16):
+
+if there were no other independent things besides the composite natural ones, the study of nature would be the primary kind of knowledge; but if there is some motionless independent thing, the knowledge of this precedes it and is first philosophy, and it is universal in just this way, because it is first. And it belongs to this sort of philosophy to study being as being, both what it is and what belongs to it just by virtue of being.[35]
+
+Substance
+Further information: Hylomorphism
+Aristotle examines the concepts of substance (ousia) and essence (to ti ên einai, "the what it was to be") in his Metaphysics (Book VII), and he concludes that a particular substance is a combination of both matter and form, a philosophical theory called hylomorphism. In Book VIII, he distinguishes the matter of the substance as the substratum, or the stuff of which it is composed. For example, the matter of a house is the bricks, stones, timbers, etc., or whatever constitutes the potential house, while the form of the substance is the actual house, namely 'covering for bodies and chattels' or any other differentia that let us define something as a house. The formula that gives the components is the account of the matter, and the formula that gives the differentia is the account of the form.[36][34]
+
+Immanent realism
+Main article: Aristotle's theory of universals
+
+Plato's forms exist as universals, like the ideal form of an apple. For Aristotle, both matter and form belong to the individual thing (hylomorphism).
+Like his teacher Plato, Aristotle's philosophy aims at the universal. Aristotle's ontology places the universal (katholou) in particulars (kath' hekaston), things in the world, whereas for Plato the universal is a separately existing form which actual things imitate. For Aristotle, "form" is still what phenomena are based on, but is "instantiated" in a particular substance.[34]

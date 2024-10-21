@@ -7,14 +7,14 @@ from r2r import VectorSearchSettings
 @pytest.mark.asyncio
 async def test_vector_db_initialization(postgres_db_provider):
     assert isinstance(postgres_db_provider, PostgresDBProvider)
-    assert postgres_db_provider.vector is not None
+    # assert postgres_db_provider is not None
 
 
 @pytest.mark.asyncio
 async def test_search_equality_filter(postgres_db_provider, sample_entries):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=10, filters={"key": {"$eq": "value_id_0"}}
         ),
@@ -25,9 +25,9 @@ async def test_search_equality_filter(postgres_db_provider, sample_entries):
 
 @pytest.mark.asyncio
 async def test_search_not_equal_filter(postgres_db_provider, sample_entries):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=100, filters={"key": {"$ne": "value_id_0"}}
         ),
@@ -40,9 +40,9 @@ async def test_search_not_equal_filter(postgres_db_provider, sample_entries):
 async def test_search_greater_than_filter(
     postgres_db_provider, sample_entries
 ):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=100, filters={"raw_key": {"$gt": 50}}
         ),
@@ -55,9 +55,9 @@ async def test_search_greater_than_filter(
 async def test_search_less_than_or_equal_filter(
     postgres_db_provider, sample_entries
 ):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=10,
             filters={"raw_key": {"$lte": 20}},
@@ -66,8 +66,8 @@ async def test_search_less_than_or_equal_filter(
     )  # TODO - Why is this number not always 10?
     assert len(results) == 10
 
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=100, filters={"raw_key": {"$lte": 20}}
         ),
@@ -78,9 +78,9 @@ async def test_search_less_than_or_equal_filter(
 
 @pytest.mark.asyncio
 async def test_search_in_filter(postgres_db_provider, sample_entries):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=10,
             filters={"key": {"$in": ["value_id_0", "value_id_1"]}},
@@ -94,9 +94,9 @@ async def test_search_in_filter(postgres_db_provider, sample_entries):
 
 @pytest.mark.asyncio
 async def test_search_complex_and_filter(postgres_db_provider, sample_entries):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=10,
             filters={
@@ -114,9 +114,9 @@ async def test_search_complex_and_filter(postgres_db_provider, sample_entries):
 
 @pytest.mark.asyncio
 async def test_search_complex_or_filter(postgres_db_provider, sample_entries):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=11,
             ef_search=100,  # TODO - Better understand why we need to set this to search the entire database.
@@ -137,9 +137,9 @@ async def test_search_complex_or_filter(postgres_db_provider, sample_entries):
 async def test_search_nested_and_or_filters(
     postgres_db_provider, sample_entries
 ):
-    query_vector = sample_entries[0].vector
-    results = postgres_db_provider.vector.semantic_search(
-        query_vector.data,
+    query_vector = sample_entries[0]
+    results = await postgres_db_provider.semantic_search(
+        query_vector.vector.data,
         VectorSearchSettings(
             search_limit=10,
             ef_search=100,  # TODO - Better understand why we need to set this to search the entire database.
@@ -163,11 +163,11 @@ async def test_search_nested_and_or_filters(
 
 @pytest.mark.asyncio
 async def test_delete_equality(temporary_postgres_db_provider, sample_entries):
-    deleted_ids = temporary_postgres_db_provider.vector.delete(
+    deleted_ids = await temporary_postgres_db_provider.delete(
         {"key": {"$eq": "value_id_0"}}
     )
     assert len(deleted_ids) == 1
-    remaining = temporary_postgres_db_provider.vector.semantic_search(
+    remaining = await temporary_postgres_db_provider.semantic_search(
         sample_entries[0].vector.data,
         VectorSearchSettings(search_limit=100),
     )
@@ -179,11 +179,11 @@ async def test_delete_equality(temporary_postgres_db_provider, sample_entries):
 async def test_delete_greater_than(
     temporary_postgres_db_provider, sample_entries
 ):
-    deleted_ids = temporary_postgres_db_provider.vector.delete(
+    deleted_ids = await temporary_postgres_db_provider.delete(
         {"raw_key": {"$gt": 90}}
     )
     assert len(deleted_ids) == 9
-    remaining = temporary_postgres_db_provider.vector.semantic_search(
+    remaining = await temporary_postgres_db_provider.semantic_search(
         sample_entries[0].vector.data,
         VectorSearchSettings(search_limit=100),
     )
@@ -193,11 +193,11 @@ async def test_delete_greater_than(
 
 @pytest.mark.asyncio
 async def test_delete_in(temporary_postgres_db_provider, sample_entries):
-    deleted_ids = temporary_postgres_db_provider.vector.delete(
+    deleted_ids = await temporary_postgres_db_provider.delete(
         {"key": {"$in": ["value_id_0", "value_id_1"]}}
     )
     assert len(deleted_ids) == 2
-    remaining = temporary_postgres_db_provider.vector.semantic_search(
+    remaining = await temporary_postgres_db_provider.semantic_search(
         sample_entries[0].vector.data,
         VectorSearchSettings(search_limit=100),
     )
@@ -212,7 +212,7 @@ async def test_delete_in(temporary_postgres_db_provider, sample_entries):
 async def test_delete_complex_and(
     temporary_postgres_db_provider, sample_entries
 ):
-    deleted_ids = temporary_postgres_db_provider.vector.delete(
+    deleted_ids = await temporary_postgres_db_provider.delete(
         {
             "$and": [
                 {"key": {"$eq": "value_id_0"}},
@@ -221,7 +221,7 @@ async def test_delete_complex_and(
         }
     )
     assert len(deleted_ids) == 1
-    remaining = temporary_postgres_db_provider.vector.semantic_search(
+    remaining = await temporary_postgres_db_provider.semantic_search(
         sample_entries[0].vector.data,
         VectorSearchSettings(search_limit=100),
     )
@@ -236,7 +236,7 @@ async def test_delete_complex_and(
 async def test_delete_complex_or(
     temporary_postgres_db_provider, sample_entries
 ):
-    deleted_ids = temporary_postgres_db_provider.vector.delete(
+    deleted_ids = await temporary_postgres_db_provider.delete(
         {
             "$or": [
                 {"key": {"$eq": "value_id_0"}},
@@ -245,7 +245,7 @@ async def test_delete_complex_or(
         }
     )
     assert len(deleted_ids) == 11
-    remaining = temporary_postgres_db_provider.vector.semantic_search(
+    remaining = await temporary_postgres_db_provider.semantic_search(
         sample_entries[0].vector.data,
         VectorSearchSettings(search_limit=100),
     )
@@ -260,7 +260,7 @@ async def test_delete_complex_or(
 async def test_delete_nested_and_or(
     temporary_postgres_db_provider, sample_entries
 ):
-    deleted_ids = temporary_postgres_db_provider.vector.delete(
+    deleted_ids = await temporary_postgres_db_provider.delete(
         {
             "$and": [
                 {"key": {"$eq": "value_id_0"}},
@@ -274,7 +274,7 @@ async def test_delete_nested_and_or(
         }
     )
     assert len(deleted_ids) == 1
-    remaining = temporary_postgres_db_provider.vector.semantic_search(
+    remaining = await temporary_postgres_db_provider.semantic_search(
         sample_entries[0].vector.data,
         VectorSearchSettings(search_limit=100),
     )

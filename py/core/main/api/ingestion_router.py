@@ -336,7 +336,7 @@ class IngestionRouter(BaseRouter):
         @self.base_endpoint
         async def create_vector_index_app(
             table_name: Optional[VectorTableName] = Body(
-                default=VectorTableName.CHUNKS,
+                default=VectorTableName.RAW_CHUNKS,
                 description="The name of the vector table to create.",
             ),
             index_method: IndexMethod = Body(
@@ -353,9 +353,9 @@ class IngestionRouter(BaseRouter):
                 None,
                 description="The arguments for the index method.",
             ),
-            replace: bool = Body(
-                default=True,
-                description="Whether to replace an existing index.",
+            index_name: Optional[str] = Body(
+                None,
+                description="The name of the index to create.",
             ),
             concurrently: bool = Body(
                 default=True,
@@ -365,7 +365,7 @@ class IngestionRouter(BaseRouter):
         ) -> WrappedCreateVectorIndexResponse:
 
             logger.info(
-                f"Creating vector index for {table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}"
+                f"Creating vector index for {table_name} with method {index_method}, measure {measure}, concurrently {concurrently}"
             )
 
             raw_message = await self.orchestration_provider.run_workflow(
@@ -376,7 +376,6 @@ class IngestionRouter(BaseRouter):
                         "index_method": index_method,
                         "measure": measure,
                         "index_arguments": index_arguments,
-                        "replace": replace,
                         "concurrently": concurrently,
                     },
                 },

@@ -12,21 +12,24 @@ from cli.utils.timer import timer
 @click.option("--filters", type=JSON, help="Filters for analytics as JSON")
 @click.option("--analysis-types", type=JSON, help="Analysis types as JSON")
 @pass_context
-def analytics(ctx, filters: Dict[str, Any], analysis_types: Dict[str, Any]):
+async def analytics(
+    ctx, filters: Dict[str, Any], analysis_types: Dict[str, Any]
+):
     client = ctx.obj
     """Retrieve analytics data."""
     with timer():
-        response = client.analytics(filters, analysis_types)
+        response = await client.analytics(filters, analysis_types)
 
     click.echo(response)
 
 
 @cli.command()
 @pass_context
-def app_settings(client):
+async def app_settings(ctx):
     """Retrieve application settings."""
+    client = ctx.obj
     with timer():
-        response = client.app_settings()
+        response = await client.app_settings()
 
     click.echo(response)
 
@@ -44,13 +47,13 @@ def app_settings(client):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-def users_overview(ctx, user_ids, offset, limit):
+async def users_overview(ctx, user_ids, offset, limit):
     """Get an overview of users."""
     client = ctx.obj
     user_ids = list(user_ids) if user_ids else None
 
     with timer():
-        response = client.users_overview(user_ids, offset, limit)
+        response = await client.users_overview(user_ids, offset, limit)
 
     if "results" in response:
         click.echo("\nUser Overview:")
@@ -73,7 +76,7 @@ def users_overview(ctx, user_ids, offset, limit):
     help="Filters for deletion in the format key:operator:value",
 )
 @pass_context
-def delete(ctx, filter):
+async def delete(ctx, filter):
     """Delete documents based on filters."""
     client = ctx.obj
     filters = {}
@@ -84,7 +87,7 @@ def delete(ctx, filter):
         filters[key][f"${operator}"] = value
 
     with timer():
-        response = client.delete(filters=filters)
+        response = await client.delete(filters=filters)
 
     click.echo(response)
 
@@ -102,13 +105,13 @@ def delete(ctx, filter):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-def documents_overview(ctx, document_ids, offset, limit):
+async def documents_overview(ctx, document_ids, offset, limit):
     """Get an overview of documents."""
     client = ctx.obj
     document_ids = list(document_ids) if document_ids else None
 
     with timer():
-        response = client.documents_overview(document_ids, offset, limit)
+        response = await client.documents_overview(document_ids, offset, limit)
 
     for document in response["results"]:
         click.echo(document)
@@ -133,7 +136,7 @@ def documents_overview(ctx, document_ids, offset, limit):
     help="Should the vector be included in the response chunks",
 )
 @pass_context
-def document_chunks(ctx, document_id, offset, limit, include_vectors):
+async def document_chunks(ctx, document_id, offset, limit, include_vectors):
     """Get chunks of a specific document."""
     client = ctx.obj
     if not document_id:
@@ -141,7 +144,7 @@ def document_chunks(ctx, document_id, offset, limit, include_vectors):
         return
 
     with timer():
-        chunks_data = client.document_chunks(
+        chunks_data = await client.document_chunks(
             document_id, offset, limit, include_vectors
         )
 

@@ -1,5 +1,4 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
-from shared.abstractions.completion import CompletionRecord, MessageType
 from shared.abstractions.document import (
     DataType,
     Document,
@@ -31,6 +30,8 @@ from shared.abstractions.graph import (
 from shared.abstractions.kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    KGEntityDeduplicationType,
     KGRunType,
 )
 from shared.abstractions.llm import (
@@ -38,6 +39,7 @@ from shared.abstractions.llm import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt
@@ -69,7 +71,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",
@@ -116,9 +117,11 @@ __all__ = [
     "VectorSearchResult",
     "VectorSearchSettings",
     "HybridSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "KGEntityDeduplicationSettings",
+    "KGEntityDeduplicationType",
     "KGRunType",
     # User abstractions
     "Token",

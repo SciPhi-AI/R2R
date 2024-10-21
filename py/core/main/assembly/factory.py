@@ -147,7 +147,7 @@ class R2RProviderFactory:
                 "Embedding config must have a base dimension to initialize database."
             )
 
-        vector_db_dimension = self.config.embedding.base_dimension
+        dimension = self.config.embedding.base_dimension
         quantization_type = (
             self.config.embedding.quantization_settings.quantization_type
         )
@@ -156,7 +156,7 @@ class R2RProviderFactory:
 
             database_provider = PostgresDBProvider(
                 db_config,
-                vector_db_dimension,
+                dimension,
                 crypto_provider=crypto_provider,
                 quantization_type=quantization_type,
             )
@@ -392,6 +392,8 @@ class R2RPipeFactory:
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
         kg_entity_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
+        kg_entity_deduplication_pipe: Optional[AsyncPipe] = None,
+        kg_entity_deduplication_summary_pipe: Optional[AsyncPipe] = None,
         kg_community_summary_pipe: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -423,6 +425,12 @@ class R2RPipeFactory:
             or self.create_kg_entity_description_pipe(*args, **kwargs),
             kg_clustering_pipe=kg_clustering_pipe
             or self.create_kg_clustering_pipe(*args, **kwargs),
+            kg_entity_deduplication_pipe=kg_entity_deduplication_pipe
+            or self.create_kg_entity_deduplication_pipe(*args, **kwargs),
+            kg_entity_deduplication_summary_pipe=kg_entity_deduplication_summary_pipe
+            or self.create_kg_entity_deduplication_summary_pipe(
+                *args, **kwargs
+            ),
             kg_community_summary_pipe=kg_community_summary_pipe
             or self.create_kg_community_summary_pipe(*args, **kwargs),
         )
@@ -621,6 +629,17 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(name="kg_clustering_pipe"),
         )
 
+    def create_kg_deduplication_summary_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGEntityDeduplicationSummaryPipe
+
+        return KGEntityDeduplicationSummaryPipe(
+            kg_provider=self.providers.kg,
+            prompt_provider=self.providers.prompt,
+            llm_provider=self.providers.llm,
+            embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(name="kg_deduplication_summary_pipe"),
+        )
+
     def create_kg_community_summary_pipe(self, *args, **kwargs) -> Any:
         from core.pipes import KGCommunitySummaryPipe
 
@@ -630,6 +649,32 @@ class R2RPipeFactory:
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
+        )
+
+    def create_kg_entity_deduplication_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGEntityDeduplicationPipe
+
+        return KGEntityDeduplicationPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
+        )
+
+    def create_kg_entity_deduplication_summary_pipe(
+        self, *args, **kwargs
+    ) -> Any:
+        from core.pipes import KGEntityDeduplicationSummaryPipe
+
+        return KGEntityDeduplicationSummaryPipe(
+            kg_provider=self.providers.kg,
+            prompt_provider=self.providers.prompt,
+            llm_provider=self.providers.llm,
+            embedding_provider=self.providers.embedding,
+            config=AsyncPipe.PipeConfig(
+                name="kg_entity_deduplication_summary_pipe"
+            ),
         )
 
 

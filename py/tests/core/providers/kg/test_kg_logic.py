@@ -1,9 +1,11 @@
 # tests/core/providers/kg/test_kg_logic.py
-import pytest
 import random
 import uuid
+
+import pytest
+
+from core.base import Community, CommunityReport, Entity, KGExtraction, Triple
 from core.providers.kg.postgres import PostgresKGProvider
-from core.base import Entity, Triple, Community, CommunityReport, KGExtraction
 from shared.abstractions.vector import VectorQuantizationType
 
 
@@ -406,5 +408,5 @@ async def test_get_community_details(
 
     assert community_level == 0
     # TODO: change these to objects
-    assert entities[0]["name"] == "Entity1"
-    assert triples[0]["subject"] == "Entity1"
+    assert entities[0].name == "Entity1"
+    assert triples[0].subject == "Entity1"
