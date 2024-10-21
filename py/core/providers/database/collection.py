@@ -61,19 +61,15 @@ class PostgresCollectionHandler(CollectionHandler):
                 self.config.default_collection_name
             )
 
-        if not await self.collection_exists(
-            default_collection_uuid
-        ):
+        if not await self.collection_exists(default_collection_uuid):
             logger.info("Initializing a new default collection...")
-            return await self.connection_manager.create_collection(
+            return await self.create_collection(
                 name=self.config.default_collection_name,
                 description=self.config.default_collection_description,
                 collection_id=default_collection_uuid,
             )
 
-        return await self.connection_manager.get_collection(
-            default_collection_uuid
-        )
+        return await self.get_collection(default_collection_uuid)
 
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
@@ -106,27 +102,17 @@ class PostgresCollectionHandler(CollectionHandler):
             current_time,
         ]
 
-        try:
-            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
-                row = await conn.fetchrow(query, *params)
+        result = await self.connection_manager.fetchrow_query(query, params)
+        if not result:
+            raise R2RException(status_code=404, message="Collection not found")
 
-            if not row:
-                raise R2RException(
-                    status_code=500, message="Failed to create collection"
-                )
-
-            return CollectionResponse(
-                collection_id=row["collection_id"],
-                name=row["name"],
-                description=row["description"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-            )
-        except Exception as e:
-            raise R2RException(
-                status_code=500,
-                message=f"An error occurred while creating the collection: {str(e)}",
-            )
+        return CollectionResponse(
+            collection_id=result["collection_id"],
+            name=result["name"],
+            description=result["description"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+        )
 
     async def get_collection(self, collection_id: UUID) -> CollectionResponse:
         """Get a collection by its ID."""
@@ -199,54 +185,45 @@ class PostgresCollectionHandler(CollectionHandler):
         )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
-        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
-            async with conn.transaction():
-                try:
-                    # Remove collection_id from users
-                    user_update_query = f"""
-                        UPDATE {self._get_table_name('users')}
-                        SET collection_ids = array_remove(collection_ids, $1)
-                        WHERE $1 = ANY(collection_ids)
-                    """
-                    await conn.execute(user_update_query, collection_id)
+        # async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+        #     async with conn.transaction():
+        #         try:
+        # Remove collection_id from users
+        user_update_query = f"""
+            UPDATE {self._get_table_name('users')}
+            SET collection_ids = array_remove(collection_ids, $1)
+            WHERE $1 = ANY(collection_ids)
+        """
+        await self.connection_manager.execute_query(
+            user_update_query, collection_id
+        )
 
-                    # Remove collection_id from documents
-                    document_update_query = f"""
-                        WITH updated AS (
-                            UPDATE {self._get_table_name('document_info')}
-                            SET collection_ids = array_remove(collection_ids, $1)
-                            WHERE $1 = ANY(collection_ids)
-                            RETURNING 1
-                        )
-                        SELECT COUNT(*) AS affected_rows FROM updated
-                    """
-                    result = await conn.fetchrow(
-                        document_update_query, collection_id
-                    )
-                    affected_rows = result["affected_rows"]
+        # Remove collection_id from documents
+        document_update_query = f"""
+            WITH updated AS (
+                UPDATE {self._get_table_name('document_info')}
+                SET collection_ids = array_remove(collection_ids, $1)
+                WHERE $1 = ANY(collection_ids)
+                RETURNING 1
+            )
+            SELECT COUNT(*) AS affected_rows FROM updated
+        """
+        await self.connection_manager.fetchrow_query(
+            document_update_query, collection_id
+        )
 
-                    # Delete the collection
-                    delete_query = f"""
-                        DELETE FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
-                        WHERE collection_id = $1
-                        RETURNING collection_id
-                    """
-                    deleted = await conn.fetchrow(delete_query, collection_id)
-                    print("deleted = ", deleted)
+        # Delete the collection
+        delete_query = f"""
+            DELETE FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+            WHERE collection_id = $1
+            RETURNING collection_id
+        """
+        deleted = await self.connection_manager.fetchrow_query(
+            delete_query, collection_id
+        )
 
-                    if not deleted:
-                        raise R2RException(
-                            status_code=404, message="Collection not found"
-                        )
-
-                except Exception as e:
-                    logger.error(
-                        f"Error deleting collection {collection_id}: {str(e)}"
-                    )
-                    raise R2RException(
-                        status_code=500,
-                        message=f"An error occurred while deleting the collection: {str(e)}",
-                    )
+        if not deleted:
+            raise R2RException(status_code=404, message="Collection not found")
 
     async def list_collections(
         self, offset: int = 0, limit: int = -1
@@ -468,9 +445,7 @@ class PostgresCollectionHandler(CollectionHandler):
                         or if there's a database error.
         """
         try:
-            if not await self.collection_exists(
-                collection_id
-            ):
+            if not await self.collection_exists(collection_id):
                 raise R2RException(
                     status_code=404, message="Collection not found"
                 )
