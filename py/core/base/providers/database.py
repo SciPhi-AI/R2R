@@ -525,6 +525,7 @@ class DatabaseProvider(Provider):
     user_handler: UserHandler
     vector_handler: VectorHandler
     config: DatabaseConfig
+    project_name: str
 
     def __init__(self, config: DatabaseConfig):
         logger.info(f"Initializing DatabaseProvider with config {config}.")
