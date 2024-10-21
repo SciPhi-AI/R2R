@@ -61,7 +61,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 self.config.default_collection_name
             )
 
-        if not await self.connection_manager.collection_exists(
+        if not await self.collection_exists(
             default_collection_uuid
         ):
             logger.info("Initializing a new default collection...")
@@ -130,7 +130,7 @@ class PostgresCollectionHandler(CollectionHandler):
 
     async def get_collection(self, collection_id: UUID) -> CollectionResponse:
         """Get a collection by its ID."""
-        if not await self.connection_manager.collection_exists(collection_id):
+        if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
@@ -159,7 +159,7 @@ class PostgresCollectionHandler(CollectionHandler):
         description: Optional[str] = None,
     ) -> CollectionResponse:
         """Update an existing collection."""
-        if not await self.connection_manager.collection_exists(collection_id):
+        if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
         update_fields = []
@@ -324,7 +324,7 @@ class PostgresCollectionHandler(CollectionHandler):
         Raises:
             R2RException: If the collection doesn't exist.
         """
-        if not await self.connection_manager.collection_exists(collection_id):
+        if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at, COUNT(*) OVER() AS total_entries
@@ -468,7 +468,7 @@ class PostgresCollectionHandler(CollectionHandler):
                         or if there's a database error.
         """
         try:
-            if not await self.connection_manager.collection_exists(
+            if not await self.collection_exists(
                 collection_id
             ):
                 raise R2RException(
@@ -565,7 +565,7 @@ class PostgresCollectionHandler(CollectionHandler):
         Raises:
             R2RException: If the collection doesn't exist or if the document is not in the collection.
         """
-        if not await self.connection_manager.collection_exists(collection_id):
+        if not await self.collection_exists(collection_id):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""

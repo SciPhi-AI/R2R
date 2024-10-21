@@ -16,7 +16,7 @@ from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
 from core.providers.database.tokens import PostgresTokenHandler
-from core.providers.database.user import PostgresUserHandle
+from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
 from shared.abstractions.vector import VectorQuantizationType
 
@@ -128,7 +128,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.collection_handler = PostgresCollectionHandler(
             self.project_name, self.connection_manager, self.config
         )
-        self.user_handler = PostgresUserHandle(
+        self.user_handler = PostgresUserHandler(
             self.project_name, self.connection_manager, self.crypto_provider
         )
         self.vector_handler = PostgresVectorHandler(
