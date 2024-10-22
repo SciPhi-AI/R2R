@@ -423,20 +423,3 @@ class KgService(Service):
         )
 
         return await _collect_results(deduplication_summary_results)
-
-
-    @telemetry_event("delete_communities")
-    async def delete_communities(
-        self,
-        collection_id: UUID,
-        community_numbers: list[int],
-    ):
-        return await self.providers.kg.delete_communities(collection_id, community_numbers)
-
-
-    @telemetry_event("delete_entities_and_triples")
-    async def delete_entities_and_triples(
-        self,
-        document_id: UUID,
-    ):
-        return await self.providers.kg.delete_entities_and_triples(document_id)   
