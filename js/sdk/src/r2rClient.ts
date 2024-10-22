@@ -662,7 +662,7 @@ export class r2rClient {
       document_id: documentId,
       metadata: metadata,
     };
-    if (run_with_orchestration !== undefined) {
+    if (run_with_orchestration != undefined) {
       inputData.run_with_orchestration = run_with_orchestration;
     }
 
