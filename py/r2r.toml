@@ -57,6 +57,15 @@ chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
+  [ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = true # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3
+    backward_chunks = 3
+    semantic_neighbors = 10
+    semantic_similarity_threshold = 0.7
+    generation_config = { model = "openai/gpt-4o-mini" }
+
   [ingestion.extra_parsers]
     pdf = "zerox"
 
