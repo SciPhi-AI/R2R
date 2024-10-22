@@ -403,7 +403,7 @@ class KGRouter(BaseRouter):
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
-            
+
             await self.service.delete_graph_for_collection(
                 collection_id, cascade
             )

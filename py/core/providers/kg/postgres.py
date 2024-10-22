@@ -472,7 +472,11 @@ class PostgresKGProvider(KGProvider):
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_collection" if entities_level == EntityLevel.COLLECTION else "entity_embedding"
+            table_name = (
+                "entity_collection"
+                if entities_level == EntityLevel.COLLECTION
+                else "entity_embedding"
+            )
         elif search_type == "__Relationship__":
             table_name = "triple_raw"
         elif search_type == "__Community__":
@@ -749,15 +753,21 @@ class PostgresKGProvider(KGProvider):
             SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1 AND collection_id = $2
             LIMIT 1
         """
-        level = (await self.fetch_query(QUERY, [community_number, collection_id]))[0]["level"]
+        level = (
+            await self.fetch_query(QUERY, [community_number, collection_id])
+        )[0]["level"]
 
         # selecting table name based on entity level
         # check if there are any entities in the community that are not in the entity_embedding table
         query = f"""
             SELECT COUNT(*) FROM {self._get_table_name("entity_collection")} WHERE collection_id = $1
         """
-        entity_count = (await self.fetch_query(query, [collection_id]))[0]["count"]
-        table_name = "entity_collection" if entity_count > 0 else "entity_embedding"
+        entity_count = (await self.fetch_query(query, [collection_id]))[0][
+            "count"
+        ]
+        table_name = (
+            "entity_collection" if entity_count > 0 else "entity_embedding"
+        )
 
         QUERY = f"""
             WITH node_triple_ids AS (
@@ -772,7 +782,9 @@ class PostgresKGProvider(KGProvider):
             FROM node_triple_ids nti
             JOIN {self._get_table_name(table_name)} e ON e.name = nti.node;
         """
-        entities = await self.fetch_query(QUERY, [community_number, collection_id])
+        entities = await self.fetch_query(
+            QUERY, [community_number, collection_id]
+        )
         entities = [Entity(**entity) for entity in entities]
 
         QUERY = f"""
@@ -787,7 +799,9 @@ class PostgresKGProvider(KGProvider):
             FROM node_triple_ids nti
             JOIN {self._get_table_name("triple_raw")} t ON t.id = ANY(nti.triple_ids);
         """
-        triples = await self.fetch_query(QUERY, [community_number, collection_id])
+        triples = await self.fetch_query(
+            QUERY, [community_number, collection_id]
+        )
         triples = [Triple(**triple) for triple in triples]
 
         return level, entities, triples
@@ -834,12 +848,14 @@ class PostgresKGProvider(KGProvider):
             f"DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;",
         ]
 
-        document_ids = await self.db_provider.documents_in_collection(
+        document_ids_response = await self.db_provider.documents_in_collection(
             collection_id
         )
-        document_ids = [doc.id for doc in document_ids["results"]]
 
-        # TODO: make these queries more efficient. Pass the document_ids as params. 
+        # This type ignore is due to insufficient typing of the documents_in_collection method
+        document_ids = [doc.id for doc in document_ids_response["results"]]  # type: ignore
+
+        # TODO: make these queries more efficient. Pass the document_ids as params.
         if cascade:
             DELETE_QUERIES += [
                 f"DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1::uuid[]);",
@@ -852,7 +868,9 @@ class PostgresKGProvider(KGProvider):
             QUERY = f"""
                 UPDATE {self._get_table_name("document_info")} SET kg_extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
             """
-            await self.execute_query(QUERY, [KGExtractionStatus.PENDING, collection_id])
+            await self.execute_query(
+                QUERY, [KGExtractionStatus.PENDING, collection_id]
+            )
 
         for query in DELETE_QUERIES:
             if "community" in query or "entity_collection" in query:

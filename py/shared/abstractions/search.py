@@ -11,6 +11,7 @@ from .llm import GenerationConfig
 
 from shared.abstractions.graph import EntityLevel
 
+
 class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
@@ -312,7 +313,6 @@ class VectorSearchSettings(R2RSerializable):
 
 
 class KGSearchSettings(R2RSerializable):
-
 
     entities_level: EntityLevel = Field(
         default=EntityLevel.DOCUMENT,
