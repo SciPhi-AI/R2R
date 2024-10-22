@@ -79,11 +79,18 @@ class R2RAsyncClient(
         if response.status_code >= 400:
             try:
                 error_content = response.json()
-                message = error_content.get("detail", {}).get(
-                    "message", str(error_content)
-                )
+                if isinstance(error_content, dict):
+                    message = (
+                        error_content.get("detail", {}).get(
+                            "message", str(error_content)
+                        )
+                        if isinstance(error_content.get("detail"), dict)
+                        else error_content.get("detail", str(error_content))
+                    )
+                else:
+                    message = str(error_content)
             except json.JSONDecodeError:
-                message = response.text()
+                message = response.text
 
             raise R2RException(
                 status_code=response.status_code, message=message

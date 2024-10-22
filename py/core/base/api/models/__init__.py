@@ -23,6 +23,7 @@ from shared.api.models.kg.responses import (
     WrappedKGEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTriplesResponse,
+    WrappedKGTunePromptResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -87,6 +88,7 @@ __all__ = [
     "WrappedKGEnrichmentResponse",
     "KGEntityDeduplicationResponse",
     "WrappedKGEntityDeduplicationResponse",
+    "WrappedKGTunePromptResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

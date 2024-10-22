@@ -208,11 +208,17 @@ class VectorDBMixin(DatabaseMixin):
         params = [query_text]
 
         if search_settings.filters:
-            filters_clause = self._build_filters(search_settings.filters, params)
+            filters_clause = self._build_filters(
+                search_settings.filters, params
+            )
             where_clauses.append(filters_clause)
 
         if where_clauses:
-            where_clause = "WHERE " + " AND ".join(where_clauses) + " AND fts @@ websearch_to_tsquery('english', $1)"
+            where_clause = (
+                "WHERE "
+                + " AND ".join(where_clauses)
+                + " AND fts @@ websearch_to_tsquery('english', $1)"
+            )
         else:
             where_clause = "WHERE fts @@ websearch_to_tsquery('english', $1)"
 

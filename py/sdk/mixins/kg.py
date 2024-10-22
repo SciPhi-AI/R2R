@@ -128,7 +128,6 @@ class KGMixins:
             params["triple_ids"] = ",".join(triple_ids)
 
         return await self._make_request("GET", "triples", params=params)  # type: ignore
-        return await self._make_request("GET", "triples", params=params)  # type: ignore
 
     async def get_communities(
         self,
@@ -163,3 +162,37 @@ class KGMixins:
             params["community_numbers"] = community_numbers
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
+
+    async def tune_prompt(
+        self,
+        prompt_name: str,
+        collection_id: Optional[str] = None,
+        documents_offset: Optional[int] = 0,
+        documents_limit: Optional[int] = 100,
+        chunk_offset: Optional[int] = 0,
+        chunk_limit: Optional[int] = 100,
+    ) -> dict:
+        """
+        Tune the GraphRAG prompt for a given collection.
+
+        Args:
+            prompt_name (str): The name of the prompt to tune.
+            collection_id (str): The ID of the collection to tune the prompt for.
+            documents_offset (Optional[int]): The offset for pagination of documents.
+            documents_limit (Optional[int]): The limit for pagination of documents.
+            chunk_offset (Optional[int]): The offset for pagination of chunks.
+            chunk_limit (Optional[int]): The limit for pagination of chunks.
+
+        Returns:
+            dict: A dictionary containing the tuned prompt.
+        """
+        body = {
+            "prompt_name": prompt_name,
+            "collection_id": collection_id,
+            "documents_offset": documents_offset,
+            "documents_limit": documents_limit,
+            "chunk_offset": chunk_offset,
+            "chunk_limit": chunk_limit,
+        }
+
+        return await self._make_request("POST", "tune_prompt", json=body)  # type: ignore
