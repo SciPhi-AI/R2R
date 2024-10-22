@@ -244,8 +244,11 @@ class KGMixins:
 
             NOTE: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
         """
-        return await self._make_request(  # type: ignore
-            "DELETE",
-            f"delete_graph_for_collection/{collection_id}",
-            params={"cascade": cascade},
-        )
+
+        data = {
+            "collection_id": str(collection_id),
+            "cascade": cascade,
+        }
+
+        return await self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore
+
