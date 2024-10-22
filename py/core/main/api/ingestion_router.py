@@ -359,7 +359,7 @@ class IngestionRouter(BaseRouter):
         @self.base_endpoint
         async def create_vector_index_app(
             table_name: Optional[VectorTableName] = Body(
-                default=VectorTableName.RAW_CHUNKS,
+                default=VectorTableName.TEXT_CHUNKS,
                 description=create_vector_descriptions.get("table_name"),
             ),
             index_method: IndexMethod = Body(

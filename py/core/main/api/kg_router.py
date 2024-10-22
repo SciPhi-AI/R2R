@@ -355,6 +355,12 @@ class KGRouter(BaseRouter):
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
+
+            if run_type == KGRunType.ESTIMATE:
+                return await self.service.get_deduplication_estimate(
+                    collection_id, server_deduplication_settings
+                )
+
             server_deduplication_settings = (
                 self.service.providers.kg.config.kg_entity_deduplication_settings.dict()
             )

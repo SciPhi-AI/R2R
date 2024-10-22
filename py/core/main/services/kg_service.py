@@ -10,6 +10,7 @@ from core.base.abstractions import (
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -366,6 +367,18 @@ class KgService(Service):
             limit,
             levels,
             community_numbers,
+        )
+
+
+    @telemetry_event("get_deduplication_estimate")
+    async def get_deduplication_estimate(
+        self,
+        collection_id: UUID,
+        kg_deduplication_settings: KGEntityDeduplicationSettings,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_deduplication_estimate(
+            collection_id, kg_deduplication_settings
         )
 
     @telemetry_event("kg_entity_deduplication")
