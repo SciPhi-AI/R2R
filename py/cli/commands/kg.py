@@ -266,3 +266,31 @@ async def get_triples(
         )
 
     click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.option(
+    "--collection-id",
+    required=True,
+    help="Collection ID to delete the graph for.",
+)
+@click.option(
+    "--cascade",
+    is_flag=True,
+    help="Whether to cascade the deletion.",
+)
+@pass_context
+async def delete_graph_for_collection(ctx, collection_id, cascade):
+    """
+    Delete the graph for a given collection.
+
+    NOTE: Setting the cascade flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+    """
+    client = ctx.obj
+
+    with timer():
+        response = await client.delete_graph_for_collection(
+            collection_id, cascade
+        )
+
+    click.echo(json.dumps(response, indent=2))

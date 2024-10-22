@@ -389,6 +389,55 @@ def test_kg_search_sample_file_cli():
     print("~" * 100)
 
 
+
+def test_kg_delete_graph_sample_file_cli():
+    print("Testing: KG delete graph")
+    output = run_command("poetry run r2r delete-graph")
+    print(output)
+
+    
+    response = requests.get(
+        "http://localhost:7272/v2/communities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["communities"] == []
+
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["entities"] != []
+
+    print("KG delete graph test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_with_cascading_sample_file_cli():
+    print("Testing: KG delete graph with cascading")
+    output = run_command("poetry run r2r delete-graph --cascade")
+    print(output)
+
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["entities"] == []
+    
+
+    response = requests.get(
+        "http://localhost:7272/v2/triples",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["triples"] == []
+    
+    print("KG delete graph with cascading test passed")
+    print("~" * 100)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Please specify a test function to run")

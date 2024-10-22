@@ -102,12 +102,9 @@ INDEX_MEASURE_TO_SQLA_ACC = {
 class VectorTableName(str, Enum):
     """
     This enum represents the different tables where we store vectors.
-
-    # TODO: change the table name of the chunks table. Right now it is called
-    # {r2r_project_name}.{r2r_project_name} due to a bug in the vector class.
     """
 
-    RAW_CHUNKS = "vectors"
+    RAW_CHUNKS = "vector"
     ENTITIES_DOCUMENT = "entity_embedding"
     ENTITIES_COLLECTION = "entity_collection"
     # TODO: Add support for triples

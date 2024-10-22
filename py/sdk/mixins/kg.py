@@ -193,3 +193,19 @@ class KGMixins:
         return await self._make_request(  # type: ignore
             "POST", "deduplicate_entities", json=data
         )
+
+    async def delete_graph_for_collection(
+        self, collection_id: Union[UUID, str], cascade: bool = False
+    ) -> dict:
+        """
+        Delete the graph for a given collection.
+
+        Args:
+            collection_id (Union[UUID, str]): The ID of the collection to delete the graph for.
+            cascade (bool): Whether to cascade the deletion, and delete entities and triples belonging to the collection.
+
+            NOTE: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+        """
+        return await self._make_request(
+            "DELETE", f"delete_graph_for_collection/{collection_id}", params={"cascade": cascade}
+        )  # type: ignore

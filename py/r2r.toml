@@ -80,6 +80,7 @@ batch_size = 256
     leiden_params = {}
 
   [kg.kg_search_settings]
+    entities_level = "document" # set to collection if you've run deduplication
     map_system_prompt = "graphrag_map_system"
     reduce_system_prompt = "graphrag_reduce_system"
     generation_config = { model = "openai/gpt-4o-mini" }

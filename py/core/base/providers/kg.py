@@ -199,7 +199,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_community_details(self, community_number: int):
+    async def get_community_details(self, community_number: int, collection_id: UUID):
         """Abstract method to get community details."""
         pass
 

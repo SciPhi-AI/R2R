@@ -24,6 +24,7 @@ from shared.api.models.kg.responses import (
     KGEnrichmentEstimationResponse,
 )
 from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
+from shared.abstractions.graph import EntityLevel
 
 logger = logging.getLogger()
 
@@ -466,11 +467,12 @@ class PostgresKGProvider(KGProvider):
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
         filters = kwargs.get("filters", {})
+        entities_level = kwargs.get("entities_level", EntityLevel.DOCUMENT)
         limit = kwargs.get("limit", 10)
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_collection"
+            table_name = "entity_collection" if entities_level == EntityLevel.COLLECTION else "entity_embedding"
         elif search_type == "__Relationship__":
             table_name = "triple_raw"
         elif search_type == "__Community__":
@@ -740,30 +742,37 @@ class PostgresKGProvider(KGProvider):
             raise ImportError("Please install the graspologic package.") from e
 
     async def get_community_details(
-        self, community_number: int
+        self, community_number: int, collection_id: UUID
     ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
         QUERY = f"""
-            SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1
+            SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1 AND collection_id = $2
             LIMIT 1
         """
-        level = (await self.fetch_query(QUERY, [community_number]))[0]["level"]
+        level = (await self.fetch_query(QUERY, [community_number, collection_id]))[0]["level"]
+
+        # selecting table name based on entity level
+        # check if there are any entities in the community that are not in the entity_embedding table
+        query = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("entity_collection")} WHERE collection_id = $1
+        """
+        entity_count = (await self.fetch_query(query, [collection_id]))[0]["count"]
+        table_name = "entity_collection" if entity_count > 0 else "entity_embedding"
 
         QUERY = f"""
             WITH node_triple_ids AS (
-
                 SELECT node, triple_ids
                 FROM {self._get_table_name("community")}
-                WHERE cluster = $1
+                WHERE cluster = $1 AND collection_id = $2
             )
             SELECT DISTINCT
                 e.id AS id,
                 e.name AS name,
                 e.description AS description
             FROM node_triple_ids nti
-            JOIN {self._get_table_name("entity_collection")} e ON e.name = nti.node;
+            JOIN {self._get_table_name(table_name)} e ON e.name = nti.node;
         """
-        entities = await self.fetch_query(QUERY, [community_number])
+        entities = await self.fetch_query(QUERY, [community_number, collection_id])
         entities = [Entity(**entity) for entity in entities]
 
         QUERY = f"""
@@ -771,14 +780,14 @@ class PostgresKGProvider(KGProvider):
 
                 SELECT node, triple_ids
                 FROM {self._get_table_name("community")}
-                WHERE cluster = $1
+                WHERE cluster = $1 AND collection_id = $2
             )
             SELECT DISTINCT
                 t.id, t.subject, t.predicate, t.object, t.weight, t.description
             FROM node_triple_ids nti
             JOIN {self._get_table_name("triple_raw")} t ON t.id = ANY(nti.triple_ids);
         """
-        triples = await self.fetch_query(QUERY, [community_number])
+        triples = await self.fetch_query(QUERY, [community_number, collection_id])
         triples = [Triple(**triple) for triple in triples]
 
         return level, entities, triples
@@ -820,24 +829,36 @@ class PostgresKGProvider(KGProvider):
             return
 
         # remove all triples for these documents.
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("community")} WHERE collection_id = $1;
-            DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;
-        """
+        DELETE_QUERIES = [
+            f"DELETE FROM {self._get_table_name("community")} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;",
+        ]
 
         document_ids = await self.db_provider.documents_in_collection(
             collection_id
         )
+        document_ids = [doc.id for doc in document_ids["results"]]
 
+        # TODO: make these queries more efficient. Pass the document_ids as params. 
         if cascade:
-            QUERY += f"""
-                DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1);
-                DELETE FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
-                DELETE FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
-                DELETE FROM {self._get_table_name("entity_collection")} WHERE document_id = ANY($1);
-            """
+            DELETE_QUERIES += [
+                f"DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name("entity_collection")} WHERE collection_id = $1;",
+            ]
 
-        await self.execute_query(QUERY, [document_ids])
+            # setting the kg_creation_status to PENDING for this collection.
+            QUERY = f"""
+                UPDATE {self._get_table_name("document_info")} SET kg_extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
+            """
+            await self.execute_query(QUERY, [KGExtractionStatus.PENDING, collection_id])
+
+        for query in DELETE_QUERIES:
+            if "community" in query or "entity_collection" in query:
+                await self.execute_query(query, [collection_id])
+            else:
+                await self.execute_query(query, [document_ids])
 
         # set status to PENDING for this collection.
         QUERY = f"""

@@ -23,3 +23,4 @@ runs:
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_cli.py test_rag_response_stream_sample_file_cli
+
