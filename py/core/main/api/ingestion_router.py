@@ -341,11 +341,11 @@ class IngestionRouter(BaseRouter):
             ),
             index_method: IndexMethod = Body(
                 default=IndexMethod.hnsw,
-                description="The type of vector index to create.",
+                description="The type of vector index to create. Supported values are 'hnsw' and 'ivfflat'.",
             ),
             measure: IndexMeasure = Body(
                 default=IndexMeasure.cosine_distance,
-                description="The measure for the index.",
+                description="The distance measure corresponding to the vector index. Used for calculating the distance between vectors during search.",
             ),
             index_arguments: Optional[
                 Union[IndexArgsIVFFlat, IndexArgsHNSW]
@@ -363,6 +363,10 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
+            """
+            Create a vector index for a given table.
+
+            """
 
             logger.info(
                 f"Creating vector index for {table_name} with method {index_method}, measure {measure}, concurrently {concurrently}"

@@ -834,6 +834,7 @@ class PostgresKGProvider(KGProvider):
                 DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1);
                 DELETE FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
                 DELETE FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("entity_collection")} WHERE document_id = ANY($1);
             """
 
         await self.execute_query(QUERY, [document_ids])

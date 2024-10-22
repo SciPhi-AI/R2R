@@ -534,8 +534,11 @@ class PostgresVectorHandler(VectorHandler):
         if table_name == VectorTableName.RAW_CHUNKS:
             table_name_str = f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"  # TODO - Fix bug in vector table naming convention
             col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+        elif table_name == VectorTableName.ENTITIES_DOCUMENT:
+            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
