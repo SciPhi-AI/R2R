@@ -545,7 +545,7 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
-        run_with_orchestration: options.run_with_orchestration ? "true" : undefined,
+        run_with_orchestration: (options.run_with_orchestration != undefined) ? String(options.run_with_orchestration) : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -624,7 +624,7 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
-        run_with_orchestration: options.run_with_orchestration ? "true" : undefined,
+        run_with_orchestration: (options.run_with_orchestration != undefined) ? String(options.run_with_orchestration) : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -657,7 +657,7 @@ export class r2rClient {
     run_with_orchestration?: boolean,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    let inputData = {
+    let inputData: Record<string, any> = {
       chunks: chunks,
       document_id: documentId,
       metadata: metadata,
