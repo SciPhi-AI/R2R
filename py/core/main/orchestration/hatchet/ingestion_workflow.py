@@ -141,6 +141,15 @@ def hatchet_ingestion_factory(
                     "is_update"
                 )
 
+                # add contextual chunks
+                await self.ingestion_service.chunk_enrichment(
+                    document_id=document_info.id,
+                )
+
+                # delete original chunks
+
+                # delete original chunk vectors
+
                 await self.ingestion_service.finalize_ingestion(
                     document_info, is_update=is_update
                 )
@@ -150,14 +159,15 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                collection_id = await service.providers.database.relational.assign_document_to_collection(
-                    document_id=document_info.id,
-                    collection_id=generate_default_user_collection_id(
-                        document_info.user_id
-                    ),
+                # TODO: Move logic onto the `management service`
+                collection_id = generate_default_user_collection_id(
+                    document_info.user_id
                 )
-
-                service.providers.database.vector.assign_document_to_collection(
+                await service.providers.database.assign_document_to_collection_relational(
+                    document_id=document_info.id,
+                    collection_id=collection_id,
+                )
+                await service.providers.database.assign_document_to_collection_vector(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
@@ -189,7 +199,7 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.relational.get_documents_overview(
+                    await self.ingestion_service.providers.database.get_documents_overview(
                         filter_document_ids=[document_id]
                     )
                 )["results"]
@@ -248,7 +258,7 @@ def hatchet_ingestion_factory(
                 )
 
             documents_overview = (
-                await self.ingestion_service.providers.database.relational.get_documents_overview(
+                await self.ingestion_service.providers.database.get_documents_overview(
                     filter_document_ids=document_ids,
                     filter_user_ids=None if user.is_superuser else [user.id],
                 )
@@ -400,13 +410,15 @@ def hatchet_ingestion_factory(
             )
 
             try:
-                collection_id = await self.ingestion_service.providers.database.relational.assign_document_to_collection(
-                    document_id=document_info.id,
-                    collection_id=generate_default_user_collection_id(
-                        document_info.user_id
-                    ),
+                # TODO - Move logic onto the `management service`
+                collection_id = generate_default_user_collection_id(
+                    document_info.user_id
                 )
-                self.ingestion_service.providers.database.vector.assign_document_to_collection(
+                await self.ingestion_service.providers.database.assign_document_to_collection_relational(
+                    document_id=document_info.id,
+                    collection_id=collection_id,
+                )
+                await self.ingestion_service.providers.database.assign_document_to_collection_vector(
                     document_id=document_info.id, collection_id=collection_id
                 )
             except Exception as e:
@@ -432,7 +444,7 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.relational.get_documents_overview(
+                    await self.ingestion_service.providers.database.get_documents_overview(
                         filter_document_ids=[document_id]
                     )
                 )["results"]
@@ -474,7 +486,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            self.ingestion_service.providers.database.vector.create_index(
+            await self.ingestion_service.providers.database.create_index(
                 **parsed_data
             )
 
@@ -482,14 +494,36 @@ def hatchet_ingestion_factory(
                 "status": "Vector index creation queued successfully.",
             }
 
+    @orchestration_provider.workflow(name="delete-vector-index", timeout="30m")
+    class HatchetDeleteVectorIndexWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="10m")
+        async def delete_vector_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_delete_vector_index_input(
+                    input_data
+                )
+            )
+
+            await self.ingestion_service.providers.database.delete_index(
+                **parsed_data
+            )
+
+            return {"status": "Vector index deleted successfully."}
+
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
+    delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 
     return {
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "create_vector_index": create_vector_index_workflow,
+        "delete_vector_index": delete_vector_index_workflow,
     }

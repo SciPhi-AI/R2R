@@ -10,16 +10,21 @@ from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
     IngestionResponse,
     WrappedCreateVectorIndexResponse,
+    WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
+    WrappedListVectorIndicesResponse,
+    WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
     KGCreationResponse,
     KGEnrichmentResponse,
+    KGEntityDeduplicationResponse,
     WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
+    WrappedKGEntityDeduplicationResponse,
     WrappedKGTriplesResponse,
 )
 from shared.api.models.management.responses import (
@@ -27,6 +32,7 @@ from shared.api.models.management.responses import (
     AppSettingsResponse,
     CollectionOverviewResponse,
     CollectionResponse,
+    ConversationOverviewResponse,
     DocumentChunkResponse,
     DocumentOverviewResponse,
     LogResponse,
@@ -34,7 +40,6 @@ from shared.api.models.management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
-    ConversationOverviewResponse,
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -42,6 +47,7 @@ from shared.api.models.management.responses import (
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
     WrappedConversationResponse,
+    WrappedConversationsOverviewResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -52,7 +58,6 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-    WrappedConversationsOverviewResponse,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
@@ -78,11 +83,16 @@ __all__ = [
     "WrappedUpdateResponse",
     "CreateVectorIndexResponse",
     "WrappedCreateVectorIndexResponse",
-    # Restructure Responses
+    "WrappedListVectorIndicesResponse",
+    "WrappedDeleteVectorIndexResponse",
+    "WrappedSelectVectorIndexResponse",
+    # Knowledge Graph Responses
     "KGCreationResponse",
     "WrappedKGCreationResponse",
     "KGEnrichmentResponse",
     "WrappedKGEnrichmentResponse",
+    "KGEntityDeduplicationResponse",
+    "WrappedKGEntityDeduplicationResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

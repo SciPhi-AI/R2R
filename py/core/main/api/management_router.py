@@ -10,7 +10,7 @@ from fastapi import Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import Json
 
-from core.base import R2RException, Message
+from core.base import Message, R2RException
 from core.base.api.models import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
@@ -19,6 +19,7 @@ from core.base.api.models import (
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
     WrappedConversationResponse,
+    WrappedConversationsOverviewResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -29,7 +30,6 @@ from core.base.api.models import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-    WrappedConversationsOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 from core.base.providers import OrchestrationProvider

@@ -9,6 +9,7 @@ import yaml
 
 from core.base import DatabaseProvider, Prompt, PromptConfig, PromptProvider
 from core.base.utils import generate_default_prompt_id
+from core.providers.database.postgres import SemaphoreConnectionPool
 
 logger = logging.getLogger()
 
@@ -19,7 +20,7 @@ class R2RPromptProvider(PromptProvider):
         self.prompts: dict[str, Prompt] = {}
         self.config: PromptConfig = config
         self.db_provider = db_provider
-        self.pool: Optional[asyncpg.pool.Pool] = None  # Initialize pool
+        self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
 
     async def __aenter__(self):
         await self.initialize()
@@ -35,14 +36,9 @@ class R2RPromptProvider(PromptProvider):
 
     async def initialize(self):
         try:
-            self.pool = await asyncpg.create_pool(
-                self.db_provider.connection_string
-            )
-            logger.info(
-                "R2RPromptProvider successfully connected to Postgres database."
-            )
+            self.pool = self.db_provider.pool
 
-            async with self.pool.acquire() as conn:
+            async with self.pool.get_connection() as conn:
                 await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
 
             await self.create_table()
@@ -53,7 +49,7 @@ class R2RPromptProvider(PromptProvider):
             raise
 
     def _get_table_name(self, base_name: str) -> str:
-        return self.db_provider._get_table_name(base_name)
+        return f"{self.db_provider.project_name}.{base_name}"
 
     async def create_table(self):
         query = f"""
@@ -78,7 +74,7 @@ class R2RPromptProvider(PromptProvider):
     ) -> Any:
         if not self.pool:
             raise ConnectionError("Database pool is not initialized.")
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 if params:
                     return await conn.execute(query, *params)
@@ -89,7 +85,7 @@ class R2RPromptProvider(PromptProvider):
     ) -> Any:
         if not self.pool:
             raise ConnectionError("Database pool is not initialized.")
-        async with self.pool.acquire() as conn:
+        async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 return (
                     await conn.fetch(query, *params)

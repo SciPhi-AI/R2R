@@ -35,6 +35,7 @@ provider = "bcrypt"
 provider = "postgres"
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
+enable_fts = true # whether or not to enable full-text search, e.g `hybrid search`
 
 [embedding]
 provider = "litellm"
@@ -55,6 +56,7 @@ chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
+
   [ingestion.extra_parsers]
     pdf = "zerox"
 

@@ -237,6 +237,22 @@ class KGCommunitiesResponse(R2RSerializable):
         }
 
 
+class KGEntityDeduplicationResponse(BaseModel):
+    """Response for knowledge graph entity deduplication."""
+
+    message: str = Field(
+        ...,
+        description="The message to display to the user.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Entity deduplication queued successfully.",
+            }
+        }
+
+
 WrappedKGCreationResponse = ResultsWrapper[
     Union[KGCreationResponse, KGCreationEstimationResponse]
 ]
@@ -246,3 +262,6 @@ WrappedKGEnrichmentResponse = ResultsWrapper[
 WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
 WrappedKGTriplesResponse = ResultsWrapper[KGTriplesResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
+WrappedKGEntityDeduplicationResponse = ResultsWrapper[
+    KGEntityDeduplicationResponse
+]

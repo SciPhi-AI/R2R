@@ -10,6 +10,7 @@ from core.base.abstractions import (
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationType,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -67,7 +68,7 @@ class KgService(Service):
                 f"KGService: Processing document {document_id} for KG extraction"
             )
 
-            await self.providers.database.relational.set_workflow_status(
+            await self.providers.database.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.PROCESSING,
@@ -101,7 +102,7 @@ class KgService(Service):
 
         except Exception as e:
             logger.error(f"KGService: Error in kg_extraction: {e}")
-            await self.providers.database.relational.set_workflow_status(
+            await self.providers.database.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.FAILED,
@@ -127,10 +128,12 @@ class KgService(Service):
                 KGExtractionStatus.PROCESSING,
             ]
 
-        document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_extraction_status",
-            status=document_status_filter,
-            collection_id=collection_id,
+        document_ids = (
+            await self.providers.database.get_document_ids_by_status(
+                status_type="kg_extraction_status",
+                status=[str(ele) for ele in document_status_filter],
+                collection_id=collection_id,
+            )
         )
 
         return document_ids
@@ -193,7 +196,7 @@ class KgService(Service):
                 f"KGService: Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
-        await self.providers.database.relational.set_workflow_status(
+        await self.providers.database.set_workflow_status(
             id=document_id,
             status_type="kg_extraction_status",
             status=KGExtractionStatus.SUCCESS,
@@ -364,3 +367,59 @@ class KgService(Service):
             levels,
             community_numbers,
         )
+
+    @telemetry_event("kg_entity_deduplication")
+    async def kg_entity_deduplication(
+        self,
+        collection_id: UUID,
+        kg_entity_deduplication_type: KGEntityDeduplicationType,
+        kg_entity_deduplication_prompt: str,
+        generation_config: GenerationConfig,
+        **kwargs,
+    ):
+        deduplication_results = await self.pipes.kg_entity_deduplication_pipe.run(
+            input=self.pipes.kg_entity_deduplication_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
+                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "generation_config": generation_config,
+                    **kwargs,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+        return await _collect_results(deduplication_results)
+
+    @telemetry_event("kg_entity_deduplication_summary")
+    async def kg_entity_deduplication_summary(
+        self,
+        collection_id: UUID,
+        offset: int,
+        limit: int,
+        kg_entity_deduplication_type: KGEntityDeduplicationType,
+        kg_entity_deduplication_prompt: str,
+        generation_config: GenerationConfig,
+        **kwargs,
+    ):
+
+        logger.info(
+            f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}"
+        )
+        deduplication_summary_results = await self.pipes.kg_entity_deduplication_summary_pipe.run(
+            input=self.pipes.kg_entity_deduplication_summary_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "offset": offset,
+                    "limit": limit,
+                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
+                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "generation_config": generation_config,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+
+        return await _collect_results(deduplication_summary_results)

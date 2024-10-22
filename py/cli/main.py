@@ -1,13 +1,5 @@
 from cli.command_group import cli
-from cli.commands import (
-    auth,
-    ingestion,
-    kg,
-    management,
-    retrieval,
-    server,
-    templates,
-)
+from cli.commands import auth, ingestion, kg, management, retrieval, server
 from cli.utils.telemetry import posthog, telemetry
 
 
@@ -32,9 +24,10 @@ add_command_with_telemetry(management.users_overview)
 add_command_with_telemetry(management.documents_overview)
 add_command_with_telemetry(management.document_chunks)
 
-# Restructure
+# Knowledge Graph
 add_command_with_telemetry(kg.create_graph)
 add_command_with_telemetry(kg.enrich_graph)
+add_command_with_telemetry(kg.deduplicate_entities)
 
 # Retrieval
 add_command_with_telemetry(retrieval.search)
@@ -50,13 +43,10 @@ add_command_with_telemetry(server.serve)
 add_command_with_telemetry(server.update)
 add_command_with_telemetry(server.version)
 
-# Templates
-add_command_with_telemetry(templates.clone)
-
 
 def main():
     try:
-        cli(_anyio_backend="asyncio")
+        cli()
     except SystemExit:
         # Silently exit without printing the traceback
         pass

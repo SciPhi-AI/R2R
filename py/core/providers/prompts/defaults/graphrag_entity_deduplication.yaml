@@ -1,0 +1,24 @@
+graphrag_entity_deduplication:
+  template: |
+    You are an expert at deduplicating entity descriptions. You are given a list of entity descriptions and you need to merge them into a single description.
+
+    Entity Name:
+    {entity_name}
+
+    Entity Descriptions:
+    {entity_descriptions}
+
+    Your summary should:
+    1. Clearly define the entity's core concept or purpose.
+    2. Integrate any relevant information from the existing description.
+    3. Maintain a neutral, factual tone.
+    4. Make sure that all information from the original descriptions is included, but not repeated.
+    5. Do not hallucinate any information, you can only use the information provided.
+
+    Return the summary in the following format. Do not output anything else.
+
+    $$<Entity Description>$$
+
+  input_types:
+    entity_name: str
+    entity_descriptions: str

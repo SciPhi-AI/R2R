@@ -81,7 +81,7 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    async def register(self, email: str, password: str) -> dict[str, str]:
+    async def register(self, email: str, password: str) -> UserResponse:
         pass
 
     @abstractmethod

@@ -10,6 +10,7 @@ from ..abstractions import (
     Entity,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
     KGExtraction,
     KGSearchSettings,
     RelationshipType,
@@ -34,6 +35,9 @@ class KGConfig(ProviderConfig):
     kg_store_path: Optional[str] = None
     kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
     kg_creation_settings: KGCreationSettings = KGCreationSettings()
+    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
+        KGEntityDeduplicationSettings()
+    )
     kg_search_settings: KGSearchSettings = KGSearchSettings()
 
     def validate_config(self) -> None:
@@ -104,9 +108,10 @@ class KGProvider(ABC):
     async def get_entities(
         self,
         collection_id: UUID,
-        offset: int,
-        limit: int,
+        offset: int = 0,
+        limit: int = -1,
         entity_ids: list[str] | None = None,
+        entity_names: list[str] | None = None,
         entity_table_name: str = "entity_embedding",
     ) -> dict:
         """Abstract method to get entities."""
@@ -257,6 +262,11 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_community_count(self, collection_id: UUID) -> int:
         """Abstract method to get the community count."""
+        pass
+
+    @abstractmethod
+    async def update_entity_descriptions(self, entities: list[Entity]):
+        """Abstract method to update entity descriptions."""
         pass
 
 

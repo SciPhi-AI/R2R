@@ -181,16 +181,23 @@ describe("r2rClient Integration Tests", () => {
       { role: "user", content: "Tell me about Raskolnikov." },
     ];
 
-    const stream = await client.agent(messages, undefined, undefined, {
-      stream: true,
-    });
+    const stream = await client.agent(messages, { stream: true });
 
     expect(stream).toBeDefined();
 
     let fullResponse = "";
 
-    for await (const chunk of stream) {
-      fullResponse += chunk;
+    if (stream && stream.getReader) {
+      const reader = stream.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        fullResponse += new TextDecoder().decode(value);
+      }
+    } else {
+      throw new Error('Stream is not a ReadableStream');
     }
 
     expect(fullResponse.length).toBeGreaterThan(0);

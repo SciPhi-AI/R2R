@@ -1,23 +1,32 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from .base import DatabaseMixin
+from core.base import TokenHandler
+
+from .base import PostgresConnectionManager
 
 
-class BlacklistedTokensMixin(DatabaseMixin):
+class PostgresTokenHandler(TokenHandler):
+    TABLE_NAME = "blacklisted_tokens"
+
+    def __init__(
+        self, project_name: str, connection_manager: PostgresConnectionManager
+    ):
+        super().__init__(project_name, connection_manager)
+
     async def create_table(self):
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name('blacklisted_tokens')} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresTokenHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             token TEXT NOT NULL,
             blacklisted_at TIMESTAMPTZ DEFAULT NOW()
         );
-        CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.project_name}_token
-        ON {self._get_table_name('blacklisted_tokens')} (token);
-        CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.project_name}_blacklisted_at
-        ON {self._get_table_name('blacklisted_tokens')} (blacklisted_at);
+        CREATE INDEX IF NOT EXISTS idx_{self.project_name}_{PostgresTokenHandler.TABLE_NAME}_token
+        ON {self._get_table_name(PostgresTokenHandler.TABLE_NAME)} (token);
+        CREATE INDEX IF NOT EXISTS idx_{self.project_name}_{PostgresTokenHandler.TABLE_NAME}_blacklisted_at
+        ON {self._get_table_name(PostgresTokenHandler.TABLE_NAME)} (blacklisted_at);
         """
-        await self.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
     async def blacklist_token(
         self, token: str, current_time: Optional[datetime] = None
@@ -26,18 +35,20 @@ class BlacklistedTokensMixin(DatabaseMixin):
             current_time = datetime.utcnow()
 
         query = f"""
-        INSERT INTO {self._get_table_name("blacklisted_tokens")} (token, blacklisted_at)
+        INSERT INTO {self._get_table_name(PostgresTokenHandler.TABLE_NAME)} (token, blacklisted_at)
         VALUES ($1, $2)
         """
-        await self.execute_query(query, [token, current_time])
+        await self.connection_manager.execute_query(
+            query, [token, current_time]
+        )
 
     async def is_token_blacklisted(self, token: str) -> bool:
         query = f"""
-        SELECT 1 FROM {self._get_table_name("blacklisted_tokens")}
+        SELECT 1 FROM {self._get_table_name(PostgresTokenHandler.TABLE_NAME)}
         WHERE token = $1
         LIMIT 1
         """
-        result = await self.fetchrow_query(query, [token])
+        result = await self.connection_manager.fetchrow_query(query, [token])
         return bool(result)
 
     async def clean_expired_blacklisted_tokens(
@@ -50,7 +61,7 @@ class BlacklistedTokensMixin(DatabaseMixin):
         expiry_time = current_time - timedelta(hours=max_age_hours)
 
         query = f"""
-        DELETE FROM {self._get_table_name("blacklisted_tokens")}
+        DELETE FROM {self._get_table_name(PostgresTokenHandler.TABLE_NAME)}
         WHERE blacklisted_at < $1
         """
-        await self.execute_query(query, [expiry_time])
+        await self.connection_manager.execute_query(query, [expiry_time])

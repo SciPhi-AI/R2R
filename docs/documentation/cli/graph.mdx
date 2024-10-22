@@ -32,6 +32,16 @@ r2r create-graph --collection-id my-collection --run --kg-creation-settings '{"k
   </Accordion>
 </AccordionGroup>
 
+### Deduplicate Entities
+
+Deduplicate entities in a collection using the `deduplicate-entities` command:
+
+````bash
+r2r deduplicate-entities --collection-id my-collection --run --deduplication-settings '{"key": "value"}'
+````
+
+
+
 ### Enrich Graph
 
 Enrich an existing knowledge graph using the `enrich-graph` command:

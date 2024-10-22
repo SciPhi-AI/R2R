@@ -21,12 +21,10 @@ jobs:
         test_category:
           - cli-ingestion
           - cli-retrieval
-          - cli-graphrag
           - sdk-ingestion
           - sdk-retrieval
           - sdk-auth
           - sdk-collections
-          - sdk-graphrag
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: 'false'
@@ -83,4 +81,4 @@ jobs:
 
       - name: Run SDK GraphRAG Tests
         if: matrix.test_category == 'sdk-graphrag'
-        uses: ./.github/actions/run-cli-graphrag-tests
+        uses: ./.github/actions/run-sdk-graphrag-tests
