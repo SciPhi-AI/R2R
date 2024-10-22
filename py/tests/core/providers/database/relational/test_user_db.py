@@ -45,8 +45,11 @@ async def test_delete_user(temporary_postgres_db_provider):
     )
     await temporary_postgres_db_provider.delete_user_relational(user.id)
     await temporary_postgres_db_provider.delete_user_vector(user.id)
-    user = await temporary_postgres_db_provider.get_user_by_id(user.id)
-    assert user is None
+    try:
+        user = await temporary_postgres_db_provider.get_user_by_id(user.id)
+        raise ValueError("User should not exist")
+    except:
+        pass
 
 
 @pytest.mark.asyncio

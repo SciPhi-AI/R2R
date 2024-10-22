@@ -114,6 +114,10 @@ class R2RAuthProvider(AuthProvider):
 
     async def user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
         token_data = await self.decode_token(token)
+        if not token_data.email:
+            raise R2RException(
+                status_code=401, message="Could not validate credentials"
+            )
         user = await self.db_provider.get_user_by_email(token_data.email)
         if user is None:
             raise R2RException(
@@ -128,7 +132,7 @@ class R2RAuthProvider(AuthProvider):
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
-    async def register(self, email: str, password: str) -> Dict[str, str]:
+    async def register(self, email: str, password: str) -> UserResponse:
         # Create new user and give them a default collection
         new_user = await self.db_provider.create_user(email, password)
         default_collection = await self.db_provider.create_default_collection(
@@ -153,9 +157,11 @@ class R2RAuthProvider(AuthProvider):
             # TODO - Integrate email provider(s)
             # self.providers.email.send_verification_email(new_user.email, verification_code)
         else:
+            expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
+
             # Mark user as verified
             await self.db_provider.store_verification_code(
-                new_user.id, None, None
+                new_user.id, str(-1), expiry
             )
             await self.db_provider.mark_user_as_verified(new_user.id)
 

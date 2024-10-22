@@ -105,3 +105,100 @@ ingest_chunks:
     chunks: "A list of text chunks to ingest into the system."
     document_id: "An optional document id to associate the chunks with. If not provided, a unique document id will be generated."
     metadata: "Optional JSON metadata to associate with the ingested chunks."
+
+list_vector_indices:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:7272")
+          # when using auth, do client.login(...)
+
+          result = client.list_vector_indices(
+              table_name="vectors",
+              concurrently=False
+          )
+      - lang: Shell
+        source: |
+          curl -X GET "http://localhost:7276/v2/list_vector_indices" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "table_name": "vectors",
+              "concurrently": false
+            }'
+
+  input_descriptions:
+    table_name: "The name of the table to list indices for. Options: vectors, entities_document, entities_collection, communities"
+    concurrently: "Whether to perform the operation concurrently"
+
+create_vector_index:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:7272")
+          # when using auth, do client.login(...)
+
+          result = client.create_vector_index(
+              table_name="vectors",
+              index_method="hnsw",
+              index_measure="cosine_distance",
+              index_arguments={"m": 16, "ef_construction": 64},
+              concurrently=True
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "http://localhost:7276/v2/create_vector_index" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "table_name": "vectors",
+              "index_method": "hnsw",
+              "index_measure": "cosine_distance",
+              "index_arguments": {
+                "m": 16,
+                "ef_construction": 64
+              },
+              "concurrently": true
+            }'
+
+  input_descriptions:
+    table_name: "The table to create the index on. Default: vectors"
+    index_method: "The indexing method to use. Options: hnsw, ivfflat, auto. Default: hnsw"
+    index_measure: "Distance measure for vector comparisons. Options: cosine_distance, l2_distance, max_inner_product. Default: cosine_distance"
+    index_name: "Optional custom name for the index. If not provided, one will be auto-generated"
+    index_arguments: "Configuration parameters for the chosen index method. For HNSW: {m: int, ef_construction: int}. For IVFFlat: {n_lists: int}"
+    concurrently: "Whether to create the index concurrently. Default: true"
+
+delete_vector_index:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:7272")
+          # when using auth, do client.login(...)
+
+          result = client.delete_vector_index(
+              index_name="ix_vector_cosine_ops_hnsw__20241021211541",
+              table_name="vectors",
+              concurrently=True
+          )
+      - lang: Shell
+        source: |
+          curl -X DELETE "http://localhost:7276/v2/delete_vector_index" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "index_name": "ix_vector_cosine_ops_hnsw__20241021211541",
+              "table_name": "vectors",
+              "concurrently": true
+            }'
+
+  input_descriptions:
+    index_name: "The name of the index to delete"
+    table_name: "The name of the table containing the index. Default: vectors"
+    concurrently: "Whether to delete the index concurrently. Default: true"

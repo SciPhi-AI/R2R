@@ -62,6 +62,7 @@ from shared.abstractions.vector import (
     StorageResult,
     Vector,
     VectorEntry,
+    VectorQuantizationType,
     VectorType,
 )
 
@@ -131,5 +132,6 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "VectorQuantizationType",
     "StorageResult",
 ]

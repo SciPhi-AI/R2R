@@ -29,6 +29,7 @@ from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 logger = logging.getLogger()
 
 
+# TODO - Refactor this to `PostgresKGHandler`
 class PostgresKGProvider(KGProvider):
 
     def __init__(
@@ -53,6 +54,9 @@ class PostgresKGProvider(KGProvider):
                 "NetworkX is not installed. Please install it to use this module."
             ) from exc
 
+    def _get_table_name(self, base_name: str) -> str:
+        return f"{self.db_provider.project_name}.{base_name}"
+
     async def initialize(self):
         logger.info(
             f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
@@ -65,7 +69,9 @@ class PostgresKGProvider(KGProvider):
     async def execute_query(
         self, query: str, params: Optional[list[Any]] = None
     ) -> Any:
-        return await self.db_provider.execute_query(query, params)
+        return await self.db_provider.connection_manager.execute_query(
+            query, params
+        )
 
     async def execute_many(
         self,
@@ -73,17 +79,18 @@ class PostgresKGProvider(KGProvider):
         params: Optional[list[tuple[Any]]] = None,
         batch_size: int = 1000,
     ) -> Any:
-        return await self.db_provider.execute_many(query, params, batch_size)
+        return await self.db_provider.connection_manager.execute_many(
+            query, params, batch_size
+        )
 
     async def fetch_query(
         self,
         query: str,
         params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
-        return await self.db_provider.fetch_query(query, params)
-
-    def _get_table_name(self, base_name: str) -> str:
-        return self.db_provider._get_table_name(base_name)
+        return await self.db_provider.connection_manager.fetch_query(
+            query, params
+        )
 
     async def create_tables(
         self, embedding_dim: int, quantization_type: VectorQuantizationType
@@ -917,7 +924,7 @@ class PostgresKGProvider(KGProvider):
         document_ids = [
             doc.id
             for doc in (
-                await self.db_provider.documents_in_collection(collection_id)
+                await self.db_provider.documents_in_collection(collection_id)  # type: ignore
             )["results"]
         ]
 
@@ -1000,7 +1007,7 @@ class PostgresKGProvider(KGProvider):
         document_ids = [
             doc.id
             for doc in (
-                await self.db_provider.documents_in_collection(collection_id)
+                await self.db_provider.documents_in_collection(collection_id)  # type: ignore
             )["results"]
         ]
 

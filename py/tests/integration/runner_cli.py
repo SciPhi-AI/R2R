@@ -251,12 +251,10 @@ def test_rag_response_stream_sample_file_cli():
 def test_kg_create_graph_sample_file_cli():
     print("Testing: KG create graph")
     print("Calling `poetry run r2r create-graph --run`")
-    output = run_command(
-        "poetry run r2r create-graph --run"
-    )
+    output = run_command("poetry run r2r create-graph --run")
 
-    # if "queued" in output:
-    time.sleep(60)
+    if "queued" in output:
+        time.sleep(60)
 
     response = requests.get(
         "http://localhost:7272/v2/entities/",
@@ -293,7 +291,7 @@ def test_kg_deduplicate_entities_sample_file_cli():
     print(output)
 
     if "queued" in output:
-        time.sleep(60)
+        time.sleep(45)
 
     response = requests.get(
         "http://localhost:7272/v2/entities",

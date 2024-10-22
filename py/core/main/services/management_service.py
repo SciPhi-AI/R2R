@@ -1,12 +1,14 @@
 import logging
 from collections import defaultdict
-from typing import Any, BinaryIO, Dict, Optional, Tuple
+from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
 from uuid import UUID
 
 import toml
 
 from core.base import (
     AnalysisTypes,
+    CollectionResponse,
+    DocumentInfo,
     LogFilterCriteria,
     LogProcessor,
     Message,
@@ -15,6 +17,7 @@ from core.base import (
     R2RLoggingProvider,
     RunManager,
     RunType,
+    UserResponse,
 )
 from core.base.utils import validate_uuid
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -205,7 +208,7 @@ class ManagementService(Service):
         **kwargs,
     ):
         return await self.providers.database.get_users_overview(
-            [str(ele) for ele in user_ids] if user_ids else None,
+            user_ids,
             offset=offset,
             limit=limit,
         )
@@ -277,7 +280,7 @@ class ManagementService(Service):
         document_ids_to_purge: set[UUID] = set()
         if vector_delete_results:
             document_ids_to_purge.update(
-                doc_id
+                UUID(doc_id)
                 for doc_id in (
                     result.get("document_id")
                     for result in vector_delete_results.values()
@@ -300,7 +303,7 @@ class ManagementService(Service):
         try:
             documents_overview = (
                 await self.providers.database.get_documents_overview(
-                    **relational_filters
+                    **relational_filters  # type: ignore
                 )
             )["results"]
         except Exception as e:
@@ -320,7 +323,7 @@ class ManagementService(Service):
         for document_id in document_ids_to_purge:
             try:
                 await self.providers.database.delete_from_documents_overview(
-                    str(document_id)
+                    document_id
                 )
                 logger.info(
                     f"Deleted document ID {document_id} from documents_overview."
@@ -355,8 +358,8 @@ class ManagementService(Service):
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
-            offset=offset,
-            limit=limit,
+            offset=offset or 0,
+            limit=limit or -1,
         )
 
     @telemetry_event("DocumentChunks")
@@ -378,7 +381,7 @@ class ManagementService(Service):
 
     @telemetry_event("AssignDocumentToCollection")
     async def assign_document_to_collection(
-        self, document_id: str, collection_id: UUID
+        self, document_id: UUID, collection_id: UUID
     ):
         await self.providers.database.assign_document_to_collection_vector(
             document_id, collection_id
@@ -405,7 +408,7 @@ class ManagementService(Service):
 
     @telemetry_event("DocumentCollections")
     async def document_collections(
-        self, document_id: str, offset: int = 0, limit: int = 100
+        self, document_id: UUID, offset: int = 0, limit: int = 100
     ):
         return await self.providers.database.document_collections(
             document_id, offset=offset, limit=limit
@@ -501,13 +504,13 @@ class ManagementService(Service):
     @telemetry_event("CreateCollection")
     async def create_collection(
         self, name: str, description: str = ""
-    ) -> UUID:
+    ) -> CollectionResponse:
         return await self.providers.database.create_collection(
             name, description
         )
 
     @telemetry_event("GetCollection")
-    async def get_collection(self, collection_id: UUID) -> Optional[dict]:
+    async def get_collection(self, collection_id: UUID) -> CollectionResponse:
         return await self.providers.database.get_collection(collection_id)
 
     @telemetry_event("UpdateCollection")
@@ -516,7 +519,7 @@ class ManagementService(Service):
         collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
-    ) -> bool:
+    ) -> CollectionResponse:
         return await self.providers.database.update_collection(
             collection_id, name, description
         )
@@ -532,7 +535,7 @@ class ManagementService(Service):
     @telemetry_event("ListCollections")
     async def list_collections(
         self, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
+    ) -> dict[str, list[CollectionResponse] | int]:
         return await self.providers.database.list_collections(
             offset=offset, limit=limit
         )
@@ -540,7 +543,7 @@ class ManagementService(Service):
     @telemetry_event("AddUserToCollection")
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> bool:
+    ) -> None:
         return await self.providers.database.add_user_to_collection(
             user_id, collection_id
         )
@@ -548,7 +551,7 @@ class ManagementService(Service):
     @telemetry_event("RemoveUserFromCollection")
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> bool:
+    ) -> None:
         return await self.providers.database.remove_user_from_collection(
             user_id, collection_id
         )
@@ -556,7 +559,7 @@ class ManagementService(Service):
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
+    ) -> dict[str, list[UserResponse] | int]:
         return await self.providers.database.get_users_in_collection(
             collection_id, offset=offset, limit=limit
         )
@@ -564,7 +567,7 @@ class ManagementService(Service):
     @telemetry_event("GetCollectionsForUser")
     async def get_collections_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
+    ) -> dict[str, list[CollectionResponse] | int]:
         return await self.providers.database.get_collections_for_user(
             user_id, offset, limit
         )
@@ -579,7 +582,7 @@ class ManagementService(Service):
         **kwargs,
     ):
         return await self.providers.database.get_collections_overview(
-            ([str(ele) for ele in collection_ids] if collection_ids else None),
+            collection_ids,
             offset=offset,
             limit=limit,
         )
@@ -587,7 +590,7 @@ class ManagementService(Service):
     @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
+    ) -> dict[str, Union[list[DocumentInfo], int]]:
         return await self.providers.database.documents_in_collection(
             collection_id, offset=offset, limit=limit
         )

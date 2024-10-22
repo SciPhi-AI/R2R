@@ -42,7 +42,7 @@ def test_ingest_sample_file_2_sdk():
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
-    
+
     time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
@@ -716,7 +716,7 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     )
 
     if "queued" in entities_deduplication_result["results"]["message"]:
-        time.sleep(30)
+        time.sleep(45)
 
     response = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
@@ -725,7 +725,7 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     )
 
     entities_list = [ele["name"] for ele in response["results"]["entities"]]
-    
+
     assert len(entities_list) >= 1
     assert "ARISTOTLE" in entities_list
 

@@ -51,7 +51,13 @@ from .search import (
     VectorSearchSettings,
 )
 from .user import Token, TokenData, UserStats
-from .vector import StorageResult, Vector, VectorEntry, VectorType
+from .vector import (
+    StorageResult,
+    Vector,
+    VectorEntry,
+    VectorQuantizationType,
+    VectorType,
+)
 
 __all__ = [
     # Base abstractions
@@ -118,5 +124,6 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "VectorQuantizationType",
     "StorageResult",
 ]

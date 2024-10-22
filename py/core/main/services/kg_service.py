@@ -132,7 +132,7 @@ class KgService(Service):
         document_ids = (
             await self.providers.database.get_document_ids_by_status(
                 status_type="kg_extraction_status",
-                status=document_status_filter,
+                status=[str(ele) for ele in document_status_filter],
                 collection_id=collection_id,
             )
         )
