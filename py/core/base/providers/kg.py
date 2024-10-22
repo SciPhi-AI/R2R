@@ -236,6 +236,13 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
+    async def get_deduplication_estimate(
+        self, *args: Any, **kwargs: Any
+    ) -> Any:
+        """Abstract method to get the deduplication estimate."""
+        pass
+
+    @abstractmethod
     async def get_enrichment_estimate(self, *args: Any, **kwargs: Any) -> Any:
         """Abstract method to get the enrichment estimate."""
         pass

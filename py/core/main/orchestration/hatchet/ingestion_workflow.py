@@ -141,15 +141,6 @@ def hatchet_ingestion_factory(
                     "is_update"
                 )
 
-                # add contextual chunks
-                await self.ingestion_service.chunk_enrichment(
-                    document_id=document_info.id,
-                )
-
-                # delete original chunks
-
-                # delete original chunk vectors
-
                 await self.ingestion_service.finalize_ingestion(
                     document_info, is_update=is_update
                 )
@@ -171,10 +162,39 @@ def hatchet_ingestion_factory(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
+                await self.ingestion_service.update_document_status(
+                    document_info,
+                    status=IngestionStatus.SUCCESS,
+                )
+
+                # add contextual chunks
+                if getattr(
+                    service.providers.ingestion.config,
+                    "enable_chunk_enrichment",
+                    False,
+                ):
+
+                    logger.info("Enriching document with contextual chunks")
+
+                    await self.ingestion_service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.ENRICHING,
+                    )
+
+                    await self.ingestion_service.chunk_enrichment(
+                        document_id=document_info.id,
+                    )
+
+                    await self.ingestion_service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.ENRICHED,
+                    )
+
                 return {
                     "status": "Successfully finalized ingestion",
                     "document_info": document_info.to_dict(),
                 }
+
             except AuthenticationError as e:
                 raise R2RException(
                     status_code=401,

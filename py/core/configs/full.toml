@@ -12,6 +12,7 @@ overlap = 256
 
     # turned off by default
     # [ingestion.chunk_enrichment_settings]
+    #     enable_chunk_enrichment = true
     #     strategies = ["semantic", "neighborhood"]
     #     forward_chunks = 3
     #     backward_chunks = 3

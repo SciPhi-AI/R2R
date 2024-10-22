@@ -532,7 +532,9 @@ class PostgresVectorHandler(VectorHandler):
         """
 
         if table_name == VectorTableName.RAW_CHUNKS:
-            table_name_str = f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
+            )
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (

@@ -369,7 +369,6 @@ class KgService(Service):
             community_numbers,
         )
 
-
     @telemetry_event("get_deduplication_estimate")
     async def get_deduplication_estimate(
         self,

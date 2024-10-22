@@ -21,17 +21,21 @@ class ChunkEnrichmentSettings(R2RSerializable):
     Settings for chunk enrichment.
     """
 
+    enable_chunk_enrichment: bool = Field(
+        default=False,
+        description="Whether to enable chunk enrichment or not",
+    )
     strategies: list[ChunkEnrichmentStrategy] = Field(
         default=[],
         description="The strategies to use for chunk enrichment. Union of chunks obtained from each strategy is used as context.",
     )
     forward_chunks: int = Field(
         default=3,
-        description="The number of chunks to include before the current chunk",
+        description="The number after the current chunk to include in the LLM context while enriching",
     )
     backward_chunks: int = Field(
         default=3,
-        description="The number of chunks to include after the current chunk",
+        description="The number of chunks before the current chunk in the LLM context while enriching",
     )
     semantic_neighbors: int = Field(
         default=10, description="The number of semantic neighbors to include"

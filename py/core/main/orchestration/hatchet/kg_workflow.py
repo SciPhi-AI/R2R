@@ -33,6 +33,25 @@ def hatchet_kg_factory(
                 )
             if key == "kg_enrichment_settings":
                 input_data[key] = json.loads(value)
+                input_data[key]["generation_config"] = GenerationConfig(
+                    **input_data[key]["generation_config"]
+                )
+
+            if key == "kg_entity_deduplication_settings":
+                input_data[key] = json.loads(value)
+
+                if isinstance(input_data[key]["generation_config"], str):
+                    input_data[key]["generation_config"] = json.loads(
+                        input_data[key]["generation_config"]
+                    )
+
+                input_data[key]["generation_config"] = GenerationConfig(
+                    **input_data[key]["generation_config"]
+                )
+
+                logger.info(
+                    f"KG Entity Deduplication Settings: {input_data[key]}"
+                )
 
             if key == "generation_config":
                 input_data[key] = GenerationConfig(**input_data[key])
@@ -246,6 +265,12 @@ def hatchet_kg_factory(
                 )
             )[0]["num_entities"]
 
+            input_data["kg_entity_deduplication_settings"][
+                "generation_config"
+            ] = input_data["kg_entity_deduplication_settings"][
+                "generation_config"
+            ].model_dump_json()
+
             # run 100 entities in one workflow
             total_workflows = math.ceil(number_of_distinct_entities / 100)
             workflows = []
@@ -259,9 +284,11 @@ def hatchet_kg_factory(
                                 "collection_id": collection_id,
                                 "offset": offset,
                                 "limit": 100,
-                                "kg_entity_deduplication_settings": input_data[
-                                    "kg_entity_deduplication_settings"
-                                ],
+                                "kg_entity_deduplication_settings": json.dumps(
+                                    input_data[
+                                        "kg_entity_deduplication_settings"
+                                    ]
+                                ),
                             }
                         },
                         key=f"{i}/{total_workflows}_entity_deduplication_part",
@@ -284,6 +311,11 @@ def hatchet_kg_factory(
         async def kg_entity_deduplication_summary(
             self, context: Context
         ) -> dict:
+
+            logger.info(
+                f"Running KG Entity Deduplication Summary for input data: {context.workflow_input()['request']}"
+            )
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )

@@ -355,14 +355,12 @@ class KGRouter(BaseRouter):
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
-
-            if run_type == KGRunType.ESTIMATE:
-                return await self.service.get_deduplication_estimate(
-                    collection_id, server_deduplication_settings
-                )
-
             server_deduplication_settings = (
-                self.service.providers.kg.config.kg_entity_deduplication_settings.dict()
+                self.service.providers.kg.config.kg_entity_deduplication_settings
+            )
+
+            logger.info(
+                f"Server deduplication settings: {server_deduplication_settings}"
             )
 
             if deduplication_settings:
@@ -375,10 +373,15 @@ class KGRouter(BaseRouter):
             )
             logger.info(f"Input data: {server_deduplication_settings}")
 
+            if run_type == KGRunType.ESTIMATE:
+                return await self.service.get_deduplication_estimate(
+                    collection_id, server_deduplication_settings
+                )
+
             workflow_input = {
                 "collection_id": str(collection_id),
                 "run_type": run_type,
-                "kg_entity_deduplication_settings": server_deduplication_settings,
+                "kg_entity_deduplication_settings": server_deduplication_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
 
