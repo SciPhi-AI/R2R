@@ -1,8 +1,7 @@
 import logging
 import math
 import time
-from time import strftime
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import KGExtractionStatus, R2RLoggingProvider, RunManager
@@ -11,6 +10,7 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationType,
+    R2RException,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -423,3 +423,85 @@ class KgService(Service):
         )
 
         return await _collect_results(deduplication_summary_results)
+
+    @telemetry_event("tune_prompt")
+    async def tune_prompt(
+        self,
+        prompt_name: str,
+        collection_id: UUID,
+        documents_offset: int = 0,
+        documents_limit: int = 100,
+        chunks_offset: int = 0,
+        chunks_limit: int = 100,
+        **kwargs,
+    ):
+
+        document_response = (
+            await self.providers.database.documents_in_collection(
+                collection_id, offset=documents_offset, limit=documents_limit
+            )
+        )
+        results = document_response["results"]
+
+        if isinstance(results, int):
+            raise TypeError("Expected list of documents, got count instead")
+
+        documents = results
+
+        if not documents:
+            raise R2RException(
+                message="No documents found in collection",
+                status_code=404,
+            )
+
+        all_chunks = []
+
+        for document in documents:
+            chunks_response = (
+                await self.providers.database.get_document_chunks(
+                    document.id,
+                    offset=chunks_offset,
+                    limit=chunks_limit,
+                )
+            )
+
+            if chunks := chunks_response.get("results", []):
+                all_chunks.extend(chunks)
+            else:
+                logger.warning(f"No chunks found for document {document.id}")
+
+        if not all_chunks:
+            raise R2RException(
+                message="No chunks found in documents",
+                status_code=404,
+            )
+
+        chunk_texts = [
+            chunk["text"] for chunk in all_chunks if chunk.get("text")
+        ]
+
+        # Pass chunks to the tuning pipe
+        tune_prompt_results = await self.pipes.kg_prompt_tuning_pipe.run(
+            input=self.pipes.kg_prompt_tuning_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "prompt_name": prompt_name,
+                    "chunks": chunk_texts,  # Pass just the text content
+                    **kwargs,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+
+        results = []
+        async for result in tune_prompt_results:
+            results.append(result)
+
+        if not results:
+            raise R2RException(
+                message="No results generated from prompt tuning",
+                status_code=500,
+            )
+
+        return results[0]

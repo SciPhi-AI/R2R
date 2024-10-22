@@ -42,6 +42,7 @@ class R2RPipes(BaseModel):
     kg_entity_deduplication_pipe: AsyncPipe
     kg_entity_deduplication_summary_pipe: AsyncPipe
     kg_community_summary_pipe: AsyncPipe
+    kg_prompt_tuning_pipe: AsyncPipe
     rag_pipe: AsyncPipe
     streaming_rag_pipe: AsyncPipe
     vector_storage_pipe: AsyncPipe

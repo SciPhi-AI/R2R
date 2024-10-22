@@ -253,6 +253,18 @@ class KGEntityDeduplicationResponse(BaseModel):
         }
 
 
+class KGTunePromptResponse(R2RSerializable):
+    """Response containing just the tuned prompt string."""
+
+    tuned_prompt: str = Field(
+        ...,
+        description="The updated prompt.",
+    )
+
+    class Config:
+        json_schema_extra = {"example": {"tuned_prompt": "The updated prompt"}}
+
+
 WrappedKGCreationResponse = ResultsWrapper[
     Union[KGCreationResponse, KGCreationEstimationResponse]
 ]
@@ -261,6 +273,7 @@ WrappedKGEnrichmentResponse = ResultsWrapper[
 ]
 WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
 WrappedKGTriplesResponse = ResultsWrapper[KGTriplesResponse]
+WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[
     KGEntityDeduplicationResponse

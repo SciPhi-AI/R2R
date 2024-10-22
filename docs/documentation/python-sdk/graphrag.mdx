@@ -426,6 +426,61 @@ client.get_communities(
 </ParamField>
 
 
+## Get Tuned Prompt
+
+```python
+client.get_tuned_prompt(
+    prompt_name="graphrag_entity_description",
+    collection_id='122fdf6a-e116-546b-a8f6-e4cb2e2c0a09',
+    documents_offset=0,
+    documents_limit=100,
+    chunk_offset=0,
+    chunk_limit=100
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response containing the tuned prompt for GraphRAG.
+      ```bash
+      {
+        "results": {
+          "tuned_prompt": "string"
+        }
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="prompt_name" type="str">
+  The name of the prompt to tune. Valid values include "graphrag_entity_description", "graphrag_triples_extraction_few_shot", and "graphrag_community_reports".
+</ParamField>
+
+<ParamField path="collection_id" type="Optional[Union[UUID, str]]">
+  The ID of the collection to tune the prompt for. If not provided, the default collection will be used.
+</ParamField>
+
+<ParamField path="documents_offset" type="Optional[int]">
+  The offset for pagination of documents. Defaults to 0.
+</ParamField>
+
+<ParamField path="documents_limit" type="Optional[int]">
+  The limit for pagination of documents. Defaults to 100. Controls how many documents are used for tuning.
+</ParamField>
+
+<ParamField path="chunk_offset" type="Optional[int]">
+  The offset for pagination of chunks within each document. Defaults to 0.
+</ParamField>
+
+<ParamField path="chunk_limit" type="Optional[int]">
+  The limit for pagination of chunks within each document. Defaults to 100. Controls how many chunks per document are used for tuning.
+</ParamField>
+
+The tuning process provides an LLM with chunks from each document in the collection. The relative sample size can therefore be controlled by adjusting the document and chunk limits.
+
+
 ## Search and RAG
 
 Please see the [Search and RAG](/documentation/python-sdk/retrieval) documentation for more information on how to perform search and RAG using Knowledge Graphs.

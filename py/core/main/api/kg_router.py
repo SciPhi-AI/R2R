@@ -14,6 +14,7 @@ from core.base.api.models import (
     WrappedKGEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTriplesResponse,
+    WrappedKGTunePromptResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
@@ -378,6 +379,50 @@ class KGRouter(BaseRouter):
 
             return await self.orchestration_provider.run_workflow(  # type: ignore
                 "entity-deduplication", {"request": workflow_input}, {}
+            )
+
+        @self.router.get("/tuned_prompt")
+        @self.base_endpoint
+        async def get_tuned_prompt(
+            prompt_name: str = Query(
+                ...,
+                description="The name of the prompt to tune. Valid options are 'kg_triples_extraction_prompt', 'kg_entity_description_prompt' and 'community_reports_prompt'.",
+            ),
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve communities from."
+            ),
+            documents_offset: Optional[int] = Query(
+                0, description="Offset for document pagination."
+            ),
+            documents_limit: Optional[int] = Query(
+                100, description="Limit for document pagination."
+            ),
+            chunks_offset: Optional[int] = Query(
+                0, description="Offset for chunk pagination."
+            ),
+            chunks_limit: Optional[int] = Query(
+                100, description="Limit for chunk pagination."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedKGTunePromptResponse:
+            """
+            Auto-tune the prompt for a specific collection.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
+            return await self.service.tune_prompt(
+                prompt_name=prompt_name,
+                collection_id=collection_id,
+                documents_offset=documents_offset,
+                documents_limit=documents_limit,
+                chunks_offset=chunks_offset,
+                chunks_limit=chunks_limit,
             )
 
         @self.router.delete("/delete_graph_for_collection")
