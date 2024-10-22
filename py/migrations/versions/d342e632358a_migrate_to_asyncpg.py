@@ -6,6 +6,7 @@ Create Date: 2024-10-22 11:55:49.461015
 
 """
 
+import os
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -20,7 +21,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-project_name = "r2r-test"  # Replace with your actual project name
+project_name = os.getenv("R2R_PROJECT_NAME") or "r2r_test"
 
 new_vector_table_name = "vectors"
 old_vector_table_name = project_name
