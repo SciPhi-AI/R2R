@@ -8,6 +8,7 @@ from core.base.api.models import UserResponse
 from core.utils import generate_user_id
 
 from .base import PostgresConnectionManager, QueryBuilder
+from .collection import PostgresCollectionHandler
 
 
 class PostgresUserHandler(UserHandler):
@@ -423,7 +424,7 @@ class PostgresUserHandler(UserHandler):
         Raises:
             R2RException: If the collection doesn't exist.
         """
-        if not await self.collection_exists(collection_id):  # type: ignore
+        if not await self._collection_exists(collection_id):  # type: ignore
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
@@ -563,3 +564,14 @@ class PostgresUserHandler(UserHandler):
         total_entries = results[0]["total_entries"]
 
         return {"results": users, "total_entries": total_entries}
+
+    async def _collection_exists(self, collection_id: UUID) -> bool:
+        """Check if a collection exists."""
+        query = f"""
+            SELECT 1 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+            WHERE collection_id = $1
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [collection_id]
+        )
+        return result is not None
