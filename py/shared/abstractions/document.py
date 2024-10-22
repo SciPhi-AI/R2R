@@ -131,6 +131,7 @@ class KGExtractionStatus(str, Enum):
     def __str__(self):
         return self.value
 
+
 class KGEnrichmentStatus(str, Enum):
     """Status of KG Enrichment per collection."""
 
@@ -141,6 +142,7 @@ class KGEnrichmentStatus(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 class DocumentInfo(R2RSerializable):
     """Base class for document information handling."""

@@ -580,8 +580,27 @@ class IngestionServiceAdapter:
         return {
             "table_name": VectorTableName(data["table_name"]),
             "index_method": IndexMethod(data["index_method"]),
-            "measure": IndexMeasure(data["measure"]),
+            "index_measure": IndexMeasure(data["index_measure"]),
+            "index_name": data["index_name"],
             "index_arguments": data["index_arguments"],
-            "replace": data["replace"],
             "concurrently": data["concurrently"],
+        }
+
+    @staticmethod
+    def parse_list_vector_indices_input(input_data: dict) -> dict:
+        return {"table_name": input_data["table_name"]}
+
+    @staticmethod
+    def parse_delete_vector_index_input(input_data: dict) -> dict:
+        return {
+            "index_name": input_data["index_name"],
+            "table_name": input_data.get("table_name"),
+            "concurrently": input_data.get("concurrently", True),
+        }
+
+    @staticmethod
+    def parse_select_vector_index_input(input_data: dict) -> dict:
+        return {
+            "index_name": input_data["index_name"],
+            "table_name": input_data.get("table_name"),
         }

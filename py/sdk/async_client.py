@@ -80,17 +80,20 @@ class R2RAsyncClient(
             try:
                 error_content = response.json()
                 if isinstance(error_content, dict):
-                    message = error_content.get("detail", {}).get(
-                        "message", str(error_content)
-                    ) if isinstance(error_content.get("detail"), dict) else error_content.get("detail", str(error_content))
+                    message = (
+                        error_content.get("detail", {}).get(
+                            "message", str(error_content)
+                        )
+                        if isinstance(error_content.get("detail"), dict)
+                        else error_content.get("detail", str(error_content))
+                    )
                 else:
                     message = str(error_content)
             except json.JSONDecodeError:
                 message = response.text
 
             raise R2RException(
-                status_code=response.status_code, 
-                message=message
+                status_code=response.status_code, message=message
             )
 
     async def close(self):

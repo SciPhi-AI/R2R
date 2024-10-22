@@ -43,7 +43,7 @@ class HybridSearchIntermediateResult(TypedDict):
 
 
 class PostgresVectorHandler(VectorHandler):
-    TABLE_NAME = "vector"
+    TABLE_NAME = VectorTableName.RAW_CHUNKS
 
     COLUMN_VARS = [
         "extraction_id",
@@ -491,8 +491,8 @@ class PostgresVectorHandler(VectorHandler):
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
-        measure: IndexMeasure = IndexMeasure.cosine_distance,
-        method: IndexMethod = IndexMethod.auto,
+        index_measure: IndexMeasure = IndexMeasure.cosine_distance,
+        index_method: IndexMethod = IndexMethod.auto,
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
@@ -522,10 +522,10 @@ class PostgresVectorHandler(VectorHandler):
             it will succeed.
 
         Args:
-            measure (IndexMeasure, optional): The measure to index for. Defaults to 'cosine_distance'.
-            method (IndexMethod, optional): The indexing method to use. Defaults to 'auto'.
+            index_measure (IndexMeasure, optional): The measure to index for. Defaults to 'cosine_distance'.
+            index_method (IndexMethod, optional): The indexing method to use. Defaults to 'auto'.
             index_arguments: (IndexArgsIVFFlat | IndexArgsHNSW, optional): Index type specific arguments
-            replace (bool, optional): Whether to replace the existing index. Defaults to True.
+            index_name (str, optional): The name of the index to create. Defaults to None.
             concurrently (bool, optional): Whether to create the index concurrently. Defaults to True.
         Raises:
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
@@ -535,10 +535,14 @@ class PostgresVectorHandler(VectorHandler):
             table_name_str = f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"  # TODO - Fix bug in vector table naming convention
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.ENTITIES_COLLECTION:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
@@ -547,7 +551,7 @@ class PostgresVectorHandler(VectorHandler):
             col_name = "embedding"
         else:
             raise ArgError("invalid table name")
-        if method not in (
+        if index_method not in (
             IndexMethod.ivfflat,
             IndexMethod.hnsw,
             IndexMethod.auto,
@@ -558,7 +562,7 @@ class PostgresVectorHandler(VectorHandler):
             # Disallow case where user submits index arguments but uses the
             # IndexMethod.auto index (index build arguments should only be
             # used with a specific index)
-            if method == IndexMethod.auto:
+            if index_method == IndexMethod.auto:
                 raise ArgError(
                     "Index build parameters are not allowed when using the IndexMethod.auto index."
                 )
@@ -566,20 +570,20 @@ class PostgresVectorHandler(VectorHandler):
             # index build arguments for the other index type
             if (
                 isinstance(index_arguments, IndexArgsHNSW)
-                and method != IndexMethod.hnsw
+                and index_method != IndexMethod.hnsw
             ) or (
                 isinstance(index_arguments, IndexArgsIVFFlat)
-                and method != IndexMethod.ivfflat
+                and index_method != IndexMethod.ivfflat
             ):
                 raise ArgError(
-                    f"{index_arguments.__class__.__name__} build parameters were supplied but {method} index was specified."
+                    f"{index_arguments.__class__.__name__} build parameters were supplied but {index_method} index was specified."
                 )
 
-        if method == IndexMethod.auto:
-            method = IndexMethod.hnsw
+        if index_method == IndexMethod.auto:
+            index_method = IndexMethod.hnsw
 
         ops = index_measure_to_ops(
-            measure  # , quantization_type=self.quantization_type
+            index_measure  # , quantization_type=self.quantization_type
         )
 
         if ops is None:
@@ -588,26 +592,31 @@ class PostgresVectorHandler(VectorHandler):
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
         index_name = (
-            index_name or f"ix_{ops}_{method}__{time.strftime('%Y%m%d%H%M%S')}"
+            index_name
+            or f"ix_{ops}_{index_method}__{time.strftime('%Y%m%d%H%M%S')}"
         )
 
         create_index_sql = f"""
         CREATE INDEX {concurrently_sql} {index_name}
         ON {table_name_str}
-        USING {method} ({col_name} {ops}) {self._get_index_options(method, index_arguments)};
+        USING {index_method} ({col_name} {ops}) {self._get_index_options(index_method, index_arguments)};
         """
 
         try:
             if concurrently:
-                # For concurrent index creation, we need to execute outside a transaction
-                await self.connection_manager.execute_query(
-                    create_index_sql, isolation_level="AUTOCOMMIT"
-                )
+                async with (
+                    self.connection_manager.pool.get_connection() as conn  # type: ignore
+                ):
+                    # Disable automatic transaction management
+                    await conn.execute(
+                        "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                    )
+                    await conn.execute(create_index_sql)
             else:
+                # Non-concurrent index creation can use normal query execution
                 await self.connection_manager.execute_query(create_index_sql)
         except Exception as e:
             raise Exception(f"Failed to create index: {e}")
-
         return None
 
     def _build_filters(
@@ -744,7 +753,7 @@ class PostgresVectorHandler(VectorHandler):
 
     async def list_indices(
         self, table_name: Optional[VectorTableName] = None
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """
         Lists all vector indices for the specified table.
 
@@ -763,9 +772,15 @@ class PostgresVectorHandler(VectorHandler):
                 f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
             )
             col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+        elif table_name == VectorTableName.ENTITIES_DOCUMENT:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
             col_name = "description_embedding"
+        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            )
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.COMMUNITIES}"
@@ -779,19 +794,19 @@ class PostgresVectorHandler(VectorHandler):
             i.indexname as name,
             i.indexdef as definition,
             am.amname as method,
-            pg_relation_size(i.indexrelid) as size_in_bytes,
-            idx_scan as number_of_scans,
-            idx_tup_read as tuples_read,
-            idx_tup_fetch as tuples_fetched
+            pg_relation_size(c.oid) as size_in_bytes,
+            COALESCE(psat.idx_scan, 0) as number_of_scans,
+            COALESCE(psat.idx_tup_read, 0) as tuples_read,
+            COALESCE(psat.idx_tup_fetch, 0) as tuples_fetched
         FROM pg_indexes i
         JOIN pg_class c ON c.relname = i.indexname
         JOIN pg_am am ON c.relam = am.oid
-        LEFT JOIN pg_stat_all_indexes s ON s.indexrelid = c.oid
-        WHERE i.tablename = $1
-        AND i.indexdef LIKE $2
+        LEFT JOIN pg_stat_user_indexes psat ON psat.indexrelname = i.indexname
+            AND psat.schemaname = i.schemaname
+        WHERE i.schemaname || '.' || i.tablename = $1
+        AND i.indexdef LIKE $2;
         """
 
-        # Look for indices on the vector column
         results = await self.connection_manager.fetch_query(
             query, (table_name_str, f"%({col_name}%")
         )
@@ -833,8 +848,15 @@ class PostgresVectorHandler(VectorHandler):
                 f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
             )
             col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+        elif table_name == VectorTableName.ENTITIES_DOCUMENT:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
@@ -844,17 +866,21 @@ class PostgresVectorHandler(VectorHandler):
         else:
             raise ArgError("invalid table name")
 
+        # Extract schema and base table name
+        schema_name, base_table_name = table_name_str.split(".")
+
         # Verify index exists and is a vector index
         query = """
         SELECT indexdef
         FROM pg_indexes
         WHERE indexname = $1
-        AND tablename = $2
-        AND indexdef LIKE $3
+        AND schemaname = $2
+        AND tablename = $3
+        AND indexdef LIKE $4
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, (index_name, table_name_str, f"%({col_name}%")
+            query, (index_name, schema_name, base_table_name, f"%({col_name}%")
         )
 
         if not result:
@@ -864,78 +890,24 @@ class PostgresVectorHandler(VectorHandler):
 
         # Drop the index
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
-        drop_query = f"DROP INDEX {concurrently_sql} {index_name}"
+        drop_query = (
+            f"DROP INDEX {concurrently_sql} {schema_name}.{index_name}"
+        )
 
         try:
             if concurrently:
-                await self.connection_manager.execute_query(
-                    drop_query, isolation_level="AUTOCOMMIT"
-                )
+                async with (
+                    self.connection_manager.pool.get_connection() as conn  # type: ignore
+                ):
+                    # Disable automatic transaction management
+                    await conn.execute(
+                        "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                    )
+                    await conn.execute(drop_query)
             else:
                 await self.connection_manager.execute_query(drop_query)
         except Exception as e:
             raise Exception(f"Failed to delete index: {e}")
-
-    async def select_index(
-        self, index_name: str, table_name: Optional[VectorTableName] = None
-    ) -> None:
-        """
-        Updates planner statistics to prefer using the specified index.
-        Note: This is a best-effort operation as PostgreSQL's query planner
-        ultimately decides which index to use.
-
-        Args:
-            index_name (str): Name of the index to prefer
-            table_name (VectorTableName, optional): Table the index belongs to
-
-        Raises:
-            ArgError: If table name is invalid or index doesn't exist
-        """
-        # Validate table name and get column name
-        if table_name == VectorTableName.RAW_CHUNKS:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
-            )
-            col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
-            col_name = "description_embedding"
-        elif table_name == VectorTableName.COMMUNITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
-            )
-            col_name = "embedding"
-        else:
-            raise ArgError("invalid table name")
-
-        # Verify index exists and is a vector index
-        query = """
-        SELECT indexdef
-        FROM pg_indexes
-        WHERE indexname = $1
-        AND tablename = $2
-        AND indexdef LIKE $3
-        """
-
-        result = await self.connection_manager.fetchrow_query(
-            query, (index_name, table_name_str, f"%({col_name}%")
-        )
-
-        if not result:
-            raise ArgError(
-                f"Vector index '{index_name}' does not exist on table {table_name_str}"
-            )
-
-        # Update statistics to encourage use of this index
-        # Note: This doesn't guarantee the index will be used
-        await self.connection_manager.execute_query(
-            f"ALTER INDEX {index_name} SET STATISTICS 1000;"
-        )
-
-        # Analyze the table to update planner statistics
-        await self.connection_manager.execute_query(
-            f"ANALYZE {table_name_str};"
-        )
 
     async def get_semantic_neighbors(
         self,
