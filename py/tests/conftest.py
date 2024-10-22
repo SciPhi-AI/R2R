@@ -27,8 +27,8 @@ from core.base import (
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
+    OrchestrationConfig,
 )
-from core.base import OrchestrationConfig
 from core.providers import (
     BCryptProvider,
     LiteCompletionProvider,
@@ -180,7 +180,6 @@ def litellm_provider(app_config):
     return LiteLLMEmbeddingProvider(config)
 
 
-
 # Embeddings
 @pytest.fixture
 def litellm_provider_128(app_config):
@@ -289,9 +288,11 @@ async def postgres_kg_provider(
 def prompt_config(app_config):
     return PromptConfig(provider="r2r", app=app_config)
 
+
 @pytest.fixture(scope="function")
 def orchestration_config(app_config):
     return OrchestrationConfig(provider="simple", app=app_config)
+
 
 @pytest.fixture(scope="function")
 async def r2r_prompt_provider(prompt_config, temporary_postgres_db_provider):

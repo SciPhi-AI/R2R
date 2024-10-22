@@ -168,7 +168,9 @@ def hatchet_ingestion_factory(
                 )
 
                 # add contextual chunk
-                logger.info(f"service.providers.ingestion.config: {service.providers.ingestion.config}")
+                logger.info(
+                    f"service.providers.ingestion.config: {service.providers.ingestion.config}"
+                )
 
                 chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
@@ -176,7 +178,9 @@ def hatchet_ingestion_factory(
                     None,
                 )
 
-                if chunk_enrichment_settings and getattr(chunk_enrichment_settings, "enable_chunk_enrichment", False):
+                if chunk_enrichment_settings and getattr(
+                    chunk_enrichment_settings, "enable_chunk_enrichment", False
+                ):
 
                     logger.info("Enriching document with contextual chunks")
 
