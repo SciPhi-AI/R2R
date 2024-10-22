@@ -391,7 +391,9 @@ def test_kg_search_sample_file_cli():
 
 def test_kg_delete_graph_sample_file_cli():
     print("Testing: KG delete graph")
-    output = run_command("poetry run r2r delete-graph")
+    output = run_command(
+        "poetry run r2r delete-graph-for-collection --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
     print(output)
 
     response = requests.get(
@@ -414,7 +416,9 @@ def test_kg_delete_graph_sample_file_cli():
 
 def test_kg_delete_graph_with_cascading_sample_file_cli():
     print("Testing: KG delete graph with cascading")
-    output = run_command("poetry run r2r delete-graph --cascade")
+    output = run_command(
+        "poetry run r2r delete-graph-for-collection --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --cascade"
+    )
     print(output)
 
     response = requests.get(

@@ -251,4 +251,3 @@ class KGMixins:
         }
 
         return await self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore
-
