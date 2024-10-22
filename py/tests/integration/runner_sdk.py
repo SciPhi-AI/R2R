@@ -689,7 +689,7 @@ def test_kg_create_graph_sample_file_sdk():
     print(create_graph_result)
 
     if "queued" in create_graph_result["results"]["message"]:
-        time.sleep(120)
+        time.sleep(60)
 
     result = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
@@ -716,7 +716,7 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     )
 
     if "queued" in entities_deduplication_result["results"]["message"]:
-        time.sleep(30)
+        time.sleep(45)
 
     response = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
