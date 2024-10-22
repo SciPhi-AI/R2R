@@ -166,7 +166,7 @@ class KGMixins:
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
 
-    async def tune_prompt(
+    async def get_tuned_prompt(
         self,
         prompt_name: str,
         collection_id: Optional[str] = None,
@@ -177,6 +177,8 @@ class KGMixins:
     ) -> dict:
         """
         Tune the GraphRAG prompt for a given collection.
+
+        The tuning process provides an LLM with chunks from each document in the collection. The relative sample size can therefore be controlled by adjusting the document and chunk limits.
 
         Args:
             prompt_name (str): The name of the prompt to tune.
@@ -189,7 +191,7 @@ class KGMixins:
         Returns:
             dict: A dictionary containing the tuned prompt.
         """
-        body = {
+        params = {
             "prompt_name": prompt_name,
             "collection_id": collection_id,
             "documents_offset": documents_offset,
@@ -198,7 +200,9 @@ class KGMixins:
             "chunk_limit": chunk_limit,
         }
 
-        return await self._make_request("POST", "tune_prompt", json=body)  # type: ignore
+        params = {k: v for k, v in params.items() if v is not None}
+
+        return await self._make_request("GET", "tuned_prompt", params=params)  # type: ignore
 
     async def deduplicate_entities(
         self,
@@ -227,4 +231,3 @@ class KGMixins:
         return await self._make_request(  # type: ignore
             "POST", "deduplicate_entities", json=data
         )
-

@@ -2,18 +2,19 @@
 Pipe to tune the prompt for the KG model.
 """
 
+import logging
+from typing import Any, Optional
 from uuid import UUID
-from typing import Optional, Any
+
 from core.base import (
     AsyncState,
     CompletionProvider,
     KGProvider,
     PipeType,
     PromptProvider,
-    R2RLoggingProvider,
     R2RException,
+    R2RLoggingProvider,
 )
-import logging
 from core.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger()
@@ -85,10 +86,7 @@ class KGPromptTuningPipe(AsyncPipe):
                     message="Failed to generate tuned prompt", status_code=500
                 )
 
-            result = {"tuned_prompt": tuned_prompt.choices[0].message.content}
-
-            logger.info(f"Successfully generated tuned prompt")
-            yield result
+            yield {"tuned_prompt": tuned_prompt.choices[0].message.content}
 
         except Exception as e:
             logger.error(f"Error in prompt tuning: {str(e)}")

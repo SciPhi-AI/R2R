@@ -429,10 +429,10 @@ class KgService(Service):
         self,
         prompt_name: str,
         collection_id: UUID,
-        documents_offset: Optional[int],
-        documents_limit: Optional[int],
-        chunks_offset: Optional[int],
-        chunks_limit: Optional[int],
+        documents_offset: int = 0,
+        documents_limit: int = 100,
+        chunks_offset: int = 0,
+        chunks_limit: int = 100,
         **kwargs,
     ):
 
@@ -441,7 +441,12 @@ class KgService(Service):
                 collection_id, offset=documents_offset, limit=documents_limit
             )
         )
-        documents = document_response.get("results", [])
+        results = document_response["results"]
+
+        if isinstance(results, int):
+            raise TypeError("Expected list of documents, got count instead")
+
+        documents = results
 
         if not documents:
             raise R2RException(
@@ -488,8 +493,6 @@ class KgService(Service):
             state=None,
             run_manager=self.run_manager,
         )
-
-        print(f"Tune prompt results: {tune_prompt_results}")
 
         results = []
         async for result in tune_prompt_results:

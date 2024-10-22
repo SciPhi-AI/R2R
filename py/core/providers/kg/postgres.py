@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
@@ -927,12 +927,9 @@ class PostgresKGProvider(KGProvider):
             )["results"]
         ]
 
-        # TODO: Vecs schema naming got messed up somewhere.
-        schema_name = self._get_table_name("document_chunks").split(".")[0]
-
         query = f"""
             SELECT document_id, COUNT(*) as chunk_count
-            FROM {schema_name}.{schema_name}
+            FROM {self._get_table_name("vectors")}
             WHERE document_id = ANY($1)
             GROUP BY document_id
         """

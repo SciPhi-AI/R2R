@@ -407,8 +407,9 @@
         "cookbooks/walkthrough",
         "cookbooks/ingestion",
         "cookbooks/hybrid-search",
-        "cookbooks/graphrag",
         "cookbooks/advanced-rag",
+        "cookbooks/graphrag",
+        "cookbooks/advanced-graphrag",
         "cookbooks/agent",
         "cookbooks/orchestration",
         "cookbooks/web-dev"

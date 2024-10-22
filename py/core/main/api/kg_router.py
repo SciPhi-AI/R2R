@@ -381,26 +381,26 @@ class KGRouter(BaseRouter):
                 "entity-deduplication", {"request": workflow_input}, {}
             )
 
-        @self.router.post("/tune_prompt")
+        @self.router.get("/tuned_prompt")
         @self.base_endpoint
-        async def tune_prompt(
-            prompt_name: str = Body(
+        async def get_tuned_prompt(
+            prompt_name: str = Query(
                 ...,
                 description="The name of the prompt to tune. Valid options are 'kg_triples_extraction_prompt', 'kg_entity_description_prompt' and 'community_reports_prompt'.",
             ),
-            collection_id: Optional[UUID] = Body(
+            collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve communities from."
             ),
-            documents_offset: Optional[int] = Body(
+            documents_offset: Optional[int] = Query(
                 0, description="Offset for document pagination."
             ),
-            documents_limit: Optional[int] = Body(
+            documents_limit: Optional[int] = Query(
                 100, description="Limit for document pagination."
             ),
-            chunks_offset: Optional[int] = Body(
+            chunks_offset: Optional[int] = Query(
                 0, description="Offset for chunk pagination."
             ),
-            chunks_limit: Optional[int] = Body(
+            chunks_limit: Optional[int] = Query(
                 100, description="Limit for chunk pagination."
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -423,6 +423,7 @@ class KGRouter(BaseRouter):
                 documents_limit=documents_limit,
                 chunks_offset=chunks_offset,
                 chunks_limit=chunks_limit,
+            )
 
         @self.router.delete("/delete_graph_for_collection")
         @self.base_endpoint
