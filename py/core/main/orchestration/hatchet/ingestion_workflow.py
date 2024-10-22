@@ -494,14 +494,78 @@ def hatchet_ingestion_factory(
                 "status": "Vector index creation queued successfully.",
             }
 
+    @orchestration_provider.workflow(name="list-vector-indices", timeout="15m")
+    class HatchetListVectorIndicesWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="5m")
+        async def list_vector_indices(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            table_name = input_data.get("table_name")
+
+            indices = (
+                await self.ingestion_service.providers.database.list_indices(
+                    table_name=table_name
+                )
+            )
+
+            return {"indices": indices}
+
+    @orchestration_provider.workflow(name="delete-vector-index", timeout="30m")
+    class HatchetDeleteVectorIndexWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="10m")
+        async def delete_vector_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_delete_vector_index_input(
+                    input_data
+                )
+            )
+
+            await self.ingestion_service.providers.database.delete_index(
+                **parsed_data
+            )
+
+            return {"status": "Vector index deleted successfully."}
+
+    @orchestration_provider.workflow(name="select-vector-index", timeout="15m")
+    class HatchetSelectVectorIndexWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="5m")
+        async def select_vector_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_select_vector_index_input(
+                    input_data
+                )
+            )
+
+            await self.ingestion_service.providers.database.select_index(
+                **parsed_data
+            )
+
+            return {"status": "Vector index selection completed successfully."}
+
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
+    list_vector_indices_workflow = HatchetListVectorIndicesWorkflow(service)
+    delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
+    select_vector_index_workflow = HatchetSelectVectorIndexWorkflow(service)
 
     return {
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "create_vector_index": create_vector_index_workflow,
+        "list_vector_indices": list_vector_indices_workflow,
+        "delete_vector_index": delete_vector_index_workflow,
+        "select_vector_index": select_vector_index_workflow,
     }

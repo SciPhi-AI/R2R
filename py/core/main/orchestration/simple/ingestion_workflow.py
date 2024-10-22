@@ -266,7 +266,7 @@ def simple_ingestion_factory(service: IngestionService):
                 )
             )
 
-            service.providers.database.create_index(**parsed_data)
+            await service.providers.database.create_index(**parsed_data)
 
         except Exception as e:
             raise R2RException(
@@ -274,9 +274,74 @@ def simple_ingestion_factory(service: IngestionService):
                 message=f"Error during vector index creation: {str(e)}",
             )
 
+    async def list_vector_indices(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_list_vector_indices_input(
+                    input_data
+                )
+            )
+
+            indices = await service.providers.database.list_indices(
+                **parsed_data
+            )
+
+            return {"indices": indices}
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during listing vector indices: {str(e)}",
+            )
+
+    async def delete_vector_index(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_delete_vector_index_input(
+                    input_data
+                )
+            )
+
+            await service.providers.database.delete_index(**parsed_data)
+
+            return {"status": "Vector index deleted successfully."}
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during vector index deletion: {str(e)}",
+            )
+
+    async def select_vector_index(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_select_vector_index_input(
+                    input_data
+                )
+            )
+
+            await service.providers.database.select_index(**parsed_data)
+
+            return {"status": "Vector index selection completed successfully."}
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during vector index selection: {str(e)}",
+            )
+
     return {
         "ingest-files": ingest_files,
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
         "create-vector-index": create_vector_index,
+        "list-vector-indices": list_vector_indices,
+        "delete-vector-index": delete_vector_index,
+        "select-vector-index": select_vector_index,
     }

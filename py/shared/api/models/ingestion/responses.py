@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -63,6 +63,21 @@ class CreateVectorIndexResponse(BaseModel):
     )
 
 
+class ListVectorIndicesResponse(BaseModel):
+    indices: list[dict[str, Any]]
+
+
+class DeleteVectorIndexResponse(BaseModel):
+    status: str
+
+
+class SelectVectorIndexResponse(BaseModel):
+    status: str
+
+
 WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
 WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
+WrappedListVectorIndicesResponse = ResultsWrapper[ListVectorIndicesResponse]
+WrappedDeleteVectorIndexResponse = ResultsWrapper[DeleteVectorIndexResponse]
+WrappedSelectVectorIndexResponse = ResultsWrapper[SelectVectorIndexResponse]

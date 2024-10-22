@@ -496,13 +496,34 @@ class VectorHandler(Handler):
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
-        measure: IndexMeasure = IndexMeasure.cosine_distance,
-        method: IndexMethod = IndexMethod.auto,
+        index_measure: IndexMeasure = IndexMeasure.cosine_distance,
+        index_method: IndexMethod = IndexMethod.auto,
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
         index_name: Optional[str] = None,
         concurrently: bool = True,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def list_indices(
+        self, table_name: Optional[VectorTableName] = None
+    ) -> list[dict]:
+        pass
+
+    @abstractmethod
+    async def delete_index(
+        self,
+        index_name: str,
+        table_name: Optional[VectorTableName] = None,
+        concurrently: bool = True,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def select_index(
+        self, index_name: str, table_name: Optional[VectorTableName] = None
     ) -> None:
         pass
 
@@ -890,8 +911,8 @@ class DatabaseProvider(Provider):
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
-        measure: IndexMeasure = IndexMeasure.cosine_distance,
-        method: IndexMethod = IndexMethod.auto,
+        index_measure: IndexMeasure = IndexMeasure.cosine_distance,
+        index_method: IndexMethod = IndexMethod.auto,
         index_arguments: Optional[
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
@@ -900,12 +921,32 @@ class DatabaseProvider(Provider):
     ) -> None:
         return await self.vector_handler.create_index(
             table_name,
-            measure,
-            method,
+            index_measure,
+            index_method,
             index_arguments,
             index_name,
             concurrently,
         )
+
+    async def list_indices(
+        self, table_name: Optional[VectorTableName] = None
+    ) -> list[dict]:
+        return await self.vector_handler.list_indices(table_name)
+
+    async def delete_index(
+        self,
+        index_name: str,
+        table_name: Optional[VectorTableName] = None,
+        concurrently: bool = True,
+    ) -> None:
+        return await self.vector_handler.delete_index(
+            index_name, table_name, concurrently
+        )
+
+    async def select_index(
+        self, index_name: str, table_name: Optional[VectorTableName] = None
+    ) -> None:
+        return await self.vector_handler.select_index(index_name, table_name)
 
     async def get_semantic_neighbors(
         self,
