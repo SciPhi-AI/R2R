@@ -69,6 +69,16 @@ class IngestionRouter(BaseRouter):
                     if self.orchestration_provider.config.provider != "simple"
                     else "Vector index creation task completed successfully."
                 ),
+                "delete-vector-index": (
+                    "Vector index deletion task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index deletion task completed successfully."
+                ),
+                "select-vector-index": (
+                    "Vector index selection task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index selection task completed successfully."
+                ),
             },
         )
 
@@ -335,34 +345,44 @@ class IngestionRouter(BaseRouter):
 
             return [raw_message]  # type: ignore
 
-        @self.router.post("/create_vector_index")
+        create_vector_index_extras = self.openapi_extras.get(
+            "create_vector_index", {}
+        )
+        create_vector_descriptions = create_vector_index_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.post(
+            "/create_vector_index",
+            openapi_extra=create_vector_index_extras.get("openapi_extra"),
+        )
         @self.base_endpoint
         async def create_vector_index_app(
             table_name: Optional[VectorTableName] = Body(
                 default=VectorTableName.RAW_CHUNKS,
-                description="The name of the vector table to create.",
+                description=create_vector_descriptions.get("table_name"),
             ),
             index_method: IndexMethod = Body(
                 default=IndexMethod.hnsw,
-                description="The type of vector index to create. Supported values are 'hnsw' and 'ivfflat'.",
+                description=create_vector_descriptions.get("index_method"),
             ),
             index_measure: IndexMeasure = Body(
                 default=IndexMeasure.cosine_distance,
-                description="The distance measure corresponding to the vector index. Used for calculating the distance between vectors during search.",
+                description=create_vector_descriptions.get("index_measure"),
             ),
             index_arguments: Optional[
                 Union[IndexArgsIVFFlat, IndexArgsHNSW]
             ] = Body(
                 None,
-                description="The arguments for the index method.",
+                description=create_vector_descriptions.get("index_arguments"),
             ),
             index_name: Optional[str] = Body(
                 None,
-                description="The name of the index to create.",
+                description=create_vector_descriptions.get("index_name"),
             ),
             concurrently: bool = Body(
                 default=True,
-                description="Whether to create the index concurrently.",
+                description=create_vector_descriptions.get("concurrently"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
@@ -394,45 +414,56 @@ class IngestionRouter(BaseRouter):
 
             return raw_message  # type: ignore
 
-        @self.router.get("/list_vector_indices")
+        list_vector_indices_extras = self.openapi_extras.get(
+            "create_vector_index", {}
+        )
+        list_vector_indices_descriptions = list_vector_indices_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.get(
+            "/list_vector_indices",
+            openapi_extra=list_vector_indices_extras.get("openapi_extra"),
+        )
         @self.base_endpoint
         async def list_vector_indices_app(
             table_name: Optional[VectorTableName] = Query(
                 default=VectorTableName.RAW_CHUNKS,
-                description="The name of the vector table to list indices for.",
+                description=list_vector_indices_descriptions.get("table_name"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedListVectorIndicesResponse:
-            logger.info(f"Listing vector indices for table {table_name}")
-
-            raw_message = await self.orchestration_provider.run_workflow(
-                "list-vector-indices",
-                {
-                    "request": {
-                        "table_name": table_name,
-                    },
-                },
-                options={
-                    "additional_metadata": {},
-                },
+            indices = await self.service.providers.database.list_indices(
+                table_name=table_name
             )
+            return {"indices": indices}  # type: ignore
 
-            return raw_message  # type: ignore
+        delete_vector_index_extras = self.openapi_extras.get(
+            "delete_vector_index", {}
+        )
+        delete_vector_index_descriptions = delete_vector_index_extras.get(
+            "input_descriptions", {}
+        )
 
-        @self.router.delete("/delete_vector_index")
+        @self.router.delete(
+            "/delete_vector_index",
+            openapi_extra=delete_vector_index_extras.get("openapi_extra"),
+        )
         @self.base_endpoint
         async def delete_vector_index_app(
             index_name: str = Body(
                 ...,
-                description="The name of the index to delete.",
+                description=delete_vector_index_descriptions.get("index_name"),
             ),
             table_name: Optional[VectorTableName] = Body(
                 default=VectorTableName.RAW_CHUNKS,
-                description="The name of the vector table containing the index.",
+                description=delete_vector_index_descriptions.get("table_name"),
             ),
             concurrently: bool = Body(
                 default=True,
-                description="Whether to delete the index concurrently.",
+                description=delete_vector_index_descriptions.get(
+                    "concurrently"
+                ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedDeleteVectorIndexResponse:
@@ -447,38 +478,6 @@ class IngestionRouter(BaseRouter):
                         "index_name": index_name,
                         "table_name": table_name,
                         "concurrently": concurrently,
-                    },
-                },
-                options={
-                    "additional_metadata": {},
-                },
-            )
-
-            return raw_message  # type: ignore
-
-        @self.router.post("/select_vector_index")
-        @self.base_endpoint
-        async def select_vector_index_app(
-            index_name: str = Body(
-                ...,
-                description="The name of the index to select.",
-            ),
-            table_name: Optional[VectorTableName] = Body(
-                default=VectorTableName.RAW_CHUNKS,
-                description="The name of the vector table containing the index.",
-            ),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedSelectVectorIndexResponse:
-            logger.info(
-                f"Selecting vector index {index_name} for table {table_name}"
-            )
-
-            raw_message = await self.orchestration_provider.run_workflow(
-                "select-vector-index",
-                {
-                    "request": {
-                        "index_name": index_name,
-                        "table_name": table_name,
                     },
                 },
                 options={

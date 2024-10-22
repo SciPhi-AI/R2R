@@ -588,8 +588,7 @@ class IngestionServiceAdapter:
 
     @staticmethod
     def parse_list_vector_indices_input(input_data: dict) -> dict:
-        request = input_data.get("request", {})
-        return {"table_name": request.get("table_name")}
+        return {"table_name": input_data["table_name"]}
 
     @staticmethod
     def parse_delete_vector_index_input(input_data: dict) -> dict:

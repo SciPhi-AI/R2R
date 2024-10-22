@@ -522,12 +522,6 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
-    async def select_index(
-        self, index_name: str, table_name: Optional[VectorTableName] = None
-    ) -> None:
-        pass
-
-    @abstractmethod
     async def get_semantic_neighbors(
         self,
         document_id: UUID,
@@ -942,11 +936,6 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.delete_index(
             index_name, table_name, concurrently
         )
-
-    async def select_index(
-        self, index_name: str, table_name: Optional[VectorTableName] = None
-    ) -> None:
-        return await self.vector_handler.select_index(index_name, table_name)
 
     async def get_semantic_neighbors(
         self,

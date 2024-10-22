@@ -33,10 +33,10 @@ async def test_index_lifecycle(postgres_db_provider):
     assert indices, "No indices returned"
     assert any(index["name"] == index_name for index in indices)
 
-    # Select the index for use
-    await postgres_db_provider.select_index(
-        index_name, VectorTableName.RAW_CHUNKS
-    )
+    # # Select the index for use
+    # await postgres_db_provider.select_index(
+    #     index_name, VectorTableName.RAW_CHUNKS
+    # )
 
     # Delete the index
     await postgres_db_provider.delete_index(
@@ -109,10 +109,10 @@ async def test_index_operations_invalid_inputs(postgres_db_provider):
         )
 
     # Try to select non-existent index
-    with pytest.raises(Exception):
-        await postgres_db_provider.select_index(
-            "nonexistent_index", VectorTableName.RAW_CHUNKS
-        )
+    # with pytest.raises(Exception):
+    #     await postgres_db_provider.select_index(
+    #         "nonexistent_index", VectorTableName.RAW_CHUNKS
+    #     )
 
 
 @pytest.mark.asyncio

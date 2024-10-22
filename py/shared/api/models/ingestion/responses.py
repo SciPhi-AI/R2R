@@ -68,7 +68,7 @@ class ListVectorIndicesResponse(BaseModel):
 
 
 class DeleteVectorIndexResponse(BaseModel):
-    status: str
+    message: str
 
 
 class SelectVectorIndexResponse(BaseModel):

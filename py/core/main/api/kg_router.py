@@ -383,19 +383,26 @@ class KGRouter(BaseRouter):
         @self.router.delete("/delete_graph_for_collection")
         @self.base_endpoint
         async def delete_graph_for_collection(
-            collection_id: UUID = Body(..., description="Collection ID to delete graph for."), 
-            cascade: bool = Body(default=False, description="Whether to cascade the deletion, and delete entities and triples belonging to the collection."),
+            collection_id: UUID = Body(
+                ..., description="Collection ID to delete graph for."
+            ),
+            cascade: bool = Body(
+                default=False,
+                description="Whether to cascade the deletion, and delete entities and triples belonging to the collection.",
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
-            Delete the graph for a given collection. Note that this endpoint may delete a large amount of data created by the KG pipeline, this deletion is irreversible, and recreating the graph may be an expensive operation. 
+            Delete the graph for a given collection. Note that this endpoint may delete a large amount of data created by the KG pipeline, this deletion is irreversible, and recreating the graph may be an expensive operation.
 
-            Notes: 
-            The endpoint deletes all communities for a given collection. If the cascade flag is set to true, the endpoint also deletes all the entities and triples associated with the collection. 
-            
+            Notes:
+            The endpoint deletes all communities for a given collection. If the cascade flag is set to true, the endpoint also deletes all the entities and triples associated with the collection.
+
             WARNING: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
-            
+
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
-            return await self.service.delete_graph_for_collection(collection_id, cascade)
+            return await self.service.delete_graph_for_collection(
+                collection_id, cascade
+            )

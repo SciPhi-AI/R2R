@@ -535,10 +535,14 @@ class PostgresVectorHandler(VectorHandler):
             table_name_str = f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"  # TODO - Fix bug in vector table naming convention
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.ENTITIES_COLLECTION:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
@@ -759,14 +763,21 @@ class PostgresVectorHandler(VectorHandler):
         Raises:
             ArgError: If an invalid table name is provided
         """
+        print("table_name = ", table_name)
         if table_name == VectorTableName.RAW_CHUNKS:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
             )
             col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+        elif table_name == VectorTableName.ENTITIES_DOCUMENT:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
             col_name = "description_embedding"
+        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            )
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.COMMUNITIES}"
@@ -834,8 +845,15 @@ class PostgresVectorHandler(VectorHandler):
                 f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
             )
             col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
+        elif table_name == VectorTableName.ENTITIES_DOCUMENT:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
+            col_name = "description_embedding"
+        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+            table_name_str = (
+                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
@@ -882,72 +900,6 @@ class PostgresVectorHandler(VectorHandler):
                 await self.connection_manager.execute_query(drop_query)
         except Exception as e:
             raise Exception(f"Failed to delete index: {e}")
-
-    async def select_index(
-        self, index_name: str, table_name: Optional[VectorTableName] = None
-    ) -> None:
-        """
-        Updates planner statistics to prefer using the specified index.
-        Note: This is a best-effort operation as PostgreSQL's query planner
-        ultimately decides which index to use.
-
-        Args:
-            index_name (str): Name of the index to prefer
-            table_name (VectorTableName, optional): Table the index belongs to
-
-        Raises:
-            ArgError: If table name is invalid or index doesn't exist
-        """
-        if table_name == VectorTableName.RAW_CHUNKS:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
-            )
-            col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES:
-            table_name_str = f"{self.project_name}.{VectorTableName.ENTITIES}"
-            col_name = "description_embedding"
-        elif table_name == VectorTableName.COMMUNITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
-            )
-            col_name = "embedding"
-        else:
-            raise ArgError("invalid table name")
-
-        # Extract schema and table name
-        schema_name, table_name_only = table_name_str.split(".")
-
-        # Verify index exists and is a vector index
-        query = """
-        SELECT indexdef
-        FROM pg_indexes
-        WHERE indexname = $1
-        AND schemaname = $2
-        AND tablename = $3
-        AND indexdef LIKE $4
-        """
-
-        result = await self.connection_manager.fetchrow_query(
-            query, (index_name, schema_name, table_name_only, f"%({col_name}%")
-        )
-
-        if not result:
-            raise ArgError(
-                f"Vector index '{index_name}' does not exist on table {table_name_str}"
-            )
-
-        try:
-            # Set higher statistics target for the column using the index
-            await self.connection_manager.execute_query(
-                f"ALTER TABLE {table_name_str} ALTER COLUMN {col_name} SET STATISTICS 1000;"
-            )
-
-            # Analyze the table to update planner statistics
-            await self.connection_manager.execute_query(
-                f"ANALYZE {table_name_str};"
-            )
-        except Exception as e:
-            raise Exception(f"Failed to update index statistics: {str(e)}")
 
     async def get_semantic_neighbors(
         self,
