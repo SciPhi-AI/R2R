@@ -212,7 +212,7 @@ class KGRouter(BaseRouter):
         @self.base_endpoint
         async def get_entities(
             entity_level: Optional[EntityLevel] = Query(
-                default=EntityLevel.COLLECTION,
+                default=EntityLevel.DOCUMENT,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
             ),
             collection_id: Optional[UUID] = Query(
@@ -409,6 +409,9 @@ class KGRouter(BaseRouter):
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
-            return await self.service.delete_graph_for_collection(
+
+            await self.service.delete_graph_for_collection(
                 collection_id, cascade
             )
+
+            return {"message": "Graph deleted successfully."}

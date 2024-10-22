@@ -13,6 +13,11 @@ runs:
       shell: bash
       run: poetry run python tests/integration/runner_cli.py test_kg_create_graph_sample_file_cli
 
+    - name: Deduplicate entities (CLI)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_cli.py test_kg_deduplicate_entities_sample_file_cli
+
     - name: Enrich the graph (CLI)
       working-directory: ./py
       shell: bash
