@@ -108,10 +108,10 @@ class VectorTableName(str, Enum):
     """
 
     RAW_CHUNKS = "vectors"
-    ENTITIES_DOCUMENT = "entity_embedding"
-    ENTITIES_COLLECTION = "entity_collection"
+    ENTITIES_DOCUMENT = "document_entity"
+    ENTITIES_COLLECTION = "collection_entity"
     # TODO: Add support for triples
-    # TRIPLES = "triple_raw"
+    # TRIPLES = "chunk_triple"
     COMMUNITIES = "community_report"
 
     def __str__(self) -> str:

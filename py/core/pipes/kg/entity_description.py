@@ -144,7 +144,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                         document_id,
                     )
                 ],
-                "entity_embedding",
+                "document_entity",
             )
 
             return out_entity.name

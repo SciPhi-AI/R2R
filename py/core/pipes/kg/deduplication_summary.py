@@ -158,7 +158,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
                 collection_id,
                 offset,
                 limit,
-                entity_table_name="entity_collection",
+                entity_table_name="collection_entity",
             )
         )["entities"]
 
@@ -168,7 +168,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             await self.kg_provider.get_entities(
                 collection_id,
                 entity_names=entity_names,
-                entity_table_name="entity_embedding",
+                entity_table_name="document_entity",
             )
         )["entities"]
 
