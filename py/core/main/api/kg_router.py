@@ -18,6 +18,7 @@ from core.base.api.models import (
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
+from shared.abstractions.graph import EntityLevel
 from shared.abstractions.kg import KGRunType
 from shared.utils.base_utils import update_settings_from_dict
 
@@ -55,11 +56,19 @@ class KGRouter(BaseRouter):
             workflow_messages["enrich-graph"] = (
                 "Graph enrichment task queued successfully."
             )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication task queued successfully."
+            )
         else:
             workflow_messages["create-graph"] = (
                 "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
             )
-            workflow_messages["enrich-graph"] = "Graph enriched successfully."
+            workflow_messages["enrich-graph"] = (
+                "Graph enriched successfully. You can view the communities at http://localhost:7272/v2/communities"
+            )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication completed successfully."
+            )
 
         self.orchestration_provider.register_workflows(
             Workflow.KG,
@@ -203,6 +212,10 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
+            entity_level: Optional[EntityLevel] = Query(
+                default=EntityLevel.COLLECTION,
+                description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
+            ),
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve entities from."
             ),
@@ -226,11 +239,19 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
+            if entity_level == EntityLevel.CHUNK:
+                entity_table_name = "entity_raw"
+            elif entity_level == EntityLevel.DOCUMENT:
+                entity_table_name = "entity_embedding"
+            else:
+                entity_table_name = "entity_collection"
+
             return await self.service.get_entities(
                 collection_id,
                 offset,
                 limit,
                 entity_ids,
+                entity_table_name,
             )
 
         @self.router.get("/triples")
@@ -402,4 +423,30 @@ class KGRouter(BaseRouter):
                 documents_limit=documents_limit,
                 chunks_offset=chunks_offset,
                 chunks_limit=chunks_limit,
+
+        @self.router.delete("/delete_graph_for_collection")
+        @self.base_endpoint
+        async def delete_graph_for_collection(
+            collection_id: UUID = Body(
+                ..., description="Collection ID to delete graph for."
+            ),
+            cascade: bool = Body(
+                default=False,
+                description="Whether to cascade the deletion, and delete entities and triples belonging to the collection.",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Delete the graph for a given collection. Note that this endpoint may delete a large amount of data created by the KG pipeline, this deletion is irreversible, and recreating the graph may be an expensive operation.
+
+            Notes:
+            The endpoint deletes all communities for a given collection. If the cascade flag is set to true, the endpoint also deletes all the entities and triples associated with the collection.
+
+            WARNING: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+            return await self.service.delete_graph_for_collection(
+                collection_id, cascade
             )

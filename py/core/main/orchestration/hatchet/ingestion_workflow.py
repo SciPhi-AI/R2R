@@ -161,7 +161,7 @@ def hatchet_ingestion_factory(
 
                 # TODO: Move logic onto the `management service`
                 collection_id = generate_default_user_collection_id(
-                    str(document_info.user_id)
+                    document_info.user_id
                 )
                 await service.providers.database.assign_document_to_collection_relational(
                     document_id=document_info.id,
@@ -486,7 +486,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            self.ingestion_service.providers.database.create_index(
+            await self.ingestion_service.providers.database.create_index(
                 **parsed_data
             )
 
@@ -494,14 +494,36 @@ def hatchet_ingestion_factory(
                 "status": "Vector index creation queued successfully.",
             }
 
+    @orchestration_provider.workflow(name="delete-vector-index", timeout="30m")
+    class HatchetDeleteVectorIndexWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="10m")
+        async def delete_vector_index(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = (
+                IngestionServiceAdapter.parse_delete_vector_index_input(
+                    input_data
+                )
+            )
+
+            await self.ingestion_service.providers.database.delete_index(
+                **parsed_data
+            )
+
+            return {"status": "Vector index deleted successfully."}
+
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
+    delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 
     return {
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "create_vector_index": create_vector_index_workflow,
+        "delete_vector_index": delete_vector_index_workflow,
     }

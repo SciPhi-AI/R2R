@@ -2,20 +2,26 @@ chunk_enrichment:
   template: >
     ## Task:
 
-    You are given a chunk of text. Your task is to enrich it with additional context from additional chunks that form the context of the chunk.
-
-    Please make sure that the additional context you provide is relevant to the chunk.
+    Enrich and refine the given chunk of text using information from the provided context chunks. The goal is to make the chunk more precise and self-contained.
 
     ## Context Chunks:
     {context_chunks}
 
-    ## Chunk:
+    ## Chunk to Enrich:
     {chunk}
 
-    Note that:
-    - You will make the chunk extremely precise and useful
+    ## Instructions:
+    1. Rewrite the chunk in third person.
+    2. Replace all common nouns with appropriate proper nouns. Use specific names, titles, or identifiers instead of general terms.
+    3. Use information from the context chunks to enhance the clarity and precision of the given chunk.
+    4. Ensure the enriched chunk remains independent and self-contained.
+    5. Do not incorporate specific information or details from other chunks into this one.
+    6. Focus on making the chunk more informative and precise within its own scope.
+    7. Maintain the original meaning and intent of the chunk while improving its clarity and usefulness.
+    8. Just output the enriched chunk. Do not include any other text.
 
-    ## Response:
+    ## Enriched Chunk:
+
   input_types:
     chunk: str
     context_chunks: str

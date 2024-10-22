@@ -42,7 +42,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
     async def kg_named_entity_deduplication(
         self, collection_id: UUID, **kwargs
-    ) -> dict:
+    ):
 
         entity_count = await self.kg_provider.get_entity_count(
             collection_id=collection_id, distinct=True
@@ -98,7 +98,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             f"KGEntityDeduplicationPipe: Deduplicated {len(deduplicated_entities)} entities"
         )
 
-        # upsert deduplcated entities in the entity_deduplicated table
+        # upsert deduplcated entities in the entity_collection table
         deduplicated_entities_list = [
             Entity(
                 name=name,
@@ -115,11 +115,11 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         )
         await self.kg_provider.add_entities(
             deduplicated_entities_list,
-            table_name="entity_deduplicated",
+            table_name="entity_collection",
             conflict_columns=["name", "collection_id", "attributes"],
         )
 
-        return {
+        yield {
             "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
             "num_entities": len(deduplicated_entities),
         }
@@ -131,7 +131,8 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[dict, None]:
+    ):
+        # TODO: figure out why the return type AsyncGenerator[dict, None] is not working
 
         collection_id = input.message["collection_id"]
 
@@ -144,9 +145,10 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         generation_config = input.message["generation_config"]
 
         if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
-            yield await self.kg_named_entity_deduplication(
+            async for result in self.kg_named_entity_deduplication(
                 collection_id, **kwargs
-            )
+            ):
+                yield result
         else:
             raise NotImplementedError(
                 f"KGEntityDeduplicationPipe: Deduplication type {kg_entity_deduplication_type} not implemented"

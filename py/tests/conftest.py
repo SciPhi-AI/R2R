@@ -75,12 +75,16 @@ def sample_entries(dimension, num_entries):
 
 
 @pytest.fixture(scope="function")
-def app_config():
+def project_name():
     collection_id = uuid.uuid4()
 
-    random_project_name = f"a_{collection_id.hex}_test_project"
+    return f"test_collection_{collection_id.hex}"
 
-    return AppConfig(project_name=random_project_name)
+
+@pytest.fixture(scope="function")
+def app_config(project_name):
+
+    return AppConfig(project_name=project_name)
 
 
 # Crypto
@@ -116,12 +120,9 @@ async def postgres_db_provider(
 
 
 @pytest.fixture(scope="function")
-def db_config_temporary(app_config):
-    collection_id = uuid.uuid4()
-
-    random_project_name = f"test_collection_{collection_id.hex}"
+def db_config_temporary(project_name, app_config):
     return DatabaseConfig.create(
-        provider="postgres", project_name=random_project_name, app=app_config
+        provider="postgres", project_name=project_name, app=app_config
     )
 
 
@@ -260,7 +261,7 @@ async def postgres_kg_provider(
     await temporary_postgres_db_provider.upsert_documents_overview(
         document_info
     )
-
+    print("config = ", temporary_postgres_db_provider.config)
     kg_provider = PostgresKGProvider(
         kg_config_temporary, temporary_postgres_db_provider, litellm_provider
     )

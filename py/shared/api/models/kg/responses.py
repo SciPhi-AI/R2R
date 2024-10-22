@@ -237,7 +237,7 @@ class KGCommunitiesResponse(R2RSerializable):
         }
 
 
-class KGEntityDeduplicationResponse(R2RSerializable):
+class KGEntityDeduplicationResponse(BaseModel):
     """Response for knowledge graph entity deduplication."""
 
     message: str = Field(
@@ -245,16 +245,10 @@ class KGEntityDeduplicationResponse(R2RSerializable):
         description="The message to display to the user.",
     )
 
-    task_id: UUID = Field(
-        ...,
-        description="The task ID of the entity deduplication request.",
-    )
-
     class Config:
         json_schema_extra = {
             "example": {
                 "message": "Entity deduplication queued successfully.",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
             }
         }
 

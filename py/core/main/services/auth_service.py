@@ -33,7 +33,7 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, email: str, password: str) -> dict[str, str]:
+    async def register(self, email: str, password: str) -> UserResponse:
         return await self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
@@ -74,6 +74,10 @@ class AuthService(Service):
     @telemetry_event("GetCurrentUser")
     async def user(self, token: str) -> UserResponse:
         token_data = await self.providers.auth.decode_token(token)
+        if not token_data.email:
+            raise R2RException(
+                status_code=401, message="Invalid authentication credentials"
+            )
         user = await self.providers.database.get_user_by_email(
             token_data.email
         )
@@ -126,7 +130,7 @@ class AuthService(Service):
         profile_picture: Optional[str] = None,
     ) -> UserResponse:
         user: UserResponse = await self.providers.database.get_user_by_id(
-            str(user_id)
+            user_id
         )
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -155,14 +159,17 @@ class AuthService(Service):
             raise R2RException(status_code=404, message="User not found")
         if not (
             is_superuser
-            or self.providers.auth.crypto_provider.verify_password(  # type: ignore
-                password, user.hashed_password
+            or (
+                user.hashed_password is not None
+                and self.providers.auth.crypto_provider.verify_password(  # type: ignore
+                    password, user.hashed_password
+                )
             )
         ):
             raise R2RException(status_code=400, message="Incorrect password")
         await self.providers.database.delete_user_relational(user_id)
         if delete_vector_data:
-            self.providers.database.delete_user_vector(user_id)
+            await self.providers.database.delete_user_vector(user_id)
 
         return {"message": f"User account {user_id} deleted successfully."}
 

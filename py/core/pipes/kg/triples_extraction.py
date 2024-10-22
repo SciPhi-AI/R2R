@@ -264,7 +264,11 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 data=extraction["text"],
                 metadata=extraction["metadata"],
             )
-            for extraction in chunks_response["results"]
+            for extraction in (
+                await self.database_provider.get_document_chunks(
+                    document_id=document_id
+                )
+            )["results"]
         ]
 
         logger.info(

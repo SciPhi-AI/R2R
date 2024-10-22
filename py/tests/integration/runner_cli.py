@@ -250,17 +250,18 @@ def test_rag_response_stream_sample_file_cli():
 
 def test_kg_create_graph_sample_file_cli():
     print("Testing: KG create graph")
-    print("Calling `poetry run r2r create-graph --run` ")
+    print("Calling `poetry run r2r create-graph --run`")
     output = run_command("poetry run r2r create-graph --run")
 
-    # if "queued" in output:
-    time.sleep(60)
+    if "queued" in output:
+        time.sleep(60)
 
     response = requests.get(
-        "http://localhost:7272/v2/entities",
+        "http://localhost:7272/v2/entities/",
         params={
             "collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
             "limit": 1000,
+            "entity_level": "document",
         },
     )
 
@@ -280,6 +281,37 @@ def test_kg_create_graph_sample_file_cli():
     assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_deduplicate_entities_sample_file_cli():
+    print("Testing: KG deduplicate entities")
+    output = run_command("poetry run r2r deduplicate-entities")
+
+    print(output)
+
+    if "queued" in output:
+        time.sleep(45)
+
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={
+            "collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+            "entity_level": "collection",
+        },
+    )
+
+    if response.status_code != 200:
+        print("KG deduplicate entities test failed: Communities not created")
+        sys.exit(1)
+
+    entities = response.json()["results"]["entities"]
+    assert len(entities) >= 1
+
+    entities_list = [ele["name"] for ele in entities]
+    assert "ARISTOTLE" in entities_list
+
+    print("KG deduplicate entities test passed")
     print("~" * 100)
 
 

@@ -2,10 +2,15 @@ from .auth import AuthConfig, AuthProvider
 from .base import AppConfig, Provider, ProviderConfig
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
+    CollectionHandler,
     DatabaseConfig,
+    DatabaseConnectionManager,
     DatabaseProvider,
+    DocumentHandler,
     PostgresConfigurationSettings,
-    VectorQuantizationType,
+    TokenHandler,
+    UserHandler,
+    VectorHandler,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
@@ -31,10 +36,15 @@ __all__ = [
     "CryptoConfig",
     "CryptoProvider",
     # Database providers
+    "DatabaseConnectionManager",
+    "DocumentHandler",
+    "CollectionHandler",
+    "TokenHandler",
+    "UserHandler",
+    "VectorHandler",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
-    "VectorQuantizationType",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

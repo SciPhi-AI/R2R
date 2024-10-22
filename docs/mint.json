@@ -317,10 +317,12 @@
       "group": "Knowledge Graph",
       "pages": [
         "api-reference/endpoint/create_graph",
+        "api-reference/endpoint/deduplicate_entities",
         "api-reference/endpoint/enrich_graph",
         "api-reference/endpoint/entities",
         "api-reference/endpoint/triples",
-        "api-reference/endpoint/communities"
+        "api-reference/endpoint/communities",
+        "api-reference/endpoint/delete_entities_and_triples"
       ]
     },
     {

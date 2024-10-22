@@ -28,6 +28,7 @@ from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 logger = logging.getLogger()
 
 
+# TODO - Refactor this to `PostgresKGHandler`
 class PostgresKGProvider(KGProvider):
 
     def __init__(
@@ -52,6 +53,9 @@ class PostgresKGProvider(KGProvider):
                 "NetworkX is not installed. Please install it to use this module."
             ) from exc
 
+    def _get_table_name(self, base_name: str) -> str:
+        return f"{self.db_provider.project_name}.{base_name}"
+
     async def initialize(self):
         logger.info(
             f"Initializing PostgresKGProvider for project {self.db_provider.project_name}"
@@ -64,7 +68,9 @@ class PostgresKGProvider(KGProvider):
     async def execute_query(
         self, query: str, params: Optional[list[Any]] = None
     ) -> Any:
-        return await self.db_provider.execute_query(query, params)
+        return await self.db_provider.connection_manager.execute_query(
+            query, params
+        )
 
     async def execute_many(
         self,
@@ -72,17 +78,18 @@ class PostgresKGProvider(KGProvider):
         params: Optional[list[tuple[Any]]] = None,
         batch_size: int = 1000,
     ) -> Any:
-        return await self.db_provider.execute_many(query, params, batch_size)
+        return await self.db_provider.connection_manager.execute_many(
+            query, params, batch_size
+        )
 
     async def fetch_query(
         self,
         query: str,
         params: Optional[Any] = None,  # TODO: make this strongly typed
     ) -> Any:
-        return await self.db_provider.fetch_query(query, params)
-
-    def _get_table_name(self, base_name: str) -> str:
-        return self.db_provider._get_table_name(base_name)
+        return await self.db_provider.connection_manager.fetch_query(
+            query, params
+        )
 
     async def create_tables(
         self, embedding_dim: int, quantization_type: VectorQuantizationType
@@ -141,7 +148,7 @@ class PostgresKGProvider(KGProvider):
 
         # deduplicated entities table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_deduplicated")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_collection")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
@@ -463,7 +470,7 @@ class PostgresKGProvider(KGProvider):
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_deduplicated"
+            table_name = "entity_collection"
         elif search_type == "__Relationship__":
             table_name = "triple_raw"
         elif search_type == "__Community__":
@@ -754,7 +761,7 @@ class PostgresKGProvider(KGProvider):
                 e.name AS name,
                 e.description AS description
             FROM node_triple_ids nti
-            JOIN {self._get_table_name("entity_embedding")} e ON e.name = nti.node;
+            JOIN {self._get_table_name("entity_collection")} e ON e.name = nti.node;
         """
         entities = await self.fetch_query(QUERY, [community_number])
         entities = [Entity(**entity) for entity in entities]
@@ -827,6 +834,7 @@ class PostgresKGProvider(KGProvider):
                 DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1);
                 DELETE FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
                 DELETE FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("entity_collection")} WHERE document_id = ANY($1);
             """
 
         await self.execute_query(QUERY, [document_ids])
@@ -915,7 +923,7 @@ class PostgresKGProvider(KGProvider):
         document_ids = [
             doc.id
             for doc in (
-                await self.db_provider.documents_in_collection(collection_id)
+                await self.db_provider.documents_in_collection(collection_id)  # type: ignore
             )["results"]
         ]
 
@@ -1001,7 +1009,7 @@ class PostgresKGProvider(KGProvider):
         document_ids = [
             doc.id
             for doc in (
-                await self.db_provider.documents_in_collection(collection_id)
+                await self.db_provider.documents_in_collection(collection_id)  # type: ignore
             )["results"]
         ]
 
@@ -1103,7 +1111,7 @@ class PostgresKGProvider(KGProvider):
             params.append(offset)
             offset_limit_clause = f"OFFSET ${len(params)}"
 
-        if entity_table_name == "entity_deduplicated":
+        if entity_table_name == "entity_collection":
             # entity deduplicated table has document_ids, not document_id.
             # we directly use the collection_id to get the entities list.
             query = f"""
@@ -1130,9 +1138,6 @@ class PostgresKGProvider(KGProvider):
         results = await self.fetch_query(query, params)
 
         entities = [Entity(**entity) for entity in results]
-
-        logger.info(f"Params: {params}")
-        logger.info(f"Entities: {entities}")
 
         total_entries = await self.get_entity_count(
             collection_id=collection_id, entity_table_name=entity_table_name
@@ -1209,11 +1214,11 @@ class PostgresKGProvider(KGProvider):
         conditions = []
         params = []
 
-        if entity_table_name == "entity_deduplicated":
+        if entity_table_name == "entity_collection":
 
             if document_id:
                 raise ValueError(
-                    "document_id is not supported for entity_deduplicated table"
+                    "document_id is not supported for entity_collection table"
                 )
 
             if collection_id:
@@ -1282,7 +1287,7 @@ class PostgresKGProvider(KGProvider):
     async def update_entity_descriptions(self, entities: list[Entity]):
 
         query = f"""
-            UPDATE {self._get_table_name("entity_deduplicated")}
+            UPDATE {self._get_table_name("entity_collection")}
             SET description = $3, description_embedding = $4
             WHERE name = $1 AND collection_id = $2
         """

@@ -14,10 +14,14 @@ from core.base.providers import (
 )
 from shared.abstractions import Entity, GenerationConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
-class KGEntityDeduplicationSummaryPipe(AsyncPipe):
+class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
+
+    class Input(AsyncPipe.Input):
+        message: dict
+
     def __init__(
         self,
         kg_provider: KGProvider,
@@ -108,7 +112,10 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         for i, entity in enumerate(entities_batch):
             entity.description_embedding = str(embeddings[i])  # type: ignore
             entity.collection_id = collection_id
-            entity.attributes = {}
+
+        logger.info(
+            f"Upserting {len(entities_batch)} entities for collection {collection_id}"
+        )
 
         result = await self.kg_provider.update_entity_descriptions(
             entities_batch,
@@ -118,7 +125,8 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
             f"Upserted {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        return result
+        for i, entity in enumerate(entities_batch):
+            yield entity
 
     async def _run_logic(
         self,
@@ -127,7 +135,8 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
+    ):
+        # TODO: figure out why the return type AsyncGenerator[dict, None] is not working
 
         collection_id = input.message["collection_id"]
         offset = input.message["offset"]
@@ -149,21 +158,11 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
                 collection_id,
                 offset,
                 limit,
-                entity_table_name="entity_deduplicated",
+                entity_table_name="entity_collection",
             )
         )["entities"]
 
-        logger.info(f"Entities: {entities}")
-
-        logger.info(
-            f"Retrieved {len(entities)} entities for collection {collection_id}"
-        )
-
         entity_names = [entity.name for entity in entities]
-
-        logger.info(
-            f"Retrieved {len(entity_names)} entity names for collection {collection_id}"
-        )
 
         entity_descriptions = (
             await self.kg_provider.get_entities(
@@ -172,18 +171,6 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
                 entity_table_name="entity_embedding",
             )
         )["entities"]
-
-        entity_descriptions_names = [
-            entity.name for entity in entity_descriptions
-        ]
-
-        logger.info(
-            f"Retrieved {entity_descriptions_names} entity descriptions names for collection {collection_id}"
-        )
-
-        logger.info(
-            f"Retrieved {len(entity_descriptions)} entity descriptions for collection {collection_id}"
-        )
 
         entity_descriptions_dict: dict[str, list[str]] = {}
         for entity_description in entity_descriptions:
@@ -194,12 +181,11 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
             )
 
         logger.info(
-            f"Merging entity descriptions for collection {collection_id}"
+            f"Retrieved {len(entity_descriptions)} entity descriptions for collection {collection_id}"
         )
 
-        logger.info(f"Entity descriptions dict: {entity_descriptions_dict}")
-
         tasks = []
+        entities_batch = []
         for entity in entities:
             tasks.append(
                 self._merge_entity_descriptions(
@@ -209,24 +195,25 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe):
                 )
             )
 
-        logger.info(
-            f"Merged {len(tasks)} entity descriptions for collection {collection_id}"
-        )
+            if len(tasks) == 32:
+                entities_batch = await asyncio.gather(*tasks)
+                # prepare and upsert entities
 
-        entities_batch = []
-        for async_result in asyncio.as_completed(tasks):
-            result = await async_result
-            yield result
-
-            entities_batch.append(result)
-
-            if len(entities_batch) == 32:
-                await self._prepare_and_upsert_entities(
+                async for result in self._prepare_and_upsert_entities(
                     entities_batch, collection_id
-                )
-                entities_batch = []
+                ):
+                    yield result
 
-        if entities_batch:
-            await self._prepare_and_upsert_entities(
+                tasks = []
+
+        if tasks:
+
+            entities_batch = await asyncio.gather(*tasks)
+            for entity in entities_batch:
+                yield entity
+
+            # prepare and upsert entities
+            async for result in self._prepare_and_upsert_entities(
                 entities_batch, collection_id
-            )
+            ):
+                yield result
