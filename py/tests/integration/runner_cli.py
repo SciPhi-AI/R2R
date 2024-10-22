@@ -286,7 +286,7 @@ def test_kg_create_graph_sample_file_cli():
 
 def test_kg_deduplicate_entities_sample_file_cli():
     print("Testing: KG deduplicate entities")
-    output = run_command("poetry run r2r deduplicate-entities")
+    output = run_command("poetry run r2r deduplicate-entities --run")
 
     print(output)
 

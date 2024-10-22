@@ -712,7 +712,8 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     print("Testing: KG deduplicate entities")
 
     entities_deduplication_result = client.deduplicate_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        run_type="run",
     )
 
     if "queued" in entities_deduplication_result["results"]["message"]:
