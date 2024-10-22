@@ -66,25 +66,25 @@ def ingest_files_from_urls(client, urls):
 @click.option(
     "--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string"
 )
+@click.option(
+    "--run-without-orchestration", is_flag=True, help="Run with orchestration"
+)
 @pass_context
-def ingest_files(ctx, file_paths, document_ids, metadatas):
+def ingest_files(
+    ctx, file_paths, document_ids, metadatas, run_without_orchestration
+):
     """Ingest files into R2R."""
     client = ctx.obj
     with timer():
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
-        response = client.ingest_files(file_paths, metadatas, document_ids)
-    click.echo(json.dumps(response, indent=2))
-
-
-@cli.command()
-@click.argument("document_ids", nargs=-1, required=True, type=click.UUID)
-@pass_context
-def retry_ingest_files(ctx, document_ids):
-    """Retry ingestion for failed documents."""
-    client = ctx.obj
-    with timer():
-        response = client.retry_ingest_files(document_ids)
+        run_with_orchestration = not run_without_orchestration
+        response = client.ingest_files(
+            file_paths,
+            metadatas,
+            document_ids,
+            run_with_orchestration=run_with_orchestration,
+        )
     click.echo(json.dumps(response, indent=2))
 
 
@@ -100,8 +100,13 @@ def retry_ingest_files(ctx, document_ids):
 @click.option(
     "--metadatas", type=JSON, help="Metadatas for updating as a JSON string"
 )
+@click.option(
+    "--run-without-orchestration", is_flag=True, help="Run with orchestration"
+)
 @pass_context
-def update_files(ctx, file_paths, document_ids, metadatas):
+def update_files(
+    ctx, file_paths, document_ids, metadatas, run_without_orchestration
+):
     """Update existing files in R2R."""
     client = ctx.obj
     with timer():
@@ -118,8 +123,13 @@ def update_files(ctx, file_paths, document_ids, metadatas):
                 raise click.BadParameter(
                     "Metadatas must be a JSON string representing a list of dictionaries or a single dictionary"
                 )
-
-        response = client.update_files(file_paths, document_ids, metadatas)
+        run_with_orchestration = not run_without_orchestration
+        response = client.update_files(
+            file_paths,
+            document_ids,
+            metadatas,
+            run_with_orchestration=run_with_orchestration,
+        )
     click.echo(json.dumps(response, indent=2))
 
 

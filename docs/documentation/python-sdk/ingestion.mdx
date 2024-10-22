@@ -216,6 +216,12 @@ Refer to the [ingestion configuration](/documentation/configuration/ingestion/pa
       Whether to keep XML tags in the output.
     </ParamField>
   </Expandable>
+
+  <ParamField path="run_with_orchestration" type="Optional[bool]">
+    Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
+  </ParamField>
+
+
 </ParamField>
 
 ### Ingest Chunks
@@ -262,6 +268,9 @@ ingest_response = client.ingest_chunks(
   An optional metadata dictionary for the document.
 </ParamField>
 
+<ParamField path="run_with_orchestration" type="Optional[bool]">
+  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
+</ParamField>
 
 
 ### Update Files
@@ -436,6 +445,10 @@ The ingestion configuration can be customized analogously to the ingest files en
       Whether to keep XML tags in the output.
     </ParamField>
   </Expandable>
+
+  <ParamField path="run_with_orchestration" type="Optional[bool]">
+    Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
+  </ParamField>
 </ParamField>
 
 

@@ -1,9 +1,11 @@
 # tests/core/providers/kg/test_kg_logic.py
-import pytest
 import random
 import uuid
+
+import pytest
+
+from core.base import Community, CommunityReport, Entity, KGExtraction, Triple
 from core.providers.kg.postgres import PostgresKGProvider
-from core.base import Entity, Triple, Community, CommunityReport, KGExtraction
 from shared.abstractions.vector import VectorQuantizationType
 
 

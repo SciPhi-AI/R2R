@@ -105,6 +105,12 @@ class IngestionRouter(BaseRouter):
                 None,
                 description=ingest_files_descriptions.get("ingestion_config"),
             ),
+            run_with_orchestration: Optional[bool] = Form(
+                True,
+                description=ingest_files_descriptions.get(
+                    "run_with_orchestration"
+                ),
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:  # type: ignore
             """
@@ -161,17 +167,36 @@ class IngestionRouter(BaseRouter):
                     file_content,
                     file_data["content_type"],
                 )
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
-                    "ingest-files",
-                    {"request": workflow_input},
-                    options={
-                        "additional_metadata": {
+                if run_with_orchestration:
+                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                        "ingest-files",
+                        {"request": workflow_input},
+                        options={
+                            "additional_metadata": {
+                                "document_id": str(document_id),
+                            }
+                        },
+                    )
+                    raw_message["document_id"] = str(document_id)
+                    messages.append(raw_message)
+                else:
+                    logger.info(
+                        f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
+                    )
+                    # TODO - Clean up implementation logic here to be more explicitly `synchronous`
+                    from core.main.orchestration import (
+                        simple_ingestion_factory,
+                    )
+
+                    simple_ingestor = simple_ingestion_factory(self.service)
+                    await simple_ingestor["ingest-files"](workflow_input)
+                    messages.append(
+                        {
+                            "message": "Ingestion task completed successfully.",
                             "document_id": str(document_id),
+                            "task_id": None,
                         }
-                    },
-                )
-                raw_message["document_id"] = str(document_id)
-                messages.append(raw_message)
+                    )
 
             return messages  # type: ignore
 
@@ -198,6 +223,12 @@ class IngestionRouter(BaseRouter):
             ingestion_config: Optional[Json[dict]] = Form(
                 None,
                 description=ingest_files_descriptions.get("ingestion_config"),
+            ),
+            run_with_orchestration: Optional[bool] = Form(
+                True,
+                description=ingest_files_descriptions.get(
+                    "run_with_orchestration"
+                ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedUpdateResponse:
@@ -261,13 +292,26 @@ class IngestionRouter(BaseRouter):
                 "is_update": True,
             }
 
-            raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
-                "update-files", {"request": workflow_input}, {}
-            )
-            raw_message["message"] = "Update task queued successfully."
-            raw_message["document_ids"] = workflow_input["document_ids"]
+            if run_with_orchestration:
+                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    "update-files", {"request": workflow_input}, {}
+                )
+                raw_message["message"] = "Update task queued successfully."
+                raw_message["document_ids"] = workflow_input["document_ids"]
 
-            return raw_message  # type: ignore
+                return raw_message  # type: ignore
+            else:
+                logger.info("Running update without orchestration.")
+                # TODO - Clean up implementation logic here to be more explicitly `synchronous`
+                from core.main.orchestration import simple_ingestion_factory
+
+                simple_ingestor = simple_ingestion_factory(self.service)
+                await simple_ingestor["update-files"](workflow_input)
+                return {  # type: ignore
+                    "message": "Update task completed successfully.",
+                    "document_ids": workflow_input["document_ids"],
+                    "task_id": None,
+                }
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})
         ingest_chunks_descriptions = ingest_chunks_extras.get(
@@ -289,6 +333,12 @@ class IngestionRouter(BaseRouter):
             metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
+            run_with_orchestration: Optional[bool] = Form(
+                True,
+                description=ingest_files_descriptions.get(
+                    "run_with_orchestration"
+                ),
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
             """
@@ -298,7 +348,6 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest chunks for their own access. More expansive collection permissioning is under development.
             """
-
             if document_id:
                 try:
                     document_uuid = UUID(document_id)
@@ -318,19 +367,31 @@ class IngestionRouter(BaseRouter):
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
             }
+            if run_with_orchestration:
+                raw_message = await self.orchestration_provider.run_workflow(
+                    "ingest-chunks",
+                    {"request": workflow_input},
+                    options={
+                        "additional_metadata": {
+                            "document_id": str(document_uuid),
+                        }
+                    },
+                )
+                raw_message["document_id"] = str(document_uuid)
 
-            raw_message = await self.orchestration_provider.run_workflow(
-                "ingest-chunks",
-                {"request": workflow_input},
-                options={
-                    "additional_metadata": {
-                        "document_id": str(document_uuid),
-                    }
-                },
-            )
-            raw_message["document_id"] = str(document_uuid)
+                return [raw_message]  # type: ignore
+            else:
+                logger.info("Running ingest chunks without orchestration.")
+                # TODO - Clean up implementation logic here to be more explicitly `synchronous`
+                from core.main.orchestration import simple_ingestion_factory
 
-            return [raw_message]  # type: ignore
+                simple_ingestor = simple_ingestion_factory(self.service)
+                await simple_ingestor["ingest-chunks"](workflow_input)
+                return {  # type: ignore
+                    "message": "Ingestion task completed successfully.",
+                    "document_id": str(document_uuid),
+                    "task_id": None,
+                }
 
         @self.router.post("/create_vector_index")
         @self.base_endpoint
