@@ -167,11 +167,6 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                # add contextual chunk
-                logger.info(
-                    f"service.providers.ingestion.config: {service.providers.ingestion.config}"
-                )
-
                 chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",

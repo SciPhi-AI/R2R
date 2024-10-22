@@ -104,7 +104,7 @@ class VectorTableName(str, Enum):
     This enum represents the different tables where we store vectors.
     """
 
-    RAW_CHUNKS = "vector"
+    RAW_CHUNKS = "vectors"
     ENTITIES_DOCUMENT = "entity_embedding"
     ENTITIES_COLLECTION = "entity_collection"
     # TODO: Add support for triples

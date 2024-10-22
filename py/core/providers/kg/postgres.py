@@ -966,7 +966,7 @@ class PostgresKGProvider(KGProvider):
 
         query = f"""
             SELECT document_id, COUNT(*) as chunk_count
-            FROM {self._get_table_name("vector")}
+            FROM {self._get_table_name("vectors")}
             WHERE document_id = ANY($1)
             GROUP BY document_id
         """

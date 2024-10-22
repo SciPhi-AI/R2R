@@ -295,42 +295,6 @@ This step will create a knowledge graph with nodes and relationships. You can ge
 - Entities: [Entities](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=document)
 - Triples: [Triples](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=document)
 
-
-## Entity Deduplication
-
-Note that the entities and triples are created at the document level. This means that if you have multiple documents with the same entity, the entity will be duplicated for each document.
-
-To deduplicate the entities, you can run the `deduplicate-entities` endpoint. This endpoint will merge duplicate entities and delete the duplicate entities.
-
-<Tabs>
-<Tab title="CLI">
-```bash
-r2r deduplicate-entities --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
-
-# Example Response
-[{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
-```
-</Tab>
-
-<Tab title="SDK">
-```python
-from r2r import R2RClient
-
-client = R2RClient("http://localhost:7272")
-client.deduplicate_entities(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")
-
-# Example Response
-[{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
-```
-</Tab>
-</Tabs>
-
-You can check the status of the deduplication task using the hatchet dashboard on http://localhost:7274. And once that is complete, check the endpoints at a entity_level = collection to see the deduplicated entities and triples.
-
-- Entities: [Entities](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
-- Triples: [Triples](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
-
-
 ## Graph Enrichment
 
 Now we have a searchable graph, but this graph is not enriched yet. It does not have any community level information. We will now run the enrichment step.
@@ -458,3 +422,8 @@ In conclusion, integrating R2R with GraphRAG significantly enhances the capabili
 In essence, combining R2R with GraphRAG empowers your RAG applications to deliver more intelligent, context-aware, and insightful responses, making it a powerful tool for advanced information retrieval and analysis tasks.
 
 Feel free to reach out to us at founders@sciphi.ai if you have any questions or need further assistance.
+
+
+# Advanced GraphRAG Techniques
+
+If you want to learn more about the advanced techniques that we use in GraphRAG, please refer to the [Advanced GraphRAG Techniques](./advanced-graphrag.mdx) page.
