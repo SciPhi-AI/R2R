@@ -107,7 +107,7 @@ class VectorTableName(str, Enum):
     # {r2r_project_name}.{r2r_project_name} due to a bug in the vector class.
     """
 
-    RAW_CHUNKS = "vectors"
+    VECTORS = "vectors"
     ENTITIES_DOCUMENT = "document_entity"
     ENTITIES_COLLECTION = "collection_entity"
     # TODO: Add support for triples
