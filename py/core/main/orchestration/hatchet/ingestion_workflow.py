@@ -162,11 +162,6 @@ def hatchet_ingestion_factory(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
-                await self.ingestion_service.update_document_status(
-                    document_info,
-                    status=IngestionStatus.SUCCESS,
-                )
-
                 chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",
@@ -178,6 +173,16 @@ def hatchet_ingestion_factory(
                 ):
 
                     logger.info("Enriching document with contextual chunks")
+
+                    # TODO: the status updating doesn't work because document_info doesn't contain information about collection IDs
+                    # we don't update the document_info when we assign document_to_collection_relational and document_to_collection_vector
+                    # hack: get document_info again from DB
+                    document_info = (
+                        await self.ingestion_service.providers.database.get_documents_overview(
+                            filter_user_ids=[document_info.user_id],
+                            filter_document_ids=[document_info.id],
+                        )
+                    )["results"][0]
 
                     await self.ingestion_service.update_document_status(
                         document_info,
