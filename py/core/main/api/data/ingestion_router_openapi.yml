@@ -28,6 +28,7 @@ ingest_files:
     metadatas: "An optional list of JSON metadata to affix to each file"
     document_ids: "An optional list of document ids for each file. If not provided, the system will generate a unique document id via the `generate_document_id` method."
     ingestion_config: "An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration."
+    run_with_orchestration: "Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result."
 
 update_files:
   openapi_extra:
@@ -56,6 +57,7 @@ update_files:
     document_ids: "An optional list of document ids for each file. If not provided, the system will attempt to generate the corresponding unique from the `generate_document_id` method."
     metadatas: "An optional list of JSON metadata to affix to each file"
     ingestion_config: "JSON string for chunking configuration override"
+    run_with_orchestration: "Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result."
 
 ingest_chunks:
   openapi_extra:
@@ -105,3 +107,4 @@ ingest_chunks:
     chunks: "A list of text chunks to ingest into the system."
     document_id: "An optional document id to associate the chunks with. If not provided, a unique document id will be generated."
     metadata: "Optional JSON metadata to associate with the ingested chunks."
+    run_with_orchestration: "Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result."

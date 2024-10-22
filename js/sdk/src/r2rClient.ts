@@ -479,6 +479,7 @@ export class r2rClient {
       document_ids?: string[];
       user_ids?: (string | null)[];
       ingestion_config?: Record<string, any>;
+      run_with_orchestration?: boolean;
     } = {},
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -544,6 +545,7 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+        run_with_orchestration: options.run_with_orchestration ? "true" : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -581,6 +583,7 @@ export class r2rClient {
       document_ids: string[];
       metadatas?: Record<string, any>[];
       ingestion_config?: Record<string, any>;
+      run_with_orchestration?: boolean;
     },
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -621,6 +624,7 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+        run_with_orchestration: options.run_with_orchestration ? "true" : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -650,15 +654,20 @@ export class r2rClient {
     chunks: RawChunk[],
     documentId?: string,
     metadata?: Record<string, any>,
+    run_with_orchestration?: boolean,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
+    let inputData = {
+      chunks: chunks,
+      document_id: documentId,
+      metadata: metadata,
+    };
+    if (run_with_orchestration !== undefined) {
+      inputData.run_with_orchestration = run_with_orchestration;
+    }
 
     return await this._makeRequest("POST", "ingest_chunks", {
-      data: {
-        chunks: chunks,
-        document_id: documentId,
-        metadata: metadata,
-      },
+      data: inputData,
       headers: {
         "Content-Type": "application/json",
       },
