@@ -604,15 +604,19 @@ class PostgresVectorHandler(VectorHandler):
 
         try:
             if concurrently:
-                # For concurrent index creation, we need to execute outside a transaction
-                await self.connection_manager.execute_query(
-                    create_index_sql, isolation_level="AUTOCOMMIT"
-                )
+                async with (
+                    self.connection_manager.pool.get_connection() as conn  # type: ignore
+                ):
+                    # Disable automatic transaction management
+                    await conn.execute(
+                        "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                    )
+                    await conn.execute(create_index_sql)
             else:
+                # Non-concurrent index creation can use normal query execution
                 await self.connection_manager.execute_query(create_index_sql)
         except Exception as e:
             raise Exception(f"Failed to create index: {e}")
-
         return None
 
     def _build_filters(
@@ -763,7 +767,6 @@ class PostgresVectorHandler(VectorHandler):
         Raises:
             ArgError: If an invalid table name is provided
         """
-        print("table_name = ", table_name)
         if table_name == VectorTableName.RAW_CHUNKS:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
@@ -893,9 +896,14 @@ class PostgresVectorHandler(VectorHandler):
 
         try:
             if concurrently:
-                await self.connection_manager.execute_query(
-                    drop_query, isolation_level="AUTOCOMMIT"
-                )
+                async with (
+                    self.connection_manager.pool.get_connection() as conn  # type: ignore
+                ):
+                    # Disable automatic transaction management
+                    await conn.execute(
+                        "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                    )
+                    await conn.execute(drop_query)
             else:
                 await self.connection_manager.execute_query(drop_query)
         except Exception as e:
