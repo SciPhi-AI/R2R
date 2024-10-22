@@ -166,6 +166,44 @@ class KGMixins:
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
 
+    async def get_tuned_prompt(
+        self,
+        prompt_name: str,
+        collection_id: Optional[str] = None,
+        documents_offset: Optional[int] = 0,
+        documents_limit: Optional[int] = 100,
+        chunk_offset: Optional[int] = 0,
+        chunk_limit: Optional[int] = 100,
+    ) -> dict:
+        """
+        Tune the GraphRAG prompt for a given collection.
+
+        The tuning process provides an LLM with chunks from each document in the collection. The relative sample size can therefore be controlled by adjusting the document and chunk limits.
+
+        Args:
+            prompt_name (str): The name of the prompt to tune.
+            collection_id (str): The ID of the collection to tune the prompt for.
+            documents_offset (Optional[int]): The offset for pagination of documents.
+            documents_limit (Optional[int]): The limit for pagination of documents.
+            chunk_offset (Optional[int]): The offset for pagination of chunks.
+            chunk_limit (Optional[int]): The limit for pagination of chunks.
+
+        Returns:
+            dict: A dictionary containing the tuned prompt.
+        """
+        params = {
+            "prompt_name": prompt_name,
+            "collection_id": collection_id,
+            "documents_offset": documents_offset,
+            "documents_limit": documents_limit,
+            "chunk_offset": chunk_offset,
+            "chunk_limit": chunk_limit,
+        }
+
+        params = {k: v for k, v in params.items() if v is not None}
+
+        return await self._make_request("GET", "tuned_prompt", params=params)  # type: ignore
+
     async def deduplicate_entities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
