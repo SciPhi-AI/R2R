@@ -58,7 +58,7 @@ chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
   [ingestion.chunk_enrichment_settings]
-    enable_chunk_enrichment = true # disabled by default
+    enable_chunk_enrichment = false # disabled by default
     strategies = ["semantic", "neighborhood"]
     forward_chunks = 3
     backward_chunks = 3
