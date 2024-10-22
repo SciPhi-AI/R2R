@@ -105,7 +105,7 @@ class VectorTableName(str, Enum):
     """
 
 
-    TEXT_CHUNKS = "vector"
+    RAW_CHUNKS = "vector"
     ENTITIES_DOCUMENT = "entity_embedding"
     ENTITIES_COLLECTION = "entity_collection"
     # TODO: Add support for triples

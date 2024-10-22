@@ -531,8 +531,8 @@ class PostgresVectorHandler(VectorHandler):
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        if table_name == VectorTableName.TEXT_CHUNKS:
-            table_name_str = f"{self.project_name}.{VectorTableName.TEXT_CHUNKS}"
+        if table_name == VectorTableName.RAW_CHUNKS:
+            table_name_str = f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
