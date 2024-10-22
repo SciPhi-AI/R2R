@@ -138,7 +138,7 @@ services:
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_INSECURE: "t"
       SERVER_GRPC_BROADCAST_ADDRESS: "hatchet-engine:7077"
-      SERVER_GRPC_MAX_MSG_SIZE: 13421772800
+      SERVER_GRPC_MAX_MSG_SIZE: 134217728
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
@@ -165,7 +165,7 @@ services:
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_PORT: "7077"
       SERVER_GRPC_INSECURE: "t"
-      SERVER_GRPC_MAX_MSG_SIZE: 13421772800
+      SERVER_GRPC_MAX_MSG_SIZE: 134217728
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
