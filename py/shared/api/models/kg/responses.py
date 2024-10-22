@@ -18,7 +18,7 @@ class KGCreationResponse(BaseModel):
         description="The task ID of the KG creation request.",
     )
 
-    class Config:
+class Config:
         json_schema_extra = {
             "example": {
                 "message": "Graph creation queued successfully.",
@@ -97,6 +97,40 @@ class KGCreationEstimationResponse(R2RSerializable):
     estimated_cost_in_usd: Optional[str] = Field(
         default=None,
         description="The estimated cost to run the graph creation process in USD.",
+    )
+
+
+class KGDeduplicationEstimationResponse(R2RSerializable):
+    """Response for knowledge graph deduplication estimation."""
+
+    message: str = Field(
+        default="",
+        description="The message to display to the user.",
+    )
+
+    num_entities: Optional[int] = Field(
+        default=None,
+        description="The number of entities in the collection.",
+    )
+
+    estimated_llm_calls: Optional[str] = Field(
+        default=None,
+        description="The estimated number of LLM calls.",
+    )
+
+    estimated_total_in_out_tokens_in_millions: Optional[str] = Field(
+        default=None,
+        description="The estimated total number of input and output tokens in millions.",
+    )
+
+    estimated_cost_in_usd: Optional[float] = Field(
+        default=None,
+        description="The estimated cost in USD.",
+    )
+
+    estimated_total_time_in_minutes: Optional[float] = Field(
+        default=None,
+        description="The estimated time in minutes.",
     )
 
 

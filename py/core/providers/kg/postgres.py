@@ -17,11 +17,12 @@ from core.base import (
     KGProvider,
     Triple,
 )
-from shared.abstractions import KGCreationSettings, KGEnrichmentSettings
+from shared.abstractions import KGCreationSettings, KGEnrichmentSettings, KGEntityDeduplicationSettings
 from shared.abstractions.vector import VectorQuantizationType
 from shared.api.models.kg.responses import (
     KGCreationEstimationResponse,
     KGEnrichmentEstimationResponse,
+    KGDeduplicationEstimationResponse,
 )
 from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
@@ -1293,3 +1294,48 @@ class PostgresKGProvider(KGProvider):
         ]
 
         await self.execute_many(query, inputs)  # type: ignore
+
+    async def get_deduplication_estimate(self, collection_id: UUID, kg_deduplication_settings: KGEntityDeduplicationSettings):
+        # number of documents in collection
+        query = f"""
+            SELECT name, count(name)
+            FROM {self._get_table_name("entity_document")}
+            WHERE document_id = ANY(
+                SELECT document_id FROM {self._get_table_name("document_info")}
+                WHERE $1 = ANY(collection_ids)
+            )
+            GROUP BY name
+            HAVING count(name) >= 5
+        """
+        entities = await self.fetch_query(query, [collection_id])
+        num_entities = len(entities)
+
+        estimated_llm_calls = num_entities
+        estimated_total_in_out_tokens_in_millions = (
+            estimated_llm_calls * 1000 / 1000000,
+            estimated_llm_calls * 5000 / 1000000,
+        )
+        estimated_cost_in_usd = (
+            estimated_total_in_out_tokens_in_millions[0]
+            * llm_cost_per_million_tokens(
+                kg_deduplication_settings.generation_config.model
+            ),
+            estimated_total_in_out_tokens_in_millions[1]
+            * llm_cost_per_million_tokens(
+                kg_deduplication_settings.generation_config.model
+            ),
+        )
+
+        estimated_total_time_in_minutes = (
+            estimated_total_in_out_tokens_in_millions[0] * 10 / 60,
+            estimated_total_in_out_tokens_in_millions[1] * 10 / 60,
+        )
+
+        return KGDeduplicationEstimationResponse(
+            message="Ran Deduplication Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the Deduplication process, run `deduplicate-entities` with `--run` in the cli, or `run_type=\"run\"` in the client.",
+            num_entities=num_entities,
+            estimated_llm_calls=self._get_str_estimation_output(estimated_llm_calls),
+            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(estimated_total_in_out_tokens_in_millions),
+            estimated_cost_in_usd=self._get_str_estimation_output(estimated_cost_in_usd),
+            estimated_total_time_in_minutes=self._get_str_estimation_output(estimated_total_time_in_minutes),
+        )
