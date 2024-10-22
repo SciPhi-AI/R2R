@@ -1,11 +1,18 @@
-from core.base import AsyncPipe
-import pytest
-import uuid
 import random
+import uuid
 
-from shared.abstractions.vector import VectorQuantizationType
+import pytest
+
+from core.base import (
+    AsyncPipe,
+    Community,
+    CommunityReport,
+    Entity,
+    KGExtraction,
+    Triple,
+)
 from core.pipes.kg.community_summary import KGCommunitySummaryPipe
-from core.base import Entity, Triple, Community, CommunityReport, KGExtraction
+from shared.abstractions.vector import VectorQuantizationType
 
 
 @pytest.fixture(scope="function")

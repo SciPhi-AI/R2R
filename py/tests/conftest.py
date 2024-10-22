@@ -13,15 +13,14 @@ from core import (
     CompletionConfig,
     DatabaseConfig,
     EmbeddingConfig,
-    KGConfig,
     FileConfig,
+    KGConfig,
     LoggingConfig,
     PromptConfig,
     SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
 )
-
 from core.base import (
     DocumentInfo,
     DocumentType,
@@ -29,18 +28,16 @@ from core.base import (
     KGEnrichmentStatus,
     KGExtractionStatus,
 )
-
 from core.providers import (
     BCryptProvider,
     LiteCompletionProvider,
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
     PostgresFileProvider,
+    PostgresKGProvider,
     R2RAuthProvider,
     R2RPromptProvider,
-    PostgresKGProvider,
 )
-
 from shared.abstractions.vector import VectorQuantizationType
 
 

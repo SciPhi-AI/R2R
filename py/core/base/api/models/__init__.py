@@ -27,6 +27,7 @@ from shared.api.models.management.responses import (
     AppSettingsResponse,
     CollectionOverviewResponse,
     CollectionResponse,
+    ConversationOverviewResponse,
     DocumentChunkResponse,
     DocumentOverviewResponse,
     LogResponse,
@@ -34,7 +35,6 @@ from shared.api.models.management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
-    ConversationOverviewResponse,
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -42,6 +42,7 @@ from shared.api.models.management.responses import (
     WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
     WrappedConversationResponse,
+    WrappedConversationsOverviewResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -52,7 +53,6 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-    WrappedConversationsOverviewResponse,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
