@@ -413,6 +413,7 @@
         "cookbooks/advanced-rag",
         "cookbooks/agent",
         "cookbooks/orchestration",
+        "cookbooks/maintenance",
         "cookbooks/web-dev"
       ]
     },
