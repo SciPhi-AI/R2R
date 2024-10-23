@@ -410,6 +410,7 @@
       "pages": [
         "cookbooks/walkthrough",
         "cookbooks/ingestion",
+        "cookbooks/contextual-enrichment",
         "cookbooks/hybrid-search",
         "cookbooks/advanced-rag",
         "cookbooks/graphrag",
