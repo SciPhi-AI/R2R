@@ -9,7 +9,7 @@ R2R's ingestion pipeline efficiently processes various document formats, transfo
 
 R2R offers two main implementations for ingestion:
 
-- **Light**: Uses R2R's **built-in** ingestion logic, which supports a wide range of file types including TXT, JSON, HTML, PDF, DOCX, PPTX, XLSX, CSV, Markdown, images, audio, and video. This is the default for the 'light' installation.
+- **Light**: Uses R2R's **built-in** ingestion logic, which supports a wide range of file types including TXT, JSON, HTML, PDF, DOCX, PPTX, XLSX, CSV, Markdown, images, audio, and video. For high quality parsing of pdfs it is recommended that developers run with the zerox parser, [explained here](/documentation/python-sdk/ingestion). This is the default for the 'light' installation.
 - **Full**: Leverages **Unstructured's** open-source [ingestion platform](https://docs.unstructured.io/open-source/introduction/overview) to handle supported file types. This is the default for the 'full' installation and provides more advanced parsing capabilities.
 
 

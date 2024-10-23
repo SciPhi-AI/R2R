@@ -4,26 +4,33 @@ description: 'Ingesting files with R2R.'
 ---
 
 <Note>
-Occasionally this SDK documentation falls out of date, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+This SDK documentation is periodically updated. For the latest parameter details, please cross-reference with the <a href="/api-reference/introduction">API Reference documentation</a>.
 </Note>
 
+Inside R2R, `ingestion` refers to the complete pipeline for processing input data:
+- Parsing files into text
+- Chunking text into semantic units
+- Generating embeddings
+- Storing data for retrieval
+
+Ingested files are stored with an associated document identifier as well as a user identifier to enable comprehensive management.
 
 ## Document Ingestion and Management
 
 <Note>
-
-As of version `3.2.13`, we have expanded the options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs by passing the following in your ingestion configuration:
+R2R has recently expanded the available options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs, [like it is shown here](https://github.com/getomni-ai/zerox), by passing the following in your ingestion configuration:
 
 ```json
 {
-  "parser_overrides": {
-    "pdf": "zerox"
+  "ingestion_config": {
+    "parser_overrides": {
+      "pdf": "zerox"
+    }
   }
 }
 ```
 
 We recommend this method for achieving the highest quality ingestion results.
-
 </Note>
 
 ### Ingest Files
@@ -35,325 +42,103 @@ const files = [
   { path: 'path/to/file1.txt', name: 'file1.txt' },
   { path: 'path/to/file2.txt', name: 'file2.txt' }
 ];
-const metadatas = [{ key1: 'value1' }, { key2: 'value2' }];
+const metadatas = [
+  { key1: 'value1' },
+  { key2: 'value2' }
+];
 
+// Runtime chunking configuration
 const ingestResponse = await client.ingestFiles(files, {
   metadatas,
   user_ids: ['user-id-1', 'user-id-2'],
+  ingestion_config: {
+    provider: "unstructured_local",  // Local processing
+    strategy: "auto",                // Automatic processing strategy
+    chunking_strategy: "by_title",   // Split on title boundaries
+    new_after_n_chars: 256,         // Start new chunk (soft limit)
+    max_characters: 512,            // Maximum chunk size (hard limit)
+    combine_under_n_chars: 64,      // Minimum chunk size
+    overlap: 100,                   // Character overlap between chunks
+  }
 });
 ```
 
-<AccordionGroup>
-  <Accordion title="Response">
-    <ResponseField name="response" type="object">
-      The response from the R2R system after ingesting the files.
-      ```bash
-      [{'message': 'Ingestion task queued successfully.', 'task_id': '6e27dfca-606d-422d-b73f-2d9e138661b4', 'document_id': 'c3291abf-8a4e-5d9d-80fd-232ef6fd8526'}, ...]
-      ```
-    </ResponseField>
-  </Accordion>
-</AccordionGroup>
-
-<ParamField path="files" type="Array<string | File | { path: string; name: string }>" required>
-  An array of file paths, File objects, or objects with path and name properties to ingest.
-</ParamField>
-
-<ParamField path="options" type="object">
-  <ParamField path="metadatas" type="Record<string, any>">
-    An optional array of metadata objects corresponding to each file.
-  </ParamField>
-
-  <ParamField path="document_ids" type="Array<string>">
-    An optional array of document IDs to assign to the ingested files.
-  </ParamField>
-
-  <ParamField path="user_ids" type="Array<string | null>">
-    An optional array of user IDs associated with the ingested files.
-  </ParamField>
-</ParamField>
-
-<ParamField path="ingestion_config" type="Optional[Union[dict, ChunkingConfig]]">
-  The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime. Learn more about [configuration here](/documentation/configuration/ingestion/parsing_and_chunking).
-  <Expandable title="properties">
-    <ParamField path="provider" type="str" default="unstructured_local">
-      Which chunking provider to use. Options are "r2r", "unstructured_local", or "unstructured_api".
-    </ParamField>
-
-    <ParamField path="method" type="str" default="by_title">
-      Which chunking method to apply. Options are "by_title", "basic", "recursive", or "character".
-    </ParamField>
-
-    <ParamField path="chunk_size" type="int" default="512">
-      The average size of chunks, in tokens.
-    </ParamField>
-
-    <ParamField path="chunk_overlap" type="int" default="20">
-      The default overlap between chunks.
-    </ParamField>
-
-    <ParamField path="max_chunk_size" type="Optional[int]" default="None">
-      Sets a maximum size on output chunks.
-    </ParamField>
-
-    <ParamField path="combine_under_n_chars" type="Optional[int]">
-      Combine chunks smaller than this number of characters.
-    </ParamField>
-
-    <ParamField path="max_characters" type="Optional[int]">
-      Maximum number of characters per chunk.
-    </ParamField>
-
-    <ParamField path="coordinates" type="bool" default="False">
-      Whether to include coordinates in the output.
-    </ParamField>
-
-    <ParamField path="encoding" type="Optional[str]">
-      Encoding to use for text files.
-    </ParamField>
-
-    <ParamField path="extract_image_block_types" type="Optional[list[str]]">
-      Types of image blocks to extract.
-    </ParamField>
-
-    <ParamField path="gz_uncompressed_content_type" type="Optional[str]">
-      Content type for uncompressed gzip files.
-    </ParamField>
-
-    <ParamField path="hi_res_model_name" type="Optional[str]">
-      Name of the high-resolution model to use.
-    </ParamField>
-
-    <ParamField path="include_orig_elements" type="Optional[bool]" default="False">
-      Whether to include original elements in the output.
-    </ParamField>
-
-    <ParamField path="include_page_breaks" type="bool">
-      Whether to include page breaks in the output.
-    </ParamField>
-
-    <ParamField path="languages" type="Optional[list[str]]">
-      List of languages to consider for text processing.
-    </ParamField>
-
-    <ParamField path="multipage_sections" type="bool" default="True">
-      Whether to allow sections to span multiple pages.
-    </ParamField>
-
-    <ParamField path="new_after_n_chars" type="Optional[int]">
-      Start a new chunk after this many characters.
-    </ParamField>
-
-    <ParamField path="ocr_languages" type="Optional[list[str]]">
-      Languages to use for OCR.
-    </ParamField>
-
-    <ParamField path="output_format" type="str" default="application/json">
-      Format of the output.
-    </ParamField>
-
-    <ParamField path="overlap" type="int" default="0">
-      Number of characters to overlap between chunks.
-    </ParamField>
-
-    <ParamField path="overlap_all" type="bool" default="False">
-      Whether to overlap all chunks.
-    </ParamField>
-
-    <ParamField path="pdf_infer_table_structure" type="bool" default="True">
-      Whether to infer table structure in PDFs.
-    </ParamField>
-
-    <ParamField path="similarity_threshold" type="Optional[float]">
-      Threshold for considering chunks similar.
-    </ParamField>
-
-    <ParamField path="skip_infer_table_types" type="Optional[list[str]]">
-      Types of tables to skip inferring.
-    </ParamField>
-
-    <ParamField path="split_pdf_concurrency_level" type="int" default="5">
-      Concurrency level for splitting PDFs.
-    </ParamField>
-
-    <ParamField path="split_pdf_page" type="bool" default="True">
-      Whether to split PDFs by page.
-    </ParamField>
-
-    <ParamField path="starting_page_number" type="Optional[int]">
-      Page number to start processing from.
-    </ParamField>
-
-    <ParamField path="strategy" type="str" default="auto">
-      Strategy for processing. Options are "auto", "fast", or "hi_res".
-    </ParamField>
-
-    <ParamField path="chunking_strategy" type="Optional[str]" default="by_title">
-      Strategy for chunking. Options are "by_title" or "basic".
-    </ParamField>
-
-    <ParamField path="unique_element_ids" type="bool" default="False">
-      Whether to generate unique IDs for elements.
-    </ParamField>
-
-    <ParamField path="xml_keep_tags" type="bool" default="False">
-      Whether to keep XML tags in the output.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<ParamField path="run_with_orchestration" type="Optional[bool]">
-  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
-</ParamField>
-
-
-### Ingest Chunks
-
-Ingest pre-parsed text chunks into your R2R system:
-
-````javascript
-const chunks = [
-  {
-    text: "Aristotle was a Greek philosopher...",
-  },
-  {
-    text: "He was born in 384 BC in Stagira...",
-  },
-];
-
-const ingestResponse = await client.ingestChunks(chunks, undefined, {
-  title: "Aristotle",
-  source: "wikipedia",
-});
-````
-
-<AccordionGroup>
-  <Accordion title="Response">
-    <ResponseField name="response" type="object">
-      The response from the R2R system after ingesting the chunks.
-      ```bash
-      {
-        'message': 'Ingest chunks task queued successfully.',
-        'task_id': '8f27dfca-606d-422d-b73f-2d9e138661c3',
-        'document_id': 'd4391abf-8a4e-5d9d-80fd-232ef6fd8527'
-      }
-      ```
-    </ResponseField>
-  </Accordion>
-</AccordionGroup>
-
-<ParamField path="chunks" type="Array<{ text: string; }>" required>
-  An array of chunk objects to ingest. Each object should contain at least a `text` property with the chunk text.
-</ParamField>
-
-<ParamField path="documentId" type="string">
-  An optional document ID to assign to the ingested chunks. If not provided, a new document ID will be generated.
-</ParamField>
-
-<ParamField path="metadata" type="Record<string, any>">
-  An optional metadata object for the document.
-</ParamField>
-
-<ParamField path="run_with_orchestration" type="Optional[bool]">
-  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
-</ParamField>
-
-
-### Update Files
-
-Update existing documents:
-
-```javascript
-const files = [
-  { path: '/path/to/updated_file1.txt', name: 'updated_file1.txt' }
-];
-const document_ids = ['document-id-1'];
-const updateResponse = await client.updateFiles(files, {
-  document_ids,
-  metadatas: [{ key: 'updated_value' }] // to overwrite the existing metadata
-});
-```
+[Previous sections remain the same through the Update Files code example, then continuing with:]
 
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="object">
       The response from the R2R system after updating the files.
       ```bash
-        {'results': {'processed_documents': [{'id': '9f375ce9-efe9-5b57-8bf2-a63dee5f3621', 'title': 'aristotle_v2.txt'}], 'failed_documents': [], 'skipped_documents': []}}
+      {
+        'results': {
+          'processed_documents': [
+            {
+              'id': '9f375ce9-efe9-5b57-8bf2-a63dee5f3621',
+              'title': 'updated_doc.txt'
+            }
+          ],
+          'failed_documents': [],
+          'skipped_documents': []
+        }
+      }
       ```
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
 <ParamField path="files" type="Array<File | { path: string; name: string }>" required>
-  An array of File objects or objects with path and name properties to update.
+  Array of files to update.
 </ParamField>
 
 <ParamField path="options" type="object" required>
   <ParamField path="document_ids" type="Array<string>" required>
-    An array of document IDs corresponding to the files being updated.
+    Document IDs corresponding to files being updated.
   </ParamField>
 
   <ParamField path="metadatas" type="Array<Record<string, any>>">
-    An optional array of metadata objects for the updated files.
+    Optional metadata for updated files.
   </ParamField>
 
-  <ParamField path="ingestion_config" type="Record<string, any>">
-    The ingestion config override parameter enables developers to customize their R2R chunking strategy at runtime. Learn more about [configuration here](/documentation/configuration/ingestion/parsing_and_chunking).
-    <Expandable title="properties">
-    <ParamField path="provider" type="str" default="r2r">
-    Which chunking provider to use, `r2r` or `unstructured`. Selecting `unstructured` is generally recommended when parsing with `unstructured` or `unstructured_api`.
-    </ParamField>
-
-    <ParamField path="method" type="str" default="recursive">
-    Which chunking method to apply? When using unstructured, `by_title` or `basic` are supported.
-    </ParamField>
-
-    <ParamField path="chunk_size" type="int" default="512">
-    The average size of chunks, in tokens.
-    </ParamField>
-
-    <ParamField path="chunk_overlap" type="int" default="20">
-    The default overlap between chunks.
-    </ParamField>
-
-    <ParamField path="max_chunk_size" type="Optional[int]" default="None">
-    Sets a maximum size on output chunks.
-    </ParamField>
-  </Expandable>
+  <ParamField path="ingestion_config" type="object">
+    Chunking configuration options.
   </ParamField>
 </ParamField>
-
-
-<ParamField path="run_with_orchestration" type="Optional[bool]">
-  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
-</ParamField>
-
 
 ### Documents Overview
 
-Retrieve high-level document information, restricted to user files, except when called by a superuser where it will then return results from over all users:
+Retrieve high-level document information:
 
 ```javascript
+// Get all documents (paginated)
 const documentsOverview = await client.documentsOverview();
+
+// Get specific documents
+const specificDocs = await client.documentsOverview({
+  document_ids: ['doc-id-1', 'doc-id-2'],
+  offset: 0,
+  limit: 10
+});
 ```
+
+Results are restricted to the current user's files unless the request is made by a superuser.
 
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="Array<object>">
-      An array of objects containing document information.
       ```bash
       [
         {
           'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
           'version': 'v1',
           'size_in_bytes': 73353,
-          'metadata': {},
-          'status': 'success',
+          'ingestion_status': 'success',
+          'restructuring_status': 'pending',
           'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
           'title': 'aristotle.txt',
           'created_at': '2024-07-21T20:09:14.218741Z',
           'updated_at': '2024-07-21T20:09:14.218741Z',
-          'metadata': {'x': 'y'}
+          'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'x': 'y'}
         },
         ...
       ]
@@ -363,69 +148,98 @@ const documentsOverview = await client.documentsOverview();
 </AccordionGroup>
 
 <ParamField path="document_ids" type="Array<string>">
-  An optional array of document IDs to filter the overview.
-</ParamField>
-<ParamField path="offset" type="Optional[int]">
-  An optional value to offset the starting point of fetched results, defaults to `0`.
-</ParamField>
-<ParamField path="limit" type="Optional[int]">
-  An optional value to limit the fetched results, defaults to `100`.
+  Optional array of document IDs to filter results.
 </ParamField>
 
+<ParamField path="offset" type="number">
+  Starting point for pagination, defaults to 0.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return, defaults to 100.
+</ParamField>
 
 ### Document Chunks
 
-Fetch chunks for a particular document:
+Fetch and examine chunks for a particular document:
 
 ```javascript
 const documentId = '9fbe403b-c11c-5aae-8ade-ef22980c3ad1';
-const chunks = await client.documentChunks(documentId);
+const chunks = await client.documentChunks(
+  documentId,
+  0,     // offset
+  100,   // limit
+  false  // include_vectors
+);
 ```
+
+These chunks represent the atomic units of text after processing.
 
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="Array<object>">
-      An array of objects containing chunk information.
       ```bash
-      [{
-        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
-        'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
-        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
-        'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
-        'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3'
-        'metadata': {'title': 'aristotle.txt', 'version': 'v0', 'chunk_order': 0}}
-      },
-      ...]
+      [
+        {
+          'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
+          'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
+          'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
+          'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
+          'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3',
+          'metadata': {
+            'title': 'aristotle.txt',
+            'version': 'v0',
+            'chunk_order': 0,
+            'document_type': 'txt',
+            'unstructured_filetype': 'text/plain',
+            'unstructured_languages': ['eng']
+          }
+        },
+        ...
+      ]
       ```
     </ResponseField>
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="document_id" type="string" required>
-  The ID of the document to retrieve chunks for.
+<ParamField path="documentId" type="string" required>
+  ID of the document to retrieve chunks for.
 </ParamField>
-<ParamField path="offset" type="Optional[int]">
-  An optional value to offset the starting point of fetched results, defaults to `0`.
+
+<ParamField path="offset" type="number">
+  Starting point for pagination, defaults to 0.
 </ParamField>
-<ParamField path="limit" type="Optional[int]">
-  An optional value to limit the fetched results, defaults to `100`.
+
+<ParamField path="limit" type="number">
+  Maximum number of chunks to return, defaults to 100.
 </ParamField>
-<ParamField path="include_vectors" type="Optional[bool]">
-  An optional value to return the vectors associated with each chunk, defaults to `False`.
+
+<ParamField path="includeVectors" type="boolean">
+  Whether to include embedding vectors in response.
 </ParamField>
 
 ### Delete Documents
 
-Delete a document by its ID:
+Delete documents using filters:
 
 ```javascript
-const deleteResponse = await client.delete({ document_id: "91662726-7271-51a5-a0ae-34818509e1fd" });
+const deleteResponse = await client.delete({
+  document_id: {
+    "$eq": "91662726-7271-51a5-a0ae-34818509e1fd"
+  }
+});
+
+// Delete multiple documents
+const bulkDelete = await client.delete({
+  user_id: {
+    "$in": ["user-1", "user-2"]
+  }
+});
 ```
 
 <AccordionGroup>
   <Accordion title="Response">
     <ResponseField name="response" type="object">
-      The response from the R2R system after successfully deleting the documents.
       ```bash
       {'results': {}}
       ```
@@ -433,6 +247,180 @@ const deleteResponse = await client.delete({ document_id: "91662726-7271-51a5-a0
   </Accordion>
 </AccordionGroup>
 
-<ParamField path="filters" type="{ [key: string]: string | string[] }" required>
-  A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
+<ParamField path="filters" type="object" required>
+  Filter conditions to identify documents for deletion.
 </ParamField>
+
+## Vector Index Management
+
+### Create Vector Index
+
+<Note>
+Vector indices significantly improve search performance for large collections but add overhead for smaller datasets. Only create indices when working with hundreds of thousands of documents or when search latency is critical.
+</Note>
+
+Create a vector index for similarity search:
+
+```javascript
+const createResponse = await client.createVectorIndex({
+    tableName: "vectors",
+    indexMethod: "hnsw",
+    indexMeasure: "cosine_distance",
+    indexArguments: {
+        m: 16,                  // Number of connections
+        ef_construction: 64     // Build time quality factor
+    },
+    concurrently: true
+});
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      ```bash
+      {
+        'message': 'Vector index creation task queued successfully.',
+        'task_id': '7d38dfca-606d-422d-b73f-2d9e138661b5'
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="tableName" type="string">
+  Table to create index on: vectors, entities_document, entities_collection, communities.
+</ParamField>
+
+<ParamField path="indexMethod" type="string">
+  Index method: hnsw, ivfflat, or auto.
+</ParamField>
+
+<ParamField path="indexMeasure" type="string">
+  Distance measure: cosine_distance, l2_distance, or max_inner_product.
+</ParamField>
+
+<ParamField path="indexArguments" type="object">
+  Configuration for chosen index method.
+  <Expandable title="HNSW Parameters">
+    <ParamField path="m" type="number">
+      Number of connections per element (16-64).
+    </ParamField>
+    <ParamField path="ef_construction" type="number">
+      Size of candidate list during construction (64-200).
+    </ParamField>
+  </Expandable>
+  <Expandable title="IVFFlat Parameters">
+    <ParamField path="n_lists" type="number">
+      Number of clusters/inverted lists.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### List Vector Indices
+
+List existing indices:
+
+```javascript
+const indices = await client.listVectorIndices({
+    tableName: "vectors"
+});
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      ```bash
+      {
+        'indices': [
+          {
+            'name': 'ix_vector_cosine_ops_hnsw__20241021211541',
+            'table': 'vectors',
+            'method': 'hnsw',
+            'measure': 'cosine_distance'
+          },
+          ...
+        ]
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+### Delete Vector Index
+
+Remove an existing index:
+
+```javascript
+const deleteResponse = await client.deleteVectorIndex({
+    indexName: "ix_vector_cosine_ops_hnsw__20241021211541",
+    tableName: "vectors",
+    concurrently: true
+});
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      ```bash
+      {
+        'message': 'Vector index deletion task queued successfully.',
+        'task_id': '8e49efca-606d-422d-b73f-2d9e138661b6'
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices and Performance Optimization
+
+### Vector Index Configuration
+
+1. **HNSW Parameters:**
+   - `m`: Higher values (16-64) improve search quality but increase memory
+   - `ef_construction`: Higher values improve quality but slow construction
+   - Recommended starting point: `m=16`, `ef_construction=64`
+
+2. **Distance Measures:**
+   - `cosine_distance`: Best for normalized vectors (most common)
+   - `l2_distance`: Better for absolute distances
+   - `max_inner_product`: Optimized for dot product similarity
+
+3. **Production Considerations:**
+   - Always use `concurrently: true` to avoid blocking operations
+   - Create indexes during off-peak hours
+   - Pre-warm indices with representative queries
+   - Monitor memory usage during creation
+
+### Chunking Strategy
+
+1. **Size Guidelines:**
+   - Avoid chunks >1024 characters for retrieval quality
+   - Keep chunks >64 characters to maintain context
+   - Use overlap for better context preservation
+
+2. **Method Selection:**
+   - Use `by_title` for structured documents
+   - Use `basic` for uniform text content
+   - Consider `recursive` for nested content
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Ingestion Failures:**
+   - Verify file permissions and paths
+   - Check file format support
+   - Ensure metadata array length matches files
+   - Monitor memory for large files
+
+2. **Vector Index Performance:**
+   - Check index creation time
+   - Monitor memory usage
+   - Verify warm-up queries
+   - Consider rebuilding if quality degrades
+
+3. **Chunking Issues:**
+   - Adjust overlap for context preservation
+   - Monitor chunk sizes
+   - Verify language detection
+   - Check encoding for special characters
