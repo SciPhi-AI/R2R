@@ -109,7 +109,7 @@ async def ingest_files(
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
-def update_files(
+async def update_files(
     ctx, file_paths, document_ids, metadatas, run_without_orchestration
 ):
     """Update existing files in R2R."""
@@ -129,7 +129,7 @@ def update_files(
                     "Metadatas must be a JSON string representing a list of dictionaries or a single dictionary"
                 )
         run_with_orchestration = not run_without_orchestration
-        response = client.update_files(
+        response = await client.update_files(
             file_paths,
             document_ids,
             metadatas,
