@@ -841,10 +841,10 @@ class PostgresKGProvider(KGProvider):
             return
 
         # remove all triples for these documents.
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("community_info")} WHERE collection_id = $1;
-            DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;
-        """
+        DELETE_QUERIES = [
+            f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1;",
+        ]
 
         document_ids_response = await self.db_provider.documents_in_collection(
             collection_id

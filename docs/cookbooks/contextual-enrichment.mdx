@@ -65,10 +65,18 @@ Enrich and refine the given chunk of text using information from the provided co
 
 To run this, first set the `enable_chunk_enrichment` flag to `true` in the ingestion settings of your collection in r2r.toml.
 
-Then you can run 
+Then you can run the following command:
+
+
 
 ```bash
-r2r ingest-files --file_paths path/to/file.pdf
+r2r ingest-files --file_paths path/to/lyft_2021.pdf
+```
+
+To see the enriched chunks, you can view the document_chunks endpoint. For example:
+
+```
+http://localhost:7272/v2/document_chunks/{document_id}
 ```
 
 After enrichment, we get the following chunk:
@@ -78,3 +86,30 @@ The impacts of the COVID-19 pandemic on the demand for and operations of the var
 ```
 
 And the raw text chunks are stored in the 'original_text' field of the chunk metadata.
+
+```json
+{
+    "results":
+        [
+            {
+                "extraction_id":"0e64254e-d9db-5332-adea-16e09c5d6493",
+                "document_id":"2f576170-c4f9-5141-a910-a0924f341de4",
+                "user_id":"2acb499e-8428-543b-bd85-0d9098718220",
+                "collection_ids":["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+                "text":"## UNITED STATES SECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n\n**FORM 10-K**\n\n(Mark One) ☒ ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934\n\nFor the fiscal year ended December 31, 2021 OR ☐ TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD\n\nFROM TO\n\n**Commission File Number 001-38846**\n\n**Lyft, Inc.**\n\n(Exact name of Registrant as specified in its Charter)\n\nDelaware (State or other jurisdiction of incorporation or organization)\n\n20-8809830 (I.R.S. Employer Identification No.)\n\n185 Berry Street, Suite 5000  \nSan Francisco, California  \n94107 (Zip Code)\n\nRegistrant’s telephone number, including area code: (844) 250-2773\n\n**Securities registered pursuant to Section 12(b) of the Act:**\n\nTitle of each class: Class A common stock, par value of $0.00001 per share\n\nTrading Symbol(s): LYFT\n\nName of each exchange on which registered: Nasdaq Global Select Market\n\n---\n\n**Insurance and Claims Overview:**\n\nAs part of our operational risk management, we acknowledge that the volume of auto-related claims has surpassed our aggregate coverage limits, which may lead to increased financial exposure. Our insurance subsidiary has already incurred costs related to deductibles and self-insured retentions, and we anticipate that insurance providers will continue to raise premiums and deductibles across various commercial risks. This trend could significantly impact our insurance and claims expenses, necessitating potential adjustments to our self-insured retentions or deductibles upon policy renewal.\n\n**Legal Proceedings and Risk Factors:**\n\nThe unpredictability of claims, lawsuits, and regulatory investigations poses a substantial risk to our financial health. The outcomes of such proceedings can be time-consuming and costly, diverting management's attention and resources. Our ability to accurately reserve for pending litigation is complex and requires significant judgment, which could lead to unforeseen financial liabilities.\n\n**Confidentiality and Trade Secrets:**\n\nIn the course of our operations, we may disclose sensitive information to consultants and other third parties. We are committed to safeguarding our proprietary information and ensuring compliance with the Defend Trade Secrets Act, which provides immunity for disclosures made in good faith to report suspected violations of law.\n\n**Tax Accounting and Deferred Compensation:**\n\nOur accounting practices adhere to the asset and liability method for income taxes, ensuring that deferred tax assets and liabilities are accurately recorded. We also maintain compliance with Section 409A regarding deferred compensation, allowing us to amend our plans as necessary to avoid additional tax liabilities for participants.\n\n---\n\nThis report serves as a comprehensive overview of Lyft, Inc.'s operational, legal, and financial landscape, providing stakeholders with critical insights into our risk management strategies and compliance measures.",
+                "metadata":{
+                    "version":"v0",
+                    "chunk_order":0,
+                    "document_type":"pdf",
+                    "original_text":"UNITED STATES SECURITIES AND EXCHANGE COMMISSION Washington, D.C. 20549\n\nFORM 10-K\n\n(Mark One) ☒ ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934\n\nFor the fiscal year ended December 31, 2021 OR ☐ TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD\n\nFROM TO\n\nCommission File Number 001-38846\n\nLyft, Inc.\n\n(Exact name of Registrant as specified in its Charter)\n\nDelaware (State or other jurisdiction of incorporation or organization)\n\n20-8809830 (I.R.S. Employer Identification No.)\n\n185 Berry Street, Suite 5000 San Francisco, California (Address of principal executive offices)\n\n94107 (Zip Code)\n\nRegistrant’s telephone number, including area code: (844) 250-2773\n\nSecurities registered pursuant to Section 12(b) of the Act:\n\nTitle of each class Class A common stock, par value of $0.00001 per share\n\nTrading Symbol(s) LYFT\n\nName of each exchange on which registered Nasdaq Global Select Market",
+                    "unstructured_filetype":"application/pdf",
+                    "unstructured_languages":["eng"],
+                    "chunk_enrichment_status":"success",
+                    "unstructured_page_number":1,
+                    "partitioned_by_unstructured":true
+                },
+                "vector":null
+            }
+        ]
+}
+```
