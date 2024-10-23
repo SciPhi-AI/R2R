@@ -555,3 +555,191 @@ delete_response = client.delete(
 <ParamField path="filters" type="list[dict]" required>
   A list of logical filters to perform over input documents fields which identifies the unique set of documents to delete (e.g., `{"document_id": {"$eq": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"}}`). Logical operations might include variables such as `"user_id"` or  `"title"` and filters like `neq`, `gte`, etc.
 </ParamField>
+
+
+## Vector Index Management
+
+### Create Vector Index
+
+Create a vector index for similarity search:
+
+Vector index creation can be a taxing procedure on large datasets.
+
+```python
+create_response = client.create_vector_index(
+    table_name="vectors",
+    index_method="hnsw",
+    index_measure="cosine_distance",
+    index_arguments={"m": 16, "ef_construction": 64},
+    concurrently=True
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system after creating the vector index.
+      ```bash
+      {
+        'message': 'Vector index creation task queued successfully.',
+        'task_id': '7d38dfca-606d-422d-b73f-2d9e138661b5'
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="table_name" type="str">
+  The table to create the index on. Options: vectors, entities_document, entities_collection, communities. Default: vectors
+</ParamField>
+
+<ParamField path="index_method" type="str">
+  The indexing method to use. Options: hnsw, ivfflat, auto. Default: hnsw
+</ParamField>
+
+<ParamField path="index_measure" type="str">
+  Distance measure for vector comparisons. Options: cosine_distance, l2_distance, max_inner_product. Default: cosine_distance
+</ParamField>
+
+<ParamField path="index_arguments" type="Optional[dict]">
+  Configuration parameters for the chosen index method.
+  <Expandable title="Configuration Options">
+    <ParamField path="HNSW Parameters">
+      <ul>
+        <li>m (int): Number of connections per element</li>
+        <li>ef_construction (int): Size of the dynamic candidate list for construction</li>
+      </ul>
+    </ParamField>
+    <ParamField path="IVFFlat Parameters">
+      <ul>
+        <li>n_lists (int): Number of clusters/inverted lists</li>
+      </ul>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="index_name" type="Optional[str]">
+  Custom name for the index. If not provided, one will be auto-generated
+</ParamField>
+
+<ParamField path="concurrently" type="bool">
+  Whether to create the index concurrently. Default: True
+</ParamField>
+
+#### Important Considerations
+
+Vector index creation requires careful planning and consideration of your data and performance requirements. Keep in mind:
+
+**Resource Intensive Process**
+- Index creation can be CPU and memory intensive, especially for large datasets
+- For HNSW indexes, memory usage scales with both dataset size and `m` parameter
+- Consider creating indexes during off-peak hours for production systems
+
+**Performance Tuning**
+1. **HNSW Parameters:**
+   - `m`: Higher values (16-64) improve search quality but increase memory usage and build time
+   - `ef_construction`: Higher values increase build time and quality but have diminishing returns past 100
+   - Recommended starting point: `m=16`, `ef_construction=64`
+
+```python
+# Example balanced configuration
+client.create_vector_index(
+    table_name="vectors",
+    index_method="hnsw",
+    index_measure="cosine_distance",
+    index_arguments={
+        "m": 16,                # Moderate connectivity
+        "ef_construction": 64   # Balanced build time/quality
+    },
+    concurrently=True
+)
+```
+**Pre-warming Required**
+- **Important:** Newly created indexes require pre-warming to achieve optimal performance
+- Initial queries may be slower until the index is loaded into memory
+- The first several queries will automatically warm the index
+- For production systems, consider implementing explicit pre-warming by running representative queries after index creation
+- Without pre-warming, you may not see the expected performance improvements
+
+**Best Practices**
+1. Always use `concurrently=True` in production to avoid blocking other operations
+2. Monitor system resources during index creation
+3. Test index performance with representative queries before deploying
+4. Consider creating indexes on smaller test datasets first to validate parameters
+
+**Distance Measures**
+Choose the appropriate measure based on your use case:
+- `cosine_distance`: Best for normalized vectors (most common)
+- `l2_distance`: Better for absolute distances
+- `max_inner_product`: Optimized for dot product similarity
+
+### List Vector Indices
+
+List existing vector indices for a table:
+
+```python
+indices = client.list_vector_indices(table_name="vectors")
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response containing the list of indices.
+      ```bash
+      {
+        'indices': [
+          {
+            'name': 'ix_vector_cosine_ops_hnsw__20241021211541',
+            'table': 'vectors',
+            'method': 'hnsw',
+            'measure': 'cosine_distance'
+          },
+          ...
+        ]
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="table_name" type="str">
+  The table to list indices from. Options: vectors, entities_document, entities_collection, communities. Default: vectors
+</ParamField>
+
+### Delete Vector Index
+
+Delete a vector index from a table:
+
+```python
+delete_response = client.delete_vector_index(
+    index_name="ix_vector_cosine_ops_hnsw__20241021211541",
+    table_name="vectors",
+    concurrently=True
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system after deleting the vector index.
+      ```bash
+      {
+        'message': 'Vector index deletion task queued successfully.',
+        'task_id': '8e49efca-606d-422d-b73f-2d9e138661b6'
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="index_name" type="str" required>
+  Name of the index to delete
+</ParamField>
+
+<ParamField path="table_name" type="str">
+  The table containing the index. Options: vectors, entities_document, entities_collection, communities. Default: vectors
+</ParamField>
+
+<ParamField path="concurrently" type="bool">
+  Whether to delete the index concurrently. Default: True
+</ParamField>

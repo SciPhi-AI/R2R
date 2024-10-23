@@ -18,8 +18,11 @@ def db():
 
 
 @db.command()
-async def history():
-    """Show database migration history."""
+@click.option(
+    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+)
+async def history(schema):
+    """Show database migration history for a specific schema."""
     try:
         db_url = get_database_url_from_env(False)
         if not await check_database_connection(db_url):
@@ -29,7 +32,7 @@ async def history():
             )
             sys.exit(1)
 
-        result = run_alembic_command("history")
+        result = await run_alembic_command("history", schema_name=schema)
         if result != 0:
             click.secho("Failed to get migration history.", fg="red")
             sys.exit(1)
@@ -39,8 +42,11 @@ async def history():
 
 
 @db.command()
-async def current():
-    """Show current database revision."""
+@click.option(
+    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+)
+async def current(schema):
+    """Show current database revision for a specific schema."""
     try:
         db_url = get_database_url_from_env(False)
         if not await check_database_connection(db_url):
@@ -50,7 +56,7 @@ async def current():
             )
             sys.exit(1)
 
-        result = run_alembic_command("current")
+        result = await run_alembic_command("current", schema_name=schema)
         if result != 0:
             click.secho("Failed to get current revision.", fg="red")
             sys.exit(1)
@@ -60,9 +66,12 @@ async def current():
 
 
 @db.command()
+@click.option(
+    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+)
 @click.option("--revision", help="Upgrade to a specific revision")
-async def upgrade(revision):
-    """Upgrade database to the latest revision or a specific revision."""
+async def upgrade(schema, revision):
+    """Upgrade database schema to the latest revision or a specific revision."""
     try:
         db_url = get_database_url_from_env(False)
         if not await check_database_connection(db_url):
@@ -72,9 +81,11 @@ async def upgrade(revision):
             )
             sys.exit(1)
 
-        click.echo("Running database upgrade...")
+        click.echo(
+            f"Running database upgrade for schema {schema or 'default'}..."
+        )
         command = f"upgrade {revision}" if revision else "upgrade"
-        result = run_alembic_command(command)
+        result = await run_alembic_command(command, schema_name=schema)
 
         if result == 0:
             click.secho("Database upgrade completed successfully.", fg="green")
@@ -88,9 +99,12 @@ async def upgrade(revision):
 
 
 @db.command()
+@click.option(
+    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+)
 @click.option("--revision", help="Downgrade to a specific revision")
-async def downgrade(revision):
-    """Downgrade database to the previous revision or a specific revision."""
+async def downgrade(schema, revision):
+    """Downgrade database schema to the previous revision or a specific revision."""
     if not revision:
         if not click.confirm(
             "No revision specified. This will downgrade the database by one revision. Continue?"
@@ -106,9 +120,11 @@ async def downgrade(revision):
             )
             sys.exit(1)
 
-        click.echo("Running database downgrade...")
+        click.echo(
+            f"Running database downgrade for schema {schema or 'default'}..."
+        )
         command = f"downgrade {revision}" if revision else "downgrade"
-        result = run_alembic_command(command)
+        result = await run_alembic_command(command, schema_name=schema)
 
         if result == 0:
             click.secho(

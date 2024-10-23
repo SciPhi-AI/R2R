@@ -136,8 +136,10 @@
                 "documentation/cli/introduction",
                 "documentation/cli/server",
                 "documentation/cli/ingestion",
+                "documentation/cli/retrieval",
                 "documentation/cli/graph",
-                "documentation/cli/management"
+                "documentation/cli/management",
+                "documentation/cli/maintenance"
               ]
             },
 

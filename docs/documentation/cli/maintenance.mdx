@@ -1,0 +1,220 @@
+---
+title: 'Maintenance'
+description: 'Managing R2R versions, updates, and database migrations across environments.'
+---
+
+## Deployment Management
+
+R2R deployments consist of three main components that need to be managed:
+1. The R2R Python package
+2. The Docker images
+3. The database schema
+
+### Version Management
+
+Check your current R2R version:
+
+```bash
+r2r version
+```
+
+### Update R2R
+
+Update your R2R installation to the latest version:
+
+```bash
+r2r update
+```
+
+This command will:
+- Upgrade the R2R package to the latest version using pip
+- Display the update progress and confirmation
+- Show any errors if they occur during the update process
+
+<Note>
+When you update R2R, the Docker image used by `r2r serve` will automatically be updated to match the new version. The system will attempt to use a version-specific image (e.g., `ragtoriches/prod:1.2.3`) or fall back to `latest` if the specific version isn't available.
+</Note>
+
+### Database Management
+
+R2R uses database migrations to manage schema changes across versions. After updating R2R, you should always check and update your database schema:
+
+### Check Current Migration
+
+View the current migration state of your database:
+
+```bash
+r2r db current
+```
+
+<AccordionGroup>
+  <Accordion title="Arguments">
+    <ParamField path="--schema" type="str">
+      Schema name to check. Defaults to R2R_PROJECT_NAME environment variable.
+    </ParamField>
+  </Accordion>
+</AccordionGroup>
+
+### Apply Migrations
+
+Upgrade your database to the latest version:
+
+```bash
+r2r db upgrade
+```
+
+<AccordionGroup>
+  <Accordion title="Arguments">
+    <ParamField path="--schema" type="str">
+      Schema name to upgrade. Defaults to R2R_PROJECT_NAME environment variable.
+    </ParamField>
+    <ParamField path="--revision" type="str">
+      Specific revision to upgrade to. Defaults to "head" (latest version).
+    </ParamField>
+  </Accordion>
+</AccordionGroup>
+
+## Deployment Process
+
+Here's the recommended process for updating an R2R deployment:
+
+1. **Prepare for Update**
+   ```bash
+   # Check current versions
+   r2r version
+   r2r db current
+
+   # Generate system report (optional)
+   r2r generate-report
+   ```
+
+2. **Stop Running Services**
+   ```bash
+   # Bring down existing deployment
+   r2r docker-down
+   ```
+
+3. **Update R2R**
+   ```bash
+   r2r update
+   ```
+
+4. **Update Database**
+   ```bash
+   # Check and apply any new migrations
+   r2r db upgrade
+   ```
+
+5. **Restart Services**
+   ```bash
+   # Start the server with your configuration
+   r2r serve --docker [additional options]
+   ```
+
+<AccordionGroup>
+  <Accordion title="Server Configuration Options">
+    <ParamField path="--host" type="str">
+      Host to run the server on. Default is "0.0.0.0".
+    </ParamField>
+    <ParamField path="--port" type="int">
+      Port to run the server on. Default comes from R2R_PORT or PORT env var, or 7272.
+    </ParamField>
+    <ParamField path="--docker" type="flag">
+      Run using Docker (recommended for production).
+    </ParamField>
+    <ParamField path="--full" type="flag">
+      Run the full R2R compose with Hatchet and Unstructured.
+    </ParamField>
+    <ParamField path="--project-name" type="str">
+      Project name for Docker deployment.
+    </ParamField>
+    <ParamField path="--image" type="str">
+      Specific Docker image to use (optional).
+    </ParamField>
+    <ParamField path="--exclude-postgres" type="flag">
+      Exclude creating a Postgres container.
+    </ParamField>
+  </Accordion>
+
+  <Accordion title="Environment Variables">
+    <ParamField path="R2R_POSTGRES_HOST" type="str">
+      PostgreSQL host address. Default is "localhost".
+    </ParamField>
+    <ParamField path="R2R_POSTGRES_PORT" type="str">
+      PostgreSQL port. Default is "5432".
+    </ParamField>
+    <ParamField path="R2R_POSTGRES_DBNAME" type="str">
+      PostgreSQL database name. Default is "postgres".
+    </ParamField>
+    <ParamField path="R2R_POSTGRES_USER" type="str">
+      PostgreSQL username. Default is "postgres".
+    </ParamField>
+    <ParamField path="R2R_PROJECT_NAME" type="str">
+      Project name used for schema. Default is "r2r_default".
+    </ParamField>
+  </Accordion>
+</AccordionGroup>
+
+## Managing Multiple Environments
+
+For different environments (development, staging, production), use different project names and schemas:
+
+```bash
+# Development
+export R2R_PROJECT_NAME=r2r_dev
+r2r serve --docker --project-name r2r-dev
+
+# Staging
+export R2R_PROJECT_NAME=r2r_staging
+r2r serve --docker --project-name r2r-staging
+
+# Production
+export R2R_PROJECT_NAME=r2r_prod
+r2r serve --docker --project-name r2r-prod
+```
+
+## Vector Index Management
+
+R2R uses vector indices to enable efficient similarity search across documents. For detailed information about managing vector indices, including creation, listing, and deletion, see the [Ingestion documentation](/documentation/cli/ingestion).
+
+Key vector index management commands:
+```bash
+# Create a new vector index
+r2r create-vector-index
+
+# List existing indices
+r2r list-vector-indices
+
+# Delete an index
+r2r delete-vector-index <index-name>
+```
+
+
+## Troubleshooting
+
+If issues occur during deployment:
+
+1. Generate a system report:
+   ```bash
+   r2r generate-report
+   ```
+
+2. Check container health:
+   ```bash
+   # Bring down existing deployment
+   r2r docker-down
+
+   # Start fresh and watch for health checks
+   r2r serve --docker
+   ```
+
+3. Review the database state:
+   ```bash
+   r2r db current
+   r2r db history
+   ```
+
+4. If needed, roll back database changes:
+   ```bash
+   r2r db downgrade --revision <previous-working-version>
+   ```

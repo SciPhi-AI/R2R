@@ -79,7 +79,7 @@ class PostgresVectorHandler(VectorHandler):
         if len(old_table_exists) > 0 and old_table_exists[0]["exists"]:
             raise ValueError(
                 f"Found old vector table '{self.project_name}.{self.project_name}'. "
-                "Please run `r2r db upgrade`, or to run manually, "
+                "Please run `r2r db upgrade` with the CLI, or to run manually, "
                 "run in R2R/py/migrations with 'alembic upgrade head' to update "
                 "your database schema to the new version."
             )
