@@ -796,6 +796,11 @@ def test_kg_search_sample_file_sdk():
 def test_kg_delete_graph_sample_file_sdk():
     print("Testing: KG delete graph")
 
+    response = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["communities"] != []
     client.delete_graph_for_collection(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
@@ -807,7 +812,8 @@ def test_kg_delete_graph_sample_file_sdk():
     assert response["results"]["communities"] == []
 
     response = client.get_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        entity_level="document",
     )
 
     assert response["results"]["entities"] != []

@@ -33,9 +33,6 @@ def hatchet_kg_factory(
                 )
             if key == "kg_enrichment_settings":
                 input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
-                )
 
             if key == "kg_entity_deduplication_settings":
                 input_data[key] = json.loads(value)
