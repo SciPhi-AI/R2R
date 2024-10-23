@@ -34,6 +34,8 @@ We recommend this method for achieving the highest quality ingestion results.
 
 </Note>
 
+
+
 ### Ingest Files
 
 
@@ -53,10 +55,13 @@ ingest_response = client.ingest_files(
         "provider": "unstructured_local",  # Local processing
         "strategy": "auto",                # Automatic processing strategy
         "chunking_strategy": "by_title",   # Split on title boundaries
-        "new_after_n_chars": 256,         # Start new chunk (soft limit)
-        "max_characters": 512,            # Maximum chunk size (hard limit)
-        "combine_under_n_chars": 64,      # Minimum chunk size
-        "overlap": 100,                   # Character overlap between chunks
+        "new_after_n_chars": 256,          # Start new chunk (soft limit)
+        "max_characters": 512,             # Maximum chunk size (hard limit)
+        "combine_under_n_chars": 64,       # Minimum chunk size
+        "overlap": 100,                    # Character overlap between chunks
+        "chunk_enrichment_settings": {     # Document enrichment settings
+            "enable_chunk_enrichment": False,
+        }
     }
 )
 ```
@@ -254,6 +259,25 @@ doc_status = client.documents_overview(
 )
 # ingestion_status will be one of: 'pending', 'processing', 'success', 'failed'
 ```
+
+<Note>
+
+We have added support for contextual chunk enrichment! You can learn more about it [here](/cookbooks/contextual-enrichment). 
+
+Currently, you need to enable it in your ingestion config:
+
+```toml
+[ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = true # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3            # Look ahead 3 chunks
+    backward_chunks = 3           # Look behind 3 chunks
+    semantic_neighbors = 10       # Find 10 semantically similar chunks
+    semantic_similarity_threshold = 0.7  # Minimum similarity score
+    generation_config = { model = "openai/gpt-4o-mini" }
+```
+
+</Note>
 
 ### Ingest Chunks
 
