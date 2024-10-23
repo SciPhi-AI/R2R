@@ -156,7 +156,7 @@ class KgService(Service):
         entity_count = await self.providers.kg.get_entity_count(
             document_id=document_id,
             distinct=True,
-            entity_table_name="chunk_embedding",
+            entity_table_name="chunk_entity",
         )
 
         logger.info(

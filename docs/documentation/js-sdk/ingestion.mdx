@@ -201,6 +201,11 @@ const ingestResponse = await client.ingestFiles(files, {
   </Expandable>
 </ParamField>
 
+<ParamField path="run_with_orchestration" type="Optional[bool]">
+  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
+</ParamField>
+
+
 ### Ingest Chunks
 
 Ingest pre-parsed text chunks into your R2R system:
@@ -246,6 +251,10 @@ const ingestResponse = await client.ingestChunks(chunks, undefined, {
 
 <ParamField path="metadata" type="Record<string, any>">
   An optional metadata object for the document.
+</ParamField>
+
+<ParamField path="run_with_orchestration" type="Optional[bool]">
+  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
 </ParamField>
 
 
@@ -312,6 +321,11 @@ const updateResponse = await client.updateFiles(files, {
     </ParamField>
   </Expandable>
   </ParamField>
+</ParamField>
+
+
+<ParamField path="run_with_orchestration" type="Optional[bool]">
+  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
 </ParamField>
 
 

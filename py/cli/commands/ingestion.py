@@ -71,15 +71,24 @@ async def ingest_files_from_urls(client, urls):
 @click.option(
     "--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string"
 )
+@click.option(
+    "--run-without-orchestration", is_flag=True, help="Run with orchestration"
+)
 @pass_context
-async def ingest_files(ctx, file_paths, document_ids, metadatas):
+async def ingest_files(
+    ctx, file_paths, document_ids, metadatas, run_without_orchestration
+):
     """Ingest files into R2R."""
     client = ctx.obj
     with timer():
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
+        run_with_orchestration = not run_without_orchestration
         response = await client.ingest_files(
-            file_paths, metadatas, document_ids
+            file_paths,
+            metadatas,
+            document_ids,
+            run_with_orchestration=run_with_orchestration,
         )
     click.echo(json.dumps(response, indent=2))
 
@@ -96,8 +105,13 @@ async def ingest_files(ctx, file_paths, document_ids, metadatas):
 @click.option(
     "--metadatas", type=JSON, help="Metadatas for updating as a JSON string"
 )
+@click.option(
+    "--run-without-orchestration", is_flag=True, help="Run with orchestration"
+)
 @pass_context
-async def update_files(ctx, file_paths, document_ids, metadatas):
+async def update_files(
+    ctx, file_paths, document_ids, metadatas, run_without_orchestration
+):
     """Update existing files in R2R."""
     client = ctx.obj
     with timer():
@@ -114,9 +128,12 @@ async def update_files(ctx, file_paths, document_ids, metadatas):
                 raise click.BadParameter(
                     "Metadatas must be a JSON string representing a list of dictionaries or a single dictionary"
                 )
-
+        run_with_orchestration = not run_without_orchestration
         response = await client.update_files(
-            file_paths, document_ids, metadatas
+            file_paths,
+            document_ids,
+            metadatas,
+            run_with_orchestration=run_with_orchestration,
         )
     click.echo(json.dumps(response, indent=2))
 

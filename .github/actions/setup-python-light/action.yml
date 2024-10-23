@@ -21,9 +21,10 @@ runs:
 
     - name: Install Poetry and dependencies on Windows
       if: inputs.os == 'windows-latest'
-      shell: cmd
+      shell: pwsh
       run: |
-        python -c "import urllib.request; print(urllib.request.urlopen('https://install.python-poetry.org').read().decode())" > install-poetry.py
-        python install-poetry.py
-        echo %USERPROFILE%\AppData\Roaming\Python\Scripts >> %GITHUB_PATH%
-        cd py && poetry install -E core -E ingestion-bundle
+        (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+        $env:PATH += ";$env:APPDATA\Python\Scripts"
+        poetry --version
+        cd py
+        poetry install -E core -E ingestion-bundle

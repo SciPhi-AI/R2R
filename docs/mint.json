@@ -312,7 +312,9 @@
         "api-reference/endpoint/ingest_files",
         "api-reference/endpoint/ingest_chunks",
         "api-reference/endpoint/update_files",
-        "api-reference/endpoint/create_vector_index"
+        "api-reference/endpoint/create_vector_index",
+        "api-reference/endpoint/delete_vector_index",
+        "api-reference/endpoint/list_vector_index"
       ]
     },
     {
