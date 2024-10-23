@@ -11,7 +11,6 @@ from core.base import (
     DocumentExtraction,
     DocumentInfo,
     DocumentType,
-    IngestionConfig,
     IngestionStatus,
     R2RException,
     R2RLoggingProvider,
@@ -109,25 +108,22 @@ class IngestionService(Service):
                 )
             )["results"]
 
-            if len(existing_document_info) > 0:
+            if not is_update and len(existing_document_info) > 0:
                 existing_doc = existing_document_info[0]
-                if not is_update:
-                    if (
-                        existing_doc.version >= version
-                        and existing_doc.ingestion_status
-                        == IngestionStatus.SUCCESS
-                    ):
-                        raise R2RException(
-                            status_code=409,
-                            message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
-                        )
-                    elif (
-                        existing_doc.ingestion_status != IngestionStatus.FAILED
-                    ):
-                        raise R2RException(
-                            status_code=409,
-                            message=f"Document {document_id} was already ingested and is not in a failed state.",
-                        )
+                if (
+                    existing_doc.version >= version
+                    and existing_doc.ingestion_status
+                    == IngestionStatus.SUCCESS
+                ):
+                    raise R2RException(
+                        status_code=409,
+                        message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
+                    )
+                elif existing_doc.ingestion_status != IngestionStatus.FAILED:
+                    raise R2RException(
+                        status_code=409,
+                        message=f"Document {document_id} was already ingested and is not in a failed state.",
+                    )
 
             await self.providers.database.upsert_documents_overview(
                 document_info
@@ -362,25 +358,23 @@ class IngestionService(Service):
         document_chunks_dict: dict,
     ) -> VectorEntry:
         # get chunks in context
-
-        context_chunk_ids = []
+        context_chunk_ids: list[UUID] = []
         for enrichment_strategy in chunk_enrichment_settings.strategies:
             if enrichment_strategy == ChunkEnrichmentStrategy.NEIGHBORHOOD:
-                for prev in range(
-                    1, chunk_enrichment_settings.backward_chunks + 1
-                ):
-                    if chunk_idx - prev >= 0:
-                        context_chunk_ids.append(
-                            document_chunks[chunk_idx - prev]["extraction_id"]
-                        )
-                for next in range(
-                    1, chunk_enrichment_settings.forward_chunks + 1
-                ):
-                    if chunk_idx + next < len(document_chunks):
-                        context_chunk_ids.append(
-                            document_chunks[chunk_idx + next]["extraction_id"]
-                        )
-
+                context_chunk_ids.extend(
+                    document_chunks[chunk_idx - prev]["extraction_id"]
+                    for prev in range(
+                        1, chunk_enrichment_settings.backward_chunks + 1
+                    )
+                    if chunk_idx - prev >= 0
+                )
+                context_chunk_ids.extend(
+                    document_chunks[chunk_idx + next]["extraction_id"]
+                    for next in range(
+                        1, chunk_enrichment_settings.forward_chunks + 1
+                    )
+                    if chunk_idx + next < len(document_chunks)
+                )
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
                 semantic_neighbors = await self.providers.database.get_semantic_neighbors(
                     document_id=document_id,
@@ -388,30 +382,27 @@ class IngestionService(Service):
                     limit=chunk_enrichment_settings.semantic_neighbors,
                     similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
                 )
-
-                for neighbor in semantic_neighbors:
-                    context_chunk_ids.append(neighbor["extraction_id"])
+                context_chunk_ids.extend(
+                    neighbor["extraction_id"]
+                    for neighbor in semantic_neighbors
+                )
 
         context_chunk_ids = list(set(context_chunk_ids))
 
-        context_chunk_texts = []
-        for context_chunk_id in context_chunk_ids:
-            context_chunk_texts.append(
-                (
-                    document_chunks_dict[context_chunk_id]["text"],
-                    document_chunks_dict[context_chunk_id]["metadata"][
-                        "chunk_order"
-                    ],
-                )
+        context_chunk_texts = [
+            (
+                document_chunks_dict[context_chunk_id]["text"],
+                document_chunks_dict[context_chunk_id]["metadata"][
+                    "chunk_order"
+                ],
             )
+            for context_chunk_id in context_chunk_ids
+        ]
 
         # sort by chunk_order
         context_chunk_texts.sort(key=lambda x: x[1])
 
         # enrich chunk
-        # get prompt and call LLM on it. Then finally embed and store it.
-        # don't call a pipe here.
-        # just call the LLM directly
         try:
             updated_chunk_text = (
                 (
@@ -419,13 +410,8 @@ class IngestionService(Service):
                         messages=await self.providers.prompt._get_message_payload(
                             task_prompt_name="chunk_enrichment",
                             task_inputs={
-                                "context_chunks": (
-                                    "\n".join(
-                                        [
-                                            text
-                                            for text, _ in context_chunk_texts
-                                        ]
-                                    )
+                                "context_chunks": "\n".join(
+                                    text for text, _ in context_chunk_texts
                                 ),
                                 "chunk": chunk["text"],
                             },
@@ -453,7 +439,7 @@ class IngestionService(Service):
 
         chunk["metadata"]["original_text"] = chunk["text"]
 
-        vector_entry_new = VectorEntry(
+        return VectorEntry(
             extraction_id=uuid.uuid5(
                 uuid.NAMESPACE_DNS, str(chunk["extraction_id"])
             ),
@@ -464,8 +450,6 @@ class IngestionService(Service):
             text=updated_chunk_text or chunk["text"],
             metadata=chunk["metadata"],
         )
-
-        return vector_entry_new
 
     async def chunk_enrichment(self, document_id: UUID) -> int:
         # just call the pipe on every chunk of the document

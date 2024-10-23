@@ -103,6 +103,12 @@ def simple_kg_factory(service: KgService):
 
     async def entity_deduplication_workflow(input_data):
 
+        # TODO: We should determine how we want to handle the input here and syncronize it across all simple orchestration methods
+        if isinstance(input_data["kg_entity_deduplication_settings"], str):
+            input_data["kg_entity_deduplication_settings"] = json.loads(
+                input_data["kg_entity_deduplication_settings"]
+            )
+
         collection_id = input_data["collection_id"]
 
         number_of_distinct_entities = (

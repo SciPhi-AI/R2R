@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from core.base import AsyncState
@@ -51,12 +51,10 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         # find the index until the length is less than 1024
         index = 0
         description_length = 0
-        while index < len(entity_descriptions):
-            if (
-                len(entity_descriptions[index]) + description_length
-                > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
-            ):
-                break
+        while index < len(entity_descriptions) and not (
+            len(entity_descriptions[index]) + description_length
+            > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
+        ):
             description_length += len(entity_descriptions[index])
             index += 1
 
@@ -117,15 +115,13 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             f"Upserting {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        result = await self.kg_provider.update_entity_descriptions(
-            entities_batch,
-        )
+        await self.kg_provider.update_entity_descriptions(entities_batch)
 
         logger.info(
             f"Upserted {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        for i, entity in enumerate(entities_batch):
+        for entity in entities_batch:
             yield entity
 
     async def _run_logic(
@@ -174,7 +170,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         entity_descriptions_dict: dict[str, list[str]] = {}
         for entity_description in entity_descriptions:
-            if not entity_description.name in entity_descriptions_dict:
+            if entity_description.name not in entity_descriptions_dict:
                 entity_descriptions_dict[entity_description.name] = []
             entity_descriptions_dict[entity_description.name].append(
                 entity_description.description
