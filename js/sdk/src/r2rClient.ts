@@ -545,7 +545,10 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
-        run_with_orchestration: (options.run_with_orchestration != undefined) ? String(options.run_with_orchestration) : undefined,
+      run_with_orchestration:
+        options.run_with_orchestration != undefined
+          ? String(options.run_with_orchestration)
+          : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -624,7 +627,10 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
-        run_with_orchestration: (options.run_with_orchestration != undefined) ? String(options.run_with_orchestration) : undefined,
+      run_with_orchestration:
+        options.run_with_orchestration != undefined
+          ? String(options.run_with_orchestration)
+          : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -661,10 +667,8 @@ export class r2rClient {
       chunks: chunks,
       document_id: documentId,
       metadata: metadata,
+      run_with_orchestration: run_with_orchestration,
     };
-    if (run_with_orchestration != undefined) {
-      inputData.run_with_orchestration = run_with_orchestration;
-    }
 
     return await this._makeRequest("POST", "ingest_chunks", {
       data: inputData,

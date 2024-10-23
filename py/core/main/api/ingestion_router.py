@@ -346,7 +346,7 @@ class IngestionRouter(BaseRouter):
             metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
-            run_with_orchestration: Optional[bool] = Form(
+            run_with_orchestration: Optional[bool] = Body(
                 True,
                 description=ingest_files_descriptions.get(
                     "run_with_orchestration"
