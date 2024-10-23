@@ -163,19 +163,11 @@ def hatchet_ingestion_factory(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
-                # get runtime config chunk_enrichment_settings
-                chunk_enrichment_settings = input_data.get(
-                    "ingestion_config", {}
-                ).get("chunk_enrichment_settings", None) or getattr(
+                chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",
                     None,
                 )
-
-                if isinstance(chunk_enrichment_settings, dict):
-                    chunk_enrichment_settings = ChunkEnrichmentSettings(
-                        **chunk_enrichment_settings
-                    )
 
                 if chunk_enrichment_settings and getattr(
                     chunk_enrichment_settings, "enable_chunk_enrichment", False
@@ -200,7 +192,6 @@ def hatchet_ingestion_factory(
 
                     await self.ingestion_service.chunk_enrichment(
                         document_id=document_info.id,
-                        chunk_enrichment_settings=chunk_enrichment_settings,
                     )
 
                     await self.ingestion_service.update_document_status(

@@ -59,8 +59,6 @@ from .vector import (
     VectorType,
 )
 
-from .ingestion import ChunkEnrichmentSettings, ChunkEnrichmentStrategy
-
 __all__ = [
     # Base abstractions
     "R2RSerializable",
@@ -92,9 +90,6 @@ __all__ = [
     "CommunityReport",
     "KGExtraction",
     "Triple",
-    # Ingestion abstractions
-    "ChunkEnrichmentSettings",
-    "ChunkEnrichmentStrategy",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
