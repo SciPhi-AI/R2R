@@ -26,6 +26,8 @@ We recommend this method for achieving the highest quality ingestion results.
 
 </Note>
 
+
+
 ### Ingest Files
 
 
@@ -48,6 +50,9 @@ ingest_response = client.ingest_files(
         "max_characters": 512, # hard maximum
         "combine_under_n_chars": 64, # hard minimum
         "overlap": 100,
+        "chunk_enrichment_settings": {
+            "enable_chunk_enrichment": False,
+        }
     }
 )
 
@@ -223,6 +228,25 @@ Refer to the [ingestion configuration](/documentation/configuration/ingestion/pa
 
 
 </ParamField>
+
+<Note>
+
+We have added support for contextual chunk enrichment! You can learn more about it [here](/cookbooks/contextual-enrichment). 
+
+Currently, you need to enable it in your ingestion config:
+
+```toml
+[ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = true # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3            # Look ahead 3 chunks
+    backward_chunks = 3           # Look behind 3 chunks
+    semantic_neighbors = 10       # Find 10 semantically similar chunks
+    semantic_similarity_threshold = 0.7  # Minimum similarity score
+    generation_config = { model = "openai/gpt-4o-mini" }
+```
+
+</Note>
 
 ### Ingest Chunks
 
