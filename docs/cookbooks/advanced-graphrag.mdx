@@ -135,23 +135,36 @@ Prompt tuning produces:
 
 Prompt tuning allow for us to generate communities that better reflect the natural organization of the domain knowledge while maintaining more precise technical and thematic boundaries between related concepts.
 
-## Contextual Embeddings
+## Contextual Chunk Enrichment
 
-Contextual embeddings are a technique that allows us to capture the semantic meaning of the entities and relationships in the knowledge graph. This is done by using a combination of the entity's textual description and its contextual embeddings.
+Contextual chunk enrichment is a technique that allows us to capture the semantic meaning of the entities and relationships in the knowledge graph. This is done by using a combination of the entity's textual description and its contextual embeddings. This enrichment process enhances the quality and depth of information in your knowledge graph by:
 
+1. Analyzing the surrounding context of each entity mention
+2. Incorporating semantic information from related passages
+3. Preserving important contextual nuances that might be lost in simple entity extraction
 
+You can learn more about contextual chunk enrichment [here](/cookbooks/contextual-enrichment).
 
 
 ### Entity Deduplication
 
-Note that the entities and triples are created at the document level. This means that if you have multiple documents with the same entity, the entity will be duplicated for each document.
+When creating a knowledge graph across multiple documents, entities are initially created at the document level. This means that the same real-world entity (e.g., "Albert Einstein" or "CRISPR") might appear multiple times if it's mentioned in different documents. This duplication can lead to:
 
-To deduplicate the entities, you can run the `deduplicate-entities` endpoint. This endpoint will merge duplicate entities and delete the duplicate entities.
+- Redundant information in your knowledge graph
+- Fragmented relationships across duplicate entities
+- Increased storage and processing overhead
+- Potentially inconsistent entity descriptions
+
+The `deduplicate-entities` endpoint addresses these issues by:
+1. Identifying similar entities using name (exact match, other strategies coming soon)
+2. Merging their properties and relationships
+3. Maintaining the most comprehensive description
+4. Removing the duplicate entries
 
 <Tabs>
 <Tab title="CLI">
 ```bash
-r2r deduplicate-entities --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
+r2r deduplicate-entities --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --run
 
 # Example Response
 [{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
@@ -163,7 +176,10 @@ r2r deduplicate-entities --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
 from r2r import R2RClient
 
 client = R2RClient("http://localhost:7272")
-client.deduplicate_entities(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")
+client.deduplicate_entities(
+    collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+    run_type="run"
+)
 
 # Example Response
 [{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
@@ -171,7 +187,24 @@ client.deduplicate_entities(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
 </Tab>
 </Tabs>
 
-You can check the status of the deduplication task using the hatchet dashboard on http://localhost:7274. And once that is complete, check the endpoints at a entity_level = collection to see the deduplicated entities and triples.
+#### Monitoring Deduplication
 
-- Entities: [Entities](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
-- Triples: [Triples](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
+You can monitor the deduplication process in two ways:
+
+1. **Hatchet Dashboard**: Access the dashboard at http://localhost:7274 to view:
+   - Task status and progress
+   - Any errors or warnings
+   - Completion time estimates
+
+2. **API Endpoints**: Once deduplication is complete, verify the results using these endpoints with `entity_level = collection`:
+   - [Entities API](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
+   - [Triples API](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
+
+#### Best Practices
+
+When using entity deduplication:
+
+- Run deduplication after initial graph creation but before any enrichment steps
+- Monitor the number of entities before and after to ensure expected reduction
+- Review a sample of merged entities to verify accuracy
+- For large collections, expect the process to take longer and plan accordingly
