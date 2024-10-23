@@ -40,7 +40,7 @@ def upgrade() -> None:
 
     # KG table migrations
     op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.entity_raw RENAME TO chunk_embedding"
+        f"ALTER TABLE IF EXISTS {project_name}.entity_raw RENAME TO chunk_entity"
     )
     op.execute(
         f"ALTER TABLE IF EXISTS {project_name}.triple_raw RENAME TO chunk_triple"
@@ -155,7 +155,7 @@ def downgrade() -> None:
 
     # Revert KG table migrations
     op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.chunk_embedding RENAME TO entity_raw"
+        f"ALTER TABLE IF EXISTS {project_name}.chunk_entity RENAME TO entity_raw"
     )
     op.execute(
         f"ALTER TABLE IF EXISTS {project_name}.chunk_triple RENAME TO triple_raw"

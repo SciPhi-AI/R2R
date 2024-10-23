@@ -240,7 +240,7 @@ class KGRouter(BaseRouter):
                 )
 
             if entity_level == EntityLevel.CHUNK:
-                entity_table_name = "chunk_embedding"
+                entity_table_name = "chunk_entity"
             elif entity_level == EntityLevel.DOCUMENT:
                 entity_table_name = "document_entity"
             else:

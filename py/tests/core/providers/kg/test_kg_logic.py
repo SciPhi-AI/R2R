@@ -214,10 +214,10 @@ async def test_add_entities_raw(
     postgres_kg_provider, entities_raw_list, collection_id
 ):
     await postgres_kg_provider.add_entities(
-        entities_raw_list, table_name="chunk_embedding"
+        entities_raw_list, table_name="chunk_entity"
     )
     entities = await postgres_kg_provider.get_entities(
-        collection_id, entity_table_name="chunk_embedding"
+        collection_id, entity_table_name="chunk_entity"
     )
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
@@ -260,13 +260,13 @@ async def test_add_kg_extractions(
     postgres_kg_provider, kg_extractions, collection_id
 ):
     added_extractions = await postgres_kg_provider.add_kg_extractions(
-        kg_extractions, table_suffix="_raw"
+        kg_extractions, table_prefix="chunk_"
     )
 
     assert added_extractions == (2, 2)
 
     entities = await postgres_kg_provider.get_entities(
-        collection_id, entity_table_name="chunk_embedding"
+        collection_id, entity_table_name="chunk_entity"
     )
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
@@ -285,7 +285,7 @@ async def test_get_entity_map(
     postgres_kg_provider, entities_raw_list, triples_raw_list, document_id
 ):
     await postgres_kg_provider.add_entities(
-        entities_raw_list, table_name="chunk_embedding"
+        entities_raw_list, table_name="chunk_entity"
     )
     entity_map = await postgres_kg_provider.get_entity_map(0, 2, document_id)
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"

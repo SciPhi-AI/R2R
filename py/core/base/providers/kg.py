@@ -80,7 +80,7 @@ class KGProvider(ABC):
 
     @abstractmethod
     async def add_kg_extractions(
-        self, kg_extractions: list[KGExtraction], table_suffix: str = "_raw"
+        self, kg_extractions: list[KGExtraction], table_prefix: str = "chunk_"
     ) -> Tuple[int, int]:
         """Abstract method to add KG extractions."""
         pass
