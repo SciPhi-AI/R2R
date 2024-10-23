@@ -22,14 +22,14 @@ from shared.abstractions import (
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
 )
+from shared.abstractions.graph import EntityLevel
 from shared.abstractions.vector import VectorQuantizationType
 from shared.api.models.kg.responses import (
     KGCreationEstimationResponse,
-    KGEnrichmentEstimationResponse,
     KGDeduplicationEstimationResponse,
+    KGEnrichmentEstimationResponse,
 )
 from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
-from shared.abstractions.graph import EntityLevel
 
 logger = logging.getLogger()
 
@@ -841,8 +841,8 @@ class PostgresKGProvider(KGProvider):
 
         # remove all triples for these documents.
         DELETE_QUERIES = [
-            f"DELETE FROM {self._get_table_name("community_info")} WHERE collection_id = $1;",
-            f"DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1;",
         ]
 
         document_ids_response = await self.db_provider.documents_in_collection(
@@ -855,10 +855,10 @@ class PostgresKGProvider(KGProvider):
         # TODO: make these queries more efficient. Pass the document_ids as params.
         if cascade:
             DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name("chunk_entity")} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name("document_entity")} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name("collection_entity")} WHERE collection_id = $1;",
+                f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('chunk_triple')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('collection_entity')} WHERE collection_id = $1;",
             ]
 
             # setting the kg_creation_status to PENDING for this collection.
