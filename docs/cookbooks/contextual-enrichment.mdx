@@ -1,14 +1,16 @@
-# Contextual Chunk Enrichment
+---
+title: 'Contextual Chunk Enrichment'
+description: 'Enrich chunks with additional information'
+icon: 'puzzle-piece'
+---
 
-[In Progress]
+When documents are ingested in a RAG system, they are broken into chunks. Chunks are a great way to store bits of information for vector search, but they may not always contain enough information for a downstream task like question answering.
 
-When documents are ingested, they are broken into chunks. Chunks are a great way to store bits of information for vector search, but they may not always contain enough information for a downstream task like question answering.
+Let's take an example of the [lyft-2021 pdf](https://github.com/SciPhi-AI/R2R/blob/main/py/core/examples/data/lyft_2021.pdf).
 
-Let's take an example of the lyft-2021 pdf here: https://github.com/SciPhi-AI/R2R/blob/main/py/core/examples/data/lyft_2021.pdf.
+When we ingest this document, the document is broken into 1223 chunks, one of which is:
 
-One of the chunks we get is:
-
-```
+```plaintext
 storing unrented and returned vehicles. These impacts to the demand for and operations of the different rental programs have and may continue to adversely affect our business, financial condition and results of operation.
 ```
 
@@ -16,11 +18,63 @@ This chunk does not contain specific information of Lyft's business, financial c
 
 To address this, we can use contextual enrichment to add more information to the chunk.
 
-After enrichment, we get the following chunk:
+You can enable contextual enrichment by setting the `enrich_chunks` flag to `true` in the ingestion settings of your collection in r2r.toml.
+
+```toml
+  [ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = true # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3
+    backward_chunks = 3
+    semantic_neighbors = 10
+    semantic_similarity_threshold = 0.7
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 ```
+
+R2R supports two strategies for contextual enrichment:
+
+- **Neighborhood**: Add the n closest chunks to the original chunk to the context and ask the LLM to generate a summary.
+- **Semantic**: Uses a semantic search to find similar chunks and appends them to the original chunk.
+
+For each chunk, we will ask an LLM to rewrite the chunk with the additional context. The chunk prompt is as follows:
+
+```
+## Task:
+
+Enrich and refine the given chunk of text using information from the provided context chunks. The goal is to make the chunk more precise and self-contained.
+
+## Context Chunks:
+{context_chunks}
+
+## Chunk to Enrich:
+{chunk}
+
+## Instructions:
+1. Rewrite the chunk in third person.
+2. Replace all common nouns with appropriate proper nouns. Use specific names, titles, or identifiers instead of general terms.
+3. Use information from the context chunks to enhance the clarity and precision of the given chunk.
+4. Ensure the enriched chunk remains independent and self-contained.
+5. Do not incorporate specific information or details from other chunks into this one.
+6. Focus on making the chunk more informative and precise within its own scope.
+7. Maintain the original meaning and intent of the chunk while improving its clarity and usefulness.
+8. Just output the enriched chunk. Do not include any other text.
+
+## Enriched Chunk:
+```
+
+To run this, first set the `enable_chunk_enrichment` flag to `true` in the ingestion settings of your collection in r2r.toml.
+
+Then you can run 
+
+```bash
+r2r ingest-files --file_paths path/to/file.pdf
+```
+
+After enrichment, we get the following chunk:
+
+```plaintext
 The impacts of the COVID-19 pandemic on the demand for and operations of the various vehicle rental programs, including Lyft Rentals and the Express Drive program, have resulted in challenges regarding the storage of unrented and returned vehicles. These adverse conditions are anticipated to continue affecting Lyft’s overall business performance, financial condition, and operational results.
 ```
 
-You can enable contextual enrichment by setting the `enrich_chunks` flag to `true` when creating a collection in r2r.toml.
-
+And the raw text chunks are stored in the 'original_text' field of the chunk metadata.
