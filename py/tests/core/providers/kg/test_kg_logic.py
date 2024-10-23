@@ -403,7 +403,9 @@ async def test_get_community_details(
     await postgres_kg_provider.add_community_report(community_report_list[0])
 
     community_level, entities, triples = (
-        await postgres_kg_provider.get_community_details(community_number=1)
+        await postgres_kg_provider.get_community_details(
+            community_number=1, collection_id=collection_id
+        )
     )
 
     assert community_level == 0

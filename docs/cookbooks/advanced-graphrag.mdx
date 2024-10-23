@@ -53,6 +53,7 @@ graph_response = client.create_graph(
 
 # Step 3: Clean up the graph by removing duplicate entities
 client.deduplicate_entities(
+    run_type="run",
     collection_id='122fdf6a-e116-546b-a8f6-e4cb2e2c0a09'
 )
 
@@ -133,3 +134,44 @@ Prompt tuning produces:
 | Communities | 29       | 41                          |
 
 Prompt tuning allow for us to generate communities that better reflect the natural organization of the domain knowledge while maintaining more precise technical and thematic boundaries between related concepts.
+
+## Contextual Embeddings
+
+Contextual embeddings are a technique that allows us to capture the semantic meaning of the entities and relationships in the knowledge graph. This is done by using a combination of the entity's textual description and its contextual embeddings.
+
+
+
+
+### Entity Deduplication
+
+Note that the entities and triples are created at the document level. This means that if you have multiple documents with the same entity, the entity will be duplicated for each document.
+
+To deduplicate the entities, you can run the `deduplicate-entities` endpoint. This endpoint will merge duplicate entities and delete the duplicate entities.
+
+<Tabs>
+<Tab title="CLI">
+```bash
+r2r deduplicate-entities --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
+
+# Example Response
+[{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
+```
+</Tab>
+
+<Tab title="SDK">
+```python
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+client.deduplicate_entities(collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")
+
+# Example Response
+[{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
+```
+</Tab>
+</Tabs>
+
+You can check the status of the deduplication task using the hatchet dashboard on http://localhost:7274. And once that is complete, check the endpoints at a entity_level = collection to see the deduplicated entities and triples.
+
+- Entities: [Entities](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
+- Triples: [Triples](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)

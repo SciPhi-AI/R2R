@@ -397,8 +397,16 @@ class IngestionService(Service):
         context_chunk_texts = []
         for context_chunk_id in context_chunk_ids:
             context_chunk_texts.append(
-                document_chunks_dict[context_chunk_id]["text"]
+                (
+                    document_chunks_dict[context_chunk_id]["text"],
+                    document_chunks_dict[context_chunk_id]["metadata"][
+                        "chunk_order"
+                    ],
+                )
             )
+
+        # sort by chunk_order
+        context_chunk_texts.sort(key=lambda x: x[1])
 
         # enrich chunk
         # get prompt and call LLM on it. Then finally embed and store it.
@@ -412,7 +420,12 @@ class IngestionService(Service):
                             task_prompt_name="chunk_enrichment",
                             task_inputs={
                                 "context_chunks": (
-                                    "\n".join(context_chunk_texts)
+                                    "\n".join(
+                                        [
+                                            text
+                                            for text, _ in context_chunk_texts
+                                        ]
+                                    )
                                 ),
                                 "chunk": chunk["text"],
                             },

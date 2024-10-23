@@ -286,7 +286,7 @@ def test_kg_create_graph_sample_file_cli():
 
 def test_kg_deduplicate_entities_sample_file_cli():
     print("Testing: KG deduplicate entities")
-    output = run_command("poetry run r2r deduplicate-entities")
+    output = run_command("poetry run r2r deduplicate-entities --run")
 
     print(output)
 
@@ -386,6 +386,56 @@ def test_kg_search_sample_file_cli():
     assert communities_found, "No communities found"
 
     print("KG search test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_sample_file_cli():
+    print("Testing: KG delete graph")
+    output = run_command(
+        "poetry run r2r delete-graph-for-collection --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+    print(output)
+
+    response = requests.get(
+        "http://localhost:7272/v2/communities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["communities"] == []
+
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["entities"] != []
+
+    print("KG delete graph test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_with_cascading_sample_file_cli():
+    print("Testing: KG delete graph with cascading")
+    output = run_command(
+        "poetry run r2r delete-graph-for-collection --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --cascade"
+    )
+    print(output)
+
+    response = requests.get(
+        "http://localhost:7272/v2/entities",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["entities"] == []
+
+    response = requests.get(
+        "http://localhost:7272/v2/triples",
+        params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
+    )
+
+    assert response.json()["results"]["triples"] == []
+
+    print("KG delete graph with cascading test passed")
     print("~" * 100)
 
 

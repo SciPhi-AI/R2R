@@ -141,15 +141,6 @@ def hatchet_ingestion_factory(
                     "is_update"
                 )
 
-                # add contextual chunks
-                await self.ingestion_service.chunk_enrichment(
-                    document_id=document_info.id,
-                )
-
-                # delete original chunks
-
-                # delete original chunk vectors
-
                 await self.ingestion_service.finalize_ingestion(
                     document_info, is_update=is_update
                 )
@@ -171,10 +162,47 @@ def hatchet_ingestion_factory(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
+                chunk_enrichment_settings = getattr(
+                    service.providers.ingestion.config,
+                    "chunk_enrichment_settings",
+                    None,
+                )
+
+                if chunk_enrichment_settings and getattr(
+                    chunk_enrichment_settings, "enable_chunk_enrichment", False
+                ):
+
+                    logger.info("Enriching document with contextual chunks")
+
+                    # TODO: the status updating doesn't work because document_info doesn't contain information about collection IDs
+                    # we don't update the document_info when we assign document_to_collection_relational and document_to_collection_vector
+                    # hack: get document_info again from DB
+                    document_info = (
+                        await self.ingestion_service.providers.database.get_documents_overview(
+                            filter_user_ids=[document_info.user_id],
+                            filter_document_ids=[document_info.id],
+                        )
+                    )["results"][0]
+
+                    await self.ingestion_service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.ENRICHING,
+                    )
+
+                    await self.ingestion_service.chunk_enrichment(
+                        document_id=document_info.id,
+                    )
+
+                    await self.ingestion_service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.ENRICHED,
+                    )
+
                 return {
                     "status": "Successfully finalized ingestion",
                     "document_info": document_info.to_dict(),
                 }
+
             except AuthenticationError as e:
                 raise R2RException(
                     status_code=401,

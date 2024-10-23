@@ -1,0 +1,26 @@
+# Contextual Chunk Enrichment
+
+[In Progress]
+
+When documents are ingested, they are broken into chunks. Chunks are a great way to store bits of information for vector search, but they may not always contain enough information for a downstream task like question answering.
+
+Let's take an example of the lyft-2021 pdf here: https://github.com/SciPhi-AI/R2R/blob/main/py/core/examples/data/lyft_2021.pdf.
+
+One of the chunks we get is:
+
+```
+storing unrented and returned vehicles. These impacts to the demand for and operations of the different rental programs have and may continue to adversely affect our business, financial condition and results of operation.
+```
+
+This chunk does not contain specific information of Lyft's business, financial condition and results of operation.
+
+To address this, we can use contextual enrichment to add more information to the chunk.
+
+After enrichment, we get the following chunk:
+
+```
+The impacts of the COVID-19 pandemic on the demand for and operations of the various vehicle rental programs, including Lyft Rentals and the Express Drive program, have resulted in challenges regarding the storage of unrented and returned vehicles. These adverse conditions are anticipated to continue affecting Lyft’s overall business performance, financial condition, and operational results.
+```
+
+You can enable contextual enrichment by setting the `enrich_chunks` flag to `true` when creating a collection in r2r.toml.
+

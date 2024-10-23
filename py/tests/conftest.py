@@ -27,6 +27,7 @@ from core.base import (
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
+    OrchestrationConfig,
 )
 from core.providers import (
     BCryptProvider,
@@ -179,6 +180,18 @@ def litellm_provider(app_config):
     return LiteLLMEmbeddingProvider(config)
 
 
+# Embeddings
+@pytest.fixture
+def litellm_provider_128(app_config):
+    config = EmbeddingConfig(
+        provider="litellm",
+        base_model="text-embedding-3-small",
+        base_dimension=128,
+        app=app_config,
+    )
+    return LiteLLMEmbeddingProvider(config)
+
+
 # File Provider
 @pytest.fixture(scope="function")
 def file_config(app_config):
@@ -274,6 +287,11 @@ async def postgres_kg_provider(
 @pytest.fixture(scope="function")
 def prompt_config(app_config):
     return PromptConfig(provider="r2r", app=app_config)
+
+
+@pytest.fixture(scope="function")
+def orchestration_config(app_config):
+    return OrchestrationConfig(provider="simple", app=app_config)
 
 
 @pytest.fixture(scope="function")

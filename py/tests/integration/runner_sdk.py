@@ -712,7 +712,8 @@ def test_kg_deduplicate_entities_sample_file_sdk():
     print("Testing: KG deduplicate entities")
 
     entities_deduplication_result = client.deduplicate_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        run_type="run",
     )
 
     if "queued" in entities_deduplication_result["results"]["message"]:
@@ -789,6 +790,58 @@ def test_kg_search_sample_file_sdk():
     assert communities_found, "No communities found"
 
     print("KG search test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_sample_file_sdk():
+    print("Testing: KG delete graph")
+
+    response = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["communities"] != []
+    client.delete_graph_for_collection(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    response = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["communities"] == []
+
+    response = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        entity_level="document",
+    )
+
+    assert response["results"]["entities"] != []
+
+    print("KG delete graph test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_with_cascading_sample_file_sdk():
+    print("Testing: KG delete graph with cascading")
+
+    client.delete_graph_for_collection(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", cascade=True
+    )
+
+    response = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["entities"] == []
+
+    response = client.get_triples(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["triples"] == []
+
+    print("KG delete graph with cascading test passed")
     print("~" * 100)
 
 

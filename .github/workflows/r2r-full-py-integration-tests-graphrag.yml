@@ -47,33 +47,9 @@ jobs:
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
 
-      - name: Run CLI Ingestion Tests
-        if: matrix.test_category == 'cli-ingestion'
-        uses: ./.github/actions/run-cli-ingestion-tests
-
-      - name: Run CLI Retrieval Tests
-        if: matrix.test_category == 'cli-retrieval'
-        uses: ./.github/actions/run-cli-retrieval-tests
-
       - name: Run CLI GraphRAG Tests
         if: matrix.test_category == 'cli-graphrag'
         uses: ./.github/actions/run-cli-graphrag-tests
-
-      - name: Run SDK Ingestion Tests
-        if: matrix.test_category == 'sdk-ingestion'
-        uses: ./.github/actions/run-sdk-ingestion-tests
-
-      - name: Run SDK Retrieval Tests
-        if: matrix.test_category == 'sdk-retrieval'
-        uses: ./.github/actions/run-sdk-retrieval-tests
-
-      - name: Run SDK Auth Tests
-        if: matrix.test_category == 'sdk-auth'
-        uses: ./.github/actions/run-sdk-auth-tests
-
-      - name: Run SDK Collections Tests
-        if: matrix.test_category == 'sdk-collections'
-        uses: ./.github/actions/run-sdk-collections-tests
 
       - name: Run SDK GraphRAG Tests
         if: matrix.test_category == 'sdk-graphrag'

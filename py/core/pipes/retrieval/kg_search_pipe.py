@@ -133,6 +133,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     "extraction_ids",
                 ],
                 filters=kg_search_settings.filters,
+                entities_level=kg_search_settings.entities_level,
             ):
                 yield KGSearchResult(
                     content=KGEntityResult(

@@ -115,6 +115,8 @@ class IngestionStatus(str, Enum):
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
     STORING = "storing"
+    ENRICHING = "enriching"
+    ENRICHED = "enriched"
 
     FAILED = "failed"
     SUCCESS = "success"

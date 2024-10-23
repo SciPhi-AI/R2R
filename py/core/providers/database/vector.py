@@ -947,7 +947,6 @@ class PostgresVectorHandler(VectorHandler):
         ORDER BY similarity ASC
         LIMIT $4
         """
-
         results = await self.connection_manager.fetch_query(
             query,
             (str(document_id), str(chunk_id), similarity_threshold, limit),

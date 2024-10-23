@@ -199,7 +199,9 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_community_details(self, community_number: int):
+    async def get_community_details(
+        self, community_number: int, collection_id: UUID
+    ):
         """Abstract method to get community details."""
         pass
 
@@ -231,6 +233,13 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_creation_estimate(self, *args: Any, **kwargs: Any) -> Any:
         """Abstract method to get the creation estimate."""
+        pass
+
+    @abstractmethod
+    async def get_deduplication_estimate(
+        self, *args: Any, **kwargs: Any
+    ) -> Any:
+        """Abstract method to get the deduplication estimate."""
         pass
 
     @abstractmethod

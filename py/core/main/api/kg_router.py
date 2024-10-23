@@ -213,7 +213,7 @@ class KGRouter(BaseRouter):
         @self.base_endpoint
         async def get_entities(
             entity_level: Optional[EntityLevel] = Query(
-                default=EntityLevel.COLLECTION,
+                default=EntityLevel.DOCUMENT,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
             ),
             collection_id: Optional[UUID] = Query(
@@ -357,7 +357,11 @@ class KGRouter(BaseRouter):
                 run_type = KGRunType.ESTIMATE
 
             server_deduplication_settings = (
-                self.service.providers.kg.config.kg_entity_deduplication_settings.dict()
+                self.service.providers.kg.config.kg_entity_deduplication_settings
+            )
+
+            logger.info(
+                f"Server deduplication settings: {server_deduplication_settings}"
             )
 
             if deduplication_settings:
@@ -370,10 +374,15 @@ class KGRouter(BaseRouter):
             )
             logger.info(f"Input data: {server_deduplication_settings}")
 
+            if run_type == KGRunType.ESTIMATE:
+                return await self.service.get_deduplication_estimate(
+                    collection_id, server_deduplication_settings
+                )
+
             workflow_input = {
                 "collection_id": str(collection_id),
                 "run_type": run_type,
-                "kg_entity_deduplication_settings": server_deduplication_settings,
+                "kg_entity_deduplication_settings": server_deduplication_settings.model_dump_json(),
                 "user": auth_user.json(),
             }
 
@@ -448,6 +457,9 @@ class KGRouter(BaseRouter):
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
-            return await self.service.delete_graph_for_collection(
+
+            await self.service.delete_graph_for_collection(
                 collection_id, cascade
             )
+
+            return {"message": "Graph deleted successfully."}
