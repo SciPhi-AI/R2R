@@ -804,13 +804,13 @@ def test_kg_delete_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    assert response.json()["results"]["communities"] == []
+    assert response["results"]["communities"] == []
 
     response = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    assert response.json()["results"]["entities"] != []
+    assert response["results"]["entities"] != []
 
     print("KG delete graph test passed")
     print("~" * 100)
@@ -827,13 +827,13 @@ def test_kg_delete_graph_with_cascading_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    assert response.json()["results"]["entities"] == []
+    assert response["results"]["entities"] == []
 
     response = client.get_triples(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
     )
 
-    assert response.json()["results"]["triples"] == []
+    assert response["results"]["triples"] == []
 
     print("KG delete graph with cascading test passed")
     print("~" * 100)
