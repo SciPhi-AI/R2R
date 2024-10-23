@@ -1,8 +1,7 @@
 import logging
 import math
 import time
-from time import strftime
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import KGExtractionStatus, R2RLoggingProvider, RunManager
@@ -10,6 +9,9 @@ from core.base.abstractions import (
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    KGEntityDeduplicationType,
+    R2RException,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -67,7 +69,7 @@ class KgService(Service):
                 f"KGService: Processing document {document_id} for KG extraction"
             )
 
-            await self.providers.database.relational.set_workflow_status(
+            await self.providers.database.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.PROCESSING,
@@ -101,7 +103,7 @@ class KgService(Service):
 
         except Exception as e:
             logger.error(f"KGService: Error in kg_extraction: {e}")
-            await self.providers.database.relational.set_workflow_status(
+            await self.providers.database.set_workflow_status(
                 id=document_id,
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.FAILED,
@@ -127,10 +129,12 @@ class KgService(Service):
                 KGExtractionStatus.PROCESSING,
             ]
 
-        document_ids = await self.providers.database.relational.get_document_ids_by_status(
-            status_type="kg_extraction_status",
-            status=document_status_filter,
-            collection_id=collection_id,
+        document_ids = (
+            await self.providers.database.get_document_ids_by_status(
+                status_type="kg_extraction_status",
+                status=[str(ele) for ele in document_status_filter],
+                collection_id=collection_id,
+            )
         )
 
         return document_ids
@@ -152,7 +156,7 @@ class KgService(Service):
         entity_count = await self.providers.kg.get_entity_count(
             document_id=document_id,
             distinct=True,
-            entity_table_name="entity_raw",
+            entity_table_name="chunk_entity",
         )
 
         logger.info(
@@ -193,7 +197,7 @@ class KgService(Service):
                 f"KGService: Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
-        await self.providers.database.relational.set_workflow_status(
+        await self.providers.database.set_workflow_status(
             id=document_id,
             status_type="kg_extraction_status",
             status=KGExtractionStatus.SUCCESS,
@@ -318,7 +322,7 @@ class KgService(Service):
         offset: int = 0,
         limit: int = 100,
         entity_ids: Optional[list[str]] = None,
-        entity_table_name: str = "entity_embedding",
+        entity_table_name: str = "document_entity",
         **kwargs,
     ):
         return await self.providers.kg.get_entities(
@@ -364,3 +368,152 @@ class KgService(Service):
             levels,
             community_numbers,
         )
+
+    @telemetry_event("get_deduplication_estimate")
+    async def get_deduplication_estimate(
+        self,
+        collection_id: UUID,
+        kg_deduplication_settings: KGEntityDeduplicationSettings,
+        **kwargs,
+    ):
+        return await self.providers.kg.get_deduplication_estimate(
+            collection_id, kg_deduplication_settings
+        )
+
+    @telemetry_event("kg_entity_deduplication")
+    async def kg_entity_deduplication(
+        self,
+        collection_id: UUID,
+        kg_entity_deduplication_type: KGEntityDeduplicationType,
+        kg_entity_deduplication_prompt: str,
+        generation_config: GenerationConfig,
+        **kwargs,
+    ):
+        deduplication_results = await self.pipes.kg_entity_deduplication_pipe.run(
+            input=self.pipes.kg_entity_deduplication_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
+                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "generation_config": generation_config,
+                    **kwargs,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+        return await _collect_results(deduplication_results)
+
+    @telemetry_event("kg_entity_deduplication_summary")
+    async def kg_entity_deduplication_summary(
+        self,
+        collection_id: UUID,
+        offset: int,
+        limit: int,
+        kg_entity_deduplication_type: KGEntityDeduplicationType,
+        kg_entity_deduplication_prompt: str,
+        generation_config: GenerationConfig,
+        **kwargs,
+    ):
+
+        logger.info(
+            f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}"
+        )
+        deduplication_summary_results = await self.pipes.kg_entity_deduplication_summary_pipe.run(
+            input=self.pipes.kg_entity_deduplication_summary_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "offset": offset,
+                    "limit": limit,
+                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
+                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "generation_config": generation_config,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+
+        return await _collect_results(deduplication_summary_results)
+
+    @telemetry_event("tune_prompt")
+    async def tune_prompt(
+        self,
+        prompt_name: str,
+        collection_id: UUID,
+        documents_offset: int = 0,
+        documents_limit: int = 100,
+        chunks_offset: int = 0,
+        chunks_limit: int = 100,
+        **kwargs,
+    ):
+
+        document_response = (
+            await self.providers.database.documents_in_collection(
+                collection_id, offset=documents_offset, limit=documents_limit
+            )
+        )
+        results = document_response["results"]
+
+        if isinstance(results, int):
+            raise TypeError("Expected list of documents, got count instead")
+
+        documents = results
+
+        if not documents:
+            raise R2RException(
+                message="No documents found in collection",
+                status_code=404,
+            )
+
+        all_chunks = []
+
+        for document in documents:
+            chunks_response = (
+                await self.providers.database.get_document_chunks(
+                    document.id,
+                    offset=chunks_offset,
+                    limit=chunks_limit,
+                )
+            )
+
+            if chunks := chunks_response.get("results", []):
+                all_chunks.extend(chunks)
+            else:
+                logger.warning(f"No chunks found for document {document.id}")
+
+        if not all_chunks:
+            raise R2RException(
+                message="No chunks found in documents",
+                status_code=404,
+            )
+
+        chunk_texts = [
+            chunk["text"] for chunk in all_chunks if chunk.get("text")
+        ]
+
+        # Pass chunks to the tuning pipe
+        tune_prompt_results = await self.pipes.kg_prompt_tuning_pipe.run(
+            input=self.pipes.kg_prompt_tuning_pipe.Input(
+                message={
+                    "collection_id": collection_id,
+                    "prompt_name": prompt_name,
+                    "chunks": chunk_texts,  # Pass just the text content
+                    **kwargs,
+                }
+            ),
+            state=None,
+            run_manager=self.run_manager,
+        )
+
+        results = []
+        async for result in tune_prompt_results:
+            results.append(result)
+
+        if not results:
+            raise R2RException(
+                message="No results generated from prompt tuning",
+                status_code=500,
+            )
+
+        return results[0]

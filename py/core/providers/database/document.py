@@ -5,19 +5,9 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 import asyncpg
-from sqlalchemy import (
-    ARRAY,
-    JSON,
-    Column,
-    DateTime,
-    Integer,
-    MetaData,
-    String,
-    Table,
-)
-from sqlalchemy.dialects.postgresql import UUID as SqlUUID
 
 from core.base import (
+    DocumentHandler,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
@@ -26,36 +16,25 @@ from core.base import (
     R2RException,
 )
 
-from .base import DatabaseMixin
+from .base import PostgresConnectionManager
 
 logger = logging.getLogger()
 
 
-class DocumentMixin(DatabaseMixin):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.metadata = MetaData()
-        self.document_info_table = Table(
-            self._get_table_name("document_info"),
-            self.metadata,
-            Column("document_id", SqlUUID, primary_key=True),
-            Column("collection_ids", ARRAY(SqlUUID)),
-            Column("user_id", SqlUUID),
-            Column("type", String),
-            Column("metadata", JSON),
-            Column("title", String),
-            Column("version", String),
-            Column("size_in_bytes", Integer),
-            Column("ingestion_status", String),
-            Column("kg_extraction_status", String),
-            Column("created_at", DateTime),
-            Column("updated_at", DateTime),
-            Column("ingestion_attempt_number", Integer, default=0),
-        )
+class PostgresDocumentHandler(DocumentHandler):
+    TABLE_NAME = "document_info"
+
+    def __init__(
+        self, project_name: str, connection_manager: PostgresConnectionManager
+    ):
+        super().__init__(project_name, connection_manager)
 
     async def create_table(self):
+        logger.info(
+            f"Creating table, if not exists: {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}"
+        )
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name('document_info')} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} (
             document_id UUID PRIMARY KEY,
             collection_ids UUID[],
             user_id UUID,
@@ -71,9 +50,9 @@ class DocumentMixin(DatabaseMixin):
             ingestion_attempt_number INT DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
-        ON {self._get_table_name('document_info')} USING GIN (collection_ids);
+        ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} USING GIN (collection_ids);
         """
-        await self.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
     async def upsert_documents_overview(
         self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
@@ -87,11 +66,11 @@ class DocumentMixin(DatabaseMixin):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.pool.acquire() as conn:  # type: ignore
+                    async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
-                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name('document_info')}
+                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                             WHERE document_id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
@@ -124,7 +103,7 @@ class DocumentMixin(DatabaseMixin):
                                 )
 
                                 update_query = f"""
-                                UPDATE {self._get_table_name('document_info')}
+                                UPDATE {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11
@@ -147,7 +126,7 @@ class DocumentMixin(DatabaseMixin):
                                 )
                             else:
                                 insert_query = f"""
-                                INSERT INTO {self._get_table_name('document_info')}
+                                INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, kg_extraction_status, created_at,
                                 updated_at, ingestion_attempt_number)
@@ -186,20 +165,20 @@ class DocumentMixin(DatabaseMixin):
                         await asyncio.sleep(wait_time)
 
     async def delete_from_documents_overview(
-        self, document_id: str, version: Optional[str] = None
+        self, document_id: UUID, version: Optional[str] = None
     ) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name('document_info')}
+        DELETE FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
         WHERE document_id = $1
         """
 
-        params = [document_id]
+        params = [str(document_id)]
 
         if version:
             query += " AND version = $2"
-            params = [document_id, version]
+            params = [str(document_id), version]
 
-        await self.execute_query(query, params)
+        await self.connection_manager.execute_query(query, params)
 
     async def _get_status_from_table(
         self, ids: list[UUID], table_name: str, status_type: str
@@ -219,7 +198,7 @@ class DocumentMixin(DatabaseMixin):
             SELECT {status_type} FROM {self._get_table_name(table_name)}
             WHERE document_id = ANY($1)
         """
-        return await self.fetch_query(query, [ids])
+        return await self.connection_manager.fetch_query(query, [ids])
 
     async def _get_ids_from_table(
         self,
@@ -240,7 +219,9 @@ class DocumentMixin(DatabaseMixin):
             SELECT document_id FROM {self._get_table_name(table_name)}
             WHERE {status_type} = ANY($1) and $2 = ANY(collection_ids)
         """
-        records = await self.fetch_query(query, [status, collection_id])
+        records = await self.connection_manager.fetch_query(
+            query, [status, collection_id]
+        )
         document_ids = [record["document_id"] for record in records]
         return document_ids
 
@@ -261,7 +242,7 @@ class DocumentMixin(DatabaseMixin):
             SET {status_type} = $1
             WHERE document_id = Any($2)
         """
-        await self.execute_query(query, [status, ids])
+        await self.connection_manager.execute_query(query, [status, ids])
 
     def _get_status_model_and_table_name(self, status_type: str):
         """
@@ -386,7 +367,7 @@ class DocumentMixin(DatabaseMixin):
             param_index += 1
 
         base_query = f"""
-            FROM {self._get_table_name('document_info')}
+            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
         """
 
         if conditions:
@@ -409,7 +390,7 @@ class DocumentMixin(DatabaseMixin):
             param_index += 1
 
         try:
-            results = await self.fetch_query(query, params)
+            results = await self.connection_manager.fetch_query(query, params)
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = [

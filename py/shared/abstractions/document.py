@@ -115,6 +115,8 @@ class IngestionStatus(str, Enum):
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
     STORING = "storing"
+    ENRICHING = "enriching"
+    ENRICHED = "enriched"
 
     FAILED = "failed"
     SUCCESS = "success"
@@ -128,6 +130,9 @@ class KGExtractionStatus(str, Enum):
     SUCCESS = "success"
     FAILED = "failed"
 
+    def __str__(self):
+        return self.value
+
 
 class KGEnrichmentStatus(str, Enum):
     """Status of KG Enrichment per collection."""
@@ -136,6 +141,9 @@ class KGEnrichmentStatus(str, Enum):
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILED = "failed"
+
+    def __str__(self):
+        return self.value
 
 
 class DocumentInfo(R2RSerializable):

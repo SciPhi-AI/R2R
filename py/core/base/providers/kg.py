@@ -10,6 +10,7 @@ from ..abstractions import (
     Entity,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
     KGExtraction,
     KGSearchSettings,
     RelationshipType,
@@ -34,6 +35,9 @@ class KGConfig(ProviderConfig):
     kg_store_path: Optional[str] = None
     kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
     kg_creation_settings: KGCreationSettings = KGCreationSettings()
+    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
+        KGEntityDeduplicationSettings()
+    )
     kg_search_settings: KGSearchSettings = KGSearchSettings()
 
     def validate_config(self) -> None:
@@ -76,7 +80,7 @@ class KGProvider(ABC):
 
     @abstractmethod
     async def add_kg_extractions(
-        self, kg_extractions: list[KGExtraction], table_suffix: str = "_raw"
+        self, kg_extractions: list[KGExtraction], table_prefix: str = "chunk_"
     ) -> Tuple[int, int]:
         """Abstract method to add KG extractions."""
         pass
@@ -104,10 +108,11 @@ class KGProvider(ABC):
     async def get_entities(
         self,
         collection_id: UUID,
-        offset: int,
-        limit: int,
+        offset: int = 0,
+        limit: int = -1,
         entity_ids: list[str] | None = None,
-        entity_table_name: str = "entity_embedding",
+        entity_names: list[str] | None = None,
+        entity_table_name: str = "document_entity",
     ) -> dict:
         """Abstract method to get entities."""
         pass
@@ -194,7 +199,9 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_community_details(self, community_number: int):
+    async def get_community_details(
+        self, community_number: int, collection_id: UUID
+    ):
         """Abstract method to get community details."""
         pass
 
@@ -204,7 +211,7 @@ class KGProvider(ABC):
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
         distinct: bool = False,
-        entity_table_name: str = "entity_embedding",
+        entity_table_name: str = "document_entity",
     ) -> int:
         """Abstract method to get the entity count."""
         pass
@@ -226,6 +233,13 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_creation_estimate(self, *args: Any, **kwargs: Any) -> Any:
         """Abstract method to get the creation estimate."""
+        pass
+
+    @abstractmethod
+    async def get_deduplication_estimate(
+        self, *args: Any, **kwargs: Any
+    ) -> Any:
+        """Abstract method to get the deduplication estimate."""
         pass
 
     @abstractmethod
@@ -257,6 +271,11 @@ class KGProvider(ABC):
     @abstractmethod
     async def get_community_count(self, collection_id: UUID) -> int:
         """Abstract method to get the community count."""
+        pass
+
+    @abstractmethod
+    async def update_entity_descriptions(self, entities: list[Entity]):
+        """Abstract method to update entity descriptions."""
         pass
 
 

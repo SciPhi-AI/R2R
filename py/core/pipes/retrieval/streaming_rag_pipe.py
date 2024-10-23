@@ -6,7 +6,6 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
-    CompletionRecord,
     LLMChatCompletionChunk,
     PipeType,
     PromptProvider,

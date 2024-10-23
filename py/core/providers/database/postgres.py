@@ -1,5 +1,4 @@
 # TODO: Clean this up and make it more congruent across the vector database and the relational database.
-
 import logging
 import os
 import warnings
@@ -8,15 +7,20 @@ from typing import Any, Optional
 from core.base import (
     CryptoProvider,
     DatabaseConfig,
+    DatabaseConnectionManager,
     DatabaseProvider,
     PostgresConfigurationSettings,
-    RelationalDBProvider,
-    VectorDBProvider,
+    VectorQuantizationType,
 )
+from core.providers.database.base import PostgresConnectionManager
+from core.providers.database.collection import PostgresCollectionHandler
+from core.providers.database.document import PostgresDocumentHandler
+from core.providers.database.tokens import PostgresTokenHandler
+from core.providers.database.user import PostgresUserHandler
+from core.providers.database.vector import PostgresVectorHandler
 from shared.abstractions.vector import VectorQuantizationType
 
-from .relational import PostgresRelationalDBProvider
-from .vector import PostgresVectorDBProvider
+from .base import SemaphoreConnectionPool
 
 logger = logging.getLogger()
 
@@ -38,7 +42,7 @@ class PostgresDBProvider(DatabaseProvider):
     db_name: str
     project_name: str
     connection_string: str
-    vector_db_dimension: int
+    dimension: int
     conn: Optional[Any]
     crypto_provider: CryptoProvider
     postgres_configuration_settings: PostgresConfigurationSettings
@@ -98,8 +102,8 @@ class PostgresDBProvider(DatabaseProvider):
             self.connection_string = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
             logger.info("Connecting to Postgres via TCP/IP")
 
-        self.vector_db_dimension = dimension
-        self.vector_db_quantization_type = quantization_type
+        self.dimension = dimension
+        self.quantization_type = quantization_type
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
@@ -110,33 +114,54 @@ class PostgresDBProvider(DatabaseProvider):
         self.default_collection_description = (
             config.default_collection_description
         )
+        self.enable_fts = config.enable_fts
 
-    def _get_table_name(self, base_name: str) -> str:
-        return f"{self.project_name}.{base_name}"
+        self.connection_manager: DatabaseConnectionManager = (
+            PostgresConnectionManager()
+        )
+        self.document_handler = PostgresDocumentHandler(
+            self.project_name, self.connection_manager
+        )
+        self.token_handler = PostgresTokenHandler(
+            self.project_name, self.connection_manager
+        )
+        self.collection_handler = PostgresCollectionHandler(
+            self.project_name, self.connection_manager, self.config
+        )
+        self.user_handler = PostgresUserHandler(
+            self.project_name, self.connection_manager, self.crypto_provider
+        )
+        self.vector_handler = PostgresVectorHandler(
+            self.project_name,
+            self.connection_manager,
+            self.dimension,
+            self.enable_fts,
+        )
 
     async def initialize(self):
-        self.vector = self._initialize_vector_db()
-        self.relational = await self._initialize_relational_db()
-
-    def _initialize_vector_db(self) -> VectorDBProvider:
-        return PostgresVectorDBProvider(
-            self.config,
-            connection_string=self.connection_string,
-            project_name=self.project_name,
-            dimension=self.vector_db_dimension,
-            quantization_type=self.vector_db_quantization_type,
+        logger.info("Initializing `PostgresDBProvider`.")
+        self.pool = SemaphoreConnectionPool(
+            self.connection_string, self.postgres_configuration_settings
         )
+        await self.pool.initialize()
+        await self.connection_manager.initialize(self.pool)
 
-    async def _initialize_relational_db(self) -> RelationalDBProvider:
-        relational_db = PostgresRelationalDBProvider(
-            self.config,
-            connection_string=self.connection_string,
-            crypto_provider=self.crypto_provider,
-            project_name=self.project_name,
-            postgres_configuration_settings=self.postgres_configuration_settings,
-        )
-        await relational_db.initialize()
-        return relational_db
+        async with self.pool.get_connection() as conn:
+            await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
+
+            # Create schema if it doesn't exist
+            await conn.execute(
+                f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";'
+            )
+
+        await self.document_handler.create_table()
+        await self.collection_handler.create_table()
+        await self.token_handler.create_table()
+        await self.user_handler.create_table()
+        await self.vector_handler.create_table()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig
@@ -178,3 +203,14 @@ class PostgresDBProvider(DatabaseProvider):
                 setattr(settings, setting, value)
 
         return settings
+
+    async def close(self):
+        if self.pool:
+            await self.pool.close()
+
+    async def __aenter__(self):
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()

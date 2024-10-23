@@ -290,14 +290,14 @@ If you are using R2R Full, you can log into the hatchet dashboard on http://loca
 ![Hatchet Dashboard](../images/kg_extraction_progress.png)
 
 
-This step will create a knowledge graph with nodes and relationships. You can get the entities and relationships in the graph using our dashboard on http://localhost:7273 or by calling the following API endpoints:
+This step will create a knowledge graph with nodes and relationships. You can get the entities and relationships in the graph using our dashboard on http://localhost:7273 or by calling the following API endpoints. These hit the /v2/entities and /v2/triples endpoints respectively. This will by default use the `entity_level=document` query parameter to get the entities and triples at the document level. We will set the default collection id to `122fdf6a-e116-546b-a8f6-e4cb2e2c0a09` in the examples below.
 
-- Entities: [Entities](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09)
-- Triples: [Triples](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09)
+- Entities: [Entities](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=document)
+- Triples: [Triples](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=document)
 
 ## Graph Enrichment
 
-Now we have a searchable graph, but this graph is not enriched yet. We need to perform the graph enrichment step.
+Now we have a searchable graph, but this graph is not enriched yet. It does not have any community level information. We will now run the enrichment step.
 
 The graph enrichment step performs hierarchical leiden clustering to create communities, and embeds the descriptions. These embeddings will be used later in the local search stage of the pipeline. If you are more interested in the algorithm, please refer to the blog post [here](https://www.sciphi.ai/blog/graphrag).
 
@@ -422,3 +422,8 @@ In conclusion, integrating R2R with GraphRAG significantly enhances the capabili
 In essence, combining R2R with GraphRAG empowers your RAG applications to deliver more intelligent, context-aware, and insightful responses, making it a powerful tool for advanced information retrieval and analysis tasks.
 
 Feel free to reach out to us at founders@sciphi.ai if you have any questions or need further assistance.
+
+
+# Advanced GraphRAG Techniques
+
+If you want to learn more about the advanced techniques that we use in GraphRAG, please refer to the [Advanced GraphRAG Techniques](./advanced-graphrag.mdx) page.

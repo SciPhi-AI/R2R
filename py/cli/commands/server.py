@@ -22,22 +22,22 @@ from cli.utils.timer import timer
 
 @cli.command()
 @pass_context
-def health(ctx):
+async def health(ctx):
     """Check the health of the server."""
     client = ctx.obj
     with timer():
-        response = client.health()
+        response = await client.health()
 
     click.echo(response)
 
 
 @cli.command()
 @pass_context
-def server_stats(ctx):
+async def server_stats(ctx):
     client = ctx.obj
     """Check the server stats."""
     with timer():
-        response = client.server_stats()
+        response = await client.server_stats()
 
     click.echo(response)
 
@@ -51,11 +51,11 @@ def server_stats(ctx):
 )
 @click.option("--run-type-filter", help="Filter for log types")
 @pass_context
-def logs(ctx, run_type_filter, offset, limit):
+async def logs(ctx, run_type_filter, offset, limit):
     """Retrieve logs with optional type filter."""
     client = ctx.obj
     with timer():
-        response = client.logs(
+        response = await client.logs(
             offset=offset, limit=limit, run_type_filter=run_type_filter
         )
 
@@ -203,7 +203,9 @@ def generate_report():
 
 @cli.command()
 @click.option("--host", default=None, help="Host to run the server on")
-@click.option("--port", default=None, help="Port to run the server on")
+@click.option(
+    "--port", default=None, type=int, help="Port to run the server on"
+)
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
     "--full",

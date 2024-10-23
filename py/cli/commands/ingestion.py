@@ -11,9 +11,14 @@ from asyncclick import pass_context
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
+from shared.abstractions.vector import (
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 
-def ingest_files_from_urls(client, urls):
+async def ingest_files_from_urls(client, urls):
     """Download and ingest files from given URLs."""
     files_to_ingest = []
     metadatas = []
@@ -45,7 +50,7 @@ def ingest_files_from_urls(client, urls):
             # TODO: use the utils function generate_document_id
             document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, url))
 
-        response = client.ingest_files(
+        response = await client.ingest_files(
             files_to_ingest, metadatas=metadatas, document_ids=document_ids
         )
 
@@ -70,7 +75,7 @@ def ingest_files_from_urls(client, urls):
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
-def ingest_files(
+async def ingest_files(
     ctx, file_paths, document_ids, metadatas, run_without_orchestration
 ):
     """Ingest files into R2R."""
@@ -79,7 +84,7 @@ def ingest_files(
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
         run_with_orchestration = not run_without_orchestration
-        response = client.ingest_files(
+        response = await client.ingest_files(
             file_paths,
             metadatas,
             document_ids,
@@ -104,7 +109,7 @@ def ingest_files(
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
-def update_files(
+async def update_files(
     ctx, file_paths, document_ids, metadatas, run_without_orchestration
 ):
     """Update existing files in R2R."""
@@ -124,7 +129,7 @@ def update_files(
                     "Metadatas must be a JSON string representing a list of dictionaries or a single dictionary"
                 )
         run_with_orchestration = not run_without_orchestration
-        response = client.update_files(
+        response = await client.update_files(
             file_paths,
             document_ids,
             metadatas,
@@ -138,13 +143,13 @@ def update_files(
     "--v2", is_flag=True, help="use aristotle_v2.txt (a smaller file)"
 )
 @pass_context
-def ingest_sample_file(ctx, v2=False):
+async def ingest_sample_file(ctx, v2=False):
     """Ingest the first sample file into R2R."""
     sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle{'_v2' if v2 else ''}.txt"
     client = ctx.obj
 
     with timer():
-        response = ingest_files_from_urls(client, [sample_file_url])
+        response = await ingest_files_from_urls(client, [sample_file_url])
     click.echo(
         f"Sample file ingestion completed. Ingest files response:\n\n{response}"
     )
@@ -152,7 +157,7 @@ def ingest_sample_file(ctx, v2=False):
 
 @cli.command()
 @pass_context
-def ingest_sample_files(ctx):
+async def ingest_sample_files(ctx):
     """Ingest multiple sample files into R2R."""
     client = ctx.obj
     urls = [
@@ -167,7 +172,7 @@ def ingest_sample_files(ctx):
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_2.html",
     ]
     with timer():
-        response = ingest_files_from_urls(client, urls)
+        response = await ingest_files_from_urls(client, urls)
 
     click.echo(
         f"Sample files ingestion completed. Ingest files response:\n\n{response}"
@@ -176,7 +181,7 @@ def ingest_sample_files(ctx):
 
 @cli.command()
 @pass_context
-def ingest_sample_files_from_unstructured(ctx):
+async def ingest_sample_files_from_unstructured(ctx):
     """Ingest multiple sample files from URLs into R2R."""
     client = ctx.obj
 
@@ -194,8 +199,107 @@ def ingest_sample_files_from_unstructured(ctx):
     file_paths = [os.path.join(folder, file) for file in os.listdir(folder)]
 
     with timer():
-        response = client.ingest_files(file_paths)
+        response = await client.ingest_files(file_paths)
 
     click.echo(
         f"Sample files ingestion completed. Ingest files response:\n\n{response}"
     )
+
+
+@cli.command()
+@click.option(
+    "--table-name",
+    type=click.Choice([t.value for t in VectorTableName]),
+    default=VectorTableName.VECTORS.value,
+    help="Table to create index on",
+)
+@click.option(
+    "--index-method",
+    type=click.Choice([m.value for m in IndexMethod]),
+    default=IndexMethod.hnsw.value,
+    help="Indexing method to use",
+)
+@click.option(
+    "--index-measure",
+    type=click.Choice([m.value for m in IndexMeasure]),
+    default=IndexMeasure.cosine_distance.value,
+    help="Distance measure to use",
+)
+@click.option(
+    "--index-arguments",
+    type=JSON,
+    help="Additional index arguments as JSON",
+)
+@click.option(
+    "--index-name",
+    help="Custom name for the index",
+)
+@click.option(
+    "--no-concurrent",
+    is_flag=True,
+    help="Disable concurrent index creation",
+)
+@pass_context
+async def create_vector_index(
+    ctx,
+    table_name,
+    index_method,
+    index_measure,
+    index_arguments,
+    index_name,
+    no_concurrent,
+):
+    """Create a vector index for similarity search."""
+    client = ctx.obj
+    with timer():
+        response = await client.create_vector_index(
+            table_name=table_name,
+            index_method=index_method,
+            index_measure=index_measure,
+            index_arguments=index_arguments,
+            index_name=index_name,
+            concurrently=not no_concurrent,
+        )
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.option(
+    "--table-name",
+    type=click.Choice([t.value for t in VectorTableName]),
+    default=VectorTableName.VECTORS.value,
+    help="Table to list indices from",
+)
+@pass_context
+async def list_vector_indices(ctx, table_name):
+    """List all vector indices for a table."""
+    client = ctx.obj
+    with timer():
+        response = await client.list_vector_indices(table_name=table_name)
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.argument("index-name", required=True)
+@click.option(
+    "--table-name",
+    type=click.Choice([t.value for t in VectorTableName]),
+    default=VectorTableName.VECTORS.value,
+    help="Table containing the index",
+)
+@click.option(
+    "--no-concurrent",
+    is_flag=True,
+    help="Disable concurrent index deletion",
+)
+@pass_context
+async def delete_vector_index(ctx, index_name, table_name, no_concurrent):
+    """Delete a vector index."""
+    client = ctx.obj
+    with timer():
+        response = await client.delete_vector_index(
+            index_name=index_name,
+            table_name=table_name,
+            concurrently=not no_concurrent,
+        )
+    click.echo(json.dumps(response, indent=2))

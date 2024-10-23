@@ -27,6 +27,7 @@ from core.base import (
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
+    OrchestrationConfig,
 )
 from core.providers import (
     BCryptProvider,
@@ -75,12 +76,16 @@ def sample_entries(dimension, num_entries):
 
 
 @pytest.fixture(scope="function")
-def app_config():
+def project_name():
     collection_id = uuid.uuid4()
 
-    random_project_name = f"a_{collection_id.hex}_test_project"
+    return f"test_collection_{collection_id.hex}"
 
-    return AppConfig(project_name=random_project_name)
+
+@pytest.fixture(scope="function")
+def app_config(project_name):
+
+    return AppConfig(project_name=project_name)
 
 
 # Crypto
@@ -108,7 +113,7 @@ async def postgres_db_provider(
         db_config, dimension=dimension, crypto_provider=crypto_provider
     )
     await db.initialize()
-    db.vector.upsert_entries(sample_entries)
+    await db.upsert_entries(sample_entries)
     yield db
     # Teardown
     # TODO - Add teardown methods
@@ -116,12 +121,9 @@ async def postgres_db_provider(
 
 
 @pytest.fixture(scope="function")
-def db_config_temporary(app_config):
-    collection_id = uuid.uuid4()
-
-    random_project_name = f"test_collection_{collection_id.hex}"
+def db_config_temporary(project_name, app_config):
     return DatabaseConfig.create(
-        provider="postgres", project_name=random_project_name, app=app_config
+        provider="postgres", project_name=project_name, app=app_config
     )
 
 
@@ -135,12 +137,12 @@ async def temporary_postgres_db_provider(
         crypto_provider=crypto_provider,
     )
     await db.initialize()
-    db.vector.upsert_entries(sample_entries)
+    await db.upsert_entries(sample_entries)
     try:
         yield db
     finally:
-        await db.relational.close()
-        db.vector.close()
+        await db.close()
+        # db.vector.close()
 
 
 # Auth
@@ -178,6 +180,18 @@ def litellm_provider(app_config):
     return LiteLLMEmbeddingProvider(config)
 
 
+# Embeddings
+@pytest.fixture
+def litellm_provider_128(app_config):
+    config = EmbeddingConfig(
+        provider="litellm",
+        base_model="text-embedding-3-small",
+        base_dimension=128,
+        app=app_config,
+    )
+    return LiteLLMEmbeddingProvider(config)
+
+
 # File Provider
 @pytest.fixture(scope="function")
 def file_config(app_config):
@@ -191,7 +205,7 @@ async def postgres_file_provider(file_config, temporary_postgres_db_provider):
     )
     await file_provider.initialize()
     yield file_provider
-    await file_provider._close_connection()
+    # await file_provider._close_connection()
 
 
 # LLM provider
@@ -257,10 +271,10 @@ async def postgres_kg_provider(
         kg_extraction_status=KGExtractionStatus.PENDING,
     )
 
-    await temporary_postgres_db_provider.relational.upsert_documents_overview(
+    await temporary_postgres_db_provider.upsert_documents_overview(
         document_info
     )
-
+    print("config = ", temporary_postgres_db_provider.config)
     kg_provider = PostgresKGProvider(
         kg_config_temporary, temporary_postgres_db_provider, litellm_provider
     )
@@ -273,6 +287,11 @@ async def postgres_kg_provider(
 @pytest.fixture(scope="function")
 def prompt_config(app_config):
     return PromptConfig(provider="r2r", app=app_config)
+
+
+@pytest.fixture(scope="function")
+def orchestration_config(app_config):
+    return OrchestrationConfig(provider="simple", app=app_config)
 
 
 @pytest.fixture(scope="function")

@@ -545,7 +545,10 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
-        run_with_orchestration: (options.run_with_orchestration != undefined) ? String(options.run_with_orchestration) : undefined,
+      run_with_orchestration:
+        options.run_with_orchestration != undefined
+          ? String(options.run_with_orchestration)
+          : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -624,7 +627,10 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
-        run_with_orchestration: (options.run_with_orchestration != undefined) ? String(options.run_with_orchestration) : undefined,
+      run_with_orchestration:
+        options.run_with_orchestration != undefined
+          ? String(options.run_with_orchestration)
+          : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {
@@ -661,10 +667,8 @@ export class r2rClient {
       chunks: chunks,
       document_id: documentId,
       metadata: metadata,
+      run_with_orchestration: run_with_orchestration,
     };
-    if (run_with_orchestration != undefined) {
-      inputData.run_with_orchestration = run_with_orchestration;
-    }
 
     return await this._makeRequest("POST", "ingest_chunks", {
       data: inputData,
@@ -1527,21 +1531,25 @@ export class r2rClient {
   /**
    * Performs a single turn in a conversation with a RAG agent.
    * @param messages The messages to send to the agent.
+   * @param rag_generation_config RAG generation configuration.
    * @param vector_search_settings Vector search settings.
    * @param kg_search_settings KG search settings.
-   * @param rag_generation_config RAG generation configuration.
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
+   * @param conversation_id The ID of the conversation, if not a new conversation.
+   * @param branch_id The ID of the branch to use, if not a new branch.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("agent")
   async agent(
     messages: Message[],
+    rag_generation_config?: GenerationConfig | Record<string, any>,
     vector_search_settings?: VectorSearchSettings | Record<string, any>,
     kg_search_settings?: KGSearchSettings | Record<string, any>,
-    rag_generation_config?: GenerationConfig | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
+    conversation_id?: string,
+    branch_id?: string,
   ): Promise<any | AsyncGenerator<string, void, unknown>> {
     this._ensureAuthenticated();
 
@@ -1552,6 +1560,8 @@ export class r2rClient {
       rag_generation_config,
       task_prompt_override,
       include_title_if_available,
+      conversation_id,
+      branch_id,
     };
 
     Object.keys(json_data).forEach(

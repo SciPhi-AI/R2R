@@ -136,8 +136,10 @@
                 "documentation/cli/introduction",
                 "documentation/cli/server",
                 "documentation/cli/ingestion",
+                "documentation/cli/retrieval",
                 "documentation/cli/graph",
-                "documentation/cli/management"
+                "documentation/cli/management",
+                "documentation/cli/maintenance"
               ]
             },
 
@@ -310,17 +312,21 @@
         "api-reference/endpoint/ingest_files",
         "api-reference/endpoint/ingest_chunks",
         "api-reference/endpoint/update_files",
-        "api-reference/endpoint/create_vector_index"
+        "api-reference/endpoint/create_vector_index",
+        "api-reference/endpoint/delete_vector_index",
+        "api-reference/endpoint/list_vector_index"
       ]
     },
     {
       "group": "Knowledge Graph",
       "pages": [
         "api-reference/endpoint/create_graph",
+        "api-reference/endpoint/deduplicate_entities",
         "api-reference/endpoint/enrich_graph",
         "api-reference/endpoint/entities",
         "api-reference/endpoint/triples",
-        "api-reference/endpoint/communities"
+        "api-reference/endpoint/communities",
+        "api-reference/endpoint/delete_entities_and_triples"
       ]
     },
     {
@@ -404,11 +410,14 @@
       "pages": [
         "cookbooks/walkthrough",
         "cookbooks/ingestion",
+        "cookbooks/contextual-enrichment",
         "cookbooks/hybrid-search",
-        "cookbooks/graphrag",
         "cookbooks/advanced-rag",
+        "cookbooks/graphrag",
+        "cookbooks/advanced-graphrag",
         "cookbooks/agent",
         "cookbooks/orchestration",
+        "cookbooks/maintenance",
         "cookbooks/web-dev"
       ]
     },

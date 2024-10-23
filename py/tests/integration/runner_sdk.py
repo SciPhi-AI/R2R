@@ -2,7 +2,7 @@ import argparse
 import sys
 import time
 
-from r2r import Message, R2RClient, R2RException
+from r2r import R2RClient, R2RException
 
 
 def compare_result_fields(result, expected_fields):
@@ -36,12 +36,13 @@ def test_ingest_sample_file_sdk():
 
 def test_ingest_sample_file_2_sdk():
     print("Testing: Ingest sample file SDK 2")
-    file_paths = ["core/examples/data/aristotle_v2.txt"]
+    file_paths = [f"core/examples/data_dedup/a{i}.txt" for i in range(1, 11)]
     ingest_response = client.ingest_files(file_paths=file_paths)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
+
     time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
@@ -67,7 +68,7 @@ def test_ingest_sample_file_with_config_sdk():
     ingest_response = client.ingest_files(
         file_paths=file_paths, ingestion_config={"chunk_size": 4_096}
     )
-    time.sleep(10)
+    time.sleep(30)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
@@ -102,7 +103,6 @@ def test_reingest_sample_file_sdk():
     file_paths = ["core/examples/data/uber_2021.pdf"]
     try:
         results = client.ingest_files(file_paths=file_paths)
-        print("results = ", results)
         time.sleep(30)
 
         if "task_id" not in results["results"][0]:
@@ -686,11 +686,15 @@ def test_kg_create_graph_sample_file_sdk():
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
     )
 
+    print(create_graph_result)
+
     if "queued" in create_graph_result["results"]["message"]:
         time.sleep(60)
 
     result = client.get_entities(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", limit=1000
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        limit=1000,
+        entity_level="document",
     )
 
     entities_list = [ele["name"] for ele in result["results"]["entities"]]
@@ -701,6 +705,35 @@ def test_kg_create_graph_sample_file_sdk():
     assert "ARISTOTLE" in entities_list
 
     print("KG create graph test passed")
+    print("~" * 100)
+
+
+def test_kg_deduplicate_entities_sample_file_sdk():
+    print("Testing: KG deduplicate entities")
+
+    entities_deduplication_result = client.deduplicate_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        run_type="run",
+    )
+
+    if "queued" in entities_deduplication_result["results"]["message"]:
+        time.sleep(45)
+
+    response = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        limit=1000,
+        entity_level="collection",
+    )
+
+    entities_list = [ele["name"] for ele in response["results"]["entities"]]
+
+    assert len(entities_list) >= 1
+    assert "ARISTOTLE" in entities_list
+
+    # Check that there are no duplicates
+    assert sorted(entities_list) == sorted(list(set(entities_list)))
+
+    print("KG deduplicate entities test passed")
     print("~" * 100)
 
 
@@ -757,6 +790,58 @@ def test_kg_search_sample_file_sdk():
     assert communities_found, "No communities found"
 
     print("KG search test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_sample_file_sdk():
+    print("Testing: KG delete graph")
+
+    response = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["communities"] != []
+    client.delete_graph_for_collection(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    response = client.get_communities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["communities"] == []
+
+    response = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        entity_level="document",
+    )
+
+    assert response["results"]["entities"] != []
+
+    print("KG delete graph test passed")
+    print("~" * 100)
+
+
+def test_kg_delete_graph_with_cascading_sample_file_sdk():
+    print("Testing: KG delete graph with cascading")
+
+    client.delete_graph_for_collection(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", cascade=True
+    )
+
+    response = client.get_entities(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["entities"] == []
+
+    response = client.get_triples(
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+    )
+
+    assert response["results"]["triples"] == []
+
+    print("KG delete graph with cascading test passed")
     print("~" * 100)
 
 
@@ -923,7 +1008,7 @@ def test_user_collection_document_management():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(15)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -997,7 +1082,7 @@ def test_user_removes_document_from_collection():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1049,7 +1134,7 @@ def test_user_lists_documents_in_collection():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1411,7 +1496,7 @@ def test_user_gets_collections_for_document():
 
     # Ingest a document
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1480,7 +1565,7 @@ def test_collection_user_interactions():
     # Ingest a document
     client.login("collection_owner@example.com", "password123")
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1533,7 +1618,7 @@ def test_collection_document_interactions():
 
     # Ingest a document
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(10)
+    time.sleep(30)
 
     document_id = ingest_result["results"][0]["document_id"]
 

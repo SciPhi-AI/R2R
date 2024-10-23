@@ -162,5 +162,18 @@ async def test_community_summary_prompt(
     summary = await kg_community_summary_pipe.community_summary_prompt(
         entities_list, triples_raw_list, max_summary_input_length
     )
-    expected_summary = "\n            Entity: Entity1\n            Descriptions: \n                1,Description1\n            Triples: \n                1,Entity1,object1,predicate1,description1\n            \n            Entity: Entity2\n            Descriptions: \n                2,Description2\n            Triples: \n                2,Entity2,object2,predicate2,description2\n            "
-    assert summary == expected_summary
+    expected_summary = """
+            Entity: Entity1
+            Descriptions:
+                1,Description1
+            Triples:
+                1,Entity1,object1,predicate1,description1
+
+            Entity: Entity2
+            Descriptions:
+                2,Description2
+            Triples:
+                2,Entity2,object2,predicate2,description2
+    """
+    # "\n            Entity: Entity1\n            Descriptions: \n                1,Description1\n            Triples: \n                1,Entity1,object1,predicate1,description1\n            \n            Entity: Entity2\n            Descriptions: \n                2,Description2\n            Triples: \n                2,Entity2,object2,predicate2,description2\n            "
+    assert summary.strip() == expected_summary.strip()

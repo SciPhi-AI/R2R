@@ -1,0 +1,151 @@
+---
+title: 'Contextual Chunk Enrichment'
+description: 'Enhance your RAG system chunks with rich contextual information'
+icon: 'puzzle-piece'
+---
+
+# Understanding Chunk Enrichment in RAG Systems
+
+In modern Retrieval-Augmented Generation (RAG) systems, documents are systematically broken down into smaller, manageable pieces called chunks. While chunking is essential for efficient vector search operations, these individual chunks sometimes lack the broader context needed for comprehensive question answering or analysis tasks.
+
+## The Challenge of Context Loss
+
+Let's examine a real-world example using Lyft's 2021 annual report (Form 10-K) from their [public filing](https://github.com/SciPhi-AI/R2R/blob/main/py/core/examples/data/lyft_2021.pdf).
+
+During ingestion, this 200+ page document is broken into 1,223 distinct chunks. Consider this isolated chunk:
+
+```plaintext
+storing unrented and returned vehicles. These impacts to the demand for and operations of the different rental programs have and may continue to adversely affect our business, financial condition and results of operation.
+```
+
+Reading this chunk in isolation raises several questions:
+- What specific impacts are being discussed?
+- Which rental programs are affected?
+- What's the broader context of these business challenges?
+
+This is where contextual enrichment becomes invaluable.
+
+## Introducing Contextual Enrichment
+
+Contextual enrichment is an advanced technique that enhances chunks with relevant information from surrounding or semantically related content. Think of it as giving each chunk its own "memory" of related information.
+
+### Enabling Enrichment
+
+To activate this feature, configure your `r2r.toml` file with the following settings:
+
+```toml
+[ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = true # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3            # Look ahead 3 chunks
+    backward_chunks = 3           # Look behind 3 chunks
+    semantic_neighbors = 10       # Find 10 semantically similar chunks
+    semantic_similarity_threshold = 0.7  # Minimum similarity score
+    generation_config = { model = "openai/gpt-4o-mini" }
+```
+
+## Enrichment Strategies Explained
+
+R2R implements two sophisticated strategies for chunk enrichment:
+
+### 1. Neighborhood Strategy
+This approach looks at the document's natural flow by examining chunks that come before and after the target chunk:
+- **Forward Looking**: Captures upcoming context (configurable, default: 3 chunks)
+- **Backward Looking**: Incorporates previous context (configurable, default: 3 chunks)
+- **Use Case**: Particularly effective for narrative documents where context flows linearly
+
+### 2. Semantic Strategy
+This method uses advanced embedding similarity to find related content throughout the document:
+- **Vector Similarity**: Identifies chunks with similar meaning regardless of location
+- **Configurable Neighbors**: Customizable number of similar chunks to consider
+- **Similarity Threshold**: Set minimum similarity scores to ensure relevance
+- **Use Case**: Excellent for documents with themes repeated across different sections
+
+## The Enrichment Process
+
+When enriching chunks, R2R uses a carefully crafted prompt to guide the LLM:
+
+```plaintext
+## Task:
+
+Enrich and refine the given chunk of text using information from the provided context chunks. The goal is to make the chunk more precise and self-contained.
+
+## Context Chunks:
+{context_chunks}
+
+## Chunk to Enrich:
+{chunk}
+
+## Instructions:
+1. Rewrite the chunk in third person.
+2. Replace all common nouns with appropriate proper nouns.
+3. Use information from the context chunks to enhance clarity.
+4. Ensure the enriched chunk remains independent and self-contained.
+5. Maintain original scope without bleeding information.
+6. Focus on precision and informativeness.
+7. Preserve original meaning while improving clarity.
+8. Output only the enriched chunk.
+
+## Enriched Chunk:
+```
+
+## Implementation and Results
+
+To process your documents with enrichment:
+
+```bash
+r2r ingest-files --file_paths path/to/lyft_2021.pdf
+```
+
+### Viewing Enriched Results
+
+Access your enriched chunks through the API:
+```
+http://localhost:7272/v2/document_chunks/{document_id}
+```
+
+Let's compare the before and after of our example chunk:
+
+**Before Enrichment:**
+```plaintext
+storing unrented and returned vehicles. These impacts to the demand for and operations of the different rental programs have and may continue to adversely affect our business, financial condition and results of operation.
+```
+
+**After Enrichment:**
+```plaintext
+The impacts of the COVID-19 pandemic on the demand for and operations of the various vehicle rental programs, including Lyft Rentals and the Express Drive program, have resulted in challenges regarding the storage of unrented and returned vehicles. These adverse conditions are anticipated to continue affecting Lyft's overall business performance, financial condition, and operational results.
+```
+
+Notice how the enriched version:
+- Specifies the cause (COVID-19 pandemic)
+- Names specific programs (Lyft Rentals, Express Drive)
+- Provides clearer context about the business impact
+- Maintains professional, third-person tone
+
+## Metadata and Storage
+
+The system maintains both enriched and original versions:
+
+```json
+{
+    "results": [
+        {
+            "text": "enriched_version",
+            "metadata": {
+                "original_text": "original_version",
+                "chunk_enrichment_status": "success",
+                // ... additional metadata ...
+            }
+        }
+    ]
+}
+```
+
+This dual storage ensures transparency and allows for version comparison when needed.
+
+## Best Practices
+
+1. **Tune Your Parameters**: Adjust `forward_chunks`, `backward_chunks`, and `semantic_neighbors` based on your document structure
+2. **Monitor Enrichment Quality**: Regularly review enriched chunks to ensure they maintain accuracy
+3. **Consider Document Type**: Different documents may benefit from different enrichment strategies
+4. **Balance Context Size**: More context isn't always better - find the sweet spot for your use case

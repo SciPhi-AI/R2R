@@ -46,7 +46,6 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
     "DataType",
@@ -80,6 +79,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "HybridSearchSettings",
     # User abstractions
     "Token",
     "TokenData",
@@ -140,8 +140,6 @@ __all__ = [
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

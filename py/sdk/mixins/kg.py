@@ -1,24 +1,22 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from .models import (
-    KGCreationResponse,
+from ..models import (
     KGCreationSettings,
-    KGEnrichmentResponse,
     KGEnrichmentSettings,
+    KGEntityDeduplicationResponse,
+    KGEntityDeduplicationSettings,
     KGRunType,
 )
 
 
-class KGMethods:
-
-    @staticmethod
+class KGMixins:
     async def create_graph(
-        client,
+        self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
-    ) -> KGCreationResponse:
+    ) -> dict:
         """
         Create a graph from the given settings.
 
@@ -36,17 +34,16 @@ class KGMethods:
             "kg_creation_settings": kg_creation_settings or {},
         }
 
-        return await client._make_request("POST", "create_graph", json=data)
+        return await self._make_request("POST", "create_graph", json=data)  # type: ignore
 
-    @staticmethod
     async def enrich_graph(
-        client,
+        self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
-    ) -> KGEnrichmentResponse:
+    ) -> dict:
         """
         Perform graph enrichment over the entire graph.
 
@@ -66,14 +63,14 @@ class KGMethods:
             "kg_enrichment_settings": kg_enrichment_settings or {},
         }
 
-        return await client._make_request("POST", "enrich_graph", json=data)
+        return await self._make_request("POST", "enrich_graph", json=data)  # type: ignore
 
-    @staticmethod
     async def get_entities(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
+        entity_level: Optional[str] = "collection",
         entity_ids: Optional[list[str]] = None,
     ) -> dict:
         """
@@ -83,12 +80,14 @@ class KGMethods:
             collection_id (str): The ID of the collection to retrieve entities from.
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
+            entity_level (Optional[str]): The level of entity to filter by.
             entity_ids (Optional[List[str]]): Optional list of entity IDs to filter by.
 
         Returns:
             dict: A dictionary containing the retrieved entities and total count.
         """
         params = {
+            "entity_level": entity_level,
             "collection_id": collection_id,
             "offset": offset,
             "limit": limit,
@@ -96,11 +95,10 @@ class KGMethods:
         if entity_ids:
             params["entity_ids"] = ",".join(entity_ids)
 
-        return await client._make_request("GET", "entities", params=params)
+        return await self._make_request("GET", "entities", params=params)  # type: ignore
 
-    @staticmethod
     async def get_triples(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -132,11 +130,10 @@ class KGMethods:
         if triple_ids:
             params["triple_ids"] = ",".join(triple_ids)
 
-        return await client._make_request("GET", "triples", params=params)
+        return await self._make_request("GET", "triples", params=params)  # type: ignore
 
-    @staticmethod
     async def get_communities(
-        client,
+        self,
         collection_id: str,
         offset: int = 0,
         limit: int = 100,
@@ -167,4 +164,90 @@ class KGMethods:
         if community_numbers:
             params["community_numbers"] = community_numbers
 
-        return await client._make_request("GET", "communities", params=params)
+        return await self._make_request("GET", "communities", params=params)  # type: ignore
+
+    async def get_tuned_prompt(
+        self,
+        prompt_name: str,
+        collection_id: Optional[str] = None,
+        documents_offset: Optional[int] = 0,
+        documents_limit: Optional[int] = 100,
+        chunk_offset: Optional[int] = 0,
+        chunk_limit: Optional[int] = 100,
+    ) -> dict:
+        """
+        Tune the GraphRAG prompt for a given collection.
+
+        The tuning process provides an LLM with chunks from each document in the collection. The relative sample size can therefore be controlled by adjusting the document and chunk limits.
+
+        Args:
+            prompt_name (str): The name of the prompt to tune.
+            collection_id (str): The ID of the collection to tune the prompt for.
+            documents_offset (Optional[int]): The offset for pagination of documents.
+            documents_limit (Optional[int]): The limit for pagination of documents.
+            chunk_offset (Optional[int]): The offset for pagination of chunks.
+            chunk_limit (Optional[int]): The limit for pagination of chunks.
+
+        Returns:
+            dict: A dictionary containing the tuned prompt.
+        """
+        params = {
+            "prompt_name": prompt_name,
+            "collection_id": collection_id,
+            "documents_offset": documents_offset,
+            "documents_limit": documents_limit,
+            "chunk_offset": chunk_offset,
+            "chunk_limit": chunk_limit,
+        }
+
+        params = {k: v for k, v in params.items() if v is not None}
+
+        return await self._make_request("GET", "tuned_prompt", params=params)  # type: ignore
+
+    async def deduplicate_entities(
+        self,
+        collection_id: Optional[Union[UUID, str]] = None,
+        run_type: Optional[Union[str, KGRunType]] = None,
+        deduplication_settings: Optional[
+            Union[dict, KGEntityDeduplicationSettings]
+        ] = None,
+    ) -> KGEntityDeduplicationResponse:
+        """
+        Deduplicate entities in the knowledge graph.
+        Args:
+            collection_id (Optional[Union[UUID, str]]): The ID of the collection to deduplicate entities for.
+            run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
+            deduplication_settings (Optional[Union[dict, KGEntityDeduplicationSettings]]): Settings for the deduplication process.
+        """
+        if isinstance(deduplication_settings, KGEntityDeduplicationSettings):
+            deduplication_settings = deduplication_settings.model_dump()
+
+        data = {
+            "collection_id": str(collection_id) if collection_id else None,
+            "run_type": str(run_type) if run_type else None,
+            "deduplication_settings": deduplication_settings or {},
+        }
+
+        return await self._make_request(  # type: ignore
+            "POST", "deduplicate_entities", json=data
+        )
+
+    async def delete_graph_for_collection(
+        self, collection_id: Union[UUID, str], cascade: bool = False
+    ) -> dict:
+        """
+        Delete the graph for a given collection.
+
+        Args:
+            collection_id (Union[UUID, str]): The ID of the collection to delete the graph for.
+            cascade (bool): Whether to cascade the deletion, and delete entities and triples belonging to the collection.
+
+            NOTE: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+        """
+
+        data = {
+            "collection_id": str(collection_id),
+            "cascade": cascade,
+        }
+
+        return await self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore

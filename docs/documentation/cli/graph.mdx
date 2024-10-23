@@ -32,6 +32,16 @@ r2r create-graph --collection-id my-collection --run --kg-creation-settings '{"k
   </Accordion>
 </AccordionGroup>
 
+### Deduplicate Entities
+
+Deduplicate entities in a collection using the `deduplicate-entities` command:
+
+````bash
+r2r deduplicate-entities --collection-id my-collection --run --deduplication-settings '{"key": "value"}'
+````
+
+
+
 ### Enrich Graph
 
 Enrich an existing knowledge graph using the `enrich-graph` command:
@@ -120,3 +130,26 @@ r2r get-triples --collection-id my-collection --offset 0 --limit 10 --triple-ids
   </Accordion>
 </AccordionGroup>
 ````
+
+
+### Delete Graph
+
+Delete the graph for a collection using the `delete-graph` command:
+
+````bash
+r2r delete-graph --collection-id my-collection --cascade
+````
+
+<AccordionGroup>
+  <Accordion title="Arguments">
+    <ParamField path="--collection-id" type="str" required>
+      Collection ID to delete the graph for.
+    </ParamField>
+
+    <ParamField path="--cascade" type="flag">
+      Whether to cascade the deletion.
+
+      NOTE: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+    </ParamField>
+  </Accordion>
+</AccordionGroup>

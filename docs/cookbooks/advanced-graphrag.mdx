@@ -1,0 +1,210 @@
+---
+title: 'Advanced GraphRAG'
+description: 'Advanced GraphRAG Techniques with R2R'
+icon: 'chart-network'
+---
+
+
+## Advanced GraphRAG Techniques
+
+R2R supports advanced GraphRAG techniques that can be easily configured at runtime. This flexibility allows you to experiment with different SoTA strategies and optimize your RAG pipeline for specific use cases.
+
+<Note>
+
+Advanced GraphRAG techniques are still a beta feature in R2R.There may be limitations in observability and analytics when implementing them.
+
+Are we missing an important technique? If so, then please let us know at founders@sciphi.ai.
+
+</Note>
+
+
+### Prompt Tuning
+
+One way that we can improve upon GraphRAG's already impressive capabilities by tuning our prompts to a specific domain. When we create a knowledge graph, an LLM extracts the relationships between entities; but for very targeted domains, a general approach may fall short.
+
+To demonstrate this, we can run GraphRAG over the technical papers for the 2024 Nobel Prizes in chemistry, medicine, and physics. By tuning our prompts for GraphRAG, we attempt to understand our documents at a high level, and provide the LLM with a more pointed description.
+
+The following script, which utilizes the Python SDK, generates the tuned prompts and calls the knowledge graph creation process with these prompts at runtime:
+
+```python
+# Step 1: Tune the prompts for knowledge graph creation
+# Tune the entity description prompt
+entity_prompt_response = client.get_tuned_prompt(
+    prompt_name="graphrag_entity_description"
+)
+tuned_entity_prompt = entity_prompt_response['results']['tuned_prompt']
+
+# Tune the triples extraction prompt
+triples_prompt_response = client.get_tuned_prompt(
+    prompt_name="graphrag_triples_extraction_few_shot"
+)
+tuned_triples_prompt = triples_prompt_response['results']['tuned_prompt']
+
+# Step 2: Create the knowledge graph
+kg_settings = {
+    "kg_entity_description_prompt": tuned_entity_prompt
+}
+
+# Generate the initial graph
+graph_response = client.create_graph(
+    run_type="run",
+    kg_creation_settings=kg_settings
+)
+
+# Step 3: Clean up the graph by removing duplicate entities
+client.deduplicate_entities(
+    run_type="run",
+    collection_id='122fdf6a-e116-546b-a8f6-e4cb2e2c0a09'
+)
+
+# Step 4: Tune and apply community reports prompt for graph enrichment
+community_prompt_response = client.get_tuned_prompt(
+    prompt_name="graphrag_community_reports"
+)
+tuned_community_prompt = community_prompt_response['results']['tuned_prompt']
+
+# Configure enrichment settings
+kg_enrichment_settings = {
+    "community_reports_prompt": tuned_community_prompt
+}
+
+# Enrich the graph with additional information
+client.enrich_graph(
+    run_type="run",
+    kg_enrichment_settings=kg_enrichment_settings
+)
+```
+
+For illustrative purposes, we look can look at the `graphrag_entity_description` prompt before and after prompt tuning. It's clear that with prompt tuning, we are able to capture the intent of the documents, giving us a more targeted prompt overall.
+
+<Tabs>
+<Tab title="Prompt after Prompt Tuning">
+```yaml
+Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
+
+Entity Info:
+{entity_info}
+Triples:
+{triples_txt}
+
+Your summary should:
+1. Clearly define the entity's core concept or purpose
+2. Highlight key relationships or attributes from the triples
+3. Integrate any relevant information from the existing description
+4. Maintain a neutral, factual tone
+5. Be approximately 2-3 sentences long
+
+Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
+```
+
+</Tab>
+
+<Tab title="Prompt after Prompt Tuning">
+```yaml
+Provide a comprehensive yet concise summary of the given entity, focusing on its significance in the field of scientific research, while incorporating its description and associated triples:
+
+Entity Info:
+{entity_info}
+Triples:
+{triples_txt}
+
+Your summary should:
+1. Clearly define the entity's core concept or purpose within computational biology, artificial intelligence, and medicine
+2. Highlight key relationships or attributes from the triples that illustrate advancements in scientific understanding and reasoning
+3. Integrate any relevant information from the existing description, particularly breakthroughs and methodologies
+4. Maintain a neutral, factual tone
+5. Be approximately 2-3 sentences long
+
+Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information, emphasizing its impact on the field.
+```
+</Tab>
+
+</Tabs>
+
+After prompt tuning, we see an increase in the number of communities—after prompt tuning, these communities appear more focused and domain-specific with clearer thematic boundaries.
+
+Prompt tuning produces:
+- **More precise community separation:** GraphRAG alone produced a single `MicroRNA Research` Community, which GraphRAG with prompt tuning produced communities around `C. elegans MicroRNA Research`, `LET-7 MicroRNA`, and `miRNA-184 and EDICT Syndrome`.
+- **Enhanced domain focus:** Previously, we had a single community for `AI Researchers`, but with prompt tuning we create specialized communities such as `Hinton, Hopfield, and Deep Learning`, `Hochreiter and Schmidhuber`, and `Minksy and Papert's ANN Critique.`
+
+| Count       | GraphRAG | GraphRAG with Prompt Tuning |
+|-------------|----------|-----------------------------|
+| Entities    | 661      | 636                         |
+| Triples     | 509      | 503                         |
+| Communities | 29       | 41                          |
+
+Prompt tuning allow for us to generate communities that better reflect the natural organization of the domain knowledge while maintaining more precise technical and thematic boundaries between related concepts.
+
+## Contextual Chunk Enrichment
+
+Contextual chunk enrichment is a technique that allows us to capture the semantic meaning of the entities and relationships in the knowledge graph. This is done by using a combination of the entity's textual description and its contextual embeddings. This enrichment process enhances the quality and depth of information in your knowledge graph by:
+
+1. Analyzing the surrounding context of each entity mention
+2. Incorporating semantic information from related passages
+3. Preserving important contextual nuances that might be lost in simple entity extraction
+
+You can learn more about contextual chunk enrichment [here](/cookbooks/contextual-enrichment).
+
+
+### Entity Deduplication
+
+When creating a knowledge graph across multiple documents, entities are initially created at the document level. This means that the same real-world entity (e.g., "Albert Einstein" or "CRISPR") might appear multiple times if it's mentioned in different documents. This duplication can lead to:
+
+- Redundant information in your knowledge graph
+- Fragmented relationships across duplicate entities
+- Increased storage and processing overhead
+- Potentially inconsistent entity descriptions
+
+The `deduplicate-entities` endpoint addresses these issues by:
+1. Identifying similar entities using name (exact match, other strategies coming soon)
+2. Merging their properties and relationships
+3. Maintaining the most comprehensive description
+4. Removing the duplicate entries
+
+<Tabs>
+<Tab title="CLI">
+```bash
+r2r deduplicate-entities --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --run
+
+# Example Response
+[{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
+```
+</Tab>
+
+<Tab title="SDK">
+```python
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+client.deduplicate_entities(
+    collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+    run_type="run"
+)
+
+# Example Response
+[{'message': 'Deduplication task queued successfully.', 'task_id': 'd9dae1bb-5862-4a16-abaf-5297024df390'}]
+```
+</Tab>
+</Tabs>
+
+#### Monitoring Deduplication
+
+You can monitor the deduplication process in two ways:
+
+1. **Hatchet Dashboard**: Access the dashboard at http://localhost:7274 to view:
+   - Task status and progress
+   - Any errors or warnings
+   - Completion time estimates
+
+2. **API Endpoints**: Once deduplication is complete, verify the results using these endpoints with `entity_level = collection`:
+   - [Entities API](http://localhost:7272/v2/entities?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
+   - [Triples API](http://localhost:7272/v2/triples?collection_id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09&entity_level=collection)
+
+#### Best Practices
+
+When using entity deduplication:
+
+- Run deduplication after initial graph creation but before any enrichment steps
+- Monitor the number of entities before and after to ensure expected reduction
+- Review a sample of merged entities to verify accuracy
+- For large collections, expect the process to take longer and plan accordingly

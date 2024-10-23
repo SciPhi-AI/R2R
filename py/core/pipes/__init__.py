@@ -5,9 +5,12 @@ from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .kg.clustering import KGClusteringPipe
 from .kg.community_summary import KGCommunitySummaryPipe
+from .kg.deduplication import KGEntityDeduplicationPipe
+from .kg.deduplication_summary import KGEntityDeduplicationSummaryPipe
 from .kg.entity_description import KGEntityDescriptionPipe
 from .kg.storage import KGStoragePipe
 from .kg.triples_extraction import KGTriplesExtractionPipe
+from .kg.prompt_tuning import KGPromptTuningPipe
 from .retrieval.kg_search_pipe import KGSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe
@@ -34,4 +37,7 @@ __all__ = [
     "MultiSearchPipe",
     "KGCommunitySummaryPipe",
     "RoutingSearchPipe",
+    "KGEntityDeduplicationPipe",
+    "KGEntityDeduplicationSummaryPipe",
+    "KGPromptTuningPipe",
 ]

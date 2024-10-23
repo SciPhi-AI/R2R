@@ -249,6 +249,12 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
         )
 
+        # First get the chunks response
+        chunks_response = await self.database_provider.get_document_chunks(
+            document_id=document_id
+        )
+
+        # Then create the extractions from the results
         extractions = [
             DocumentExtraction(
                 id=extraction["extraction_id"],
@@ -258,11 +264,11 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 data=extraction["text"],
                 metadata=extraction["metadata"],
             )
-            for extraction in self.database_provider.vector.get_document_chunks(
-                document_id=document_id
-            )[
-                "results"
-            ]
+            for extraction in (
+                await self.database_provider.get_document_chunks(
+                    document_id=document_id
+                )
+            )["results"]
         ]
 
         logger.info(

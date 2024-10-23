@@ -88,7 +88,7 @@ async def run_local_serve(
     full: bool = False,
 ) -> None:
     try:
-        from r2r import R2RBuilder, R2RConfig
+        from core import R2RBuilder, R2RConfig
     except ImportError as e:
         click.echo(
             "Error: You must install the `r2r core` package to run the R2R server locally."
@@ -122,7 +122,7 @@ async def run_local_serve(
     #     "core.main.app_entry:app", host=host, port=available_port, reload=False
     # )
 
-    r2r_instance.serve(host, available_port)
+    await r2r_instance.serve(host, available_port)
 
 
 def run_docker_serve(
@@ -334,7 +334,7 @@ def get_compose_files():
     return compose_files
 
 
-def find_available_port(start_port):
+def find_available_port(start_port: int):
     port = start_port
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

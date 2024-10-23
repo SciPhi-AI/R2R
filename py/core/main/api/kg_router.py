@@ -12,10 +12,13 @@ from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
+    WrappedKGEntityDeduplicationResponse,
     WrappedKGTriplesResponse,
+    WrappedKGTunePromptResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
+from shared.abstractions.graph import EntityLevel
 from shared.abstractions.kg import KGRunType
 from shared.utils.base_utils import update_settings_from_dict
 
@@ -53,11 +56,19 @@ class KGRouter(BaseRouter):
             workflow_messages["enrich-graph"] = (
                 "Graph enrichment task queued successfully."
             )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication task queued successfully."
+            )
         else:
             workflow_messages["create-graph"] = (
                 "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
             )
-            workflow_messages["enrich-graph"] = "Graph enriched successfully."
+            workflow_messages["enrich-graph"] = (
+                "Graph enriched successfully. You can view the communities at http://localhost:7272/v2/communities"
+            )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication completed successfully."
+            )
 
         self.orchestration_provider.register_workflows(
             Workflow.KG,
@@ -201,6 +212,10 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
+            entity_level: Optional[EntityLevel] = Query(
+                default=EntityLevel.DOCUMENT,
+                description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
+            ),
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve entities from."
             ),
@@ -224,11 +239,19 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
+            if entity_level == EntityLevel.CHUNK:
+                entity_table_name = "chunk_entity"
+            elif entity_level == EntityLevel.DOCUMENT:
+                entity_table_name = "document_entity"
+            else:
+                entity_table_name = "collection_entity"
+
             return await self.service.get_entities(
                 collection_id,
                 offset,
                 limit,
                 entity_ids,
+                entity_table_name,
             )
 
         @self.router.get("/triples")
@@ -304,3 +327,139 @@ class KGRouter(BaseRouter):
                 levels,
                 community_numbers,
             )
+
+        @self.router.post("/deduplicate_entities")
+        @self.base_endpoint
+        async def deduplicate_entities(
+            collection_id: Optional[UUID] = Body(
+                None, description="Collection ID to deduplicate entities for."
+            ),
+            run_type: Optional[KGRunType] = Body(
+                None, description="Run type for the deduplication process."
+            ),
+            deduplication_settings: Optional[dict] = Body(
+                None, description="Settings for the deduplication process."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedKGEntityDeduplicationResponse:
+            """
+            Deduplicate entities in the knowledge graph.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            server_deduplication_settings = (
+                self.service.providers.kg.config.kg_entity_deduplication_settings
+            )
+
+            logger.info(
+                f"Server deduplication settings: {server_deduplication_settings}"
+            )
+
+            if deduplication_settings:
+                server_deduplication_settings = update_settings_from_dict(
+                    server_deduplication_settings, deduplication_settings
+                )
+
+            logger.info(
+                f"Running deduplicate_entities on collection {collection_id}"
+            )
+            logger.info(f"Input data: {server_deduplication_settings}")
+
+            if run_type == KGRunType.ESTIMATE:
+                return await self.service.get_deduplication_estimate(
+                    collection_id, server_deduplication_settings
+                )
+
+            workflow_input = {
+                "collection_id": str(collection_id),
+                "run_type": run_type,
+                "kg_entity_deduplication_settings": server_deduplication_settings.model_dump_json(),
+                "user": auth_user.json(),
+            }
+
+            return await self.orchestration_provider.run_workflow(  # type: ignore
+                "entity-deduplication", {"request": workflow_input}, {}
+            )
+
+        @self.router.get("/tuned_prompt")
+        @self.base_endpoint
+        async def get_tuned_prompt(
+            prompt_name: str = Query(
+                ...,
+                description="The name of the prompt to tune. Valid options are 'kg_triples_extraction_prompt', 'kg_entity_description_prompt' and 'community_reports_prompt'.",
+            ),
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve communities from."
+            ),
+            documents_offset: Optional[int] = Query(
+                0, description="Offset for document pagination."
+            ),
+            documents_limit: Optional[int] = Query(
+                100, description="Limit for document pagination."
+            ),
+            chunks_offset: Optional[int] = Query(
+                0, description="Offset for chunk pagination."
+            ),
+            chunks_limit: Optional[int] = Query(
+                100, description="Limit for chunk pagination."
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedKGTunePromptResponse:
+            """
+            Auto-tune the prompt for a specific collection.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
+            return await self.service.tune_prompt(
+                prompt_name=prompt_name,
+                collection_id=collection_id,
+                documents_offset=documents_offset,
+                documents_limit=documents_limit,
+                chunks_offset=chunks_offset,
+                chunks_limit=chunks_limit,
+            )
+
+        @self.router.delete("/delete_graph_for_collection")
+        @self.base_endpoint
+        async def delete_graph_for_collection(
+            collection_id: UUID = Body(
+                ..., description="Collection ID to delete graph for."
+            ),
+            cascade: bool = Body(
+                default=False,
+                description="Whether to cascade the deletion, and delete entities and triples belonging to the collection.",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Delete the graph for a given collection. Note that this endpoint may delete a large amount of data created by the KG pipeline, this deletion is irreversible, and recreating the graph may be an expensive operation.
+
+            Notes:
+            The endpoint deletes all communities for a given collection. If the cascade flag is set to true, the endpoint also deletes all the entities and triples associated with the collection.
+
+            WARNING: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            await self.service.delete_graph_for_collection(
+                collection_id, cascade
+            )
+
+            return {"message": "Graph deleted successfully."}

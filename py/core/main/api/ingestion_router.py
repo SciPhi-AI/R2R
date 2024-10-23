@@ -6,14 +6,17 @@ from typing import Optional, Union
 from uuid import UUID
 
 import yaml
-from fastapi import Body, Depends, File, Form, UploadFile
+from fastapi import Body, Depends, File, Form, Query, UploadFile
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
 from core.base.api.models import (
     CreateVectorIndexResponse,
     WrappedCreateVectorIndexResponse,
+    WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
+    WrappedListVectorIndicesResponse,
+    WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
@@ -65,6 +68,16 @@ class IngestionRouter(BaseRouter):
                     "Vector index creation task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Vector index creation task completed successfully."
+                ),
+                "delete-vector-index": (
+                    "Vector index deletion task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index deletion task completed successfully."
+                ),
+                "select-vector-index": (
+                    "Vector index selection task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index selection task completed successfully."
                 ),
             },
         )
@@ -333,7 +346,7 @@ class IngestionRouter(BaseRouter):
             metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
-            run_with_orchestration: Optional[bool] = Form(
+            run_with_orchestration: Optional[bool] = Body(
                 True,
                 description=ingest_files_descriptions.get(
                     "run_with_orchestration"
@@ -393,40 +406,54 @@ class IngestionRouter(BaseRouter):
                     "task_id": None,
                 }
 
-        @self.router.post("/create_vector_index")
+        create_vector_index_extras = self.openapi_extras.get(
+            "create_vector_index", {}
+        )
+        create_vector_descriptions = create_vector_index_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.post(
+            "/create_vector_index",
+            openapi_extra=create_vector_index_extras.get("openapi_extra"),
+        )
         @self.base_endpoint
         async def create_vector_index_app(
             table_name: Optional[VectorTableName] = Body(
-                default=VectorTableName.CHUNKS,
-                description="The name of the vector table to create.",
+                default=VectorTableName.VECTORS,
+                description=create_vector_descriptions.get("table_name"),
             ),
             index_method: IndexMethod = Body(
                 default=IndexMethod.hnsw,
-                description="The type of vector index to create.",
+                description=create_vector_descriptions.get("index_method"),
             ),
-            measure: IndexMeasure = Body(
+            index_measure: IndexMeasure = Body(
                 default=IndexMeasure.cosine_distance,
-                description="The measure for the index.",
+                description=create_vector_descriptions.get("index_measure"),
             ),
             index_arguments: Optional[
                 Union[IndexArgsIVFFlat, IndexArgsHNSW]
             ] = Body(
                 None,
-                description="The arguments for the index method.",
+                description=create_vector_descriptions.get("index_arguments"),
             ),
-            replace: bool = Body(
-                default=True,
-                description="Whether to replace an existing index.",
+            index_name: Optional[str] = Body(
+                None,
+                description=create_vector_descriptions.get("index_name"),
             ),
             concurrently: bool = Body(
                 default=True,
-                description="Whether to create the index concurrently.",
+                description=create_vector_descriptions.get("concurrently"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
+            """
+            Create a vector index for a given table.
+
+            """
 
             logger.info(
-                f"Creating vector index for {table_name} with method {index_method}, measure {measure}, replace {replace}, concurrently {concurrently}"
+                f"Creating vector index for {table_name} with method {index_method}, measure {index_measure}, concurrently {concurrently}"
             )
 
             raw_message = await self.orchestration_provider.run_workflow(
@@ -435,9 +462,82 @@ class IngestionRouter(BaseRouter):
                     "request": {
                         "table_name": table_name,
                         "index_method": index_method,
-                        "measure": measure,
+                        "index_measure": index_measure,
+                        "index_name": index_name,
                         "index_arguments": index_arguments,
-                        "replace": replace,
+                        "concurrently": concurrently,
+                    },
+                },
+                options={
+                    "additional_metadata": {},
+                },
+            )
+
+            return raw_message  # type: ignore
+
+        list_vector_indices_extras = self.openapi_extras.get(
+            "create_vector_index", {}
+        )
+        list_vector_indices_descriptions = list_vector_indices_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.get(
+            "/list_vector_indices",
+            openapi_extra=list_vector_indices_extras.get("openapi_extra"),
+        )
+        @self.base_endpoint
+        async def list_vector_indices_app(
+            table_name: Optional[VectorTableName] = Query(
+                default=VectorTableName.VECTORS,
+                description=list_vector_indices_descriptions.get("table_name"),
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedListVectorIndicesResponse:
+            indices = await self.service.providers.database.list_indices(
+                table_name=table_name
+            )
+            return {"indices": indices}  # type: ignore
+
+        delete_vector_index_extras = self.openapi_extras.get(
+            "delete_vector_index", {}
+        )
+        delete_vector_index_descriptions = delete_vector_index_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.delete(
+            "/delete_vector_index",
+            openapi_extra=delete_vector_index_extras.get("openapi_extra"),
+        )
+        @self.base_endpoint
+        async def delete_vector_index_app(
+            index_name: str = Body(
+                ...,
+                description=delete_vector_index_descriptions.get("index_name"),
+            ),
+            table_name: Optional[VectorTableName] = Body(
+                default=VectorTableName.VECTORS,
+                description=delete_vector_index_descriptions.get("table_name"),
+            ),
+            concurrently: bool = Body(
+                default=True,
+                description=delete_vector_index_descriptions.get(
+                    "concurrently"
+                ),
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedDeleteVectorIndexResponse:
+            logger.info(
+                f"Deleting vector index {index_name} from table {table_name}"
+            )
+
+            raw_message = await self.orchestration_provider.run_workflow(
+                "delete-vector-index",
+                {
+                    "request": {
+                        "index_name": index_name,
+                        "table_name": table_name,
                         "concurrently": concurrently,
                     },
                 },

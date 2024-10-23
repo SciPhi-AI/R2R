@@ -18,13 +18,14 @@ class KGCreationResponse(BaseModel):
         description="The task ID of the KG creation request.",
     )
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Graph creation queued successfully.",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-            }
+
+class Config:
+    json_schema_extra = {
+        "example": {
+            "message": "Graph creation queued successfully.",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
         }
+    }
 
 
 class KGEnrichmentResponse(BaseModel):
@@ -97,6 +98,40 @@ class KGCreationEstimationResponse(R2RSerializable):
     estimated_cost_in_usd: Optional[str] = Field(
         default=None,
         description="The estimated cost to run the graph creation process in USD.",
+    )
+
+
+class KGDeduplicationEstimationResponse(R2RSerializable):
+    """Response for knowledge graph deduplication estimation."""
+
+    message: str = Field(
+        default="",
+        description="The message to display to the user.",
+    )
+
+    num_entities: Optional[int] = Field(
+        default=None,
+        description="The number of entities in the collection.",
+    )
+
+    estimated_llm_calls: Optional[str] = Field(
+        default=None,
+        description="The estimated number of LLM calls.",
+    )
+
+    estimated_total_in_out_tokens_in_millions: Optional[str] = Field(
+        default=None,
+        description="The estimated total number of input and output tokens in millions.",
+    )
+
+    estimated_cost_in_usd: Optional[str] = Field(
+        default=None,
+        description="The estimated cost in USD.",
+    )
+
+    estimated_total_time_in_minutes: Optional[str] = Field(
+        default=None,
+        description="The estimated time in minutes.",
     )
 
 
@@ -237,6 +272,34 @@ class KGCommunitiesResponse(R2RSerializable):
         }
 
 
+class KGEntityDeduplicationResponse(BaseModel):
+    """Response for knowledge graph entity deduplication."""
+
+    message: str = Field(
+        ...,
+        description="The message to display to the user.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Entity deduplication queued successfully.",
+            }
+        }
+
+
+class KGTunePromptResponse(R2RSerializable):
+    """Response containing just the tuned prompt string."""
+
+    tuned_prompt: str = Field(
+        ...,
+        description="The updated prompt.",
+    )
+
+    class Config:
+        json_schema_extra = {"example": {"tuned_prompt": "The updated prompt"}}
+
+
 WrappedKGCreationResponse = ResultsWrapper[
     Union[KGCreationResponse, KGCreationEstimationResponse]
 ]
@@ -245,4 +308,8 @@ WrappedKGEnrichmentResponse = ResultsWrapper[
 ]
 WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
 WrappedKGTriplesResponse = ResultsWrapper[KGTriplesResponse]
+WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
+WrappedKGEntityDeduplicationResponse = ResultsWrapper[
+    Union[KGEntityDeduplicationResponse, KGDeduplicationEstimationResponse]
+]
