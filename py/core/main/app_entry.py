@@ -100,6 +100,19 @@ logger.info(
 logger.info(
     f"Environment R2R_CONFIG_PATH: {'None' if config_path is None else config_path}"
 )
+logger.info(f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PROJECT_NAME')}")
+
+logger.info(f"Environment R2R_POSTGRES_HOST: {os.getenv('R2R_POSTGRES_HOST')}")
+logger.info(
+    f"Environment R2R_POSTGRES_DBNAME: {os.getenv('R2R_POSTGRES_DBNAME')}"
+)
+logger.info(f"Environment R2R_POSTGRES_PORT: {os.getenv('R2R_POSTGRES_PORT')}")
+logger.info(
+    f"Environment R2R_POSTGRES_PASSWORD: {os.getenv('R2R_POSTGRES_PASSWORD')}"
+)
+logger.info(
+    f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PR2R_PROJECT_NAME')}"
+)
 
 # Create the FastAPI app
 app = FastAPI(lifespan=lifespan)

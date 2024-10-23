@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.2.16"
+version = "3.2.30"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -23,6 +23,7 @@ packages = [
 # Python Versions
 python = ">=3.12,<3.13"
 
+alembic = "^1.13.3"
 asyncclick = "^8.1.7.2"
 click = "^8.0.0"
 fastapi = "^0.114.0"
@@ -77,10 +78,10 @@ pypdf = { version = "^4.2.0", optional = true }
 pypdf2 = { version = "^3.0.1", optional = true }
 python-pptx = { version = "^1.0.1", optional = true }
 python-docx = { version = "^1.1.0", optional = true }
-alembic = "^1.13.3"
 
 [tool.poetry.extras]
 core = [
+    "alembic",
     "aiosqlite",
     "apscheduler",
     "asyncpg",

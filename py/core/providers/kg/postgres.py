@@ -102,7 +102,7 @@ class PostgresKGProvider(KGProvider):
         )
 
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_raw")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_embedding")} (
             id SERIAL PRIMARY KEY,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
@@ -116,7 +116,7 @@ class PostgresKGProvider(KGProvider):
 
         # raw triples table, also the final table. this will have embeddings.
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("triple_raw")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_triple")} (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -133,7 +133,7 @@ class PostgresKGProvider(KGProvider):
 
         # embeddings tables
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_embedding")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("document_entity")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -148,7 +148,7 @@ class PostgresKGProvider(KGProvider):
 
         # deduplicated entities table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("entity_collection")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("collection_entity")} (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
@@ -164,7 +164,7 @@ class PostgresKGProvider(KGProvider):
 
         # communities table, result of the Leiden algorithm
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
             id SERIAL PRIMARY KEY,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
@@ -284,10 +284,10 @@ class PostgresKGProvider(KGProvider):
     async def add_triples(
         self,
         triples: list[Triple],
-        table_name: str = "triple_raw",
+        table_name: str = "chunk_triple",
     ) -> None:
         """
-        Upsert triples into the triple_raw table. These are raw triples extracted from the document.
+        Upsert triples into the chunk_triple table. These are raw triples extracted from the document.
 
         Args:
             triples: list[Triple]: list of triples to upsert
@@ -363,7 +363,7 @@ class PostgresKGProvider(KGProvider):
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name
-                FROM {self._get_table_name("entity_raw")}
+                FROM {self._get_table_name("chunk_embedding")}
                 WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
@@ -371,7 +371,7 @@ class PostgresKGProvider(KGProvider):
             SELECT e.name, e.description, e.category,
                    (SELECT array_agg(DISTINCT x) FROM unnest(e.extraction_ids) x) AS extraction_ids,
                    e.document_id
-            FROM {self._get_table_name("entity_raw")} e
+            FROM {self._get_table_name("chunk_embedding")} e
             JOIN entities_list el ON e.name = el.name
             GROUP BY e.name, e.description, e.category, e.extraction_ids, e.document_id
             ORDER BY e.name;"""
@@ -392,7 +392,7 @@ class PostgresKGProvider(KGProvider):
             WITH entities_list AS (
 
                 SELECT DISTINCT name
-                FROM {self._get_table_name("entity_raw")}
+                FROM {self._get_table_name("chunk_embedding")}
                 WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
@@ -400,7 +400,7 @@ class PostgresKGProvider(KGProvider):
 
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
                    (SELECT array_agg(DISTINCT x) FROM unnest(t.extraction_ids) x) AS extraction_ids, t.document_id
-            FROM {self._get_table_name("triple_raw")} t
+            FROM {self._get_table_name("chunk_triple")} t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
         """
@@ -470,9 +470,9 @@ class PostgresKGProvider(KGProvider):
 
         table_name = ""
         if search_type == "__Entity__":
-            table_name = "entity_collection"
+            table_name = "collection_entity"
         elif search_type == "__Relationship__":
-            table_name = "triple_raw"
+            table_name = "chunk_triple"
         elif search_type == "__Community__":
             table_name = "community_report"
         else:
@@ -533,14 +533,14 @@ class PostgresKGProvider(KGProvider):
         document_ids = [doc_id["document_id"] for doc_id in document_ids]
 
         QUERY = f"""
-            SELECT id, subject, predicate, weight, object FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1)
+            SELECT id, subject, predicate, weight, object FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1)
         """
         triples = await self.fetch_query(QUERY, [document_ids])
         return [Triple(**triple) for triple in triples]
 
     async def add_communities(self, communities: List[Any]) -> None:
         QUERY = f"""
-            INSERT INTO {self._get_table_name("community")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids, collection_id)
+            INSERT INTO {self._get_table_name("community_info")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids, collection_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             """
         await self.execute_many(QUERY, communities)
@@ -744,7 +744,7 @@ class PostgresKGProvider(KGProvider):
     ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
         QUERY = f"""
-            SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1
+            SELECT level FROM {self._get_table_name("community_info")} WHERE cluster = $1
             LIMIT 1
         """
         level = (await self.fetch_query(QUERY, [community_number]))[0]["level"]
@@ -753,7 +753,7 @@ class PostgresKGProvider(KGProvider):
             WITH node_triple_ids AS (
 
                 SELECT node, triple_ids
-                FROM {self._get_table_name("community")}
+                FROM {self._get_table_name("community_info")}
                 WHERE cluster = $1
             )
             SELECT DISTINCT
@@ -761,7 +761,7 @@ class PostgresKGProvider(KGProvider):
                 e.name AS name,
                 e.description AS description
             FROM node_triple_ids nti
-            JOIN {self._get_table_name("entity_collection")} e ON e.name = nti.node;
+            JOIN {self._get_table_name("collection_entity")} e ON e.name = nti.node;
         """
         entities = await self.fetch_query(QUERY, [community_number])
         entities = [Entity(**entity) for entity in entities]
@@ -770,13 +770,13 @@ class PostgresKGProvider(KGProvider):
             WITH node_triple_ids AS (
 
                 SELECT node, triple_ids
-                FROM {self._get_table_name("community")}
+                FROM {self._get_table_name("community_info")}
                 WHERE cluster = $1
             )
             SELECT DISTINCT
                 t.id, t.subject, t.predicate, t.object, t.weight, t.description
             FROM node_triple_ids nti
-            JOIN {self._get_table_name("triple_raw")} t ON t.id = ANY(nti.triple_ids);
+            JOIN {self._get_table_name("chunk_triple")} t ON t.id = ANY(nti.triple_ids);
         """
         triples = await self.fetch_query(QUERY, [community_number])
         triples = [Triple(**triple) for triple in triples]
@@ -821,7 +821,7 @@ class PostgresKGProvider(KGProvider):
 
         # remove all triples for these documents.
         QUERY = f"""
-            DELETE FROM {self._get_table_name("community")} WHERE collection_id = $1;
+            DELETE FROM {self._get_table_name("community_info")} WHERE collection_id = $1;
             DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1;
         """
 
@@ -831,10 +831,10 @@ class PostgresKGProvider(KGProvider):
 
         if cascade:
             QUERY += f"""
-                DELETE FROM {self._get_table_name("entity_raw")} WHERE document_id = ANY($1);
-                DELETE FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
-                DELETE FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
-                DELETE FROM {self._get_table_name("entity_collection")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("chunk_embedding")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("document_entity")} WHERE document_id = ANY($1);
+                DELETE FROM {self._get_table_name("collection_entity")} WHERE document_id = ANY($1);
             """
 
         await self.execute_query(QUERY, [document_ids])
@@ -862,9 +862,9 @@ class PostgresKGProvider(KGProvider):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name('entity_raw')} WHERE document_id = $1",
-            f"DELETE FROM {self._get_table_name('triple_raw')} WHERE document_id = $1",
-            f"DELETE FROM {self._get_table_name('entity_embedding')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('chunk_embedding')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('chunk_triple')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('document_entity')} WHERE document_id = $1",
         ]
 
         for query in delete_queries:
@@ -907,7 +907,7 @@ class PostgresKGProvider(KGProvider):
         self, document_id: UUID
     ) -> list[str]:
         QUERY = f"""
-            SELECT DISTINCT unnest(extraction_ids) AS extraction_id FROM {self._get_table_name("entity_raw")} WHERE document_id = $1
+            SELECT DISTINCT unnest(extraction_ids) AS extraction_id FROM {self._get_table_name("chunk_embedding")} WHERE document_id = $1
         """
         extraction_ids = [
             item["extraction_id"]
@@ -1011,7 +1011,7 @@ class PostgresKGProvider(KGProvider):
         ]
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("entity_embedding")} WHERE document_id = ANY($1);
+            SELECT COUNT(*) FROM {self._get_table_name("document_entity")} WHERE document_id = ANY($1);
         """
         entity_count = (await self.fetch_query(QUERY, [document_ids]))[0][
             "count"
@@ -1023,7 +1023,7 @@ class PostgresKGProvider(KGProvider):
             )
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("triple_raw")} WHERE document_id = ANY($1);
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1);
         """
         triple_count = (await self.fetch_query(QUERY, [document_ids]))[0][
             "count"
@@ -1086,7 +1086,7 @@ class PostgresKGProvider(KGProvider):
         limit: int = -1,
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
-        entity_table_name: str = "entity_embedding",
+        entity_table_name: str = "document_entity",
     ) -> dict:
         conditions = []
         params: list = [collection_id]
@@ -1108,7 +1108,7 @@ class PostgresKGProvider(KGProvider):
             params.append(offset)
             offset_limit_clause = f"OFFSET ${len(params)}"
 
-        if entity_table_name == "entity_collection":
+        if entity_table_name == "collection_entity":
             # entity deduplicated table has document_ids, not document_id.
             # we directly use the collection_id to get the entities list.
             query = f"""
@@ -1165,7 +1165,7 @@ class PostgresKGProvider(KGProvider):
 
         query = f"""
             SELECT id, subject, predicate, object, description
-            FROM {self._get_table_name("triple_raw")}
+            FROM {self._get_table_name("chunk_triple")}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
                 WHERE $1 = ANY(collection_ids)
@@ -1201,7 +1201,7 @@ class PostgresKGProvider(KGProvider):
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
         distinct: bool = False,
-        entity_table_name: str = "entity_embedding",
+        entity_table_name: str = "document_entity",
     ) -> int:
         if collection_id is None and document_id is None:
             raise ValueError(
@@ -1211,11 +1211,11 @@ class PostgresKGProvider(KGProvider):
         conditions = []
         params = []
 
-        if entity_table_name == "entity_collection":
+        if entity_table_name == "collection_entity":
 
             if document_id:
                 raise ValueError(
-                    "document_id is not supported for entity_collection table"
+                    "document_id is not supported for collection_entity table"
                 )
 
             if collection_id:
@@ -1276,7 +1276,7 @@ class PostgresKGProvider(KGProvider):
             params.append(str(document_id))
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("triple_raw")}
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")}
             WHERE {" AND ".join(conditions)}
         """
         return (await self.fetch_query(QUERY, params))[0]["count"]
@@ -1284,7 +1284,7 @@ class PostgresKGProvider(KGProvider):
     async def update_entity_descriptions(self, entities: list[Entity]):
 
         query = f"""
-            UPDATE {self._get_table_name("entity_collection")}
+            UPDATE {self._get_table_name("collection_entity")}
             SET description = $3, description_embedding = $4
             WHERE name = $1 AND collection_id = $2
         """

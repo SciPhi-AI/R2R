@@ -11,6 +11,11 @@ from asyncclick import pass_context
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
+from shared.abstractions.vector import (
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 
 
 async def ingest_files_from_urls(client, urls):
@@ -182,3 +187,102 @@ async def ingest_sample_files_from_unstructured(ctx):
     click.echo(
         f"Sample files ingestion completed. Ingest files response:\n\n{response}"
     )
+
+
+@cli.command()
+@click.option(
+    "--table-name",
+    type=click.Choice([t.value for t in VectorTableName]),
+    default=VectorTableName.VECTORS.value,
+    help="Table to create index on",
+)
+@click.option(
+    "--index-method",
+    type=click.Choice([m.value for m in IndexMethod]),
+    default=IndexMethod.hnsw.value,
+    help="Indexing method to use",
+)
+@click.option(
+    "--index-measure",
+    type=click.Choice([m.value for m in IndexMeasure]),
+    default=IndexMeasure.cosine_distance.value,
+    help="Distance measure to use",
+)
+@click.option(
+    "--index-arguments",
+    type=JSON,
+    help="Additional index arguments as JSON",
+)
+@click.option(
+    "--index-name",
+    help="Custom name for the index",
+)
+@click.option(
+    "--no-concurrent",
+    is_flag=True,
+    help="Disable concurrent index creation",
+)
+@pass_context
+async def create_vector_index(
+    ctx,
+    table_name,
+    index_method,
+    index_measure,
+    index_arguments,
+    index_name,
+    no_concurrent,
+):
+    """Create a vector index for similarity search."""
+    client = ctx.obj
+    with timer():
+        response = await client.create_vector_index(
+            table_name=table_name,
+            index_method=index_method,
+            index_measure=index_measure,
+            index_arguments=index_arguments,
+            index_name=index_name,
+            concurrently=not no_concurrent,
+        )
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.option(
+    "--table-name",
+    type=click.Choice([t.value for t in VectorTableName]),
+    default=VectorTableName.VECTORS.value,
+    help="Table to list indices from",
+)
+@pass_context
+async def list_vector_indices(ctx, table_name):
+    """List all vector indices for a table."""
+    client = ctx.obj
+    with timer():
+        response = await client.list_vector_indices(table_name=table_name)
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command()
+@click.argument("index-name", required=True)
+@click.option(
+    "--table-name",
+    type=click.Choice([t.value for t in VectorTableName]),
+    default=VectorTableName.VECTORS.value,
+    help="Table containing the index",
+)
+@click.option(
+    "--no-concurrent",
+    is_flag=True,
+    help="Disable concurrent index deletion",
+)
+@pass_context
+async def delete_vector_index(ctx, index_name, table_name, no_concurrent):
+    """Delete a vector index."""
+    client = ctx.obj
+    with timer():
+        response = await client.delete_vector_index(
+            index_name=index_name,
+            table_name=table_name,
+            concurrently=not no_concurrent,
+        )
+    click.echo(json.dumps(response, indent=2))

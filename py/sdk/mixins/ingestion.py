@@ -4,6 +4,12 @@ from contextlib import ExitStack
 from typing import Optional, Union
 from uuid import UUID
 
+from shared.abstractions.vector import (
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
+
 
 class IngestionMixins:
     async def ingest_files(
@@ -151,3 +157,82 @@ class IngestionMixins:
             "metadata": metadata,
         }
         return await self._make_request("POST", "ingest_chunks", json=data)  # type: ignore
+
+    async def create_vector_index(
+        self,
+        table_name: VectorTableName = VectorTableName.VECTORS,
+        index_method: IndexMethod = IndexMethod.hnsw,
+        index_measure: IndexMeasure = IndexMeasure.cosine_distance,
+        index_arguments: Optional[dict] = None,
+        index_name: Optional[str] = None,
+        concurrently: bool = True,
+    ) -> dict:
+        """
+        Create a vector index for a given table.
+
+        Args:
+            table_name (VectorTableName): Name of the table to create index on
+            index_method (IndexMethod): Method to use for indexing (hnsw or ivf_flat)
+            index_measure (IndexMeasure): Distance measure to use
+            index_arguments (Optional[dict]): Additional arguments for the index
+            index_name (Optional[str]): Custom name for the index
+            concurrently (bool): Whether to create the index concurrently
+
+        Returns:
+            dict: Response containing the creation status
+        """
+        data = {
+            "table_name": table_name,
+            "index_method": index_method,
+            "index_measure": index_measure,
+            "index_arguments": index_arguments,
+            "index_name": index_name,
+            "concurrently": concurrently,
+        }
+        return await self._make_request(  # type: ignore
+            "POST", "create_vector_index", json=data
+        )
+
+    async def list_vector_indices(
+        self,
+        table_name: VectorTableName = VectorTableName.VECTORS,
+    ) -> dict:
+        """
+        List all vector indices for a given table.
+
+        Args:
+            table_name (VectorTableName): Name of the table to list indices from
+
+        Returns:
+            dict: Response containing the list of indices
+        """
+        params = {"table_name": table_name}
+        return await self._make_request(  # type: ignore
+            "GET", "list_vector_indices", params=params
+        )
+
+    async def delete_vector_index(
+        self,
+        index_name: str,
+        table_name: VectorTableName = VectorTableName.VECTORS,
+        concurrently: bool = True,
+    ) -> dict:
+        """
+        Delete a vector index from a given table.
+
+        Args:
+            index_name (str): Name of the index to delete
+            table_name (VectorTableName): Name of the table containing the index
+            concurrently (bool): Whether to delete the index concurrently
+
+        Returns:
+            dict: Response containing the deletion status
+        """
+        data = {
+            "index_name": index_name,
+            "table_name": table_name,
+            "concurrently": concurrently,
+        }
+        return await self._make_request(  # type: ignore
+            "DELETE", "delete_vector_index", json=data
+        )

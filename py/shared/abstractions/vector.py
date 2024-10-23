@@ -107,11 +107,11 @@ class VectorTableName(str, Enum):
     # {r2r_project_name}.{r2r_project_name} due to a bug in the vector class.
     """
 
-    RAW_CHUNKS = "vectors"
-    ENTITIES_DOCUMENT = "entity_embedding"
-    ENTITIES_COLLECTION = "entity_collection"
+    VECTORS = "vectors"
+    ENTITIES_DOCUMENT = "document_entity"
+    ENTITIES_COLLECTION = "collection_entity"
     # TODO: Add support for triples
-    # TRIPLES = "triple_raw"
+    # TRIPLES = "chunk_triple"
     COMMUNITIES = "community_report"
 
     def __str__(self) -> str:

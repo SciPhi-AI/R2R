@@ -240,11 +240,11 @@ class KGRouter(BaseRouter):
                 )
 
             if entity_level == EntityLevel.CHUNK:
-                entity_table_name = "entity_raw"
+                entity_table_name = "chunk_embedding"
             elif entity_level == EntityLevel.DOCUMENT:
-                entity_table_name = "entity_embedding"
+                entity_table_name = "document_entity"
             else:
-                entity_table_name = "entity_collection"
+                entity_table_name = "collection_entity"
 
             return await self.service.get_entities(
                 collection_id,

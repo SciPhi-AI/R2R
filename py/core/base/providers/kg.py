@@ -112,7 +112,7 @@ class KGProvider(ABC):
         limit: int = -1,
         entity_ids: list[str] | None = None,
         entity_names: list[str] | None = None,
-        entity_table_name: str = "entity_embedding",
+        entity_table_name: str = "document_entity",
     ) -> dict:
         """Abstract method to get entities."""
         pass
@@ -209,7 +209,7 @@ class KGProvider(ABC):
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
         distinct: bool = False,
-        entity_table_name: str = "entity_embedding",
+        entity_table_name: str = "document_entity",
     ) -> int:
         """Abstract method to get the entity count."""
         pass
