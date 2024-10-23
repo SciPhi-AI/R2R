@@ -197,7 +197,7 @@ describe("r2rClient Integration Tests", () => {
         fullResponse += new TextDecoder().decode(value);
       }
     } else {
-      throw new Error('Stream is not a ReadableStream');
+      throw new Error("Stream is not a ReadableStream");
     }
 
     expect(fullResponse.length).toBeGreaterThan(0);
