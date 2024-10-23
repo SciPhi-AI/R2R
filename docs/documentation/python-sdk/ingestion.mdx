@@ -262,7 +262,7 @@ doc_status = client.documents_overview(
 
 <Note>
 
-We have added support for contextual chunk enrichment! You can learn more about it [here](/cookbooks/contextual-enrichment). 
+We have added support for contextual chunk enrichment! You can learn more about it [here](/cookbooks/contextual-enrichment).
 
 Currently, you need to enable it in your ingestion config:
 
@@ -839,8 +839,8 @@ delete_response = client.delete_vector_index(
 - Monitor memory usage for large files
 
 #### Chunking Issues
-- Large chunks (>1024 chars) may impact retrieval quality
-- Small chunks (<64 chars) may lose context
+- Large chunks may impact retrieval quality
+- Small chunks may lose context
 - Adjust overlap for better context preservation
 
 #### Vector Index Performance
