@@ -14,7 +14,6 @@ from core.base import (
     increment_version,
 )
 from core.base.abstractions import DocumentInfo, R2RException
-from shared.abstractions.ingestion import ChunkEnrichmentSettings
 from core.utils import generate_default_user_collection_id
 
 from ...services import IngestionService, IngestionServiceAdapter

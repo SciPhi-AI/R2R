@@ -474,7 +474,6 @@ class IngestionService(Service):
         chunk_enrichment_settings = (
             self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
         )
-
         # get all document_chunks
         document_chunks = (
             await self.providers.database.get_document_chunks(
