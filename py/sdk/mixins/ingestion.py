@@ -18,6 +18,7 @@ class IngestionMixins:
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
         ingestion_config: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
         Ingest files into your R2R deployment
@@ -74,6 +75,9 @@ class IngestionMixins:
             if ingestion_config:
                 data["ingestion_config"] = json.dumps(ingestion_config)
 
+            if run_with_orchestration is not None:
+                data["run_with_orchestration"] = str(run_with_orchestration)
+
             return await self._make_request(  # type: ignore
                 "POST", "ingest_files", data=data, files=files_tuples
             )
@@ -84,6 +88,7 @@ class IngestionMixins:
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
         ingestion_config: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
         Update existing files in your R2R deployment.
@@ -129,6 +134,9 @@ class IngestionMixins:
             if ingestion_config:
                 data["ingestion_config"] = json.dumps(ingestion_config)
 
+            if run_with_orchestration is not None:
+                data["run_with_orchestration"] = str(run_with_orchestration)
+
             return await self._make_request(  # type: ignore
                 "POST", "update_files", data=data, files=files
             )
@@ -138,6 +146,7 @@ class IngestionMixins:
         chunks: list[dict],
         document_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
         Ingest files into your R2R deployment
@@ -156,6 +165,8 @@ class IngestionMixins:
             "document_id": document_id,
             "metadata": metadata,
         }
+        if run_with_orchestration is not None:
+            data["run_with_orchestration"] = str(run_with_orchestration)  # type: ignore
         return await self._make_request("POST", "ingest_chunks", json=data)  # type: ignore
 
     async def create_vector_index(
