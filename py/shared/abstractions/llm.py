@@ -41,6 +41,7 @@ class GenerationConfig(R2RSerializable):
         "tools": None,
         "add_generation_kwargs": None,
         "api_base": None,
+        "response_format": None,
     }
 
     model: str = Field(
@@ -74,6 +75,7 @@ class GenerationConfig(R2RSerializable):
     api_base: Optional[str] = Field(
         default_factory=lambda: GenerationConfig._defaults["api_base"]
     )
+    response_format: Optional[dict] = None
 
     @classmethod
     def set_default(cls, **kwargs):
