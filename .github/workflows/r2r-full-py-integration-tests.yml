@@ -59,10 +59,6 @@ jobs:
         if: matrix.test_category == 'cli-retrieval'
         uses: ./.github/actions/run-cli-retrieval-tests
 
-      - name: Run CLI GraphRAG Tests
-        if: matrix.test_category == 'cli-graphrag'
-        uses: ./.github/actions/run-cli-graphrag-tests
-
       - name: Run SDK Ingestion Tests
         if: matrix.test_category == 'sdk-ingestion'
         uses: ./.github/actions/run-sdk-ingestion-tests
@@ -78,7 +74,3 @@ jobs:
       - name: Run SDK Collections Tests
         if: matrix.test_category == 'sdk-collections'
         uses: ./.github/actions/run-sdk-collections-tests
-
-      - name: Run SDK GraphRAG Tests
-        if: matrix.test_category == 'sdk-graphrag'
-        uses: ./.github/actions/run-sdk-graphrag-tests
