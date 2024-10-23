@@ -198,9 +198,13 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 break
             except Exception as e:
                 if attempt == 2:
-                    raise ValueError(
-                        f"Failed to generate a summary for community {community_number} at level {community_level}."
-                    ) from e
+                    logger.error(
+                        f"KGCommunitySummaryPipe: Error generating community summary for community {community_number}: {e}"
+                    )
+                    return {
+                        "community_number": community_number,
+                        "error": str(e),
+                    }
 
         community_report = CommunityReport(
             community_number=community_number,
@@ -273,11 +277,28 @@ class KGCommunitySummaryPipe(AsyncPipe):
                     )
                 )
 
+        total_jobs = len(community_summary_jobs)
+        total_errors = 0
         completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
+
+            summary = await community_summary
             completed_community_summary_jobs += 1
             if completed_community_summary_jobs % 50 == 0:
                 logger.info(
-                    f"KGCommunitySummaryPipe: {completed_community_summary_jobs}/{len(community_summary_jobs)} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
+                    f"KGCommunitySummaryPipe: {completed_community_summary_jobs}/{total_jobs} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
                 )
-            yield await community_summary
+
+            if "error" in summary:
+                logger.error(
+                    f"KGCommunitySummaryPipe: Error generating community summary for community {summary['community_number']}: {summary['error']}"
+                )
+                total_errors += 1
+                continue
+
+            yield summary
+
+        if total_errors > 0:
+            raise ValueError(
+                f"KGCommunitySummaryPipe: Failed to generate community summaries for {total_errors} out of {total_jobs} communities. Please rerun the job if there are too many failures."
+            )

@@ -126,7 +126,10 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 .message.content
             )
 
-            # will do more requests, but it is simpler
+            if not out_entity.description:
+                logger.error(f"No description for entity {out_entity.name}")
+                return out_entity.name
+
             out_entity.description_embedding = (
                 await self.embedding_provider.async_get_embeddings(
                     [out_entity.description]
