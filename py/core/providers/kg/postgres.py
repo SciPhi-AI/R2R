@@ -748,7 +748,7 @@ class PostgresKGProvider(KGProvider):
     ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
         QUERY = f"""
-            SELECT level FROM {self._get_table_name("community")} WHERE cluster = $1 AND collection_id = $2
+            SELECT level FROM {self._get_table_name("community_info")} WHERE cluster = $1 AND collection_id = $2
             LIMIT 1
         """
         level = (
@@ -770,7 +770,7 @@ class PostgresKGProvider(KGProvider):
         QUERY = f"""
             WITH node_triple_ids AS (
                 SELECT node, triple_ids
-                FROM {self._get_table_name("community")}
+                FROM {self._get_table_name("community_info")}
                 WHERE cluster = $1 AND collection_id = $2
             )
             SELECT DISTINCT
@@ -871,7 +871,7 @@ class PostgresKGProvider(KGProvider):
             )
 
         for query in DELETE_QUERIES:
-            if "community" in query or "entity_collection" in query:
+            if "community" in query or "collection_entity" in query:
                 await self.execute_query(query, [collection_id])
             else:
                 await self.execute_query(query, [document_ids])
