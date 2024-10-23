@@ -500,6 +500,52 @@ client.get_tuned_prompt(
 
 The tuning process provides an LLM with chunks from each document in the collection. The relative sample size can therefore be controlled by adjusting the document and chunk limits.
 
+## Deduplicate Entities
+
+```python
+client.deduplicate_entities(
+    collection_id='122fdf6a-e116-546b-a8f6-e4cb2e2c0a09',
+    entity_deduplication_settings=entity_deduplication_settings
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system after deduplicating the entities.
+      ```bash
+      {
+        "message": "Entity deduplication task queued successfully.",
+        "task_id": "6e27dfca-606d-422d-b73f-2d9e138661b4"
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+
+<ParamField path="collection_id" type="Union[UUID, str]">
+  The ID of the collection to deduplicate entities for.
+</ParamField>
+
+<ParamField path="entity_deduplication_settings" type="EntityDeduplicationSettings">
+  The settings for the entity deduplication process.
+  <Expandable title="EntityDeduplicationSettings">
+    <ParamField path="kg_entity_deduplication_type" type="str">
+      The type of deduplication to perform. Valid values are "by_name". More deduplication types will be added in the future.
+    </ParamField>
+    <ParamField path="kg_entity_deduplication_prompt" type="str">
+      The prompt to use for entity deduplication.
+    </ParamField>
+    <ParamField path="generation_config" type="GenerationConfig">
+      The configuration for text generation during entity deduplication.
+    </ParamField>
+    <ParamField path="max_description_input_length" type="int">
+      The maximum length of the description for a node in the graph in characters (and not tokens).
+      Used so that we don't hit the input context window of the LLM while generating descriptions.
+    </ParamField>
+  </Expandable>
+</ParamField>
 
 ## Search and RAG
 

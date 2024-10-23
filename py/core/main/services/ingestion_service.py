@@ -467,13 +467,13 @@ class IngestionService(Service):
 
         return vector_entry_new
 
-    async def chunk_enrichment(self, document_id: UUID) -> int:
+    async def chunk_enrichment(
+        self,
+        document_id: UUID,
+        chunk_enrichment_settings: ChunkEnrichmentSettings,
+    ) -> int:
         # just call the pipe on every chunk of the document
 
-        # TODO: Why is the config not recognized as an ingestionconfig but as a providerconfig?
-        chunk_enrichment_settings = (
-            self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
-        )
         # get all document_chunks
         document_chunks = (
             await self.providers.database.get_document_chunks(

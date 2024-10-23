@@ -14,6 +14,7 @@ from core.base import (
     increment_version,
 )
 from core.base.abstractions import DocumentInfo, R2RException
+from shared.abstractions.ingestion import ChunkEnrichmentSettings
 from core.utils import generate_default_user_collection_id
 
 from ...services import IngestionService, IngestionServiceAdapter
@@ -162,11 +163,19 @@ def hatchet_ingestion_factory(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
-                chunk_enrichment_settings = getattr(
+                # get runtime config chunk_enrichment_settings
+                chunk_enrichment_settings = input_data.get(
+                    "ingestion_config", {}
+                ).get("chunk_enrichment_settings", None) or getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",
                     None,
                 )
+
+                if isinstance(chunk_enrichment_settings, dict):
+                    chunk_enrichment_settings = ChunkEnrichmentSettings(
+                        **chunk_enrichment_settings
+                    )
 
                 if chunk_enrichment_settings and getattr(
                     chunk_enrichment_settings, "enable_chunk_enrichment", False
@@ -191,6 +200,7 @@ def hatchet_ingestion_factory(
 
                     await self.ingestion_service.chunk_enrichment(
                         document_id=document_info.id,
+                        chunk_enrichment_settings=chunk_enrichment_settings,
                     )
 
                     await self.ingestion_service.update_document_status(
