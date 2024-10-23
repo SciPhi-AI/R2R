@@ -75,7 +75,7 @@ class GenerationConfig(R2RSerializable):
     api_base: Optional[str] = Field(
         default_factory=lambda: GenerationConfig._defaults["api_base"]
     )
-    response_format: Optional[dict] = None
+    response_format: Optional[Union[dict, BaseModel]] = None
 
     @classmethod
     def set_default(cls, **kwargs):
@@ -88,6 +88,20 @@ class GenerationConfig(R2RSerializable):
                 )
 
     def __init__(self, **data):
+        if (
+            "response_format" in data
+            and isinstance(data["response_format"], type)
+            and issubclass(data["response_format"], BaseModel)
+        ):
+            model_class = data["response_format"]
+            data["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": model_class.__name__,
+                    "schema": model_class.model_json_schema(),
+                },
+            }
+
         model = data.pop("model", None)
         if model is not None:
             super().__init__(model=model, **data)
