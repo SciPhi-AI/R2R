@@ -1,0 +1,185 @@
+---
+title: 'Maintenance & Scaling'
+description: 'Learn how to maintain and scale your R2R system'
+icon: 'paint-roller'
+---
+
+## Introduction
+
+This guide covers essential maintenance tasks for R2R deployments, with a focus on vector index management and system updates. Understanding when and how to build vector indices, as well as keeping your R2R installation current, is crucial for maintaining optimal performance at scale.
+
+## Vector Indices
+
+### Why Vector Indices Matter
+
+Vector indices are essential for efficient similarity search across documents. Without an index, every search would require comparing against every vector in your database - a process that becomes increasingly expensive as your dataset grows.
+
+Based on benchmarks from similar systems (pgvector), vector indices can provide significant performance improvements:
+- Queries can be 10-100x faster with proper indexing
+- High-dimensional vectors (1536d) benefit even more from indexing than lower-dimensional ones
+- Index performance becomes critical at scale (>100K documents)
+
+### When to Build Vector Indices
+
+Consider building vector indices when:
+- Your document collection exceeds 100K documents
+- Query latency exceeds acceptable thresholds
+- You're using high-dimensional vectors (e.g., 1536d from large language models)
+- You need to support concurrent queries
+
+### Vector Index Creation
+
+R2R supports multiple indexing methods, with HNSW (Hierarchical Navigable Small World) being recommended for most use cases:
+
+```python
+create_response = client.create_vector_index(
+    table_name="vectors",
+    index_method="hnsw",
+    index_measure="cosine_distance",
+    index_arguments={
+        "m": 16,              # Number of connections per element
+        "ef_construction": 64 # Size of dynamic candidate list
+    },
+    concurrently=True
+)
+```
+
+#### Important Considerations
+
+1. **Resource Usage**
+   - Index creation is CPU and memory intensive
+   - Memory usage scales with both dataset size and `m` parameter
+   - Consider creating indices during off-peak hours
+
+2. **Performance Tuning**
+   - HNSW Parameters:
+     - `m`: 16-64 (higher = better quality, more memory)
+     - `ef_construction`: 64-100 (higher = better quality, longer build time)
+   - Distance Measures:
+     - `cosine_distance`: Best for normalized vectors (most common)
+     - `l2_distance`: Better for absolute distances
+     - `max_inner_product`: Optimized for dot product similarity
+
+3. **Index Warming**
+   - New indices require warming for optimal performance
+   - Initial queries may be slower until index is loaded into memory
+   - Consider implementing explicit pre-warming in production
+
+### Managing Vector Indices
+
+List existing indices:
+```bash
+r2r list-vector-indices
+```
+
+Delete an index:
+```bash
+r2r delete-vector-index <index-name>
+```
+
+For detailed information about vector index management, see the [Ingestion documentation](/documentation/cli/ingestion).
+
+## System Updates and Maintenance
+
+### Version Management
+
+Check your current R2R version:
+```bash
+r2r version
+```
+
+### Update Process
+
+1. **Prepare for Update**
+   ```bash
+   # Check current versions
+   r2r version
+   r2r db current
+
+   # Generate system report (optional)
+   r2r generate-report
+   ```
+
+2. **Stop Running Services**
+   ```bash
+   r2r docker-down
+   ```
+
+3. **Update R2R**
+   ```bash
+   r2r update
+   ```
+
+4. **Update Database**
+   ```bash
+   r2r db upgrade
+   ```
+
+5. **Restart Services**
+   ```bash
+   r2r serve --docker [additional options]
+   ```
+
+### Database Migration Management
+
+R2R uses database migrations to manage schema changes. Always check and update your database schema after updates:
+
+Check current migration:
+```bash
+r2r db current
+```
+
+Apply migrations:
+```bash
+r2r db upgrade
+```
+
+### Managing Multiple Environments
+
+Use different project names and schemas for different environments:
+
+```bash
+# Development
+export R2R_PROJECT_NAME=r2r_dev
+r2r serve --docker --project-name r2r-dev
+
+# Staging
+export R2R_PROJECT_NAME=r2r_staging
+r2r serve --docker --project-name r2r-staging
+
+# Production
+export R2R_PROJECT_NAME=r2r_prod
+r2r serve --docker --project-name r2r-prod
+```
+
+## Troubleshooting
+
+If issues occur:
+
+1. Generate a system report:
+   ```bash
+   r2r generate-report
+   ```
+
+2. Check container health:
+   ```bash
+   r2r docker-down
+   r2r serve --docker
+   ```
+
+3. Review database state:
+   ```bash
+   r2r db current
+   r2r db history
+   ```
+
+4. Roll back if needed:
+   ```bash
+   r2r db downgrade --revision <previous-working-version>
+   ```
+
+## Additional Resources
+
+- [Python SDK Ingestion Documentation](/documentation/python-sdk/ingestion)
+- [CLI Maintenance Documentation](/documentation/cli/maintenance)
+- [Ingestion Configuration Documentation](/documentation/configuration/ingestion/overview)

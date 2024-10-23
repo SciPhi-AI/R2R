@@ -18,7 +18,7 @@ async def test_index_lifecycle(postgres_db_provider):
     # Create an index
     index_name = f"test_index_{uuid4().hex[:8]}"
     await postgres_db_provider.create_index(
-        table_name=VectorTableName.RAW_CHUNKS,
+        table_name=VectorTableName.VECTORS,
         index_measure=IndexMeasure.cosine_distance,
         index_method=IndexMethod.hnsw,
         index_name=index_name,
@@ -26,28 +26,26 @@ async def test_index_lifecycle(postgres_db_provider):
     )
 
     # List indices and verify our index exists
-    indices = await postgres_db_provider.list_indices(
-        VectorTableName.RAW_CHUNKS
-    )
+    indices = await postgres_db_provider.list_indices(VectorTableName.VECTORS)
     print("indices = ", indices)
     assert indices, "No indices returned"
     assert any(index["name"] == index_name for index in indices)
 
     # # Select the index for use
     # await postgres_db_provider.select_index(
-    #     index_name, VectorTableName.RAW_CHUNKS
+    #     index_name, VectorTableName.VECTORS
     # )
 
     # Delete the index
     await postgres_db_provider.delete_index(
         index_name,
-        table_name=VectorTableName.RAW_CHUNKS,
+        table_name=VectorTableName.VECTORS,
         concurrently=False,  # Consistent with creation
     )
 
     # Verify index was deleted
     indices_after = await postgres_db_provider.list_indices(
-        VectorTableName.RAW_CHUNKS
+        VectorTableName.VECTORS
     )
     assert not any(index["name"] == index_name for index in indices_after)
 
@@ -59,7 +57,7 @@ async def test_multiple_index_types(postgres_db_provider):
     # Create HNSW index
     hnsw_name = f"hnsw_index_{uuid4().hex[:8]}"
     await postgres_db_provider.create_index(
-        table_name=VectorTableName.RAW_CHUNKS,
+        table_name=VectorTableName.VECTORS,
         index_measure=IndexMeasure.cosine_distance,
         index_method=IndexMethod.hnsw,
         index_name=hnsw_name,
@@ -70,7 +68,7 @@ async def test_multiple_index_types(postgres_db_provider):
     # Create IVF-Flat index
     ivf_name = f"ivf_index_{uuid4().hex[:8]}"
     await postgres_db_provider.create_index(
-        table_name=VectorTableName.RAW_CHUNKS,
+        table_name=VectorTableName.VECTORS,
         index_measure=IndexMeasure.cosine_distance,
         index_method=IndexMethod.ivfflat,
         index_name=ivf_name,
@@ -79,18 +77,16 @@ async def test_multiple_index_types(postgres_db_provider):
     )
 
     # List indices and verify both exist
-    indices = await postgres_db_provider.list_indices(
-        VectorTableName.RAW_CHUNKS
-    )
+    indices = await postgres_db_provider.list_indices(VectorTableName.VECTORS)
     assert any(index["name"] == hnsw_name for index in indices)
     assert any(index["name"] == ivf_name for index in indices)
 
     # Clean up
     await postgres_db_provider.delete_index(
-        hnsw_name, table_name=VectorTableName.RAW_CHUNKS, concurrently=False
+        hnsw_name, table_name=VectorTableName.VECTORS, concurrently=False
     )
     await postgres_db_provider.delete_index(
-        ivf_name, table_name=VectorTableName.RAW_CHUNKS, concurrently=False
+        ivf_name, table_name=VectorTableName.VECTORS, concurrently=False
     )
 
 
@@ -105,13 +101,13 @@ async def test_index_operations_invalid_inputs(postgres_db_provider):
     # Try to delete non-existent index
     with pytest.raises(Exception):
         await postgres_db_provider.delete_index(
-            "nonexistent_index", VectorTableName.RAW_CHUNKS
+            "nonexistent_index", VectorTableName.VECTORS
         )
 
     # Try to select non-existent index
     # with pytest.raises(Exception):
     #     await postgres_db_provider.select_index(
-    #         "nonexistent_index", VectorTableName.RAW_CHUNKS
+    #         "nonexistent_index", VectorTableName.VECTORS
     #     )
 
 
@@ -124,7 +120,7 @@ async def test_index_persistence(
     # Create index using first connection
     index_name = f"persist_test_{uuid4().hex[:8]}"
     await postgres_db_provider.create_index(
-        table_name=VectorTableName.RAW_CHUNKS,
+        table_name=VectorTableName.VECTORS,
         index_measure=IndexMeasure.cosine_distance,
         index_method=IndexMethod.hnsw,
         index_name=index_name,
@@ -133,11 +129,11 @@ async def test_index_persistence(
 
     # Verify index exists using second connection
     indices = await temporary_postgres_db_provider.list_indices(
-        VectorTableName.RAW_CHUNKS
+        VectorTableName.VECTORS
     )
     assert any(index["name"] == index_name for index in indices)
 
     # Clean up
     await postgres_db_provider.delete_index(
-        index_name, table_name=VectorTableName.RAW_CHUNKS, concurrently=False
+        index_name, table_name=VectorTableName.VECTORS, concurrently=False
     )

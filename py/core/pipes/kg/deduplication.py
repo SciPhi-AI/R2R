@@ -98,7 +98,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             f"KGEntityDeduplicationPipe: Deduplicated {len(deduplicated_entities)} entities"
         )
 
-        # upsert deduplcated entities in the entity_collection table
+        # upsert deduplcated entities in the collection_entity table
         deduplicated_entities_list = [
             Entity(
                 name=name,
@@ -115,7 +115,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         )
         await self.kg_provider.add_entities(
             deduplicated_entities_list,
-            table_name="entity_collection",
+            table_name="collection_entity",
             conflict_columns=["name", "collection_id", "attributes"],
         )
 

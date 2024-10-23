@@ -1,5 +1,5 @@
 from .command_group import cli as command_group_cli
-from .commands import auth, ingestion, management, retrieval, server
+from .commands import auth, database, ingestion, management, retrieval, server
 from .main import main
 
 __all__ = [
@@ -12,6 +12,7 @@ __all__ = [
     "ingestion",
     "management",
     "kg",
+    "database",
     "retrieval",
     "server",
 ]

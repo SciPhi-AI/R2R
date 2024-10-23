@@ -214,10 +214,10 @@ async def test_add_entities_raw(
     postgres_kg_provider, entities_raw_list, collection_id
 ):
     await postgres_kg_provider.add_entities(
-        entities_raw_list, table_name="entity_raw"
+        entities_raw_list, table_name="chunk_embedding"
     )
     entities = await postgres_kg_provider.get_entities(
-        collection_id, entity_table_name="entity_raw"
+        collection_id, entity_table_name="chunk_embedding"
     )
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
@@ -230,10 +230,10 @@ async def test_add_entities(
     postgres_kg_provider, entities_list, collection_id
 ):
     await postgres_kg_provider.add_entities(
-        entities_list, table_name="entity_embedding"
+        entities_list, table_name="document_entity"
     )
     entities = await postgres_kg_provider.get_entities(
-        collection_id, entity_table_name="entity_embedding"
+        collection_id, entity_table_name="document_entity"
     )
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
@@ -246,7 +246,7 @@ async def test_add_triples(
     postgres_kg_provider, triples_raw_list, collection_id
 ):
     await postgres_kg_provider.add_triples(
-        triples_raw_list, table_name="triple_raw"
+        triples_raw_list, table_name="chunk_triple"
     )
     triples = await postgres_kg_provider.get_triples(collection_id)
     assert triples["triples"][0].subject == "Entity1"
@@ -266,7 +266,7 @@ async def test_add_kg_extractions(
     assert added_extractions == (2, 2)
 
     entities = await postgres_kg_provider.get_entities(
-        collection_id, entity_table_name="entity_raw"
+        collection_id, entity_table_name="chunk_embedding"
     )
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
@@ -285,7 +285,7 @@ async def test_get_entity_map(
     postgres_kg_provider, entities_raw_list, triples_raw_list, document_id
 ):
     await postgres_kg_provider.add_entities(
-        entities_raw_list, table_name="entity_raw"
+        entities_raw_list, table_name="chunk_embedding"
     )
     entity_map = await postgres_kg_provider.get_entity_map(0, 2, document_id)
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
@@ -304,7 +304,7 @@ async def test_get_entity_map(
 async def test_upsert_embeddings(
     postgres_kg_provider, collection_id, entities_list
 ):
-    table_name = "entity_embedding"
+    table_name = "document_entity"
 
     entities_list_to_upsert = [
         (
@@ -371,10 +371,10 @@ async def test_perform_graph_clustering(
 
     # addd entities and triples
     await postgres_kg_provider.add_entities(
-        entities_list, table_name="entity_embedding"
+        entities_list, table_name="document_entity"
     )
     await postgres_kg_provider.add_triples(
-        triples_raw_list, table_name="triple_raw"
+        triples_raw_list, table_name="chunk_triple"
     )
 
     num_communities = await postgres_kg_provider.perform_graph_clustering(
@@ -394,10 +394,10 @@ async def test_get_community_details(
 ):
 
     await postgres_kg_provider.add_entities(
-        entities_list, table_name="entity_embedding"
+        entities_list, table_name="document_entity"
     )
     await postgres_kg_provider.add_triples(
-        triples_raw_list, table_name="triple_raw"
+        triples_raw_list, table_name="chunk_triple"
     )
     await postgres_kg_provider.add_communities(community_table_info)
     await postgres_kg_provider.add_community_report(community_report_list[0])

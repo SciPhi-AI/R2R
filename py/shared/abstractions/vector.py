@@ -104,11 +104,11 @@ class VectorTableName(str, Enum):
     This enum represents the different tables where we store vectors.
     """
 
-    RAW_CHUNKS = "vectors"
-    ENTITIES_DOCUMENT = "entity_embedding"
-    ENTITIES_COLLECTION = "entity_collection"
+    VECTORS = "vectors"
+    ENTITIES_DOCUMENT = "document_entity"
+    ENTITIES_COLLECTION = "collection_entity"
     # TODO: Add support for triples
-    # TRIPLES = "triple_raw"
+    # TRIPLES = "chunk_triple"
     COMMUNITIES = "community_report"
 
     def __str__(self) -> str:

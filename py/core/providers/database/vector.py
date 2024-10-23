@@ -43,7 +43,7 @@ class HybridSearchIntermediateResult(TypedDict):
 
 
 class PostgresVectorHandler(VectorHandler):
-    TABLE_NAME = VectorTableName.RAW_CHUNKS
+    TABLE_NAME = VectorTableName.VECTORS
 
     COLUMN_VARS = [
         "extraction_id",
@@ -64,6 +64,26 @@ class PostgresVectorHandler(VectorHandler):
         self.enable_fts = enable_fts
 
     async def create_table(self):
+        # Check for old table name first
+        check_query = f"""
+        SELECT EXISTS (
+            SELECT FROM pg_tables
+            WHERE schemaname = $1
+            AND tablename = $2
+        );
+        """
+        old_table_exists = await self.connection_manager.fetch_query(
+            check_query, (self.project_name, self.project_name)
+        )
+
+        if len(old_table_exists) > 0 and old_table_exists[0]["exists"]:
+            raise ValueError(
+                f"Found old vector table '{self.project_name}.{self.project_name}'. "
+                "Please run `r2r db upgrade` with the CLI, or to run manually, "
+                "run in R2R/py/migrations with 'alembic upgrade head' to update "
+                "your database schema to the new version."
+            )
+
         # TODO - Move ids to `UUID` type
         # Create the vector table if it doesn't exist
         query = f"""
@@ -531,10 +551,8 @@ class PostgresVectorHandler(VectorHandler):
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        if table_name == VectorTableName.RAW_CHUNKS:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
-            )
+        if table_name == VectorTableName.VECTORS:
+            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"  # TODO - Fix bug in vector table naming convention
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
@@ -761,7 +779,7 @@ class PostgresVectorHandler(VectorHandler):
 
         Args:
             table_name (VectorTableName, optional): The table to list indices for.
-                If None, defaults to RAW_CHUNKS table.
+                If None, defaults to VECTORS table.
 
         Returns:
             List[dict]: List of indices with their properties
@@ -769,10 +787,8 @@ class PostgresVectorHandler(VectorHandler):
         Raises:
             ArgError: If an invalid table name is provided
         """
-        if table_name == VectorTableName.RAW_CHUNKS:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
-            )
+        if table_name == VectorTableName.VECTORS:
+            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
@@ -845,10 +861,8 @@ class PostgresVectorHandler(VectorHandler):
             Exception: If index deletion fails
         """
         # Validate table name and get column name
-        if table_name == VectorTableName.RAW_CHUNKS:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.RAW_CHUNKS}"
-            )
+        if table_name == VectorTableName.VECTORS:
+            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (

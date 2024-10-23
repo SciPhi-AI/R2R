@@ -1,5 +1,13 @@
 from cli.command_group import cli
-from cli.commands import auth, ingestion, kg, management, retrieval, server
+from cli.commands import (
+    auth,
+    database,
+    ingestion,
+    kg,
+    management,
+    retrieval,
+    server,
+)
 from cli.utils.telemetry import posthog, telemetry
 
 
@@ -42,6 +50,13 @@ add_command_with_telemetry(server.generate_report)
 add_command_with_telemetry(server.serve)
 add_command_with_telemetry(server.update)
 add_command_with_telemetry(server.version)
+
+# Database
+add_command_with_telemetry(database.db)  # Add the main db group
+add_command_with_telemetry(database.upgrade)
+add_command_with_telemetry(database.downgrade)
+add_command_with_telemetry(database.current)
+add_command_with_telemetry(database.history)
 
 
 def main():
