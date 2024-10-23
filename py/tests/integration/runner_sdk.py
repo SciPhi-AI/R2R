@@ -1008,7 +1008,7 @@ def test_user_collection_document_management():
 
     # Ingest the "aristotle.txt" file
     ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(30)
+    time.sleep(15)
 
     document_id = ingest_result["results"][0]["document_id"]
 

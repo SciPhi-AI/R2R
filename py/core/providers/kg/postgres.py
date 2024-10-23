@@ -870,7 +870,7 @@ class PostgresKGProvider(KGProvider):
             )
 
         for query in DELETE_QUERIES:
-            if "community_info" in query or "collection_entity" in query:
+            if "community" in query or "collection_entity" in query:
                 await self.execute_query(query, [collection_id])
             else:
                 await self.execute_query(query, [document_ids])
