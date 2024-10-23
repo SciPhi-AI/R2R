@@ -75,7 +75,7 @@ async def ingest_files_from_urls(client, urls):
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
-def ingest_files(
+async def ingest_files(
     ctx, file_paths, document_ids, metadatas, run_without_orchestration
 ):
     """Ingest files into R2R."""
@@ -84,7 +84,7 @@ def ingest_files(
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
         run_with_orchestration = not run_without_orchestration
-        response = client.ingest_files(
+        response = await client.ingest_files(
             file_paths,
             metadatas,
             document_ids,
