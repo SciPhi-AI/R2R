@@ -50,6 +50,7 @@ class R2RSerializable(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {
+            UUID: str,
             bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
 
