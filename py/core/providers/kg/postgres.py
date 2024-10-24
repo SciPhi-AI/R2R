@@ -508,7 +508,7 @@ class PostgresKGProvider(KGProvider):
             SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
 
-        if not filter_query:
+        if filter_query != "":
             results = await self.fetch_query(
                 QUERY, (str(query_embedding), limit, filter_ids)
             )
