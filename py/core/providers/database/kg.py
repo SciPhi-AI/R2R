@@ -16,19 +16,19 @@ from core.base import (
     R2RException,
     Triple,
 )
-from shared.abstractions import (
+from core.base.abstractions import (
+    EntityLevel,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    VectorQuantizationType,
 )
-from shared.abstractions.graph import EntityLevel
-from shared.abstractions.vector import VectorQuantizationType
-from shared.api.models.kg.responses import (
+from core.base.api.models import (
     KGCreationEstimationResponse,
     KGDeduplicationEstimationResponse,
     KGEnrichmentEstimationResponse,
 )
-from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
+from core.base.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
 from .base import PostgresConnectionManager
 from .collection import PostgresCollectionHandler

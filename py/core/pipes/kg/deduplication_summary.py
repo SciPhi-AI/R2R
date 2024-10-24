@@ -4,6 +4,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 from core.base import AsyncState
+from core.base.abstractions import Entity, GenerationConfig
 from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
 from core.base.providers import (
@@ -11,7 +12,6 @@ from core.base.providers import (
     DatabaseProvider,
     EmbeddingProvider,
 )
-from shared.abstractions import Entity, GenerationConfig
 
 logger = logging.getLogger()
 

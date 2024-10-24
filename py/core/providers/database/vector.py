@@ -7,17 +7,15 @@ from typing import Any, Optional, Tuple, TypedDict, Union
 from uuid import UUID
 
 from core.base import (
-    VectorEntry,
-    VectorHandler,
-    VectorQuantizationType,
-    VectorSearchResult,
-)
-from core.base.abstractions import VectorSearchSettings
-from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
+    VectorEntry,
+    VectorHandler,
+    VectorQuantizationType,
+    VectorSearchResult,
+    VectorSearchSettings,
     VectorTableName,
 )
 
@@ -25,7 +23,7 @@ from .base import PostgresConnectionManager
 from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
-from shared.utils import _decorate_vector_type
+from core.base.utils import _decorate_vector_type
 
 
 def index_measure_to_ops(

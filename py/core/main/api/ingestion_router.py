@@ -10,6 +10,13 @@ from fastapi import Body, Depends, File, Form, Query, UploadFile
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
+from core.base.abstractions import (
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
+    VectorTableName,
+)
 from core.base.api.models import (
     CreateVectorIndexResponse,
     WrappedCreateVectorIndexResponse,
@@ -20,13 +27,6 @@ from core.base.api.models import (
     WrappedUpdateResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
-from shared.abstractions.vector import (
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
-    IndexMeasure,
-    IndexMethod,
-    VectorTableName,
-)
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType

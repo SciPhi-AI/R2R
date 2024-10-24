@@ -1,6 +1,6 @@
 from typing import Optional
 
-from shared.abstractions import R2RException
+from core.base.abstractions import R2RException
 
 
 class BaseClient:

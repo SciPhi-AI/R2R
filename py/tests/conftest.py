@@ -14,7 +14,6 @@ from core import (
     DatabaseConfig,
     EmbeddingConfig,
     LoggingConfig,
-    PromptConfig,
     SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
@@ -25,6 +24,7 @@ from core.base import (
     IngestionStatus,
     KGExtractionStatus,
     OrchestrationConfig,
+    VectorQuantizationType,
 )
 from core.providers import (
     BCryptProvider,
@@ -33,7 +33,6 @@ from core.providers import (
     PostgresDBProvider,
     R2RAuthProvider,
 )
-from shared.abstractions.vector import VectorQuantizationType
 
 
 # Vectors
@@ -232,11 +231,6 @@ def embedding_dimension():
 @pytest.fixture(scope="function")
 def vector_quantization_type():
     return VectorQuantizationType.FP32
-
-
-@pytest.fixture(scope="function")
-def prompt_config(app_config):
-    return PromptConfig(provider="r2r", app=app_config)
 
 
 @pytest.fixture(scope="function")
