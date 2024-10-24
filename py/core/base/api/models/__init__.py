@@ -15,6 +15,7 @@ from shared.api.models.ingestion.responses import (
     WrappedListVectorIndicesResponse,
     WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
+    WrappedEnrichChunksWithContextResponse,
 )
 from shared.api.models.kg.responses import (
     KGCreationResponse,
@@ -87,6 +88,7 @@ __all__ = [
     "WrappedListVectorIndicesResponse",
     "WrappedDeleteVectorIndexResponse",
     "WrappedSelectVectorIndexResponse",
+    "WrappedEnrichChunksWithContextResponse",
     # Knowledge Graph Responses
     "KGCreationResponse",
     "WrappedKGCreationResponse",

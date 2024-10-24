@@ -605,6 +605,14 @@ class IngestionServiceAdapter:
         }
 
     @staticmethod
+    def parse_enrich_chunks_with_context_input(data: dict) -> dict:
+        return {
+            "document_id": UUID(data["document_id"]),
+            "chunk_enrichment_settings": IngestionServiceAdapter._parse_chunk_enrichment_settings(data["chunk_enrichment_settings"]),
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+        }
+
+    @staticmethod
     def parse_list_vector_indices_input(input_data: dict) -> dict:
         return {"table_name": input_data["table_name"]}
 

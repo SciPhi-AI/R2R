@@ -363,6 +363,42 @@ def hatchet_ingestion_factory(
             return None
 
     @orchestration_provider.workflow(
+        name="enrich-chunks-with-context",
+        timeout="60m",
+    )
+    class HatchetEnrichChunksWithContextWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="60m")
+        async def enrich(self, context: Context) -> dict:
+            input_data = context.workflow_input()["request"]
+            parsed_data = IngestionServiceAdapter.parse_enrich_chunks_with_context_input(
+                input_data
+            )
+
+            # check if the user has access to the document
+            if not parsed_data["user"].is_superuser:
+                document_info = await self.ingestion_service.providers.database.get_documents_overview(
+                    filter_document_ids=[parsed_data["document_id"]],
+                    filter_user_ids=[parsed_data["user"].id],
+                )
+                if len(document_info) == 0:
+                    raise R2RException(
+                        status_code=403,
+                        message="User not authorized to enrich chunks for this document or document does not exist.",
+                    )
+
+            await self.ingestion_service.chunk_enrichment(
+                document_id=parsed_data["document_id"],
+                chunk_enrichment_settings=parsed_data["chunk_enrichment_settings"],
+            )
+
+            return {
+                "status": "Successfully enriched chunks",
+            }
+
+    @orchestration_provider.workflow(
         name="ingest-chunks",
         timeout="60m",
     )
@@ -556,6 +592,7 @@ def hatchet_ingestion_factory(
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
     delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
+    enrich_chunks_with_context_workflow = HatchetEnrichChunksWithContextWorkflow(service)
 
     return {
         "ingest_files": ingest_files_workflow,
@@ -563,4 +600,5 @@ def hatchet_ingestion_factory(
         "ingest_chunks": ingest_chunks_workflow,
         "create_vector_index": create_vector_index_workflow,
         "delete_vector_index": delete_vector_index_workflow,
+        "enrich_chunks_with_context": enrich_chunks_with_context_workflow,
     }

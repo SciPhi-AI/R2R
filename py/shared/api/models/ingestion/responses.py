@@ -75,9 +75,25 @@ class SelectVectorIndexResponse(BaseModel):
     status: str
 
 
+
+class EnrichChunksWithContextResponse(BaseModel):
+    message: str = Field(
+        ...,
+        description="Chunks enrichment queued successfully.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Chunks enrichment queued successfully.",
+            }
+        }
+
+
 WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
 WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
 WrappedListVectorIndicesResponse = ResultsWrapper[ListVectorIndicesResponse]
 WrappedDeleteVectorIndexResponse = ResultsWrapper[DeleteVectorIndexResponse]
 WrappedSelectVectorIndexResponse = ResultsWrapper[SelectVectorIndexResponse]
+WrappedEnrichChunksWithContextResponse = ResultsWrapper[EnrichChunksWithContextResponse]

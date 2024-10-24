@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedListVectorIndicesResponse,
     WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
+    WrappedEnrichChunksWithContextResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from shared.abstractions.vector import (
@@ -30,6 +31,7 @@ from shared.abstractions.vector import (
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
+from core.base.utils import update_settings_from_dict
 
 logger = logging.getLogger()
 
@@ -325,6 +327,75 @@ class IngestionRouter(BaseRouter):
                     "document_ids": workflow_input["document_ids"],
                     "task_id": None,
                 }
+
+        enrich_chunks_with_context_extras = self.openapi_extras.get(
+            "enrich_chunks_with_context", {}
+        )
+        enrich_chunks_with_context_descriptions = enrich_chunks_with_context_extras.get(
+            "input_descriptions", {}
+        )
+
+        @self.router.post(
+            "/enrich_chunks_with_context",
+            openapi_extra=enrich_chunks_with_context_extras.get(
+                "openapi_extra"
+            ),
+        )
+        @self.base_endpoint
+        async def enrich_chunks_with_context_app(
+            document_id: str = Body(
+                ..., description=enrich_chunks_with_context_descriptions.get("document_id")
+            ),
+            chunk_enrichment_settings: Optional[Json[dict]] = Body(
+                None, description=enrich_chunks_with_context_descriptions.get("chunk_enrichment_settings")
+            ),
+            run_with_orchestration: Optional[bool] = Body(
+                True,
+                description=enrich_chunks_with_context_descriptions.get(
+                    "run_with_orchestration"
+                ),
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedEnrichChunksWithContextResponse:
+            """
+            Enrich text chunks to enhance RAG performance. This endpoint rewrites each chunk based on neighboring chunks as well as semantically similar chunks.
+            """
+
+            # TODO: Make hatchet an enum
+            if not run_with_orchestration or self.orchestration_provider.config.provider != "hatchet":
+                raise R2RException(
+                    status_code=400,
+                    message="Enriching chunks with context must be run with orchestration. Please set run_with_orchestration to True, or use R2R-Full.",
+                )
+
+            # get server chunk enrichment settings and override parts of it if provided in the ingestion config
+            server_chunk_enrichment_settings = getattr(
+                self.service.providers.ingestion.config,
+                "chunk_enrichment_settings",
+                None,
+            )
+
+            if server_chunk_enrichment_settings:
+                chunk_enrichment_settings = update_settings_from_dict(
+                    server_chunk_enrichment_settings,
+                    chunk_enrichment_settings or {},
+                )
+
+            workflow_input = {
+                "document_id": document_id,
+                "chunk_enrichment_settings": chunk_enrichment_settings.model_dump_json(),
+                "user": auth_user.model_dump_json(),
+            }
+
+            raw_message = await self.orchestration_provider.run_workflow(
+                "enrich-chunks-with-context",
+                {"request": workflow_input},
+                options={
+                    "additional_metadata": {},
+                },
+            )
+
+            return raw_message
 
         ingest_chunks_extras = self.openapi_extras.get("ingest_chunks", {})
         ingest_chunks_descriptions = ingest_chunks_extras.get(

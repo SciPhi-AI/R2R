@@ -17,6 +17,7 @@ from shared.utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
+    update_settings_from_dict,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "validate_uuid",
+    "update_settings_from_dict",
 ]
