@@ -1,0 +1,23 @@
+rag_context:
+  template: >+
+    ### Instruction:
+
+
+    You are given a `query` and an associated `context`. Your task is to sequentially score each sentence in the context as either 1 or 0, based on the relevancy to the given query. For instance, if the query is "What is the capital of France?" then the sentence "The capital of France is Paris" would receive a +1 value, whereas "The french enjoy wine" would receive a 0. Return your response as a tuple containing a list of 1s and 0s, where each value corresponds to the respective sentence in the context, and then the rational fraction of 1's to the total number of sentences (e.g. '1/4'). NOTE - do not include ANY extra text other than the requested tuple.
+
+
+    Query:
+
+    {query}
+
+
+    Context:
+
+    {context}
+
+
+    ###Response
+
+  input_types:
+    query: str
+    context: str

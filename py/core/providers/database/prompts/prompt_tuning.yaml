@@ -1,0 +1,25 @@
+prompt_tuning_task:
+  template: |
+    You are an expert prompt tuner whose task is to adjust the current prompt template to better suit the specified domain and specialization.
+    Current prompt template to be tuned:
+    ```
+    {prompt_template}
+    ```
+
+    The current prompt has these input types:
+    {input_types}
+
+    And here is a sample of the data that will be used with this prompt:
+    {sample_data}
+
+    Please generate a new version of this prompt that:
+    1. Maintains the same basic structure and required input types
+    2. Is specialized for the given domain and specialization
+    3. Emphasizes the specified relationships
+    4. Pays special attention to the specific fields
+    5. Maintains clarity and conciseness
+
+    Return only the new prompt template, maintaining the exact format required for the input types.
+  input_types:
+    prompt_template: str
+    input_types: str

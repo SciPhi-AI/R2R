@@ -1,0 +1,28 @@
+default_rag:
+  template: >
+    ## Task:
+
+    Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query.
+
+
+    ### Query:
+
+    {query}
+
+
+    ### Context:
+
+    {context}
+
+
+    ### Query:
+
+    {query}
+
+
+    REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
+
+    ## Response:
+  input_types:
+    query: str
+    context: str
