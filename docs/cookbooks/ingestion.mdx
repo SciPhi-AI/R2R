@@ -13,7 +13,8 @@ R2R provides a powerful and flexible ingestion pipeline that allows you to effic
 As of version `3.2.13`, we have expanded the options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs by passing the following in your ingestion configuration:
 
 ```json
-{
+"ingestion_config": {
+  ...,
   "parser_overrides": {
     "pdf": "zerox"
   }

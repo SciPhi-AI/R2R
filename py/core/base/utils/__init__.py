@@ -1,6 +1,7 @@
 from shared.utils import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
+    _decorate_vector_type,
     decrement_version,
     format_entity_types,
     format_relations,
@@ -14,6 +15,7 @@ from shared.utils import (
     generate_run_id,
     generate_user_id,
     increment_version,
+    llm_cost_per_million_tokens,
     run_pipeline,
     to_async_generator,
     validate_uuid,
@@ -37,5 +39,7 @@ __all__ = [
     "generate_default_prompt_id",
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
+    "llm_cost_per_million_tokens",
     "validate_uuid",
+    "_decorate_vector_type",
 ]

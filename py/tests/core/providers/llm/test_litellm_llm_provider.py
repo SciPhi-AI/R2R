@@ -4,17 +4,17 @@ import contextlib
 import pytest
 
 from core import CompletionConfig, GenerationConfig
-from core.providers import LiteCompletionProvider
+from core.providers import LiteLLMCompletionProvider
 
 
 def test_litellm_initialization(litellm_completion_provider):
-    assert isinstance(litellm_completion_provider, LiteCompletionProvider)
+    assert isinstance(litellm_completion_provider, LiteLLMCompletionProvider)
 
 
 def test_litellm_invalid_provider_initialization():
     with pytest.raises(ValueError):
         config = CompletionConfig(provider="invalid_provider")
-        LiteCompletionProvider(config)
+        LiteLLMCompletionProvider(config)
 
 
 @pytest.mark.asyncio

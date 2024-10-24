@@ -13,7 +13,7 @@ from core.base import (
 
 # @pytest.mark.asyncio
 # async def test_create_table(temporary_postgres_db_provider):
-#     await temporary_postgres_db_provider.create_table()
+#     await temporary_postgres_db_provider.create_tables()
 #     # Verify that the table is created with the expected columns and constraints
 #     # You can execute a query to check the table structure or use a database inspection tool
 

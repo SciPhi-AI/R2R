@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set
+from typing import Any, Optional, Set, Union
 from uuid import UUID
 
 import psutil
@@ -32,8 +32,10 @@ from core.base.api.models import (
     WrappedUsersInCollectionResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
-from core.base.providers import OrchestrationProvider
-from shared.abstractions.kg import KGRunType
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 
 from ..services.management_service import ManagementService
 from .base_router import BaseRouter, RunType
@@ -43,7 +45,9 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self,
         service: ManagementService,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -690,14 +694,6 @@ class ManagementRouter(BaseRouter):
             document_id: str = Body(..., description="Document ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-            run_type: Optional[KGRunType] = Body(
-                default=KGRunType.ESTIMATE,
-                description="Run type for the graph enrichment process.",
-            ),
-            kg_enrichment_settings: Optional[dict] = Body(
-                default=None,
-                description="Settings for the graph enrichment process.",
-            ),
         ) -> WrappedDeleteResponse:
             collection_uuid = UUID(collection_id)
             document_uuid = UUID(document_id)
@@ -710,37 +706,9 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            enrichment = await self.service.remove_document_from_collection(
+            return self.service.remove_document_from_collection(
                 document_uuid, collection_uuid
             )
-            if enrichment:
-                if not run_type:
-                    run_type = KGRunType.ESTIMATE
-
-                server_kg_enrichment_settings = (
-                    self.service.providers.kg.config.kg_enrichment_settings
-                )
-                if run_type is KGRunType.ESTIMATE:
-
-                    return await self.service.providers.kg.get_enrichment_estimate(
-                        collection_id, server_kg_enrichment_settings
-                    )
-
-                if kg_enrichment_settings:
-                    for key, value in kg_enrichment_settings.items():
-                        if value is not None:
-                            setattr(server_kg_enrichment_settings, key, value)
-
-                workflow_input = {
-                    "collection_id": str(collection_id),
-                    "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-                    "user": auth_user.json(),
-                }
-                await self.orchestration_provider.run_workflow(
-                    "enrich-graph", {"request": workflow_input}, {}
-                )
-
-            return None  # type: ignore
 
         @self.router.get("/document_collections/{document_id}")
         @self.base_endpoint

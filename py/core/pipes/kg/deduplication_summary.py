@@ -1,18 +1,19 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from core.base import AsyncState
+from core.base.abstractions import Entity, GenerationConfig
 from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
-from core.base.providers import (
-    CompletionProvider,
-    EmbeddingProvider,
-    KGProvider,
-    PromptProvider,
+from core.providers import (
+    LiteLLMCompletionProvider,
+    LiteLLMEmbeddingProvider,
+    OpenAICompletionProvider,
+    OpenAIEmbeddingProvider,
+    PostgresDBProvider,
 )
-from shared.abstractions import Entity, GenerationConfig
 
 logger = logging.getLogger()
 
@@ -24,10 +25,13 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
-        prompt_provider: PromptProvider,
-        llm_provider: CompletionProvider,
-        embedding_provider: EmbeddingProvider,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
+        embedding_provider: Union[
+            LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
+        ],
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
@@ -36,8 +40,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         super().__init__(
             pipe_logger=pipe_logger, type=type, config=config, **kwargs
         )
-        self.kg_provider = kg_provider
-        self.prompt_provider = prompt_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
 
@@ -51,18 +54,16 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         # find the index until the length is less than 1024
         index = 0
         description_length = 0
-        while index < len(entity_descriptions):
-            if (
-                len(entity_descriptions[index]) + description_length
-                > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
-            ):
-                break
+        while index < len(entity_descriptions) and not (
+            len(entity_descriptions[index]) + description_length
+            > self.database_provider.config.kg_entity_deduplication_settings.max_description_input_length
+        ):
             description_length += len(entity_descriptions[index])
             index += 1
 
         completion = await self.llm_provider.aget_completion(
-            messages=await self.prompt_provider._get_message_payload(
-                task_prompt_name=self.kg_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
+            messages=await self.database_provider.prompt_handler.get_message_payload(
+                task_prompt_name=self.database_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
                 task_inputs={
                     "entity_name": entity_name,
                     "entity_descriptions": "\n".join(
@@ -117,15 +118,13 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             f"Upserting {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        result = await self.kg_provider.update_entity_descriptions(
-            entities_batch,
-        )
+        await self.database_provider.update_entity_descriptions(entities_batch)
 
         logger.info(
             f"Upserted {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        for i, entity in enumerate(entities_batch):
+        for entity in entities_batch:
             yield entity
 
     async def _run_logic(
@@ -154,7 +153,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         )
 
         entities = (
-            await self.kg_provider.get_entities(
+            await self.database_provider.get_entities(
                 collection_id,
                 offset,
                 limit,
@@ -165,7 +164,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
-            await self.kg_provider.get_entities(
+            await self.database_provider.get_entities(
                 collection_id,
                 entity_names=entity_names,
                 entity_table_name="document_entity",
@@ -174,7 +173,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         entity_descriptions_dict: dict[str, list[str]] = {}
         for entity_description in entity_descriptions:
-            if not entity_description.name in entity_descriptions_dict:
+            if entity_description.name not in entity_descriptions_dict:
                 entity_descriptions_dict[entity_description.name] = []
             entity_descriptions_dict[entity_description.name].append(
                 entity_description.description

@@ -9,24 +9,24 @@ import yaml
 from fastapi import Body, Depends, File, Form, Query, UploadFile, Path
 from pydantic import Json
 
-from core.base import R2RException, RawChunk, generate_document_id
-from core.base.api.models import (
-    CreateVectorIndexResponse,
-    UpdateResponse,
-    WrappedCreateVectorIndexResponse,
-    WrappedDeleteVectorIndexResponse,
-    WrappedIngestionResponse,
-    WrappedListVectorIndicesResponse,
-    WrappedSelectVectorIndexResponse,
-    WrappedUpdateResponse,
-)
-from core.base.providers import OrchestrationProvider, Workflow
-from shared.abstractions.vector import (
+from core.base import R2RException, RawChunk, Workflow, generate_document_id
+from core.base.abstractions import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
     VectorTableName,
+)
+from core.base.api.models import (
+    WrappedCreateVectorIndexResponse,
+    WrappedDeleteVectorIndexResponse,
+    WrappedIngestionResponse,
+    WrappedListVectorIndicesResponse,
+    WrappedUpdateResponse,
+)
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
 )
 
 from ..services.ingestion_service import IngestionService
@@ -39,7 +39,9 @@ class IngestionRouter(BaseRouter):
     def __init__(
         self,
         service: IngestionService,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -182,7 +184,7 @@ class IngestionRouter(BaseRouter):
                 }
 
                 file_name = file_data["filename"]
-                await self.service.providers.file.store_file(
+                await self.service.providers.database.store_file(
                     document_id,
                     file_name,
                     file_content,
@@ -284,7 +286,7 @@ class IngestionRouter(BaseRouter):
                     )
                 )
 
-                await self.service.providers.file.store_file(
+                await self.service.providers.database.store_file(
                     document_id,
                     file_data["filename"],
                     BytesIO(content),

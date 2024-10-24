@@ -60,10 +60,7 @@ class RetrievalService(Service):
         async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             t0 = time.time()
 
-            if (
-                kg_search_settings.use_kg_search
-                and self.config.kg.provider is None
-            ):
+            if kg_search_settings.use_kg_search:
                 raise R2RException(
                     status_code=400,
                     message="Knowledge Graph search is not enabled in the configuration.",
@@ -329,8 +326,8 @@ class RetrievalService(Service):
                     async def stream_response():
                         async with manage_run(self.run_manager, "rag_agent"):
                             agent = R2RStreamingRAGAgent(
+                                database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
-                                prompt_provider=self.providers.prompt,
                                 config=self.config.agent,
                                 search_pipeline=self.pipelines.search_pipeline,
                             )

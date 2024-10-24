@@ -143,15 +143,9 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
-    # Knowledge Graph provider
-    "KGConfig",
-    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Prompt provider
-    "PromptConfig",
-    "PromptProvider",
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
@@ -242,15 +236,11 @@ __all__ = [
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    # KG
-    "PostgresKGProvider",
     # LLM
     "OpenAICompletionProvider",
-    "LiteCompletionProvider",
+    "LiteLLMCompletionProvider",
     # Ingestion
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
     "ChunkingStrategy",
-    # Prompts
-    "R2RPromptProvider",
 ]

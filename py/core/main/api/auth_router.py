@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path
@@ -12,7 +12,10 @@ from core.base.api.models import (
     WrappedTokenResponse,
     WrappedUserResponse,
 )
-from core.base.providers import OrchestrationProvider
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 
 from ..services.auth_service import AuthService
 from .base_router import BaseRouter, RunType
@@ -24,7 +27,9 @@ class AuthRouter(BaseRouter):
     def __init__(
         self,
         service: AuthService,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         run_type: RunType = RunType.UNSPECIFIED,
     ):
         super().__init__(service, orchestration_provider, run_type)

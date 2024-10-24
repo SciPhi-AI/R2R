@@ -109,7 +109,7 @@ async def run_local_serve(
         llm_provider = completion_config.provider
         llm_model = completion_config.generation_config.model
         model_provider = llm_model.split("/")[0]
-        check_llm_reqs(llm_provider, model_provider, include_ollama=True)
+        check_llm_reqs(llm_provider, model_provider)
 
     click.echo("R2R now runs on port 7272 by default!")
     available_port = find_available_port(port)
@@ -172,7 +172,7 @@ def run_docker_serve(
     os.system(up_command)
 
 
-def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
+def check_llm_reqs(llm_provider, model_provider):
     providers = {
         "openai": {"env_vars": ["OPENAI_API_KEY"]},
         "anthropic": {"env_vars": ["ANTHROPIC_API_KEY"]},
@@ -212,9 +212,7 @@ def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
                     click.echo("Aborting Docker setup.")
                     sys.exit(1)
 
-    if (
-        llm_provider == "ollama" or model_provider == "ollama"
-    ) and include_ollama:
+    if model_provider == "ollama":
         check_external_ollama()
 
 
@@ -243,7 +241,8 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
             "Please ensure Ollama is running externally if you've excluded it from Docker and plan on running Local LLMs."
         )
         if not click.confirm(
-            "Do you want to continue without Ollama connection?", default=False
+            "Do you want to continue without confirming an `Ollama` connection?",
+            default=False,
         ):
             click.echo("Aborting Docker setup.")
             sys.exit(1)

@@ -153,7 +153,7 @@ class KgService(Service):
             f"KGService: Running kg_entity_description for document {document_id}"
         )
 
-        entity_count = await self.providers.kg.get_entity_count(
+        entity_count = await self.providers.database.get_entity_count(
             document_id=document_id,
             distinct=True,
             entity_table_name="chunk_entity",
@@ -277,7 +277,7 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.kg.delete_graph_for_collection(
+        return await self.providers.database.delete_graph_for_collection(
             collection_id, cascade
         )
 
@@ -288,7 +288,7 @@ class KgService(Service):
         collection_id: UUID,
         **kwargs,
     ):
-        return await self.providers.kg.delete_node_via_document_id(
+        return await self.providers.database.delete_node_via_document_id(
             collection_id, document_id
         )
 
@@ -299,7 +299,7 @@ class KgService(Service):
         kg_creation_settings: KGCreationSettings,
         **kwargs,
     ):
-        return await self.providers.kg.get_creation_estimate(
+        return await self.providers.database.get_creation_estimate(
             collection_id, kg_creation_settings
         )
 
@@ -311,7 +311,7 @@ class KgService(Service):
         **kwargs,
     ):
 
-        return await self.providers.kg.get_enrichment_estimate(
+        return await self.providers.database.get_enrichment_estimate(
             collection_id, kg_enrichment_settings
         )
 
@@ -325,7 +325,7 @@ class KgService(Service):
         entity_table_name: str = "document_entity",
         **kwargs,
     ):
-        return await self.providers.kg.get_entities(
+        return await self.providers.database.get_entities(
             collection_id,
             offset,
             limit,
@@ -343,7 +343,7 @@ class KgService(Service):
         triple_ids: Optional[list[str]] = None,
         **kwargs,
     ):
-        return await self.providers.kg.get_triples(
+        return await self.providers.database.get_triples(
             collection_id,
             offset,
             limit,
@@ -361,7 +361,7 @@ class KgService(Service):
         community_numbers: Optional[list[int]] = None,
         **kwargs,
     ):
-        return await self.providers.kg.get_communities(
+        return await self.providers.database.get_communities(
             collection_id,
             offset,
             limit,
@@ -376,7 +376,7 @@ class KgService(Service):
         kg_deduplication_settings: KGEntityDeduplicationSettings,
         **kwargs,
     ):
-        return await self.providers.kg.get_deduplication_estimate(
+        return await self.providers.database.get_deduplication_estimate(
             collection_id, kg_deduplication_settings
         )
 

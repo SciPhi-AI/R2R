@@ -56,6 +56,35 @@ R2R's retrieval system is highly customizable, allowing you to:
 - Add custom pipes to the search and RAG pipelines
 - Implement reranking for improved result relevance
 
+### Structured Outputs
+
+R2R supports structured outputs for RAG responses, allowing you to define specific response formats using Pydantic models. This ensures consistent, type-safe responses that can be easily validated and processed programmatically.
+
+<Info>Some models may require the word 'JSON' to appear in their prompt for structured outputs to work. Be sure to update your prompt to reflect this, if necessary.</Info>
+
+Here's a simple example of using structured outputs with Pydantic models:
+
+```python
+from r2r import R2RClient, GenerationConfig
+from pydantic import BaseModel
+
+# Initialize the client
+client = R2RClient()
+
+# Define your response structure
+class ResponseModel(BaseModel):
+    answer: str
+    sources: list[str]
+
+# Make a RAG query with structured output
+response = client.rag(
+    query="…",
+    rag_generation_config=GenerationConfig(
+        response_format=ResponseModel
+    )
+)
+```
+
 ## Pipeline Architecture
 
 Retrieval in R2R is implemented as a pipeline and consists of the main components shown below:

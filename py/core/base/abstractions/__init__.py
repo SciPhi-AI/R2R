@@ -22,10 +22,15 @@ from shared.abstractions.graph import (
     Community,
     CommunityReport,
     Entity,
+    EntityLevel,
     EntityType,
     KGExtraction,
     RelationshipType,
     Triple,
+)
+from shared.abstractions.ingestion import (
+    ChunkEnrichmentSettings,
+    ChunkEnrichmentStrategy,
 )
 from shared.abstractions.kg import (
     KGCreationSettings,
@@ -59,10 +64,16 @@ from shared.abstractions.search import (
 )
 from shared.abstractions.user import Token, TokenData, UserStats
 from shared.abstractions.vector import (
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
     StorageResult,
     Vector,
     VectorEntry,
+    VectorQuantizationSettings,
     VectorQuantizationType,
+    VectorTableName,
     VectorType,
 )
 
@@ -97,6 +108,7 @@ __all__ = [
     "CommunityReport",
     "KGExtraction",
     "Triple",
+    "EntityLevel",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -132,6 +144,14 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexMeasure",
+    "IndexMethod",
+    "VectorTableName",
+    "IndexArgsHNSW",
+    "IndexArgsIVFFlat",
+    "VectorQuantizationSettings",
     "VectorQuantizationType",
     "StorageResult",
+    "ChunkEnrichmentSettings",
+    "ChunkEnrichmentStrategy",
 ]
