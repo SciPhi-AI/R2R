@@ -1446,3 +1446,33 @@ class DatabaseProvider(Provider):
         return await self.kg_handler.get_deduplication_estimate(
             collection_id, kg_deduplication_settings
         )
+
+    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+        return await self.kg_handler.get_all_triples(collection_id)
+
+    async def update_entity_descriptions(self, entities: list[Entity]):
+        return await self.kg_handler.update_entity_descriptions(entities)
+
+    async def vector_query(self, query: str, **kwargs: Any) -> Any:
+        return await self.kg_handler.vector_query(query, **kwargs)
+
+    async def create_vector_index(self) -> None:
+        return await self.kg_handler.create_vector_index()
+
+    async def delete_triples(self, triple_ids: list[int]) -> None:
+        return await self.kg_handler.delete_triples(triple_ids)
+
+    async def get_schema(self) -> Any:
+        return await self.kg_handler.get_schema()
+
+    async def structured_query(self) -> Any:
+        return await self.kg_handler.structured_query()
+
+    async def update_extraction_prompt(self) -> None:
+        return await self.kg_handler.update_extraction_prompt()
+
+    async def update_kg_search_prompt(self) -> None:
+        return await self.kg_handler.update_kg_search_prompt()
+
+    async def upsert_triples(self) -> None:
+        return await self.kg_handler.upsert_triples()
