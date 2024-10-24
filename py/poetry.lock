@@ -5764,10 +5764,10 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-core = ["aiosqlite", "alembic", "apscheduler", "asyncpg", "bcrypt", "boto3", "deepdiff", "fire", "fsspec", "future", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "passlib", "psutil", "pydantic", "pyjwt", "python-multipart", "pyyaml", "sqlalchemy", "supabase", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
+core = ["aiosqlite", "apscheduler", "asyncpg", "bcrypt", "boto3", "deepdiff", "fire", "fsspec", "future", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "passlib", "psutil", "pydantic", "pyjwt", "python-multipart", "pyyaml", "sqlalchemy", "supabase", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
 ingestion-bundle = ["aiofiles", "aioshutil", "beautifulsoup4", "bs4", "markdown", "numpy", "openpyxl", "pdf2image", "pypdf", "pypdf2", "python-docx", "python-pptx"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "47fb2fb51d1587f45a2767eaf5ab41de5718c4626200f01f8bb5e4d2e271acf7"
+content-hash = "f559d55f471e4173bd9f0947cf85f63da3529417f1c91fdaa17863069e53aef1"
