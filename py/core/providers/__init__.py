@@ -6,7 +6,6 @@ from .embeddings import (
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
 )
-from .file import PostgresFileProvider
 from .ingestion import (  # type: ignore
     R2RIngestionConfig,
     R2RIngestionProvider,
@@ -37,8 +36,6 @@ __all__ = [
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    # File
-    "PostgresFileProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",

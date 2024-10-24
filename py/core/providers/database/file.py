@@ -5,38 +5,16 @@ from uuid import UUID
 
 import asyncpg
 
-from core.base import FileConfig, R2RException
-from core.base.providers import FileProvider
-from core.providers.database.postgres import (
-    PostgresDBProvider,
-    SemaphoreConnectionPool,
-)
+from core.base import FileHandler, R2RException
 
 logger = logging.getLogger()
 
 
-# Refactor this to be a `PostgresFileHandler`
-class PostgresFileProvider(FileProvider):
-    def __init__(
-        self, config: FileConfig, database_provider: PostgresDBProvider
-    ):
-        super().__init__(config)
-        self.config: FileConfig = config
-        self.database_provider = database_provider
-        self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
+class PostgresFileHandler(FileHandler):
+    """PostgreSQL implementation of the FileHandler."""
 
-    async def initialize(self):
-        self.pool = self.database_provider.pool
-
-        async with self.pool.get_connection() as conn:
-            await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
-
-        await self.create_tables()
-
-    def _get_table_name(self, base_name: str) -> str:
-        return f"{self.database_provider.project_name}.{base_name}"
-
-    async def create_tables(self):
+    async def create_tables(self) -> None:
+        """Create the necessary tables for file storage."""
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('file_storage')} (
             document_id UUID PRIMARY KEY,
@@ -47,10 +25,25 @@ class PostgresFileProvider(FileProvider):
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
+
+        -- Create trigger for updating the updated_at timestamp
+        CREATE OR REPLACE FUNCTION {self.project_name}.update_file_storage_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = CURRENT_TIMESTAMP;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS update_file_storage_updated_at
+        ON {self._get_table_name('file_storage')};
+
+        CREATE TRIGGER update_file_storage_updated_at
+            BEFORE UPDATE ON {self._get_table_name('file_storage')}
+            FOR EACH ROW
+            EXECUTE FUNCTION {self.project_name}.update_file_storage_updated_at();
         """
-        async with self.pool.get_connection() as conn:
-            async with conn.transaction():
-                await conn.execute(query)
+        await self.connection_manager.execute_query(query)
 
     async def upsert_file(
         self,
@@ -60,12 +53,7 @@ class PostgresFileProvider(FileProvider):
         file_size: int,
         file_type: Optional[str] = None,
     ) -> None:
-        if not self.pool:
-            raise R2RException(
-                status_code=500,
-                message="Connection to the database is not initialized",
-            )
-
+        """Add or update a file entry in storage."""
         query = f"""
         INSERT INTO {self._get_table_name('file_storage')}
         (document_id, file_name, file_oid, file_size, file_type)
@@ -77,28 +65,21 @@ class PostgresFileProvider(FileProvider):
             file_type = EXCLUDED.file_type,
             updated_at = NOW();
         """
-        async with self.pool.get_connection() as conn:
-            async with conn.transaction():
-                await conn.execute(
-                    query,
-                    document_id,
-                    file_name,
-                    file_oid,
-                    file_size,
-                    file_type,
-                )
+        await self.connection_manager.execute_query(
+            query, [document_id, file_name, file_oid, file_size, file_type]
+        )
 
     async def store_file(
-        self, document_id, file_name, file_content: io.BytesIO, file_type=None
-    ):
-        if not self.pool:
-            raise R2RException(
-                status_code=500,
-                message="Connection to the database is not initialized",
-            )
-
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_content: io.BytesIO,
+        file_type: Optional[str] = None,
+    ) -> None:
+        """Store a new file in the database."""
         file_size = file_content.getbuffer().nbytes
-        async with self.pool.get_connection() as conn:
+
+        async with self.connection_manager.pool.get_connection() as conn:
             async with conn.transaction():
                 oid = await conn.fetchval("SELECT lo_create(0)")
                 await self._write_lobject(conn, oid, file_content)
@@ -106,14 +87,13 @@ class PostgresFileProvider(FileProvider):
                     document_id, file_name, oid, file_size, file_type
                 )
 
-    async def _write_lobject(self, conn, oid, file_content):
-        # Open the large object
-        lobject = await conn.fetchval(
-            "SELECT lo_open($1, $2)", oid, 0x20000
-        )  # 0x20000 is INV_WRITE flag
+    async def _write_lobject(
+        self, conn, oid: int, file_content: io.BytesIO
+    ) -> None:
+        """Write content to a large object."""
+        lobject = await conn.fetchval("SELECT lo_open($1, $2)", oid, 0x20000)
 
         try:
-            # Write the content in chunks
             chunk_size = 8192  # 8 KB chunks
             while True:
                 chunk = file_content.read(chunk_size)
@@ -121,14 +101,10 @@ class PostgresFileProvider(FileProvider):
                     break
                 await conn.execute("SELECT lowrite($1, $2)", lobject, chunk)
 
-            # Close the large object
             await conn.execute("SELECT lo_close($1)", lobject)
 
         except Exception as e:
-            # Handle exceptions, rollback the transaction if necessary
-            await conn.execute(
-                "SELECT lo_unlink($1)", oid
-            )  # Delete the large object
+            await conn.execute("SELECT lo_unlink($1)", oid)
             raise R2RException(
                 status_code=500,
                 message=f"Failed to write to large object: {e}",
@@ -137,36 +113,39 @@ class PostgresFileProvider(FileProvider):
     async def retrieve_file(
         self, document_id: UUID
     ) -> Optional[tuple[str, BinaryIO, int]]:
-        if not self.pool:
-            raise R2RException(
-                status_code=500,
-                message="Connection to the database is not initialized",
-            )
-
+        """Retrieve a file from storage."""
         query = f"""
         SELECT file_name, file_oid, file_size
         FROM {self._get_table_name('file_storage')}
         WHERE document_id = $1
         """
-        async with self.pool.get_connection() as conn:
-            async with conn.transaction():
-                result = await conn.fetchrow(query, document_id)
-                if not result:
-                    raise R2RException(
-                        status_code=404,
-                        message=f"File for document {document_id} not found",
-                    )
-                file_name, oid, file_size = result
-                file_content = await self._read_lobject(conn, oid)
-                return file_name, io.BytesIO(file_content), file_size
+
+        result = await self.connection_manager.fetchrow_query(
+            query, [document_id]
+        )
+        if not result:
+            raise R2RException(
+                status_code=404,
+                message=f"File for document {document_id} not found",
+            )
+
+        file_name, oid, file_size = (
+            result["file_name"],
+            result["file_oid"],
+            result["file_size"],
+        )
+
+        async with self.connection_manager.pool.get_connection() as conn:
+            file_content = await self._read_lobject(conn, oid)
+            return file_name, io.BytesIO(file_content), file_size
 
     async def _read_lobject(self, conn, oid: int) -> bytes:
+        """Read content from a large object."""
         file_data = io.BytesIO()
         chunk_size = 8192
 
         async with conn.transaction():
             try:
-                # Check if the large object exists before opening
                 lo_exists = await conn.fetchval(
                     "SELECT EXISTS(SELECT 1 FROM pg_largeobject WHERE loid = $1)",
                     oid,
@@ -177,19 +156,16 @@ class PostgresFileProvider(FileProvider):
                         message=f"Large object {oid} not found.",
                     )
 
-                # Open the large object and fetch its descriptor
                 lobject = await conn.fetchval(
                     "SELECT lo_open($1, 262144)", oid
-                )  # INV_READ
+                )
 
-                # Ensure the descriptor is valid before reading
                 if lobject is None:
                     raise R2RException(
                         status_code=404,
                         message=f"Failed to open large object {oid}.",
                     )
 
-                # Read the large object in chunks
                 while True:
                     chunk = await conn.fetchval(
                         "SELECT loread($1, $2)", lobject, chunk_size
@@ -198,37 +174,31 @@ class PostgresFileProvider(FileProvider):
                         break
                     file_data.write(chunk)
             except asyncpg.exceptions.UndefinedObjectError as e:
-                # Handle large object not found
                 raise R2RException(
                     status_code=404,
                     message=f"Failed to read large object {oid}: {e}",
                 )
             finally:
-                # Always close the large object
                 await conn.execute("SELECT lo_close($1)", lobject)
 
         return file_data.getvalue()
 
     async def delete_file(self, document_id: UUID) -> bool:
-        if not self.pool:
-            raise R2RException(
-                status_code=500,
-                message="Connection to the database is not initialized",
-            )
-
+        """Delete a file from storage."""
         query = f"""
         SELECT file_oid FROM {self._get_table_name('file_storage')}
         WHERE document_id = $1
         """
-        async with self.pool.get_connection() as conn:
+
+        async with self.connection_manager.pool.get_connection() as conn:
             async with conn.transaction():
-                result = await conn.fetchval(query, document_id)
-                if not result:
+                oid = await conn.fetchval(query, document_id)
+                if not oid:
                     raise R2RException(
                         status_code=404,
                         message=f"File for document {document_id} not found",
                     )
-                oid = result
+
                 await self._delete_lobject(conn, oid)
 
                 delete_query = f"""
@@ -236,12 +206,13 @@ class PostgresFileProvider(FileProvider):
                 WHERE document_id = $1
                 """
                 await conn.execute(delete_query, document_id)
+
         return True
 
     async def _delete_lobject(self, conn, oid: int) -> None:
+        """Delete a large object."""
         await conn.execute("SELECT lo_unlink($1)", oid)
 
-    # Implementation of get_files_overview
     async def get_files_overview(
         self,
         filter_document_ids: Optional[list[UUID]] = None,
@@ -249,12 +220,7 @@ class PostgresFileProvider(FileProvider):
         offset: int = 0,
         limit: int = 100,
     ) -> list[dict]:
-        if not self.pool:
-            raise R2RException(
-                status_code=500,
-                message="Connection to the database is not initialized",
-            )
-
+        """Get an overview of stored files."""
         conditions = []
         params: list[Union[str, list[str], int]] = []
         query = f"""
@@ -276,9 +242,7 @@ class PostgresFileProvider(FileProvider):
         query += f" ORDER BY created_at DESC OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}"
         params.extend([offset, limit])
 
-        async with self.pool.get_connection() as conn:
-            async with conn.transaction():
-                results = await conn.fetch(query, *params)
+        results = await self.connection_manager.fetch_query(query, params)
 
         if not results:
             raise R2RException(

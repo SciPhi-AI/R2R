@@ -15,6 +15,7 @@ from core.base import (
 from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
+from core.providers.database.file import PostgresFileHandler
 from core.providers.database.kg import PostgresKGHandler
 from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
@@ -147,6 +148,9 @@ class PostgresDBProvider(DatabaseProvider):
         self.prompt_handler = PostgresPromptHandler(
             self.project_name, self.connection_manager
         )
+        self.file_handler = PostgresFileHandler(
+            self.project_name, self.connection_manager
+        )
 
     async def initialize(self):
         logger.info("Initializing `PostgresDBProvider`.")
@@ -172,6 +176,8 @@ class PostgresDBProvider(DatabaseProvider):
         await self.token_handler.create_tables()
         await self.user_handler.create_tables()
         await self.vector_handler.create_tables()
+        await self.prompt_handler.create_tables()
+        await self.file_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

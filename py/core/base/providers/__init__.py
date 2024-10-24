@@ -7,6 +7,7 @@ from .database import (
     DatabaseConnectionManager,
     DatabaseProvider,
     DocumentHandler,
+    FileHandler,
     KGHandler,
     PostgresConfigurationSettings,
     PromptHandler,
@@ -15,7 +16,6 @@ from .database import (
     VectorHandler,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
-from .file import FileConfig, FileProvider
 from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
@@ -44,6 +44,7 @@ __all__ = [
     "VectorHandler",
     "KGHandler",
     "PromptHandler",
+    "FileHandler",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
@@ -57,7 +58,4 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
-    # File provider
-    "FileConfig",
-    "FileProvider",
 ]

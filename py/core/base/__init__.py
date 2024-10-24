@@ -117,9 +117,6 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
-    # File provider
-    "FileConfig",
-    "FileProvider",
     # Ingestion provider
     "IngestionConfig",
     "IngestionProvider",

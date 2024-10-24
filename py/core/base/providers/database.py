@@ -1,7 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from io import BytesIO
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -899,6 +900,56 @@ class PromptHandler(Handler):
         pass
 
 
+class FileHandler(Handler):
+    """Abstract base class for file handling operations."""
+
+    @abstractmethod
+    async def upsert_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_oid: int,
+        file_size: int,
+        file_type: Optional[str] = None,
+    ) -> None:
+        """Add or update a file entry in storage."""
+        pass
+
+    @abstractmethod
+    async def store_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_content: BytesIO,
+        file_type: Optional[str] = None,
+    ) -> None:
+        """Store a new file in the database."""
+        pass
+
+    @abstractmethod
+    async def retrieve_file(
+        self, document_id: UUID
+    ) -> Optional[tuple[str, BinaryIO, int]]:
+        """Retrieve a file from storage."""
+        pass
+
+    @abstractmethod
+    async def delete_file(self, document_id: UUID) -> bool:
+        """Delete a file from storage."""
+        pass
+
+    @abstractmethod
+    async def get_files_overview(
+        self,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_file_names: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[dict]:
+        """Get an overview of stored files."""
+        pass
+
+
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
@@ -908,6 +959,7 @@ class DatabaseProvider(Provider):
     vector_handler: VectorHandler
     kg_handler: KGHandler
     prompt_handler: PromptHandler
+    file_handler: FileHandler
     config: DatabaseConfig
     project_name: str
 
@@ -1588,3 +1640,45 @@ class DatabaseProvider(Provider):
 
     async def delete_prompt(self, name: str) -> None:
         return await self.prompt_handler.delete_prompt(name)
+
+    async def upsert_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_oid: int,
+        file_size: int,
+        file_type: Optional[str] = None,
+    ) -> None:
+        return await self.file_handler.upsert_file(
+            document_id, file_name, file_oid, file_size, file_type
+        )
+
+    async def store_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_content: BytesIO,
+        file_type: Optional[str] = None,
+    ) -> None:
+        return await self.file_handler.store_file(
+            document_id, file_name, file_content, file_type
+        )
+
+    async def retrieve_file(
+        self, document_id: UUID
+    ) -> Optional[tuple[str, BinaryIO, int]]:
+        return await self.file_handler.retrieve_file(document_id)
+
+    async def delete_file(self, document_id: UUID) -> bool:
+        return await self.file_handler.delete_file(document_id)
+
+    async def get_files_overview(
+        self,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_file_names: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[dict]:
+        return await self.file_handler.get_files_overview(
+            filter_document_ids, filter_file_names, offset, limit
+        )

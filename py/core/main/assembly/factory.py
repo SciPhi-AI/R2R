@@ -15,8 +15,6 @@ from core.base import (
     DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
-    FileConfig,
-    FileProvider,
     IngestionConfig,
     IngestionProvider,
     OrchestrationConfig,
@@ -200,28 +198,6 @@ class R2RProviderFactory:
         return embedding_provider
 
     @staticmethod
-    async def create_file_provider(
-        file_config: FileConfig,
-        database_provider: Any,
-        *args,
-        **kwargs,
-    ) -> FileProvider:
-        file_provider: Optional[FileProvider] = None
-        if file_config.provider == "postgres":
-            from core.providers import PostgresFileProvider
-
-            file_provider = PostgresFileProvider(
-                file_config, database_provider
-            )
-            await file_provider.initialize()
-        else:
-            raise ValueError(
-                f"File provider {file_config.provider} not supported."
-            )
-
-        return file_provider
-
-    @staticmethod
     def create_llm_provider(
         llm_config: CompletionConfig, *args, **kwargs
     ) -> CompletionProvider:
@@ -248,7 +224,6 @@ class R2RProviderFactory:
         crypto_provider_override: Optional[CryptoProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
-        file_provider_override: Optional[FileProvider] = None,
         ingestion_provider_override: Optional[IngestionProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
@@ -294,10 +269,6 @@ class R2RProviderFactory:
             )
         )
 
-        file_provider = file_provider_override or await self.create_file_provider(
-            self.config.file, database_provider, *args, **kwargs  # type: ignore
-        )
-
         orchestration_provider = (
             orchestration_provider_override
             or self.create_orchestration_provider(self.config.orchestration)
@@ -310,7 +281,6 @@ class R2RProviderFactory:
             ingestion=ingestion_provider,
             llm=llm_provider,
             orchestration=orchestration_provider,
-            file=file_provider,
         )
 
 
@@ -383,7 +353,7 @@ class R2RPipeFactory:
 
         return ParsingPipe(
             ingestion_provider=self.providers.ingestion,
-            file_provider=self.providers.file,
+            database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="parsing_pipe"),
         )
 

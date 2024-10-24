@@ -13,7 +13,6 @@ from core import (
     CompletionConfig,
     DatabaseConfig,
     EmbeddingConfig,
-    FileConfig,
     LoggingConfig,
     PromptConfig,
     SqlitePersistentLoggingProvider,
@@ -24,7 +23,6 @@ from core.base import (
     DocumentInfo,
     DocumentType,
     IngestionStatus,
-    KGEnrichmentStatus,
     KGExtractionStatus,
     OrchestrationConfig,
 )
@@ -33,7 +31,6 @@ from core.providers import (
     LiteCompletionProvider,
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
-    PostgresFileProvider,
     R2RAuthProvider,
 )
 from shared.abstractions.vector import VectorQuantizationType
@@ -203,22 +200,6 @@ def litellm_provider_128(app_config):
         app=app_config,
     )
     return LiteLLMEmbeddingProvider(config)
-
-
-# File Provider
-@pytest.fixture(scope="function")
-def file_config(app_config):
-    return FileConfig(provider="postgres", app=app_config)
-
-
-@pytest.fixture(scope="function")
-async def postgres_file_provider(file_config, temporary_postgres_db_provider):
-    file_provider = PostgresFileProvider(
-        file_config, temporary_postgres_db_provider
-    )
-    await file_provider.initialize()
-    yield file_provider
-    # await file_provider._close_connection()
 
 
 # LLM provider

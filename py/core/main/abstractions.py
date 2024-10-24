@@ -7,7 +7,6 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    FileProvider,
     IngestionProvider,
     OrchestrationProvider,
 )
@@ -19,7 +18,6 @@ class R2RProviders(BaseModel):
     database: DatabaseProvider
     ingestion: IngestionProvider
     embedding: EmbeddingProvider
-    file: FileProvider
     llm: CompletionProvider
     orchestration: OrchestrationProvider
 

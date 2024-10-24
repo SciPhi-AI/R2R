@@ -15,7 +15,6 @@ from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
 from ..base.providers.embedding import EmbeddingConfig
-from ..base.providers.file import FileConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
@@ -72,7 +71,6 @@ class R2RConfig:
     ingestion: IngestionConfig
     logging: LoggingConfig
     agent: AgentConfig
-    file: FileConfig
     orchestration: OrchestrationConfig
 
     def __init__(
@@ -125,7 +123,6 @@ class R2RConfig:
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
         self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
-        self.file = FileConfig.create(**self.file, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
         # override GenerationConfig defaults
         GenerationConfig.set_default(

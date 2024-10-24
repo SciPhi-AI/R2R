@@ -174,7 +174,7 @@ class IngestionRouter(BaseRouter):
                 }
 
                 file_name = file_data["filename"]
-                await self.service.providers.file.store_file(
+                await self.service.providers.database.store_file(
                     document_id,
                     file_name,
                     file_content,
@@ -276,7 +276,7 @@ class IngestionRouter(BaseRouter):
                     )
                 )
 
-                await self.service.providers.file.store_file(
+                await self.service.providers.database.store_file(
                     document_id,
                     file_data["filename"],
                     BytesIO(content),

@@ -339,7 +339,7 @@ class ManagementService(Service):
     async def download_file(
         self, document_id: UUID
     ) -> Optional[Tuple[str, BinaryIO, int]]:
-        if result := await self.providers.file.retrieve_file(document_id):
+        if result := await self.providers.database.retrieve_file(document_id):
             return result
         return None
 
