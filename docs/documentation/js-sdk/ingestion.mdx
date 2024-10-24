@@ -329,6 +329,63 @@ const updateResponse = await client.updateFiles(files, {
 </ParamField>
 
 
+### Update Chunks
+
+Update the content of an existing chunk in your R2R system:
+
+```javascript
+const documentId = "9fbe403b-c11c-5aae-8ade-ef22980c3ad1";
+const extractionId = "aeba6400-1bd0-5ee9-8925-04732d675434";
+
+const updateResponse = await client.updateChunks({
+  document_id: documentId,
+  extraction_id: extractionId,
+  text: "Updated chunk content...",
+  metadata: {
+    source: "manual_edit",
+    edited_at: "2024-10-24"
+  }
+});
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="object">
+      The response from the R2R system after updating the chunk.
+      ```bash
+      {
+        'message': 'Update chunk task queued successfully.',
+        'task_id': '7e27dfca-606d-422d-b73f-2d9e138661b4',
+        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1'
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="params" type="object" required>
+  <ParamField path="document_id" type="string" required>
+    The ID of the document containing the chunk to update.
+  </ParamField>
+
+  <ParamField path="extraction_id" type="string" required>
+    The ID of the specific chunk to update.
+  </ParamField>
+
+  <ParamField path="text" type="string" required>
+    The new text content to replace the existing chunk text.
+  </ParamField>
+
+  <ParamField path="metadata" type="Record<string, any>">
+    An optional metadata object for the updated chunk. If provided, this will replace the existing chunk metadata.
+  </ParamField>
+
+  <ParamField path="run_with_orchestration" type="boolean">
+    Whether or not the update runs with orchestration, default is `true`. When set to `false`, the update process will run synchronous and directly return the result.
+  </ParamField>
+</ParamField>
+
+
 ### Documents Overview
 
 Retrieve high-level document information, restricted to user files, except when called by a superuser where it will then return results from over all users:

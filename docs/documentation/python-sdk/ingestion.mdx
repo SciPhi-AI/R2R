@@ -452,6 +452,58 @@ The ingestion configuration can be customized analogously to the ingest files en
 </ParamField>
 
 
+### Update Chunks
+
+Update the content of an existing chunk in your R2R system:
+
+```python
+document_id = "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+extraction_id = "aeba6400-1bd0-5ee9-8925-04732d675434"
+
+update_response = client.update_chunks(
+    document_id=document_id,
+    extraction_id=extraction_id,
+    text="Updated chunk content...",
+    metadata={"source": "manual_edit", "edited_at": "2024-10-24"}
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Response">
+    <ResponseField name="response" type="dict">
+      The response from the R2R system after updating the chunk.
+      ```bash
+      {
+        'message': 'Update chunk task queued successfully.',
+        'task_id': '7e27dfca-606d-422d-b73f-2d9e138661b4',
+        'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1'
+      }
+      ```
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+<ParamField path="document_id" type="UUID" required>
+  The ID of the document containing the chunk to update.
+</ParamField>
+
+<ParamField path="extraction_id" type="UUID" required>
+  The ID of the specific chunk to update.
+</ParamField>
+
+<ParamField path="text" type="str" required>
+  The new text content to replace the existing chunk text.
+</ParamField>
+
+<ParamField path="metadata" type="Optional[dict]">
+  An optional metadata dictionary for the updated chunk. If provided, this will replace the existing chunk metadata.
+</ParamField>
+
+<ParamField path="run_with_orchestration" type="Optional[bool]">
+  Whether or not the update runs with orchestration, default is `True`. When set to `False`, the update process will run synchronous and directly return the result.
+</ParamField>
+
+
 ### Documents Overview
 
 Retrieve high-level document information. Results are restricted to the current user's files, unless the request is made by a superuser, in which case results from all users are returned:
