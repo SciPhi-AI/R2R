@@ -1,25 +1,34 @@
+from typing import Union
+
 from pydantic import BaseModel
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base.pipes import AsyncPipe
-from core.base.providers import (
-    AuthProvider,
-    CompletionProvider,
-    DatabaseProvider,
-    EmbeddingProvider,
-    IngestionProvider,
-    OrchestrationProvider,
-)
 from core.pipelines import RAGPipeline, SearchPipeline
+from core.providers import (
+    HatchetOrchestrationProvider,
+    LiteLLMCompletionProvider,
+    LiteLLMEmbeddingProvider,
+    OpenAICompletionProvider,
+    OpenAIEmbeddingProvider,
+    PostgresDBProvider,
+    R2RAuthProvider,
+    R2RIngestionProvider,
+    SimpleOrchestrationProvider,
+    SupabaseAuthProvider,
+    UnstructuredIngestionProvider,
+)
 
 
 class R2RProviders(BaseModel):
-    auth: AuthProvider
-    database: DatabaseProvider
-    ingestion: IngestionProvider
-    embedding: EmbeddingProvider
-    llm: CompletionProvider
-    orchestration: OrchestrationProvider
+    auth: Union[R2RAuthProvider, SupabaseAuthProvider]
+    database: PostgresDBProvider
+    ingestion: Union[R2RIngestionProvider, UnstructuredIngestionProvider]
+    embedding: Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]
+    llm: Union[LiteLLMCompletionProvider, OpenAICompletionProvider]
+    orchestration: Union[
+        HatchetOrchestrationProvider, SimpleOrchestrationProvider
+    ]
 
     class Config:
         arbitrary_types_allowed = True

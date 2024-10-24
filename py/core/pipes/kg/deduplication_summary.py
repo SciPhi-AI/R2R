@@ -1,16 +1,18 @@
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from core.base import AsyncState
 from core.base.abstractions import Entity, GenerationConfig
 from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
-from core.base.providers import (
-    CompletionProvider,
-    DatabaseProvider,
-    EmbeddingProvider,
+from core.providers import (
+    LiteLLMCompletionProvider,
+    LiteLLMEmbeddingProvider,
+    OpenAICompletionProvider,
+    OpenAIEmbeddingProvider,
+    PostgresDBProvider,
 )
 
 logger = logging.getLogger()
@@ -23,9 +25,13 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
-        llm_provider: CompletionProvider,
-        embedding_provider: EmbeddingProvider,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
+        embedding_provider: Union[
+            LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
+        ],
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,

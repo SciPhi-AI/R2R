@@ -1,8 +1,13 @@
+from typing import Union
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from core.base.providers import OrchestrationProvider
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 
 from .api.auth_router import AuthRouter
 from .api.ingestion_router import IngestionRouter
@@ -16,7 +21,9 @@ class R2RApp:
     def __init__(
         self,
         config: R2RConfig,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         auth_router: AuthRouter,
         ingestion_router: IngestionRouter,
         management_router: ManagementRouter,

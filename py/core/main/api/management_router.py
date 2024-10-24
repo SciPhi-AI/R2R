@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set
+from typing import Any, Optional, Set, Union
 from uuid import UUID
 
 import psutil
@@ -32,7 +32,10 @@ from core.base.api.models import (
     WrappedUsersInCollectionResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
-from core.base.providers import OrchestrationProvider
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 
 from ..services.management_service import ManagementService
 from .base_router import BaseRouter, RunType
@@ -42,7 +45,9 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self,
         service: ManagementService,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(service, orchestration_provider, run_type)

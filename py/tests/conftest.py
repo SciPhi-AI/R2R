@@ -28,7 +28,7 @@ from core.base import (
 )
 from core.providers import (
     BCryptProvider,
-    LiteCompletionProvider,
+    LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
     R2RAuthProvider,
@@ -205,7 +205,7 @@ def litellm_provider_128(app_config):
 @pytest.fixture
 def litellm_completion_provider(app_config):
     config = CompletionConfig(provider="litellm", app=app_config)
-    return LiteCompletionProvider(config)
+    return LiteLLMCompletionProvider(config)
 
 
 # Logging
