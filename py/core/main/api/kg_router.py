@@ -1,12 +1,12 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 import yaml
 from fastapi import Body, Depends, Query
 
-from core.base import RunType
+from core.base import RunType, Workflow
 from core.base.abstractions import EntityLevel, KGRunType
 from core.base.api.models import (
     WrappedKGCommunitiesResponse,
@@ -17,7 +17,10 @@ from core.base.api.models import (
     WrappedKGTriplesResponse,
     WrappedKGTunePromptResponse,
 )
-from core.base.providers import OrchestrationProvider, Workflow
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 from core.utils import (
     generate_default_user_collection_id,
     update_settings_from_dict,
@@ -33,7 +36,9 @@ class KGRouter(BaseRouter):
     def __init__(
         self,
         service: KgService,
-        orchestration_provider: Optional[OrchestrationProvider] = None,
+        orchestration_provider: Optional[
+            Union[HatchetOrchestrationProvider, SimpleOrchestrationProvider]
+        ] = None,
         run_type: RunType = RunType.KG,
     ):
         if not orchestration_provider:

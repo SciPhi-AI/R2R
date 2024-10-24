@@ -9,7 +9,7 @@ import yaml
 from fastapi import Body, Depends, File, Form, Query, UploadFile
 from pydantic import Json
 
-from core.base import R2RException, RawChunk, generate_document_id
+from core.base import R2RException, RawChunk, Workflow, generate_document_id
 from core.base.abstractions import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -18,15 +18,16 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import (
-    CreateVectorIndexResponse,
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedListVectorIndicesResponse,
-    WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
 )
-from core.base.providers import OrchestrationProvider, Workflow
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 
 from ..services.ingestion_service import IngestionService
 from .base_router import BaseRouter, RunType
@@ -38,7 +39,9 @@ class IngestionRouter(BaseRouter):
     def __init__(
         self,
         service: IngestionService,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(service, orchestration_provider, run_type)

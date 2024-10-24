@@ -238,7 +238,7 @@ __all__ = [
     "OpenAIEmbeddingProvider",
     # LLM
     "OpenAICompletionProvider",
-    "LiteCompletionProvider",
+    "LiteLLMCompletionProvider",
     # Ingestion
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",

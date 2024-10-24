@@ -1,22 +1,18 @@
 import logging
 import os
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base import (
     AsyncPipe,
     AuthConfig,
-    AuthProvider,
     CompletionConfig,
     CompletionProvider,
     CryptoConfig,
-    CryptoProvider,
     DatabaseConfig,
-    DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
     IngestionConfig,
-    IngestionProvider,
     OrchestrationConfig,
     R2RLoggingProvider,
 )
@@ -27,6 +23,23 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
 logger = logging.getLogger()
+from core.providers import (
+    BCryptConfig,
+    BCryptProvider,
+    HatchetOrchestrationProvider,
+    LiteLLMCompletionProvider,
+    LiteLLMEmbeddingProvider,
+    OpenAICompletionProvider,
+    OpenAIEmbeddingProvider,
+    PostgresDBProvider,
+    R2RAuthProvider,
+    R2RIngestionConfig,
+    R2RIngestionProvider,
+    SimpleOrchestrationProvider,
+    SupabaseAuthProvider,
+    UnstructuredIngestionConfig,
+    UnstructuredIngestionProvider,
+)
 
 
 class R2RProviderFactory:
@@ -36,13 +49,12 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        database_provider: DatabaseProvider,
-        crypto_provider: CryptoProvider,
+        database_provider: PostgresDBProvider,
+        crypto_provider: BCryptProvider,
         *args,
         **kwargs,
-    ) -> AuthProvider:
+    ) -> Union[R2RAuthProvider, SupabaseAuthProvider]:
         if auth_config.provider == "r2r":
-            from core.providers import R2RAuthProvider
 
             r2r_auth = R2RAuthProvider(
                 auth_config, crypto_provider, database_provider
@@ -50,8 +62,6 @@ class R2RProviderFactory:
             await r2r_auth.initialize()
             return r2r_auth
         elif auth_config.provider == "supabase":
-            from core.providers import SupabaseAuthProvider
-
             return SupabaseAuthProvider(
                 auth_config, crypto_provider, database_provider
             )
@@ -63,10 +73,8 @@ class R2RProviderFactory:
     @staticmethod
     def create_crypto_provider(
         crypto_config: CryptoConfig, *args, **kwargs
-    ) -> CryptoProvider:
+    ) -> BCryptProvider:
         if crypto_config.provider == "bcrypt":
-            from core.providers.crypto import BCryptConfig, BCryptProvider
-
             return BCryptProvider(BCryptConfig(**crypto_config.dict()))
         else:
             raise ValueError(
@@ -76,7 +84,7 @@ class R2RProviderFactory:
     @staticmethod
     def create_ingestion_provider(
         ingestion_config: IngestionConfig, *args, **kwargs
-    ) -> IngestionProvider:
+    ) -> Union[R2RIngestionProvider, UnstructuredIngestionProvider]:
 
         config_dict = (
             ingestion_config.model_dump()
@@ -87,8 +95,6 @@ class R2RProviderFactory:
         extra_fields = config_dict.pop("extra_fields", {})
 
         if config_dict["provider"] == "r2r":
-            from core.providers import R2RIngestionConfig, R2RIngestionProvider
-
             r2r_ingestion_config = R2RIngestionConfig(
                 **config_dict, **extra_fields
             )
@@ -97,11 +103,6 @@ class R2RProviderFactory:
             "unstructured_local",
             "unstructured_api",
         ]:
-            from core.providers import (
-                UnstructuredIngestionConfig,
-                UnstructuredIngestionProvider,
-            )
-
             unstructured_ingestion_config = UnstructuredIngestionConfig(
                 **config_dict, **extra_fields
             )
@@ -117,10 +118,8 @@ class R2RProviderFactory:
     @staticmethod
     def create_orchestration_provider(
         config: OrchestrationConfig, *args, **kwargs
-    ):
+    ) -> Union[HatchetOrchestrationProvider, SimpleOrchestrationProvider]:
         if config.provider == "hatchet":
-            from core.providers import HatchetOrchestrationProvider
-
             orchestration_provider = HatchetOrchestrationProvider(config)
             orchestration_provider.get_worker("r2r-worker")
             return orchestration_provider
@@ -128,15 +127,18 @@ class R2RProviderFactory:
             from core.providers import SimpleOrchestrationProvider
 
             return SimpleOrchestrationProvider(config)
+        else:
+            raise ValueError(
+                f"Orchestration provider {config.provider} not supported"
+            )
 
     async def create_database_provider(
         self,
         db_config: DatabaseConfig,
-        crypto_provider: CryptoProvider,
+        crypto_provider: BCryptProvider,
         *args,
         **kwargs,
-    ) -> DatabaseProvider:
-        database_provider: Optional[DatabaseProvider] = None
+    ) -> PostgresDBProvider:
         if not self.config.embedding.base_dimension:
             raise ValueError(
                 "Embedding config must have a base dimension to initialize database."
@@ -165,7 +167,7 @@ class R2RProviderFactory:
     @staticmethod
     def create_embedding_provider(
         embedding: EmbeddingConfig, *args, **kwargs
-    ) -> EmbeddingProvider:
+    ) -> Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]:
         embedding_provider: Optional[EmbeddingProvider] = None
 
         if embedding.provider == "openai":
@@ -182,14 +184,6 @@ class R2RProviderFactory:
 
             embedding_provider = LiteLLMEmbeddingProvider(embedding)
 
-        elif embedding.provider == "ollama":
-            from core.providers import OllamaEmbeddingProvider
-
-            embedding_provider = OllamaEmbeddingProvider(embedding)
-
-        elif embedding is None:
-            embedding_provider = None
-
         else:
             raise ValueError(
                 f"Embedding provider {embedding.provider} not supported"
@@ -200,16 +194,12 @@ class R2RProviderFactory:
     @staticmethod
     def create_llm_provider(
         llm_config: CompletionConfig, *args, **kwargs
-    ) -> CompletionProvider:
+    ) -> Union[LiteLLMCompletionProvider, OpenAICompletionProvider]:
         llm_provider: Optional[CompletionProvider] = None
         if llm_config.provider == "openai":
-            from core.providers import OpenAICompletionProvider
-
             llm_provider = OpenAICompletionProvider(llm_config)
         elif llm_config.provider == "litellm":
-            from core.providers import LiteCompletionProvider
-
-            llm_provider = LiteCompletionProvider(llm_config)
+            llm_provider = LiteLLMCompletionProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -220,12 +210,20 @@ class R2RProviderFactory:
 
     async def create_providers(
         self,
-        auth_provider_override: Optional[AuthProvider] = None,
-        crypto_provider_override: Optional[CryptoProvider] = None,
-        database_provider_override: Optional[DatabaseProvider] = None,
-        embedding_provider_override: Optional[EmbeddingProvider] = None,
-        ingestion_provider_override: Optional[IngestionProvider] = None,
-        llm_provider_override: Optional[CompletionProvider] = None,
+        auth_provider_override: Optional[
+            Union[R2RAuthProvider, SupabaseAuthProvider]
+        ] = None,
+        crypto_provider_override: Optional[BCryptProvider] = None,
+        database_provider_override: Optional[PostgresDBProvider] = None,
+        embedding_provider_override: Optional[
+            Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]
+        ] = None,
+        ingestion_provider_override: Optional[
+            Union[R2RIngestionProvider, UnstructuredIngestionProvider]
+        ] = None,
+        llm_provider_override: Optional[
+            Union[OpenAICompletionProvider, LiteLLMCompletionProvider]
+        ] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,
         **kwargs,

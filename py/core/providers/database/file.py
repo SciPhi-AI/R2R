@@ -7,11 +7,15 @@ import asyncpg
 
 from core.base import FileHandler, R2RException
 
+from .base import PostgresConnectionManager
+
 logger = logging.getLogger()
 
 
 class PostgresFileHandler(FileHandler):
     """PostgreSQL implementation of the FileHandler."""
+
+    connection_manager: PostgresConnectionManager
 
     async def create_tables(self) -> None:
         """Create the necessary tables for file storage."""
@@ -79,7 +83,7 @@ class PostgresFileHandler(FileHandler):
         """Store a new file in the database."""
         file_size = file_content.getbuffer().nbytes
 
-        async with self.connection_manager.pool.get_connection() as conn:
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             async with conn.transaction():
                 oid = await conn.fetchval("SELECT lo_create(0)")
                 await self._write_lobject(conn, oid, file_content)
@@ -135,7 +139,7 @@ class PostgresFileHandler(FileHandler):
             result["file_size"],
         )
 
-        async with self.connection_manager.pool.get_connection() as conn:
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             file_content = await self._read_lobject(conn, oid)
             return file_name, io.BytesIO(file_content), file_size
 
@@ -190,7 +194,7 @@ class PostgresFileHandler(FileHandler):
         WHERE document_id = $1
         """
 
-        async with self.connection_manager.pool.get_connection() as conn:
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             async with conn.transaction():
                 oid = await conn.fetchval(query, document_id)
                 if not oid:

@@ -1,6 +1,7 @@
+from typing import Union
+
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
-    DatabaseProvider,
     format_search_results_for_llm,
     format_search_results_for_stream,
 )
@@ -13,6 +14,11 @@ from core.base.agent import AgentConfig, Tool
 from core.base.providers import CompletionProvider
 from core.base.utils import to_async_generator
 from core.pipelines import SearchPipeline
+from core.providers import (
+    LiteLLMCompletionProvider,
+    OpenAICompletionProvider,
+    PostgresDBProvider,
+)
 
 
 class RAGAgentMixin:
@@ -80,8 +86,10 @@ class RAGAgentMixin:
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
-        database_provider: DatabaseProvider,
-        llm_provider: CompletionProvider,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):
@@ -96,8 +104,10 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
-        database_provider: DatabaseProvider,
-        llm_provider: CompletionProvider,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):

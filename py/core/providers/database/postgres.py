@@ -5,13 +5,13 @@ import warnings
 from typing import Any, Optional
 
 from core.base import (
-    CryptoProvider,
     DatabaseConfig,
     DatabaseConnectionManager,
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,
 )
+from core.providers import BCryptProvider
 from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
@@ -37,25 +37,40 @@ def get_env_var(new_var, old_var, config_value):
 
 
 class PostgresDBProvider(DatabaseProvider):
+    # R2R configuration settings
+    config: DatabaseConfig
+    project_name: str
+
+    # Postgres connection settings
     user: str
     password: str
     host: str
     port: int
     db_name: str
-    project_name: str
     connection_string: str
     dimension: int
     conn: Optional[Any]
-    crypto_provider: CryptoProvider
+
+    crypto_provider: BCryptProvider
     postgres_configuration_settings: PostgresConfigurationSettings
     default_collection_name: str
     default_collection_description: str
+
+    connection_manager: PostgresConnectionManager
+    document_handler: PostgresDocumentHandler
+    collection_handler: PostgresCollectionHandler
+    token_handler: PostgresTokenHandler
+    user_handler: PostgresUserHandler
+    vector_handler: PostgresVectorHandler
+    kg_handler: PostgresKGHandler
+    prompt_handler: PostgresPromptHandler
+    file_handler: PostgresFileHandler
 
     def __init__(
         self,
         config: DatabaseConfig,
         dimension: int,
-        crypto_provider: CryptoProvider,
+        crypto_provider: BCryptProvider,
         quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,
@@ -116,7 +131,7 @@ class PostgresDBProvider(DatabaseProvider):
         )
         self.enable_fts = config.enable_fts
 
-        self.connection_manager: DatabaseConnectionManager = (
+        self.connection_manager: PostgresConnectionManager = (
             PostgresConnectionManager()
         )
         self.document_handler = PostgresDocumentHandler(
