@@ -17,7 +17,7 @@ from core.base import (
     PipeType,
     R2RLoggingProvider,
 )
-from shared.abstractions.graph import Entity, Triple
+from core.base.abstractions import Entity, Triple
 
 logger = logging.getLogger()
 

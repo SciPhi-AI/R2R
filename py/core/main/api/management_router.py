@@ -33,7 +33,6 @@ from core.base.api.models import (
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 from core.base.providers import OrchestrationProvider
-from shared.abstractions.kg import KGRunType
 
 from ..services.management_service import ManagementService
 from .base_router import BaseRouter, RunType

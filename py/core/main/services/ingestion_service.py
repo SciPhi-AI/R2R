@@ -21,17 +21,15 @@ from core.base import (
     VectorType,
     decrement_version,
 )
-from core.base.api.models import UserResponse
-from core.telemetry.telemetry_decorator import telemetry_event
-from shared.abstractions.ingestion import (
+from core.base.abstractions import (
     ChunkEnrichmentSettings,
     ChunkEnrichmentStrategy,
-)
-from shared.abstractions.vector import (
     IndexMeasure,
     IndexMethod,
     VectorTableName,
 )
+from core.base.api.models import UserResponse
+from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig

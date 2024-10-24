@@ -4,11 +4,7 @@ from contextlib import ExitStack
 from typing import Optional, Union
 from uuid import UUID
 
-from shared.abstractions.vector import (
-    IndexMeasure,
-    IndexMethod,
-    VectorTableName,
-)
+from core.base import IndexMeasure, IndexMethod, VectorTableName
 
 
 class IngestionMixins:

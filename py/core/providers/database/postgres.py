@@ -21,7 +21,6 @@ from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
-from shared.abstractions.vector import VectorQuantizationType
 
 from .base import SemaphoreConnectionPool
 

@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from litellm import AuthenticationError
 
-from shared.abstractions.vector import VectorQuantizationSettings
+from core.base.abstractions import VectorQuantizationSettings
 
 from ..abstractions import (
     EmbeddingPurpose,

@@ -3,6 +3,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 from core.base import AsyncState, R2RException
+from core.base.abstractions import Entity, KGEntityDeduplicationType
 from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
 from core.base.providers import (
@@ -10,8 +11,6 @@ from core.base.providers import (
     DatabaseProvider,
     EmbeddingProvider,
 )
-from shared.abstractions.graph import Entity
-from shared.abstractions.kg import KGEntityDeduplicationType
 
 logger = logging.getLogger()
 

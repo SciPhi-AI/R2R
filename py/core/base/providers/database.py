@@ -16,35 +16,29 @@ from core.base import (
 )
 from core.base.abstractions import (
     DocumentInfo,
-    UserStats,
-    VectorEntry,
-    VectorSearchResult,
-    VectorSearchSettings,
-)
-from core.base.api.models import (
-    CollectionOverviewResponse,
-    CollectionResponse,
-    UserResponse,
-)
-from shared.abstractions import (
-    KGCreationSettings,
-    KGEnrichmentSettings,
-    KGEntityDeduplicationSettings,
-)
-from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    UserStats,
+    VectorEntry,
     VectorQuantizationType,
+    VectorSearchResult,
+    VectorSearchSettings,
     VectorTableName,
 )
-from shared.api.models.kg.responses import (
+from core.base.api.models import (
+    CollectionOverviewResponse,
+    CollectionResponse,
     KGCreationEstimationResponse,
     KGDeduplicationEstimationResponse,
     KGEnrichmentEstimationResponse,
+    UserResponse,
 )
-from shared.utils import _decorate_vector_type
+from core.base.utils import _decorate_vector_type
 
 from .base import Provider, ProviderConfig
 

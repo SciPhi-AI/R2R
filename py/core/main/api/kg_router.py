@@ -7,6 +7,7 @@ import yaml
 from fastapi import Body, Depends, Query
 
 from core.base import RunType
+from core.base.abstractions import EntityLevel, KGRunType
 from core.base.api.models import (
     WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
@@ -17,10 +18,10 @@ from core.base.api.models import (
     WrappedKGTunePromptResponse,
 )
 from core.base.providers import OrchestrationProvider, Workflow
-from core.utils import generate_default_user_collection_id
-from shared.abstractions.graph import EntityLevel
-from shared.abstractions.kg import KGRunType
-from shared.utils.base_utils import update_settings_from_dict
+from core.utils import (
+    generate_default_user_collection_id,
+    update_settings_from_dict,
+)
 
 from ..services.kg_service import KgService
 from .base_router import BaseRouter

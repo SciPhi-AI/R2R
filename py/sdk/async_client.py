@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator
 
 import httpx
 
-from shared.abstractions import R2RException
+from core.base.abstractions import R2RException
 
 from .base.base_client import BaseClient
 from .mixins import (
