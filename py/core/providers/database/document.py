@@ -16,7 +16,7 @@ from core.base import (
     R2RException,
 )
 
-from .base import PostgresConnectionManager
+from .postgres import PostgresConnectionManager
 
 logger = logging.getLogger()
 

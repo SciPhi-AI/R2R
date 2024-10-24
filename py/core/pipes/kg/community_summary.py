@@ -32,7 +32,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
         self,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -51,7 +50,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def community_summary_prompt(
@@ -160,7 +158,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=await self.prompt_provider._get_message_payload(
+                        messages=await self.database_provider.prompt_handler.get_message_payload(
                             task_prompt_name=self.database_provider.config.kg_enrichment_settings.community_reports_prompt,
                             task_inputs={
                                 "input_text": (

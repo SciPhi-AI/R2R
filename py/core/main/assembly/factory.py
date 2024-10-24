@@ -244,26 +244,6 @@ class R2RProviderFactory:
             raise ValueError("Language model provider not found")
         return llm_provider
 
-    @staticmethod
-    async def create_prompt_provider(
-        prompt_config: PromptConfig,
-        database_provider: DatabaseProvider,
-        *args,
-        **kwargs,
-    ) -> PromptProvider:
-        prompt_provider = None
-
-        if prompt_config.provider != "r2r":
-            raise ValueError(
-                f"Prompt provider {prompt_config.provider} not supported"
-            )
-        from core.providers import R2RPromptProvider
-
-        prompt_provider = R2RPromptProvider(prompt_config, database_provider)
-        await prompt_provider.initialize()
-
-        return prompt_provider
-
     async def create_providers(
         self,
         auth_provider_override: Optional[AuthProvider] = None,
@@ -273,7 +253,6 @@ class R2RProviderFactory:
         file_provider_override: Optional[FileProvider] = None,
         ingestion_provider_override: Optional[IngestionProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
-        prompt_provider_override: Optional[PromptProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,
         **kwargs,
@@ -317,13 +296,6 @@ class R2RProviderFactory:
             )
         )
 
-        prompt_provider = (
-            prompt_provider_override
-            or await self.create_prompt_provider(
-                self.config.prompt, database_provider, *args, **kwargs
-            )
-        )
-
         file_provider = file_provider_override or await self.create_file_provider(
             self.config.file, database_provider, *args, **kwargs  # type: ignore
         )
@@ -339,7 +311,6 @@ class R2RProviderFactory:
             embedding=embedding_provider,
             ingestion=ingestion_provider,
             llm=llm_provider,
-            prompt=prompt_provider,
             orchestration=orchestration_provider,
             file=file_provider,
         )
@@ -471,7 +442,7 @@ class R2RPipeFactory:
 
         query_transform_pipe = QueryTransformPipe(
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
+            database_provider=self.providers.database,
             config=QueryTransformPipe.QueryTransformConfig(
                 name="multi_query_transform",
                 task_prompt=expansion_technique,
@@ -524,7 +495,6 @@ class R2RPipeFactory:
         return KGTriplesExtractionPipe(
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
-            prompt_provider=self.providers.prompt,
             config=AsyncPipe.PipeConfig(name="kg_triples_extraction_pipe"),
         )
 
@@ -542,7 +512,6 @@ class R2RPipeFactory:
         return KGSearchSearchPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
             config=GeneratorPipe.PipeConfig(
                 name="kg_rag_pipe", task_prompt="kg_search"
@@ -555,7 +524,7 @@ class R2RPipeFactory:
 
             return StreamingSearchRAGPipe(
                 llm_provider=self.providers.llm,
-                prompt_provider=self.providers.prompt,
+                database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
                     name="streaming_rag_pipe", task_prompt="default_rag"
                 ),
@@ -565,7 +534,7 @@ class R2RPipeFactory:
 
             return SearchRAGPipe(
                 llm_provider=self.providers.llm,
-                prompt_provider=self.providers.prompt,
+                database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
                     name="search_rag_pipe", task_prompt="default_rag"
                 ),
@@ -577,7 +546,6 @@ class R2RPipeFactory:
         return KGEntityDescriptionPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_entity_description_pipe"),
         )
@@ -588,7 +556,6 @@ class R2RPipeFactory:
         return KGClusteringPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_clustering_pipe"),
         )
@@ -598,7 +565,6 @@ class R2RPipeFactory:
 
         return KGEntityDeduplicationSummaryPipe(
             database_provider=self.providers.database,
-            prompt_provider=self.providers.prompt,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_deduplication_summary_pipe"),
@@ -610,7 +576,6 @@ class R2RPipeFactory:
         return KGCommunitySummaryPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
         )
@@ -621,7 +586,6 @@ class R2RPipeFactory:
         return KGEntityDeduplicationPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
         )
@@ -633,7 +597,6 @@ class R2RPipeFactory:
 
         return KGEntityDeduplicationSummaryPipe(
             database_provider=self.providers.database,
-            prompt_provider=self.providers.prompt,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(
@@ -647,7 +610,6 @@ class R2RPipeFactory:
         return KGPromptTuningPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             config=AsyncPipe.PipeConfig(name="kg_prompt_tuning_pipe"),
         )
 
@@ -753,26 +715,24 @@ class R2RAgentFactory:
     def create_streaming_rag_agent(
         self, *args, **kwargs
     ) -> R2RStreamingRAGAgent:
-        if not self.providers.llm or not self.providers.prompt:
+        if not self.providers.llm or not self.providers.database:
             raise ValueError(
-                "LLM and Prompt providers are required for RAG Agent"
+                "LLM and database providers are required for RAG Agent"
             )
 
         return R2RStreamingRAGAgent(
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,
         )
 
     def create_rag_agent(self, *args, **kwargs) -> R2RRAGAgent:
-        if not self.providers.llm or not self.providers.prompt:
+        if not self.providers.llm or not self.providers.database:
             raise ValueError(
-                "LLM and Prompt providers are required for RAG Agent"
+                "LLM and database providers are required for RAG Agent"
             )
         return R2RRAGAgent(
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,
         )

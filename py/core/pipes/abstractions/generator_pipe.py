@@ -5,8 +5,8 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
+    DatabaseProvider,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 from core.base.abstractions import GenerationConfig
@@ -22,7 +22,7 @@ class GeneratorPipe(AsyncPipe):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -37,7 +37,7 @@ class GeneratorPipe(AsyncPipe):
             **kwargs,
         )
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
+        self.database_provider = database_provider
 
     @abstractmethod
     async def _run_logic(

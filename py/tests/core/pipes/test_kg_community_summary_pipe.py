@@ -22,16 +22,14 @@ def kg_pipeline_config():
 
 @pytest.fixture(scope="function")
 def kg_community_summary_pipe(
-    postgres_kg_provider,
+    postgres_db_provider,
     litellm_completion_provider,
-    r2r_prompt_provider,
     litellm_provider,
     kg_pipeline_config,
 ):
     return KGCommunitySummaryPipe(
-        postgres_kg_provider,
+        postgres_db_provider,
         litellm_completion_provider,
-        r2r_prompt_provider,
         litellm_provider,
         kg_pipeline_config,
     )

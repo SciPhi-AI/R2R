@@ -23,7 +23,6 @@ class R2RProviders(BaseModel):
     file: FileProvider
     llm: CompletionProvider
     orchestration: OrchestrationProvider
-    prompt: PromptProvider
 
     class Config:
         arbitrary_types_allowed = True

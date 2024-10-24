@@ -80,14 +80,12 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):
         super().__init__(
             search_pipeline=search_pipeline,
             llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
             config=config,
         )
 
@@ -96,7 +94,6 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):
@@ -104,6 +101,5 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         super().__init__(
             search_pipeline=search_pipeline,
             llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
             config=config,
         )

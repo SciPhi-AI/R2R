@@ -64,7 +64,7 @@ class PromptProvider(Provider):
     async def delete_prompt(self, name: str) -> None:
         pass
 
-    async def _get_message_payload(
+    async def get_message_payload(
         self,
         system_prompt_name: Optional[str] = None,
         system_role: str = "system",

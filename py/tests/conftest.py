@@ -263,12 +263,3 @@ def prompt_config(app_config):
 @pytest.fixture(scope="function")
 def orchestration_config(app_config):
     return OrchestrationConfig(provider="simple", app=app_config)
-
-
-@pytest.fixture(scope="function")
-async def r2r_prompt_provider(prompt_config, temporary_postgres_db_provider):
-    prompt_provider = R2RPromptProvider(
-        prompt_config, temporary_postgres_db_provider
-    )
-    await prompt_provider.initialize()
-    yield prompt_provider

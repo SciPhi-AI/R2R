@@ -12,10 +12,10 @@ from core.base import (
     PostgresConfigurationSettings,
     VectorQuantizationType,
 )
-from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
 from core.providers.database.kg import PostgresKGHandler
+from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
@@ -33,6 +33,64 @@ def get_env_var(new_var, old_var, config_value):
             f"{old_var} is deprecated and support for it will be removed in release 3.5.0. Use {new_var} instead."
         )
     return value
+
+
+class PostgresConnectionManager(DatabaseConnectionManager):
+
+    def __init__(self):
+        self.pool: Optional[SemaphoreConnectionPool] = None
+
+    async def initialize(self, pool: SemaphoreConnectionPool):
+        self.pool = pool
+
+    async def execute_query(self, query, params=None, isolation_level=None):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            if isolation_level:
+                async with conn.transaction(isolation=isolation_level):
+                    if params:
+                        return await conn.execute(query, *params)
+                    else:
+                        return await conn.execute(query)
+            else:
+                if params:
+                    return await conn.execute(query, *params)
+                else:
+                    return await conn.execute(query)
+
+    async def execute_many(self, query, params=None, batch_size=1000):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    for i in range(0, len(params), batch_size):
+                        param_batch = params[i : i + batch_size]
+                        await conn.executemany(query, param_batch)
+                else:
+                    await conn.executemany(query)
+
+    async def fetch_query(self, query, params=None):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                return (
+                    await conn.fetch(query, *params)
+                    if params
+                    else await conn.fetch(query)
+                )
+
+    async def fetchrow_query(self, query, params=None):
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction():
+                if params:
+                    return await conn.fetchrow(query, *params)
+                else:
+                    return await conn.fetchrow(query)
 
 
 class PostgresDBProvider(DatabaseProvider):
@@ -142,6 +200,9 @@ class PostgresDBProvider(DatabaseProvider):
             self.collection_handler,
             self.dimension,
             self.quantization_type,
+        )
+        self.prompt_handler = PostgresPromptHandler(
+            self.project_name, self.connection_manager
         )
 
     async def initialize(self):

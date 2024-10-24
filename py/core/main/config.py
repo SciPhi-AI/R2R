@@ -19,7 +19,6 @@ from ..base.providers.file import FileConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
-from ..base.providers.prompt import PromptConfig
 
 logger = logging.getLogger()
 
@@ -58,7 +57,6 @@ class R2RConfig:
             "kg_enrichment_settings",
         ],
         "logging": ["provider", "log_table"],
-        "prompt": ["provider"],
         "database": ["provider"],
         "agent": ["generation_config"],
         "file": ["provider"],
@@ -73,7 +71,6 @@ class R2RConfig:
     embedding: EmbeddingConfig
     ingestion: IngestionConfig
     logging: LoggingConfig
-    prompt: PromptConfig
     agent: AgentConfig
     file: FileConfig
     orchestration: OrchestrationConfig
