@@ -141,6 +141,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.kg_handler = PostgresKGHandler(
             self.project_name,
             self.connection_manager,
+            self.collection_handler,
             self.dimension,
             self.quantization_type,
         )

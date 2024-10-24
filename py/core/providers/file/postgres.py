@@ -17,14 +17,16 @@ logger = logging.getLogger()
 
 # Refactor this to be a `PostgresFileHandler`
 class PostgresFileProvider(FileProvider):
-    def __init__(self, config: FileConfig, db_provider: PostgresDBProvider):
+    def __init__(
+        self, config: FileConfig, database_provider: PostgresDBProvider
+    ):
         super().__init__(config)
         self.config: FileConfig = config
-        self.db_provider = db_provider
+        self.database_provider = database_provider
         self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
 
     async def initialize(self):
-        self.pool = self.db_provider.pool
+        self.pool = self.database_provider.pool
 
         async with self.pool.get_connection() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
@@ -32,7 +34,7 @@ class PostgresFileProvider(FileProvider):
         await self.create_tables()
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{self.db_provider.project_name}.{base_name}"
+        return f"{self.database_provider.project_name}.{base_name}"
 
     async def create_tables(self):
         query = f"""

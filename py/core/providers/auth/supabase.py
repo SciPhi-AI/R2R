@@ -28,7 +28,7 @@ class SupabaseAuthProvider(AuthProvider):
         self,
         config: AuthConfig,
         crypto_provider: CryptoProvider,
-        db_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
     ):
         super().__init__(config, crypto_provider)
         self.supabase_url = config.extra_fields.get(

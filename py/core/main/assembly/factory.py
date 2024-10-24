@@ -40,7 +40,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        db_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
         crypto_provider: CryptoProvider,
         *args,
         **kwargs,
@@ -49,7 +49,7 @@ class R2RProviderFactory:
             from core.providers import R2RAuthProvider
 
             r2r_auth = R2RAuthProvider(
-                auth_config, crypto_provider, db_provider
+                auth_config, crypto_provider, database_provider
             )
             await r2r_auth.initialize()
             return r2r_auth
@@ -57,7 +57,7 @@ class R2RProviderFactory:
             from core.providers import SupabaseAuthProvider
 
             return SupabaseAuthProvider(
-                auth_config, crypto_provider, db_provider
+                auth_config, crypto_provider, database_provider
             )
         else:
             raise ValueError(
@@ -204,7 +204,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_file_provider(
         file_config: FileConfig,
-        db_provider: Any,
+        database_provider: Any,
         *args,
         **kwargs,
     ) -> FileProvider:
@@ -212,7 +212,9 @@ class R2RProviderFactory:
         if file_config.provider == "postgres":
             from core.providers import PostgresFileProvider
 
-            file_provider = PostgresFileProvider(file_config, db_provider)
+            file_provider = PostgresFileProvider(
+                file_config, database_provider
+            )
             await file_provider.initialize()
         else:
             raise ValueError(
@@ -245,7 +247,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_prompt_provider(
         prompt_config: PromptConfig,
-        db_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
         *args,
         **kwargs,
     ) -> PromptProvider:
@@ -257,7 +259,7 @@ class R2RProviderFactory:
             )
         from core.providers import R2RPromptProvider
 
-        prompt_provider = R2RPromptProvider(prompt_config, db_provider)
+        prompt_provider = R2RPromptProvider(prompt_config, database_provider)
         await prompt_provider.initialize()
 
         return prompt_provider
