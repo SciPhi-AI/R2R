@@ -21,7 +21,7 @@ from shared.abstractions.vector import (
     VectorTableName,
 )
 
-from .postgres import PostgresConnectionManager
+from .base import PostgresConnectionManager
 from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()

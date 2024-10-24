@@ -9,7 +9,6 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PromptProvider,
 )
 from shared.abstractions.graph import Entity
 from shared.abstractions.kg import KGEntityDeduplicationType

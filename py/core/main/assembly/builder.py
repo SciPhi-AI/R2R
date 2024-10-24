@@ -11,7 +11,6 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     OrchestrationProvider,
-    PromptProvider,
     R2RLoggingProvider,
     RunManager,
 )
@@ -45,7 +44,6 @@ class ProviderOverrides:
     database: Optional[DatabaseProvider] = None
     embedding: Optional[EmbeddingProvider] = None
     llm: Optional[CompletionProvider] = None
-    prompt: Optional[PromptProvider] = None
     crypto: Optional[CryptoProvider] = None
     orchestration: Optional[OrchestrationProvider] = None
 

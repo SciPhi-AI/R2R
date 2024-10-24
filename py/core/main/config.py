@@ -124,7 +124,6 @@ class R2RConfig:
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
         self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
-        self.prompt = PromptConfig.create(**self.prompt, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.file = FileConfig.create(**self.file, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore

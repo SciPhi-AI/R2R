@@ -20,8 +20,6 @@ from core.base import (
     IngestionConfig,
     IngestionProvider,
     OrchestrationConfig,
-    PromptConfig,
-    PromptProvider,
     R2RLoggingProvider,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
@@ -721,6 +719,7 @@ class R2RAgentFactory:
             )
 
         return R2RStreamingRAGAgent(
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,
@@ -732,6 +731,7 @@ class R2RAgentFactory:
                 "LLM and database providers are required for RAG Agent"
             )
         return R2RRAGAgent(
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,

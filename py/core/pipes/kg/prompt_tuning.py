@@ -11,7 +11,6 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     PipeType,
-    PromptProvider,
     R2RException,
     R2RLoggingProvider,
 )

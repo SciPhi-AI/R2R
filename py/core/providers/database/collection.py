@@ -17,7 +17,7 @@ from core.utils import (
     generate_default_user_collection_id,
 )
 
-from .postgres import PostgresConnectionManager
+from .base import PostgresConnectionManager
 
 logger = logging.getLogger()
 

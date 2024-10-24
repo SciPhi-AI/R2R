@@ -34,9 +34,7 @@ from core.providers import (
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
     PostgresFileProvider,
-    PostgresKGProvider,
     R2RAuthProvider,
-    R2RPromptProvider,
 )
 from shared.abstractions.vector import VectorQuantizationType
 

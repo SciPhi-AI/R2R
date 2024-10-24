@@ -14,7 +14,6 @@ from core.base import (
     GenerationConfig,
     KGExtraction,
     PipeType,
-    PromptProvider,
     R2RDocumentProcessingError,
     R2RException,
     R2RLoggingProvider,

@@ -1,5 +1,6 @@
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
+    DatabaseProvider,
     format_search_results_for_llm,
     format_search_results_for_stream,
 )
@@ -9,7 +10,7 @@ from core.base.abstractions import (
     VectorSearchSettings,
 )
 from core.base.agent import AgentConfig, Tool
-from core.base.providers import CompletionProvider, PromptProvider
+from core.base.providers import CompletionProvider
 from core.base.utils import to_async_generator
 from core.pipelines import SearchPipeline
 
@@ -79,11 +80,13 @@ class RAGAgentMixin:
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):
         super().__init__(
+            database_provider=database_provider,
             search_pipeline=search_pipeline,
             llm_provider=llm_provider,
             config=config,
@@ -93,12 +96,14 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):
         config.stream = True
         super().__init__(
+            database_provider=database_provider,
             search_pipeline=search_pipeline,
             llm_provider=llm_provider,
             config=config,

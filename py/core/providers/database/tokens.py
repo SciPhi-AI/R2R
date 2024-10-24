@@ -3,7 +3,7 @@ from typing import Optional
 
 from core.base import TokenHandler
 
-from .postgres import PostgresConnectionManager
+from .base import PostgresConnectionManager
 
 
 class PostgresTokenHandler(TokenHandler):

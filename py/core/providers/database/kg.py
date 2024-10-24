@@ -30,8 +30,8 @@ from shared.api.models.kg.responses import (
 )
 from shared.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
+from .base import PostgresConnectionManager
 from .collection import PostgresCollectionHandler
-from .postgres import PostgresConnectionManager
 
 logger = logging.getLogger()
 

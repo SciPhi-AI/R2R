@@ -15,7 +15,6 @@ from core.base import (
     EmbeddingProvider,
     GenerationConfig,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 from shared.abstractions.graph import Entity, Triple

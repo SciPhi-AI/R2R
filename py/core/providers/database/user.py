@@ -7,9 +7,8 @@ from core.base.abstractions import R2RException, UserStats
 from core.base.api.models import UserResponse
 from core.utils import generate_user_id
 
-from .base import QueryBuilder
+from .base import PostgresConnectionManager, QueryBuilder
 from .collection import PostgresCollectionHandler
-from .postgres import PostgresConnectionManager
 
 
 class PostgresUserHandler(UserHandler):

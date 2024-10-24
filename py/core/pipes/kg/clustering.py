@@ -9,7 +9,6 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 

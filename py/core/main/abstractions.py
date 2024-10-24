@@ -10,7 +10,6 @@ from core.base.providers import (
     FileProvider,
     IngestionProvider,
     OrchestrationProvider,
-    PromptProvider,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 

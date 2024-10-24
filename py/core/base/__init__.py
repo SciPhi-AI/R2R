@@ -127,9 +127,6 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Prompt provider
-    "PromptConfig",
-    "PromptProvider",
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

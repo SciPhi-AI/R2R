@@ -10,7 +10,6 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PromptProvider,
 )
 from shared.abstractions import Entity, GenerationConfig
 

@@ -4,7 +4,7 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import R2RClient, R2RPromptProvider
+from r2r import R2RClient
 
 
 def escape_braces(text):
@@ -125,11 +125,10 @@ def main(
     ]
 
     client = R2RClient(base_url=base_url)
-    r2r_prompts = R2RPromptProvider()
 
     prompt = "graphrag_triples_extraction_few_shot"
 
-    r2r_prompts.update_prompt(
+    client.update_prompt(
         prompt,
         input_types={"entity_types": entity_types, "relations": relations},
     )
