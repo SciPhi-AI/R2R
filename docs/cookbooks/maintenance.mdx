@@ -4,34 +4,30 @@ description: 'Learn how to maintain and scale your R2R system'
 icon: 'paint-roller'
 ---
 
-## Introduction
-
 This guide covers essential maintenance tasks for R2R deployments, with a focus on vector index management and system updates. Understanding when and how to build vector indices, as well as keeping your R2R installation current, is crucial for maintaining optimal performance at scale.
 
 ## Vector Indices
+### Do You Need Vector Indices?
 
-### Why Vector Indices Matter
+Vector indices are **not necessary for all deployments**, especially in multi-user applications where each user typically queries their own subset of documents. Consider that:
 
-Vector indices are essential for efficient similarity search across documents. Without an index, every search would require comparing against every vector in your database - a process that becomes increasingly expensive as your dataset grows.
+- In multi-user applications, queries are usually filtered by user_id, drastically reducing the actual number of vectors being searched
+- A system with 1 million total vectors but 1000 users might only search through 1000 vectors per query
+- Performance impact of not having indices is minimal when searching small per-user document sets
 
-Based on benchmarks from similar systems (pgvector), vector indices can provide significant performance improvements:
-- Queries can be 10-100x faster with proper indexing
-- High-dimensional vectors (1536d) benefit even more from indexing than lower-dimensional ones
-- Index performance becomes critical at scale (>100K documents)
+Only consider implementing vector indices when:
+- Individual users are searching across hundreds of thousands of documents
+- Query latency becomes a bottleneck even with user-specific filtering
+- You need to support cross-user search functionality at scale
 
-### When to Build Vector Indices
+For development environments or smaller deployments, the overhead of maintaining vector indices often outweighs their benefits.
 
-Consider building vector indices when:
-- Your document collection exceeds 100K documents
-- Query latency exceeds acceptable thresholds
-- You're using high-dimensional vectors (e.g., 1536d from large language models)
-- You need to support concurrent queries
-
-### Vector Index Creation
+### Vector Index Management
 
 R2R supports multiple indexing methods, with HNSW (Hierarchical Navigable Small World) being recommended for most use cases:
 
 ```python
+# Create vector index
 create_response = client.create_vector_index(
     table_name="vectors",
     index_method="hnsw",
@@ -42,16 +38,32 @@ create_response = client.create_vector_index(
     },
     concurrently=True
 )
+
+# List existing indices
+indices = client.list_vector_indices(table_name="vectors")
+
+# Delete an index
+delete_response = client.delete_vector_index(
+    index_name="ix_vector_cosine_ops_hnsw__20241021211541",
+    table_name="vectors",
+    concurrently=True
+)
 ```
 
 #### Important Considerations
 
-1. **Resource Usage**
+1. **Pre-warming Requirement**
+   - New indices start "cold" and require warming for optimal performance
+   - Initial queries will be slower until the index is loaded into memory
+   - Consider implementing explicit pre-warming in production
+   - Warming must be repeated after system restarts
+
+2. **Resource Usage**
    - Index creation is CPU and memory intensive
    - Memory usage scales with both dataset size and `m` parameter
    - Consider creating indices during off-peak hours
 
-2. **Performance Tuning**
+3. **Performance Tuning**
    - HNSW Parameters:
      - `m`: 16-64 (higher = better quality, more memory)
      - `ef_construction`: 64-100 (higher = better quality, longer build time)
@@ -59,25 +71,6 @@ create_response = client.create_vector_index(
      - `cosine_distance`: Best for normalized vectors (most common)
      - `l2_distance`: Better for absolute distances
      - `max_inner_product`: Optimized for dot product similarity
-
-3. **Index Warming**
-   - New indices require warming for optimal performance
-   - Initial queries may be slower until index is loaded into memory
-   - Consider implementing explicit pre-warming in production
-
-### Managing Vector Indices
-
-List existing indices:
-```bash
-r2r list-vector-indices
-```
-
-Delete an index:
-```bash
-r2r delete-vector-index <index-name>
-```
-
-For detailed information about vector index management, see the [Ingestion documentation](/documentation/cli/ingestion).
 
 ## System Updates and Maintenance
 
@@ -124,13 +117,11 @@ r2r version
 
 R2R uses database migrations to manage schema changes. Always check and update your database schema after updates:
 
-Check current migration:
 ```bash
+# Check current migration
 r2r db current
-```
 
-Apply migrations:
-```bash
+# Apply migrations
 r2r db upgrade
 ```
 
@@ -177,6 +168,93 @@ If issues occur:
    ```bash
    r2r db downgrade --revision <previous-working-version>
    ```
+
+
+## Scaling Strategies
+
+### Horizontal Scaling
+
+For applications serving many users:
+
+1. **Load Balancing**
+   - Deploy multiple R2R instances behind a load balancer
+   - Each instance can handle a subset of users
+   - Particularly effective since most queries are user-specific
+
+2. **Sharding**
+   - Consider sharding by user_id for large multi-user deployments
+   - Each shard handles a subset of users
+   - Maintains performance even with millions of total documents
+
+### Vertical Scaling
+
+For applications requiring large single-user searches:
+
+1. **Cloud Provider Solutions**
+   - AWS RDS supports up to 1 billion vectors per instance
+   - Scale up compute and memory resources as needed
+   - Example instance types:
+     - `db.r6g.16xlarge`: Suitable for up to 100M vectors
+     - `db.r6g.metal`: Can handle 1B+ vectors
+
+2. **Memory Optimization**
+   ```python
+   # Optimize for large vector collections
+   client.create_vector_index(
+       table_name="vectors",
+       index_method="hnsw",
+       index_arguments={
+           "m": 32,              # Increased for better performance
+           "ef_construction": 80  # Balanced for large collections
+       }
+   )
+   ```
+
+### Multi-User Considerations
+
+1. **Filtering Optimization**
+   ```python
+   # Efficient per-user search
+   response = client.search(
+       "query",
+       vector_search_settings={
+           "search_filters": {
+               "user_id": {"$eq": "current_user_id"}
+           }
+       }
+   )
+   ```
+
+2. **Collection Management**
+   - Group related documents into collections
+   - Enable efficient access control
+   - Optimize search scope
+
+3. **Resource Allocation**
+   - Monitor per-user resource usage
+   - Implement usage quotas if needed
+   - Consider dedicated instances for power users
+
+
+### Performance Monitoring
+
+Monitor these metrics to inform scaling decisions:
+
+1. **Query Performance**
+   - Average query latency per user
+   - Number of vectors searched per query
+   - Cache hit rates
+
+2. **System Resources**
+   - Memory usage per instance
+   - CPU utilization
+   - Storage growth rate
+
+3. **User Patterns**
+   - Number of active users
+   - Query patterns and peak usage times
+   - Document count per user
+
 
 ## Additional Resources
 

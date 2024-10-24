@@ -60,7 +60,7 @@ class Entity(R2RSerializable):
     id: Optional[int] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    description_embedding: Optional[list[float]] = None
+    description_embedding: Optional[Union[list[float], str]] = None
     community_numbers: Optional[list[str]] = None
     extraction_ids: Optional[list[UUID]] = None
     collection_id: Optional[UUID] = None
@@ -86,7 +86,6 @@ class Entity(R2RSerializable):
                 self.attributes = json.loads(self.attributes)
             except json.JSONDecodeError:
                 self.attributes = self.attributes
-                pass
 
 
 class Triple(R2RSerializable):
