@@ -679,7 +679,7 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_community_details(
         self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
+    ) -> Tuple[int, list[Entity], list[Triple]]:
         """Get detailed information about a community."""
         pass
 
@@ -757,6 +757,7 @@ class KGHandler(Handler):
     ) -> int:
         """Get entity count."""
         pass
+
     @abstractmethod
     async def get_triple_count(
         self,
@@ -831,6 +832,14 @@ class KGHandler(Handler):
         self, document_id: UUID
     ) -> list[str]:
         """Get existing entity extraction IDs."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_entity_descriptions(self, entities: list[Entity]):
         raise NotImplementedError
 
 
@@ -1324,7 +1333,7 @@ class DatabaseProvider(Provider):
 
     async def get_community_details(
         self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, List[Dict[str, Any]], List[Dict[str, Any]]]:
+    ) -> Tuple[int, list[Entity], list[Triple]]:
         """Forward to KG handler get_community_details method."""
         return await self.kg_handler.get_community_details(
             community_number, collection_id
@@ -1486,5 +1495,6 @@ class DatabaseProvider(Provider):
     async def get_existing_entity_extraction_ids(
         self, document_id: UUID
     ) -> list[str]:
-        return await self.kg_handler.upsert_triples()
-
+        return await self.kg_handler.get_existing_entity_extraction_ids(
+            document_id
+        )

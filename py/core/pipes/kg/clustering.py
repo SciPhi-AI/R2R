@@ -41,7 +41,7 @@ class KGClusteringPipe(AsyncPipe):
             type=type,
             config=config or AsyncPipe.PipeConfig(name="kg_cluster_pipe"),
         )
-        self.KGClusteringPipe = KGClusteringPipe
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
@@ -55,9 +55,11 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        num_communities = await self.KGClusteringPipe.perform_graph_clustering(
-            collection_id,
-            leiden_params,
+        num_communities = (
+            await self.database_provider.perform_graph_clustering(
+                collection_id,
+                leiden_params,
+            )
         )  # type: ignore
 
         logger.info(

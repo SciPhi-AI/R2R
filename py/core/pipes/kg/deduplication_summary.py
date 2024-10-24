@@ -53,7 +53,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         description_length = 0
         while index < len(entity_descriptions) and not (
             len(entity_descriptions[index]) + description_length
-            > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
+            > self.database_provider.config.kg_entity_deduplication_settings.max_description_input_length
         ):
             description_length += len(entity_descriptions[index])
             index += 1

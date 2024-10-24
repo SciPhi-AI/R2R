@@ -483,7 +483,7 @@ class PostgresKGHandler(KGHandler):
         """
 
         if not filter_query:
-            results = await self.fetch_query(
+            results = await self.connection_manager.fetch_query(
                 QUERY, (str(query_embedding), limit, filter_ids)
             )
         else:
@@ -727,7 +727,7 @@ class PostgresKGHandler(KGHandler):
 
     async def get_community_details(
         self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
+    ) -> Tuple[int, list[Entity], list[Triple]]:
 
         QUERY = f"""
             SELECT level FROM {self._get_table_name("community_info")} WHERE cluster = $1 AND collection_id = $2
@@ -1345,7 +1345,9 @@ class PostgresKGHandler(KGHandler):
                 GROUP BY name
                 HAVING count(name) >= 5
             """
-            entities = await self.fetch_query(query, [collection_id])
+            entities = await self.connection_manager.fetch_query(
+                query, [collection_id]
+            )
             num_entities = len(entities)
 
             estimated_llm_calls = (num_entities, num_entities)
