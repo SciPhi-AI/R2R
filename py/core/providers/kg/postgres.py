@@ -486,6 +486,7 @@ class PostgresKGProvider(KGProvider):
 
         collection_ids_dict = filters.get("collection_ids", {})
         filter_query = ""
+        filter_ids = []
         if collection_ids_dict:
             filter_query = "WHERE collection_id = ANY($3)"
             filter_ids = collection_ids_dict["$overlap"]
