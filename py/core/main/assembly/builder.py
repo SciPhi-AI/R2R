@@ -10,9 +10,7 @@ from core.base import (
     CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
     OrchestrationProvider,
-    PromptProvider,
     R2RLoggingProvider,
     RunManager,
 )
@@ -45,9 +43,7 @@ class ProviderOverrides:
     auth: Optional[AuthProvider] = None
     database: Optional[DatabaseProvider] = None
     embedding: Optional[EmbeddingProvider] = None
-    kg: Optional[KGProvider] = None
     llm: Optional[CompletionProvider] = None
-    prompt: Optional[PromptProvider] = None
     crypto: Optional[CryptoProvider] = None
     orchestration: Optional[OrchestrationProvider] = None
 

@@ -4,10 +4,9 @@ from uuid import UUID
 
 from core.base import (
     AsyncState,
+    DatabaseProvider,
     Document,
     DocumentExtraction,
-    FileProvider,
-    IngestionConfig,
     PipeType,
     R2RLoggingProvider,
 )
@@ -25,8 +24,8 @@ class ParsingPipe(AsyncPipe):
 
     def __init__(
         self,
+        database_provider: DatabaseProvider,
         ingestion_provider: IngestionProvider,
-        file_provider: FileProvider,
         config: AsyncPipe.PipeConfig,
         type: PipeType = PipeType.INGESTOR,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -40,8 +39,8 @@ class ParsingPipe(AsyncPipe):
             *args,
             **kwargs,
         )
+        self.database_provider = database_provider
         self.ingestion_provider = ingestion_provider
-        self.file_provider = file_provider
 
     async def _parse(
         self,
@@ -61,7 +60,9 @@ class ParsingPipe(AsyncPipe):
                 raise ValueError(
                     f"Provider '{override_provider}' does not match ingestion provider '{self.ingestion_provider.config.provider}'."
                 )
-            if result := await self.file_provider.retrieve_file(document.id):
+            if result := await self.database_provider.retrieve_file(
+                document.id
+            ):
                 file_name, file_wrapper, file_size = result
 
             with file_wrapper as file_content_stream:

@@ -68,7 +68,6 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         # Create a custom multi-search pipe
         query_transform_pipe = QueryTransformPipe(
             llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
             config=QueryTransformPipe.QueryTransformConfig(
                 name="multi_search",
                 task_prompt="multi_search_task_prompt",
@@ -105,8 +104,6 @@ Available provider override methods:
 - `with_embedding_provider`
 - `with_eval_provider`
 - `with_llm_provider`
-- `with_prompt_provider`
-- `with_kg_provider`
 - `with_crypto_provider`
 
 

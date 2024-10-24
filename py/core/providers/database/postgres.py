@@ -5,20 +5,22 @@ import warnings
 from typing import Any, Optional
 
 from core.base import (
-    CryptoProvider,
     DatabaseConfig,
     DatabaseConnectionManager,
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,
 )
+from core.providers import BCryptProvider
 from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
+from core.providers.database.file import PostgresFileHandler
+from core.providers.database.kg import PostgresKGHandler
+from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
-from shared.abstractions.vector import VectorQuantizationType
 
 from .base import SemaphoreConnectionPool
 
@@ -35,28 +37,41 @@ def get_env_var(new_var, old_var, config_value):
 
 
 class PostgresDBProvider(DatabaseProvider):
+    # R2R configuration settings
+    config: DatabaseConfig
+    project_name: str
+
+    # Postgres connection settings
     user: str
     password: str
     host: str
     port: int
     db_name: str
-    project_name: str
     connection_string: str
     dimension: int
     conn: Optional[Any]
-    crypto_provider: CryptoProvider
+
+    crypto_provider: BCryptProvider
     postgres_configuration_settings: PostgresConfigurationSettings
     default_collection_name: str
     default_collection_description: str
+
+    connection_manager: PostgresConnectionManager
+    document_handler: PostgresDocumentHandler
+    collection_handler: PostgresCollectionHandler
+    token_handler: PostgresTokenHandler
+    user_handler: PostgresUserHandler
+    vector_handler: PostgresVectorHandler
+    kg_handler: PostgresKGHandler
+    prompt_handler: PostgresPromptHandler
+    file_handler: PostgresFileHandler
 
     def __init__(
         self,
         config: DatabaseConfig,
         dimension: int,
-        crypto_provider: CryptoProvider,
-        quantization_type: Optional[
-            VectorQuantizationType
-        ] = VectorQuantizationType.FP32,
+        crypto_provider: BCryptProvider,
+        quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,
     ):
@@ -116,7 +131,7 @@ class PostgresDBProvider(DatabaseProvider):
         )
         self.enable_fts = config.enable_fts
 
-        self.connection_manager: DatabaseConnectionManager = (
+        self.connection_manager: PostgresConnectionManager = (
             PostgresConnectionManager()
         )
         self.document_handler = PostgresDocumentHandler(
@@ -136,6 +151,19 @@ class PostgresDBProvider(DatabaseProvider):
             self.connection_manager,
             self.dimension,
             self.enable_fts,
+        )
+        self.kg_handler = PostgresKGHandler(
+            self.project_name,
+            self.connection_manager,
+            self.collection_handler,
+            self.dimension,
+            self.quantization_type,
+        )
+        self.prompt_handler = PostgresPromptHandler(
+            self.project_name, self.connection_manager
+        )
+        self.file_handler = PostgresFileHandler(
+            self.project_name, self.connection_manager
         )
 
     async def initialize(self):
@@ -157,11 +185,13 @@ class PostgresDBProvider(DatabaseProvider):
                 f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";'
             )
 
-        await self.document_handler.create_table()
-        await self.collection_handler.create_table()
-        await self.token_handler.create_table()
-        await self.user_handler.create_table()
-        await self.vector_handler.create_table()
+        await self.document_handler.create_tables()
+        await self.collection_handler.create_tables()
+        await self.token_handler.create_tables()
+        await self.user_handler.create_tables()
+        await self.vector_handler.create_tables()
+        await self.prompt_handler.create_tables()
+        await self.file_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

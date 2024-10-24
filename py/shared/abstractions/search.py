@@ -6,10 +6,10 @@ from uuid import UUID
 
 from pydantic import Field
 
+from shared.abstractions.graph import EntityLevel
+
 from .base import R2RSerializable
 from .llm import GenerationConfig
-
-from shared.abstractions.graph import EntityLevel
 
 
 class VectorSearchResult(R2RSerializable):

@@ -28,7 +28,7 @@ class SupabaseAuthProvider(AuthProvider):
         self,
         config: AuthConfig,
         crypto_provider: CryptoProvider,
-        db_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
     ):
         super().__init__(config, crypto_provider)
         self.supabase_url = config.extra_fields.get(
@@ -65,12 +65,24 @@ class SupabaseAuthProvider(AuthProvider):
             "decode_token is not used with Supabase authentication"
         )
 
-    async def register(self, email: str, password: str) -> dict[str, str]:  # type: ignore
+    async def register(self, email: str, password: str) -> UserResponse:  # type: ignore
         # Use Supabase client to create a new user
         user = self.supabase.auth.sign_up(email=email, password=password)
 
         if user:
-            return {"message": "User registered successfully"}
+            raise R2RException(
+                status_code=400,
+                message="Supabase provider implementation is still under construction",
+            )
+            # return UserResponse(
+            #     id=user.id,
+            #     email=user.email,
+            #     is_active=True,
+            #     is_superuser=False,
+            #     created_at=user.created_at,
+            #     updated_at=user.updated_at,
+            #     is_verified=False,
+            # )
         else:
             raise R2RException(
                 status_code=400, message="User registration failed"

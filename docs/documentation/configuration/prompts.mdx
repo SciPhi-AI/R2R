@@ -53,28 +53,28 @@ Certainly! I'll create an expanded table that explains all the prompts you've li
 
 | Prompt File | Purpose |
 |-------------|---------|
-| [`default_rag.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/default_rag.yaml) | Default prompt for Retrieval-Augmented Generation (RAG) tasks. It instructs the model to answer queries based on provided context, using line item references. |
-| [`graphrag_community_reports.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/graphrag_community_reports.yaml) | Used in GraphRAG to generate reports about communities or clusters in the knowledge graph. |
-| [`graphrag_entity_description.yaml.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/graphrag_entity_description.yaml) | System prompt for the "map" phase in GraphRAG, used to process individual nodes or edges. |
-| [`graphrag_map_system.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/graphrag_map_system.yaml) | System prompt for the "map" phase in GraphRAG, used to process individual nodes or edges. |
-| [`graphrag_reduce_system.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/graphrag_reduce_system.yaml) | System prompt for the "reduce" phase in GraphRAG, used to combine or summarize information from multiple sources. |
-| [`graphrag_triples_extraction_few_shot.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/graphrag_triples_extraction_few_shot.yaml) | Few-shot prompt for extracting subject-predicate-object triplets in GraphRAG, with examples. |
-| [`hyde.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/hyde.yaml) | Related to Hypothetical Document Embeddings (HyDE) for improving retrieval performance. |
-| [`kg_search.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/kg_search.yaml) | Used for searching the knowledge graph, possibly to formulate queries or interpret results. |
-| [`kg_search_with_spec.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/kg_search_with_spec.yaml) | Similar to `kg_search.yaml`, but with a specific schema or specification for the search process. |
-| [`rag_agent.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/rag_agent.yaml) | Defines the behavior and instructions for the RAG agent, which coordinates the retrieval and generation process. |
-| [`rag_context.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/rag_context.yaml) | Used to process or format the context retrieved for RAG tasks. |
-| [`rag_fusion.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/rag_fusion.yaml) | Used in RAG fusion techniques, possibly for combining information from multiple retrieved passages. |
-| [`system.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/prompts/defaults/system.yaml) | Contains general system-level prompts or instructions for the R2R system. |
+| [`default_rag.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/default_rag.yaml) | Default prompt for Retrieval-Augmented Generation (RAG) tasks. It instructs the model to answer queries based on provided context, using line item references. |
+| [`graphrag_community_reports.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/graphrag_community_reports.yaml) | Used in GraphRAG to generate reports about communities or clusters in the knowledge graph. |
+| [`graphrag_entity_description.yaml.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/graphrag_entity_description.yaml) | System prompt for the "map" phase in GraphRAG, used to process individual nodes or edges. |
+| [`graphrag_map_system.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/graphrag_map_system.yaml) | System prompt for the "map" phase in GraphRAG, used to process individual nodes or edges. |
+| [`graphrag_reduce_system.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/graphrag_reduce_system.yaml) | System prompt for the "reduce" phase in GraphRAG, used to combine or summarize information from multiple sources. |
+| [`graphrag_triples_extraction_few_shot.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/graphrag_triples_extraction_few_shot.yaml) | Few-shot prompt for extracting subject-predicate-object triplets in GraphRAG, with examples. |
+| [`hyde.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/hyde.yaml) | Related to Hypothetical Document Embeddings (HyDE) for improving retrieval performance. |
+| [`kg_search.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/kg_search.yaml) | Used for searching the knowledge graph, possibly to formulate queries or interpret results. |
+| [`kg_search_with_spec.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/kg_search_with_spec.yaml) | Similar to `kg_search.yaml`, but with a specific schema or specification for the search process. |
+| [`rag_agent.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/rag_agent.yaml) | Defines the behavior and instructions for the RAG agent, which coordinates the retrieval and generation process. |
+| [`rag_context.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/rag_context.yaml) | Used to process or format the context retrieved for RAG tasks. |
+| [`rag_fusion.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/rag_fusion.yaml) | Used in RAG fusion techniques, possibly for combining information from multiple retrieved passages. |
+| [`system.yaml`](https://github.com/SciPhi-AI/R2R/blob/main/py/core/providers/database/prompts/system.yaml) | Contains general system-level prompts or instructions for the R2R system. |
 
 
 You can find the full list of default prompts and their contents in the [defaults directory](https://github.com/SciPhi-AI/R2R/tree/main/py/core/providers/prompts/defaults).
 
 ## Prompt Provider
 
-R2R uses a `R2RPromptProvider` class to manage prompts. This provider handles the storage, retrieval, and manipulation of prompts, leveraging both a PostgreSQL database and YAML files for flexibility and persistence.
+R2R uses a postgres class to manage prompts. This allows for storage, retrieval, and manipulation of prompts, leveraging both a PostgreSQL database and YAML files for flexibility and persistence.
 
-Key features of the `R2RPromptProvider`:
+Key features of prompts inside R2R:
 
 1. **Database Storage**: Prompts are stored in a PostgreSQL table, allowing for efficient querying and updates.
 2. **YAML File Support**: Prompts can be loaded from YAML files, providing an easy way to version control and distribute default prompts.

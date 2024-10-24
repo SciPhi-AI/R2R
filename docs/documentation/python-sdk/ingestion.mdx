@@ -4,18 +4,26 @@ description: 'Ingesting files with R2R.'
 ---
 
 <Note>
-Occasionally this SDK documentation falls out of date, cross-check with the automatcially generated <a href="/api-reference/introduction"> API Reference documentation </a> for the latest parameters.
+This SDK documentation is periodically updated. For the latest parameter details, please cross-reference with the <a href="/api-reference/introduction">API Reference documentation</a>.
 </Note>
 
+Inside R2R, `ingestion` refers to the complete pipeline for processing input data:
+- Parsing files into text
+- Chunking text into semantic units
+- Generating embeddings
+- Storing data for retrieval
+
+Ingested files are stored with an associated document identifier as well as a user identifier to enable comprehensive management.
 
 ## Document Ingestion and Management
 
 <Note>
 
-As of version `3.2.13`, we have expanded the options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs by passing the following in your ingestion configuration:
+R2R has recently expanded the available options for ingesting files using multimodal foundation models. In addition to using such models by default for images, R2R can now use them on PDFs, [like it is shown here](https://github.com/getomni-ai/zerox), by passing the following in your ingestion configuration:
 
 ```json
-{
+"ingestion_config": {
+  ...,
   "parser_overrides": {
     "pdf": "zerox"
   }
@@ -25,6 +33,8 @@ As of version `3.2.13`, we have expanded the options for ingesting files using m
 We recommend this method for achieving the highest quality ingestion results.
 
 </Note>
+
+
 
 ### Ingest Files
 
@@ -36,24 +46,27 @@ Ingest files or directories into your R2R system:
 file_paths = ['path/to/file1.txt', 'path/to/file2.txt']
 metadatas = [{'key1': 'value1'}, {'key2': 'value2'}]
 
+# Ingestion configuration for `R2R Full`
 ingest_response = client.ingest_files(
     file_paths=file_paths,
     metadatas=metadatas,
-    # optionally override chunking settings at runtime
+    # Runtime chunking configuration
     ingestion_config={
-        "provider": "unstructured_local",
-        "strategy": "auto",
-        "chunking_strategy": "by_title",
-        "new_after_n_chars": 256, # soft maximum
-        "max_characters": 512, # hard maximum
-        "combine_under_n_chars": 64, # hard minimum
-        "overlap": 100,
+        "provider": "unstructured_local",  # Local processing
+        "strategy": "auto",                # Automatic processing strategy
+        "chunking_strategy": "by_title",   # Split on title boundaries
+        "new_after_n_chars": 256,          # Start new chunk (soft limit)
+        "max_characters": 512,             # Maximum chunk size (hard limit)
+        "combine_under_n_chars": 64,       # Minimum chunk size
+        "overlap": 100,                    # Character overlap between chunks
+        "chunk_enrichment_settings": {     # Document enrichment settings
+            "enable_chunk_enrichment": False,
+        }
     }
 )
-
 ```
 
-Refer to the [ingestion configuration](/documentation/configuration/ingestion/parsing_and_chunking) section for comprehensive details on available options.
+An `ingested` file is parsed, chunked, embedded and stored inside your R2R system. The stored information includes a document identifier, a corresponding user identifier, and other metadata. Knowledge graph creation is done separately and at the `collection` level. Refer to the [ingestion configuration](/documentation/configuration/ingestion/parsing_and_chunking) section for comprehensive details on available options.
 
 <AccordionGroup>
   <Accordion title="Response">
@@ -98,14 +111,18 @@ Refer to the [ingestion configuration](/documentation/configuration/ingestion/pa
     <ParamField path="chunk_overlap" type="number" default="512">
       The target overlap fraction for output chunks
     </ParamField>
-    <ParamField path="excluded_parsers" type="list[str]" default="['mp4']">
-      Which parsers to exclude from inside R2R.
+    <ParamField path="parser_overrides" type="dict[str, str]" >
+      Dictionary of filetypes and selected override parsers. Currently only `{"pdf": "zerox"}` is supported.
     </ParamField>
   </Expandable>
 
   <Expandable title="Unstructured Provider Options">
     <ParamField path="provider" type="str" default="unstructured_local">
       Which unstructured ingestion provider to use. Options are "unstructured_local", or "unstructured_api".
+    </ParamField>
+
+    <ParamField path="parser_overrides" type="dict[str, str]" >
+      Dictionary of filetypes and selected override parsers. Currently only `{"pdf": "zerox"}` is supported.
     </ParamField>
 
     <ParamField path="max_chunk_size" type="Optional[int]" default="None">
@@ -218,15 +235,56 @@ Refer to the [ingestion configuration](/documentation/configuration/ingestion/pa
   </Expandable>
 
   <ParamField path="run_with_orchestration" type="Optional[bool]">
-    Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
+    Whether or not ingestion runs with [orchestration](/cookbooks/orchestration), default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
   </ParamField>
 
 
 </ParamField>
 
+### Understanding Ingestion Status
+
+After calling `ingest_files`, the response includes important status information:
+
+```python
+# Successful ingestion
+{
+    'message': 'Ingestion task queued successfully.',
+    'task_id': '6e27dfca-606d-422d-b73f-2d9e138661b4',
+    'document_id': 'c3291abf-8a4e-5d9d-80fd-232ef6fd8526'
+}
+
+# Check document status later
+doc_status = client.documents_overview(
+    document_ids=['c3291abf-8a4e-5d9d-80fd-232ef6fd8526']
+)
+# ingestion_status will be one of: 'pending', 'processing', 'success', 'failed'
+```
+
+<Note>
+
+We have added support for contextual chunk enrichment! You can learn more about it [here](/cookbooks/contextual-enrichment).
+
+Currently, you need to enable it in your ingestion config:
+
+```toml
+[ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = true # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3            # Look ahead 3 chunks
+    backward_chunks = 3           # Look behind 3 chunks
+    semantic_neighbors = 10       # Find 10 semantically similar chunks
+    semantic_similarity_threshold = 0.7  # Minimum similarity score
+    generation_config = { model = "openai/gpt-4o-mini" }
+```
+
+</Note>
+
 ### Ingest Chunks
 
-Ingest pre-parsed text chunks into your R2R system:
+The `ingest_chunks` method allows direct ingestion of pre-processed text, bypassing the standard parsing pipeline. This is useful for:
+- Custom preprocessing pipelines
+- Streaming data ingestion
+- Working with non-file data sources
 
 ```python
 chunks = [
@@ -269,21 +327,32 @@ ingest_response = client.ingest_chunks(
 </ParamField>
 
 <ParamField path="run_with_orchestration" type="Optional[bool]">
-  Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
+  Whether or not ingestion runs with [orchestration](/cookbooks/orchestration), default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.
 </ParamField>
 
 
 ### Update Files
 
-Update existing documents:
+Update existing documents while maintaining version history:
 
 ```python
-file_paths = ["/path/to/r2r/examples/data/aristotle_v2.txt"]
-document_ids = ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"]
+# Basic update with new metadata
 update_response = client.update_files(
-  file_paths=file_paths,
-  document_ids=document_ids,
-  metadatas=[{"x":"y"}] # to overwrite the existing metadata
+    file_paths=file_paths,
+    document_ids=document_ids,
+    metadatas=[{
+        "status": "reviewed"
+    }]
+)
+
+# Update with custom chunking
+update_response = client.update_files(
+    file_paths=file_paths,
+    document_ids=document_ids,
+    ingestion_config={
+        "chunking_strategy": "by_title",
+        "max_characters": 1024  # Larger chunks for this version
+    }
 )
 ```
 
@@ -327,8 +396,8 @@ The ingestion configuration can be customized analogously to the ingest files en
     <ParamField path="chunk_overlap" type="number" default="512">
       The target overlap fraction for output chunks
     </ParamField>
-    <ParamField path="excluded_parsers" type="list[str]" default="['mp4']">
-      Which parsers to exclude from inside R2R.
+    <ParamField path="parser_overrides" type="dict[str, str]" >
+      Dictionary of filetypes and selected override parsers. Currently only `{"pdf": "zerox"}` is supported.
     </ParamField>
   </Expandable>
 
@@ -498,7 +567,7 @@ documents_overview = client.documents_overview()
 
 ### Document Chunks
 
-Fetch chunks for a particular document:
+Fetch and examine chunks for a particular document. Chunks represent the atomic units of text after processing:
 
 ```python
 document_id = "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
@@ -574,9 +643,12 @@ delete_response = client.delete(
 
 ### Create Vector Index
 
+<Note>
+Vector indices significantly improve search performance for large collections but add overhead for smaller datasets. Only create indices when working with hundreds of thousands of documents or when search latency is critical.
+</Note>
+
 Create a vector index for similarity search:
 
-Vector index creation can be a taxing procedure on large datasets.
 
 ```python
 create_response = client.create_vector_index(
@@ -756,3 +828,23 @@ delete_response = client.delete_vector_index(
 <ParamField path="concurrently" type="bool">
   Whether to delete the index concurrently. Default: True
 </ParamField>
+
+
+### Troubleshooting Common Issues
+
+#### Ingestion Failures
+- Check file permissions and paths
+- Verify file formats are supported
+- Ensure metadata length matches file_paths length
+- Monitor memory usage for large files
+
+#### Chunking Issues
+- Large chunks may impact retrieval quality
+- Small chunks may lose context
+- Adjust overlap for better context preservation
+
+#### Vector Index Performance
+- Monitor index creation time
+- Check memory usage during creation
+- Verify warm-up queries are representative
+- Consider index rebuild if quality degrades

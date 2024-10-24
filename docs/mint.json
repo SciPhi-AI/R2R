@@ -67,7 +67,15 @@
       "pages": [
         "introduction",
         "introduction/system",
-        "introduction/whats-new"
+        "introduction/whats-new",
+        {
+          "group": "Guides",
+          "pages": [
+            "introduction/what-is-r2r",
+            "introduction/rag",
+            "introduction/how-r2r-works"
+          ]
+        }
       ]
     },
     {
@@ -314,7 +322,7 @@
         "api-reference/endpoint/update_files",
         "api-reference/endpoint/create_vector_index",
         "api-reference/endpoint/delete_vector_index",
-        "api-reference/endpoint/list_vector_index"
+        "api-reference/endpoint/list_vector_indices"
       ]
     },
     {

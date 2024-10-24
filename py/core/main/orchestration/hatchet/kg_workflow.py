@@ -9,7 +9,7 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-from shared.abstractions.document import KGExtractionStatus
+from core.base.abstractions import KGExtractionStatus
 
 from ...services import KgService
 

@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from core import EmbeddingConfig
-from core.providers import OllamaEmbeddingProvider, OpenAIEmbeddingProvider
+from core.providers import OpenAIEmbeddingProvider
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,14 +28,3 @@ def openai_provider(app_config):
         app=app_config,
     )
     return OpenAIEmbeddingProvider(config)
-
-
-@pytest.fixture
-def ollama_provider(app_config):
-    config = EmbeddingConfig(
-        provider="ollama",
-        base_model="mxbai-embed-large",
-        base_dimension=1024,
-        app=app_config,
-    )
-    return OllamaEmbeddingProvider(config)
