@@ -8,8 +8,8 @@ from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
 from core.base.providers import (
     CompletionProvider,
+    DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
     PromptProvider,
 )
 from shared.abstractions import Entity, GenerationConfig
@@ -24,7 +24,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         prompt_provider: PromptProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
@@ -36,7 +36,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         super().__init__(
             pipe_logger=pipe_logger, type=type, config=config, **kwargs
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.prompt_provider = prompt_provider
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
@@ -54,7 +54,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         while index < len(entity_descriptions):
             if (
                 len(entity_descriptions[index]) + description_length
-                > self.kg_provider.config.kg_entity_deduplication_settings.max_description_input_length
+                > self.database_provider.config.kg_entity_deduplication_settings.max_description_input_length
             ):
                 break
             description_length += len(entity_descriptions[index])
@@ -62,7 +62,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         completion = await self.llm_provider.aget_completion(
             messages=await self.prompt_provider._get_message_payload(
-                task_prompt_name=self.kg_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
+                task_prompt_name=self.database_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
                 task_inputs={
                     "entity_name": entity_name,
                     "entity_descriptions": "\n".join(
@@ -117,7 +117,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             f"Upserting {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        result = await self.kg_provider.update_entity_descriptions(
+        result = await self.database_provider.update_entity_descriptions(
             entities_batch,
         )
 
@@ -154,7 +154,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         )
 
         entities = (
-            await self.kg_provider.get_entities(
+            await self.database_provider.get_entities(
                 collection_id,
                 offset,
                 limit,
@@ -165,7 +165,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
-            await self.kg_provider.get_entities(
+            await self.database_provider.get_entities(
                 collection_id,
                 entity_names=entity_names,
                 entity_table_name="document_entity",

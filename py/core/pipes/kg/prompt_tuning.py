@@ -9,7 +9,7 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
-    KGProvider,
+    DatabaseProvider,
     PipeType,
     PromptProvider,
     R2RException,
@@ -27,7 +27,7 @@ class KGPromptTuningPipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         config: AsyncPipe.PipeConfig,
@@ -41,7 +41,7 @@ class KGPromptTuningPipe(AsyncPipe):
             type=type,
             config=config,
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
 
@@ -78,7 +78,7 @@ class KGPromptTuningPipe(AsyncPipe):
                         "sample_data": chunks,
                     },
                 ),
-                generation_config=self.kg_provider.config.kg_creation_settings.generation_config,
+                generation_config=self.database_provider.config.kg_creation_settings.generation_config,
             )
 
             if not tuned_prompt:

@@ -5,7 +5,6 @@ import uuid
 import pytest
 
 from core.base import Community, CommunityReport, Entity, KGExtraction, Triple
-from core.providers.kg.postgres import PostgresKGProvider
 from shared.abstractions.vector import VectorQuantizationType
 
 
@@ -184,26 +183,21 @@ def community_report_list(embedding_vectors, collection_id):
 
 
 @pytest.mark.asyncio
-async def test_kg_provider_initialization(postgres_kg_provider):
-    assert isinstance(postgres_kg_provider, PostgresKGProvider)
-
-
-@pytest.mark.asyncio
 async def test_create_tables(
-    postgres_kg_provider,
+    postgres_db_provider,
     collection_id,
     embedding_dimension,
     vector_quantization_type,
 ):
-    assert await postgres_kg_provider.get_entities(collection_id) == {
+    assert await postgres_db_provider.get_entities(collection_id) == {
         "entities": [],
         "total_entries": 0,
     }
-    assert await postgres_kg_provider.get_triples(collection_id) == {
+    assert await postgres_db_provider.get_triples(collection_id) == {
         "triples": [],
         "total_entries": 0,
     }
-    assert await postgres_kg_provider.get_communities(collection_id) == {
+    assert await postgres_db_provider.get_communities(collection_id) == {
         "communities": [],
         "total_entries": 0,
     }
@@ -211,12 +205,12 @@ async def test_create_tables(
 
 @pytest.mark.asyncio
 async def test_add_entities_raw(
-    postgres_kg_provider, entities_raw_list, collection_id
+    postgres_db_provider, entities_raw_list, collection_id
 ):
-    await postgres_kg_provider.add_entities(
+    await postgres_db_provider.add_entities(
         entities_raw_list, table_name="chunk_entity"
     )
-    entities = await postgres_kg_provider.get_entities(
+    entities = await postgres_db_provider.get_entities(
         collection_id, entity_table_name="chunk_entity"
     )
     assert entities["entities"][0].name == "Entity1"
@@ -227,12 +221,12 @@ async def test_add_entities_raw(
 
 @pytest.mark.asyncio
 async def test_add_entities(
-    postgres_kg_provider, entities_list, collection_id
+    postgres_db_provider, entities_list, collection_id
 ):
-    await postgres_kg_provider.add_entities(
+    await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    entities = await postgres_kg_provider.get_entities(
+    entities = await postgres_db_provider.get_entities(
         collection_id, entity_table_name="document_entity"
     )
     assert entities["entities"][0].name == "Entity1"
@@ -243,12 +237,12 @@ async def test_add_entities(
 
 @pytest.mark.asyncio
 async def test_add_triples(
-    postgres_kg_provider, triples_raw_list, collection_id
+    postgres_db_provider, triples_raw_list, collection_id
 ):
-    await postgres_kg_provider.add_triples(
+    await postgres_db_provider.add_triples(
         triples_raw_list, table_name="chunk_triple"
     )
-    triples = await postgres_kg_provider.get_triples(collection_id)
+    triples = await postgres_db_provider.get_triples(collection_id)
     assert triples["triples"][0].subject == "Entity1"
     assert triples["triples"][1].subject == "Entity2"
     assert len(triples["triples"]) == 2
@@ -257,15 +251,15 @@ async def test_add_triples(
 
 @pytest.mark.asyncio
 async def test_add_kg_extractions(
-    postgres_kg_provider, kg_extractions, collection_id
+    postgres_db_provider, kg_extractions, collection_id
 ):
-    added_extractions = await postgres_kg_provider.add_kg_extractions(
+    added_extractions = await postgres_db_provider.add_kg_extractions(
         kg_extractions, table_prefix="chunk_"
     )
 
     assert added_extractions == (2, 2)
 
-    entities = await postgres_kg_provider.get_entities(
+    entities = await postgres_db_provider.get_entities(
         collection_id, entity_table_name="chunk_entity"
     )
     assert entities["entities"][0].name == "Entity1"
@@ -273,7 +267,7 @@ async def test_add_kg_extractions(
     assert len(entities["entities"]) == 2
     assert entities["total_entries"] == 2
 
-    triples = await postgres_kg_provider.get_triples(collection_id)
+    triples = await postgres_db_provider.get_triples(collection_id)
     assert triples["triples"][0].subject == "Entity1"
     assert triples["triples"][1].subject == "Entity2"
     assert len(triples["triples"]) == 2
@@ -282,17 +276,17 @@ async def test_add_kg_extractions(
 
 @pytest.mark.asyncio
 async def test_get_entity_map(
-    postgres_kg_provider, entities_raw_list, triples_raw_list, document_id
+    postgres_db_provider, entities_raw_list, triples_raw_list, document_id
 ):
-    await postgres_kg_provider.add_entities(
+    await postgres_db_provider.add_entities(
         entities_raw_list, table_name="chunk_entity"
     )
-    entity_map = await postgres_kg_provider.get_entity_map(0, 2, document_id)
+    entity_map = await postgres_db_provider.get_entity_map(0, 2, document_id)
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
     assert entity_map["Entity2"]["entities"][0].name == "Entity2"
 
-    await postgres_kg_provider.add_triples(triples_raw_list)
-    entity_map = await postgres_kg_provider.get_entity_map(0, 2, document_id)
+    await postgres_db_provider.add_triples(triples_raw_list)
+    entity_map = await postgres_db_provider.get_entity_map(0, 2, document_id)
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
     assert entity_map["Entity2"]["entities"][0].name == "Entity2"
 
@@ -302,7 +296,7 @@ async def test_get_entity_map(
 
 @pytest.mark.asyncio
 async def test_upsert_embeddings(
-    postgres_kg_provider, collection_id, entities_list
+    postgres_db_provider, collection_id, entities_list
 ):
     table_name = "document_entity"
 
@@ -317,11 +311,11 @@ async def test_upsert_embeddings(
         for entity in entities_list
     ]
 
-    await postgres_kg_provider.upsert_embeddings(
+    await postgres_db_provider.upsert_embeddings(
         entities_list_to_upsert, table_name
     )
 
-    entities = await postgres_kg_provider.get_entities(
+    entities = await postgres_db_provider.get_entities(
         collection_id, entity_table_name=table_name
     )
     assert entities["entities"][0].name == "Entity1"
@@ -330,10 +324,10 @@ async def test_upsert_embeddings(
 
 @pytest.mark.asyncio
 async def test_get_all_triples(
-    postgres_kg_provider, collection_id, triples_raw_list
+    postgres_db_provider, collection_id, triples_raw_list
 ):
-    await postgres_kg_provider.add_triples(triples_raw_list)
-    triples = await postgres_kg_provider.get_triples(collection_id)
+    await postgres_db_provider.add_triples(triples_raw_list)
+    triples = await postgres_db_provider.get_triples(collection_id)
     assert triples["triples"][0].subject == "Entity1"
     assert triples["triples"][1].subject == "Entity2"
     assert len(triples["triples"]) == 2
@@ -341,11 +335,11 @@ async def test_get_all_triples(
 
 @pytest.mark.asyncio
 async def test_get_communities(
-    postgres_kg_provider, collection_id, community_report_list
+    postgres_db_provider, collection_id, community_report_list
 ):
-    await postgres_kg_provider.add_community_report(community_report_list[0])
-    await postgres_kg_provider.add_community_report(community_report_list[1])
-    communities = await postgres_kg_provider.get_communities(collection_id)
+    await postgres_db_provider.add_community_report(community_report_list[0])
+    await postgres_db_provider.add_community_report(community_report_list[1])
+    communities = await postgres_db_provider.get_communities(collection_id)
     assert communities["communities"][0].name == "Community Report 1"
     assert len(communities["communities"]) == 2
     assert communities["total_entries"] == 2
@@ -362,7 +356,7 @@ def leiden_params_1():
 
 @pytest.mark.asyncio
 async def test_perform_graph_clustering(
-    postgres_kg_provider,
+    postgres_db_provider,
     collection_id,
     leiden_params_1,
     entities_list,
@@ -370,14 +364,14 @@ async def test_perform_graph_clustering(
 ):
 
     # addd entities and triples
-    await postgres_kg_provider.add_entities(
+    await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    await postgres_kg_provider.add_triples(
+    await postgres_db_provider.add_triples(
         triples_raw_list, table_name="chunk_triple"
     )
 
-    num_communities = await postgres_kg_provider.perform_graph_clustering(
+    num_communities = await postgres_db_provider.perform_graph_clustering(
         collection_id, leiden_params_1
     )
     assert num_communities
@@ -385,7 +379,7 @@ async def test_perform_graph_clustering(
 
 @pytest.mark.asyncio
 async def test_get_community_details(
-    postgres_kg_provider,
+    postgres_db_provider,
     entities_list,
     triples_raw_list,
     collection_id,
@@ -393,17 +387,17 @@ async def test_get_community_details(
     community_table_info,
 ):
 
-    await postgres_kg_provider.add_entities(
+    await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    await postgres_kg_provider.add_triples(
+    await postgres_db_provider.add_triples(
         triples_raw_list, table_name="chunk_triple"
     )
-    await postgres_kg_provider.add_communities(community_table_info)
-    await postgres_kg_provider.add_community_report(community_report_list[0])
+    await postgres_db_provider.add_communities(community_table_info)
+    await postgres_db_provider.add_community_report(community_report_list[0])
 
     community_level, entities, triples = (
-        await postgres_kg_provider.get_community_details(
+        await postgres_db_provider.get_community_details(
             community_number=1, collection_id=collection_id
         )
     )

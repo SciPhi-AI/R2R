@@ -25,7 +25,7 @@ def upgrade() -> None:
     ### Schema-aware migration
     All table operations should include the schema name, for example:
 
-    op.create_table(
+    op.create_tables(
         'my_table',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(), nullable=True),

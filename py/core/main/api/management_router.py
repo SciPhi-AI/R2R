@@ -718,12 +718,12 @@ class ManagementRouter(BaseRouter):
                     run_type = KGRunType.ESTIMATE
 
                 server_kg_enrichment_settings = (
-                    self.service.providers.kg.config.kg_enrichment_settings
+                    self.service.providers.database.config.kg_enrichment_settings
                 )
                 if run_type is KGRunType.ESTIMATE:
 
-                    return await self.service.providers.kg.get_enrichment_estimate(
-                        collection_id, server_kg_enrichment_settings
+                    return await self.service.providers.database.get_enrichment_estimate(
+                        collection_uuid, server_kg_enrichment_settings
                     )
 
                 if kg_enrichment_settings:

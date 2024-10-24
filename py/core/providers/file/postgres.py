@@ -29,12 +29,12 @@ class PostgresFileProvider(FileProvider):
         async with self.pool.get_connection() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
 
-        await self.create_table()
+        await self.create_tables()
 
     def _get_table_name(self, base_name: str) -> str:
         return f"{self.db_provider.project_name}.{base_name}"
 
-    async def create_table(self):
+    async def create_tables(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('file_storage')} (
             document_id UUID PRIMARY KEY,

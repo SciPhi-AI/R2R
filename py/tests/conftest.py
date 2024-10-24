@@ -14,7 +14,6 @@ from core import (
     DatabaseConfig,
     EmbeddingConfig,
     FileConfig,
-    KGConfig,
     LoggingConfig,
     PromptConfig,
     SqlitePersistentLoggingProvider,
@@ -112,8 +111,24 @@ async def postgres_db_provider(
     db = PostgresDBProvider(
         db_config, dimension=dimension, crypto_provider=crypto_provider
     )
+    await db.create_tables(embedding_dimension, vector_quantization_type)
     await db.initialize()
     await db.upsert_entries(sample_entries)
+
+    # upsert into documents_overview
+    document_info = DocumentInfo(
+        id=UUID("9fbe403b-c11c-5aae-8ade-ef22980c3ad1"),
+        collection_ids=[UUID("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")],
+        user_id=UUID("00000000-0000-0000-0000-000000000003"),
+        type=DocumentType.PDF,
+        metadata={},
+        title="Test Document for KG",
+        version="1.0",
+        size_in_bytes=1024,
+        ingestion_status=IngestionStatus.PENDING,
+        kg_extraction_status=KGExtractionStatus.PENDING,
+    )
+    await db.upsert_documents_overview(document_info)
     yield db
     # Teardown
     # TODO - Add teardown methods
@@ -231,14 +246,6 @@ async def local_logging_provider(app_config):
 
 
 @pytest.fixture(scope="function")
-def kg_config_temporary(app_config):
-    return KGConfig(provider="postgres", app=app_config)
-
-
-# KG
-
-
-@pytest.fixture(scope="function")
 def embedding_dimension():
     return 128
 
@@ -246,42 +253,6 @@ def embedding_dimension():
 @pytest.fixture(scope="function")
 def vector_quantization_type():
     return VectorQuantizationType.FP32
-
-
-@pytest.fixture(scope="function")
-async def postgres_kg_provider(
-    kg_config_temporary,
-    temporary_postgres_db_provider,
-    litellm_provider,
-    embedding_dimension,
-    vector_quantization_type,
-):
-
-    # upsert into documents_overview
-    document_info = DocumentInfo(
-        id=UUID("9fbe403b-c11c-5aae-8ade-ef22980c3ad1"),
-        collection_ids=[UUID("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")],
-        user_id=UUID("00000000-0000-0000-0000-000000000003"),
-        type=DocumentType.PDF,
-        metadata={},
-        title="Test Document for KG",
-        version="1.0",
-        size_in_bytes=1024,
-        ingestion_status=IngestionStatus.PENDING,
-        kg_extraction_status=KGExtractionStatus.PENDING,
-    )
-
-    await temporary_postgres_db_provider.upsert_documents_overview(
-        document_info
-    )
-    print("config = ", temporary_postgres_db_provider.config)
-    kg_provider = PostgresKGProvider(
-        kg_config_temporary, temporary_postgres_db_provider, litellm_provider
-    )
-    await kg_provider.create_tables(
-        embedding_dimension, vector_quantization_type
-    )
-    yield kg_provider
 
 
 @pytest.fixture(scope="function")

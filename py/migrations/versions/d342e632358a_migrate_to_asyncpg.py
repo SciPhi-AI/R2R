@@ -53,7 +53,7 @@ def upgrade() -> None:
     )
 
     # Create the new table
-    op.create_table(
+    op.create_tables(
         new_vector_table_name,
         sa.Column("extraction_id", postgresql.UUID(), nullable=False),
         sa.Column("document_id", postgresql.UUID(), nullable=False),

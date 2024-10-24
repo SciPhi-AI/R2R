@@ -11,9 +11,9 @@ from core.base import (
     AsyncState,
     CommunityReport,
     CompletionProvider,
+    DatabaseProvider,
     EmbeddingProvider,
     GenerationConfig,
-    KGProvider,
     PipeType,
     PromptProvider,
     R2RLoggingProvider,
@@ -30,7 +30,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
@@ -49,7 +49,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             config=config
             or AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
@@ -144,7 +144,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
 
         community_level, entities, triples = (
-            await self.kg_provider.get_community_details(
+            await self.database_provider.get_community_details(
                 community_number=community_number,
                 collection_id=collection_id,
             )
@@ -161,7 +161,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 (
                     await self.llm_provider.aget_completion(
                         messages=await self.prompt_provider._get_message_payload(
-                            task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
+                            task_prompt_name=self.database_provider.config.kg_enrichment_settings.community_reports_prompt,
                             task_inputs={
                                 "input_text": (
                                     await self.community_summary_prompt(
@@ -219,7 +219,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.kg_provider.add_community_report(community_report)
+        await self.database_provider.add_community_report(community_report)
 
         return {
             "community_number": community_report.community_number,
@@ -253,7 +253,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
         community_numbers_exist = (
-            await self.kg_provider.check_community_reports_exist(
+            await self.database_provider.check_community_reports_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
         )

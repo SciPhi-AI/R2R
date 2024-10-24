@@ -7,8 +7,8 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
+    DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
     PipeType,
     PromptProvider,
     R2RLoggingProvider,
@@ -37,7 +37,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
@@ -59,7 +59,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             *args,
             **kwargs,
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
@@ -120,7 +120,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "__Entity__"
-            async for search_result in self.kg_provider.vector_query(  # type: ignore
+            async for search_result in self.database_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -149,7 +149,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             # relationship search
             # disabled for now. We will check evaluations and see if we need it
             # search_type = "__Relationship__"
-            # async for search_result in self.kg_provider.vector_query(  # type: ignore
+            # async for search_result in self.database_provider.vector_query(  # type: ignore
             #     input,
             #     search_type=search_type,
             #     search_type_limits=kg_search_settings.local_search_limits[
@@ -177,7 +177,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # community search
             search_type = "__Community__"
-            async for search_result in self.kg_provider.vector_query(  # type: ignore
+            async for search_result in self.database_provider.vector_query(  # type: ignore
                 input,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[

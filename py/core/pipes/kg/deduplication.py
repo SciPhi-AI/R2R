@@ -7,8 +7,8 @@ from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
 from core.base.providers import (
     CompletionProvider,
+    DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
     PromptProvider,
 )
 from shared.abstractions.graph import Entity
@@ -21,7 +21,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
     def __init__(
         self,
         config: AsyncPipe.PipeConfig,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
@@ -35,7 +35,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             config=config
             or AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
@@ -44,7 +44,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self, collection_id: UUID, **kwargs
     ):
 
-        entity_count = await self.kg_provider.get_entity_count(
+        entity_count = await self.database_provider.get_entity_count(
             collection_id=collection_id, distinct=True
         )
 
@@ -54,7 +54,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         logger.info(f"KGEntityDeduplicationPipe: Entity count: {entity_count}")
 
         entities = (
-            await self.kg_provider.get_entities(
+            await self.database_provider.get_entities(
                 collection_id=collection_id, offset=0, limit=-1
             )
         )["entities"]
@@ -113,7 +113,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         logger.info(
             f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
         )
-        await self.kg_provider.add_entities(
+        await self.database_provider.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
             conflict_columns=["name", "collection_id", "attributes"],
