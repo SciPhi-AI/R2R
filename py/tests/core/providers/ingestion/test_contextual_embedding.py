@@ -1,23 +1,30 @@
-import pytest
-from uuid import UUID
-from datetime import datetime
-from shared.api.models.auth.responses import UserResponse
-from core.base import RawChunk, DocumentType, IngestionStatus, VectorEntry
-from shared.abstractions.ingestion import (
-    ChunkEnrichmentStrategy,
-    ChunkEnrichmentSettings,
-)
+import random
 import subprocess
-from core.main.services.ingestion_service import (
-    IngestionService,
-    IngestionConfig,
+from datetime import datetime
+from uuid import UUID
+
+import pytest
+
+from core.base import (
+    DocumentType,
+    IngestionStatus,
+    RawChunk,
+    Vector,
+    VectorEntry,
+    VectorType,
 )
 from core.main.abstractions import R2RProviders
-from core.providers.orchestration import SimpleOrchestrationProvider
+from core.main.services.ingestion_service import (
+    IngestionConfig,
+    IngestionService,
+)
 from core.providers.ingestion import R2RIngestionConfig, R2RIngestionProvider
-
-from core.base import Vector, VectorType
-import random
+from core.providers.orchestration import SimpleOrchestrationProvider
+from shared.abstractions.ingestion import (
+    ChunkEnrichmentSettings,
+    ChunkEnrichmentStrategy,
+)
+from shared.api.models.auth.responses import UserResponse
 
 
 @pytest.fixture
@@ -123,8 +130,6 @@ def orchestration_provider(orchestration_config):
 @pytest.fixture
 def r2r_providers(
     r2r_ingestion_provider,
-    r2r_prompt_provider,
-    postgres_kg_provider,
     postgres_db_provider,
     litellm_provider_128,
     postgres_file_provider,
@@ -134,8 +139,6 @@ def r2r_providers(
 ):
     return R2RProviders(
         ingestion=r2r_ingestion_provider,
-        prompt=r2r_prompt_provider,
-        kg=postgres_kg_provider,
         database=postgres_db_provider,
         embedding=litellm_provider_128,
         file=postgres_file_provider,

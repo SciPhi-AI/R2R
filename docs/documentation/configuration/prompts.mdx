@@ -72,9 +72,9 @@ You can find the full list of default prompts and their contents in the [default
 
 ## Prompt Provider
 
-R2R uses a `R2RPromptProvider` class to manage prompts. This provider handles the storage, retrieval, and manipulation of prompts, leveraging both a PostgreSQL database and YAML files for flexibility and persistence.
+R2R uses a postgres class to manage prompts. This allows for storage, retrieval, and manipulation of prompts, leveraging both a PostgreSQL database and YAML files for flexibility and persistence.
 
-Key features of the `R2RPromptProvider`:
+Key features of prompts inside R2R:
 
 1. **Database Storage**: Prompts are stored in a PostgreSQL table, allowing for efficient querying and updates.
 2. **YAML File Support**: Prompts can be loaded from YAML files, providing an easy way to version control and distribute default prompts.

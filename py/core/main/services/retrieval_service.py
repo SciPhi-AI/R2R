@@ -326,8 +326,8 @@ class RetrievalService(Service):
                     async def stream_response():
                         async with manage_run(self.run_manager, "rag_agent"):
                             agent = R2RStreamingRAGAgent(
+                                database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
-                                prompt_provider=self.providers.prompt,
                                 config=self.config.agent,
                                 search_pipeline=self.pipelines.search_pipeline,
                             )

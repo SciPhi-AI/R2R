@@ -18,7 +18,6 @@ from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from .prompts import R2RPromptProvider
 
 __all__ = [
     # Auth
@@ -46,6 +45,4 @@ __all__ = [
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",
-    # Prompts
-    "R2RPromptProvider",
 ]

@@ -16,6 +16,7 @@ from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
 from core.providers.database.kg import PostgresKGHandler
+from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
@@ -142,6 +143,9 @@ class PostgresDBProvider(DatabaseProvider):
             self.collection_handler,
             self.dimension,
             self.quantization_type,
+        )
+        self.prompt_handler = PostgresPromptHandler(
+            self.project_name, self.connection_manager
         )
 
     async def initialize(self):

@@ -146,9 +146,6 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Prompt provider
-    "PromptConfig",
-    "PromptProvider",
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
@@ -246,6 +243,4 @@ __all__ = [
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
     "ChunkingStrategy",
-    # Prompts
-    "R2RPromptProvider",
 ]

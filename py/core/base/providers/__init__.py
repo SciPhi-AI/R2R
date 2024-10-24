@@ -9,6 +9,7 @@ from .database import (
     DocumentHandler,
     KGHandler,
     PostgresConfigurationSettings,
+    PromptHandler,
     TokenHandler,
     UserHandler,
     VectorHandler,
@@ -18,7 +19,6 @@ from .file import FileConfig, FileProvider
 from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
-from .prompt import PromptConfig, PromptProvider
 
 __all__ = [
     # Auth provider
@@ -43,6 +43,7 @@ __all__ = [
     "UserHandler",
     "VectorHandler",
     "KGHandler",
+    "PromptHandler",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
@@ -56,9 +57,6 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
-    # Prompt provider
-    "PromptConfig",
-    "PromptProvider",
     # File provider
     "FileConfig",
     "FileProvider",

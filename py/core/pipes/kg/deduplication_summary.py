@@ -10,7 +10,6 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PromptProvider,
 )
 from shared.abstractions import Entity, GenerationConfig
 
@@ -25,7 +24,6 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        prompt_provider: PromptProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
@@ -37,7 +35,6 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             pipe_logger=pipe_logger, type=type, config=config, **kwargs
         )
         self.database_provider = database_provider
-        self.prompt_provider = prompt_provider
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
 
@@ -59,7 +56,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             index += 1
 
         completion = await self.llm_provider.aget_completion(
-            messages=await self.prompt_provider._get_message_payload(
+            messages=await self.database_provider.prompt_handler.get_message_payload(
                 task_prompt_name=self.database_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
                 task_inputs={
                     "entity_name": entity_name,

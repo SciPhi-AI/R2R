@@ -12,7 +12,7 @@ from core.base.abstractions import (
     Message,
     MessageType,
 )
-from core.base.providers import CompletionProvider, PromptProvider
+from core.base.providers import CompletionProvider, DatabaseProvider
 
 from .base import Tool, ToolResult
 
@@ -75,11 +75,11 @@ class Agent(ABC):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         config: AgentConfig,
     ):
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
+        self.database_provider = database_provider
         self.config = config
         self.conversation = Conversation()
         self._completed = False
@@ -96,7 +96,7 @@ class Agent(ABC):
                 role="system",
                 content=system_instruction
                 or (
-                    await self.prompt_provider.get_prompt(
+                    await self.database_provider.get_prompt(
                         self.config.system_instruction_name
                     )
                 ),

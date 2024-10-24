@@ -190,7 +190,7 @@ class ManagementService(Service):
 
     @telemetry_event("AppSettings")
     async def app_settings(self, *args: Any, **kwargs: Any):
-        prompts = self.providers.prompt.get_all_prompts()
+        prompts = self.providers.database.get_all_prompts()
         config_toml = self.config.to_toml()
         config_dict = toml.loads(config_toml)
         return {
@@ -600,7 +600,9 @@ class ManagementService(Service):
         self, name: str, template: str, input_types: dict[str, str]
     ) -> dict:
         try:
-            await self.providers.prompt.add_prompt(name, template, input_types)
+            await self.providers.database.add_prompt(
+                name, template, input_types
+            )
             return {"message": f"Prompt '{name}' added successfully."}
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
@@ -615,7 +617,7 @@ class ManagementService(Service):
         try:
             return {
                 "message": (
-                    await self.providers.prompt.get_prompt(
+                    await self.providers.database.get_prompt(
                         prompt_name, inputs, prompt_override
                     )
                 )
@@ -625,7 +627,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
-        return self.providers.prompt.get_all_prompts()
+        return await self.providers.database.get_all_prompts()
 
     @telemetry_event("UpdatePrompt")
     async def update_prompt(
@@ -635,7 +637,7 @@ class ManagementService(Service):
         input_types: Optional[dict[str, str]] = None,
     ) -> dict:
         try:
-            await self.providers.prompt.update_prompt(
+            await self.providers.database.update_prompt(
                 name, template, input_types
             )
             return {"message": f"Prompt '{name}' updated successfully."}
@@ -645,7 +647,7 @@ class ManagementService(Service):
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
         try:
-            await self.providers.prompt.delete_prompt(name)
+            await self.providers.database.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))

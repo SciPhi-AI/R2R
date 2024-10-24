@@ -6,9 +6,9 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
+    DatabaseProvider,
     LLMChatCompletionChunk,
     PipeType,
-    PromptProvider,
     format_search_results_for_llm,
     format_search_results_for_stream,
 )
@@ -30,7 +30,7 @@ class StreamingSearchRAGPipe(GeneratorPipe):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         config: GeneratorPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
         *args,
@@ -38,7 +38,7 @@ class StreamingSearchRAGPipe(GeneratorPipe):
     ):
         super().__init__(
             llm_provider,
-            prompt_provider,
+            database_provider,
             config,
             type,
             *args,
@@ -66,10 +66,12 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             gen_context = format_search_results_for_llm(search_results)
             context += gen_context
 
-        messages = await self.prompt_provider._get_message_payload(
-            system_prompt_name=self.config.system_prompt,
-            task_prompt_name=self.config.task_prompt,
-            task_inputs={"query": query, "context": context},
+        messages = (
+            await self.database_provider.prompt_handler.get_message_payload(
+                system_prompt_name=self.config.system_prompt,
+                task_prompt_name=self.config.task_prompt,
+                task_inputs={"query": query, "context": context},
+            )
         )
         yield f"<{self.COMPLETION_STREAM_MARKER}>"
         response = ""

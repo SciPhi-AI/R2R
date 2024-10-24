@@ -9,7 +9,6 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PromptProvider,
 )
 from shared.abstractions.graph import Entity
 from shared.abstractions.kg import KGEntityDeduplicationType
@@ -23,7 +22,6 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         config: AsyncPipe.PipeConfig,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         type: PipeType = PipeType.OTHER,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -37,7 +35,6 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def kg_named_entity_deduplication(

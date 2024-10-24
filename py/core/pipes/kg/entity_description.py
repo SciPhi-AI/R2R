@@ -13,7 +13,6 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
@@ -34,7 +33,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
         self,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -49,7 +47,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def _run_logic(  # type: ignore
@@ -106,7 +103,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             out_entity.description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=await self.prompt_provider._get_message_payload(
+                        messages=await self.database_provider.prompt_handler.get_message_payload(
                             task_prompt_name=self.database_provider.config.kg_creation_settings.kg_entity_description_prompt,
                             task_inputs={
                                 "entity_info": truncate_info(

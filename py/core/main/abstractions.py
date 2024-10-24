@@ -10,7 +10,6 @@ from core.base.providers import (
     FileProvider,
     IngestionProvider,
     OrchestrationProvider,
-    PromptProvider,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 
@@ -23,7 +22,6 @@ class R2RProviders(BaseModel):
     file: FileProvider
     llm: CompletionProvider
     orchestration: OrchestrationProvider
-    prompt: PromptProvider
 
     class Config:
         arbitrary_types_allowed = True

@@ -843,6 +843,62 @@ class KGHandler(Handler):
         raise NotImplementedError
 
 
+class PromptHandler(Handler):
+    """Abstract base class for prompt handling operations."""
+
+    @abstractmethod
+    async def add_prompt(
+        self, name: str, template: str, input_types: dict[str, str]
+    ) -> None:
+        """Add a new prompt template to the database."""
+        pass
+
+    @abstractmethod
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
+        """Retrieve and format a prompt template."""
+        pass
+
+    @abstractmethod
+    async def get_all_prompts(self) -> dict[str, Any]:
+        """Retrieve all stored prompts."""
+        pass
+
+    @abstractmethod
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ) -> None:
+        """Update an existing prompt template."""
+        pass
+
+    @abstractmethod
+    async def delete_prompt(self, name: str) -> None:
+        """Delete a prompt template."""
+        pass
+
+    @abstractmethod
+    async def get_message_payload(
+        self,
+        system_prompt_name: Optional[str] = None,
+        system_role: str = "system",
+        system_inputs: dict = {},
+        system_prompt_override: Optional[str] = None,
+        task_prompt_name: Optional[str] = None,
+        task_role: str = "user",
+        task_inputs: dict = {},
+        task_prompt_override: Optional[str] = None,
+    ) -> list[dict]:
+        """Get the payload of a prompt."""
+        pass
+
+
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
@@ -851,6 +907,7 @@ class DatabaseProvider(Provider):
     user_handler: UserHandler
     vector_handler: VectorHandler
     kg_handler: KGHandler
+    prompt_handler: PromptHandler
     config: DatabaseConfig
     project_name: str
 
@@ -1498,3 +1555,36 @@ class DatabaseProvider(Provider):
         return await self.kg_handler.get_existing_entity_extraction_ids(
             document_id
         )
+
+    async def add_prompt(
+        self, name: str, template: str, input_types: dict[str, str]
+    ) -> None:
+        return await self.prompt_handler.add_prompt(
+            name, template, input_types
+        )
+
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
+        return await self.prompt_handler.get_prompt(
+            prompt_name, inputs, prompt_override
+        )
+
+    async def get_all_prompts(self) -> dict[str, Any]:
+        return await self.prompt_handler.get_all_prompts()
+
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ) -> None:
+        return await self.prompt_handler.update_prompt(
+            name, template, input_types
+        )
+
+    async def delete_prompt(self, name: str) -> None:
+        return await self.prompt_handler.delete_prompt(name)

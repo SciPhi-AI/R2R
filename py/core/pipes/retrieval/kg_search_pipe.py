@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 from typing import Any, AsyncGenerator, Optional
@@ -10,19 +9,15 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 from core.base.abstractions import (
     KGCommunityResult,
     KGEntityResult,
-    KGGlobalResult,
-    KGRelationshipResult,
     KGSearchMethod,
     KGSearchResult,
     KGSearchResultType,
     KGSearchSettings,
-    R2RException,
 )
 
 from ..abstractions.generator_pipe import GeneratorPipe
@@ -37,9 +32,8 @@ class KGSearchSearchPipe(GeneratorPipe):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         config: GeneratorPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -52,7 +46,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         """
         super().__init__(
             llm_provider,
-            prompt_provider,
+            database_provider,
             config,
             type,
             pipe_logger,
@@ -61,7 +55,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
         self.pipe_run_info = None
 

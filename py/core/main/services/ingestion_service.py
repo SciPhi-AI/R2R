@@ -407,7 +407,7 @@ class IngestionService(Service):
             updated_chunk_text = (
                 (
                     await self.providers.llm.aget_completion(
-                        messages=await self.providers.prompt._get_message_payload(
+                        messages=await self.providers.database.prompt_handler.get_message_payload(
                             task_prompt_name="chunk_enrichment",
                             task_inputs={
                                 "context_chunks": "\n".join(

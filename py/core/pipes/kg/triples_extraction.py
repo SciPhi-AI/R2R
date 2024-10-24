@@ -14,7 +14,6 @@ from core.base import (
     GenerationConfig,
     KGExtraction,
     PipeType,
-    PromptProvider,
     R2RDocumentProcessingError,
     R2RException,
     R2RLoggingProvider,
@@ -47,7 +46,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         self,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         config: AsyncPipe.PipeConfig,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
@@ -63,7 +61,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             config=config
             or AsyncPipe.PipeConfig(name="default_kg_triples_extraction_pipe"),
         )
-        self.prompt_provider = prompt_provider
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.kg_batch_size = kg_batch_size
@@ -90,7 +87,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         # combine all extractions into a single string
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
-        messages = await self.prompt_provider._get_message_payload(
+        messages = await self.database_provider.prompt_handler.get_message_payload(
             task_prompt_name=self.database_provider.config.kg_creation_settings.kg_triples_extraction_prompt,
             task_inputs={
                 "input": combined_extraction,

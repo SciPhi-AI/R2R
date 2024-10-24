@@ -9,8 +9,6 @@ from asyncpg.exceptions import PostgresError, UndefinedTableError
 
 from core.base import (
     CommunityReport,
-    DatabaseProvider,
-    EmbeddingProvider,
     Entity,
     KGExtraction,
     KGExtractionStatus,

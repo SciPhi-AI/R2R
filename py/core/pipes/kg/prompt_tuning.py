@@ -11,7 +11,6 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     PipeType,
-    PromptProvider,
     R2RException,
     R2RLoggingProvider,
 )
@@ -29,7 +28,6 @@ class KGPromptTuningPipe(AsyncPipe):
         self,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
         type: PipeType = PipeType.OTHER,
@@ -43,7 +41,6 @@ class KGPromptTuningPipe(AsyncPipe):
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
 
     async def _run_logic(
         self,
@@ -55,9 +52,9 @@ class KGPromptTuningPipe(AsyncPipe):
     ):
         try:
             prompt_name = input.message["prompt_name"]
-            current_prompt = self.prompt_provider.get_all_prompts().get(
-                prompt_name
-            )
+            current_prompt = (
+                await self.database_provider.get_all_prompts()
+            ).get(prompt_name)
 
             if not current_prompt:
                 raise R2RException(
@@ -70,7 +67,7 @@ class KGPromptTuningPipe(AsyncPipe):
             logger.info(f"Starting prompt tuning for {prompt_name}")
 
             tuned_prompt = await self.llm_provider.aget_completion(
-                messages=await self.prompt_provider._get_message_payload(
+                messages=await self.database_provider.prompt_handler.get_message_payload(
                     task_prompt_name="prompt_tuning_task",
                     task_inputs={
                         "prompt_template": current_prompt.template,
