@@ -9,8 +9,8 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     PipeType,
-    R2RLoggingProvider,
 )
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

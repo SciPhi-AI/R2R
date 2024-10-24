@@ -12,9 +12,9 @@ from core.base import (
     DatabaseProvider,
     PipeType,
     R2RException,
-    R2RLoggingProvider,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

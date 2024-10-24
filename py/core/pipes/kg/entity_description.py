@@ -13,10 +13,10 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

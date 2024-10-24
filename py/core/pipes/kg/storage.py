@@ -10,9 +10,9 @@ from core.base import (
     KGExtraction,
     PipeType,
     R2RDocumentProcessingError,
-    R2RLoggingProvider,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

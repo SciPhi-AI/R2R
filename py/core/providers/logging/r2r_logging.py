@@ -1,86 +1,23 @@
 import json
-import logging
 import os
-import uuid
-from abc import abstractmethod
 from datetime import datetime
-from typing import Any, Optional, Tuple, Union
+from typing import Optional, Union
+from core.base import Message
+from core.base.logging.base import RunType
+from core.base.logging.logger import (
+    LoggingConfig,
+    RunInfoLog,
+    RunLoggingProvider,
+    logger,
+)
+
+
+from typing import Tuple
+import uuid
 from uuid import UUID
 
-from pydantic import BaseModel
 
-from core.base import Message
-
-from ..providers.base import Provider, ProviderConfig
-from .base import RunType
-
-logger = logging.getLogger()
-
-
-class RunInfoLog(BaseModel):
-    run_id: UUID
-    run_type: str
-    timestamp: datetime
-    user_id: UUID
-
-
-class LoggingConfig(ProviderConfig):
-    provider: str = "local"
-    log_table: str = "logs"
-    log_info_table: str = "log_info"
-    logging_path: Optional[str] = None
-
-    def validate_config(self) -> None:
-        pass
-
-    @property
-    def supported_providers(self) -> list[str]:
-        return ["local", "postgres"]
-
-
-class RunLoggingProvider(Provider):
-    @abstractmethod
-    async def close(self):
-        pass
-
-    @abstractmethod
-    async def log(
-        self,
-        run_id: UUID,
-        key: str,
-        value: str,
-    ):
-        pass
-
-    @abstractmethod
-    async def get_logs(
-        self,
-        run_ids: list[UUID],
-        limit_per_run: int,
-    ) -> list:
-        pass
-
-    @abstractmethod
-    async def info_log(
-        self,
-        run_id: UUID,
-        run_type: RunType,
-        user_id: UUID,
-    ):
-        pass
-
-    @abstractmethod
-    async def get_info_logs(
-        self,
-        offset: int = 0,
-        limit: int = 100,
-        run_type_filter: Optional[RunType] = None,
-        user_ids: Optional[list[UUID]] = None,
-    ) -> list[RunInfoLog]:
-        pass
-
-
-class SqlitePersistentLoggingProvider(RunLoggingProvider):
+class R2RSqlitePersistentLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -100,7 +37,7 @@ class SqlitePersistentLoggingProvider(RunLoggingProvider):
             self.aiosqlite = aiosqlite
         except ImportError:
             raise ImportError(
-                "Please install aiosqlite to use the SqlitePersistentLoggingProvider."
+                "Please install aiosqlite to use the R2RSqlitePersistentLoggingProvider."
             )
 
     async def _init(self):
@@ -725,42 +662,15 @@ class SqlitePersistentLoggingProvider(RunLoggingProvider):
         return result
 
 
-class HatchetLogger:
-    def __init__(self, context: Any):
-        self.context = context
-
-    def _log(self, level: str, message: str, function: Optional[str] = None):
-        if function:
-            log_message = f"[{level}]: {function}: {message}"
-        else:
-            log_message = f"[{level}]: {message}"
-        self.context.log(log_message)
-
-    def debug(self, message: str, function: Optional[str] = None):
-        self._log("DEBUG", message, function)
-
-    def info(self, message: str, function: Optional[str] = None):
-        self._log("INFO", message, function)
-
-    def warning(self, message: str, function: Optional[str] = None):
-        self._log("WARNING", message, function)
-
-    def error(self, message: str, function: Optional[str] = None):
-        self._log("ERROR", message, function)
-
-    def critical(self, message: str, function: Optional[str] = None):
-        self._log("CRITICAL", message, function)
-
-
 class R2RLoggingProvider:
     _instance = None
     _is_configured = False
     _config: Optional[LoggingConfig] = None
 
     PERSISTENT_PROVIDERS = {
-        "r2r": SqlitePersistentLoggingProvider,
+        "r2r": R2RSqlitePersistentLoggingProvider,
         # TODO - Mark this as deprecated
-        "local": SqlitePersistentLoggingProvider,
+        "local": R2RSqlitePersistentLoggingProvider,
     }
 
     @classmethod

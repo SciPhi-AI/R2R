@@ -9,7 +9,6 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import (
     KGCommunityResult,
@@ -19,6 +18,7 @@ from core.base.abstractions import (
     KGSearchResultType,
     KGSearchSettings,
 )
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 from ..abstractions.generator_pipe import GeneratorPipe
 

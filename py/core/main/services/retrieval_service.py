@@ -10,7 +10,6 @@ from core.base import (
     KGSearchSettings,
     Message,
     R2RException,
-    R2RLoggingProvider,
     RunManager,
     RunType,
     VectorSearchSettings,
@@ -18,6 +17,7 @@ from core.base import (
     to_async_generator,
 )
 from core.base.api.models import RAGResponse, SearchResponse, UserResponse
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders

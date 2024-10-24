@@ -14,7 +14,6 @@ from core import (
     DatabaseConfig,
     EmbeddingConfig,
     LoggingConfig,
-    SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
 )
@@ -32,6 +31,9 @@ from core.providers import (
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
     R2RAuthProvider,
+)
+from core.providers.logging.r2r_logging import (
+    R2RSqlitePersistentLoggingProvider,
 )
 
 

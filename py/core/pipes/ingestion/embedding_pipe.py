@@ -8,11 +8,11 @@ from core.base import (
     EmbeddingProvider,
     PipeType,
     R2RDocumentProcessingError,
-    R2RLoggingProvider,
     Vector,
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

@@ -3,13 +3,8 @@ from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
-from core.base import (
-    AsyncPipe,
-    AsyncState,
-    PipeType,
-    R2RLoggingProvider,
-    VectorSearchResult,
-)
+from core.base import AsyncPipe, AsyncState, PipeType, VectorSearchResult
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

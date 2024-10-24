@@ -13,7 +13,6 @@ from core.base import (
     DocumentType,
     IngestionStatus,
     R2RException,
-    R2RLoggingProvider,
     RawChunk,
     RunManager,
     Vector,
@@ -29,6 +28,7 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import UserResponse
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders

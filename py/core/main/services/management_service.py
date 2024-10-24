@@ -14,12 +14,12 @@ from core.base import (
     Message,
     Prompt,
     R2RException,
-    R2RLoggingProvider,
     RunManager,
     RunType,
     UserResponse,
 )
 from core.base.utils import validate_uuid
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders

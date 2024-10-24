@@ -82,8 +82,6 @@ __all__ = [
     "LogAnalyticsConfig",
     "LogFilterCriteria",
     "LogProcessor",
-    # Logging Providers
-    "SqlitePersistentLoggingProvider",
     "LoggingConfig",
     "R2RLoggingProvider",
     # Run Manager

@@ -4,7 +4,6 @@ from uuid import UUID
 
 from core.base import AsyncState, R2RException
 from core.base.abstractions import Entity, KGEntityDeduplicationType
-from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
 from core.providers import (
     LiteLLMCompletionProvider,
@@ -13,6 +12,7 @@ from core.providers import (
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
 )
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

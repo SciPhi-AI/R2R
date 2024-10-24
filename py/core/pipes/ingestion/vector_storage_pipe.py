@@ -6,11 +6,11 @@ from core.base import (
     AsyncState,
     DatabaseProvider,
     PipeType,
-    R2RLoggingProvider,
     StorageResult,
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

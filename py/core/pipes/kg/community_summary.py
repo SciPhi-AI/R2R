@@ -15,9 +15,9 @@ from core.base import (
     EmbeddingProvider,
     GenerationConfig,
     PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import Entity, Triple
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 

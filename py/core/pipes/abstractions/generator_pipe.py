@@ -7,10 +7,10 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 
 class GeneratorPipe(AsyncPipe):

@@ -1,3 +1,4 @@
+from ...providers.logging.r2r_logging import R2RLoggingProvider
 from .base import RunType
 from .log_processor import (
     AnalysisTypes,
@@ -6,11 +7,7 @@ from .log_processor import (
     LogFilterCriteria,
     LogProcessor,
 )
-from .r2r_logger import (
-    LoggingConfig,
-    R2RLoggingProvider,
-    SqlitePersistentLoggingProvider,
-)
+from .logger import LoggingConfig
 from .run_manager import RunManager, manage_run
 
 __all__ = [
@@ -22,7 +19,6 @@ __all__ = [
     "LogFilterCriteria",
     "LogProcessor",
     # Logging Providers
-    "SqlitePersistentLoggingProvider",
     "LoggingConfig",
     "R2RLoggingProvider",
     # Run Manager
