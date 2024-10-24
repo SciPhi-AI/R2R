@@ -10,7 +10,7 @@ version = "3.2.33"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
-include = ["r2r.toml", "compose.yaml", "compose.full.yaml", "pyproject.toml", "core/migrations/**/*" ]
+include = ["r2r.toml", "compose.yaml", "compose.full.yaml", "pyproject.toml", "migrations/**/*" ]
 packages = [
     { include = "r2r" },
     { include = "sdk", from = "." },
