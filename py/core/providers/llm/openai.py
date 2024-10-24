@@ -39,6 +39,8 @@ class OpenAICompletionProvider(CompletionProvider):
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:
             args["tools"] = generation_config.tools
+        if generation_config.response_format is not None:
+            args["response_format"] = generation_config.response_format
         return args
 
     async def _execute_task(self, task: dict[str, Any]):
