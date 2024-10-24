@@ -230,7 +230,12 @@ class ManagementService(Service):
         """
 
         def validate_filters(filters: dict[str, Any]) -> None:
-            ALLOWED_FILTERS = {"document_id", "user_id", "collection_ids"}
+            ALLOWED_FILTERS = {
+                "document_id",
+                "user_id",
+                "collection_ids",
+                "extraction_id",
+            }
 
             if not filters:
                 raise R2RException(
@@ -244,7 +249,7 @@ class ManagementService(Service):
                         message=f"Invalid filter field: {field}",
                     )
 
-            for field in ["document_id", "user_id"]:
+            for field in ["document_id", "user_id", "extraction_id"]:
                 if field in filters:
                     op = next(iter(filters[field].keys()))
                     try:
@@ -280,12 +285,9 @@ class ManagementService(Service):
         document_ids_to_purge: set[UUID] = set()
         if vector_delete_results:
             document_ids_to_purge.update(
-                UUID(doc_id)
-                for doc_id in (
-                    result.get("document_id")
-                    for result in vector_delete_results.values()
-                )
-                if doc_id
+                UUID(result.get("document_id"))
+                for result in vector_delete_results.values()
+                if result.get("document_id")
             )
 
         relational_filters = {}
@@ -300,38 +302,47 @@ class ManagementService(Service):
                 filters["collection_ids"]["$in"]
             )
 
-        try:
-            documents_overview = (
-                await self.providers.database.get_documents_overview(
-                    **relational_filters  # type: ignore
-                )
-            )["results"]
-        except Exception as e:
-            logger.error(
-                f"Error fetching documents from relational database: {e}"
-            )
-            documents_overview = []
-
-        if documents_overview:
-            document_ids_to_purge.update(doc.id for doc in documents_overview)
-
-        if not document_ids_to_purge:
-            raise R2RException(
-                status_code=404, message="No entries found for deletion."
-            )
-
-        for document_id in document_ids_to_purge:
+        if relational_filters:
             try:
-                await self.providers.database.delete_from_documents_overview(
-                    document_id
-                )
-                logger.info(
-                    f"Deleted document ID {document_id} from documents_overview."
-                )
+                documents_overview = (
+                    await self.providers.database.get_documents_overview(
+                        **relational_filters  # type: ignore
+                    )
+                )["results"]
             except Exception as e:
                 logger.error(
-                    f"Error deleting document ID {document_id} from documents_overview: {e}"
+                    f"Error fetching documents from relational database: {e}"
                 )
+                documents_overview = []
+
+            if documents_overview:
+                document_ids_to_purge.update(
+                    doc.id for doc in documents_overview
+                )
+
+            if not document_ids_to_purge:
+                raise R2RException(
+                    status_code=404, message="No entries found for deletion."
+                )
+
+            for document_id in document_ids_to_purge:
+                remaining_chunks = (
+                    await self.providers.database.get_document_chunks(
+                        document_id
+                    )
+                )
+                if remaining_chunks["total_entries"] == 0:
+                    try:
+                        await self.providers.database.delete_from_documents_overview(
+                            document_id
+                        )
+                        logger.info(
+                            f"Deleted document ID {document_id} from documents_overview."
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Error deleting document ID {document_id} from documents_overview: {e}"
+                        )
 
         return None
 

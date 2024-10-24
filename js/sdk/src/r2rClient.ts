@@ -678,6 +678,45 @@ export class r2rClient {
     });
   }
 
+  @feature("updateChunk")
+  async updateChunk(
+    documentId: string,
+    extractionId: string,
+    text: string,
+    metadata?: Record<string, any>,
+    runWithOrchestration?: boolean,
+  ): Promise<Record<string, any>> {
+    /**
+     * Update the content of an existing chunk.
+     *
+     * @param documentId - The ID of the document containing the chunk.
+     * @param extractionId - The ID of the chunk to update.
+     * @param text - The new text content of the chunk.
+     * @param metadata - Optional metadata dictionary for the chunk.
+     * @param runWithOrchestration - Whether to run the update through orchestration.
+     * @returns Update results containing processed, failed, and skipped documents.
+     */
+    this._ensureAuthenticated();
+
+    const data: Record<string, any> = {
+      text,
+      metadata,
+      run_with_orchestration: runWithOrchestration,
+    };
+
+    Object.keys(data).forEach(
+      (key) => data[key] === undefined && delete data[key],
+    );
+
+    return await this._makeRequest(
+      "PUT",
+      `update_chunk/${documentId}/${extractionId}`,
+      {
+        data,
+      },
+    );
+  }
+
   // -----------------------------------------------------------------------------
   //
   // Management

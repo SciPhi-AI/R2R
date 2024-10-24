@@ -257,13 +257,12 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
     async def update_chunk(input_data):
-        try:
-            from core.main import IngestionServiceAdapter
+        from core.main import IngestionServiceAdapter
 
+        try:
             parsed_data = IngestionServiceAdapter.parse_update_chunk_input(
                 input_data
             )
-
             document_uuid = (
                 UUID(parsed_data["document_id"])
                 if isinstance(parsed_data["document_id"], str)
@@ -275,32 +274,14 @@ def simple_ingestion_factory(service: IngestionService):
                 else parsed_data["extraction_id"]
             )
 
-            document_info = await service.update_chunk_ingress(
-                **{
-                    **parsed_data,
-                    "document_id": document_uuid,
-                    "extraction_id": extraction_uuid,
-                }
-            )
-
-            extraction = DocumentExtraction(
-                id=extraction_uuid,
+            await service.update_chunk_ingress(
                 document_id=document_uuid,
-                collection_ids=parsed_data.get("collection_ids", []),
-                user_id=document_info.user_id,
-                data=parsed_data["text"],
-                metadata=parsed_data["metadata"],
-            ).model_dump()
-
-            embedding_generator = await service.embed_document([extraction])
-            embeddings = [
-                embedding.model_dump()
-                async for embedding in embedding_generator
-            ]
-
-            storage_generator = await service.store_embeddings(embeddings)
-            async for _ in storage_generator:
-                pass
+                extraction_id=extraction_uuid,
+                text=parsed_data.get("text"),
+                user=parsed_data["user"],
+                metadata=parsed_data.get("metadata"),
+                collection_ids=parsed_data.get("collection_ids"),
+            )
 
         except Exception as e:
             raise R2RException(

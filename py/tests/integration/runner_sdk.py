@@ -1795,6 +1795,130 @@ def test_conversation_history_sdk():
     print("~" * 100)
 
 
+def test_ingest_chunks():
+    print("Testing: Ingest chunks")
+
+    client.ingest_chunks(
+        chunks=[
+            {
+                # extraction_id should be 21acd7c0-fe60-572e-89b1-3ae71861bbb3
+                "text": "Hello, world!",
+            },
+            {
+                # extraction_id should be 7c1871cd-0f6a-52c1-84d8-3365c29251b3
+                "text": "Hallo, Welt!",
+            },
+            {
+                # extraction_id should be bccdb72f-ac9f-5708-81eb-b4d781ed9fe2
+                "text": "Szia, világ!",
+            },
+            {
+                # extraction_id should be 0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc
+                "text": "Dzień dobry, świecie!",
+            },
+        ],
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
+        metadata={
+            "Language 1": "English",
+            "Language 2": "German",
+            "Language 3": "Hungarian",
+            "Language 4": "Polish",
+        },
+    )
+
+    ingest_chunks_response = client.document_chunks(
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
+    )
+
+    # Assert that the extraction_id is correct
+    assert (
+        ingest_chunks_response["results"][0]["extraction_id"]
+        == "21acd7c0-fe60-572e-89b1-3ae71861bbb3"
+    )
+    assert (
+        ingest_chunks_response["results"][1]["extraction_id"]
+        == "7c1871cd-0f6a-52c1-84d8-3365c29251b3"
+    )
+    assert (
+        ingest_chunks_response["results"][2]["extraction_id"]
+        == "bccdb72f-ac9f-5708-81eb-b4d781ed9fe2"
+    )
+    assert (
+        ingest_chunks_response["results"][3]["extraction_id"]
+        == "0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc"
+    )
+
+
+def test_update_chunks():
+    print("Testing: Update chunk")
+
+    client.update_chunks(
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
+        extraction_id="21acd7c0-fe60-572e-89b1-3ae71861bbb3",
+        text="Goodbye, world!",
+    )
+
+    client.update_chunks(
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
+        extraction_id="7c1871cd-0f6a-52c1-84d8-3365c29251b3",
+        text="Auf Wiedersehen, Welt!",
+    )
+
+    client.update_chunks(
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
+        extraction_id="bccdb72f-ac9f-5708-81eb-b4d781ed9fe2",
+        text="Viszlát, világ!",
+    )
+
+    client.update_chunks(
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
+        extraction_id="0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc",
+        text="Dobranoc, świecie!",
+    )
+
+    ingest_chunks_response = client.document_chunks(
+        document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
+    )
+
+    # Assert that the text has been updated
+    assert ingest_chunks_response["results"][0]["text"] == "Goodbye, world!"
+    assert (
+        ingest_chunks_response["results"][1]["text"]
+        == "Auf Wiedersehen, Welt!"
+    )
+    assert ingest_chunks_response["results"][2]["text"] == "Viszlát, világ!"
+    assert ingest_chunks_response["results"][3]["text"] == "Dobranoc, świecie!"
+
+    # Assert that the metadata has been maintained
+    assert (
+        ingest_chunks_response["results"][0]["metadata"]["Language 1"]
+        == "English"
+    )
+
+
+def test_delete_chunks():
+    print("Testing: Delete chunks")
+
+    client.delete(
+        {"extraction_id": {"$eq": "21acd7c0-fe60-572e-89b1-3ae71861bbb3"}}
+    )
+    client.delete(
+        {"extraction_id": {"$eq": "7c1871cd-0f6a-52c1-84d8-3365c29251b3"}}
+    )
+    client.delete(
+        {"extraction_id": {"$eq": "bccdb72f-ac9f-5708-81eb-b4d781ed9fe2"}}
+    )
+    client.delete(
+        {"extraction_id": {"$eq": "0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc"}}
+    )
+    try:
+        client.document_chunks(
+            document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
+        )
+    except R2RException as e:
+        assert e.status_code == 404
+
+
 def create_client(base_url):
     return R2RClient(base_url)
 

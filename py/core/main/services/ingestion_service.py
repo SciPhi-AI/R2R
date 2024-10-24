@@ -362,7 +362,7 @@ class IngestionService(Service):
         metadata: Optional[dict] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> DocumentInfo:
+    ) -> dict:
         # Verify chunk exists and user has access
         existing_chunks = await self.providers.database.get_document_chunks(
             document_id=document_id, limit=1
@@ -374,7 +374,12 @@ class IngestionService(Service):
                 message=f"Chunk with extraction_id {extraction_id} not found.",
             )
 
-        existing_chunk = existing_chunks["results"][0]
+        existing_chunk = await self.providers.database.get_chunk(extraction_id)
+        if not existing_chunk:
+            raise R2RException(
+                status_code=404,
+                message=f"Chunk with id {extraction_id} not found",
+            )
 
         if (
             str(existing_chunk["user_id"]) != str(user.id)
@@ -385,14 +390,39 @@ class IngestionService(Service):
                 message="You don't have permission to modify this chunk.",
             )
 
-        # Get document info for return
-        documents_overview = (
-            await self.providers.database.get_documents_overview(
-                filter_document_ids=[document_id],
-            )
-        )["results"]
+        # Handle metadata merging
+        if metadata is not None:
+            merged_metadata = {
+                **existing_chunk["metadata"],
+                **metadata,
+            }
+        else:
+            merged_metadata = existing_chunk["metadata"]
 
-        return documents_overview[0]
+        # Create updated extraction
+        extraction_data = {
+            "id": extraction_id,
+            "document_id": document_id,
+            "collection_ids": kwargs.get(
+                "collection_ids", existing_chunk["collection_ids"]
+            ),
+            "user_id": existing_chunk["user_id"],
+            "data": text or existing_chunk["text"],
+            "metadata": merged_metadata,
+        }
+
+        extraction = DocumentExtraction(**extraction_data).model_dump()
+
+        embedding_generator = await self.embed_document([extraction])
+        embeddings = [
+            embedding.model_dump() async for embedding in embedding_generator
+        ]
+
+        storage_generator = await self.store_embeddings(embeddings)
+        async for _ in storage_generator:
+            pass
+
+        return extraction
 
     async def _get_enriched_chunk_text(
         self,

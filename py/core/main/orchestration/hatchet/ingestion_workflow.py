@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import uuid
+from uuid import UUID
 from typing import TYPE_CHECKING
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
@@ -515,52 +516,28 @@ def hatchet_ingestion_factory(
                 )
 
                 document_uuid = (
-                    parsed_data["document_id"]
+                    UUID(parsed_data["document_id"])
                     if isinstance(parsed_data["document_id"], str)
                     else parsed_data["document_id"]
                 )
                 extraction_uuid = (
-                    parsed_data["extraction_id"]
+                    UUID(parsed_data["extraction_id"])
                     if isinstance(parsed_data["extraction_id"], str)
                     else parsed_data["extraction_id"]
                 )
 
-                document_info = (
-                    await self.ingestion_service.update_chunk_ingress(
-                        **{
-                            **parsed_data,
-                            "document_id": document_uuid,
-                            "extraction_id": extraction_uuid,
-                        }
-                    )
-                )
-
-                extraction = DocumentExtraction(
-                    id=extraction_uuid,
+                await self.ingestion_service.update_chunk_ingress(
                     document_id=document_uuid,
-                    collection_ids=parsed_data.get("collection_ids", []),
-                    user_id=document_info.user_id,
-                    data=parsed_data["text"],
-                    metadata=parsed_data["metadata"],
-                ).to_dict()
-
-                embedding_generator = (
-                    await self.ingestion_service.embed_document([extraction])
+                    extraction_id=extraction_uuid,
+                    text=parsed_data.get("text"),
+                    user=parsed_data["user"],
+                    metadata=parsed_data.get("metadata"),
+                    collection_ids=parsed_data.get("collection_ids"),
                 )
-                embeddings = [
-                    embedding.to_dict()
-                    async for embedding in embedding_generator
-                ]
-
-                storage_generator = (
-                    await self.ingestion_service.store_embeddings(embeddings)
-                )
-                async for _ in storage_generator:
-                    pass
 
                 return {
                     "message": "Chunk update completed successfully.",
-                    "task_id": context.workflow_run_id(),  # or None if not applicable
+                    "task_id": context.workflow_run_id(),
                     "document_ids": [str(document_uuid)],
                 }
 
