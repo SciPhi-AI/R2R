@@ -757,7 +757,6 @@ class KGHandler(Handler):
     ) -> int:
         """Get entity count."""
         pass
-
     @abstractmethod
     async def get_triple_count(
         self,
@@ -825,6 +824,13 @@ class KGHandler(Handler):
     @abstractmethod
     async def upsert_triples(self) -> None:
         """Upsert triples."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        """Get existing entity extraction IDs."""
         raise NotImplementedError
 
 
@@ -1476,3 +1482,9 @@ class DatabaseProvider(Provider):
 
     async def upsert_triples(self) -> None:
         return await self.kg_handler.upsert_triples()
+
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        return await self.kg_handler.upsert_triples()
+
