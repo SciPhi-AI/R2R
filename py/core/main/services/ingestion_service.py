@@ -363,6 +363,12 @@ class IngestionService(Service):
     ) -> VectorEntry:
         # get chunks in context
 
+        if chunk_enrichment_settings.strategies == []:
+            logger.error("No enrichment strategies provided")
+            raise R2RException(
+                status_code=400, message="No enrichment strategies provided"
+            )
+
         context_chunk_ids = []
         for enrichment_strategy in chunk_enrichment_settings.strategies:
             if enrichment_strategy == ChunkEnrichmentStrategy.NEIGHBORHOOD:
@@ -392,7 +398,17 @@ class IngestionService(Service):
                 for neighbor in semantic_neighbors:
                     context_chunk_ids.append(neighbor["extraction_id"])
 
-        context_chunk_ids = list(set(context_chunk_ids))
+        context_chunk_ids = list(
+            set(
+                [
+                    str(context_chunk_id)
+                    for context_chunk_id in context_chunk_ids
+                ]
+            )
+        )
+        context_chunk_ids = [
+            UUID(context_chunk_id) for context_chunk_id in context_chunk_ids
+        ]
 
         context_chunk_texts = []
         for context_chunk_id in context_chunk_ids:
@@ -467,13 +483,15 @@ class IngestionService(Service):
 
         return vector_entry_new
 
-    async def chunk_enrichment(self, document_id: UUID) -> int:
+    async def chunk_enrichment(
+        self,
+        document_id: UUID,
+        chunk_enrichment_settings: ChunkEnrichmentSettings,
+    ) -> int:
         # just call the pipe on every chunk of the document
 
-        # TODO: Why is the config not recognized as an ingestionconfig but as a providerconfig?
-        chunk_enrichment_settings = (
-            self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
-        )
+        logger.info(f"chunk_enrichment_settings: {chunk_enrichment_settings}")
+
         # get all document_chunks
         document_chunks = (
             await self.providers.database.get_document_chunks(
