@@ -143,9 +143,6 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
-    # Knowledge Graph provider
-    "KGConfig",
-    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
@@ -242,8 +239,6 @@ __all__ = [
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    # KG
-    "PostgresKGProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",

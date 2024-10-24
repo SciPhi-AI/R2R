@@ -15,6 +15,7 @@ from core.base import (
 from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
+from core.providers.database.kg import PostgresKGHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
@@ -54,9 +55,7 @@ class PostgresDBProvider(DatabaseProvider):
         config: DatabaseConfig,
         dimension: int,
         crypto_provider: CryptoProvider,
-        quantization_type: Optional[
-            VectorQuantizationType
-        ] = VectorQuantizationType.FP32,
+        quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,
     ):
@@ -137,6 +136,13 @@ class PostgresDBProvider(DatabaseProvider):
             self.dimension,
             self.enable_fts,
         )
+        self.kg_handler = PostgresKGHandler(
+            self.project_name,
+            self.connection_manager,
+            self.collection_handler,
+            self.dimension,
+            self.quantization_type,
+        )
 
     async def initialize(self):
         logger.info("Initializing `PostgresDBProvider`.")
@@ -157,11 +163,11 @@ class PostgresDBProvider(DatabaseProvider):
                 f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";'
             )
 
-        await self.document_handler.create_table()
-        await self.collection_handler.create_table()
-        await self.token_handler.create_table()
-        await self.user_handler.create_table()
-        await self.vector_handler.create_table()
+        await self.document_handler.create_tables()
+        await self.collection_handler.create_tables()
+        await self.token_handler.create_tables()
+        await self.user_handler.create_tables()
+        await self.vector_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

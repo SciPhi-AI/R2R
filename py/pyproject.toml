@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.2.31"
+version = "3.2.32"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -81,7 +81,6 @@ python-docx = { version = "^1.1.0", optional = true }
 
 [tool.poetry.extras]
 core = [
-    "alembic",
     "aiosqlite",
     "apscheduler",
     "asyncpg",

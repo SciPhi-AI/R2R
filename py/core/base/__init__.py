@@ -124,9 +124,6 @@ __all__ = [
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",
-    # Knowledge Graph provider
-    "KGConfig",
-    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",

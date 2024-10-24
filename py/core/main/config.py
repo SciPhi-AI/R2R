@@ -17,7 +17,6 @@ from ..base.providers.database import DatabaseConfig
 from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.file import FileConfig
 from ..base.providers.ingestion import IngestionConfig
-from ..base.providers.kg import KGConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
 from ..base.providers.prompt import PromptConfig
@@ -73,7 +72,6 @@ class R2RConfig:
     database: DatabaseConfig
     embedding: EmbeddingConfig
     ingestion: IngestionConfig
-    kg: KGConfig
     logging: LoggingConfig
     prompt: PromptConfig
     agent: AgentConfig
@@ -128,7 +126,6 @@ class R2RConfig:
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
-        self.kg = KGConfig.create(**self.kg, app=self.app)  # type: ignore
         self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.prompt = PromptConfig.create(**self.prompt, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore

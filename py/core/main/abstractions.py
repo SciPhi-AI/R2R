@@ -9,7 +9,6 @@ from core.base.providers import (
     EmbeddingProvider,
     FileProvider,
     IngestionProvider,
-    KGProvider,
     OrchestrationProvider,
     PromptProvider,
 )
@@ -22,7 +21,6 @@ class R2RProviders(BaseModel):
     ingestion: IngestionProvider
     embedding: EmbeddingProvider
     file: FileProvider
-    kg: KGProvider
     llm: CompletionProvider
     orchestration: OrchestrationProvider
     prompt: PromptProvider

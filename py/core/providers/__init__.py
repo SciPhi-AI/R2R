@@ -13,7 +13,6 @@ from .ingestion import (  # type: ignore
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
-from .kg import PostgresKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .orchestration import (
     HatchetOrchestrationProvider,
@@ -41,8 +40,6 @@ __all__ = [
     "OpenAIEmbeddingProvider",
     # File
     "PostgresFileProvider",
-    # KG
-    "PostgresKGProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",

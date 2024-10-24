@@ -63,7 +63,7 @@ class PostgresVectorHandler(VectorHandler):
         self.dimension = dimension
         self.enable_fts = enable_fts
 
-    async def create_table(self):
+    async def create_tables(self):
         # Check for old table name first
         check_query = f"""
         SELECT EXISTS (

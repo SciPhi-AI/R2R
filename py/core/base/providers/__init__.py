@@ -7,6 +7,7 @@ from .database import (
     DatabaseConnectionManager,
     DatabaseProvider,
     DocumentHandler,
+    KGHandler,
     PostgresConfigurationSettings,
     TokenHandler,
     UserHandler,
@@ -15,7 +16,6 @@ from .database import (
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .file import FileConfig, FileProvider
 from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
-from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
 from .prompt import PromptConfig, PromptProvider
@@ -42,15 +42,13 @@ __all__ = [
     "TokenHandler",
     "UserHandler",
     "VectorHandler",
+    "KGHandler",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
-    # Knowledge Graph provider
-    "KGConfig",
-    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",

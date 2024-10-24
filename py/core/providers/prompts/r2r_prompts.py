@@ -15,11 +15,13 @@ logger = logging.getLogger()
 
 
 class R2RPromptProvider(PromptProvider):
-    def __init__(self, config: PromptConfig, db_provider: DatabaseProvider):
+    def __init__(
+        self, config: PromptConfig, database_provider: DatabaseProvider
+    ):
         super().__init__(config)
         self.prompts: dict[str, Prompt] = {}
         self.config: PromptConfig = config
-        self.db_provider = db_provider
+        self.database_provider = database_provider
         self.pool: Optional[SemaphoreConnectionPool] = None  # Initialize pool
 
     async def __aenter__(self):
@@ -36,12 +38,12 @@ class R2RPromptProvider(PromptProvider):
 
     async def initialize(self):
         try:
-            self.pool = self.db_provider.pool
+            self.pool = self.database_provider.pool
 
             async with self.pool.get_connection() as conn:
                 await conn.execute('CREATE EXTENSION IF NOT EXISTS "lo";')
 
-            await self.create_table()
+            await self.create_tables()
             await self._load_prompts_from_database()
             await self._load_prompts_from_yaml_directory()
         except Exception as e:
@@ -49,9 +51,9 @@ class R2RPromptProvider(PromptProvider):
             raise
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{self.db_provider.project_name}.{base_name}"
+        return f"{self.database_provider.project_name}.{base_name}"
 
-    async def create_table(self):
+    async def create_tables(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('prompts')} (
             prompt_id UUID PRIMARY KEY,

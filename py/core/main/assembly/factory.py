@@ -19,7 +19,6 @@ from core.base import (
     FileProvider,
     IngestionConfig,
     IngestionProvider,
-    KGProvider,
     OrchestrationConfig,
     PromptConfig,
     PromptProvider,
@@ -41,7 +40,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        db_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
         crypto_provider: CryptoProvider,
         *args,
         **kwargs,
@@ -50,7 +49,7 @@ class R2RProviderFactory:
             from core.providers import R2RAuthProvider
 
             r2r_auth = R2RAuthProvider(
-                auth_config, crypto_provider, db_provider
+                auth_config, crypto_provider, database_provider
             )
             await r2r_auth.initialize()
             return r2r_auth
@@ -58,7 +57,7 @@ class R2RProviderFactory:
             from core.providers import SupabaseAuthProvider
 
             return SupabaseAuthProvider(
-                auth_config, crypto_provider, db_provider
+                auth_config, crypto_provider, database_provider
             )
         else:
             raise ValueError(
@@ -205,7 +204,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_file_provider(
         file_config: FileConfig,
-        db_provider: Any,
+        database_provider: Any,
         *args,
         **kwargs,
     ) -> FileProvider:
@@ -213,7 +212,9 @@ class R2RProviderFactory:
         if file_config.provider == "postgres":
             from core.providers import PostgresFileProvider
 
-            file_provider = PostgresFileProvider(file_config, db_provider)
+            file_provider = PostgresFileProvider(
+                file_config, database_provider
+            )
             await file_provider.initialize()
         else:
             raise ValueError(
@@ -246,7 +247,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_prompt_provider(
         prompt_config: PromptConfig,
-        db_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
         *args,
         **kwargs,
     ) -> PromptProvider:
@@ -258,30 +259,10 @@ class R2RProviderFactory:
             )
         from core.providers import R2RPromptProvider
 
-        prompt_provider = R2RPromptProvider(prompt_config, db_provider)
+        prompt_provider = R2RPromptProvider(prompt_config, database_provider)
         await prompt_provider.initialize()
 
         return prompt_provider
-
-    @staticmethod
-    async def create_kg_provider(
-        kg_config, database_provider, embedding_provider, *args, **kwargs
-    ):
-        if kg_config.provider == "postgres":
-            from core.providers import PostgresKGProvider
-
-            provider = PostgresKGProvider(
-                kg_config, database_provider, embedding_provider
-            )
-            await provider.initialize()
-            return provider
-
-        elif kg_config.provider is None:
-            return None
-        else:
-            raise ValueError(
-                f"KG provider {kg_config.provider} not supported."
-            )
 
     async def create_providers(
         self,
@@ -291,7 +272,6 @@ class R2RProviderFactory:
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         file_provider_override: Optional[FileProvider] = None,
         ingestion_provider_override: Optional[IngestionProvider] = None,
-        kg_provider_override: Optional[KGProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
@@ -324,14 +304,6 @@ class R2RProviderFactory:
             or await self.create_database_provider(
                 self.config.database, crypto_provider, *args, **kwargs
             )
-        )
-
-        kg_provider = kg_provider_override or await self.create_kg_provider(
-            self.config.kg,
-            database_provider,
-            embedding_provider,
-            *args,
-            **kwargs,
         )
 
         auth_provider = (
@@ -368,7 +340,6 @@ class R2RProviderFactory:
             ingestion=ingestion_provider,
             llm=llm_provider,
             prompt=prompt_provider,
-            kg=kg_provider,
             orchestration=orchestration_provider,
             file=file_provider,
         )
@@ -548,13 +519,9 @@ class R2RPipeFactory:
         )
 
     def create_kg_triples_extraction_pipe(self, *args, **kwargs) -> Any:
-        if self.config.kg.provider is None:
-            return None
-
         from core.pipes import KGTriplesExtractionPipe
 
         return KGTriplesExtractionPipe(
-            kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
@@ -562,24 +529,18 @@ class R2RPipeFactory:
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
-        if self.config.kg.provider is None:
-            return None
-
         from core.pipes import KGStoragePipe
 
         return KGStoragePipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="kg_storage_pipe"),
         )
 
     def create_kg_search_pipe(self, *args, **kwargs) -> Any:
-        if self.config.kg.provider is None:
-            return None
-
         from core.pipes import KGSearchSearchPipe
 
         return KGSearchSearchPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
@@ -614,7 +575,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDescriptionPipe
 
         return KGEntityDescriptionPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
@@ -625,7 +586,7 @@ class R2RPipeFactory:
         from core.pipes import KGClusteringPipe
 
         return KGClusteringPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
@@ -636,7 +597,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -647,7 +608,7 @@ class R2RPipeFactory:
         from core.pipes import KGCommunitySummaryPipe
 
         return KGCommunitySummaryPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
@@ -658,7 +619,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationPipe
 
         return KGEntityDeduplicationPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             embedding_provider=self.providers.embedding,
@@ -671,7 +632,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -684,7 +645,7 @@ class R2RPipeFactory:
         from core.pipes import KGPromptTuningPipe
 
         return KGPromptTuningPipe(
-            kg_provider=self.providers.kg,
+            database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             config=AsyncPipe.PipeConfig(name="kg_prompt_tuning_pipe"),
@@ -707,12 +668,6 @@ class R2RPipelineFactory:
         ):
             search_pipeline.add_pipe(
                 self.pipes.vector_search_pipe, vector_search_pipe=True
-            )
-
-        # Add KG pipes if provider is set
-        if self.config.kg.provider is not None:
-            search_pipeline.add_pipe(
-                self.pipes.kg_search_pipe, kg_triples_extraction_pipe=True
             )
 
         return search_pipeline

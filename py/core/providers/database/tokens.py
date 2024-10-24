@@ -14,7 +14,7 @@ class PostgresTokenHandler(TokenHandler):
     ):
         super().__init__(project_name, connection_manager)
 
-    async def create_table(self):
+    async def create_tables(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresTokenHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

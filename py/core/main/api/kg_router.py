@@ -119,7 +119,7 @@ class KGRouter(BaseRouter):
 
             # Apply runtime settings overrides
             server_kg_creation_settings = (
-                self.service.providers.kg.config.kg_creation_settings
+                self.service.providers.database.config.kg_creation_settings
             )
 
             if kg_creation_settings:
@@ -184,7 +184,7 @@ class KGRouter(BaseRouter):
 
             # Apply runtime settings overrides
             server_kg_enrichment_settings = (
-                self.service.providers.kg.config.kg_enrichment_settings
+                self.service.providers.database.config.kg_enrichment_settings
             )
             if kg_enrichment_settings:
                 server_kg_enrichment_settings = update_settings_from_dict(
@@ -357,7 +357,7 @@ class KGRouter(BaseRouter):
                 run_type = KGRunType.ESTIMATE
 
             server_deduplication_settings = (
-                self.service.providers.kg.config.kg_entity_deduplication_settings
+                self.service.providers.database.config.kg_entity_deduplication_settings
             )
 
             logger.info(

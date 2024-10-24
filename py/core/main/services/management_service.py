@@ -401,7 +401,7 @@ class ManagementService(Service):
         await self.providers.database.remove_document_from_collection_vector(
             document_id, collection_id
         )
-        await self.providers.kg.delete_node_via_document_id(
+        await self.providers.database.delete_node_via_document_id(
             document_id, collection_id
         )
         return None
