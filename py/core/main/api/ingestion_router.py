@@ -1,17 +1,18 @@
 import base64
 import logging
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path as pathlib_Path
 from typing import Optional, Union
 from uuid import UUID
 
 import yaml
-from fastapi import Body, Depends, File, Form, Query, UploadFile
+from fastapi import Body, Depends, File, Form, Query, UploadFile, Path
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, generate_document_id
 from core.base.api.models import (
     CreateVectorIndexResponse,
+    UpdateResponse,
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
@@ -64,6 +65,11 @@ class IngestionRouter(BaseRouter):
                     if self.orchestration_provider.config.provider != "simple"
                     else "Update task queued successfully."
                 ),
+                "update-chunk": (
+                    "Update chunk task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Chunk update completed successfully."
+                ),
                 "create-vector-index": (
                     "Vector index creation task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
@@ -84,7 +90,9 @@ class IngestionRouter(BaseRouter):
 
     def _load_openapi_extras(self):
         yaml_path = (
-            Path(__file__).parent / "data" / "ingestion_router_openapi.yml"
+            pathlib_Path(__file__).parent
+            / "data"
+            / "ingestion_router_openapi.yml"
         )
         with open(yaml_path, "r") as yaml_file:
             yaml_content = yaml.safe_load(yaml_file)
@@ -405,6 +413,63 @@ class IngestionRouter(BaseRouter):
                     "document_id": str(document_uuid),
                     "task_id": None,
                 }
+
+        @self.router.put(
+            "/update_chunk/{document_id}/{extraction_id}",
+        )
+        @self.base_endpoint
+        async def update_chunk_app(
+            document_id: UUID = Path(
+                ..., description="The document ID of the chunk to update"
+            ),
+            extraction_id: UUID = Path(
+                ..., description="The extraction ID of the chunk to update"
+            ),
+            text: str = Body(
+                ..., description="The new text content for the chunk"
+            ),
+            metadata: Optional[dict] = Body(
+                None, description="Optional updated metadata"
+            ),
+            run_with_orchestration: Optional[bool] = Body(True),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedUpdateResponse:
+            try:
+                workflow_input = {
+                    "document_id": str(document_id),
+                    "extraction_id": str(extraction_id),
+                    "text": text,
+                    "metadata": metadata,
+                    "user": auth_user.model_dump_json(),
+                }
+
+                if run_with_orchestration:
+                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                        "update-chunk", {"request": workflow_input}, {}
+                    )
+                    raw_message["message"] = "Update task queued successfully."
+                    raw_message["document_ids"] = [document_id]  # type: ignore
+
+                    return raw_message  # type: ignore
+                else:
+                    logger.info("Running chunk update without orchestration.")
+                    from core.main.orchestration import (
+                        simple_ingestion_factory,
+                    )
+
+                    simple_ingestor = simple_ingestion_factory(self.service)
+                    await simple_ingestor["update-chunk"](workflow_input)
+
+                    return {  # type: ignore
+                        "message": "Update task completed successfully.",
+                        "document_ids": workflow_input["document_ids"],
+                        "task_id": None,
+                    }
+
+            except Exception as e:
+                raise R2RException(
+                    status_code=500, message=f"Error updating chunk: {str(e)}"
+                )
 
         create_vector_index_extras = self.openapi_extras.get(
             "create_vector_index", {}

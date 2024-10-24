@@ -499,6 +499,83 @@ def hatchet_ingestion_factory(
                 )
 
     @orchestration_provider.workflow(
+        name="update-chunk",
+        timeout="60m",
+    )
+    class HatchetUpdateChunkWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="60m")
+        async def update_chunk(self, context: Context) -> dict:
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_update_chunk_input(
+                    input_data
+                )
+
+                document_uuid = (
+                    parsed_data["document_id"]
+                    if isinstance(parsed_data["document_id"], str)
+                    else parsed_data["document_id"]
+                )
+                extraction_uuid = (
+                    parsed_data["extraction_id"]
+                    if isinstance(parsed_data["extraction_id"], str)
+                    else parsed_data["extraction_id"]
+                )
+
+                document_info = (
+                    await self.ingestion_service.update_chunk_ingress(
+                        **{
+                            **parsed_data,
+                            "document_id": document_uuid,
+                            "extraction_id": extraction_uuid,
+                        }
+                    )
+                )
+
+                extraction = DocumentExtraction(
+                    id=extraction_uuid,
+                    document_id=document_uuid,
+                    collection_ids=parsed_data.get("collection_ids", []),
+                    user_id=document_info.user_id,
+                    data=parsed_data["text"],
+                    metadata=parsed_data["metadata"],
+                ).to_dict()
+
+                embedding_generator = (
+                    await self.ingestion_service.embed_document([extraction])
+                )
+                embeddings = [
+                    embedding.to_dict()
+                    async for embedding in embedding_generator
+                ]
+
+                storage_generator = (
+                    await self.ingestion_service.store_embeddings(embeddings)
+                )
+                async for _ in storage_generator:
+                    pass
+
+                return {
+                    "message": "Chunk update completed successfully.",
+                    "task_id": context.workflow_run_id(),  # or None if not applicable
+                    "document_ids": [str(document_uuid)],
+                }
+
+            except Exception as e:
+                raise R2RException(
+                    status_code=500,
+                    message=f"Error during chunk update: {str(e)}",
+                )
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            # Handle failure case if necessary
+            pass
+
+    @orchestration_provider.workflow(
         name="create-vector-index", timeout="360m"
     )
     class HatchetCreateVectorIndexWorkflow:
@@ -545,6 +622,7 @@ def hatchet_ingestion_factory(
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
+    update_chunks_workflow = HatchetUpdateChunkWorkflow(service)
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
     delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 
@@ -552,6 +630,7 @@ def hatchet_ingestion_factory(
         "ingest_files": ingest_files_workflow,
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
+        "update_chunk": update_chunks_workflow,
         "create_vector_index": create_vector_index_workflow,
         "delete_vector_index": delete_vector_index_workflow,
     }

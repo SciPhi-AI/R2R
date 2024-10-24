@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from uuid import UUID
 
 from litellm import AuthenticationError
 
@@ -255,6 +256,58 @@ def simple_ingestion_factory(service: IngestionService):
                 message=f"Error during chunk ingestion: {str(e)}",
             )
 
+    async def update_chunk(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = IngestionServiceAdapter.parse_update_chunk_input(
+                input_data
+            )
+
+            document_uuid = (
+                UUID(parsed_data["document_id"])
+                if isinstance(parsed_data["document_id"], str)
+                else parsed_data["document_id"]
+            )
+            extraction_uuid = (
+                UUID(parsed_data["extraction_id"])
+                if isinstance(parsed_data["extraction_id"], str)
+                else parsed_data["extraction_id"]
+            )
+
+            document_info = await service.update_chunk_ingress(
+                **{
+                    **parsed_data,
+                    "document_id": document_uuid,
+                    "extraction_id": extraction_uuid,
+                }
+            )
+
+            extraction = DocumentExtraction(
+                id=extraction_uuid,
+                document_id=document_uuid,
+                collection_ids=parsed_data.get("collection_ids", []),
+                user_id=document_info.user_id,
+                data=parsed_data["text"],
+                metadata=parsed_data["metadata"],
+            ).model_dump()
+
+            embedding_generator = await service.embed_document([extraction])
+            embeddings = [
+                embedding.model_dump()
+                async for embedding in embedding_generator
+            ]
+
+            storage_generator = await service.store_embeddings(embeddings)
+            async for _ in storage_generator:
+                pass
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during chunk update: {str(e)}",
+            )
+
     async def create_vector_index(input_data):
 
         try:
@@ -298,6 +351,7 @@ def simple_ingestion_factory(service: IngestionService):
         "ingest-files": ingest_files,
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
+        "update-chunk": update_chunk,
         "create-vector-index": create_vector_index,
         "delete-vector-index": delete_vector_index,
     }

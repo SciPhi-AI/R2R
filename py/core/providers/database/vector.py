@@ -479,6 +479,7 @@ class PostgresVectorHandler(VectorHandler):
         SELECT extraction_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE document_id = $1
+        ORDER BY (metadata->>'chunk_order')::integer
         OFFSET $2
         {limit_clause};
         """
