@@ -5,7 +5,7 @@ from typing import Any, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
-from asyncpg.exceptions import UndefinedTableError, PostgresError
+from asyncpg.exceptions import PostgresError, UndefinedTableError
 
 from core.base import (
     CommunityReport,
@@ -16,8 +16,8 @@ from core.base import (
     KGExtraction,
     KGExtractionStatus,
     KGProvider,
-    Triple,
     R2RException,
+    Triple,
 )
 from shared.abstractions import (
     KGCreationSettings,
@@ -485,7 +485,6 @@ class PostgresKGProvider(KGProvider):
 
         collection_ids_dict = filters.get("collection_ids", {})
         filter_query = ""
-        filter_ids = []
         if collection_ids_dict:
             filter_query = "WHERE collection_id = ANY($3)"
             filter_ids = collection_ids_dict["$overlap"]
@@ -495,10 +494,8 @@ class PostgresKGProvider(KGProvider):
                 or table_name == "collection_entity"
             ):
                 logger.info(f"Searching in collection ids: {filter_ids}")
-            elif (
-                search_type == "__Entity__"
-                or search_type == "__Relationship__"
-            ):
+
+            elif search_type in ["__Entity__", "__Relationship__"]:
                 filter_query = "WHERE document_id = ANY($3)"
                 # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
                 query = f"""
@@ -514,7 +511,7 @@ class PostgresKGProvider(KGProvider):
             SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
 
-        if filter_query != "" and filter_ids:
+        if filter_query != "":
             results = await self.fetch_query(
                 QUERY, (str(query_embedding), limit, filter_ids)
             )
