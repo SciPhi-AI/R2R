@@ -64,7 +64,7 @@ excluded_parsers = ["mp4"]
     backward_chunks = 3
     semantic_neighbors = 10
     semantic_similarity_threshold = 0.7
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
   [ingestion.extra_parsers]
     pdf = "zerox"
