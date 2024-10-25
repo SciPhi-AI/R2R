@@ -223,7 +223,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         try:
             results = await self.connection_manager.fetch_query(query)
             for row in results:
-                logger.info(f"Loading saved prompt: {row}")
+                logger.info(f"Loading saved prompt: {row['name']}")
 
                 # Ensure input_types is a dictionary
                 input_types = row["input_types"]
