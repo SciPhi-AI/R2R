@@ -65,14 +65,8 @@ class BaseRouter:
                         return results
                     return {"results": results, **outer_kwargs}
 
-                except R2RException as re:
-                    raise HTTPException(
-                        status_code=re.status_code,
-                        detail={
-                            "message": re.message,
-                            "error_type": type(re).__name__,
-                        },
-                    )
+                except R2RException:
+                    raise
 
                 except Exception as e:
 
