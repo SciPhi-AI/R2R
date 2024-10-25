@@ -660,158 +660,674 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         return result
 
 
-# class SqlitePersistentLoggingProvider:
-#     _instance = None
-#     _is_configured = False
-#     _config: Optional[PersistentLoggingConfig] = None
+class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
+    def __init__(self, config: PersistentLoggingConfig):
+        self.log_table = config.log_table
+        self.log_info_table = config.log_info_table
+        self.project_name = os.getenv("R2R_PROJECT_NAME", "r2r_default")
+        
+        # PostgreSQL connection settings
+        self.db_host = os.getenv("R2R_POSTGRES_HOST", "localhost")
+        self.db_port = os.getenv("R2R_POSTGRES_PORT", "5432")
+        self.db_name = os.getenv("R2R_POSTGRES_DB")
+        self.db_user = os.getenv("R2R_POSTGRES_USER")
+        self.db_password = os.getenv("R2R_POSTGRES_PASSWORD")
+        
+        if not all([self.db_name, self.db_user, self.db_password]):
+            raise ValueError(
+                "Please set all required PostgreSQL environment variables: "
+                "POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD"
+            )
+        
+        self.conn = None
+        try:
+            import asyncpg
+            self.asyncpg = asyncpg
+        except ImportError:
+            raise ImportError(
+                "Please install asyncpg to use the PostgresPersistentLoggingProvider."
+            )
 
-#     PERSISTENT_PROVIDERS = {
-#         "r2r": SqlitePersistentLoggingProvider,
-#         # TODO - Mark this as deprecated
-#         "local": SqlitePersistentLoggingProvider,
-#     }
+    async def initialize(self):
+        self.conn = await self.asyncpg.connect(
+            host=self.db_host,
+            port=self.db_port,
+            database=self.db_name,
+            user=self.db_user,
+            password=self.db_password
+        )
 
-#     @classmethod
-#     def get_persistent_logger(cls):
-#         return cls.PERSISTENT_PROVIDERS[cls._config.provider](cls._config)
+        # Create schema if it doesn't exist
+        await self.conn.execute(f"CREATE SCHEMA IF NOT EXISTS {self.project_name}")
 
-#     @classmethod
-#     def configure(cls, logging_config: PersistentLoggingConfig):
-#         if logging_config.provider == "local":
-#             logger.warning(
-#                 "Local logging provider is deprecated. Please use 'r2r' instead."
-#             )
-#         if not cls._is_configured:
-#             cls._config = logging_config
-#             cls._is_configured = True
-#         else:
-#             raise Exception("SqlitePersistentLoggingProvider is already configured.")
+        # Create log tables
+        await self.conn.execute(f"""
+            CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_table} (
+                timestamp TIMESTAMP WITH TIME ZONE,
+                run_id UUID,
+                key TEXT,
+                value TEXT
+            )
+        """)
 
-#     @classmethod
-#     async def log(
-#         cls,
-#         run_id: UUID,
-#         key: str,
-#         value: str,
-#     ):
-#         try:
-#             async with cls.get_persistent_logger() as provider:
-#                 await provider.log(run_id, key, value)
-#         except Exception as e:
-#             logger.error(f"Error logging data {(run_id, key, value)}: {e}")
+        await self.conn.execute(f"""
+            CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_info_table} (
+                timestamp TIMESTAMP WITH TIME ZONE,
+                run_id UUID UNIQUE,
+                run_type TEXT,
+                user_id UUID
+            )
+        """)
 
-#     @classmethod
-#     async def info_log(
-#         cls,
-#         run_id: UUID,
-#         run_type: RunType,
-#         user_id: UUID,
-#     ):
-#         try:
-#             async with cls.get_persistent_logger() as provider:
-#                 await provider.info_log(run_id, run_type, user_id)
-#         except Exception as e:
-#             logger.error(
-#                 f"Error logging info data {(run_id, run_type, user_id)}: {e}"
-#             )
+        # Create conversation-related tables
+        await self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id UUID PRIMARY KEY,
+                created_at TIMESTAMP WITH TIME ZONE
+            );
 
-#     @classmethod
-#     async def get_info_logs(
-#         cls,
-#         offset: int = 0,
-#         limit: int = 100,
-#         run_type_filter: Optional[RunType] = None,
-#         user_ids: Optional[list[UUID]] = None,
-#     ) -> list[RunInfoLog]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_info_logs(
-#                 offset=offset,
-#                 limit=limit,
-#                 run_type_filter=run_type_filter,
-#                 user_ids=user_ids,
-#             )
+            CREATE TABLE IF NOT EXISTS messages (
+                id UUID PRIMARY KEY,
+                conversation_id UUID REFERENCES conversations(id),
+                parent_id UUID REFERENCES messages(id),
+                content JSONB,
+                created_at TIMESTAMP WITH TIME ZONE,
+                metadata JSONB
+            );
 
-#     @classmethod
-#     async def get_logs(
-#         cls,
-#         run_ids: list[UUID],
-#         limit_per_run: int = 10,
-#     ) -> list:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_logs(run_ids, limit_per_run)
+            CREATE TABLE IF NOT EXISTS branches (
+                id UUID PRIMARY KEY,
+                conversation_id UUID REFERENCES conversations(id),
+                branch_point_id UUID REFERENCES messages(id),
+                created_at TIMESTAMP WITH TIME ZONE
+            );
 
-#     @classmethod
-#     async def create_conversation(cls) -> str:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.create_conversation()
+            CREATE TABLE IF NOT EXISTS message_branches (
+                message_id UUID REFERENCES messages(id),
+                branch_id UUID REFERENCES branches(id),
+                PRIMARY KEY (message_id, branch_id)
+            );
+        """)
 
-#     @classmethod
-#     async def get_conversations_overview(
-#         cls,
-#         conversation_ids: Optional[list[UUID]] = None,
-#         offset: int = 0,
-#         limit: int = 100,
-#     ) -> list[dict]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_conversations_overview(
-#                 conversation_ids=conversation_ids,
-#                 offset=offset,
-#                 limit=limit,
-#             )
+    async def __aenter__(self):
+        if self.conn is None:
+            await self.initialize()
+        return self
 
-#     @classmethod
-#     async def add_message(
-#         cls,
-#         conversation_id: str,
-#         content: Message,
-#         parent_id: Optional[str] = None,
-#         metadata: Optional[dict] = None,
-#     ) -> str:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.add_message(
-#                 conversation_id, content, parent_id, metadata
-#             )
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
-#     @classmethod
-#     async def edit_message(
-#         cls, message_id: str, new_content: str
-#     ) -> Tuple[str, str]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.edit_message(message_id, new_content)
+    async def close(self):
+        if self.conn:
+            await self.conn.close()
+            self.conn = None
 
-#     @classmethod
-#     async def get_conversation(
-#         cls, conversation_id: str, branch_id: Optional[str] = None
-#     ) -> list[dict]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_conversation(conversation_id, branch_id)
+    async def log(
+        self,
+        run_id: UUID,
+        key: str,
+        value: str,
+    ):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
 
-#     @classmethod
-#     async def get_branches_overview(cls, conversation_id: str) -> list[dict]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_branches_overview(conversation_id)
+        await self.conn.execute(
+            f"""
+            INSERT INTO {self.project_name}.{self.log_table} 
+            (timestamp, run_id, key, value)
+            VALUES (CURRENT_TIMESTAMP, $1, $2, $3)
+            """,
+            run_id, key, value
+        )
 
-#     @classmethod
-#     async def get_next_branch(cls, current_branch_id: str) -> Optional[str]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_next_branch(current_branch_id)
+    async def info_log(
+        self,
+        run_id: UUID,
+        run_type: RunType,
+        user_id: UUID,
+    ):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
 
-#     @classmethod
-#     async def get_prev_branch(cls, current_branch_id: str) -> Optional[str]:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.get_prev_branch(current_branch_id)
+        await self.conn.execute(
+            f"""
+            INSERT INTO {self.project_name}.{self.log_info_table} 
+            (timestamp, run_id, run_type, user_id)
+            VALUES (CURRENT_TIMESTAMP, $1, $2, $3)
+            ON CONFLICT (run_id) DO UPDATE SET
+                timestamp = CURRENT_TIMESTAMP,
+                run_type = EXCLUDED.run_type,
+                user_id = EXCLUDED.user_id
+            """,
+            run_id, run_type, user_id
+        )
 
-#     @classmethod
-#     async def branch_at_message(cls, message_id: str) -> str:
-#         async with cls.get_persistent_logger() as provider:
-#             return await provider.branch_at_message(message_id)
+    async def get_info_logs(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional[RunType] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
 
-#     @classmethod
-#     async def delete_conversation(cls, conversation_id: str):
-#         async with cls.get_persistent_logger() as provider:
-#             await provider.delete_conversation(conversation_id)
+        query = f"""
+            SELECT run_id, run_type, timestamp, user_id
+            FROM {self.project_name}.{self.log_info_table}
+            WHERE 1=1
+        """
+        params = []
+        if run_type_filter:
+            query += " AND run_type = $1"
+            params.append(run_type_filter)
+        if user_ids:
+            query += f" AND user_id = ANY(${len(params) + 1})"
+            params.append(user_ids)
+        
+        query += " ORDER BY timestamp DESC LIMIT $" + str(len(params) + 1)
+        query += " OFFSET $" + str(len(params) + 2)
+        params.extend([limit, offset])
 
-#     @classmethod
-#     async def close(cls):
-#         async with cls.get_persistent_logger() as provider:
-#             await provider.close()
+        rows = await self.conn.fetch(query, *params)
+        return [
+            RunInfoLog(
+                run_id=row['run_id'],
+                run_type=row['run_type'],
+                timestamp=row['timestamp'],
+                user_id=row['user_id']
+            )
+            for row in rows
+        ]
+
+    async def create_conversation(self) -> str:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        conversation_id = uuid.uuid4()
+        await self.conn.execute(
+            """
+            INSERT INTO conversations (id, created_at)
+            VALUES ($1, CURRENT_TIMESTAMP)
+            """,
+            conversation_id
+        )
+        return str(conversation_id)
+
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> dict[str, Union[list[dict], int]]:
+        query = """
+            WITH conversation_overview AS (
+                SELECT c.id, c.created_at
+                FROM conversations c
+                {where_clause}
+            ),
+            counted_overview AS (
+                SELECT *, COUNT(*) OVER() AS total_entries
+                FROM conversation_overview
+            )
+            SELECT * FROM counted_overview
+            ORDER BY created_at DESC
+            LIMIT $1 OFFSET $2
+        """
+
+        where_clause = "WHERE c.id = ANY($3)" if conversation_ids else ""
+        query = query.format(where_clause=where_clause)
+
+        params = [limit if limit != -1 else None, offset]
+        if conversation_ids:
+            params.append(conversation_ids)
+
+        rows = await self.conn.fetch(query, *params)
+        if not rows:
+            return {"results": [], "total_entries": 0}
+
+        conversations = [
+            {
+                "conversation_id": str(row['id']),
+                "created_at": row['created_at'].timestamp()
+            }
+            for row in rows
+        ]
+
+        total_entries = rows[0]['total_entries'] if rows else 0
+        return {"results": conversations, "total_entries": total_entries}
+
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: Message,
+        parent_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> str:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        message_id = uuid.uuid4()
+        async with self.conn.transaction():
+            # Insert message
+            await self.conn.execute(
+                """
+                INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
+                """,
+                message_id,
+                UUID(conversation_id),
+                UUID(parent_id) if parent_id else None,
+                json.loads(content.json()),
+                metadata or {}
+            )
+
+            if parent_id:
+                # Copy branch associations from parent
+                await self.conn.execute(
+                    """
+                    INSERT INTO message_branches (message_id, branch_id)
+                    SELECT $1, branch_id FROM message_branches WHERE message_id = $2
+                    """,
+                    message_id, UUID(parent_id)
+                )
+            else:
+                # Get or create default branch
+                branch_row = await self.conn.fetchrow(
+                    """
+                    SELECT id FROM branches
+                    WHERE conversation_id = $1
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    UUID(conversation_id)
+                )
+                
+                branch_id = branch_row['id'] if branch_row else uuid.uuid4()
+                if not branch_row:
+                    await self.conn.execute(
+                        """
+                        INSERT INTO branches (id, conversation_id, branch_point_id)
+                        VALUES ($1, $2, NULL)
+                        """,
+                        branch_id, UUID(conversation_id)
+                    )
+                
+                await self.conn.execute(
+                    """
+                    INSERT INTO message_branches (message_id, branch_id)
+                    VALUES ($1, $2)
+                    """,
+                    message_id, branch_id
+                )
+
+        return str(message_id)
+
+    async def edit_message(
+        self, message_id: str, new_content: str
+    ) -> Tuple[str, str]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        async with self.conn.transaction():
+            # Get original message details
+            row = await self.conn.fetchrow(
+                """
+                SELECT conversation_id, parent_id, content
+                FROM messages WHERE id = $1
+                """,
+                UUID(message_id)
+            )
+            if not row:
+                raise ValueError(f"Message {message_id} not found")
+
+            conversation_id = row['conversation_id']
+            parent_id = row['parent_id']
+            old_message = Message.parse_raw(json.dumps(row['content']))
+
+            # Create edited message
+            edited_message = Message(
+                role=old_message.role,
+                content=new_content,
+                name=old_message.name,
+                function_call=old_message.function_call,
+                tool_calls=old_message.tool_calls,
+            )
+
+            # Create new branch
+            new_branch_id = uuid.uuid4()
+            new_message_id = uuid.uuid4()
+
+            await self.conn.execute(
+                """
+                INSERT INTO branches (id, conversation_id, branch_point_id, created_at)
+                VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+                """,
+                new_branch_id, conversation_id, UUID(message_id)
+            )
+
+            # Add edited message
+            await self.conn.execute(
+                """
+                INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
+                """,
+                new_message_id,
+                conversation_id,
+                parent_id,
+                json.loads(edited_message.json()),
+                {"edited": True}
+            )
+
+            # Link message to new branch
+            await self.conn.execute(
+                """
+                INSERT INTO message_branches (message_id, branch_id)
+                VALUES ($1, $2)
+                """,
+                new_message_id, new_branch_id
+            )
+
+            # Link ancestors to new branch
+            await self.conn.execute(
+                """
+                WITH RECURSIVE ancestors AS (
+                    SELECT parent_id as id
+                    FROM messages
+                    WHERE id = $1
+                    UNION ALL
+                    SELECT m.parent_id
+                    FROM messages m
+                    JOIN ancestors a ON m.id = a.id
+                    WHERE m.parent_id IS NOT NULL
+                )
+                INSERT INTO message_branches (message_id, branch_id)
+                SELECT id, $2
+                FROM ancestors
+                WHERE id IS NOT NULL
+                ON CONFLICT DO NOTHING
+                """,
+                UUID(message_id), new_branch_id
+            )
+
+            # Update descendants' parent
+            await self.conn.execute(
+                """
+                WITH RECURSIVE descendants AS (
+                    SELECT id
+                    FROM messages
+                    WHERE parent_id = $1
+                    UNION ALL
+                    SELECT m.id
+                    FROM messages m
+                    JOIN descendants d ON m.parent_id = d.id
+                )
+                UPDATE messages
+                SET parent_id = $2
+                WHERE id IN (SELECT id FROM descendants)
+                """,
+                UUID(message_id), new_message_id
+            )
+
+        return str(new_message_id), str(new_branch_id)
+
+    async def get_conversation(
+        self,
+        conversation_id: str,
+        branch_id: Optional[str] = None
+    ) -> list[tuple[str, Message]]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        if branch_id is None:
+            row = await self.conn.fetchrow(
+                """
+                SELECT id FROM branches
+                WHERE conversation_id = $1
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                UUID(conversation_id)
+            )
+            branch_id = str(row['id']) if row else None
+
+        if branch_id is None:
+            return []
+
+        rows = await self.conn.fetch(
+            """
+            WITH RECURSIVE branch_messages AS (
+                SELECT m.id, m.content, m.parent_id, 0 as depth, m.created_at
+                FROM messages m
+                JOIN message_branches mb ON m.id = mb.message_id
+                WHERE mb.branch_id = $1 AND m.parent_id IS NULL
+                UNION ALL
+                SELECT m.id, m.content, m.parent_id, bm.depth + 1, m.created_at
+                FROM messages m
+                JOIN message_branches mb ON m.id = mb.message_id
+                JOIN branch_messages bm ON m.parent_id = bm.id
+                WHERE mb.branch_id = $1
+            )
+            SELECT id, content
+            FROM branch_messages
+ORDER BY created_at ASC
+            """,
+            UUID(branch_id)
+        )
+        return [(str(row['id']), Message.parse_raw(json.dumps(row['content']))) for row in rows]
+
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        rows = await self.conn.fetch(
+            """
+            SELECT b.id, b.branch_point_id, m.content, b.created_at
+            FROM branches b
+            LEFT JOIN messages m ON b.branch_point_id = m.id
+            WHERE b.conversation_id = $1
+            ORDER BY b.created_at
+            """,
+            UUID(conversation_id)
+        )
+        return [
+            {
+                "branch_id": str(row['id']),
+                "branch_point_id": str(row['branch_point_id']) if row['branch_point_id'] else None,
+                "content": row['content'],
+                "created_at": row['created_at'].timestamp()
+            }
+            for row in rows
+        ]
+
+    async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        row = await self.conn.fetchrow(
+            """
+            SELECT id FROM branches
+            WHERE conversation_id = (
+                SELECT conversation_id 
+                FROM branches 
+                WHERE id = $1
+            )
+            AND created_at > (
+                SELECT created_at 
+                FROM branches 
+                WHERE id = $1
+            )
+            ORDER BY created_at
+            LIMIT 1
+            """,
+            UUID(current_branch_id)
+        )
+        return str(row['id']) if row else None
+
+    async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        row = await self.conn.fetchrow(
+            """
+            SELECT id FROM branches
+            WHERE conversation_id = (
+                SELECT conversation_id 
+                FROM branches 
+                WHERE id = $1
+            )
+            AND created_at < (
+                SELECT created_at 
+                FROM branches 
+                WHERE id = $1
+            )
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            UUID(current_branch_id)
+        )
+        return str(row['id']) if row else None
+
+    async def branch_at_message(self, message_id: str) -> str:
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        async with self.conn.transaction():
+            # Get conversation_id
+            row = await self.conn.fetchrow(
+                "SELECT conversation_id FROM messages WHERE id = $1",
+                UUID(message_id)
+            )
+            if not row:
+                raise ValueError(f"Message {message_id} not found")
+            conversation_id = row['conversation_id']
+
+            # Check if message is already a branch point
+            row = await self.conn.fetchrow(
+                "SELECT id FROM branches WHERE branch_point_id = $1",
+                UUID(message_id)
+            )
+            if row:
+                return str(row['id'])
+
+            # Create new branch
+            new_branch_id = uuid.uuid4()
+            await self.conn.execute(
+                """
+                INSERT INTO branches (id, conversation_id, branch_point_id)
+                VALUES ($1, $2, $3)
+                """,
+                new_branch_id, conversation_id, UUID(message_id)
+            )
+
+            # Link ancestors to new branch
+            await self.conn.execute(
+                """
+                WITH RECURSIVE ancestors AS (
+                    SELECT id FROM messages WHERE id = $1
+                    UNION ALL
+                    SELECT m.parent_id
+                    FROM messages m
+                    JOIN ancestors a ON m.id = a.id
+                    WHERE m.parent_id IS NOT NULL
+                )
+                INSERT INTO message_branches (message_id, branch_id)
+                SELECT id, $2
+                FROM ancestors
+                WHERE id IS NOT NULL
+                ON CONFLICT DO NOTHING
+                """,
+                UUID(message_id), new_branch_id
+            )
+
+            return str(new_branch_id)
+
+    async def delete_conversation(self, conversation_id: str):
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        async with self.conn.transaction():
+            # Delete in correct order to respect foreign key constraints
+            await self.conn.execute(
+                "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = $1)",
+                UUID(conversation_id)
+            )
+            await self.conn.execute(
+                "DELETE FROM branches WHERE conversation_id = $1",
+                UUID(conversation_id)
+            )
+            await self.conn.execute(
+                "DELETE FROM messages WHERE conversation_id = $1",
+                UUID(conversation_id)
+            )
+            await self.conn.execute(
+                "DELETE FROM conversations WHERE id = $1",
+                UUID(conversation_id)
+            )
+
+    async def get_logs(
+        self,
+        run_ids: list[UUID],
+        limit_per_run: int = 10,
+    ) -> list:
+        if not run_ids:
+            raise ValueError("No run ids provided.")
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        rows = await self.conn.fetch(
+            f"""
+            WITH ranked_logs AS (
+                SELECT 
+                    run_id,
+                    key,
+                    value,
+                    timestamp,
+                    ROW_NUMBER() OVER (PARTITION BY run_id ORDER BY timestamp DESC) as rn
+                FROM {self.project_name}.{self.log_table}
+                WHERE run_id = ANY($1)
+            )
+            SELECT run_id, key, value, timestamp
+            FROM ranked_logs
+            WHERE rn <= $2
+            ORDER BY timestamp DESC
+            """,
+            run_ids,
+            limit_per_run
+        )
+
+        return [
+            {
+                "run_id": row['run_id'],
+                "key": row['key'],
+                "value": row['value'],
+                "timestamp": row['timestamp']
+            }
+            for row in rows
+        ]

@@ -171,7 +171,7 @@ class DocumentInfo(R2RSerializable):
             "document_id": self.id,
             "collection_ids": self.collection_ids,
             "user_id": self.user_id,
-            "type": self.document_type,
+            "document_type": self.document_type,
             "metadata": json.dumps(self.metadata),
             "title": self.title or "N/A",
             "version": self.version,
