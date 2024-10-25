@@ -1,7 +1,7 @@
 from abc import ABC
 
 from core.base import RunManager
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig

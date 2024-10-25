@@ -6,8 +6,6 @@ from uuid import UUID
 
 import pytest
 
-from core.providers.orchestration import SimpleOrchestrationProvider
-from core.providers.ingestion import R2RIngestionConfig, R2RIngestionProvider
 from core import (
     AppConfig,
     AuthConfig,
@@ -23,11 +21,11 @@ from core import (
 from core.base import (
     DocumentInfo,
     DocumentType,
+    IngestionConfig,
     IngestionStatus,
     KGExtractionStatus,
     OrchestrationConfig,
     VectorQuantizationType,
-    IngestionConfig
 )
 from core.providers import (
     BCryptProvider,
@@ -36,6 +34,8 @@ from core.providers import (
     PostgresDBProvider,
     R2RAuthProvider,
 )
+from core.providers.ingestion import R2RIngestionConfig, R2RIngestionProvider
+from core.providers.orchestration import SimpleOrchestrationProvider
 
 
 # Vectors
@@ -246,11 +246,10 @@ def orchestration_provider(orchestration_config):
     return SimpleOrchestrationProvider(orchestration_config)
 
 
-
 @pytest.fixture
 def ingestion_config(app_config):
     return IngestionConfig(
-        app=app_config #  , chunk_enrichment_settings=enrichment_settings
+        app=app_config  #  , chunk_enrichment_settings=enrichment_settings
     )
 
 
