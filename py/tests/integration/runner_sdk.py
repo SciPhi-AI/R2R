@@ -1827,6 +1827,8 @@ def test_ingest_chunks():
         },
     )
 
+    time.sleep(10)
+
     ingest_chunks_response = client.document_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
     )
