@@ -1,23 +1,107 @@
 import json
 import os
-from datetime import datetime
-from typing import Optional, Union
-from core.base import Message
-from core.base.logging.base import RunType
-from core.base.logging.logger import (
-    LoggingConfig,
-    RunInfoLog,
-    RunLoggingProvider,
-    logger,
-)
-
-
-from typing import Tuple
 import uuid
+from datetime import datetime
+from typing import Optional, Tuple, Union
 from uuid import UUID
 
+from core.base import Message
+from core.base.logging.base import RunType
+from core.base.logging.logger import LoggingConfig, LoggingProvider, RunInfoLog
 
-class R2RSqlitePersistentLoggingProvider(RunLoggingProvider):
+
+class R2RPostgresPersistentLoggingProvider(LoggingProvider):
+    """Postgres implementation of the R2R logging provider."""
+
+    def __init__(self, config: LoggingConfig):
+        self.config = config
+        self.db_provider = None
+
+    async def __aenter__(self):
+        if self.db_provider is None:
+            # Initialize database provider with logging configuration
+            self.db_provider = PostgresDBProvider(self.config)
+            await self.db_provider.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.db_provider:
+            await self.db_provider.__aexit__(exc_type, exc_val, exc_tb)
+
+    async def close(self):
+        if self.db_provider:
+            await self.db_provider.close()
+            self.db_provider = None
+
+    async def log(
+        self,
+        run_id: UUID,
+        key: str,
+        value: str,
+    ):
+        """Log a message using the Postgres handler."""
+        if not self.db_provider:
+            raise ValueError("Database provider not initialized")
+        await self.db_provider.log_handler.log(run_id, key, value)
+
+    async def info_log(
+        self,
+        run_id: UUID,
+        run_type: RunType,
+        user_id: UUID,
+    ):
+        """Log run information using the Postgres handler."""
+        if not self.db_provider:
+            raise ValueError("Database provider not initialized")
+        await self.db_provider.log_handler.info_log(run_id, run_type, user_id)
+
+    async def get_info_logs(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional[RunType] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
+        """Retrieve info logs with filtering and pagination."""
+        if not self.db_provider:
+            raise ValueError("Database provider not initialized")
+        return await self.db_provider.log_handler.get_info_logs(
+            offset, limit, run_type_filter, user_ids
+        )
+
+    async def get_logs(
+        self,
+        run_ids: list[UUID],
+        limit_per_run: int = 10,
+    ) -> list:
+        """Retrieve logs for specific runs."""
+        if not self.db_provider:
+            raise ValueError("Database provider not initialized")
+        return await self.db_provider.log_handler.get_logs(
+            run_ids, limit_per_run
+        )
+
+    async def create_conversation(self) -> str:
+        """Create a new conversation."""
+        if not self.db_provider:
+            raise ValueError("Database provider not initialized")
+        return await self.db_provider.log_handler.create_conversation()
+
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> dict:
+        """Get overview of conversations."""
+        if not self.db_provider:
+            raise ValueError("Database provider not initialized")
+        return await self.db_provider.log_handler.get_conversations_overview(
+            conversation_ids, offset, limit
+        )
+
+
+class R2RSqlitePersistentLoggingProvider(LoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table

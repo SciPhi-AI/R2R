@@ -6,7 +6,6 @@ from typing import Any, Optional
 
 from core.base import (
     DatabaseConfig,
-    DatabaseConnectionManager,
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,
@@ -17,6 +16,7 @@ from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
 from core.providers.database.file import PostgresFileHandler
 from core.providers.database.kg import PostgresKGHandler
+from core.providers.database.logger import PostgresLogHandler
 from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
@@ -65,6 +65,7 @@ class PostgresDBProvider(DatabaseProvider):
     kg_handler: PostgresKGHandler
     prompt_handler: PostgresPromptHandler
     file_handler: PostgresFileHandler
+    log_handler: PostgresLogHandler
 
     def __init__(
         self,
@@ -165,6 +166,9 @@ class PostgresDBProvider(DatabaseProvider):
         self.file_handler = PostgresFileHandler(
             self.project_name, self.connection_manager
         )
+        self.log_handler = PostgresLogHandler(
+            self.project_name, self.connection_manager
+        )
 
     async def initialize(self):
         logger.info("Initializing `PostgresDBProvider`.")
@@ -192,6 +196,7 @@ class PostgresDBProvider(DatabaseProvider):
         await self.vector_handler.create_tables()
         await self.prompt_handler.create_tables()
         await self.file_handler.create_tables()
+        await self.log_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

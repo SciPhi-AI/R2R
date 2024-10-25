@@ -2,20 +2,25 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
-from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from core.base import (
     CommunityReport,
-    Entity,
-    KGExtraction,
-    Triple,
-    VectorEntry,
-)
-from core.base.abstractions import (
     DocumentInfo,
+    Entity,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -23,9 +28,10 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    KGExtraction,
+    Triple,
     UserStats,
     VectorEntry,
-    VectorQuantizationType,
     VectorSearchResult,
     VectorSearchSettings,
     VectorTableName,
@@ -40,15 +46,6 @@ from core.base.api.models import (
 )
 from core.base.utils import _decorate_vector_type
 
-from .base import Provider, ProviderConfig
-
-"""Base classes for knowledge graph providers."""
-
-import logging
-from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple
-from uuid import UUID
-
 from ..abstractions import (
     CommunityReport,
     Entity,
@@ -60,9 +57,11 @@ from ..abstractions import (
     RelationshipType,
     Triple,
 )
-from .base import ProviderConfig
+from .base import Provider, ProviderConfig
 
-logger = logging.getLogger()
+if TYPE_CHECKING:
+    from ..abstractions import Message
+    from ..logging.logger import RunInfoLog, RunType
 
 
 def escape_braces(s: str) -> str:
@@ -944,6 +943,120 @@ class FileHandler(Handler):
         pass
 
 
+class LogHandler(Handler):
+    """Abstract base class for logging operations."""
+
+    @abstractmethod
+    async def create_tables(self) -> None:
+        """Create required logging tables."""
+        pass
+
+    @abstractmethod
+    async def log(
+        self,
+        run_id: UUID,
+        key: str,
+        value: str,
+    ) -> None:
+        """Log a message."""
+        pass
+
+    @abstractmethod
+    async def info_log(
+        self,
+        run_id: UUID,
+        run_type: "RunType",
+        user_id: UUID,
+    ) -> None:
+        """Log run information."""
+        pass
+
+    @abstractmethod
+    async def get_info_logs(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional["RunType"] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list["RunInfoLog"]:
+        """Retrieve info logs with filtering and pagination."""
+        pass
+
+    @abstractmethod
+    async def get_logs(
+        self,
+        run_ids: list[UUID],
+        limit_per_run: int = 10,
+    ) -> list:
+        """Retrieve logs for specific runs."""
+        pass
+
+    @abstractmethod
+    async def create_conversation(self) -> str:
+        """Create a new conversation."""
+        pass
+
+    @abstractmethod
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> dict[str, Union[list[dict], int]]:
+        """Get overview of conversations."""
+        pass
+
+    @abstractmethod
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: "Message",
+        parent_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> str:
+        """Add a message to a conversation."""
+        pass
+
+    @abstractmethod
+    async def edit_message(
+        self, message_id: str, new_content: str
+    ) -> Tuple[str, str]:
+        """Edit an existing message."""
+        pass
+
+    @abstractmethod
+    async def get_conversation(
+        self, conversation_id: str, branch_id: Optional[str] = None
+    ) -> list[dict]:
+        """Retrieve a conversation."""
+        pass
+
+    @abstractmethod
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+        """Get overview of branches in a conversation."""
+        pass
+
+    @abstractmethod
+    async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the next branch ID."""
+        pass
+
+    @abstractmethod
+    async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the previous branch ID."""
+        pass
+
+    @abstractmethod
+    async def branch_at_message(self, message_id: str) -> str:
+        """Create a new branch at a message."""
+        pass
+
+    @abstractmethod
+    async def delete_conversation(self, conversation_id: str) -> None:
+        """Delete a conversation."""
+        pass
+
+
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
@@ -954,6 +1067,7 @@ class DatabaseProvider(Provider):
     kg_handler: KGHandler
     prompt_handler: PromptHandler
     file_handler: FileHandler
+    log_handler: LogHandler
     config: DatabaseConfig
     project_name: str
 
@@ -1676,3 +1790,102 @@ class DatabaseProvider(Provider):
         return await self.file_handler.get_files_overview(
             filter_document_ids, filter_file_names, offset, limit
         )
+
+    async def log(
+        self,
+        run_id: UUID,
+        key: str,
+        value: str,
+    ):
+        """Log a message using the log handler."""
+        return await self.log_handler.log(run_id, key, value)
+
+    async def info_log(
+        self,
+        run_id: UUID,
+        run_type: "RunType",
+        user_id: UUID,
+    ):
+        """Log run information using the log handler."""
+        return await self.log_handler.info_log(run_id, run_type, user_id)
+
+    async def get_info_logs(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional["RunType"] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list["RunInfoLog"]:
+        """Retrieve info logs with filtering and pagination."""
+        return await self.log_handler.get_info_logs(
+            offset, limit, run_type_filter, user_ids
+        )
+
+    async def get_logs(
+        self,
+        run_ids: list[UUID],
+        limit_per_run: int = 10,
+    ) -> list:
+        """Retrieve logs for specific runs."""
+        return await self.log_handler.get_logs(run_ids, limit_per_run)
+
+    async def create_conversation(self) -> str:
+        """Create a new conversation."""
+        return await self.log_handler.create_conversation()
+
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> dict:
+        """Get overview of conversations."""
+        return await self.log_handler.get_conversations_overview(
+            conversation_ids, offset, limit
+        )
+
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: "Message",
+        parent_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> str:
+        """Add a message to a conversation."""
+        return await self.log_handler.add_message(
+            conversation_id, content, parent_id, metadata
+        )
+
+    async def edit_message(
+        self, message_id: str, new_content: str
+    ) -> Tuple[str, str]:
+        """Edit an existing message."""
+        return await self.log_handler.edit_message(message_id, new_content)
+
+    async def get_conversation(
+        self, conversation_id: str, branch_id: Optional[str] = None
+    ) -> list[dict]:
+        """Retrieve a conversation."""
+        return await self.log_handler.get_conversation(
+            conversation_id, branch_id
+        )
+
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+        """Get overview of branches in a conversation."""
+        return await self.log_handler.get_branches_overview(conversation_id)
+
+    async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the next branch ID."""
+        return await self.log_handler.get_next_branch(current_branch_id)
+
+    async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the previous branch ID."""
+        return await self.log_handler.get_prev_branch(current_branch_id)
+
+    async def branch_at_message(self, message_id: str) -> str:
+        """Create a new branch at a message."""
+        return await self.log_handler.branch_at_message(message_id)
+
+    async def delete_conversation(self, conversation_id: str) -> None:
+        """Delete a conversation."""
+        return await self.log_handler.delete_conversation(conversation_id)

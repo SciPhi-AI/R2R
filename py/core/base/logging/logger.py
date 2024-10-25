@@ -9,8 +9,6 @@ from pydantic import BaseModel
 from ..providers.base import Provider, ProviderConfig
 from .base import RunType
 
-logger = logging.getLogger()
-
 
 class RunInfoLog(BaseModel):
     run_id: UUID
@@ -33,7 +31,7 @@ class LoggingConfig(ProviderConfig):
         return ["local", "postgres"]
 
 
-class RunLoggingProvider(Provider):
+class LoggingProvider(Provider):
     @abstractmethod
     async def close(self):
         pass

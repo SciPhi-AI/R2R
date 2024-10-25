@@ -1,4 +1,3 @@
-from ...providers.logging.r2r_logging import R2RLoggingProvider
 from .base import RunType
 from .log_processor import (
     AnalysisTypes,
@@ -7,7 +6,7 @@ from .log_processor import (
     LogFilterCriteria,
     LogProcessor,
 )
-from .logger import LoggingConfig
+from .logger import LoggingConfig, LoggingProvider, RunInfoLog
 from .run_manager import RunManager, manage_run
 
 __all__ = [
@@ -20,7 +19,8 @@ __all__ = [
     "LogProcessor",
     # Logging Providers
     "LoggingConfig",
-    "R2RLoggingProvider",
+    "RunInfoLog",
+    "LoggingProvider",
     # Run Manager
     "RunManager",
     "manage_run",

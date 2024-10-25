@@ -1,7 +1,5 @@
-from .litellm import LiteLLMCompletionProvider
-from .openai import OpenAICompletionProvider
+from .r2r_logging import R2RLoggingProvider
 
 __all__ = [
-    "LiteLLMCompletionProvider",
-    "OpenAICompletionProvider",
+    "R2RLoggingProvider",
 ]

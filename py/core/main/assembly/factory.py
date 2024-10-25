@@ -17,7 +17,6 @@ from core.base import (
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -35,6 +34,7 @@ from core.providers import (
     R2RAuthProvider,
     R2RIngestionConfig,
     R2RIngestionProvider,
+    R2RLoggingProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionConfig,
