@@ -12,10 +12,10 @@ from core.base import (
     Vector,
     VectorEntry,
     VectorType,
+    IngestionConfig
 )
 from core.main.abstractions import R2RProviders
 from core.main.services.ingestion_service import (
-    IngestionConfig,
     IngestionService,
 )
 from core.providers.ingestion import R2RIngestionConfig, R2RIngestionProvider
@@ -135,6 +135,7 @@ def r2r_providers(
     r2r_auth_provider,
     litellm_completion_provider,
     orchestration_provider,
+    local_logging_provider,
 ):
     return R2RProviders(
         ingestion=r2r_ingestion_provider,
@@ -143,6 +144,7 @@ def r2r_providers(
         auth=r2r_auth_provider,
         llm=litellm_completion_provider,
         orchestration=orchestration_provider,
+        logging=local_logging_provider
     )
 
 
