@@ -14,14 +14,14 @@ For a practical, step-by-step guide on implementing knowledge graphs in R2R, inc
 
 ### Knowledge Graph Configuration
 
-These are located in the `r2r.toml` file, under the `[kg]` section.
+These are located in the `r2r.toml` file, under the `[database]` section.
 
 ```toml
-[kg]
+[database]
 provider = "postgres"
 batch_size = 256
 
-  [kg.kg_creation_settings]
+  [database.kg_creation_settings]
     kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
     entity_types = ["Person", "Organization", "Location"] # if empty, all entities are extracted
     relation_types = ["works at", "founded by", "invested in"] # if empty, all relations are extracted
@@ -29,7 +29,7 @@ batch_size = 256
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for triplet extraction
 
-  [kg.kg_enrichment_settings]
+  [database.kg_enrichment_settings]
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536 # increase if you want more comprehensive summaries
     generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering

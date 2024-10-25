@@ -112,5 +112,5 @@ provider = "simple"
 [prompt]
 provider = "r2r"
 
-[kg]
+[database]
 test = "kg"
