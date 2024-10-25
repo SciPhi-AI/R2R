@@ -18,11 +18,12 @@ from core.base.api.models import (
 )
 from core.base.providers import OrchestrationProvider, Workflow
 from core.utils import generate_default_user_collection_id
-from shared.abstractions.graph import EntityLevel
+from shared.abstractions.graph import EntityLevel, Entity, Triple
 from shared.abstractions.kg import KGRunType
 from shared.utils.base_utils import update_settings_from_dict
 
 from ..services.kg_service import KgService
+from core.base.abstractions import CommunityReport
 from .base_router import BaseRouter
 
 logger = logging.getLogger()
@@ -463,3 +464,199 @@ class KGRouter(BaseRouter):
             )
 
             return {"message": "Graph deleted successfully."}
+
+
+        # add entities endpoint 
+        @self.router.post("/add_entities")
+        @self.base_endpoint
+        async def add_entities(
+            level: EntityLevel = Body(..., description="Level of entities to add."),
+            document_ids: Optional[list[UUID]] = Body(None, description="Document IDs to add entities to. All entities must belong to some document."),
+            collection_id: Optional[UUID] = Body(None, description="Collection ID to add entities to."),
+            entities: Optional[list[Entity]] = Body(None, description="Entities to add to the graph."),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(entities) > 1000:
+                raise ValueError("Cannot add more than 1000 entities at a time.")
+
+            # validating inputs here
+            if level == EntityLevel.DOCUMENT and not document_ids:
+                raise ValueError("document_ids must be provided if level is DOCUMENT")
+            if level == EntityLevel.COLLECTION and not collection_id:
+                raise ValueError("collection_id must be provided if level is COLLECTION")
+            if level == EntityLevel.CHUNK and not document_ids:
+                raise ValueError("document_ids must be provided if level is CHUNK")
+            
+            if not entities:
+                raise ValueError("entities must be provided")
+
+            # check if entity level is not chunk, then description embedding must be provided
+            if level != EntityLevel.CHUNK and not all(entity.description_embedding for entity in entities):
+                raise ValueError("description_embedding must be provided for all entities if level is not CHUNK. Please make sure that you construct embeddings with the same embedding model. Please reach out in our discord channel if you need this feature.")
+            
+            # check if entity level is chunk, then document_ids must be provided
+            if level == EntityLevel.CHUNK and not document_ids:
+                raise ValueError("document_ids must be provided if level is CHUNK")
+            
+            # check that ID is not provided for any entity
+            if any(entity.id for entity in entities):
+                raise ValueError("ID is not allowed to be provided for any entity. It is automatically generated when the entity is added to the graph.")
+
+            pass
+
+        # add triples endpoint
+        @self.router.post("/add_triples")
+        @self.base_endpoint
+        async def add_triples(
+            triples: list[Triple],
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(triples) > 1000:
+                raise ValueError("Cannot add more than 1000 triples at a time.")
+
+            # no checks for triples, as triples is just a single table. Input validation is done via fastapi.
+
+        # update_entities endpoint
+        @self.router.put("/update_entities")
+        @self.base_endpoint
+        async def update_entities(
+            level: EntityLevel = Body(..., description="Level of entities to update."),
+            document_ids: Optional[list[UUID]] = Body(None, description="Document IDs to update entities for. All entities must belong to some document."),
+            collection_id: Optional[UUID] = Body(None, description="Collection ID to update entities for."),
+            entities: list[Entity] = Body(..., description="Entities to update in the graph."),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(entities) > 1000:
+                raise ValueError("Cannot update more than 1000 entities at a time.")
+
+            # same validation as add_entities
+            # also need to validate that ID is provided for all entities
+            # also need to validate that the entity.id exists in the graph
+
+        # update_triples endpoint
+        @self.router.put("/update_triples")
+        @self.base_endpoint
+        async def update_triples(
+            triples: list[Triple],
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(triples) > 1000:
+                raise ValueError("Cannot update more than 1000 triples at a time.")
+
+            for triple in triples:
+                if not triple.id:
+                    raise ValueError("ID is required for all triples.")
+                
+
+            # check that ID is provided for all triples. We actually don't need to check if the ID exists in the graph, as we can just update the triples with the provided ID.
+            # no checks for triples, as triples is just a single table. Input validation is done via fastapi.
+
+        # delete_entities endpoint
+        @self.router.delete("/delete_entities")
+        @self.base_endpoint
+        async def delete_entities(
+            level: EntityLevel = Body(..., description="Level of entities to delete."),
+            document_ids: Optional[list[UUID]] = Body(None, description="Document IDs to delete entities for. All entities must belong to some document."),
+            collection_id: Optional[UUID] = Body(None, description="Collection ID to delete entities for."),
+            entity_ids: list[UUID] = Body(..., description="Entity IDs to delete from the graph."),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(entity_ids) > 1000:
+                raise ValueError("Cannot delete more than 1000 entities at a time.")
+
+            # same validation as add_entities
+            # also need to validate that the entity.id exists in the graph
+
+        # delete_triples endpoint
+        @self.router.delete("/delete_triples")
+        @self.base_endpoint
+        async def delete_triples(
+            triple_ids: list[int],
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(triple_ids) > 1000:
+                raise ValueError("Cannot delete more than 1000 triples at a time.")
+
+            # no checks for triples, as triples is just a single table. Input validation is done via fastapi.
+
+
+        @self.router.post("/add_communities")
+        @self.base_endpoint
+        async def add_communities():
+            raise NotImplementedError("There is no add communities endpoint because communities are created automatically when enriching the graph.")
+
+        # update_communities endpoint
+        @self.router.post("/update_communities")
+        @self.base_endpoint
+        async def update_communities(
+            communities: list[CommunityReport],
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            if len(communities) > 100:
+                raise ValueError("Cannot update more than 100 communities at a time.")
+
+            # make sure that embedding is provided for all communities
+            if not all(community.embedding for community in communities):
+                raise ValueError("Embedding is required for all communities.")
+
+            # need to validate that the community.id exists in the graph
+            for community in communities:
+                if not community.id:
+                    raise ValueError("ID is required for all communities.")
+
+        # delete_communities endpoint
+        @self.router.post("/delete_communities")
+        @self.base_endpoint
+        async def delete_community(
+            collection_id: UUID = Body(..., description="Collection ID to delete communities for."),
+            community_numbers: list[int] = Body(..., description="Community numbers to delete."),
+            level: int = Body(..., description="Level of communities to delete."),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """
+            Delete communities from the knowledge graph.
+            
+            This endpoint deletes specified communities from the knowledge graph for a given collection ID and level.
+            The communities are identified by their community numbers.
+            
+            The deletion process includes:
+            1. Validating the collection ID exists
+            2. Checking that the specified communities exist at the given level
+            3. Removing the communities and their associated data (reports, embeddings, etc.)
+            4. Cleaning up any orphaned relationships
+
+            Args:
+                collection_id: Collection ID to delete communities for.
+                community_numbers: Community numbers to delete.
+                level: Level of communities to delete.
+
+            Returns:
+                A message indicating that the communities were deleted successfully.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+
+            if len(community_numbers) > 100:
+                raise ValueError("Cannot delete more than 100 communities at a time.")
