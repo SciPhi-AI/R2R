@@ -151,11 +151,11 @@ provider = "None"
 Refer to the [`KGProvider`](documentation/deep-dive/providers/knowledge-graph) to learn more about how R2R supports knowledge graphs.
 
 ```toml
-[kg]
+[database]
 provider = "postgres"
 batch_size = 1
 
-[kg.kg_extraction_config]
+[database.kg_extraction_config]
 model = "gpt-4o"
 temperature = 0.1
 top_p = 1

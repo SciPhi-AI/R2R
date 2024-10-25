@@ -36,7 +36,7 @@ base_model = "amazon.titan-embed-text-v1"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
-[kg]
+[database]
 provider = "None"
 
 [logging]

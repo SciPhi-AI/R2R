@@ -49,12 +49,9 @@ class R2RConfig:
             "batch_size",
             "add_title_as_prefix",
         ],
+        # TODO - deprecated, remove
+        "kg": [],
         "ingestion": ["provider"],
-        "kg": [
-            "provider",
-            "batch_size",
-            "kg_enrichment_settings",
-        ],
         "logging": ["provider", "log_table"],
         "database": ["provider"],
         "agent": ["generation_config"],
@@ -114,6 +111,16 @@ class R2RConfig:
                     )
             setattr(self, section, default_config[section])
 
+        # TODO - deprecated, remove
+        try:
+            if self.kg.keys() != []:  # type: ignore
+                logger.warning(
+                    "The 'kg' section is deprecated. Please move your arguments to the 'database' section instead."
+                )
+                self.database.update(self.kg)  # type: ignore
+        except:
+            pass
+
         self.app = AppConfig.create(**self.app)  # type: ignore
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
         self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
@@ -124,6 +131,7 @@ class R2RConfig:
         self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
+
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()

@@ -10,25 +10,25 @@ R2R supports knowledge graph functionality to enhance document understanding and
 To configure the knowledge graph settings for your project, edit the `kg` section in your `r2r.toml` file:
 
 ```toml r2r.toml
-[kg]
+[database]
 provider = "postgres"
 batch_size = 256
 kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
 
-  [kg.kg_creation_settings]
+  [database.kg_creation_settings]
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     generation_config = { model = "openai/gpt-4o-mini" }
     max_knowledge_triples = 100 # max number of triples to extract for each document chunk
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
 
-  [kg.kg_enrichment_settings]
+  [database.kg_enrichment_settings]
     max_description_input_length = 65536 # increase if you want more comprehensive descriptions
     max_summary_input_length = 65536
     generation_config = { model = "openai/gpt-4o-mini" } # and other generation params below
     leiden_params = {}
 
-  [kg.kg_search_settings]
+  [database.kg_search_settings]
     generation_config = { model = "openai/gpt-4o-mini" }
 ```
 
