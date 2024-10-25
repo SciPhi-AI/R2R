@@ -95,7 +95,7 @@ class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
     collection_ids: list[UUID]
     user_id: UUID
-    type: DocumentType
+    document_type: DocumentType
     metadata: dict
 
     class Config:

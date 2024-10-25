@@ -28,7 +28,7 @@ class KGPromptTuningPipe(AsyncPipe):
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):

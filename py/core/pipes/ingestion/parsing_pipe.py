@@ -26,7 +26,7 @@ class ParsingPipe(AsyncPipe):
         database_provider: DatabaseProvider,
         ingestion_provider: IngestionProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):

@@ -211,6 +211,7 @@ class IngestionService(Service):
                         "document_type": document_info.document_type.value,
                         **document_info.metadata,
                     },
+                    document_type=document_info.document_type,
                 )
             ),
             state=None,

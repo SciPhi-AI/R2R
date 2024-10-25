@@ -35,7 +35,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         config: GeneratorPipe.PipeConfig,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):

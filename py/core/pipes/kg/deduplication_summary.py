@@ -33,7 +33,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
         ],
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
         super().__init__(

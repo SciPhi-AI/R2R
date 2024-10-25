@@ -25,8 +25,8 @@ class KGStoragePipe(AsyncPipe):
         self,
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
+        logging_provider: SqlitePersistentLoggingProvider,
         storage_batch_size: int = 1,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

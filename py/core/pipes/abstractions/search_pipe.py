@@ -21,7 +21,7 @@ class SearchPipe(AsyncPipe[VectorSearchResult]):
     def __init__(
         self,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):

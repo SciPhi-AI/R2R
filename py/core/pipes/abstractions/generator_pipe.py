@@ -19,7 +19,7 @@ class GeneratorPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):

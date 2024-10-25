@@ -669,7 +669,7 @@ class ManagementService(Service):
         conversation_id: str,
         branch_id: Optional[str] = None,
         auth_user=None,
-    ) -> list[dict]:
+    ) -> Tuple[str, list[Message]]:
         return await self.logging_connection.get_conversation(
             conversation_id, branch_id
         )
@@ -685,7 +685,7 @@ class ManagementService(Service):
         offset: int = 0,
         limit: int = 100,
         auth_user=None,
-    ) -> list[Dict]:
+    ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations_overview(
             conversation_ids=conversation_ids,
             offset=offset,

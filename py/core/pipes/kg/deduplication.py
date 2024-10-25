@@ -28,7 +28,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         embedding_provider: Union[
             LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
         ],
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
         super().__init__(

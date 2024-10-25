@@ -215,9 +215,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
 
         # TODO - Cleanup this approach to be less hardcoded
         # TODO - Remove code duplication between Unstructured & R2R
-        if document.type.value in parser_overrides:
+        if document.document_type.value in parser_overrides:
             logger.info(
-                f"Using parser_override for {document.type} with input value {parser_overrides[document.type.value]}"
+                f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
             )
             async for element in self.parse_fallback(
                 file_content,
@@ -226,19 +226,19 @@ class UnstructuredIngestionProvider(IngestionProvider):
             ):
                 elements.append(element)
 
-        elif document.type in self.R2R_FALLBACK_PARSERS.keys():
+        elif document.document_type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(
-                f"Parsing {document.type}: {document.id} with fallback parser"
+                f"Parsing {document.document_type}: {document.id} with fallback parser"
             )
             async for element in self.parse_fallback(
                 file_content,
                 ingestion_config=ingestion_config,
-                parser_name=document.type,
+                parser_name=document.document_type,
             ):
                 elements.append(element)
         else:
             logger.info(
-                f"Parsing {document.type}: {document.id} with unstructured"
+                f"Parsing {document.document_type}: {document.id} with unstructured"
             )
             if isinstance(file_content, bytes):
                 file_content = BytesIO(file_content)  # type: ignore

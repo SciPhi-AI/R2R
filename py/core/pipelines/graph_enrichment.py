@@ -16,7 +16,7 @@ class KGEnrichmentPipeline(AsyncPipeline):
 
     def __init__(
         self,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(logging_provider, run_manager)

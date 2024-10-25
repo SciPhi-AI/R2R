@@ -265,6 +265,11 @@ class RetrievalService(Service):
                 ids = None
 
                 if not messages:
+                    if not message:
+                        raise R2RException(
+                            status_code=400,
+                            message="Message not provided",
+                        )
                     # Fetch or create conversation
                     if conversation_id:
                         conversation = (
@@ -280,7 +285,7 @@ class RetrievalService(Service):
                                 status_code=404,
                                 message=f"Conversation not found: {conversation_id}",
                             )
-                        messages = [conv[1] for conv in conversation] + [
+                        messages = [conv[1] for conv in conversation] + [  # type: ignore
                             message
                         ]
                         ids = [conv[0] for conv in conversation]
@@ -304,7 +309,7 @@ class RetrievalService(Service):
                                 )
                             )
 
-                current_message = messages[-1]
+                current_message = messages[-1]  # type: ignore
 
                 # Save the new message to the conversation
                 message_id = await self.logging_connection.add_message(

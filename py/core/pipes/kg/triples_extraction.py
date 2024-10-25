@@ -46,10 +46,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         config: AsyncPipe.PipeConfig,
+        logging_provider: SqlitePersistentLoggingProvider,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

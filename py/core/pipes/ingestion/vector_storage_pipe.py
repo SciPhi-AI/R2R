@@ -17,8 +17,8 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         self,
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
+        logging_provider: SqlitePersistentLoggingProvider,
         storage_batch_size: int = 128,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

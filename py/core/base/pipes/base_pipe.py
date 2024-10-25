@@ -8,8 +8,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base.logging import RunType
-
-# from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.base.logging.r2r_logger import PersistentLoggingProvider
 from core.base.logging.run_manager import RunManager, manage_run
 

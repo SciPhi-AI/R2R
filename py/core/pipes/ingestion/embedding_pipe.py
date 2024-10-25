@@ -28,8 +28,8 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         self,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
+        logging_provider: SqlitePersistentLoggingProvider,
         embedding_batch_size: int = 1,
-        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):
