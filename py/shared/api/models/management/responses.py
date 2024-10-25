@@ -14,6 +14,7 @@ class UpdatePromptResponse(BaseModel):
 
 
 class PromptResponse(BaseModel):
+    prompt_id: UUID
     name: str
     template: str
     created_at: datetime
