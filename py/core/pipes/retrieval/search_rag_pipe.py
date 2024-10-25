@@ -7,7 +7,6 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     DatabaseProvider,
-    PipeType,
 )
 from core.base.abstractions import GenerationConfig, RAGCompletion
 
@@ -23,7 +22,6 @@ class SearchRAGPipe(GeneratorPipe):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: GeneratorPipe.PipeConfig,
-        type: PipeType = PipeType.GENERATOR,
         *args,
         **kwargs,
     ):
@@ -31,7 +29,6 @@ class SearchRAGPipe(GeneratorPipe):
             llm_provider,
             database_provider,
             config,
-            type,
             *args,
             **kwargs,
         )

@@ -8,10 +8,10 @@ from ..base.abstractions import (
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.logging.r2r_logger import R2RLoggingProvider
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
+from ..providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -21,10 +21,10 @@ class SearchPipeline(AsyncPipeline):
 
     def __init__(
         self,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         run_manager: Optional[RunManager] = None,
     ):
-        super().__init__(pipe_logger, run_manager)
+        super().__init__(logging_provider, run_manager)
         self._parsing_pipe: Optional[AsyncPipe] = None
         self._vector_search_pipeline: Optional[AsyncPipeline] = None
         self._kg_search_pipeline: Optional[AsyncPipeline] = None
@@ -125,7 +125,9 @@ class SearchPipeline(AsyncPipeline):
 
         if kg_search_pipe:
             if not self._kg_search_pipeline:
-                self._kg_search_pipeline = AsyncPipeline()
+                self._kg_search_pipeline = AsyncPipeline(
+                    logging_provider=self.logging_provider
+                )
             if not self._kg_search_pipeline:
                 raise ValueError(
                     "KG search pipeline not found"
@@ -136,7 +138,9 @@ class SearchPipeline(AsyncPipeline):
             )
         elif vector_search_pipe:
             if not self._vector_search_pipeline:
-                self._vector_search_pipeline = AsyncPipeline()
+                self._vector_search_pipeline = AsyncPipeline(
+                    logging_provider=self.logging_provider
+                )
             if not self._vector_search_pipeline:
                 raise ValueError(
                     "Vector search pipeline not found"

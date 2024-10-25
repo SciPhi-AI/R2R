@@ -179,10 +179,10 @@ class R2RIngestionProvider(IngestionProvider):
     ) -> AsyncGenerator[
         Union[DocumentExtraction, R2RDocumentProcessingError], None
     ]:
-        if document.type not in self.parsers:
+        if document.document_type not in self.parsers:
             yield R2RDocumentProcessingError(
                 document_id=document.id,
-                error_message=f"Parser for {document.type} not found in `R2RIngestionProvider`.",
+                error_message=f"Parser for {document.document_type} not found in `R2RIngestionProvider`.",
             )
         else:
             t0 = time.time()
@@ -190,13 +190,13 @@ class R2RIngestionProvider(IngestionProvider):
             parser_overrides = ingestion_config_override.get(
                 "parser_overrides", {}
             )
-            if document.type.value in parser_overrides:
+            if document.document_type.value in parser_overrides:
                 logger.info(
-                    f"Using parser_override for {document.type} with input value {parser_overrides[document.type.value]}"
+                    f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
                 )
                 # TODO - Cleanup this approach to be less hardcoded
                 if (
-                    document.type != DocumentType.PDF
+                    document.document_type != DocumentType.PDF
                     or parser_overrides[DocumentType.PDF.value] != "zerox"
                 ):
                     raise ValueError(
@@ -207,7 +207,7 @@ class R2RIngestionProvider(IngestionProvider):
                 ].ingest(file_content, **ingestion_config_override):
                     contents += text + "\n"
             else:
-                async for text in self.parsers[document.type].ingest(
+                async for text in self.parsers[document.document_type].ingest(
                     file_content, **ingestion_config_override
                 ):
                     contents += text + "\n"

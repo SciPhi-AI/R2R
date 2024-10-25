@@ -8,18 +8,10 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base.logging import RunType
-from core.base.logging.r2r_logger import R2RLoggingProvider
+from core.base.logging.r2r_logger import PersistentLoggingProvider
 from core.base.logging.run_manager import RunManager, manage_run
 
 logger = logging.getLogger()
-
-
-class PipeType(Enum):
-    INGESTOR = "ingestor"
-    GENERATOR = "generator"
-    SEARCH = "search"
-    TRANSFORM = "transform"
-    OTHER = "other"
 
 
 class AsyncState:
@@ -91,34 +83,30 @@ class AsyncPipe(Generic[T]):
     def __init__(
         self,
         config: PipeConfig,
-        type: PipeType = PipeType.OTHER,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
+        logging_provider: PersistentLoggingProvider,
         run_manager: Optional[RunManager] = None,
     ):
+        # TODO - Deprecate
+        if logging_provider is None:
+            raise ValueError("Pipe logger is required.")
+
         self._config = config or self.PipeConfig()
-        self._type = type
-        self.pipe_logger = pipe_logger or R2RLoggingProvider()
+        self.logging_provider = logging_provider
         self.log_queue: asyncio.Queue = asyncio.Queue()
         self.log_worker_task = None
-        self._run_manager = run_manager or RunManager(self.pipe_logger)
+        self._run_manager = run_manager or RunManager(self.logging_provider)
 
-        logger.debug(
-            f"Initialized pipe {self.config.name} of type {self.type}"
-        )
+        logger.debug(f"Initialized pipe {self.config.name}")
 
     @property
     def config(self) -> PipeConfig:
         return self._config
 
-    @property
-    def type(self) -> PipeType:
-        return self._type
-
     async def log_worker(self):
         while True:
             log_data = await self.log_queue.get()
             run_id, key, value = log_data
-            await self.pipe_logger.log(run_id, key, value)
+            await self.logging_provider.log(run_id, key, value)
             self.log_queue.task_done()
 
     async def enqueue_log(self, run_id: UUID, key: str, value: str):

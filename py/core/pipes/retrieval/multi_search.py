@@ -7,7 +7,7 @@ from core.base.abstractions import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from core.base.pipes.base_pipe import AsyncPipe, PipeType
+from core.base.pipes.base_pipe import AsyncPipe
 
 from ..abstractions.search_pipe import SearchPipe
 from .query_transform_pipe import QueryTransformPipe
@@ -37,7 +37,6 @@ class MultiSearchPipe(AsyncPipe):
         )
         super().__init__(
             config,
-            PipeType.SEARCH,
             *args,
             **kwargs,
         )

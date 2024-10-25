@@ -6,7 +6,7 @@ from uuid import UUID
 import pytest
 
 from core import (
-    LoggingConfig,
+    PersistentLoggingConfig,
     SqlitePersistentLoggingProvider,
     generate_run_id,
 )

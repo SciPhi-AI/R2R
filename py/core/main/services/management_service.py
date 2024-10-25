@@ -14,12 +14,12 @@ from core.base import (
     Message,
     Prompt,
     R2RException,
-    R2RLoggingProvider,
     RunManager,
     RunType,
     UserResponse,
 )
 from core.base.utils import validate_uuid
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -38,7 +38,7 @@ class ManagementService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: R2RLoggingProvider,
+        logging_connection: SqlitePersistentLoggingProvider,
     ):
         super().__init__(
             config,
@@ -669,7 +669,7 @@ class ManagementService(Service):
         conversation_id: str,
         branch_id: Optional[str] = None,
         auth_user=None,
-    ) -> list[dict]:
+    ) -> Tuple[str, list[Message]]:
         return await self.logging_connection.get_conversation(
             conversation_id, branch_id
         )
@@ -685,7 +685,7 @@ class ManagementService(Service):
         offset: int = 0,
         limit: int = 100,
         auth_user=None,
-    ) -> list[Dict]:
+    ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations_overview(
             conversation_ids=conversation_ids,
             offset=offset,

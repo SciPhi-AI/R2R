@@ -7,12 +7,11 @@ from core.base import (
     DatabaseProvider,
     Document,
     DocumentExtraction,
-    PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
@@ -27,15 +26,13 @@ class ParsingPipe(AsyncPipe):
         database_provider: DatabaseProvider,
         ingestion_provider: IngestionProvider,
         config: AsyncPipe.PipeConfig,
-        type: PipeType = PipeType.INGESTOR,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
-            pipe_logger,
+            logging_provider,
             *args,
             **kwargs,
         )

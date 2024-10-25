@@ -6,13 +6,12 @@ from core.base import (
     AsyncState,
     DocumentExtraction,
     EmbeddingProvider,
-    PipeType,
     R2RDocumentProcessingError,
-    R2RLoggingProvider,
     Vector,
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -29,16 +28,14 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         self,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
+        logging_provider: SqlitePersistentLoggingProvider,
         embedding_batch_size: int = 1,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
-            pipe_logger,
+            logging_provider,
         )
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size

@@ -12,11 +12,10 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -35,14 +34,12 @@ class KGEntityDescriptionPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.OTHER,
+        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
+            logging_provider=logging_provider,
             config=config,
         )
         self.database_provider = database_provider

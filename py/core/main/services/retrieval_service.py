@@ -10,7 +10,6 @@ from core.base import (
     KGSearchSettings,
     Message,
     R2RException,
-    R2RLoggingProvider,
     RunManager,
     RunType,
     VectorSearchSettings,
@@ -18,6 +17,7 @@ from core.base import (
     to_async_generator,
 )
 from core.base.api.models import RAGResponse, SearchResponse, UserResponse
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -36,7 +36,7 @@ class RetrievalService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: R2RLoggingProvider,
+        logging_connection: SqlitePersistentLoggingProvider,
     ):
         super().__init__(
             config,
@@ -267,6 +267,11 @@ class RetrievalService(Service):
                 ids = None
 
                 if not messages:
+                    if not message:
+                        raise R2RException(
+                            status_code=400,
+                            message="Message not provided",
+                        )
                     # Fetch or create conversation
                     if conversation_id:
                         conversation = (
@@ -282,7 +287,7 @@ class RetrievalService(Service):
                                 status_code=404,
                                 message=f"Conversation not found: {conversation_id}",
                             )
-                        messages = [conv[1] for conv in conversation] + [
+                        messages = [conv[1] for conv in conversation] + [  # type: ignore
                             message
                         ]
                         ids = [conv[0] for conv in conversation]
@@ -306,7 +311,7 @@ class RetrievalService(Service):
                                 )
                             )
 
-                current_message = messages[-1]
+                current_message = messages[-1]  # type: ignore
 
                 # Save the new message to the conversation
                 message_id = await self.logging_connection.add_message(

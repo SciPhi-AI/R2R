@@ -3,13 +3,12 @@ from typing import Any, AsyncGenerator
 
 import pytest
 
-from core import AsyncPipe, AsyncPipeline, PipeType
+from core import AsyncPipe, AsyncPipeline
 
 
 class MultiplierPipe(AsyncPipe):
     def __init__(self, multiplier=1, delay=0, name="multiplier_pipe"):
         super().__init__(
-            type=PipeType.OTHER,
             config=self.PipeConfig(name=name),
         )
         self.multiplier = multiplier
@@ -38,7 +37,6 @@ class MultiplierPipe(AsyncPipe):
 class FanOutPipe(AsyncPipe):
     def __init__(self, multiplier=1, delay=0, name="fan_out_pipe"):
         super().__init__(
-            type=PipeType.OTHER,
             config=self.PipeConfig(name=name),
         )
         self.multiplier = multiplier
@@ -64,7 +62,6 @@ class FanOutPipe(AsyncPipe):
 class FanInPipe(AsyncPipe):
     def __init__(self, delay=0, name="fan_in_pipe"):
         super().__init__(
-            type=PipeType.OTHER,
             config=self.PipeConfig(name=name),
         )
         self.delay = delay

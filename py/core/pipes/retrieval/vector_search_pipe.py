@@ -9,7 +9,6 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     EmbeddingPurpose,
-    PipeType,
     VectorSearchResult,
     VectorSearchSettings,
 )
@@ -25,13 +24,11 @@ class VectorSearchPipe(SearchPipe):
         database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         config: SearchPipe.SearchConfig,
-        type: PipeType = PipeType.SEARCH,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
             *args,
             **kwargs,
         )
