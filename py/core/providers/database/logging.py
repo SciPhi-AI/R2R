@@ -21,7 +21,7 @@ class PostgresLoggingHandler(LoggingHandler):
     ):
         super().__init__(project_name, connection_manager)
 
-    async def initialize(self) -> None:
+    async def create_tables(self) -> None:
         """Create necessary tables for logging and conversation management."""
         # Create schema and base logging tables
         query = f"""
@@ -90,9 +90,6 @@ class PostgresLoggingHandler(LoggingHandler):
         ON message_branches(message_id);
         """
         await self.connection_manager.execute_query(query)
-
-    async def create_tables(self):
-        pass
 
     async def log(self, run_id: UUID, key: str, value: str) -> None:
         """Log a key-value pair for a specific run."""
@@ -327,7 +324,7 @@ class PostgresLoggingHandler(LoggingHandler):
                 )
 
         await self.connection_manager.execute_query(
-            "BEGIN", isolation_level="SERIALIZABLE"
+            "BEGIN", isolation_level="serializable"
         )
         try:
             await transaction()
@@ -521,7 +518,7 @@ class PostgresLoggingHandler(LoggingHandler):
             )
 
         await self.connection_manager.execute_query(
-            "BEGIN", isolation_level="SERIALIZABLE"
+            "BEGIN", isolation_level="serializable"
         )
         try:
             await transaction()
@@ -639,7 +636,7 @@ class PostgresLoggingHandler(LoggingHandler):
 
         # Execute transaction
         await self.connection_manager.execute_query(
-            "BEGIN", isolation_level="SERIALIZABLE"
+            "BEGIN", isolation_level="serializable"
         )
         try:
             result = await transaction()
