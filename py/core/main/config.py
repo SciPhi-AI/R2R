@@ -90,7 +90,9 @@ class R2RConfig:
         # Validate and set the configuration
         for section, keys in R2RConfig.REQUIRED_KEYS.items():
             # Check the keys when provider is set
-            # TODO - Clean up robust null checks
+            # TODO - remove after deprecation
+            if section == "kg" and section not in default_config:
+                continue
             if "provider" in default_config[section] and (
                 default_config[section]["provider"] is not None
                 and default_config[section]["provider"] != "None"
