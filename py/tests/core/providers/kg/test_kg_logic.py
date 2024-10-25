@@ -28,7 +28,7 @@ def extraction_ids():
 
 @pytest.fixture(scope="function")
 def embedding_dimension():
-    return 512
+    return 128
 
 
 @pytest.fixture(scope="function")

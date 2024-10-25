@@ -8,9 +8,7 @@ from core import AsyncPipe, AsyncPipeline
 
 class MultiplierPipe(AsyncPipe):
     def __init__(self, multiplier=1, delay=0, name="multiplier_pipe"):
-        super().__init__(
-            config=self.PipeConfig(name=name),
-        )
+        super().__init__(config=self.PipeConfig(name=name), logging_provider=1)
         self.multiplier = multiplier
         self.delay = delay
 
@@ -36,9 +34,7 @@ class MultiplierPipe(AsyncPipe):
 
 class FanOutPipe(AsyncPipe):
     def __init__(self, multiplier=1, delay=0, name="fan_out_pipe"):
-        super().__init__(
-            config=self.PipeConfig(name=name),
-        )
+        super().__init__(config=self.PipeConfig(name=name), logging_provider=1)
         self.multiplier = multiplier
         self.delay = delay
 
@@ -61,9 +57,7 @@ class FanOutPipe(AsyncPipe):
 
 class FanInPipe(AsyncPipe):
     def __init__(self, delay=0, name="fan_in_pipe"):
-        super().__init__(
-            config=self.PipeConfig(name=name),
-        )
+        super().__init__(config=self.PipeConfig(name=name), logging_provider=1)
         self.delay = delay
 
     async def _run_logic(
@@ -110,7 +104,7 @@ async def test_single_multiplier(pipe_factory, multiplier, delay, name):
         for i in [1, 2, 3]:
             yield i
 
-    pipeline = AsyncPipeline()
+    pipeline = AsyncPipeline(logging_provider=1)
     pipeline.add_pipe(pipe)
 
     result = []
@@ -142,7 +136,7 @@ async def test_double_multiplier(
         for i in [1, 2, 3]:
             yield i
 
-    pipeline = AsyncPipeline()
+    pipeline = AsyncPipeline(logging_provider=1)
     pipeline.add_pipe(pipe_a)
     pipeline.add_pipe(pipe_b)
 
@@ -167,7 +161,7 @@ async def test_fan_out(pipe_factory, multiplier, delay, name):
         for i in [1, 2, 3]:
             yield i
 
-    pipeline = AsyncPipeline()
+    pipeline = AsyncPipeline(logging_provider=1)
     pipeline.add_pipe(pipe)
 
     result = []
@@ -204,7 +198,7 @@ async def multiply_then_fan_out(
         for i in [1, 2, 3]:
             yield i
 
-    pipeline = AsyncPipeline()
+    pipeline = AsyncPipeline(logging_provider=1)
     pipeline.add_pipe(pipe_a)
     pipeline.add_pipe(pipe_b)
 
@@ -232,7 +226,7 @@ async def test_fan_in_sum(pipe_factory, multiplier, delay, name):
         for i in [1, 2, 3]:
             yield i
 
-    pipeline = AsyncPipeline()
+    pipeline = AsyncPipeline(logging_provider=1)
     pipeline.add_pipe(fan_out_pipe)
     pipeline.add_pipe(fan_in_sum_pipe)
 
@@ -270,7 +264,7 @@ async def test_fan_out_then_multiply(
         for i in [1, 2, 3]:
             yield i
 
-    pipeline = AsyncPipeline()
+    pipeline = AsyncPipeline(logging_provider=1)
     pipeline.add_pipe(pipe_a)
     pipeline.add_pipe(pipe_b)
     pipeline.add_pipe(pipe_c)
