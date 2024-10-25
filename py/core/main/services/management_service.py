@@ -190,8 +190,10 @@ class ManagementService(Service):
 
     @telemetry_event("AppSettings")
     async def app_settings(self, *args: Any, **kwargs: Any):
+        print("Got into app_settings")
         prompts = self.providers.database.get_all_prompts()
         config_toml = self.config.to_toml()
+        print(f"config_toml: {config_toml}")
         config_dict = toml.loads(config_toml)
         return {
             "config": config_dict,
