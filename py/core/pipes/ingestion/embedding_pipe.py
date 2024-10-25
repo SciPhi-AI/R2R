@@ -11,7 +11,7 @@ from core.base import (
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 

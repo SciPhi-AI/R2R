@@ -31,14 +31,15 @@ from core.base.api.models import (
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
-from core.base.logging import AnalysisTypes, LogFilterCriteria
+from core.base.logger import AnalysisTypes, LogFilterCriteria
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
 
+from ...base.logger.base import RunType
 from ..services.management_service import ManagementService
-from .base_router import BaseRouter, RunType
+from .base_router import BaseRouter
 
 
 class ManagementRouter(BaseRouter):

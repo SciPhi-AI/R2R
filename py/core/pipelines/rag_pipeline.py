@@ -7,12 +7,12 @@ from ..base.abstractions import (
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.logging import RunType
-from ..base.logging.run_manager import RunManager, manage_run
+from ..base.logger.base import RunType
+from ..base.logger.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 from ..base.utils import to_async_generator
-from ..providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from ..providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 

@@ -14,7 +14,7 @@ from core.base import (
     RunManager,
 )
 from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RProviders
 from ..api.auth_router import AuthRouter

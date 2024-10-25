@@ -218,5 +218,3 @@
 #     assert len(results) == len(document_ids)
 #     for result in results:
 #         assert result is not None
-
-
