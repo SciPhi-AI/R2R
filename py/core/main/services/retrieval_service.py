@@ -59,8 +59,10 @@ class RetrievalService(Service):
     ) -> SearchResponse:
         async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             t0 = time.time()
-
-            if kg_search_settings.use_kg_search:
+            if (
+                kg_search_settings.use_kg_search
+                and self.config.database.kg_search_settings is False
+            ):
                 raise R2RException(
                     status_code=400,
                     message="Knowledge Graph search is not enabled in the configuration.",

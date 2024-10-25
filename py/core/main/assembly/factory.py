@@ -597,6 +597,9 @@ class R2RPipelineFactory:
             search_pipeline.add_pipe(
                 self.pipes.vector_search_pipe, vector_search_pipe=True
             )
+            search_pipeline.add_pipe(
+                self.pipes.kg_search_pipe, kg_search_pipe=True
+            )
 
         return search_pipeline
 

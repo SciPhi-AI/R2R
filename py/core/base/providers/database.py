@@ -2,7 +2,17 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
-from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    BinaryIO,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -641,7 +651,9 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def vector_query(self, query: str, **kwargs: Any) -> Any:
+    async def vector_query(
+        self, query: str, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
         """Perform vector similarity search."""
         pass
 
@@ -1578,8 +1590,10 @@ class DatabaseProvider(Provider):
     async def update_entity_descriptions(self, entities: list[Entity]):
         return await self.kg_handler.update_entity_descriptions(entities)
 
-    async def vector_query(self, query: str, **kwargs: Any) -> Any:
-        return await self.kg_handler.vector_query(query, **kwargs)
+    async def vector_query(
+        self, query: str, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
+        return self.kg_handler.vector_query(query, **kwargs)  # type: ignore
 
     async def create_vector_index(self) -> None:
         return await self.kg_handler.create_vector_index()

@@ -226,9 +226,14 @@ class PostgresPromptHandler(CacheablePromptHandler):
             for row in results:
                 logger.info(f"Loading saved prompt: {row}")
 
+                # Ensure input_types is a dictionary
+                input_types = row["input_types"]
+                if isinstance(input_types, str):
+                    input_types = json.loads(input_types)
+
                 self.prompts[row["name"]] = {
                     "template": row["template"],
-                    "input_types": row["input_types"],
+                    "input_types": input_types,
                     "created_at": row["created_at"],
                     "updated_at": row["updated_at"],
                 }
@@ -237,7 +242,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
                     row["name"],
                     {
                         "template": row["template"],
-                        "input_types": row["input_types"],
+                        "input_types": input_types,
                     },
                 )
             logger.debug(f"Loaded {len(results)} prompts from database")
@@ -332,9 +337,14 @@ class PostgresPromptHandler(CacheablePromptHandler):
         )
 
         if result:
+            # Ensure input_types is a dictionary
+            input_types = result["input_types"]
+            if isinstance(input_types, str):
+                input_types = json.loads(input_types)
+
             template_info = {
                 "template": result["template"],
-                "input_types": result["input_types"],
+                "input_types": input_types,
             }
             self._template_cache.set(prompt_name, template_info)
             return template_info
@@ -411,6 +421,13 @@ class PostgresPromptHandler(CacheablePromptHandler):
         if preserve_existing and name in self.prompts:
             return
 
+        # Ensure input_types is properly serialized
+        input_types_json = (
+            json.dumps(input_types)
+            if isinstance(input_types, dict)
+            else input_types
+        )
+
         query = f"""
         INSERT INTO {self._get_table_name("prompts")} (name, template, input_types)
         VALUES ($1, $2, $3)
@@ -422,19 +439,23 @@ class PostgresPromptHandler(CacheablePromptHandler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, [name, template, json.dumps(input_types)]
+            query, [name, template, input_types_json]
         )
 
         self.prompts[name] = {
             "template": template,
-            "input_types": input_types,
+            "input_types": input_types,  # Store as dict in memory
             "created_at": result["created_at"],
             "updated_at": result["updated_at"],
         }
 
         # Update template cache
         self._template_cache.set(
-            name, {"template": template, "input_types": input_types}
+            name,
+            {
+                "template": template,
+                "input_types": input_types,
+            },  # Store as dict in cache
         )
 
         # Invalidate any cached formatted prompts

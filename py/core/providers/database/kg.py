@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any, Optional, Tuple
+from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
@@ -427,7 +427,9 @@ class PostgresKGHandler(KGHandler):
         query = QUERY.format(table_name)
         await self.connection_manager.execute_query(query, entities)
 
-    async def vector_query(self, query: str, **kwargs: Any) -> Any:
+    async def vector_query(  # type: ignore
+        self, query: str, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
 
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "__Entity__")
