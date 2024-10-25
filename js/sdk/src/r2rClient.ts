@@ -1629,90 +1629,88 @@ export class r2rClient {
       responseType: "stream",
     });
   }
-/**
- * Create a vector index for similarity search.
- * @param options The options for creating the vector index
- * @returns Promise resolving to the creation response
- */
-@feature("createVectorIndex")
-async createVectorIndex(options: {
-  tableName: string;
-  indexMethod: "hnsw" | "ivfflat" | "auto";
-  indexMeasure: "cosine_distance" | "l2_distance" | "max_inner_product";
-  indexArguments?: {
-    m?: number;              // HNSW: Number of connections per element
-    ef_construction?: number;// HNSW: Size of dynamic candidate list
-    n_lists?: number;        // IVFFlat: Number of clusters/inverted lists
-  };
-  indexName?: string;
-  concurrently?: boolean;
-}): Promise<Record<string, any>> {
-  this._ensureAuthenticated();
+  /**
+   * Create a vector index for similarity search.
+   * @param options The options for creating the vector index
+   * @returns Promise resolving to the creation response
+   */
+  @feature("createVectorIndex")
+  async createVectorIndex(options: {
+    tableName: string;
+    indexMethod: "hnsw" | "ivfflat" | "auto";
+    indexMeasure: "cosine_distance" | "l2_distance" | "max_inner_product";
+    indexArguments?: {
+      m?: number; // HNSW: Number of connections per element
+      ef_construction?: number; // HNSW: Size of dynamic candidate list
+      n_lists?: number; // IVFFlat: Number of clusters/inverted lists
+    };
+    indexName?: string;
+    concurrently?: boolean;
+  }): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
 
-  const data = {
-    table_name: options.tableName,
-    index_method: options.indexMethod,
-    index_measure: options.indexMeasure,
-    index_arguments: options.indexArguments,
-    index_name: options.indexName,
-    concurrently: options.concurrently ?? true
-  };
+    const data = {
+      table_name: options.tableName,
+      index_method: options.indexMethod,
+      index_measure: options.indexMeasure,
+      index_arguments: options.indexArguments,
+      index_name: options.indexName,
+      concurrently: options.concurrently ?? true,
+    };
 
-  return await this._makeRequest("POST", "create_vector_index", {
-    data,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-}
-
-/**
- * List existing vector indices for a table.
- * @param options The options for listing vector indices
- * @returns Promise resolving to the list of indices
- */
-@feature("listVectorIndices")
-async listVectorIndices(options: {
-  tableName?: string;
-}): Promise<Record<string, any>> {
-  this._ensureAuthenticated();
-
-  const params: Record<string, string> = {};
-  if (options.tableName) {
-    params.table_name = options.tableName;
+    return await this._makeRequest("POST", "create_vector_index", {
+      data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
 
-  return await this._makeRequest("GET", "list_vector_indices", { params });
-}
+  /**
+   * List existing vector indices for a table.
+   * @param options The options for listing vector indices
+   * @returns Promise resolving to the list of indices
+   */
+  @feature("listVectorIndices")
+  async listVectorIndices(options: {
+    tableName?: string;
+  }): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
 
-/**
- * Delete a vector index from a table.
- * @param options The options for deleting the vector index
- * @returns Promise resolving to the deletion response
- */
-@feature("deleteVectorIndex")
-async deleteVectorIndex(options: {
-  indexName: string;
-  tableName?: string;
-  concurrently?: boolean;
-}): Promise<Record<string, any>> {
-  this._ensureAuthenticated();
-
-  const data = {
-    index_name: options.indexName,
-    table_name: options.tableName,
-    concurrently: options.concurrently ?? true
-  };
-
-  return await this._makeRequest("DELETE", "delete_vector_index", {
-    data,
-    headers: {
-      "Content-Type": "application/json"
+    const params: Record<string, string> = {};
+    if (options.tableName) {
+      params.table_name = options.tableName;
     }
-  });
-}
 
-}
+    return await this._makeRequest("GET", "list_vector_indices", { params });
+  }
 
+  /**
+   * Delete a vector index from a table.
+   * @param options The options for deleting the vector index
+   * @returns Promise resolving to the deletion response
+   */
+  @feature("deleteVectorIndex")
+  async deleteVectorIndex(options: {
+    indexName: string;
+    tableName?: string;
+    concurrently?: boolean;
+  }): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const data = {
+      index_name: options.indexName,
+      table_name: options.tableName,
+      concurrently: options.concurrently ?? true,
+    };
+
+    return await this._makeRequest("DELETE", "delete_vector_index", {
+      data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+}
 
 export default r2rClient;
