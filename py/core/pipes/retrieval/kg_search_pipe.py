@@ -113,7 +113,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "__Entity__"
-            async for search_result in self.database_provider.vector_query(  # type: ignore
+            async for search_result in await self.database_provider.vector_query(  # type: ignore
                 message,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -170,7 +170,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # community search
             search_type = "__Community__"
-            async for search_result in self.database_provider.vector_query(  # type: ignore
+            async for search_result in await self.database_provider.vector_query(  # type: ignore
                 message,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[

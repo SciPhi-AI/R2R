@@ -772,6 +772,7 @@ def test_kg_search_sample_file_sdk():
     )
 
     kg_search_results = output["results"]["kg_search_results"]
+    print("kg_search_results = ", kg_search_results)
     assert len(kg_search_results) >= 1
 
     kg_search_result_present = False

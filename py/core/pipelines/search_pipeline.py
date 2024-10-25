@@ -116,14 +116,14 @@ class SearchPipeline(AsyncPipeline):
         self,
         pipe: AsyncPipe,
         add_upstream_outputs: Optional[list[dict[str, str]]] = None,
-        kg_triples_extraction_pipe: bool = False,
+        kg_search_pipe: bool = False,
         vector_search_pipe: bool = False,
         *args,
         **kwargs,
     ) -> None:
         logger.debug(f"Adding pipe {pipe.config.name} to the SearchPipeline")
 
-        if kg_triples_extraction_pipe:
+        if kg_search_pipe:
             if not self._kg_search_pipeline:
                 self._kg_search_pipeline = AsyncPipeline()
             if not self._kg_search_pipeline:

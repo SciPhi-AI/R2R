@@ -706,7 +706,7 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            return self.service.remove_document_from_collection(
+            return await self.service.remove_document_from_collection(
                 document_uuid, collection_uuid
             )
 
