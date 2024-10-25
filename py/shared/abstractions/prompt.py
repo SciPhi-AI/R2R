@@ -22,8 +22,7 @@ class Prompt(BaseModel):
 
     def format_prompt(self, inputs: dict[str, Any]) -> str:
         self._validate_inputs(inputs)
-        formatted_prompt = self.template.format(**inputs)
-        return formatted_prompt
+        return self.template.format(**inputs)
 
     def _validate_inputs(self, inputs: dict[str, Any]) -> None:
         for var, expected_type_name in self.input_types.items():
