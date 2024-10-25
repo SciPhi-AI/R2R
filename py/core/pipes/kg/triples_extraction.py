@@ -13,9 +13,7 @@ from core.base import (
     Entity,
     GenerationConfig,
     KGExtraction,
-    KGProvider,
     PipeType,
-    PromptProvider,
     R2RDocumentProcessingError,
     R2RException,
     R2RLoggingProvider,
@@ -46,10 +44,8 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         config: AsyncPipe.PipeConfig,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
@@ -65,8 +61,6 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             config=config
             or AsyncPipe.PipeConfig(name="default_kg_triples_extraction_pipe"),
         )
-        self.kg_provider = kg_provider
-        self.prompt_provider = prompt_provider
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.kg_batch_size = kg_batch_size
@@ -93,8 +87,8 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         # combine all extractions into a single string
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
-        messages = await self.prompt_provider._get_message_payload(
-            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_triples_extraction_prompt,
+        messages = await self.database_provider.prompt_handler.get_message_payload(
+            task_prompt_name=self.database_provider.config.kg_creation_settings.kg_triples_extraction_prompt,
             task_inputs={
                 "input": combined_extraction,
                 "max_knowledge_triples": max_knowledge_triples,
@@ -276,10 +270,8 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         )
 
         if filter_out_existing_chunks:
-            existing_extraction_ids = (
-                await self.kg_provider.get_existing_entity_extraction_ids(
-                    document_id=document_id
-                )
+            existing_extraction_ids = await self.database_provider.get_existing_entity_extraction_ids(
+                document_id=document_id
             )
             extractions = [
                 extraction

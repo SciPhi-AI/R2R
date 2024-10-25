@@ -6,10 +6,9 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     CompletionProvider,
+    DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 
@@ -23,9 +22,8 @@ class KGClusteringPipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -41,9 +39,8 @@ class KGClusteringPipe(AsyncPipe):
             type=type,
             config=config or AsyncPipe.PipeConfig(name="kg_cluster_pipe"),
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def cluster_kg(
@@ -55,9 +52,11 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        num_communities = await self.kg_provider.perform_graph_clustering(
-            collection_id,
-            leiden_params,
+        num_communities = (
+            await self.database_provider.perform_graph_clustering(
+                collection_id,
+                leiden_params,
+            )
         )  # type: ignore
 
         logger.info(

@@ -23,7 +23,7 @@ class PostgresUserHandler(UserHandler):
         super().__init__(project_name, connection_manager)
         self.crypto_provider = crypto_provider
 
-    async def create_table(self):
+    async def create_tables(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresUserHandler.TABLE_NAME)} (
             user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

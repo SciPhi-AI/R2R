@@ -1,18 +1,18 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from core.base import AsyncState, R2RException
+from core.base.abstractions import Entity, KGEntityDeduplicationType
 from core.base.logging import R2RLoggingProvider
 from core.base.pipes import AsyncPipe, PipeType
-from core.base.providers import (
-    CompletionProvider,
-    EmbeddingProvider,
-    KGProvider,
-    PromptProvider,
+from core.providers import (
+    LiteLLMCompletionProvider,
+    LiteLLMEmbeddingProvider,
+    OpenAICompletionProvider,
+    OpenAIEmbeddingProvider,
+    PostgresDBProvider,
 )
-from shared.abstractions.graph import Entity
-from shared.abstractions.kg import KGEntityDeduplicationType
 
 logger = logging.getLogger()
 
@@ -21,10 +21,13 @@ class KGEntityDeduplicationPipe(AsyncPipe):
     def __init__(
         self,
         config: AsyncPipe.PipeConfig,
-        kg_provider: KGProvider,
-        llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
-        embedding_provider: EmbeddingProvider,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            OpenAICompletionProvider, LiteLLMCompletionProvider
+        ],
+        embedding_provider: Union[
+            LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
+        ],
         type: PipeType = PipeType.OTHER,
         pipe_logger: Optional[R2RLoggingProvider] = None,
         **kwargs,
@@ -35,16 +38,15 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             config=config
             or AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def kg_named_entity_deduplication(
         self, collection_id: UUID, **kwargs
     ):
         try:
-            entity_count = await self.kg_provider.get_entity_count(
+            entity_count = await self.database_provider.get_entity_count(
                 collection_id=collection_id, distinct=True
             )
 
@@ -56,7 +58,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
             entities = (
-                await self.kg_provider.get_entities(
+                await self.database_provider.get_entities(
                     collection_id=collection_id, offset=0, limit=-1
                 )
             )["entities"]
@@ -115,7 +117,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             logger.info(
                 f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
             )
-            await self.kg_provider.add_entities(
+            await self.database_provider.add_entities(
                 deduplicated_entities_list,
                 table_name="collection_entity",
                 conflict_columns=["name", "collection_id", "attributes"],

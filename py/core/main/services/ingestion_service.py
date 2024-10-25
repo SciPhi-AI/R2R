@@ -21,17 +21,15 @@ from core.base import (
     VectorType,
     decrement_version,
 )
-from core.base.api.models import UserResponse
-from core.telemetry.telemetry_decorator import telemetry_event
-from shared.abstractions.ingestion import (
+from core.base.abstractions import (
     ChunkEnrichmentSettings,
     ChunkEnrichmentStrategy,
-)
-from shared.abstractions.vector import (
     IndexMeasure,
     IndexMethod,
     VectorTableName,
 )
+from core.base.api.models import UserResponse
+from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -348,6 +346,78 @@ class IngestionService(Service):
 
         return document_info
 
+    @telemetry_event("UpdateChunk")
+    async def update_chunk_ingress(
+        self,
+        document_id: UUID,
+        extraction_id: UUID,
+        text: str,
+        user: UserResponse,
+        metadata: Optional[dict] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> dict:
+        # Verify chunk exists and user has access
+        existing_chunks = await self.providers.database.get_document_chunks(
+            document_id=document_id, limit=1
+        )
+
+        if not existing_chunks["results"]:
+            raise R2RException(
+                status_code=404,
+                message=f"Chunk with extraction_id {extraction_id} not found.",
+            )
+
+        existing_chunk = await self.providers.database.get_chunk(extraction_id)
+        if not existing_chunk:
+            raise R2RException(
+                status_code=404,
+                message=f"Chunk with id {extraction_id} not found",
+            )
+
+        if (
+            str(existing_chunk["user_id"]) != str(user.id)
+            and not user.is_superuser
+        ):
+            raise R2RException(
+                status_code=403,
+                message="You don't have permission to modify this chunk.",
+            )
+
+        # Handle metadata merging
+        if metadata is not None:
+            merged_metadata = {
+                **existing_chunk["metadata"],
+                **metadata,
+            }
+        else:
+            merged_metadata = existing_chunk["metadata"]
+
+        # Create updated extraction
+        extraction_data = {
+            "id": extraction_id,
+            "document_id": document_id,
+            "collection_ids": kwargs.get(
+                "collection_ids", existing_chunk["collection_ids"]
+            ),
+            "user_id": existing_chunk["user_id"],
+            "data": text or existing_chunk["text"],
+            "metadata": merged_metadata,
+        }
+
+        extraction = DocumentExtraction(**extraction_data).model_dump()
+
+        embedding_generator = await self.embed_document([extraction])
+        embeddings = [
+            embedding.model_dump() async for embedding in embedding_generator
+        ]
+
+        storage_generator = await self.store_embeddings(embeddings)
+        async for _ in storage_generator:
+            pass
+
+        return extraction
+
     async def _get_enriched_chunk_text(
         self,
         chunk_idx: int,
@@ -407,7 +477,7 @@ class IngestionService(Service):
             updated_chunk_text = (
                 (
                     await self.providers.llm.aget_completion(
-                        messages=await self.providers.prompt._get_message_payload(
+                        messages=await self.providers.database.prompt_handler.get_message_payload(
                             task_prompt_name="chunk_enrichment",
                             task_inputs={
                                 "context_chunks": "\n".join(
@@ -559,6 +629,17 @@ class IngestionServiceAdapter:
             "metadata": data["metadata"],
             "document_id": data["document_id"],
             "chunks": [RawChunk.from_dict(chunk) for chunk in data["chunks"]],
+        }
+
+    @staticmethod
+    def parse_update_chunk_input(data: dict) -> dict:
+        return {
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+            "document_id": UUID(data["document_id"]),
+            "extraction_id": UUID(data["extraction_id"]),
+            "text": data["text"],
+            "metadata": data.get("metadata"),
+            "collection_ids": data.get("collection_ids", []),
         }
 
     @staticmethod

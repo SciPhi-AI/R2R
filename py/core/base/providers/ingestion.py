@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from enum import Enum
 
-from shared.abstractions.ingestion import ChunkEnrichmentSettings
+from core.base.abstractions import ChunkEnrichmentSettings
 
 from .base import Provider, ProviderConfig
 

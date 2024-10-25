@@ -82,3 +82,18 @@ runs:
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_sdk.py test_user_permissions
+
+    - name: Ingest chunks
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_sdk.py test_ingest_chunks
+
+    - name: Update chunks
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_sdk.py test_update_chunks
+
+    - name: Delete chunks
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_sdk.py test_delete_chunks

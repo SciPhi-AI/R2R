@@ -117,22 +117,13 @@ __all__ = [
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
-    # File provider
-    "FileConfig",
-    "FileProvider",
     # Ingestion provider
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",
-    # Knowledge Graph provider
-    "KGConfig",
-    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Prompt provider
-    "PromptConfig",
-    "PromptProvider",
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

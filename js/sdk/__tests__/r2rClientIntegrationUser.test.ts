@@ -29,6 +29,7 @@ const baseUrl = "http://localhost:7272";
  *     - ingestFiles
  *     - updateFiles
  *     X ingestChunks
+ *     X updateChunks
  *    Management:
  *     - serverStats
  *     X updatePrompt

@@ -1,25 +1,18 @@
 from .auth import R2RAuthProvider, SupabaseAuthProvider
 from .crypto import BCryptConfig, BCryptProvider
 from .database import PostgresDBProvider
-from .embeddings import (
-    LiteLLMEmbeddingProvider,
-    OllamaEmbeddingProvider,
-    OpenAIEmbeddingProvider,
-)
-from .file import PostgresFileProvider
+from .embeddings import LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
 from .ingestion import (  # type: ignore
     R2RIngestionConfig,
     R2RIngestionProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
-from .kg import PostgresKGProvider
-from .llm import LiteCompletionProvider, OpenAICompletionProvider
+from .llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from .prompts import R2RPromptProvider
 
 __all__ = [
     # Auth
@@ -37,18 +30,11 @@ __all__ = [
     "PostgresDBProvider",
     # Embeddings
     "LiteLLMEmbeddingProvider",
-    "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    # File
-    "PostgresFileProvider",
-    # KG
-    "PostgresKGProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",
     # LLM
     "OpenAICompletionProvider",
-    "LiteCompletionProvider",
-    # Prompts
-    "R2RPromptProvider",
+    "LiteLLMCompletionProvider",
 ]

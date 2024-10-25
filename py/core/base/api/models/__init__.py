@@ -9,6 +9,7 @@ from shared.api.models.auth.responses import (
 from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
     IngestionResponse,
+    UpdateResponse,
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
@@ -17,7 +18,10 @@ from shared.api.models.ingestion.responses import (
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
+    KGCreationEstimationResponse,
     KGCreationResponse,
+    KGDeduplicationEstimationResponse,
+    KGEnrichmentEstimationResponse,
     KGEnrichmentResponse,
     KGEntityDeduplicationResponse,
     WrappedKGCommunitiesResponse,
@@ -87,6 +91,7 @@ __all__ = [
     "WrappedListVectorIndicesResponse",
     "WrappedDeleteVectorIndexResponse",
     "WrappedSelectVectorIndexResponse",
+    "UpdateResponse",
     # Knowledge Graph Responses
     "KGCreationResponse",
     "WrappedKGCreationResponse",
@@ -95,6 +100,9 @@ __all__ = [
     "KGEntityDeduplicationResponse",
     "WrappedKGEntityDeduplicationResponse",
     "WrappedKGTunePromptResponse",
+    "KGCreationEstimationResponse",
+    "KGDeduplicationEstimationResponse",
+    "KGEnrichmentEstimationResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

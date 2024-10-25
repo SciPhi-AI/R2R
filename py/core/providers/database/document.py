@@ -29,7 +29,7 @@ class PostgresDocumentHandler(DocumentHandler):
     ):
         super().__init__(project_name, connection_manager)
 
-    async def create_table(self):
+    async def create_tables(self):
         logger.info(
             f"Creating table, if not exists: {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}"
         )
