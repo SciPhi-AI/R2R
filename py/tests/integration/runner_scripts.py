@@ -25,7 +25,6 @@ def test_ingested_zerox_document():
     print("Testing: Ingest sample file SDK")
     documents_overview = client.documents_overview()
     results = documents_overview["results"]
-    print("results =", results)
     assert results[0]["id"] == "7b0f40c5-2ace-5781-ae35-ead99ddee8c5"
     assert len(results) == 1
     assert results[0]["ingestion_status"] == "success"
