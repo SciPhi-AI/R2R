@@ -4,8 +4,7 @@ from uuid import UUID
 
 from core.base import AsyncState, R2RException
 from core.base.abstractions import Entity, KGEntityDeduplicationType
-from core.base.logging import R2RLoggingProvider
-from core.base.pipes import AsyncPipe, PipeType
+from core.base.pipes import AsyncPipe
 from core.providers import (
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
@@ -13,6 +12,7 @@ from core.providers import (
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
 )
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -28,13 +28,11 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         embedding_provider: Union[
             LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
         ],
-        type: PipeType = PipeType.OTHER,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
+        logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
+            logging_provider=logging_provider,
             config=config
             or AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
         )

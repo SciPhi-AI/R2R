@@ -9,6 +9,7 @@ from .ingestion import (  # type: ignore
     UnstructuredIngestionProvider,
 )
 from .llm import LiteLLMCompletionProvider, OpenAICompletionProvider
+from .logging import SqlitePersistentLoggingProvider
 from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -37,4 +38,6 @@ __all__ = [
     # LLM
     "OpenAICompletionProvider",
     "LiteLLMCompletionProvider",
+    # Logging
+    "SqlitePersistentLoggingProvider",
 ]

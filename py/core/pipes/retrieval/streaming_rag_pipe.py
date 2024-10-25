@@ -8,7 +8,6 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     LLMChatCompletionChunk,
-    PipeType,
     format_search_results_for_llm,
     format_search_results_for_stream,
 )
@@ -32,7 +31,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: GeneratorPipe.PipeConfig,
-        type: PipeType = PipeType.GENERATOR,
         *args,
         **kwargs,
     ):
@@ -40,7 +38,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             llm_provider,
             database_provider,
             config,
-            type,
             *args,
             **kwargs,
         )

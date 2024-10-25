@@ -113,7 +113,7 @@ async def test_assign_and_remove_document_from_collection(
             id=document_id,
             collection_ids=[],
             user_id=UUID("00000000-0000-0000-0000-000000000002"),
-            type=DocumentType.PDF,
+            document_type=DocumentType.PDF,
             metadata={},
             version="v1",
             size_in_bytes=0,

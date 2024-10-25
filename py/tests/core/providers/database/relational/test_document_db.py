@@ -24,7 +24,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
         id=UUID("00000000-0000-0000-0000-000000000001"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
-        type=DocumentType.PDF,
+        document_type=DocumentType.PDF,
         metadata={},
         title="Test Document",
         version="1.0",
@@ -45,7 +45,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
     assert inserted_document.id == document_info.id
     assert inserted_document.collection_ids == document_info.collection_ids
     assert inserted_document.user_id == document_info.user_id
-    assert inserted_document.type == document_info.type
+    assert inserted_document.type == document_info.document_type
     assert inserted_document.metadata == document_info.metadata
     assert inserted_document.title == document_info.title
     assert inserted_document.version == document_info.version
@@ -78,7 +78,7 @@ async def test_delete_from_documents_overview(temporary_postgres_db_provider):
         id=UUID("00000000-0000-0000-0000-000000000001"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
-        type=DocumentType.PDF,
+        document_type=DocumentType.PDF,
         metadata={},
         title="Test Document",
         version="1.0",
@@ -107,7 +107,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         id=UUID("00000000-0000-0000-0000-000000000001"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
-        type=DocumentType.PDF,
+        document_type=DocumentType.PDF,
         metadata={},
         title="Test Document 1",
         version="1.0",
@@ -119,7 +119,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         id=UUID("00000000-0000-0000-0000-000000000004"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
-        type=DocumentType.DOCX,
+        document_type=DocumentType.DOCX,
         metadata={},
         title="Test Document 2",
         version="1.0",

@@ -15,6 +15,7 @@ from core.providers import (
     R2RAuthProvider,
     R2RIngestionProvider,
     SimpleOrchestrationProvider,
+    SqlitePersistentLoggingProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
 )
@@ -29,6 +30,7 @@ class R2RProviders(BaseModel):
     orchestration: Union[
         HatchetOrchestrationProvider, SimpleOrchestrationProvider
     ]
+    logging: SqlitePersistentLoggingProvider
 
     class Config:
         arbitrary_types_allowed = True
