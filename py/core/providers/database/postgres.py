@@ -192,6 +192,7 @@ class PostgresDBProvider(DatabaseProvider):
         await self.vector_handler.create_tables()
         await self.prompt_handler.create_tables()
         await self.file_handler.create_tables()
+        await self.kg_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig
