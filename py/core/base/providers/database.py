@@ -1,36 +1,78 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Optional, Sequence, Tuple, Union
+from io import BytesIO
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from core.base import VectorEntry
+from core.base import (
+    CommunityReport,
+    Entity,
+    KGExtraction,
+    Triple,
+    VectorEntry,
+)
 from core.base.abstractions import (
     DocumentInfo,
-    UserStats,
-    VectorEntry,
-    VectorSearchResult,
-    VectorSearchSettings,
-)
-from core.base.api.models import (
-    CollectionOverviewResponse,
-    CollectionResponse,
-    UserResponse,
-)
-from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    UserStats,
+    VectorEntry,
+    VectorQuantizationType,
+    VectorSearchResult,
+    VectorSearchSettings,
     VectorTableName,
 )
+from core.base.api.models import (
+    CollectionOverviewResponse,
+    CollectionResponse,
+    KGCreationEstimationResponse,
+    KGDeduplicationEstimationResponse,
+    KGEnrichmentEstimationResponse,
+    UserResponse,
+)
+from core.base.utils import _decorate_vector_type
 
 from .base import Provider, ProviderConfig
 
+"""Base classes for knowledge graph providers."""
+
+import logging
+from abc import ABC, abstractmethod
+from typing import Any, Optional, Tuple
+from uuid import UUID
+
+from ..abstractions import (
+    CommunityReport,
+    Entity,
+    KGCreationSettings,
+    KGEnrichmentSettings,
+    KGEntityDeduplicationSettings,
+    KGExtraction,
+    KGSearchSettings,
+    RelationshipType,
+    Triple,
+)
+from .base import ProviderConfig
+
 logger = logging.getLogger()
-from shared.utils import _decorate_vector_type
+
+
+def escape_braces(s: str) -> str:
+    """
+    Escape braces in a string.
+    This is a placeholder function - implement the actual logic as needed.
+    """
+    # Implement your escape_braces logic here
+    return s.replace("{", "{{").replace("}", "}}")
+
 
 logger = logging.getLogger()
 
@@ -78,6 +120,16 @@ class DatabaseConfig(ProviderConfig):
     default_collection_name: str = "Default"
     default_collection_description: str = "Your default collection."
     enable_fts: bool = False
+
+    # KG settings
+    batch_size: Optional[int] = 1
+    kg_store_path: Optional[str] = None
+    kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
+    kg_creation_settings: KGCreationSettings = KGCreationSettings()
+    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
+        KGEntityDeduplicationSettings()
+    )
+    kg_search_settings: KGSearchSettings = KGSearchSettings()
 
     def __post_init__(self):
         self.validate_config()
@@ -140,7 +192,7 @@ class Handler(ABC):
         return f"{self.project_name}.{base_name}"
 
     @abstractmethod
-    def create_table(self):
+    def create_tables(self):
         pass
 
 
@@ -286,7 +338,7 @@ class CollectionHandler(Handler):
 class TokenHandler(Handler):
 
     @abstractmethod
-    async def create_table(self):
+    async def create_tables(self):
         pass
 
     @abstractmethod
@@ -493,6 +545,10 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
+    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+        pass
+
+    @abstractmethod
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
@@ -532,6 +588,366 @@ class VectorHandler(Handler):
         pass
 
 
+class KGHandler(Handler):
+    """Base handler for Knowledge Graph operations."""
+
+    @abstractmethod
+    async def create_tables(self) -> None:
+        """Create required database tables."""
+        pass
+
+    @abstractmethod
+    async def add_kg_extractions(
+        self,
+        kg_extractions: list[KGExtraction],
+        table_prefix: str = "chunk_",
+    ) -> Tuple[int, int]:
+        """Add KG extractions to storage."""
+        pass
+
+    @abstractmethod
+    async def add_entities(
+        self,
+        entities: list[Entity],
+        table_name: str,
+        conflict_columns: list[str] = [],
+    ) -> Any:
+        """Add entities to storage."""
+        pass
+
+    @abstractmethod
+    async def add_triples(
+        self,
+        triples: list[Triple],
+        table_name: str = "chunk_triple",
+    ) -> None:
+        """Add triples to storage."""
+        pass
+
+    @abstractmethod
+    async def get_entity_map(
+        self, offset: int, limit: int, document_id: UUID
+    ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+        """Get entity map for a document."""
+        pass
+
+    @abstractmethod
+    async def upsert_embeddings(
+        self,
+        data: List[Tuple[Any]],
+        table_name: str,
+    ) -> None:
+        """Upsert embeddings into storage."""
+        pass
+
+    @abstractmethod
+    async def vector_query(self, query: str, **kwargs: Any) -> Any:
+        """Perform vector similarity search."""
+        pass
+
+    # Community management
+    @abstractmethod
+    async def add_communities(self, communities: List[Any]) -> None:
+        """Add communities to storage."""
+        pass
+
+    @abstractmethod
+    async def get_communities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        levels: Optional[list[int]] = None,
+        community_numbers: Optional[list[int]] = None,
+    ) -> dict:
+        """Get communities for a collection."""
+        pass
+
+    @abstractmethod
+    async def get_community_count(self, collection_id: UUID) -> int:
+        """Get total number of communities for a collection."""
+        pass
+
+    @abstractmethod
+    async def add_community_report(
+        self, community_report: CommunityReport
+    ) -> None:
+        """Add a community report."""
+        pass
+
+    @abstractmethod
+    async def get_community_details(
+        self, community_number: int, collection_id: UUID
+    ) -> Tuple[int, list[Entity], list[Triple]]:
+        """Get detailed information about a community."""
+        pass
+
+    @abstractmethod
+    async def get_community_reports(
+        self, collection_id: UUID
+    ) -> List[CommunityReport]:
+        """Get community reports for a collection."""
+        pass
+
+    @abstractmethod
+    async def check_community_reports_exist(
+        self, collection_id: UUID, offset: int, limit: int
+    ) -> List[int]:
+        """Check which community reports exist."""
+        pass
+
+    @abstractmethod
+    async def perform_graph_clustering(
+        self,
+        collection_id: UUID,
+        leiden_params: Dict[str, Any],
+    ) -> int:
+        """Perform graph clustering."""
+        pass
+
+    # Graph operations
+    @abstractmethod
+    async def delete_graph_for_collection(
+        self, collection_id: UUID, cascade: bool = False
+    ) -> None:
+        """Delete graph data for a collection."""
+        pass
+
+    @abstractmethod
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        """Delete a node using document ID."""
+        pass
+
+    # Entity and Triple management
+    @abstractmethod
+    async def get_entities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = -1,
+        entity_ids: Optional[List[str]] = None,
+        entity_names: Optional[List[str]] = None,
+        entity_table_name: str = "document_entity",
+    ) -> dict:
+        """Get entities from storage."""
+        pass
+
+    @abstractmethod
+    async def get_triples(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        entity_names: Optional[List[str]] = None,
+        triple_ids: Optional[List[str]] = None,
+    ) -> dict:
+        """Get triples from storage."""
+        pass
+
+    @abstractmethod
+    async def get_entity_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+        distinct: bool = False,
+        entity_table_name: str = "document_entity",
+    ) -> int:
+        """Get entity count."""
+        pass
+
+    @abstractmethod
+    async def get_triple_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+    ) -> int:
+        """Get triple count."""
+        pass
+
+    # Cost estimation methods
+    @abstractmethod
+    async def get_creation_estimate(
+        self, collection_id: UUID, kg_creation_settings: KGCreationSettings
+    ) -> KGCreationEstimationResponse:
+        """Get creation cost estimate."""
+        pass
+
+    @abstractmethod
+    async def get_enrichment_estimate(
+        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
+    ) -> KGEnrichmentEstimationResponse:
+        """Get enrichment cost estimate."""
+        pass
+
+    @abstractmethod
+    async def get_deduplication_estimate(
+        self,
+        collection_id: UUID,
+        kg_deduplication_settings: KGEntityDeduplicationSettings,
+    ) -> KGDeduplicationEstimationResponse:
+        """Get deduplication cost estimate."""
+        pass
+
+    # Other operations
+    @abstractmethod
+    async def create_vector_index(self) -> None:
+        """Create vector index."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_triples(self, triple_ids: list[int]) -> None:
+        """Delete triples."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_schema(self) -> Any:
+        """Get schema."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def structured_query(self) -> Any:
+        """Perform structured query."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_extraction_prompt(self) -> None:
+        """Update extraction prompt."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_kg_search_prompt(self) -> None:
+        """Update KG search prompt."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def upsert_triples(self) -> None:
+        """Upsert triples."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        """Get existing entity extraction IDs."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_entity_descriptions(self, entities: list[Entity]):
+        raise NotImplementedError
+
+
+class PromptHandler(Handler):
+    """Abstract base class for prompt handling operations."""
+
+    @abstractmethod
+    async def add_prompt(
+        self, name: str, template: str, input_types: dict[str, str]
+    ) -> None:
+        """Add a new prompt template to the database."""
+        pass
+
+    @abstractmethod
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
+        """Retrieve and format a prompt template."""
+        pass
+
+    @abstractmethod
+    async def get_all_prompts(self) -> dict[str, Any]:
+        """Retrieve all stored prompts."""
+        pass
+
+    @abstractmethod
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ) -> None:
+        """Update an existing prompt template."""
+        pass
+
+    @abstractmethod
+    async def delete_prompt(self, name: str) -> None:
+        """Delete a prompt template."""
+        pass
+
+    @abstractmethod
+    async def get_message_payload(
+        self,
+        system_prompt_name: Optional[str] = None,
+        system_role: str = "system",
+        system_inputs: dict = {},
+        system_prompt_override: Optional[str] = None,
+        task_prompt_name: Optional[str] = None,
+        task_role: str = "user",
+        task_inputs: dict = {},
+        task_prompt_override: Optional[str] = None,
+    ) -> list[dict]:
+        """Get the payload of a prompt."""
+        pass
+
+
+class FileHandler(Handler):
+    """Abstract base class for file handling operations."""
+
+    @abstractmethod
+    async def upsert_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_oid: int,
+        file_size: int,
+        file_type: Optional[str] = None,
+    ) -> None:
+        """Add or update a file entry in storage."""
+        pass
+
+    @abstractmethod
+    async def store_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_content: BytesIO,
+        file_type: Optional[str] = None,
+    ) -> None:
+        """Store a new file in the database."""
+        pass
+
+    @abstractmethod
+    async def retrieve_file(
+        self, document_id: UUID
+    ) -> Optional[tuple[str, BinaryIO, int]]:
+        """Retrieve a file from storage."""
+        pass
+
+    @abstractmethod
+    async def delete_file(self, document_id: UUID) -> bool:
+        """Delete a file from storage."""
+        pass
+
+    @abstractmethod
+    async def get_files_overview(
+        self,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_file_names: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[dict]:
+        """Get an overview of stored files."""
+        pass
+
+
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
@@ -539,6 +955,9 @@ class DatabaseProvider(Provider):
     token_handler: TokenHandler
     user_handler: UserHandler
     vector_handler: VectorHandler
+    kg_handler: KGHandler
+    prompt_handler: PromptHandler
+    file_handler: FileHandler
     config: DatabaseConfig
     project_name: str
 
@@ -902,6 +1321,9 @@ class DatabaseProvider(Provider):
             document_id, offset, limit, include_vectors
         )
 
+    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+        return await self.vector_handler.get_chunk(extraction_id)
+
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
@@ -946,4 +1368,318 @@ class DatabaseProvider(Provider):
     ) -> list[dict[str, Any]]:
         return await self.vector_handler.get_semantic_neighbors(
             document_id, chunk_id, limit, similarity_threshold
+        )
+
+    async def add_kg_extractions(
+        self,
+        kg_extractions: list[KGExtraction],
+        table_prefix: str = "chunk_",
+    ) -> Tuple[int, int]:
+        """Forward to KG handler add_kg_extractions method."""
+        return await self.kg_handler.add_kg_extractions(
+            kg_extractions, table_prefix
+        )
+
+    async def add_entities(
+        self,
+        entities: list[Entity],
+        table_name: str,
+        conflict_columns: list[str] = [],
+    ) -> Any:
+        """Forward to KG handler add_entities method."""
+        return await self.kg_handler.add_entities(
+            entities, table_name, conflict_columns
+        )
+
+    async def add_triples(
+        self,
+        triples: list[Triple],
+        table_name: str = "chunk_triple",
+    ) -> None:
+        """Forward to KG handler add_triples method."""
+        return await self.kg_handler.add_triples(triples, table_name)
+
+    async def get_entity_map(
+        self, offset: int, limit: int, document_id: UUID
+    ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+        """Forward to KG handler get_entity_map method."""
+        return await self.kg_handler.get_entity_map(offset, limit, document_id)
+
+    async def upsert_embeddings(
+        self,
+        data: List[Tuple[Any]],
+        table_name: str,
+    ) -> None:
+        """Forward to KG handler upsert_embeddings method."""
+        return await self.kg_handler.upsert_embeddings(data, table_name)
+
+    # Community methods
+    async def add_communities(self, communities: List[Any]) -> None:
+        """Forward to KG handler add_communities method."""
+        return await self.kg_handler.add_communities(communities)
+
+    async def get_communities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        levels: Optional[list[int]] = None,
+        community_numbers: Optional[list[int]] = None,
+    ) -> dict:
+        """Forward to KG handler get_communities method."""
+        return await self.kg_handler.get_communities(
+            collection_id, offset, limit, levels, community_numbers
+        )
+
+    async def get_community_count(self, collection_id: UUID) -> int:
+        """Forward to KG handler get_community_count method."""
+        return await self.kg_handler.get_community_count(collection_id)
+
+    async def add_community_report(
+        self, community_report: CommunityReport
+    ) -> None:
+        """Forward to KG handler add_community_report method."""
+        return await self.kg_handler.add_community_report(community_report)
+
+    async def get_community_details(
+        self, community_number: int, collection_id: UUID
+    ) -> Tuple[int, list[Entity], list[Triple]]:
+        """Forward to KG handler get_community_details method."""
+        return await self.kg_handler.get_community_details(
+            community_number, collection_id
+        )
+
+    async def get_community_reports(
+        self, collection_id: UUID
+    ) -> List[CommunityReport]:
+        """Forward to KG handler get_community_reports method."""
+        return await self.kg_handler.get_community_reports(collection_id)
+
+    async def check_community_reports_exist(
+        self, collection_id: UUID, offset: int, limit: int
+    ) -> List[int]:
+        """Forward to KG handler check_community_reports_exist method."""
+        return await self.kg_handler.check_community_reports_exist(
+            collection_id, offset, limit
+        )
+
+    async def perform_graph_clustering(
+        self,
+        collection_id: UUID,
+        leiden_params: Dict[str, Any],
+    ) -> int:
+        """Forward to KG handler perform_graph_clustering method."""
+        return await self.kg_handler.perform_graph_clustering(
+            collection_id, leiden_params
+        )
+
+    # Graph operations
+    async def delete_graph_for_collection(
+        self, collection_id: UUID, cascade: bool = False
+    ) -> None:
+        """Forward to KG handler delete_graph_for_collection method."""
+        return await self.kg_handler.delete_graph_for_collection(
+            collection_id, cascade
+        )
+
+    async def delete_node_via_document_id(
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
+        """Forward to KG handler delete_node_via_document_id method."""
+        return await self.kg_handler.delete_node_via_document_id(
+            document_id, collection_id
+        )
+
+    # Entity and Triple operations
+    async def get_entities(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = -1,
+        entity_ids: Optional[List[str]] = None,
+        entity_names: Optional[List[str]] = None,
+        entity_table_name: str = "document_entity",
+    ) -> dict:
+        """Forward to KG handler get_entities method."""
+        return await self.kg_handler.get_entities(
+            collection_id,
+            offset,
+            limit,
+            entity_ids,
+            entity_names,
+            entity_table_name,
+        )
+
+    async def get_triples(
+        self,
+        collection_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
+        entity_names: Optional[List[str]] = None,
+        triple_ids: Optional[List[str]] = None,
+    ) -> dict:
+        """Forward to KG handler get_triples method."""
+        return await self.kg_handler.get_triples(
+            collection_id, offset, limit, entity_names, triple_ids
+        )
+
+    async def get_entity_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+        distinct: bool = False,
+        entity_table_name: str = "document_entity",
+    ) -> int:
+        """Forward to KG handler get_entity_count method."""
+        return await self.kg_handler.get_entity_count(
+            collection_id, document_id, distinct, entity_table_name
+        )
+
+    async def get_triple_count(
+        self,
+        collection_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+    ) -> int:
+        """Forward to KG handler get_triple_count method."""
+        return await self.kg_handler.get_triple_count(
+            collection_id, document_id
+        )
+
+    # Estimation methods
+    async def get_creation_estimate(
+        self, collection_id: UUID, kg_creation_settings: KGCreationSettings
+    ) -> KGCreationEstimationResponse:
+        """Forward to KG handler get_creation_estimate method."""
+        return await self.kg_handler.get_creation_estimate(
+            collection_id, kg_creation_settings
+        )
+
+    async def get_enrichment_estimate(
+        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
+    ) -> KGEnrichmentEstimationResponse:
+        """Forward to KG handler get_enrichment_estimate method."""
+        return await self.kg_handler.get_enrichment_estimate(
+            collection_id, kg_enrichment_settings
+        )
+
+    async def get_deduplication_estimate(
+        self,
+        collection_id: UUID,
+        kg_deduplication_settings: KGEntityDeduplicationSettings,
+    ) -> KGDeduplicationEstimationResponse:
+        """Forward to KG handler get_deduplication_estimate method."""
+        return await self.kg_handler.get_deduplication_estimate(
+            collection_id, kg_deduplication_settings
+        )
+
+    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+        return await self.kg_handler.get_all_triples(collection_id)
+
+    async def update_entity_descriptions(self, entities: list[Entity]):
+        return await self.kg_handler.update_entity_descriptions(entities)
+
+    async def vector_query(self, query: str, **kwargs: Any) -> Any:
+        return await self.kg_handler.vector_query(query, **kwargs)
+
+    async def create_vector_index(self) -> None:
+        return await self.kg_handler.create_vector_index()
+
+    async def delete_triples(self, triple_ids: list[int]) -> None:
+        return await self.kg_handler.delete_triples(triple_ids)
+
+    async def get_schema(self) -> Any:
+        return await self.kg_handler.get_schema()
+
+    async def structured_query(self) -> Any:
+        return await self.kg_handler.structured_query()
+
+    async def update_extraction_prompt(self) -> None:
+        return await self.kg_handler.update_extraction_prompt()
+
+    async def update_kg_search_prompt(self) -> None:
+        return await self.kg_handler.update_kg_search_prompt()
+
+    async def upsert_triples(self) -> None:
+        return await self.kg_handler.upsert_triples()
+
+    async def get_existing_entity_extraction_ids(
+        self, document_id: UUID
+    ) -> list[str]:
+        return await self.kg_handler.get_existing_entity_extraction_ids(
+            document_id
+        )
+
+    async def add_prompt(
+        self, name: str, template: str, input_types: dict[str, str]
+    ) -> None:
+        return await self.prompt_handler.add_prompt(
+            name, template, input_types
+        )
+
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
+        return await self.prompt_handler.get_prompt(
+            prompt_name, inputs, prompt_override
+        )
+
+    async def get_all_prompts(self) -> dict[str, Any]:
+        return await self.prompt_handler.get_all_prompts()
+
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ) -> None:
+        return await self.prompt_handler.update_prompt(
+            name, template, input_types
+        )
+
+    async def delete_prompt(self, name: str) -> None:
+        return await self.prompt_handler.delete_prompt(name)
+
+    async def upsert_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_oid: int,
+        file_size: int,
+        file_type: Optional[str] = None,
+    ) -> None:
+        return await self.file_handler.upsert_file(
+            document_id, file_name, file_oid, file_size, file_type
+        )
+
+    async def store_file(
+        self,
+        document_id: UUID,
+        file_name: str,
+        file_content: BytesIO,
+        file_type: Optional[str] = None,
+    ) -> None:
+        return await self.file_handler.store_file(
+            document_id, file_name, file_content, file_type
+        )
+
+    async def retrieve_file(
+        self, document_id: UUID
+    ) -> Optional[tuple[str, BinaryIO, int]]:
+        return await self.file_handler.retrieve_file(document_id)
+
+    async def delete_file(self, document_id: UUID) -> bool:
+        return await self.file_handler.delete_file(document_id)
+
+    async def get_files_overview(
+        self,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_file_names: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[dict]:
+        return await self.file_handler.get_files_overview(
+            filter_document_ids, filter_file_names, offset, limit
         )

@@ -10,10 +10,9 @@ from uuid import UUID
 from core.base import (
     AsyncState,
     CompletionProvider,
+    DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
     PipeType,
-    PromptProvider,
     R2RLoggingProvider,
 )
 from core.base.abstractions import Entity
@@ -32,9 +31,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         pipe_logger: Optional[R2RLoggingProvider] = None,
@@ -47,9 +45,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
             type=type,
             config=config,
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def _run_logic(  # type: ignore
@@ -106,8 +103,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
             out_entity.description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=await self.prompt_provider._get_message_payload(
-                            task_prompt_name=self.kg_provider.config.kg_creation_settings.kg_entity_description_prompt,
+                        messages=await self.database_provider.prompt_handler.get_message_payload(
+                            task_prompt_name=self.database_provider.config.kg_creation_settings.kg_entity_description_prompt,
                             task_inputs={
                                 "entity_info": truncate_info(
                                     entity_info,
@@ -119,7 +116,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                                 ),
                             },
                         ),
-                        generation_config=self.kg_provider.config.kg_creation_settings.generation_config,
+                        generation_config=self.database_provider.config.kg_creation_settings.generation_config,
                     )
                 )
                 .choices[0]
@@ -134,7 +131,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             )[0]
 
             # upsert the entity and its embedding
-            await self.kg_provider.upsert_embeddings(
+            await self.database_provider.upsert_embeddings(
                 [
                     (
                         out_entity.name,
@@ -158,7 +155,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
         )
 
-        entity_map = await self.kg_provider.get_entity_map(
+        entity_map = await self.database_provider.get_entity_map(
             offset, limit, document_id
         )
         total_entities = len(entity_map)

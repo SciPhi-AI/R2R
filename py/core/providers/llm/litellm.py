@@ -7,7 +7,7 @@ from core.base.providers.llm import CompletionConfig, CompletionProvider
 logger = logging.getLogger()
 
 
-class LiteCompletionProvider(CompletionProvider):
+class LiteLLMCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         try:
@@ -19,13 +19,13 @@ class LiteCompletionProvider(CompletionProvider):
         except ImportError:
             logger.error("Failed to import LiteLLM")
             raise ImportError(
-                "Please install the `litellm` package to use the LiteCompletionProvider."
+                "Please install the `litellm` package to use the LiteLLMCompletionProvider."
             )
 
         if config.provider != "litellm":
             logger.error(f"Invalid provider: {config.provider}")
             raise ValueError(
-                "LiteCompletionProvider must be initialized with config with `litellm` provider."
+                "LiteLLMCompletionProvider must be initialized with config with `litellm` provider."
             )
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:

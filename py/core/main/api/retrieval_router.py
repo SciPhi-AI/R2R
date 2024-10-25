@@ -21,7 +21,10 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
-from core.base.providers import OrchestrationProvider
+from core.providers import (
+    HatchetOrchestrationProvider,
+    SimpleOrchestrationProvider,
+)
 
 from ..services.retrieval_service import RetrievalService
 from .base_router import BaseRouter
@@ -31,7 +34,9 @@ class RetrievalRouter(BaseRouter):
     def __init__(
         self,
         service: RetrievalService,
-        orchestration_provider: OrchestrationProvider,
+        orchestration_provider: Union[
+            HatchetOrchestrationProvider, SimpleOrchestrationProvider
+        ],
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(service, orchestration_provider, run_type)

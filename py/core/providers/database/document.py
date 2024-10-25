@@ -29,7 +29,7 @@ class PostgresDocumentHandler(DocumentHandler):
     ):
         super().__init__(project_name, connection_manager)
 
-    async def create_table(self):
+    async def create_tables(self):
         logger.info(
             f"Creating table, if not exists: {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}"
         )
@@ -375,7 +375,7 @@ class PostgresDocumentHandler(DocumentHandler):
 
         query = f"""
             SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                size_in_bytes, ingestion_status, created_at, updated_at, kg_extraction_status,
+                size_in_bytes, ingestion_status, kg_extraction_status, created_at, updated_at,
                 COUNT(*) OVER() AS total_entries
             {base_query}
             ORDER BY created_at DESC
@@ -404,11 +404,11 @@ class PostgresDocumentHandler(DocumentHandler):
                     version=row["version"],
                     size_in_bytes=row["size_in_bytes"],
                     ingestion_status=IngestionStatus(row["ingestion_status"]),
-                    created_at=row["created_at"],
-                    updated_at=row["updated_at"],
                     kg_extraction_status=KGExtractionStatus(
                         row["kg_extraction_status"]
                     ),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 for row in results
             ]

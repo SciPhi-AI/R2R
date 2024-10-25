@@ -4,11 +4,7 @@ from contextlib import ExitStack
 from typing import Optional, Union
 from uuid import UUID
 
-from shared.abstractions.vector import (
-    IndexMeasure,
-    IndexMethod,
-    VectorTableName,
-)
+from core.base import IndexMeasure, IndexMethod, VectorTableName
 
 
 class IngestionMixins:
@@ -168,6 +164,39 @@ class IngestionMixins:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)  # type: ignore
         return await self._make_request("POST", "ingest_chunks", json=data)  # type: ignore
+
+    async def update_chunks(
+        self,
+        document_id: UUID,
+        extraction_id: UUID,
+        text: str,
+        metadata: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = None,
+    ) -> dict:
+        """
+        Update the content of an existing chunk.
+
+        Args:
+            document_id (UUID): The ID of the document containing the chunk.
+            extraction_id (UUID): The ID of the chunk to update.
+            text (str): The new text content of the chunk.
+            metadata (Optional[dict]): Metadata dictionary for the chunk.
+            run_with_orchestration (Optional[bool]): Whether to run the update through orchestration.
+
+        Returns:
+            dict: Update results containing processed, failed, and skipped documents.
+        """
+
+        data = {
+            "text": text,
+            "metadata": metadata,
+            "run_with_orchestration": run_with_orchestration,
+        }
+
+        # Remove None values from payload
+        data = {k: v for k, v in data.items() if v is not None}
+
+        return await self._make_request("PUT", f"update_chunk/{document_id}/{extraction_id}", json=data)  # type: ignore
 
     async def create_vector_index(
         self,

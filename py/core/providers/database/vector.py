@@ -7,17 +7,15 @@ from typing import Any, Optional, Tuple, TypedDict, Union
 from uuid import UUID
 
 from core.base import (
-    VectorEntry,
-    VectorHandler,
-    VectorQuantizationType,
-    VectorSearchResult,
-)
-from core.base.abstractions import VectorSearchSettings
-from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
+    VectorEntry,
+    VectorHandler,
+    VectorQuantizationType,
+    VectorSearchResult,
+    VectorSearchSettings,
     VectorTableName,
 )
 
@@ -25,7 +23,7 @@ from .base import PostgresConnectionManager
 from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
-from shared.utils import _decorate_vector_type
+from core.base.utils import _decorate_vector_type
 
 
 def index_measure_to_ops(
@@ -63,7 +61,7 @@ class PostgresVectorHandler(VectorHandler):
         self.dimension = dimension
         self.enable_fts = enable_fts
 
-    async def create_table(self):
+    async def create_tables(self):
         # Check for old table name first
         check_query = f"""
         SELECT EXISTS (
@@ -479,6 +477,7 @@ class PostgresVectorHandler(VectorHandler):
         SELECT extraction_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE document_id = $1
+        ORDER BY (metadata->>'chunk_order')::integer
         OFFSET $2
         {limit_clause};
         """
@@ -507,6 +506,28 @@ class PostgresVectorHandler(VectorHandler):
             ]
 
         return {"results": chunks, "total_entries": total}
+
+    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+        query = f"""
+        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata
+        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        WHERE extraction_id = $1;
+        """
+
+        result = await self.connection_manager.fetchrow_query(
+            query, (extraction_id,)
+        )
+
+        if result:
+            return {
+                "extraction_id": result["extraction_id"],
+                "document_id": result["document_id"],
+                "user_id": result["user_id"],
+                "collection_ids": result["collection_ids"],
+                "text": result["text"],
+                "metadata": json.loads(result["metadata"]),
+            }
+        return None
 
     async def create_index(
         self,

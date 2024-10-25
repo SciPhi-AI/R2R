@@ -6,8 +6,8 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     CompletionProvider,
+    DatabaseProvider,
     PipeType,
-    PromptProvider,
 )
 from core.base.abstractions import GenerationConfig, RAGCompletion
 
@@ -21,7 +21,7 @@ class SearchRAGPipe(GeneratorPipe):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         config: GeneratorPipe.PipeConfig,
         type: PipeType = PipeType.GENERATOR,
         *args,
@@ -29,7 +29,7 @@ class SearchRAGPipe(GeneratorPipe):
     ):
         super().__init__(
             llm_provider,
-            prompt_provider,
+            database_provider,
             config,
             type,
             *args,
@@ -63,11 +63,13 @@ class SearchRAGPipe(GeneratorPipe):
             context += context_piece
             search_iteration += 1
 
-        messages = await self.prompt_provider._get_message_payload(
-            system_prompt_name=self.config.system_prompt,
-            task_prompt_name=self.config.task_prompt,
-            task_inputs={"query": sel_query, "context": context},
-            task_prompt_override=kwargs.get("task_prompt_override", None),
+        messages = (
+            await self.database_provider.prompt_handler.get_message_payload(
+                system_prompt_name=self.config.system_prompt,
+                task_prompt_name=self.config.task_prompt,
+                task_inputs={"query": sel_query, "context": context},
+                task_prompt_override=kwargs.get("task_prompt_override", None),
+            )
         )
         response = await self.llm_provider.aget_completion(
             messages=messages, generation_config=rag_generation_config

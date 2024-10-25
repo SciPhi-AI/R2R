@@ -33,6 +33,7 @@ let newCollectionId: string;
  *     - ingestFiles
  *     - updateFiles
  *     - ingestChunks
+ *     - updateChunks
  *    Management:
  *     - serverStats
  *     X updatePrompt
@@ -254,8 +255,37 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.not.toThrow();
   });
 
-  test("Collections overview", async () => {
-    await expect(client.collectionsOverview()).resolves.not.toThrow();
+  test("Update chunk", async () => {
+    const response = await client.updateChunk(
+      "bd2cbead-66e0-57bc-acea-2c34711a39b5",
+      "c043aa2c-80e8-59ed-a390-54f1947ea32b",
+      "updated text",
+    );
+  });
+
+  test("Ensure that updated chunk has updated text", async () => {
+    const response = await client.documentChunks(
+      "bd2cbead-66e0-57bc-acea-2c34711a39b5",
+    );
+
+    const targetId = "c043aa2c-80e8-59ed-a390-54f1947ea32b";
+    const updatedChunk = response.results.find(
+      (chunk: { extraction_id: string; text: string }) =>
+        String(chunk.extraction_id) === targetId,
+    );
+
+    expect(updatedChunk).toBeDefined();
+    expect(updatedChunk?.text).toBe("updated text");
+  });
+
+  test("Delete the updated chunk", async () => {
+    await expect(
+      client.delete({
+        extraction_id: {
+          $eq: "c043aa2c-80e8-59ed-a390-54f1947ea32b",
+        },
+      }),
+    ).resolves.toBe("");
   });
 
   test("Create collection", async () => {
