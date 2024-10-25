@@ -11,7 +11,7 @@ from ..base.abstractions import (
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
-from ..providers.logging.r2r_logging import R2RLoggingProvider
+from ..providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -21,7 +21,7 @@ class SearchPipeline(AsyncPipeline):
 
     def __init__(
         self,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(logging_provider, run_manager)
@@ -136,7 +136,9 @@ class SearchPipeline(AsyncPipeline):
             )
         elif vector_search_pipe:
             if not self._vector_search_pipeline:
-                self._vector_search_pipeline = AsyncPipeline()
+                self._vector_search_pipeline = AsyncPipeline(
+                    logging_provider=self.logging_provider
+                )
             if not self._vector_search_pipeline:
                 raise ValueError(
                     "Vector search pipeline not found"

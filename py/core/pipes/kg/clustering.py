@@ -9,7 +9,7 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
 )
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -25,7 +25,7 @@ class KGClusteringPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

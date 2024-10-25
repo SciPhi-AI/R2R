@@ -16,7 +16,7 @@ from core.base import (
     GenerationConfig,
 )
 from core.base.abstractions import Entity, Triple
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -32,7 +32,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

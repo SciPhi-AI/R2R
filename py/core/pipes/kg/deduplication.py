@@ -12,7 +12,7 @@ from core.providers import (
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
 )
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -28,7 +28,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         embedding_provider: Union[
             LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
         ],
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         **kwargs,
     ):
         super().__init__(

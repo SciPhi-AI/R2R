@@ -13,7 +13,7 @@ from core.base.abstractions import (
     KGEntityDeduplicationType,
     R2RException,
 )
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -41,7 +41,7 @@ class KgService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: R2RLoggingProvider,
+        logging_connection: SqlitePersistentLoggingProvider,
     ):
         super().__init__(
             config,

@@ -11,7 +11,7 @@ from core.base import (
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -29,7 +29,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         embedding_batch_size: int = 1,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

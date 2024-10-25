@@ -4,7 +4,7 @@ from uuid import UUID
 
 from core.base import AsyncState, DatabaseProvider, StorageResult, VectorEntry
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -18,7 +18,7 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 128,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

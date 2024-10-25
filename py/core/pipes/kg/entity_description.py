@@ -15,7 +15,7 @@ from core.base import (
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -34,7 +34,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

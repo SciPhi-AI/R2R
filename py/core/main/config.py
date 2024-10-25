@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
-from ..base.logging.r2r_logger import LoggingConfig
+from ..base.logging.r2r_logger import PersistentLoggingConfig
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
@@ -69,7 +69,7 @@ class R2RConfig:
     database: DatabaseConfig
     embedding: EmbeddingConfig
     ingestion: IngestionConfig
-    logging: LoggingConfig
+    logging: PersistentLoggingConfig
     agent: AgentConfig
     orchestration: OrchestrationConfig
 
@@ -121,7 +121,7 @@ class R2RConfig:
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
-        self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
+        self.logging = PersistentLoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
         # override GenerationConfig defaults

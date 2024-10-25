@@ -13,7 +13,7 @@ from core.base import (
     R2RException,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -28,7 +28,7 @@ class KGPromptTuningPipe(AsyncPipe):
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

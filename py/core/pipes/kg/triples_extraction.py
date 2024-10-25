@@ -18,7 +18,7 @@ from core.base import (
     Triple,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -49,7 +49,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

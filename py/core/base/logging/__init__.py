@@ -6,7 +6,7 @@ from .log_processor import (
     LogFilterCriteria,
     LogProcessor,
 )
-from .r2r_logger import LoggingConfig, SqlitePersistentLoggingProvider
+from .r2r_logger import PersistentLoggingConfig
 from .run_manager import RunManager, manage_run
 
 __all__ = [
@@ -18,8 +18,7 @@ __all__ = [
     "LogFilterCriteria",
     "LogProcessor",
     # Logging Providers
-    "SqlitePersistentLoggingProvider",
-    "LoggingConfig",
+    "PersistentLoggingConfig",
     # Run Manager
     "RunManager",
     "manage_run",

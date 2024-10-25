@@ -13,7 +13,7 @@ from core import (
     CompletionConfig,
     DatabaseConfig,
     EmbeddingConfig,
-    LoggingConfig,
+    PersistentLoggingConfig,
     SqlitePersistentLoggingProvider,
     Vector,
     VectorEntry,
@@ -214,7 +214,7 @@ async def local_logging_provider(app_config):
     unique_id = str(uuid.uuid4())
     logging_path = f"test_{unique_id}.sqlite"
     provider = SqlitePersistentLoggingProvider(
-        LoggingConfig(logging_path=logging_path, app=app_config)
+        PersistentLoggingConfig(logging_path=logging_path, app=app_config)
     )
     await provider._init()
     yield provider

@@ -12,7 +12,7 @@ from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 from ..base.utils import to_async_generator
-from ..providers.logging.r2r_logging import R2RLoggingProvider
+from ..providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -22,7 +22,7 @@ class RAGPipeline(AsyncPipeline):
 
     def __init__(
         self,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(logging_provider, run_manager)
@@ -109,7 +109,9 @@ class RAGPipeline(AsyncPipeline):
                 "Only pipes that are part of the RAG pipeline can be added to the RAG pipeline"
             )
         if not self._rag_pipeline:
-            self._rag_pipeline = AsyncPipeline()
+            self._rag_pipeline = AsyncPipeline(
+                logging_provider=self.logging_provider
+            )
         self._rag_pipeline.add_pipe(
             pipe, add_upstream_outputs, *args, **kwargs
         )

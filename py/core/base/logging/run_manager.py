@@ -8,13 +8,13 @@ from core.base.api.models import UserResponse
 from core.base.logging.base import RunType
 from core.base.utils import generate_run_id
 
-from .r2r_logger import RunLoggingProvider
+from .r2r_logger import PersistentLoggingProvider
 
 run_id_var = contextvars.ContextVar("run_id", default=generate_run_id())
 
 
 class RunManager:
-    def __init__(self, logger: RunLoggingProvider):
+    def __init__(self, logger: PersistentLoggingProvider):
         self.logger = logger
         self.run_info: dict[UUID, dict] = {}
 

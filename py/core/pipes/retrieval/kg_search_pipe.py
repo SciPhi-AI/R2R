@@ -17,7 +17,7 @@ from core.base.abstractions import (
     KGSearchResultType,
     KGSearchSettings,
 )
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 from ..abstractions.generator_pipe import GeneratorPipe
 
@@ -35,7 +35,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         config: GeneratorPipe.PipeConfig,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):

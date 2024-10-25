@@ -110,8 +110,7 @@ __all__ = [
     "LogFilterCriteria",
     "LogProcessor",
     # Logging Providers
-    "SqlitePersistentLoggingProvider",
-    "LoggingConfig",
+    "PersistentLoggingConfig",
     # Run Manager
     "RunManager",
     "manage_run",

@@ -9,8 +9,8 @@ from pydantic import BaseModel
 
 from core.base.logging import RunType
 
-# from core.providers.logger.r2r_logger import R2RLoggingProvider
-from core.base.logging.r2r_logger import RunLoggingProvider
+# from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+from core.base.logging.r2r_logger import PersistentLoggingProvider
 from core.base.logging.run_manager import RunManager, manage_run
 
 logger = logging.getLogger()
@@ -85,7 +85,7 @@ class AsyncPipe(Generic[T]):
     def __init__(
         self,
         config: PipeConfig,
-        logging_provider: RunLoggingProvider,
+        logging_provider: PersistentLoggingProvider,
         run_manager: Optional[RunManager] = None,
     ):
         # TODO - Deprecate
@@ -93,7 +93,7 @@ class AsyncPipe(Generic[T]):
             raise ValueError("Pipe logger is required.")
 
         self._config = config or self.PipeConfig()
-        self.logging_provider = logging_provider  # or R2RLoggingProvider()
+        self.logging_provider = logging_provider
         self.log_queue: asyncio.Queue = asyncio.Queue()
         self.log_worker_task = None
         self._run_manager = run_manager or RunManager(self.logging_provider)

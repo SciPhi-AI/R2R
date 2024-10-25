@@ -17,7 +17,7 @@ from core.base import (
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -225,7 +225,9 @@ class R2RProviderFactory:
             Union[OpenAICompletionProvider, LiteLLMCompletionProvider]
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
-        r2r_logging_provider_override: Optional[R2RLoggingProvider] = None,
+        r2r_logging_provider_override: Optional[
+            SqlitePersistentLoggingProvider
+        ] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -274,9 +276,10 @@ class R2RProviderFactory:
         )
 
         logging_provider = (
-            r2r_logging_provider_override or R2RLoggingProvider()
+            r2r_logging_provider_override
+            or SqlitePersistentLoggingProvider(self.config.logging)
         )
-        logging_provider.configure(self.config.logging)
+        await logging_provider.initialize()
 
         return R2RProviders(
             auth=auth_provider,
@@ -517,6 +520,7 @@ class R2RPipeFactory:
             from core.pipes import SearchRAGPipe
 
             return SearchRAGPipe(
+                logging_provider=self.providers.logging,
                 llm_provider=self.providers.llm,
                 database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
@@ -606,13 +610,18 @@ class R2RPipeFactory:
 
 
 class R2RPipelineFactory:
-    def __init__(self, config: R2RConfig, pipes: R2RPipes):
+    def __init__(
+        self, config: R2RConfig, providers: R2RProviders, pipes: R2RPipes
+    ):
         self.config = config
+        self.providers = providers
         self.pipes = pipes
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         """factory method to create an ingestion pipeline."""
-        search_pipeline = SearchPipeline()
+        search_pipeline = SearchPipeline(
+            logging_provider=self.providers.logging
+        )
 
         # Add vector search pipes if embedding provider and vector provider is set
         if (
@@ -636,7 +645,7 @@ class R2RPipelineFactory:
             self.pipes.streaming_rag_pipe if stream else self.pipes.rag_pipe
         )
 
-        rag_pipeline = RAGPipeline()
+        rag_pipeline = RAGPipeline(logging_provider=self.providers.logging)
         rag_pipeline.set_search_pipeline(search_pipeline)
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline

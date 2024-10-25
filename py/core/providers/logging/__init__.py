@@ -1,3 +1,3 @@
-from .r2r_logging import R2RLoggingProvider
+from .r2r_logging import SqlitePersistentLoggingProvider
 
-__all_ = ["R2RLoggingProvider"]
+__all_ = ["SqlitePersistentLoggingProvider"]

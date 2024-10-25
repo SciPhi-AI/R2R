@@ -11,7 +11,7 @@ from core.base import (
     R2RDocumentProcessingError,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logging.r2r_logging import R2RLoggingProvider
+from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -26,7 +26,7 @@ class KGStoragePipe(AsyncPipe):
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 1,
-        logging_provider: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[SqlitePersistentLoggingProvider] = None,
         *args,
         **kwargs,
     ):
