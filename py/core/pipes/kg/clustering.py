@@ -9,7 +9,7 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
 )
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 

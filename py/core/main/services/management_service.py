@@ -15,11 +15,11 @@ from core.base import (
     Prompt,
     R2RException,
     RunManager,
-    RunType,
     UserResponse,
 )
+from core.base.logger.base import RunType
 from core.base.utils import validate_uuid
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders

@@ -11,7 +11,7 @@ from core.base import (
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.utils import generate_extraction_id
 
 logger = logging.getLogger()

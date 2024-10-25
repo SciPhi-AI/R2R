@@ -6,7 +6,7 @@ from uuid import UUID
 import yaml
 from fastapi import Body, Depends, Query
 
-from core.base import RunType, Workflow
+from core.base import Workflow
 from core.base.abstractions import EntityLevel, KGRunType
 from core.base.api.models import (
     WrappedKGCommunitiesResponse,
@@ -17,6 +17,7 @@ from core.base.api.models import (
     WrappedKGTriplesResponse,
     WrappedKGTunePromptResponse,
 )
+from core.base.logger.base import RunType
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
