@@ -50,7 +50,6 @@ class R2RConfig:
             "add_title_as_prefix",
         ],
         # TODO - deprecated, remove
-        "kg": [],
         "ingestion": ["provider"],
         "logging": ["provider", "log_table"],
         "database": ["provider"],
