@@ -256,3 +256,17 @@ def ingestion_config(app_config):
 @pytest.fixture
 def r2r_ingestion_provider(app_config):
     return R2RIngestionProvider(R2RIngestionConfig(app=app_config))
+
+
+# @pytest.fixture(scope="function")
+# async def postgres_logging_provider(app_config):
+#     unique_id = str(uuid.uuid4())
+#     logging_path = f"test_{unique_id}.sqlite"
+#     provider = PostgresPersistentLoggingProvider(
+#         PersistentLoggingConfig(logging_path=logging_path, app=app_config)
+#     )
+#     await provider.initialize()
+#     yield provider
+#     await provider.close()
+#     if os.path.exists(logging_path):
+#         os.remove(logging_path)

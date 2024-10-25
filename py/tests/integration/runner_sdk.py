@@ -133,7 +133,7 @@ def test_document_overview_sample_file_sdk():
     uber_document = {
         "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "title": "uber_2021.pdf",
-        "type": "pdf",
+        "document_type": "pdf",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
@@ -519,7 +519,7 @@ def test_user_document_management():
         "id": ingested_document["document_id"],
         "title": "lyft_2021.pdf",
         "user_id": lambda x: len(x) == 36,  # Check if user_id is a valid UUID
-        "type": "pdf",
+        "document_type": "pdf",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "version": "v0",
