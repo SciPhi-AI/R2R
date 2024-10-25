@@ -17,7 +17,7 @@ from core.base.abstractions import (
     KGSearchResultType,
     KGSearchSettings,
 )
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions.generator_pipe import GeneratorPipe
 

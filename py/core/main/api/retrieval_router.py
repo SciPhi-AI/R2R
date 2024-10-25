@@ -12,7 +12,6 @@ from core.base import (
     KGSearchSettings,
     Message,
     R2RException,
-    RunType,
     VectorSearchSettings,
 )
 from core.base.api.models import (
@@ -21,6 +20,7 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
+from core.base.logger.base import RunType
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,

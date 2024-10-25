@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
-from ..base.logging.r2r_logger import PersistentLoggingConfig
+from ..base.logger.base import PersistentLoggingConfig
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig

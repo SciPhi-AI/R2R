@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import uuid
@@ -6,13 +7,14 @@ from typing import Optional, Tuple, Union
 from uuid import UUID
 
 from core.base import Message
-from core.base.logging.base import RunType
-from core.base.logging.r2r_logger import (
+from core.base.logger.base import RunType
+from core.base.logger.base import (
     PersistentLoggingConfig,
     PersistentLoggingProvider,
     RunInfoLog,
-    logger,
 )
+
+logger = logging.getLogger()
 
 
 class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
@@ -665,23 +667,24 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.project_name = os.getenv("R2R_PROJECT_NAME", "r2r_default")
-        
+
         # PostgreSQL connection settings
         self.db_host = os.getenv("R2R_POSTGRES_HOST", "localhost")
         self.db_port = os.getenv("R2R_POSTGRES_PORT", "5432")
         self.db_name = os.getenv("R2R_POSTGRES_DB")
         self.db_user = os.getenv("R2R_POSTGRES_USER")
         self.db_password = os.getenv("R2R_POSTGRES_PASSWORD")
-        
+
         if not all([self.db_name, self.db_user, self.db_password]):
             raise ValueError(
                 "Please set all required PostgreSQL environment variables: "
                 "POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD"
             )
-        
+
         self.conn = None
         try:
             import asyncpg
+
             self.asyncpg = asyncpg
         except ImportError:
             raise ImportError(
@@ -694,33 +697,40 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
             port=self.db_port,
             database=self.db_name,
             user=self.db_user,
-            password=self.db_password
+            password=self.db_password,
         )
 
         # Create schema if it doesn't exist
-        await self.conn.execute(f"CREATE SCHEMA IF NOT EXISTS {self.project_name}")
+        await self.conn.execute(
+            f"CREATE SCHEMA IF NOT EXISTS {self.project_name}"
+        )
 
         # Create log tables
-        await self.conn.execute(f"""
+        await self.conn.execute(
+            f"""
             CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_table} (
                 timestamp TIMESTAMP WITH TIME ZONE,
                 run_id UUID,
                 key TEXT,
                 value TEXT
             )
-        """)
+        """
+        )
 
-        await self.conn.execute(f"""
+        await self.conn.execute(
+            f"""
             CREATE TABLE IF NOT EXISTS {self.project_name}.{self.log_info_table} (
                 timestamp TIMESTAMP WITH TIME ZONE,
                 run_id UUID UNIQUE,
                 run_type TEXT,
                 user_id UUID
             )
-        """)
+        """
+        )
 
         # Create conversation-related tables
-        await self.conn.execute("""
+        await self.conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS conversations (
                 id UUID PRIMARY KEY,
                 created_at TIMESTAMP WITH TIME ZONE
@@ -747,7 +757,8 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 branch_id UUID REFERENCES branches(id),
                 PRIMARY KEY (message_id, branch_id)
             );
-        """)
+        """
+        )
 
     async def __aenter__(self):
         if self.conn is None:
@@ -775,11 +786,13 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
 
         await self.conn.execute(
             f"""
-            INSERT INTO {self.project_name}.{self.log_table} 
+            INSERT INTO {self.project_name}.{self.log_table}
             (timestamp, run_id, key, value)
             VALUES (CURRENT_TIMESTAMP, $1, $2, $3)
             """,
-            run_id, key, value
+            run_id,
+            key,
+            value,
         )
 
     async def info_log(
@@ -795,7 +808,7 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
 
         await self.conn.execute(
             f"""
-            INSERT INTO {self.project_name}.{self.log_info_table} 
+            INSERT INTO {self.project_name}.{self.log_info_table}
             (timestamp, run_id, run_type, user_id)
             VALUES (CURRENT_TIMESTAMP, $1, $2, $3)
             ON CONFLICT (run_id) DO UPDATE SET
@@ -803,7 +816,9 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 run_type = EXCLUDED.run_type,
                 user_id = EXCLUDED.user_id
             """,
-            run_id, run_type, user_id
+            run_id,
+            run_type,
+            user_id,
         )
 
     async def get_info_logs(
@@ -830,7 +845,7 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
         if user_ids:
             query += f" AND user_id = ANY(${len(params) + 1})"
             params.append(user_ids)
-        
+
         query += " ORDER BY timestamp DESC LIMIT $" + str(len(params) + 1)
         query += " OFFSET $" + str(len(params) + 2)
         params.extend([limit, offset])
@@ -838,10 +853,10 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
         rows = await self.conn.fetch(query, *params)
         return [
             RunInfoLog(
-                run_id=row['run_id'],
-                run_type=row['run_type'],
-                timestamp=row['timestamp'],
-                user_id=row['user_id']
+                run_id=row["run_id"],
+                run_type=row["run_type"],
+                timestamp=row["timestamp"],
+                user_id=row["user_id"],
             )
             for row in rows
         ]
@@ -858,7 +873,7 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
             INSERT INTO conversations (id, created_at)
             VALUES ($1, CURRENT_TIMESTAMP)
             """,
-            conversation_id
+            conversation_id,
         )
         return str(conversation_id)
 
@@ -888,21 +903,21 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
 
         params = [limit if limit != -1 else None, offset]
         if conversation_ids:
-            params.append(conversation_ids)
+            params.append(conversation_ids)  # type: ignore
 
-        rows = await self.conn.fetch(query, *params)
+        rows = await self.conn.fetch(query, *params)  # type: ignore
         if not rows:
             return {"results": [], "total_entries": 0}
 
         conversations = [
             {
-                "conversation_id": str(row['id']),
-                "created_at": row['created_at'].timestamp()
+                "conversation_id": str(row["id"]),
+                "created_at": row["created_at"].timestamp(),
             }
             for row in rows
         ]
 
-        total_entries = rows[0]['total_entries'] if rows else 0
+        total_entries = rows[0]["total_entries"] if rows else 0
         return {"results": conversations, "total_entries": total_entries}
 
     async def add_message(
@@ -929,7 +944,7 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 UUID(conversation_id),
                 UUID(parent_id) if parent_id else None,
                 json.loads(content.json()),
-                metadata or {}
+                metadata or {},
             )
 
             if parent_id:
@@ -939,7 +954,8 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                     INSERT INTO message_branches (message_id, branch_id)
                     SELECT $1, branch_id FROM message_branches WHERE message_id = $2
                     """,
-                    message_id, UUID(parent_id)
+                    message_id,
+                    UUID(parent_id),
                 )
             else:
                 # Get or create default branch
@@ -950,25 +966,27 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                     ORDER BY created_at DESC
                     LIMIT 1
                     """,
-                    UUID(conversation_id)
+                    UUID(conversation_id),
                 )
-                
-                branch_id = branch_row['id'] if branch_row else uuid.uuid4()
+
+                branch_id = branch_row["id"] if branch_row else uuid.uuid4()
                 if not branch_row:
                     await self.conn.execute(
                         """
                         INSERT INTO branches (id, conversation_id, branch_point_id)
                         VALUES ($1, $2, NULL)
                         """,
-                        branch_id, UUID(conversation_id)
+                        branch_id,
+                        UUID(conversation_id),
                     )
-                
+
                 await self.conn.execute(
                     """
                     INSERT INTO message_branches (message_id, branch_id)
                     VALUES ($1, $2)
                     """,
-                    message_id, branch_id
+                    message_id,
+                    branch_id,
                 )
 
         return str(message_id)
@@ -988,14 +1006,14 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 SELECT conversation_id, parent_id, content
                 FROM messages WHERE id = $1
                 """,
-                UUID(message_id)
+                UUID(message_id),
             )
             if not row:
                 raise ValueError(f"Message {message_id} not found")
 
-            conversation_id = row['conversation_id']
-            parent_id = row['parent_id']
-            old_message = Message.parse_raw(json.dumps(row['content']))
+            conversation_id = row["conversation_id"]
+            parent_id = row["parent_id"]
+            old_message = Message.parse_raw(json.dumps(row["content"]))
 
             # Create edited message
             edited_message = Message(
@@ -1015,7 +1033,9 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 INSERT INTO branches (id, conversation_id, branch_point_id, created_at)
                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
                 """,
-                new_branch_id, conversation_id, UUID(message_id)
+                new_branch_id,
+                conversation_id,
+                UUID(message_id),
             )
 
             # Add edited message
@@ -1028,7 +1048,7 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 conversation_id,
                 parent_id,
                 json.loads(edited_message.json()),
-                {"edited": True}
+                {"edited": True},
             )
 
             # Link message to new branch
@@ -1037,7 +1057,8 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 INSERT INTO message_branches (message_id, branch_id)
                 VALUES ($1, $2)
                 """,
-                new_message_id, new_branch_id
+                new_message_id,
+                new_branch_id,
             )
 
             # Link ancestors to new branch
@@ -1059,7 +1080,8 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 WHERE id IS NOT NULL
                 ON CONFLICT DO NOTHING
                 """,
-                UUID(message_id), new_branch_id
+                UUID(message_id),
+                new_branch_id,
             )
 
             # Update descendants' parent
@@ -1078,15 +1100,14 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 SET parent_id = $2
                 WHERE id IN (SELECT id FROM descendants)
                 """,
-                UUID(message_id), new_message_id
+                UUID(message_id),
+                new_message_id,
             )
 
         return str(new_message_id), str(new_branch_id)
 
     async def get_conversation(
-        self,
-        conversation_id: str,
-        branch_id: Optional[str] = None
+        self, conversation_id: str, branch_id: Optional[str] = None
     ) -> list[tuple[str, Message]]:
         if not self.conn:
             raise ValueError(
@@ -1101,9 +1122,9 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
                 ORDER BY created_at DESC
                 LIMIT 1
                 """,
-                UUID(conversation_id)
+                UUID(conversation_id),
             )
-            branch_id = str(row['id']) if row else None
+            branch_id = str(row["id"]) if row else None
 
         if branch_id is None:
             return []
@@ -1126,9 +1147,12 @@ class PostgresPersistentLoggingProvider(PersistentLoggingProvider):
             FROM branch_messages
 ORDER BY created_at ASC
             """,
-            UUID(branch_id)
+            UUID(branch_id),
         )
-        return [(str(row['id']), Message.parse_raw(json.dumps(row['content']))) for row in rows]
+        return [
+            (str(row["id"]), Message.parse_raw(json.dumps(row["content"])))
+            for row in rows
+        ]
 
     async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         if not self.conn:
@@ -1144,14 +1168,18 @@ ORDER BY created_at ASC
             WHERE b.conversation_id = $1
             ORDER BY b.created_at
             """,
-            UUID(conversation_id)
+            UUID(conversation_id),
         )
         return [
             {
-                "branch_id": str(row['id']),
-                "branch_point_id": str(row['branch_point_id']) if row['branch_point_id'] else None,
-                "content": row['content'],
-                "created_at": row['created_at'].timestamp()
+                "branch_id": str(row["id"]),
+                "branch_point_id": (
+                    str(row["branch_point_id"])
+                    if row["branch_point_id"]
+                    else None
+                ),
+                "content": row["content"],
+                "created_at": row["created_at"].timestamp(),
             }
             for row in rows
         ]
@@ -1166,21 +1194,21 @@ ORDER BY created_at ASC
             """
             SELECT id FROM branches
             WHERE conversation_id = (
-                SELECT conversation_id 
-                FROM branches 
+                SELECT conversation_id
+                FROM branches
                 WHERE id = $1
             )
             AND created_at > (
-                SELECT created_at 
-                FROM branches 
+                SELECT created_at
+                FROM branches
                 WHERE id = $1
             )
             ORDER BY created_at
             LIMIT 1
             """,
-            UUID(current_branch_id)
+            UUID(current_branch_id),
         )
-        return str(row['id']) if row else None
+        return str(row["id"]) if row else None
 
     async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
         if not self.conn:
@@ -1192,21 +1220,21 @@ ORDER BY created_at ASC
             """
             SELECT id FROM branches
             WHERE conversation_id = (
-                SELECT conversation_id 
-                FROM branches 
+                SELECT conversation_id
+                FROM branches
                 WHERE id = $1
             )
             AND created_at < (
-                SELECT created_at 
-                FROM branches 
+                SELECT created_at
+                FROM branches
                 WHERE id = $1
             )
             ORDER BY created_at DESC
             LIMIT 1
             """,
-            UUID(current_branch_id)
+            UUID(current_branch_id),
         )
-        return str(row['id']) if row else None
+        return str(row["id"]) if row else None
 
     async def branch_at_message(self, message_id: str) -> str:
         if not self.conn:
@@ -1218,19 +1246,19 @@ ORDER BY created_at ASC
             # Get conversation_id
             row = await self.conn.fetchrow(
                 "SELECT conversation_id FROM messages WHERE id = $1",
-                UUID(message_id)
+                UUID(message_id),
             )
             if not row:
                 raise ValueError(f"Message {message_id} not found")
-            conversation_id = row['conversation_id']
+            conversation_id = row["conversation_id"]
 
             # Check if message is already a branch point
             row = await self.conn.fetchrow(
                 "SELECT id FROM branches WHERE branch_point_id = $1",
-                UUID(message_id)
+                UUID(message_id),
             )
             if row:
-                return str(row['id'])
+                return str(row["id"])
 
             # Create new branch
             new_branch_id = uuid.uuid4()
@@ -1239,7 +1267,9 @@ ORDER BY created_at ASC
                 INSERT INTO branches (id, conversation_id, branch_point_id)
                 VALUES ($1, $2, $3)
                 """,
-                new_branch_id, conversation_id, UUID(message_id)
+                new_branch_id,
+                conversation_id,
+                UUID(message_id),
             )
 
             # Link ancestors to new branch
@@ -1259,7 +1289,8 @@ ORDER BY created_at ASC
                 WHERE id IS NOT NULL
                 ON CONFLICT DO NOTHING
                 """,
-                UUID(message_id), new_branch_id
+                UUID(message_id),
+                new_branch_id,
             )
 
             return str(new_branch_id)
@@ -1274,19 +1305,19 @@ ORDER BY created_at ASC
             # Delete in correct order to respect foreign key constraints
             await self.conn.execute(
                 "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = $1)",
-                UUID(conversation_id)
+                UUID(conversation_id),
             )
             await self.conn.execute(
                 "DELETE FROM branches WHERE conversation_id = $1",
-                UUID(conversation_id)
+                UUID(conversation_id),
             )
             await self.conn.execute(
                 "DELETE FROM messages WHERE conversation_id = $1",
-                UUID(conversation_id)
+                UUID(conversation_id),
             )
             await self.conn.execute(
                 "DELETE FROM conversations WHERE id = $1",
-                UUID(conversation_id)
+                UUID(conversation_id),
             )
 
     async def get_logs(
@@ -1304,7 +1335,7 @@ ORDER BY created_at ASC
         rows = await self.conn.fetch(
             f"""
             WITH ranked_logs AS (
-                SELECT 
+                SELECT
                     run_id,
                     key,
                     value,
@@ -1319,15 +1350,15 @@ ORDER BY created_at ASC
             ORDER BY timestamp DESC
             """,
             run_ids,
-            limit_per_run
+            limit_per_run,
         )
 
         return [
             {
-                "run_id": row['run_id'],
-                "key": row['key'],
-                "value": row['value'],
-                "timestamp": row['timestamp']
+                "run_id": row["run_id"],
+                "key": row["key"],
+                "value": row["value"],
+                "timestamp": row["timestamp"],
             }
             for row in rows
         ]
