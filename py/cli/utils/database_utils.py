@@ -106,8 +106,17 @@ def create_schema_config(
     """Create an Alembic config for a specific schema."""
     config = alembic.config.Config()
 
+    # Calculate the path to the migrations folder
+    current_file = Path(__file__)
+    migrations_path = current_file.parent.parent.parent / "migrations"
+
+    if not migrations_path.exists():
+        raise FileNotFoundError(
+            f"Migrations folder not found at {migrations_path}"
+        )
+
     # Set basic options
-    config.set_main_option("script_location", str(project_root / "migrations"))
+    config.set_main_option("script_location", str(migrations_path))
     config.set_main_option("sqlalchemy.url", db_url)
 
     # Set schema-specific version table
