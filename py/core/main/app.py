@@ -1,8 +1,11 @@
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+
+from core.base import R2RException
 
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -38,6 +41,17 @@ class R2RApp:
         self.kg_router = kg_router
         self.orchestration_provider = orchestration_provider
         self.app = FastAPI()
+
+        @self.app.exception_handler(R2RException)
+        async def r2r_exception_handler(request: Request, exc: R2RException):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={
+                    "message": exc.message,
+                    "error_type": type(exc).__name__,
+                },
+            )
+
         self._setup_routes()
         self._apply_cors()
 
