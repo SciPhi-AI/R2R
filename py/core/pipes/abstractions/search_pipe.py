@@ -3,13 +3,8 @@ from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
-from core.base import (
-    AsyncPipe,
-    AsyncState,
-    PipeType,
-    R2RLoggingProvider,
-    VectorSearchResult,
-)
+from core.base import AsyncPipe, AsyncState, VectorSearchResult
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 
@@ -26,15 +21,13 @@ class SearchPipe(AsyncPipe[VectorSearchResult]):
     def __init__(
         self,
         config: AsyncPipe.PipeConfig,
-        type: PipeType = PipeType.SEARCH,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
-            pipe_logger,
+            logging_provider,
             *args,
             **kwargs,
         )

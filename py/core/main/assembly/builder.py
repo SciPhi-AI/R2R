@@ -11,10 +11,10 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     OrchestrationProvider,
-    R2RLoggingProvider,
     RunManager,
 )
 from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 from ..api.auth_router import AuthRouter
 from ..api.ingestion_router import IngestionRouter

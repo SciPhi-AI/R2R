@@ -7,8 +7,8 @@ from uuid import UUID, uuid4
 from core.base import (
     CollectionHandler,
     DatabaseConfig,
-    R2RException,
     KGExtractionStatus,
+    R2RException,
     generate_default_user_collection_id,
 )
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
@@ -325,7 +325,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 id=row["document_id"],
                 collection_ids=[collection_id],
                 user_id=row["user_id"],
-                type=DocumentType(row["type"]),
+                document_type=DocumentType(row["type"]),
                 metadata=json.loads(row["metadata"]),
                 title=row["title"],
                 version=row["version"],

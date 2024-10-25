@@ -112,7 +112,6 @@ __all__ = [
     # Logging Providers
     "SqlitePersistentLoggingProvider",
     "LoggingConfig",
-    "R2RLoggingProvider",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -125,7 +124,6 @@ __all__ = [
     ## PIPES
     "AsyncPipe",
     "AsyncState",
-    "PipeType",
     ## PROVIDERS
     # Base provider classes
     "AppConfig",

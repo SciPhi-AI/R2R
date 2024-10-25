@@ -2,15 +2,9 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    DatabaseProvider,
-    PipeType,
-    R2RLoggingProvider,
-    StorageResult,
-    VectorEntry,
-)
+from core.base import AsyncState, DatabaseProvider, StorageResult, VectorEntry
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 
@@ -24,8 +18,7 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
@@ -34,8 +27,7 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         """
         super().__init__(
             config,
-            type,
-            pipe_logger,
+            logging_provider,
             *args,
             **kwargs,
         )

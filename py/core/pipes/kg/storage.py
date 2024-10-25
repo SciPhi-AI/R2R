@@ -8,11 +8,10 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     KGExtraction,
-    PipeType,
     R2RDocumentProcessingError,
-    R2RLoggingProvider,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 
@@ -27,8 +26,7 @@ class KGStoragePipe(AsyncPipe):
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 1,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
@@ -41,8 +39,7 @@ class KGStoragePipe(AsyncPipe):
 
         super().__init__(
             config,
-            type,
-            pipe_logger,
+            logging_provider,
             *args,
             **kwargs,
         )

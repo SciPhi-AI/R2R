@@ -13,13 +13,12 @@ from core.base import (
     Entity,
     GenerationConfig,
     KGExtraction,
-    PipeType,
     R2RDocumentProcessingError,
     R2RException,
-    R2RLoggingProvider,
     Triple,
 )
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 
@@ -50,14 +49,12 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
+            logging_provider=logging_provider,
             config=config
             or AsyncPipe.PipeConfig(name="default_kg_triples_extraction_pipe"),
         )

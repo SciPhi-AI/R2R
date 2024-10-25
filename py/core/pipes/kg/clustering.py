@@ -8,9 +8,8 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PipeType,
-    R2RLoggingProvider,
 )
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 logger = logging.getLogger()
 
@@ -26,8 +25,7 @@ class KGClusteringPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.OTHER,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
@@ -35,8 +33,7 @@ class KGClusteringPipe(AsyncPipe):
         Initializes the KG clustering pipe with necessary components and configurations.
         """
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
+            logging_provider=logging_provider,
             config=config or AsyncPipe.PipeConfig(name="kg_cluster_pipe"),
         )
         self.database_provider = database_provider

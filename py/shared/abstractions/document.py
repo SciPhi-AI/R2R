@@ -152,7 +152,7 @@ class DocumentInfo(R2RSerializable):
     id: UUID
     collection_ids: list[UUID]
     user_id: UUID
-    type: DocumentType
+    document_type: DocumentType
     metadata: dict
     title: Optional[str] = None
     version: str
@@ -171,7 +171,7 @@ class DocumentInfo(R2RSerializable):
             "document_id": self.id,
             "collection_ids": self.collection_ids,
             "user_id": self.user_id,
-            "type": self.type,
+            "type": self.document_type,
             "metadata": json.dumps(self.metadata),
             "title": self.title or "N/A",
             "version": self.version,

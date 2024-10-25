@@ -8,8 +8,6 @@ from core.base import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    PipeType,
-    R2RLoggingProvider,
 )
 from core.base.abstractions import (
     KGCommunityResult,
@@ -19,6 +17,7 @@ from core.base.abstractions import (
     KGSearchResultType,
     KGSearchSettings,
 )
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 from ..abstractions.generator_pipe import GeneratorPipe
 
@@ -36,8 +35,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         config: GeneratorPipe.PipeConfig,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
@@ -48,8 +46,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             llm_provider,
             database_provider,
             config,
-            type,
-            pipe_logger,
+            logging_provider,
             *args,
             **kwargs,
         )

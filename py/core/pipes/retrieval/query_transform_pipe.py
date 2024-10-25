@@ -7,7 +7,6 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     DatabaseProvider,
-    PipeType,
 )
 from core.base.abstractions import GenerationConfig
 
@@ -30,7 +29,6 @@ class QueryTransformPipe(GeneratorPipe):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: QueryTransformConfig,
-        type: PipeType = PipeType.TRANSFORM,
         *args,
         **kwargs,
     ):
@@ -39,7 +37,6 @@ class QueryTransformPipe(GeneratorPipe):
             llm_provider,
             database_provider,
             config,
-            type,
             *args,
             **kwargs,
         )

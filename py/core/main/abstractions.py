@@ -14,6 +14,7 @@ from core.providers import (
     PostgresDBProvider,
     R2RAuthProvider,
     R2RIngestionProvider,
+    R2RLoggingProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
@@ -29,6 +30,7 @@ class R2RProviders(BaseModel):
     orchestration: Union[
         HatchetOrchestrationProvider, SimpleOrchestrationProvider
     ]
+    logging: R2RLoggingProvider
 
     class Config:
         arbitrary_types_allowed = True

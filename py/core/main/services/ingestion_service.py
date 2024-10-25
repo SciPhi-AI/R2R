@@ -13,7 +13,6 @@ from core.base import (
     DocumentType,
     IngestionStatus,
     R2RException,
-    R2RLoggingProvider,
     RawChunk,
     RunManager,
     Vector,
@@ -29,6 +28,7 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import UserResponse
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -161,7 +161,7 @@ class IngestionService(Service):
             id=document_id,
             user_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
-            type=DocumentType[file_extension.upper()],
+            document_type=DocumentType[file_extension.upper()],
             title=metadata.get("title", file_name.split("/")[-1]),
             metadata=metadata,
             version=version,
@@ -186,7 +186,7 @@ class IngestionService(Service):
             id=document_id,
             user_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
-            type=DocumentType.TXT,
+            document_type=DocumentType.TXT,
             title=metadata.get("title", f"Ingested Chunks - {document_id}"),
             metadata=metadata,
             version=version,
@@ -207,9 +207,8 @@ class IngestionService(Service):
                     id=document_info.id,
                     collection_ids=document_info.collection_ids,
                     user_id=document_info.user_id,
-                    type=document_info.type,
                     metadata={
-                        "document_type": document_info.type.value,
+                        "document_type": document_info.document_type.value,
                         **document_info.metadata,
                     },
                 )

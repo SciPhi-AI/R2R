@@ -14,10 +14,10 @@ from core.base import (
     EmbeddingProvider,
     IngestionConfig,
     OrchestrationConfig,
-    R2RLoggingProvider,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -225,6 +225,7 @@ class R2RProviderFactory:
             Union[OpenAICompletionProvider, LiteLLMCompletionProvider]
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
+        r2r_logging_provider_override: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -272,6 +273,11 @@ class R2RProviderFactory:
             or self.create_orchestration_provider(self.config.orchestration)
         )
 
+        logging_provider = (
+            r2r_logging_provider_override or R2RLoggingProvider()
+        )
+        logging_provider.configure(self.config.logging)
+
         return R2RProviders(
             auth=auth_provider,
             database=database_provider,
@@ -279,6 +285,7 @@ class R2RProviderFactory:
             ingestion=ingestion_provider,
             llm=llm_provider,
             orchestration=orchestration_provider,
+            logging=logging_provider,
         )
 
 
@@ -350,6 +357,7 @@ class R2RPipeFactory:
         from core.pipes import ParsingPipe
 
         return ParsingPipe(
+            logging_provider=self.providers.logging,
             ingestion_provider=self.providers.ingestion,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="parsing_pipe"),
@@ -362,6 +370,7 @@ class R2RPipeFactory:
         from core.pipes import EmbeddingPipe
 
         return EmbeddingPipe(
+            logging_provider=self.providers.logging,
             embedding_provider=self.providers.embedding,
             database_provider=self.providers.database,
             embedding_batch_size=self.config.embedding.batch_size,
@@ -375,6 +384,7 @@ class R2RPipeFactory:
         from core.pipes import VectorStoragePipe
 
         return VectorStoragePipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="vector_storage_pipe"),
         )
@@ -386,6 +396,7 @@ class R2RPipeFactory:
         from core.pipes import VectorSearchPipe
 
         return VectorSearchPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
             config=SearchPipe.SearchConfig(name="vector_search_pipe"),
@@ -407,6 +418,7 @@ class R2RPipeFactory:
         )
 
         query_transform_pipe = QueryTransformPipe(
+            logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             config=QueryTransformPipe.QueryTransformConfig(
@@ -416,6 +428,7 @@ class R2RPipeFactory:
         )
 
         return MultiSearchPipe(
+            logging_provider=self.providers.logging,
             query_transform_pipe=query_transform_pipe,
             inner_search_pipe=inner_search_pipe,
             config=multi_search_config,
@@ -446,6 +459,7 @@ class R2RPipeFactory:
         from core.pipes import RoutingSearchPipe
 
         return RoutingSearchPipe(
+            logging_provider=self.providers.logging,
             search_pipes={
                 "vanilla": vanilla_vector_search_pipe,
                 "hyde": hyde_search_pipe,
@@ -459,6 +473,7 @@ class R2RPipeFactory:
         from core.pipes import KGTriplesExtractionPipe
 
         return KGTriplesExtractionPipe(
+            logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="kg_triples_extraction_pipe"),
@@ -468,6 +483,7 @@ class R2RPipeFactory:
         from core.pipes import KGStoragePipe
 
         return KGStoragePipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="kg_storage_pipe"),
         )
@@ -476,6 +492,7 @@ class R2RPipeFactory:
         from core.pipes import KGSearchSearchPipe
 
         return KGSearchSearchPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -489,6 +506,7 @@ class R2RPipeFactory:
             from core.pipes import StreamingSearchRAGPipe
 
             return StreamingSearchRAGPipe(
+                logging_provider=self.providers.logging,
                 llm_provider=self.providers.llm,
                 database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
@@ -510,6 +528,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDescriptionPipe
 
         return KGEntityDescriptionPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -520,6 +539,7 @@ class R2RPipeFactory:
         from core.pipes import KGClusteringPipe
 
         return KGClusteringPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -530,6 +550,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -540,6 +561,7 @@ class R2RPipeFactory:
         from core.pipes import KGCommunitySummaryPipe
 
         return KGCommunitySummaryPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -550,6 +572,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationPipe
 
         return KGEntityDeduplicationPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -562,6 +585,7 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -574,6 +598,7 @@ class R2RPipeFactory:
         from core.pipes import KGPromptTuningPipe
 
         return KGPromptTuningPipe(
+            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             config=AsyncPipe.PipeConfig(name="kg_prompt_tuning_pipe"),
@@ -624,10 +649,6 @@ class R2RPipelineFactory:
         *args,
         **kwargs,
     ) -> R2RPipelines:
-        try:
-            self.configure_logging()
-        except Exception as e:
-            logger.warning(f"Error configuring logging: {e}")
         search_pipeline = search_pipeline or self.create_search_pipeline(
             *args, **kwargs
         )
@@ -648,9 +669,6 @@ class R2RPipelineFactory:
                 **kwargs,
             ),
         )
-
-    def configure_logging(self):
-        R2RLoggingProvider.configure(self.config.logging)
 
 
 class R2RAgentFactory:

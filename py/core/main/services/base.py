@@ -1,6 +1,7 @@
 from abc import ABC
 
-from core.base import R2RLoggingProvider, RunManager
+from core.base import RunManager
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig

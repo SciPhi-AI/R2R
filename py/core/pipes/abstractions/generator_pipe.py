@@ -2,15 +2,10 @@ from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    CompletionProvider,
-    DatabaseProvider,
-    PipeType,
-    R2RLoggingProvider,
-)
+from core.base import AsyncState, CompletionProvider, DatabaseProvider
 from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.logging.r2r_logging import R2RLoggingProvider
 
 
 class GeneratorPipe(AsyncPipe):
@@ -24,15 +19,13 @@ class GeneratorPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
-        type: PipeType = PipeType.GENERATOR,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
+        logging_provider: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
-            pipe_logger,
+            logging_provider,
             *args,
             **kwargs,
         )
