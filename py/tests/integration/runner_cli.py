@@ -52,6 +52,31 @@ def test_ingest_sample_file_2_cli():
     print("~" * 100)
 
 
+def compare_document_fields(documents, expected_doc):
+    for doc in documents:
+        mismatched_fields = {}
+        for key, expected_value in expected_doc.items():
+            actual_value = doc.get(key)
+            if actual_value != expected_value:
+                mismatched_fields[key] = {
+                    "expected": expected_value,
+                    "actual": actual_value,
+                }
+
+        if not mismatched_fields:  # If all fields match
+            return True
+
+        # Print mismatches for debugging
+        print(f"\nMismatched fields in document: {doc['title']}")
+        for field, values in mismatched_fields.items():
+            print(f"Field '{field}':")
+            print(f"  Expected: {values['expected']}")
+            print(f"  Actual:   {values['actual']}")
+        print()
+
+    return False
+
+
 def test_document_overview_sample_file_cli():
     print("Testing: Document overview contains 'aristotle.txt'")
     output = run_command("poetry run r2r documents-overview")
@@ -61,21 +86,28 @@ def test_document_overview_sample_file_cli():
 
     aristotle_document = {
         "title": "aristotle.txt",
-        "type": "txt",
+        "document_type": "txt",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "version": "v0",
         "metadata": {"title": "aristotle.txt", "version": "v0"},
     }
 
-    # Check if any document in the overview matches the Aristotle document
-    if not any(
-        all(doc.get(k) == v for k, v in aristotle_document.items())
-        for doc in documents
-    ):
+    if not compare_document_fields(documents, aristotle_document):
         print("Document overview test failed")
         print("Aristotle document not found in the overview")
+        print("All documents:", documents)
         sys.exit(1)
+
+    # # Check if any document in the overview matches the Aristotle document
+    # if not any(
+    #     all(doc.get(k) == v for k, v in aristotle_document.items())
+    #     for doc in documents
+    # ):
+    #     print("Document overview test failed")
+    #     print("Aristotle document not found in the overview")
+    #     print("Documents:", documents)
+    #     sys.exit(1)
     print("Document overview test passed")
     print("~" * 100)
 
