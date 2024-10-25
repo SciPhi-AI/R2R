@@ -9,6 +9,7 @@ from shared.api.models.auth.responses import (
 from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
     IngestionResponse,
+    UpdateResponse,
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
@@ -90,6 +91,7 @@ __all__ = [
     "WrappedListVectorIndicesResponse",
     "WrappedDeleteVectorIndexResponse",
     "WrappedSelectVectorIndexResponse",
+    "UpdateResponse",
     # Knowledge Graph Responses
     "KGCreationResponse",
     "WrappedKGCreationResponse",

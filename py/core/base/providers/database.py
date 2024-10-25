@@ -545,6 +545,10 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
+    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+        pass
+
+    @abstractmethod
     async def create_index(
         self,
         table_name: Optional[VectorTableName] = None,
@@ -1316,6 +1320,9 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.get_document_chunks(
             document_id, offset, limit, include_vectors
         )
+
+    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+        return await self.vector_handler.get_chunk(extraction_id)
 
     async def create_index(
         self,
