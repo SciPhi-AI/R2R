@@ -586,7 +586,7 @@ def test_user_password_management():
     print("Testing: User password management")
 
     # Test for duplicate user
-    client.login("duplicate_test@example.com", "password123")
+    client.login("password_mgmt@example.com", "password123")
 
     # Change password
     client.change_password("password123", "new_password")
