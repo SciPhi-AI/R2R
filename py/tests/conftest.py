@@ -21,6 +21,7 @@ from core import (
 from core.base import (
     DocumentInfo,
     DocumentType,
+    IngestionConfig,
     IngestionStatus,
     KGExtractionStatus,
     OrchestrationConfig,
@@ -33,6 +34,8 @@ from core.providers import (
     PostgresDBProvider,
     R2RAuthProvider,
 )
+from core.providers.ingestion import R2RIngestionConfig, R2RIngestionProvider
+from core.providers.orchestration import SimpleOrchestrationProvider
 
 
 # Vectors
@@ -105,7 +108,7 @@ async def postgres_db_provider(
     db = PostgresDBProvider(
         db_config, dimension=dimension, crypto_provider=crypto_provider
     )
-    await db.create_tables(embedding_dimension, vector_quantization_type)
+    # await db.create_tables(embedding_dimension, vector_quantization_type)
     await db.initialize()
     await db.upsert_entries(sample_entries)
 
@@ -216,7 +219,7 @@ async def local_logging_provider(app_config):
     provider = SqlitePersistentLoggingProvider(
         PersistentLoggingConfig(logging_path=logging_path, app=app_config)
     )
-    await provider._init()
+    await provider.initialize()
     yield provider
     await provider.close()
     if os.path.exists(logging_path):
@@ -236,3 +239,34 @@ def vector_quantization_type():
 @pytest.fixture(scope="function")
 def orchestration_config(app_config):
     return OrchestrationConfig(provider="simple", app=app_config)
+
+
+@pytest.fixture
+def orchestration_provider(orchestration_config):
+    return SimpleOrchestrationProvider(orchestration_config)
+
+
+@pytest.fixture
+def ingestion_config(app_config):
+    return IngestionConfig(
+        app=app_config  #  , chunk_enrichment_settings=enrichment_settings
+    )
+
+
+@pytest.fixture
+def r2r_ingestion_provider(app_config):
+    return R2RIngestionProvider(R2RIngestionConfig(app=app_config))
+
+
+# @pytest.fixture(scope="function")
+# async def postgres_logging_provider(app_config):
+#     unique_id = str(uuid.uuid4())
+#     logging_path = f"test_{unique_id}.sqlite"
+#     provider = PostgresPersistentLoggingProvider(
+#         PersistentLoggingConfig(logging_path=logging_path, app=app_config)
+#     )
+#     await provider.initialize()
+#     yield provider
+#     await provider.close()
+#     if os.path.exists(logging_path):
+#         os.remove(logging_path)

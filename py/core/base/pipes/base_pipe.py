@@ -7,9 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from core.base.logging import RunType
-from core.base.logging.r2r_logger import PersistentLoggingProvider
-from core.base.logging.run_manager import RunManager, manage_run
+from core.base.logger.base import PersistentLoggingProvider, RunType
+from core.base.logger.run_manager import RunManager, manage_run
 
 logger = logging.getLogger()
 

@@ -14,6 +14,7 @@ class UpdatePromptResponse(BaseModel):
 
 
 class PromptResponse(BaseModel):
+    prompt_id: UUID
     name: str
     template: str
     created_at: datetime
@@ -89,7 +90,7 @@ class DocumentOverviewResponse(BaseModel):
     id: UUID
     title: str
     user_id: UUID
-    type: str
+    document_type: str
     created_at: datetime
     updated_at: datetime
     ingestion_status: str

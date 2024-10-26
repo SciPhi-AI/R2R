@@ -133,7 +133,7 @@ def test_document_overview_sample_file_sdk():
     uber_document = {
         "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
         "title": "uber_2021.pdf",
-        "type": "pdf",
+        "document_type": "pdf",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
@@ -519,7 +519,7 @@ def test_user_document_management():
         "id": ingested_document["document_id"],
         "title": "lyft_2021.pdf",
         "user_id": lambda x: len(x) == 36,  # Check if user_id is a valid UUID
-        "type": "pdf",
+        "document_type": "pdf",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "version": "v0",
@@ -1920,6 +1920,74 @@ def test_delete_chunks():
         )
     except R2RException as e:
         assert e.status_code == 404
+
+
+def test_get_all_prompts():
+    print("Testing: Get All Prompts")
+
+    response = client.get_all_prompts()
+
+    # Test basic structure
+    assert isinstance(response, dict)
+    assert "results" in response
+    assert "prompts" in response["results"]
+
+    # Test prompts dictionary
+    prompts = response["results"]["prompts"]
+    assert isinstance(prompts, dict)
+
+    # Test that we have at least some expected prompt types
+    expected_prompt_types = {
+        "default_system",
+        "rag_agent",
+        "hyde",
+        "default_rag",
+    }
+    assert expected_prompt_types.issubset(set(prompts.keys()))
+
+    # Test structure of individual prompt entries
+    for _, prompt_data in prompts.items():
+        assert isinstance(prompt_data, dict)
+        required_fields = {
+            "name",
+            "prompt_id",
+            "template",
+            "created_at",
+            "updated_at",
+            "input_types",
+        }
+
+        assert all(field in prompt_data for field in required_fields)
+
+        # Test field types
+        assert isinstance(prompt_data["name"], str)
+        assert isinstance(prompt_data["template"], str)
+        assert isinstance(prompt_data["created_at"], str)
+        assert isinstance(prompt_data["updated_at"], str)
+        assert isinstance(prompt_data["input_types"], dict)
+
+        # Test timestamp format
+        for timestamp in [
+            prompt_data["created_at"],
+            prompt_data["updated_at"],
+        ]:
+            assert timestamp.endswith("Z")
+            assert (
+                "T" in timestamp
+            )  # ISO format contains T between date and time
+
+
+def test_get_prompt():
+    print("Testing: Get Prompt")
+
+    response = client.get_prompt("default_system")
+
+    print(response)
+
+    # Test basic structure
+    assert isinstance(response, dict)
+    assert "results" in response
+    assert "You are a helpful agent." in response["results"]["message"]
 
 
 def create_client(base_url):

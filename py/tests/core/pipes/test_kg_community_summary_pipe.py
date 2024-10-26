@@ -26,12 +26,14 @@ def kg_community_summary_pipe(
     litellm_completion_provider,
     litellm_provider,
     kg_pipeline_config,
+    local_logging_provider,
 ):
     return KGCommunitySummaryPipe(
         postgres_db_provider,
         litellm_completion_provider,
         litellm_provider,
         kg_pipeline_config,
+        logging_provider=local_logging_provider,
     )
 
 

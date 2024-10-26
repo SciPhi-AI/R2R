@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
 from core.base import AsyncPipe, AsyncState, VectorSearchResult
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 

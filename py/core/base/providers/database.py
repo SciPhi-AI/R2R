@@ -21,6 +21,7 @@ from core.base import (
     CommunityReport,
     Entity,
     KGExtraction,
+    Message,
     Triple,
     VectorEntry,
 )
@@ -50,6 +51,8 @@ from core.base.api.models import (
 )
 from core.base.utils import _decorate_vector_type
 
+from ..logger import RunInfoLog
+from ..logger.base import RunType
 from .base import Provider, ProviderConfig
 
 """Base classes for knowledge graph providers."""
@@ -960,6 +963,114 @@ class FileHandler(Handler):
         pass
 
 
+class LoggingHandler(Handler):
+    """Abstract base class defining the interface for logging handlers."""
+
+    @abstractmethod
+    async def close(self) -> None:
+        """Close any open connections."""
+        pass
+
+    # Basic logging methods
+    @abstractmethod
+    async def log(self, run_id: UUID, key: str, value: str) -> None:
+        """Log a key-value pair for a specific run."""
+        pass
+
+    @abstractmethod
+    async def info_log(
+        self, run_id: UUID, run_type: RunType, user_id: UUID
+    ) -> None:
+        """Log run information."""
+        pass
+
+    @abstractmethod
+    async def get_logs(
+        self, run_ids: List[UUID], limit_per_run: int = 10
+    ) -> List[Dict]:
+        """Retrieve logs for specified run IDs."""
+        pass
+
+    @abstractmethod
+    async def get_info_logs(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional[RunType] = None,
+        user_ids: Optional[List[UUID]] = None,
+    ) -> List[RunInfoLog]:
+        """Retrieve run information logs with filtering options."""
+        pass
+
+    # Conversation management methods
+    @abstractmethod
+    async def create_conversation(self) -> str:
+        """Create a new conversation and return its ID."""
+        pass
+
+    @abstractmethod
+    async def delete_conversation(self, conversation_id: str) -> None:
+        """Delete a conversation and all associated data."""
+        pass
+
+    @abstractmethod
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[List[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> Dict[str, Union[List[Dict], int]]:
+        """Get an overview of conversations with pagination."""
+        pass
+
+    # Message management methods
+    @abstractmethod
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: Message,
+        parent_id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> str:
+        """Add a message to a conversation."""
+        pass
+
+    @abstractmethod
+    async def edit_message(
+        self, message_id: str, new_content: str
+    ) -> Tuple[str, str]:
+        """Edit an existing message and return new message ID and branch ID."""
+        pass
+
+    @abstractmethod
+    async def get_conversation(
+        self, conversation_id: str, branch_id: Optional[str] = None
+    ) -> List[Tuple[str, Message]]:
+        """Retrieve all messages in a conversation branch."""
+        pass
+
+    # Branch management methods
+    @abstractmethod
+    async def get_branches_overview(self, conversation_id: str) -> List[Dict]:
+        """Get an overview of all branches in a conversation."""
+        pass
+
+    @abstractmethod
+    async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the ID of the next branch in chronological order."""
+        pass
+
+    @abstractmethod
+    async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the ID of the previous branch in chronological order."""
+        pass
+
+    @abstractmethod
+    async def branch_at_message(self, message_id: str) -> str:
+        """Create a new branch starting at a specific message."""
+        pass
+
+
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
@@ -970,6 +1081,7 @@ class DatabaseProvider(Provider):
     kg_handler: KGHandler
     prompt_handler: PromptHandler
     file_handler: FileHandler
+    logging_handler: LoggingHandler
     config: DatabaseConfig
     project_name: str
 
@@ -1697,3 +1809,104 @@ class DatabaseProvider(Provider):
         return await self.file_handler.get_files_overview(
             filter_document_ids, filter_file_names, offset, limit
         )
+
+    async def log(
+        self,
+        run_id: UUID,
+        key: str,
+        value: str,
+    ) -> None:
+        """Add a new log entry."""
+        return await self.logging_handler.log(run_id, key, value)
+
+    async def info_log(
+        self,
+        run_id: UUID,
+        run_type: RunType,
+        user_id: UUID,
+    ) -> None:
+        """Add or update a log info entry."""
+        return await self.logging_handler.info_log(run_id, run_type, user_id)
+
+    async def get_info_logs(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        run_type_filter: Optional[RunType] = None,
+        user_ids: Optional[List[UUID]] = None,
+    ) -> List[RunInfoLog]:
+        """Retrieve log info entries with filtering and pagination."""
+        return await self.logging_handler.get_info_logs(
+            offset, limit, run_type_filter, user_ids
+        )
+
+    async def get_logs(
+        self,
+        run_ids: List[UUID],
+        limit_per_run: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve logs for specified run IDs with a per-run limit."""
+        return await self.logging_handler.get_logs(run_ids, limit_per_run)
+
+    async def create_conversation(self) -> str:
+        """Create a new conversation and return its ID."""
+        return await self.logging_handler.create_conversation()
+
+    async def delete_conversation(self, conversation_id: str) -> None:
+        """Delete a conversation and all associated data."""
+        return await self.logging_handler.delete_conversation(conversation_id)
+
+    async def get_conversations_overview(
+        self,
+        conversation_ids: Optional[List[UUID]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> Dict[str, Union[List[Dict], int]]:
+        """Get an overview of conversations with pagination."""
+        return await self.logging_handler.get_conversations_overview(
+            conversation_ids, offset, limit
+        )
+
+    async def add_message(
+        self,
+        conversation_id: str,
+        content: Message,
+        parent_id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> str:
+        """Add a message to a conversation."""
+        return await self.logging_handler.add_message(
+            conversation_id, content, parent_id, metadata
+        )
+
+    async def edit_message(
+        self, message_id: str, new_content: str
+    ) -> Tuple[str, str]:
+        """Edit an existing message and return new message ID and branch ID."""
+        return await self.logging_handler.edit_message(message_id, new_content)
+
+    async def get_conversation(
+        self, conversation_id: str, branch_id: Optional[str] = None
+    ) -> List[Tuple[str, Message]]:
+        """Retrieve all messages in a conversation branch."""
+        return await self.logging_handler.get_conversation(
+            conversation_id, branch_id
+        )
+
+    async def get_branches_overview(self, conversation_id: str) -> List[Dict]:
+        """Get an overview of all branches in a conversation."""
+        return await self.logging_handler.get_branches_overview(
+            conversation_id
+        )
+
+    async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the ID of the next branch in chronological order."""
+        return await self.logging_handler.get_next_branch(current_branch_id)
+
+    async def get_prev_branch(self, current_branch_id: str) -> Optional[str]:
+        """Get the ID of the previous branch in chronological order."""
+        return await self.logging_handler.get_prev_branch(current_branch_id)
+
+    async def branch_at_message(self, message_id: str) -> str:
+        """Create a new branch starting at a specific message."""
+        return await self.logging_handler.branch_at_message(message_id)

@@ -5,8 +5,8 @@ import logging
 import traceback
 from typing import Any, AsyncGenerator, Optional
 
-from ..logging.r2r_logger import PersistentLoggingProvider
-from ..logging.run_manager import RunManager, manage_run
+from ..logger.base import PersistentLoggingProvider
+from ..logger.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger()

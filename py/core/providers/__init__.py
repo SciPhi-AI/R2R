@@ -9,7 +9,7 @@ from .ingestion import (  # type: ignore
     UnstructuredIngestionProvider,
 )
 from .llm import LiteLLMCompletionProvider, OpenAICompletionProvider
-from .logging import SqlitePersistentLoggingProvider
+from .logger import SqlitePersistentLoggingProvider
 from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,

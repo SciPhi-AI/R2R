@@ -1,4 +1,4 @@
-from .base import RunType
+from .base import PersistentLoggingConfig, RunInfoLog, RunType
 from .log_processor import (
     AnalysisTypes,
     LogAnalytics,
@@ -6,7 +6,6 @@ from .log_processor import (
     LogFilterCriteria,
     LogProcessor,
 )
-from .r2r_logger import PersistentLoggingConfig
 from .run_manager import RunManager, manage_run
 
 __all__ = [
@@ -19,6 +18,7 @@ __all__ = [
     "LogProcessor",
     # Logging Providers
     "PersistentLoggingConfig",
+    "RunInfoLog",
     # Run Manager
     "RunManager",
     "manage_run",

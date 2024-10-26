@@ -29,8 +29,9 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
+from ...base.logger.base import RunType
 from ..services.ingestion_service import IngestionService
-from .base_router import BaseRouter, RunType
+from .base_router import BaseRouter
 
 logger = logging.getLogger()
 

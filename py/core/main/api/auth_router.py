@@ -17,8 +17,9 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
+from ...base.logger.base import RunType
 from ..services.auth_service import AuthService
-from .base_router import BaseRouter, RunType
+from .base_router import BaseRouter
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

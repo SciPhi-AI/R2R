@@ -16,7 +16,7 @@ from core.base import (
     GenerationConfig,
 )
 from core.base.abstractions import Entity, Triple
-from core.providers.logging.r2r_logging import SqlitePersistentLoggingProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 

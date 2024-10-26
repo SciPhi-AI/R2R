@@ -1,6 +1,7 @@
 import logging
 from abc import abstractmethod
 from datetime import datetime
+from enum import Enum
 from typing import Any, Optional, Tuple, Union
 from uuid import UUID
 
@@ -9,7 +10,6 @@ from pydantic import BaseModel
 from core.base import Message
 
 from ..providers.base import Provider, ProviderConfig
-from .base import RunType
 
 logger = logging.getLogger()
 
@@ -33,6 +33,17 @@ class PersistentLoggingConfig(ProviderConfig):
     @property
     def supported_providers(self) -> list[str]:
         return ["local", "postgres"]
+
+
+class RunType(str, Enum):
+    """Enumeration of the different types of runs."""
+
+    RETRIEVAL = "RETRIEVAL"
+    MANAGEMENT = "MANAGEMENT"
+    INGESTION = "INGESTION"
+    AUTH = "AUTH"
+    UNSPECIFIED = "UNSPECIFIED"
+    KG = "KG"
 
 
 class PersistentLoggingProvider(Provider):
