@@ -259,7 +259,10 @@ class PostgresDocumentHandler(DocumentHandler):
         elif status_type == "kg_extraction_status":
             return KGExtractionStatus, "document_info"
         elif status_type == "kg_enrichment_status":
-            return KGEnrichmentStatus, "collection_info"
+            return (
+                KGEnrichmentStatus,
+                "collections",
+            )  # TODO: Rename to collection info?
         else:
             raise R2RException(
                 status_code=400, message=f"Invalid status type: {status_type}"

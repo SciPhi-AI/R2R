@@ -9,7 +9,7 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-from core.base.abstractions import KGExtractionStatus
+from core.base.abstractions import KGExtractionStatus, KGEnrichmentStatus
 
 from ...services import KgService
 
@@ -291,11 +291,28 @@ def hatchet_kg_factory(
                         key=f"{i}/{total_workflows}_entity_deduplication_part",
                     )
                 )
-            await asyncio.gather(*workflows)
+            result = await asyncio.gather(*workflows)
+            # set status to success
+            await self.kg_service.providers.database.set_workflow_status(
+                id=collection_id,
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.SUCCESS,
+            )
 
             return {
                 "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
             }
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            collection_id = context.workflow_input()["request"][
+                "collection_id"
+            ]
+            await self.kg_service.providers.database.set_workflow_status(
+                id=collection_id,
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.FAILED,
+            )
 
     @orchestration_provider.workflow(
         name="kg-entity-deduplication-summary", timeout="360m"
