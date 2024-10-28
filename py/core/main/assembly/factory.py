@@ -89,7 +89,13 @@ class R2RProviderFactory:
 
     @staticmethod
     def create_ingestion_provider(
-        ingestion_config: IngestionConfig, *args, **kwargs
+        ingestion_config: IngestionConfig,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
+        *args,
+        **kwargs,
     ) -> Union[R2RIngestionProvider, UnstructuredIngestionProvider]:
 
         config_dict = (
@@ -104,7 +110,9 @@ class R2RProviderFactory:
             r2r_ingestion_config = R2RIngestionConfig(
                 **config_dict, **extra_fields
             )
-            return R2RIngestionProvider(r2r_ingestion_config)
+            return R2RIngestionProvider(
+                r2r_ingestion_config, database_provider, llm_provider
+            )
         elif config_dict["provider"] in [
             "unstructured_local",
             "unstructured_api",
@@ -114,7 +122,7 @@ class R2RProviderFactory:
             )
 
             return UnstructuredIngestionProvider(
-                unstructured_ingestion_config,
+                unstructured_ingestion_config, database_provider, llm_provider
             )
         else:
             raise ValueError(
@@ -217,10 +225,12 @@ class R2RProviderFactory:
     @staticmethod
     async def create_email_provider(
         email_config: Optional[EmailConfig] = None, *args, **kwargs
-    ) -> Optional[Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]]:
+    ) -> Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]:
         """Creates an email provider based on configuration."""
         if not email_config:
-            return None
+            raise ValueError(
+                f"No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
+            )
 
         if email_config.provider == "smtp":
             return AsyncSMTPEmailProvider(email_config)
@@ -263,25 +273,29 @@ class R2RProviderFactory:
                 self.config.embedding, *args, **kwargs
             )
         )
-        ingestion_provider = (
-            ingestion_provider_override
-            or self.create_ingestion_provider(
-                self.config.ingestion, *args, **kwargs
-            )
-        )
-
         llm_provider = llm_provider_override or self.create_llm_provider(
             self.config.completion, *args, **kwargs
         )
+
         crypto_provider = (
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
-
         database_provider = (
             database_provider_override
             or await self.create_database_provider(
                 self.config.database, crypto_provider, *args, **kwargs
+            )
+        )
+
+        ingestion_provider = (
+            ingestion_provider_override
+            or self.create_ingestion_provider(
+                self.config.ingestion,
+                database_provider,
+                llm_provider,
+                *args,
+                **kwargs,
             )
         )
 

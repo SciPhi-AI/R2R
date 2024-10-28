@@ -35,7 +35,9 @@ class AsyncSMTPEmailProvider(EmailProvider):
         if not self.smtp_password:
             raise ValueError("SMTP password is required")
 
-        self.from_email = config.from_email or os.getenv("R2R_FROM_EMAIL")
+        self.from_email: Optional[str] = config.from_email or os.getenv(
+            "R2R_FROM_EMAIL"
+        )
         if not self.from_email:
             raise ValueError("From email is required")
 
@@ -52,8 +54,8 @@ class AsyncSMTPEmailProvider(EmailProvider):
         html_body: Optional[str] = None,
     ) -> None:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = self.from_email
+        msg["Subject"] = subject  # type: ignore
+        msg["From"] = self.from_email  # type: ignore
         msg["To"] = to_email
 
         msg.attach(MIMEText(body, "plain"))
@@ -63,7 +65,7 @@ class AsyncSMTPEmailProvider(EmailProvider):
         try:
             smtp = SMTP(
                 hostname=self.smtp_server,
-                port=self.smtp_port,
+                port=int(self.smtp_port) if self.smtp_port else None,
                 use_tls=self.use_tls,
             )
 
@@ -84,9 +86,9 @@ class AsyncSMTPEmailProvider(EmailProvider):
         subject = "Verify Your Email Address"
         body = f"""
         Thank you for registering! Please verify your email address by entering the following code:
-        
+
         {verification_code}
-        
+
         This code will expire in 24 hours.
         """
         html_body = f"""
@@ -103,9 +105,9 @@ class AsyncSMTPEmailProvider(EmailProvider):
         subject = "Password Reset Request"
         body = f"""
         We received a request to reset your password. Use the following code to reset your password:
-        
+
         {reset_token}
-        
+
         This code will expire in 1 hour. If you didn't request this reset, please ignore this email.
         """
         html_body = f"""

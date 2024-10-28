@@ -88,6 +88,12 @@ chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
+audio_transcription_model="openai/whisper-1"
+vision_img_model = "gpt-4o-mini"
+vision_pdf_model = "gpt-4o-mini"
+# vision_img_prompt_name = "vision_img" # optional, default is "vision_img"
+# vision_pdf_prompt_name = "vision_pdf" # optional, default is "vision_pdf"
+
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
     strategies = ["semantic", "neighborhood"]
@@ -96,9 +102,6 @@ excluded_parsers = ["mp4"]
     semantic_neighbors = 10
     semantic_similarity_threshold = 0.7
     generation_config = { model = "openai/gpt-4o-mini" }
-
-  [ingestion.extra_parsers]
-    pdf = "zerox"
 
 [logging]
 provider = "r2r"
