@@ -86,6 +86,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.JPG: [parsers.ImageParser],
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
+        DocumentType.PDF: [parsers.VLMPDFParser],
         DocumentType.MP3: [parsers.AudioParser],
         DocumentType.JSON: [parsers.JSONParser],  # type: ignore
         DocumentType.HTML: [parsers.HTMLParser],  # type: ignore
@@ -98,14 +99,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
             "unstructured": parsers.PDFParserUnstructured,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
-    }
-
-    IMAGE_TYPES = {
-        DocumentType.GIF,
-        DocumentType.JPG,
-        DocumentType.JPEG,
-        DocumentType.PNG,
-        DocumentType.SVG,
     }
 
     def __init__(
@@ -168,7 +161,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     and doc_type not in self.parsers
                 ):
                     # will choose the first parser in the list
-                    self.parsers[doc_type] = parsers(
+                    self.parsers[doc_type] = parser(
                         config=self.config,
                         database_provider=self.database_provider,
                         llm_provider=self.llm_provider,

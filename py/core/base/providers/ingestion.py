@@ -22,8 +22,11 @@ class IngestionConfig(ProviderConfig):
 
     audio_transcription_model: str
 
-    vision_prompt_name: Optional[str] = None
-    vision_model: str
+    vision_img_prompt_name: Optional[str] = None
+    vision_img_model: str
+
+    vision_pdf_prompt_name: Optional[str] = None
+    vision_pdf_model: str
 
     @property
     def supported_providers(self) -> list[str]:

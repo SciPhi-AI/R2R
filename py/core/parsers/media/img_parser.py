@@ -16,7 +16,7 @@ logger = logging.getLogger()
 class ImageParser(AsyncParser[DataType]):
     """A parser for image data using vision models."""
 
-    DEFAULT_VISION_PROMPT_NAME = "vision"
+    DEFAULT_IMG_VISION_PROMPT_NAME = "vision_img"
 
     def __init__(
         self,
@@ -55,14 +55,14 @@ class ImageParser(AsyncParser[DataType]):
         """
         if not self.vision_prompt_text:
             self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
-                prompt_name=self.config.vision_prompt_name
-                or self.DEFAULT_VISION_PROMPT_NAME
+                prompt_name=self.config.vision_img_prompt_name
+                or self.DEFAULT_IMG_VISION_PROMPT_NAME
             )
         try:
             # Verify model supports vision
-            if not self.supports_vision(model=self.config.vision_model):
+            if not self.supports_vision(model=self.config.vision_img_model):
                 raise ValueError(
-                    f"Model {self.config.vision_model} does not support vision"
+                    f"Model {self.config.vision_img_model} does not support vision"
                 )
 
             # Encode image data if needed
@@ -73,7 +73,7 @@ class ImageParser(AsyncParser[DataType]):
 
             # Configure the generation parameters
             generation_config = GenerationConfig(
-                model=self.config.vision_model,
+                model=self.config.vision_img_model,
                 stream=False,
             )
 

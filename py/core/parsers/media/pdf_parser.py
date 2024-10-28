@@ -25,7 +25,7 @@ logger = logging.getLogger()
 class VLMPDFParser(AsyncParser[DataType]):
     """A parser for PDF documents using vision models for page processing."""
 
-    DEFAULT_VISION_PROMPT_NAME = "vision"
+    DEFAULT_PDF_VISION_PROMPT_NAME = "vision_pdf"
 
     def __init__(
         self,
@@ -79,14 +79,14 @@ class VLMPDFParser(AsyncParser[DataType]):
                 image_base64 = base64.b64encode(image_data).decode("utf-8")
 
             # Verify model supports vision
-            if not self.supports_vision(model=self.config.vision_model):
+            if not self.supports_vision(model=self.config.vision_pdf_model):
                 raise ValueError(
-                    f"Model {self.config.vision_model} does not support vision"
+                    f"Model {self.config.vision_pdf_model} does not support vision"
                 )
 
             # Configure generation parameters
             generation_config = GenerationConfig(
-                model=self.config.vision_model,
+                model=self.config.vision_pdf_model,
                 stream=False,
             )
 
@@ -115,7 +115,6 @@ class VLMPDFParser(AsyncParser[DataType]):
                 content = response.choices[0].message.content
                 if not content:
                     raise ValueError("No content in response")
-                print("done processing, yielding content = ", content)
                 return {"page": str(page_num), "content": content}
             else:
                 raise ValueError("No response content")
@@ -142,8 +141,8 @@ class VLMPDFParser(AsyncParser[DataType]):
         """
         if not self.vision_prompt_text:
             self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
-                prompt_name=self.config.vision_prompt_name
-                or self.DEFAULT_VISION_PROMPT_NAME
+                prompt_name=self.config.vision_pdf_prompt_name
+                or self.DEFAULT_PDF_VISION_PROMPT_NAME
             )
 
         temp_dir = None

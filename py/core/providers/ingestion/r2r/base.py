@@ -64,14 +64,6 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
     }
 
-    IMAGE_TYPES = {
-        DocumentType.GIF,
-        DocumentType.JPG,
-        DocumentType.JPEG,
-        DocumentType.PNG,
-        DocumentType.SVG,
-    }
-
     def __init__(
         self,
         config: R2RIngestionConfig,

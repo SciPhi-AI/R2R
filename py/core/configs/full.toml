@@ -8,7 +8,7 @@ combine_under_n_chars = 128
 overlap = 256
 
     [ingestion.extra_parsers]
-    pdf = "zerox"
+    pdf = "unstructured" # vision language model is default
 
 [orchestration]
 provider = "hatchet"
