@@ -72,11 +72,11 @@ batch_size = 256
 provider = "litellm"
 base_model = "openai/text-embedding-3-large"
 base_dimension = 3072
+quantization_settings = { quantization_type = "INT1" }
 batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
-quantization_settings = { quantization_type = "INT1" }
 
 [file]
 provider = "postgres"

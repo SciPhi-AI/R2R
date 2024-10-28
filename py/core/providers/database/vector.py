@@ -37,7 +37,7 @@ def index_measure_to_ops(
 
 def quantize_vector_to_binary(
     vector: Union[list[float], np.ndarray], threshold: float = 0.0
-) -> str:
+) -> bytes:
     """
     Quantizes a float vector to a binary vector string for PostgreSQL bit type.
     Used when quantization_type is INT1.
@@ -227,7 +227,7 @@ class PostgresVectorHandler(VectorHandler):
             text = EXCLUDED.text,
             metadata = EXCLUDED.metadata;
             """
-            params = [
+            bin_params = [
                 (
                     entry.extraction_id,
                     entry.document_id,
@@ -242,6 +242,8 @@ class PostgresVectorHandler(VectorHandler):
                 )
                 for entry in entries
             ]
+            await self.connection_manager.execute_many(query, bin_params)
+
         else:
             # For regular vectors, use vec column only
             query = f"""
@@ -269,7 +271,7 @@ class PostgresVectorHandler(VectorHandler):
                 for entry in entries
             ]
 
-        await self.connection_manager.execute_many(query, params)
+            await self.connection_manager.execute_many(query, params)
 
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
@@ -288,51 +290,101 @@ class PostgresVectorHandler(VectorHandler):
             f"{table_name}.text",
         ]
 
-        # Handle binary vectors for INT1 quantization type
+        params: list[Union[str, int, bytes]] = []
+        # For binary vectors (INT1), implement two-stage search
         if self.quantization_type == VectorQuantizationType.INT1:
             # Convert query vector to binary format
             binary_query = quantize_vector_to_binary(query_vector)
-            # Use binary column and binary-specific distance measures
-            if (
-                imeasure_obj == IndexMeasure.hamming_distance
-                or imeasure_obj == IndexMeasure.jaccard_distance
-            ):
-                distance_calc = f"{table_name}.vec_binary {search_settings.index_measure.pgvector_repr} $1::bit({self.dimension})"
-                query_param = binary_query
-            else:
-                # For non-binary distance measures, use regular vec column with binarized query
-                distance_calc = f"{table_name}.vec {search_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
-                query_param = str(query_vector)
+            # TODO - Put depth multiplier in config / settings
+            extended_limit = (
+                search_settings.search_limit * 20
+            )  # Get 20x candidates for re-ranking
+
+            # Use binary column and binary-specific distance measures for first stage
+            stage1_distance = f"{table_name}.vec_binary {search_settings.index_measure.pgvector_repr} $1::bit({self.dimension})"
+            stage1_param = binary_query
+
+            cols.append(
+                f"{table_name}.vec"
+            )  # Need original vector for re-ranking
+            if search_settings.include_metadatas:
+                cols.append(f"{table_name}.metadata")
+
+            select_clause = ", ".join(cols)
+            where_clause = ""
+            params.append(stage1_param)
+
+            if search_settings.filters:
+                where_clause = self._build_filters(
+                    search_settings.filters, params
+                )
+                where_clause = f"WHERE {where_clause}"
+
+            # First stage: Get candidates using binary search
+            query = f"""
+            WITH candidates AS (
+                SELECT {select_clause},
+                    ({stage1_distance}) as binary_distance
+                FROM {table_name}
+                {where_clause}
+                ORDER BY {stage1_distance}
+                LIMIT ${len(params) + 1}
+                OFFSET ${len(params) + 2}
+            )
+            -- Second stage: Re-rank using original vectors
+            SELECT
+                extraction_id,
+                document_id,
+                user_id,
+                collection_ids,
+                text,
+                {"metadata," if search_settings.include_metadatas else ""}
+                (vec <=> ${len(params) + 4}::vector({self.dimension})) as distance
+            FROM candidates
+            ORDER BY distance
+            LIMIT ${len(params) + 3}
+            """
+
+            params.extend(
+                [
+                    extended_limit,  # First stage limit
+                    search_settings.offset,
+                    search_settings.search_limit,  # Final limit
+                    str(query_vector),  # For re-ranking
+                ]
+            )
+
         else:
-            # Standard float vector handling
+            # Standard float vector handling - unchanged from original
             distance_calc = f"{table_name}.vec {search_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
             query_param = str(query_vector)
 
-        if search_settings.include_values:
-            cols.append(f"({distance_calc}) AS distance")
+            if search_settings.include_values:
+                cols.append(f"({distance_calc}) AS distance")
+            if search_settings.include_metadatas:
+                cols.append(f"{table_name}.metadata")
 
-        if search_settings.include_metadatas:
-            cols.append(f"{table_name}.metadata")
+            select_clause = ", ".join(cols)
+            where_clause = ""
+            params.append(query_param)
 
-        select_clause = ", ".join(cols)
+            if search_settings.filters:
+                where_clause = self._build_filters(
+                    search_settings.filters, params
+                )
+                where_clause = f"WHERE {where_clause}"
 
-        where_clause = ""
-        params: list[Union[str, int]] = [query_param]
-        if search_settings.filters:
-            where_clause = self._build_filters(search_settings.filters, params)
-            where_clause = f"WHERE {where_clause}"
-
-        query = f"""
-        SELECT {select_clause}
-        FROM {table_name}
-        {where_clause}
-        ORDER BY {distance_calc}
-        LIMIT ${len(params) + 1}
-        OFFSET ${len(params) + 2}
-        """
-        print("query = ", query)
-
-        params.extend([search_settings.search_limit, search_settings.offset])
+            query = f"""
+            SELECT {select_clause}
+            FROM {table_name}
+            {where_clause}
+            ORDER BY {distance_calc}
+            LIMIT ${len(params) + 1}
+            OFFSET ${len(params) + 2}
+            """
+            params.extend(
+                [search_settings.search_limit, search_settings.offset]
+            )
 
         results = await self.connection_manager.fetch_query(query, params)
 
@@ -345,7 +397,7 @@ class PostgresVectorHandler(VectorHandler):
                 text=result["text"],
                 score=(
                     (1 - float(result["distance"]))
-                    if search_settings.include_values
+                    if "distance" in result
                     else -1
                 ),
                 metadata=(
@@ -366,7 +418,7 @@ class PostgresVectorHandler(VectorHandler):
             )
 
         where_clauses = []
-        params: list[Union[str, int]] = [query_text]
+        params: list[Union[str, int, bytes]] = [query_text]
 
         if search_settings.filters:
             filters_clause = self._build_filters(
@@ -529,7 +581,7 @@ class PostgresVectorHandler(VectorHandler):
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
-        params: list[Union[str, int]] = []
+        params: list[Union[str, int, bytes]] = []
         where_clause = self._build_filters(filters, params)
 
         query = f"""
@@ -802,7 +854,7 @@ class PostgresVectorHandler(VectorHandler):
         return None
 
     def _build_filters(
-        self, filters: dict, parameters: list[Union[str, int]]
+        self, filters: dict, parameters: list[Union[str, int, bytes]]
     ) -> str:
 
         def parse_condition(key: str, value: Any) -> str:  # type: ignore
@@ -1144,28 +1196,3 @@ class PostgresVectorHandler(VectorHandler):
                 return "WITH (m=16, ef_construction=64)"
         else:
             return ""  # No options for other methods
-
-    def _get_index_type(self, method: IndexMethod) -> str:
-        if method == IndexMethod.ivfflat:
-            return "ivfflat"
-        elif method == IndexMethod.hnsw:
-            return "hnsw"
-        elif method == IndexMethod.auto:
-            # Here you might want to implement logic to choose between ivfflat and hnsw
-            return "hnsw"
-
-    def _get_index_operator(self, measure: IndexMeasure) -> str:
-        if measure == IndexMeasure.l2_distance:
-            return "vector_l2_ops"
-        elif measure == IndexMeasure.max_inner_product:
-            return "vector_ip_ops"
-        elif measure == IndexMeasure.cosine_distance:
-            return "vector_cosine_ops"
-
-    def _get_distance_function(self, imeasure_obj: IndexMeasure) -> str:
-        if imeasure_obj == IndexMeasure.cosine_distance:
-            return "<=>"
-        elif imeasure_obj == IndexMeasure.l2_distance:
-            return "l2_distance"
-        elif imeasure_obj == IndexMeasure.max_inner_product:
-            return "max_inner_product"
