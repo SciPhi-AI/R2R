@@ -27,6 +27,7 @@ export interface GenerationConfig {
   tools?: Array<Record<string, any>>;
   add_generation_kwargs?: Record<string, any>;
   api_base?: string;
+  response_format?: string;
 }
 
 export interface HybridSearchSettings {
@@ -65,6 +66,40 @@ export interface KGSearchSettings {
   max_community_description_length?: number;
   max_llm_queries_for_global_search?: number;
   local_search_limits?: Record<string, number>;
+}
+
+export enum KGRunType {
+  ESTIMATE = "estimate",
+  RUN = "run",
+}
+
+export interface KGCreationSettings {
+  kg_triples_extraction_prompt?: string;
+  kg_entity_description_prompt?: string;
+  force_kg_creation?: boolean;
+  entity_types?: string[];
+  relation_types?: string[];
+  extractions_merge_count?: number;
+  max_knowledge_triples?: number;
+  max_description_input_length?: number;
+  generation_config?: GenerationConfig;
+}
+
+export interface KGEnrichmentSettings {
+  force_kg_enrichment?: boolean;
+  community_reports_prompt?: string;
+  max_summary_input_length?: number;
+  generation_config?: GenerationConfig;
+  leiden_params?: Record<string, any>;
+}
+
+export interface KGEntityDeduplicationSettings {
+  kg_entity_deduplication_type?: KGEntityDeduplicationType;
+}
+
+export enum KGEntityDeduplicationType {
+  BY_NAME = "by_name",
+  BY_DESCRIPTION = "by_description",
 }
 
 export interface KGLocalSearchResult {
