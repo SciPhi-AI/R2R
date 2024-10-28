@@ -36,6 +36,3 @@ jobs:
 
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
-
-      - name: Run Test Zerox
-        uses: ./.github/actions/run-script-zerox-tests

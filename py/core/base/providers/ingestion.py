@@ -1,10 +1,13 @@
 import logging
 from abc import ABC
 from enum import Enum
+from typing import Optional
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
 from .base import Provider, ProviderConfig
+from .database import DatabaseProvider
+from .llm import CompletionProvider
 
 logger = logging.getLogger()
 
@@ -15,7 +18,14 @@ class IngestionConfig(ProviderConfig):
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
     )
-    extra_parsers: dict[str, str] = {}
+
+    audio_transcription_model: str
+
+    vision_img_prompt_name: Optional[str] = None
+    vision_img_model: str
+
+    vision_pdf_prompt_name: Optional[str] = None
+    vision_pdf_model: str
 
     @property
     def supported_providers(self) -> list[str]:
@@ -27,7 +37,21 @@ class IngestionConfig(ProviderConfig):
 
 
 class IngestionProvider(Provider, ABC):
-    pass
+
+    config: IngestionConfig
+    database_provider: DatabaseProvider
+    llm_provider: CompletionProvider
+
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        super().__init__(config)
+        self.config: IngestionConfig = config
+        self.llm_provider = llm_provider
+        self.database_provider = database_provider
 
 
 class ChunkingStrategy(str, Enum):

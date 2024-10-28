@@ -243,6 +243,7 @@ async def create_vector_index(
     index_measure,
     index_arguments,
     index_name,
+    index_column,
     no_concurrent,
 ):
     """Create a vector index for similarity search."""
@@ -254,6 +255,7 @@ async def create_vector_index(
             index_measure=index_measure,
             index_arguments=index_arguments,
             index_name=index_name,
+            index_column=index_column,
             concurrently=not no_concurrent,
         )
     click.echo(json.dumps(response, indent=2))

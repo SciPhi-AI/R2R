@@ -10,6 +10,7 @@ from core.base import (
     CompletionProvider,
     CryptoConfig,
     DatabaseConfig,
+    EmailConfig,
     EmbeddingConfig,
     EmbeddingProvider,
     IngestionConfig,
@@ -24,8 +25,10 @@ from ..config import R2RConfig
 
 logger = logging.getLogger()
 from core.providers import (
+    AsyncSMTPEmailProvider,
     BCryptConfig,
     BCryptProvider,
+    ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
@@ -49,21 +52,24 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        database_provider: PostgresDBProvider,
         crypto_provider: BCryptProvider,
+        database_provider: PostgresDBProvider,
+        email_provider: Union[
+            AsyncSMTPEmailProvider, ConsoleMockEmailProvider
+        ],
         *args,
         **kwargs,
     ) -> Union[R2RAuthProvider, SupabaseAuthProvider]:
         if auth_config.provider == "r2r":
 
             r2r_auth = R2RAuthProvider(
-                auth_config, crypto_provider, database_provider
+                auth_config, crypto_provider, database_provider, email_provider
             )
             await r2r_auth.initialize()
             return r2r_auth
         elif auth_config.provider == "supabase":
             return SupabaseAuthProvider(
-                auth_config, crypto_provider, database_provider
+                auth_config, crypto_provider, database_provider, email_provider
             )
         else:
             raise ValueError(
@@ -83,7 +89,13 @@ class R2RProviderFactory:
 
     @staticmethod
     def create_ingestion_provider(
-        ingestion_config: IngestionConfig, *args, **kwargs
+        ingestion_config: IngestionConfig,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
+        *args,
+        **kwargs,
     ) -> Union[R2RIngestionProvider, UnstructuredIngestionProvider]:
 
         config_dict = (
@@ -98,7 +110,9 @@ class R2RProviderFactory:
             r2r_ingestion_config = R2RIngestionConfig(
                 **config_dict, **extra_fields
             )
-            return R2RIngestionProvider(r2r_ingestion_config)
+            return R2RIngestionProvider(
+                r2r_ingestion_config, database_provider, llm_provider
+            )
         elif config_dict["provider"] in [
             "unstructured_local",
             "unstructured_api",
@@ -108,7 +122,7 @@ class R2RProviderFactory:
             )
 
             return UnstructuredIngestionProvider(
-                unstructured_ingestion_config,
+                unstructured_ingestion_config, database_provider, llm_provider
             )
         else:
             raise ValueError(
@@ -208,6 +222,25 @@ class R2RProviderFactory:
             raise ValueError("Language model provider not found")
         return llm_provider
 
+    @staticmethod
+    async def create_email_provider(
+        email_config: Optional[EmailConfig] = None, *args, **kwargs
+    ) -> Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]:
+        """Creates an email provider based on configuration."""
+        if not email_config:
+            raise ValueError(
+                f"No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
+            )
+
+        if email_config.provider == "smtp":
+            return AsyncSMTPEmailProvider(email_config)
+        elif email_config.provider == "console_mock":
+            return ConsoleMockEmailProvider(email_config)
+        else:
+            raise ValueError(
+                f"Email provider {email_config.provider} not supported."
+            )
+
     async def create_providers(
         self,
         auth_provider_override: Optional[
@@ -215,6 +248,9 @@ class R2RProviderFactory:
         ] = None,
         crypto_provider_override: Optional[BCryptProvider] = None,
         database_provider_override: Optional[PostgresDBProvider] = None,
+        email_provider_override: Optional[
+            Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]
+        ] = None,
         embedding_provider_override: Optional[
             Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]
         ] = None,
@@ -237,21 +273,14 @@ class R2RProviderFactory:
                 self.config.embedding, *args, **kwargs
             )
         )
-        ingestion_provider = (
-            ingestion_provider_override
-            or self.create_ingestion_provider(
-                self.config.ingestion, *args, **kwargs
-            )
-        )
-
         llm_provider = llm_provider_override or self.create_llm_provider(
             self.config.completion, *args, **kwargs
         )
+
         crypto_provider = (
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
-
         database_provider = (
             database_provider_override
             or await self.create_database_provider(
@@ -259,12 +288,31 @@ class R2RProviderFactory:
             )
         )
 
+        ingestion_provider = (
+            ingestion_provider_override
+            or self.create_ingestion_provider(
+                self.config.ingestion,
+                database_provider,
+                llm_provider,
+                *args,
+                **kwargs,
+            )
+        )
+
+        email_provider = (
+            email_provider_override
+            or await self.create_email_provider(
+                self.config.email, crypto_provider, *args, **kwargs
+            )
+        )
+
         auth_provider = (
             auth_provider_override
             or await self.create_auth_provider(
                 self.config.auth,
-                database_provider,
                 crypto_provider,
+                database_provider,
+                email_provider,
                 *args,
                 **kwargs,
             )
@@ -287,6 +335,7 @@ class R2RProviderFactory:
             embedding=embedding_provider,
             ingestion=ingestion_provider,
             llm=llm_provider,
+            email=email_provider,
             orchestration=orchestration_provider,
             logging=logging_provider,
         )

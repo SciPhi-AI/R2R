@@ -16,6 +16,7 @@ from .database import (
     UserHandler,
     VectorHandler,
 )
+from .email import EmailConfig, EmailProvider
 from .embedding import EmbeddingConfig, EmbeddingProvider
 from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
 from .llm import CompletionConfig, CompletionProvider
@@ -36,6 +37,9 @@ __all__ = [
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
+    # Email provider
+    "EmailConfig",
+    "EmailProvider",
     # Database providers
     "DatabaseConnectionManager",
     "DocumentHandler",
