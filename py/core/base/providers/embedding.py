@@ -14,6 +14,7 @@ from ..abstractions import (
     VectorSearchResult,
     default_embedding_prefixes,
 )
+import random
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger()
@@ -79,7 +80,7 @@ class EmbeddingProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                await asyncio.sleep(backoff)
+                await asyncio.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     def _execute_with_backoff_sync(self, task: dict[str, Any]):
@@ -97,7 +98,7 @@ class EmbeddingProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                time.sleep(backoff)
+                time.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     @abstractmethod
