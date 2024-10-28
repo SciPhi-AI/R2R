@@ -111,3 +111,6 @@ provider = "simple"
 
 [prompt]
 provider = "r2r"
+
+[email]
+provider = "console_mock"

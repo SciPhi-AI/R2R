@@ -6,6 +6,8 @@ from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base.pipes import AsyncPipe
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.providers import (
+    AsyncSMTPEmailProvider,
+    ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
@@ -31,6 +33,7 @@ class R2RProviders(BaseModel):
         HatchetOrchestrationProvider, SimpleOrchestrationProvider
     ]
     logging: SqlitePersistentLoggingProvider
+    email: Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]
 
     class Config:
         arbitrary_types_allowed = True

@@ -299,9 +299,18 @@ class PostgresVectorHandler(VectorHandler):
             extended_limit = (
                 search_settings.search_limit * 20
             )  # Get 20x candidates for re-ranking
+            if (
+                imeasure_obj == IndexMeasure.hamming_distance
+                or imeasure_obj == IndexMeasure.jaccard_distance
+            ):
+                binary_search_measure_repr = imeasure_obj.pgvector_repr
+            else:
+                binary_search_measure_repr = (
+                    IndexMeasure.hamming_distance.pgvector_repr
+                )
 
             # Use binary column and binary-specific distance measures for first stage
-            stage1_distance = f"{table_name}.vec_binary {search_settings.index_measure.pgvector_repr} $1::bit({self.dimension})"
+            stage1_distance = f"{table_name}.vec_binary {binary_search_measure_repr} $1::bit({self.dimension})"
             stage1_param = binary_query
 
             cols.append(
