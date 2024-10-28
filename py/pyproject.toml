@@ -81,6 +81,7 @@ pypdf2 = { version = "^3.0.1", optional = true }
 python-pptx = { version = "^1.0.1", optional = true }
 python-docx = { version = "^1.1.0", optional = true }
 aiosmtplib = "^3.0.2"
+types-aiofiles = "^24.1.0.20240626"
 
 [tool.poetry.extras]
 core = [

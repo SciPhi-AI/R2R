@@ -88,6 +88,9 @@ chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
+audio_transcription_model="openai/whisper-1"
+vision_model="gpt-4o-mini"
+
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
     strategies = ["semantic", "neighborhood"]

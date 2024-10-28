@@ -19,6 +19,9 @@ from core.base import (
 from core.base.abstractions import DocumentExtraction
 from core.utils import generate_extraction_id
 
+from ...database import PostgresDBProvider
+from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
+
 logger = logging.getLogger()
 
 
@@ -47,6 +50,8 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.JPG: parsers.ImageParser,
         DocumentType.PNG: parsers.ImageParser,
         DocumentType.SVG: parsers.ImageParser,
+        DocumentType.WEBP: parsers.ImageParser,
+        DocumentType.ICO: parsers.ImageParser,
         DocumentType.MP3: parsers.AudioParser,
     }
 
@@ -68,9 +73,20 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.SVG,
     }
 
-    def __init__(self, config: R2RIngestionConfig):
-        super().__init__(config)
+    def __init__(
+        self,
+        config: R2RIngestionConfig,
+        database_provider: PostgresDBProvider,
+        llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ],
+    ):
+        super().__init__(config, database_provider, llm_provider)
         self.config: R2RIngestionConfig = config  # for type hinting
+        self.database_provider: PostgresDBProvider = database_provider
+        self.llm_provider: Union[
+            LiteLLMCompletionProvider, OpenAICompletionProvider
+        ] = llm_provider
         self.parsers: dict[DocumentType, AsyncParser] = {}
         self.text_splitter = self._build_text_splitter()
         self._initialize_parsers()
@@ -83,10 +99,18 @@ class R2RIngestionProvider(IngestionProvider):
         for doc_type, parser in self.DEFAULT_PARSERS.items():
             # will choose the first parser in the list
             if doc_type not in self.config.excluded_parsers:
-                self.parsers[doc_type] = parser()
+                self.parsers[doc_type] = parser(
+                    config=self.config,
+                    database_provider=self.database_provider,
+                    llm_provider=self.llm_provider,
+                )
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
-                R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name]()
+            self.parsers[
+                f"{doc_parser_name}_{str(doc_type)}"
+            ] = R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
+                config=self.config,
+                database_provider=self.database_provider,
+                llm_provider=self.llm_provider,
             )
 
     def _build_text_splitter(

@@ -3,12 +3,26 @@ from typing import IO, AsyncGenerator, Optional, Union
 
 from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
+from core.base.providers import (
+    CompletionProvider,
+    DatabaseProvider,
+    IngestionConfig,
+)
 
 
 class CSVParser(AsyncParser[DataType]):
     """A parser for CSV data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
+
         import csv
         from io import StringIO
 
@@ -29,7 +43,12 @@ class CSVParser(AsyncParser[DataType]):
 class CSVParserAdvanced(AsyncParser[DataType]):
     """A parser for CSV data."""
 
-    def __init__(self):
+    def __init__(
+        self, config: IngestionConfig, llm_provider: CompletionProvider
+    ):
+        self.llm_provider = llm_provider
+        self.config = config
+
         import csv
         from io import StringIO
 

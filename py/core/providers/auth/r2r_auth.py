@@ -306,7 +306,7 @@ class R2RAuthProvider(AuthProvider):
         )
 
         # TODO: Integrate with email provider to send reset link
-        await self.email_provider.send_reset_email(email, reset_token)
+        await self.email_provider.send_password_reset_email(email, reset_token)
 
         return {"message": "If the email exists, a reset link has been sent"}
 

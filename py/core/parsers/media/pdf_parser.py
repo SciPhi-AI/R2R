@@ -1,7 +1,6 @@
 # type: ignore
 import asyncio
 import logging
-import os
 import string
 import unicodedata
 from io import BytesIO
@@ -9,6 +8,11 @@ from typing import AsyncGenerator
 
 from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
+from core.base.providers import (
+    CompletionProvider,
+    DatabaseProvider,
+    IngestionConfig,
+)
 
 logger = logging.getLogger()
 ZEROX_DEFAULT_MODEL = "openai/gpt-4o-mini"
@@ -17,7 +21,15 @@ ZEROX_DEFAULT_MODEL = "openai/gpt-4o-mini"
 class PDFParser(AsyncParser[DataType]):
     """A parser for PDF data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from pypdf import PdfReader
 
@@ -68,7 +80,15 @@ class PDFParser(AsyncParser[DataType]):
 class PDFParserSix(AsyncParser[DataType]):
     """A parser for PDF data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from pdfminer.high_level import extract_text_to_fp
             from pdfminer.layout import LAParams
@@ -112,7 +132,15 @@ class PDFParserSix(AsyncParser[DataType]):
 
 
 class PDFParserUnstructured(AsyncParser[DataType]):
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from unstructured.partition.pdf import partition_pdf
 
@@ -146,7 +174,15 @@ class PDFParserUnstructured(AsyncParser[DataType]):
 class PDFParserMarker(AsyncParser[DataType]):
     model_refs = None
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from marker.convert import convert_single_pdf
             from marker.models import load_all_models
@@ -175,7 +211,15 @@ class PDFParserMarker(AsyncParser[DataType]):
 class ZeroxPDFParser(AsyncParser[DataType]):
     """An advanced PDF parser using zerox."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         """
         Use the zerox library to parse PDF data.
 

@@ -5322,6 +5322,17 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "types-aiofiles"
+version = "24.1.0.20240626"
+description = "Typing stubs for aiofiles"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-aiofiles-24.1.0.20240626.tar.gz", hash = "sha256:48604663e24bc2d5038eac05ccc33e75799b0779e93e13d6a8f711ddc306ac08"},
+    {file = "types_aiofiles-24.1.0.20240626-py3-none-any.whl", hash = "sha256:7939eca4a8b4f9c6491b6e8ef160caee9a21d32e18534a57d5ed90aee47c66b4"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.0.20241016"
 description = "Typing stubs for requests"
@@ -5858,4 +5869,4 @@ ingestion-bundle = ["aiofiles", "aioshutil", "beautifulsoup4", "bs4", "markdown"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "076bf72cff07b22d020e62cbe5e477865157be0deba19f817b1b2a41787625df"
+content-hash = "fb41515396b9a34291521c668a4d9b889406c781731a00cf6b06ef2e6347b28a"
