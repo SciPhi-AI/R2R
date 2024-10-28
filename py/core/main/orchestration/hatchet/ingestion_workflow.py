@@ -15,7 +15,7 @@ from core.base import (
     increment_version,
 )
 from core.base.abstractions import DocumentInfo, R2RException
-from core.utils import generate_default_user_collection_id
+from core.utils import generate_default_user_collection_id, update_settings_from_dict
 
 from ...services import IngestionService, IngestionServiceAdapter
 
@@ -163,15 +163,21 @@ def hatchet_ingestion_factory(
                     document_id=document_info.id, collection_id=collection_id
                 )
 
-                chunk_enrichment_settings = getattr(
+                # get server chunk enrichment settings and override parts of it if provided in the ingestion config
+                server_chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",
                     None,
                 )
 
-                if chunk_enrichment_settings and getattr(
-                    chunk_enrichment_settings, "enable_chunk_enrichment", False
-                ):
+                if server_chunk_enrichment_settings:
+                    chunk_enrichment_settings = update_settings_from_dict(
+                        server_chunk_enrichment_settings,
+                        ingestion_config.get("chunk_enrichment_settings", {})
+                        or {},
+                    )
+
+                if chunk_enrichment_settings.enable_chunk_enrichment:
 
                     logger.info("Enriching document with contextual chunks")
 
@@ -192,6 +198,7 @@ def hatchet_ingestion_factory(
 
                     await self.ingestion_service.chunk_enrichment(
                         document_id=document_info.id,
+                        chunk_enrichment_settings=chunk_enrichment_settings,
                     )
 
                     await self.ingestion_service.update_document_status(
@@ -243,8 +250,8 @@ def hatchet_ingestion_factory(
 
                 # Update the document status to FAILED
                 if (
-                    not document_info.ingestion_status
-                    == IngestionStatus.SUCCESS
+                    document_info.ingestion_status
+                    not in [IngestionStatus.SUCCESS, IngestionStatus.ENRICHED]
                 ):
                     await self.ingestion_service.update_document_status(
                         document_info,

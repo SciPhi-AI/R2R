@@ -4,7 +4,7 @@ import mimetypes
 from datetime import datetime, timezone
 from typing import Any, Optional, Set, Union
 from uuid import UUID
-
+import os
 import psutil
 from fastapi import Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
@@ -887,3 +887,11 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedDeleteResponse:
             await self.service.delete_conversation(conversation_id)
             return None  # type: ignore
+
+
+        @self.router.get("/r2r_project_name")
+        @self.base_endpoint
+        async def r2r_project_name(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> dict:
+            return {"project_name": os.environ["R2R_PROJECT_NAME"]}
