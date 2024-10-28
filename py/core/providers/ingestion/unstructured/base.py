@@ -96,7 +96,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
     EXTRA_PARSERS = {
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
         DocumentType.PDF: {
-            "unstructured": parsers.PDFParserUnstructured,
+            "basic": parsers.BasicPDFParser,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
     }
@@ -228,9 +228,25 @@ class UnstructuredIngestionProvider(IngestionProvider):
         )
         elements = []
 
+        # allow user to re-override places where unstructured is overriden above
+        # e.g.
+        # "ingestion_config": {
+        #     ...,
+        #     "parser_overrides": {
+        #         "pdf": "unstructured"
+        #     }
+        # }
+        reoverride_with_unst = (
+            parser_overrides.get(document.document_type.value, None)
+            == "unstructured"
+        )
+
         # TODO - Cleanup this approach to be less hardcoded
         # TODO - Remove code duplication between Unstructured & R2R
-        if document.document_type.value in parser_overrides:
+        if (
+            document.document_type.value in parser_overrides
+            and not reoverride_with_unst
+        ):
             logger.info(
                 f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
             )
@@ -241,7 +257,10 @@ class UnstructuredIngestionProvider(IngestionProvider):
             ):
                 elements.append(element)
 
-        elif document.document_type in self.R2R_FALLBACK_PARSERS.keys():
+        elif (
+            document.document_type in self.R2R_FALLBACK_PARSERS.keys()
+            and not reoverride_with_unst
+        ):
             logger.info(
                 f"Parsing {document.document_type}: {document.id} with fallback parser"
             )
