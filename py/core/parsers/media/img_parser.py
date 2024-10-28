@@ -16,7 +16,7 @@ logger = logging.getLogger()
 class ImageParser(AsyncParser[DataType]):
     """A parser for image data using vision models."""
 
-    DEFAULT_VISION_PROMPT = "First, provide a title for the image, then explain everything that you see. Be very thorough in your analysis as a user will need to understand the image without seeing it. If it is possible to transcribe the image to text directly, then do so. The more detail you provide, the better the user will understand the image."
+    DEFAULT_VISION_PROMPT_NAME = "vision"
 
     def __init__(
         self,
@@ -27,6 +27,8 @@ class ImageParser(AsyncParser[DataType]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
+        self.vision_prompt_text = None
+
         try:
             from litellm import supports_vision
 
@@ -51,6 +53,11 @@ class ImageParser(AsyncParser[DataType]):
         Yields:
             Chunks of image description text
         """
+        if not self.vision_prompt_text:
+            self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
+                prompt_name=self.config.vision_prompt
+                or self.DEFAULT_VISION_PROMPT_NAME
+            )
         try:
             # Verify model supports vision
             if not self.supports_vision(model=self.config.vision_model):
@@ -75,11 +82,7 @@ class ImageParser(AsyncParser[DataType]):
                 {
                     "role": "user",
                     "content": [
-                        {
-                            "type": "text",
-                            "text": self.config.vision_prompt
-                            or self.DEFAULT_VISION_PROMPT,
-                        },
+                        {"type": "text", "text": self.vision_prompt_text},
                         {
                             "type": "image_url",
                             "image_url": {

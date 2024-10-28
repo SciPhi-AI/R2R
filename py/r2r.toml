@@ -89,7 +89,8 @@ chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
 audio_transcription_model="openai/whisper-1"
-vision_model="gpt-4o-mini"
+vision_model = "gpt-4o-mini"
+# vision_prompt_name = "vision"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
