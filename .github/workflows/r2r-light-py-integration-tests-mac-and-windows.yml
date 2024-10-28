@@ -3,11 +3,6 @@
 name: R2R Light Python Integration Test (macOS / windows)
 
 on:
-  push:
-    branches:
-      - dev
-      - dev-minor
-      - main
   workflow_dispatch:
 
 jobs:
