@@ -162,7 +162,6 @@ class VLMPDFParser(AsyncParser[DataType]):
 
             # Convert PDF to images
             image_paths = await self.convert_pdf_to_images(pdf_path, temp_dir)
-            print("creating hte tasks to process pages")
             # Create tasks for all pages
             tasks = {
                 asyncio.create_task(
