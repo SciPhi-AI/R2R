@@ -22,7 +22,7 @@ class IngestionConfig(ProviderConfig):
 
     audio_transcription_model: str
 
-    vision_prompt: Optional[str] = None
+    vision_prompt_name: Optional[str] = None
     vision_model: str
 
     @property

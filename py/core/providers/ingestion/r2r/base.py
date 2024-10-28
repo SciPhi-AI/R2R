@@ -41,7 +41,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.HTM: parsers.HTMLParser,
         DocumentType.JSON: parsers.JSONParser,
         DocumentType.MD: parsers.MDParser,
-        DocumentType.PDF: parsers.PDFParser,
+        DocumentType.PDF: parsers.VLMPDFParser,
         DocumentType.PPTX: parsers.PPTParser,
         DocumentType.TXT: parsers.TextParser,
         DocumentType.XLSX: parsers.XLSXParser,
@@ -59,8 +59,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,
-            "zerox": parsers.ZeroxPDFParser,
-            "marker": parsers.PDFParserMarker,
+            "basic": parsers.BasicPDFParser,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
     }

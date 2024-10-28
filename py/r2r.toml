@@ -90,7 +90,7 @@ excluded_parsers = ["mp4"]
 
 audio_transcription_model="openai/whisper-1"
 vision_model = "gpt-4o-mini"
-# vision_prompt_name = "vision"
+# vision_prompt_name = "vision" # optional, default is "vision"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
@@ -100,9 +100,6 @@ vision_model = "gpt-4o-mini"
     semantic_neighbors = 10
     semantic_similarity_threshold = 0.7
     generation_config = { model = "openai/gpt-4o-mini" }
-
-  [ingestion.extra_parsers]
-    pdf = "zerox"
 
 [logging]
 provider = "r2r"

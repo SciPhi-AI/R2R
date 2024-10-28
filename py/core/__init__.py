@@ -195,9 +195,9 @@ __all__ = [
     "AudioParser",
     "DOCXParser",
     "ImageParser",
-    "PDFParser",
+    "VLMPDFParser",
+    "BasicPDFParser",
     "PDFParserUnstructured",
-    "PDFParserMarker",
     "PPTParser",
     # Structured parsers
     "CSVParser",

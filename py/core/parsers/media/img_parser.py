@@ -55,7 +55,7 @@ class ImageParser(AsyncParser[DataType]):
         """
         if not self.vision_prompt_text:
             self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
-                prompt_name=self.config.vision_prompt
+                prompt_name=self.config.vision_prompt_name
                 or self.DEFAULT_VISION_PROMPT_NAME
             )
         try:

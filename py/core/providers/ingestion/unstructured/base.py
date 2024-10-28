@@ -96,8 +96,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,
-            "zerox": parsers.ZeroxPDFParser,
-            "marker": parsers.PDFParserMarker,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
     }
