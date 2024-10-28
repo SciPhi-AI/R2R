@@ -509,6 +509,10 @@ class IngestionRouter(BaseRouter):
                 None,
                 description=create_vector_descriptions.get("index_name"),
             ),
+            index_column: Optional[str] = Body(
+                None,
+                description=create_vector_descriptions.get("index_column"),
+            ),
             concurrently: bool = Body(
                 default=True,
                 description=create_vector_descriptions.get("concurrently"),
@@ -532,6 +536,7 @@ class IngestionRouter(BaseRouter):
                         "index_method": index_method,
                         "index_measure": index_measure,
                         "index_name": index_name,
+                        "index_column": index_column,
                         "index_arguments": index_arguments,
                         "concurrently": concurrently,
                     },
