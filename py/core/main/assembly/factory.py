@@ -10,6 +10,7 @@ from core.base import (
     CompletionProvider,
     CryptoConfig,
     DatabaseConfig,
+    EmailConfig,
     EmbeddingConfig,
     EmbeddingProvider,
     IngestionConfig,
@@ -24,8 +25,10 @@ from ..config import R2RConfig
 
 logger = logging.getLogger()
 from core.providers import (
+    AsyncSMTPEmailProvider,
     BCryptConfig,
     BCryptProvider,
+    ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
@@ -49,21 +52,24 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        database_provider: PostgresDBProvider,
         crypto_provider: BCryptProvider,
+        database_provider: PostgresDBProvider,
+        email_provider: Union[
+            AsyncSMTPEmailProvider, ConsoleMockEmailProvider
+        ],
         *args,
         **kwargs,
     ) -> Union[R2RAuthProvider, SupabaseAuthProvider]:
         if auth_config.provider == "r2r":
 
             r2r_auth = R2RAuthProvider(
-                auth_config, crypto_provider, database_provider
+                auth_config, crypto_provider, database_provider, email_provider
             )
             await r2r_auth.initialize()
             return r2r_auth
         elif auth_config.provider == "supabase":
             return SupabaseAuthProvider(
-                auth_config, crypto_provider, database_provider
+                auth_config, crypto_provider, database_provider, email_provider
             )
         else:
             raise ValueError(
@@ -208,6 +214,23 @@ class R2RProviderFactory:
             raise ValueError("Language model provider not found")
         return llm_provider
 
+    @staticmethod
+    async def create_email_provider(
+        email_config: Optional[EmailConfig] = None, *args, **kwargs
+    ) -> Optional[Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]]:
+        """Creates an email provider based on configuration."""
+        if not email_config:
+            return None
+
+        if email_config.provider == "smtp":
+            return AsyncSMTPEmailProvider(email_config)
+        elif email_config.provider == "console_mock":
+            return ConsoleMockEmailProvider(email_config)
+        else:
+            raise ValueError(
+                f"Email provider {email_config.provider} not supported."
+            )
+
     async def create_providers(
         self,
         auth_provider_override: Optional[
@@ -215,6 +238,9 @@ class R2RProviderFactory:
         ] = None,
         crypto_provider_override: Optional[BCryptProvider] = None,
         database_provider_override: Optional[PostgresDBProvider] = None,
+        email_provider_override: Optional[
+            Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]
+        ] = None,
         embedding_provider_override: Optional[
             Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]
         ] = None,
@@ -259,12 +285,20 @@ class R2RProviderFactory:
             )
         )
 
+        email_provider = (
+            email_provider_override
+            or await self.create_email_provider(
+                self.config.email, crypto_provider, *args, **kwargs
+            )
+        )
+
         auth_provider = (
             auth_provider_override
             or await self.create_auth_provider(
                 self.config.auth,
-                database_provider,
                 crypto_provider,
+                database_provider,
+                email_provider,
                 *args,
                 **kwargs,
             )
@@ -287,6 +321,7 @@ class R2RProviderFactory:
             embedding=embedding_provider,
             ingestion=ingestion_provider,
             llm=llm_provider,
+            email=email_provider,
             orchestration=orchestration_provider,
             logging=logging_provider,
         )

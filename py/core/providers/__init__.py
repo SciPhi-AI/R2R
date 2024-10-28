@@ -1,6 +1,7 @@
 from .auth import R2RAuthProvider, SupabaseAuthProvider
 from .crypto import BCryptConfig, BCryptProvider
 from .database import PostgresDBProvider
+from .email import AsyncSMTPEmailProvider, ConsoleMockEmailProvider
 from .embeddings import LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
 from .ingestion import (  # type: ignore
     R2RIngestionConfig,
@@ -32,6 +33,9 @@ __all__ = [
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    # Email
+    "AsyncSMTPEmailProvider",
+    "ConsoleMockEmailProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",
