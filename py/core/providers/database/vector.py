@@ -6,6 +6,8 @@ import uuid
 from typing import Any, Optional, Tuple, TypedDict, Union
 from uuid import UUID
 
+import numpy as np
+
 from core.base import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -33,6 +35,33 @@ def index_measure_to_ops(
     return _decorate_vector_type(measure.ops, quantization_type)
 
 
+def quantize_vector_to_binary(
+    vector: Union[list[float], np.ndarray], threshold: float = 0.0
+) -> str:
+    """
+    Quantizes a float vector to a binary vector string for PostgreSQL bit type.
+    Used when quantization_type is INT1.
+
+    Args:
+        vector (Union[List[float], np.ndarray]): Input vector of floats
+        threshold (float, optional): Threshold for binarization. Defaults to 0.0.
+
+    Returns:
+        str: Binary string representation for PostgreSQL bit type
+    """
+    # Convert input to numpy array if it isn't already
+    if not isinstance(vector, np.ndarray):
+        vector = np.array(vector)
+
+    # Convert to binary (1 where value > threshold, 0 otherwise)
+    binary_vector = (vector > threshold).astype(int)
+
+    # Convert to string of 1s and 0s
+    # Convert to string of 1s and 0s, then to bytes
+    binary_string = "".join(map(str, binary_vector))
+    return binary_string.encode("ascii")
+
+
 class HybridSearchIntermediateResult(TypedDict):
     semantic_rank: int
     full_text_rank: int
@@ -55,10 +84,12 @@ class PostgresVectorHandler(VectorHandler):
         project_name: str,
         connection_manager: PostgresConnectionManager,
         dimension: int,
+        quantization_type: VectorQuantizationType,
         enable_fts: bool = False,
     ):
         super().__init__(project_name, connection_manager)
         self.dimension = dimension
+        self.quantization_type = quantization_type
         self.enable_fts = enable_fts
 
     async def create_tables(self):
@@ -82,8 +113,12 @@ class PostgresVectorHandler(VectorHandler):
                 "your database schema to the new version."
             )
 
-        # TODO - Move ids to `UUID` type
-        # Create the vector table if it doesn't exist
+        binary_col = (
+            ""
+            if self.quantization_type != VectorQuantizationType.INT1
+            else f"vec_binary bit({self.dimension}),"
+        )
+
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (
             extraction_id UUID PRIMARY KEY,
@@ -91,6 +126,7 @@ class PostgresVectorHandler(VectorHandler):
             user_id UUID,
             collection_ids UUID[],
             vec vector({self.dimension}),
+            {binary_col}
             text TEXT,
             metadata JSONB
             {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
@@ -108,56 +144,131 @@ class PostgresVectorHandler(VectorHandler):
         await self.connection_manager.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
-        query = f"""
-        INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-        (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (extraction_id) DO UPDATE SET
-        document_id = EXCLUDED.document_id,
-        user_id = EXCLUDED.user_id,
-        collection_ids = EXCLUDED.collection_ids,
-        vec = EXCLUDED.vec,
-        text = EXCLUDED.text,
-        metadata = EXCLUDED.metadata;
         """
-        await self.connection_manager.execute_query(
-            query,
-            (
-                entry.extraction_id,
-                entry.document_id,
-                entry.user_id,
-                entry.collection_ids,
-                str(entry.vector.data),
-                entry.text,
-                json.dumps(entry.metadata),
-            ),
-        )
+        Upsert function that handles vector quantization only when quantization_type is INT1.
+        Matches the table schema where vec_binary column only exists for INT1 quantization.
+        """
+        # Check the quantization type to determine which columns to use
+        if self.quantization_type == VectorQuantizationType.INT1:
+            # For quantized vectors, use vec_binary column
+            query = f"""
+            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            (extraction_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
+            ON CONFLICT (extraction_id) DO UPDATE SET
+            document_id = EXCLUDED.document_id,
+            user_id = EXCLUDED.user_id,
+            collection_ids = EXCLUDED.collection_ids,
+            vec = EXCLUDED.vec,
+            vec_binary = EXCLUDED.vec_binary,
+            text = EXCLUDED.text,
+            metadata = EXCLUDED.metadata;
+            """
+            await self.connection_manager.execute_query(
+                query,
+                (
+                    entry.extraction_id,
+                    entry.document_id,
+                    entry.user_id,
+                    entry.collection_ids,
+                    str(entry.vector.data),
+                    quantize_vector_to_binary(
+                        entry.vector.data
+                    ),  # Convert to binary
+                    entry.text,
+                    json.dumps(entry.metadata),
+                ),
+            )
+        else:
+            # For regular vectors, use vec column only
+            query = f"""
+            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (extraction_id) DO UPDATE SET
+            document_id = EXCLUDED.document_id,
+            user_id = EXCLUDED.user_id,
+            collection_ids = EXCLUDED.collection_ids,
+            vec = EXCLUDED.vec,
+            text = EXCLUDED.text,
+            metadata = EXCLUDED.metadata;
+            """
+
+            await self.connection_manager.execute_query(
+                query,
+                (
+                    entry.extraction_id,
+                    entry.document_id,
+                    entry.user_id,
+                    entry.collection_ids,
+                    str(entry.vector.data),
+                    entry.text,
+                    json.dumps(entry.metadata),
+                ),
+            )
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
-        query = f"""
-        INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-        (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (extraction_id) DO UPDATE SET
-        document_id = EXCLUDED.document_id,
-        user_id = EXCLUDED.user_id,
-        collection_ids = EXCLUDED.collection_ids,
-        vec = EXCLUDED.vec,
-        text = EXCLUDED.text,
-        metadata = EXCLUDED.metadata;
         """
-        params = [
-            (
-                entry.extraction_id,
-                entry.document_id,
-                entry.user_id,
-                entry.collection_ids,
-                str(entry.vector.data),
-                entry.text,
-                json.dumps(entry.metadata),
-            )
-            for entry in entries
-        ]
+        Batch upsert function that handles vector quantization only when quantization_type is INT1.
+        Matches the table schema where vec_binary column only exists for INT1 quantization.
+        """
+        if self.quantization_type == VectorQuantizationType.INT1:
+            # For quantized vectors, use vec_binary column
+            query = f"""
+            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            (extraction_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
+            ON CONFLICT (extraction_id) DO UPDATE SET
+            document_id = EXCLUDED.document_id,
+            user_id = EXCLUDED.user_id,
+            collection_ids = EXCLUDED.collection_ids,
+            vec = EXCLUDED.vec,
+            vec_binary = EXCLUDED.vec_binary,
+            text = EXCLUDED.text,
+            metadata = EXCLUDED.metadata;
+            """
+            params = [
+                (
+                    entry.extraction_id,
+                    entry.document_id,
+                    entry.user_id,
+                    entry.collection_ids,
+                    str(entry.vector.data),
+                    quantize_vector_to_binary(
+                        entry.vector.data
+                    ),  # Convert to binary
+                    entry.text,
+                    json.dumps(entry.metadata),
+                )
+                for entry in entries
+            ]
+        else:
+            # For regular vectors, use vec column only
+            query = f"""
+            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (extraction_id) DO UPDATE SET
+            document_id = EXCLUDED.document_id,
+            user_id = EXCLUDED.user_id,
+            collection_ids = EXCLUDED.collection_ids,
+            vec = EXCLUDED.vec,
+            text = EXCLUDED.text,
+            metadata = EXCLUDED.metadata;
+            """
+            params = [
+                (
+                    entry.extraction_id,
+                    entry.document_id,
+                    entry.user_id,
+                    entry.collection_ids,
+                    str(entry.vector.data),
+                    entry.text,
+                    json.dumps(entry.metadata),
+                )
+                for entry in entries
+            ]
+
         await self.connection_manager.execute_many(query, params)
 
     async def semantic_search(
@@ -177,8 +288,25 @@ class PostgresVectorHandler(VectorHandler):
             f"{table_name}.text",
         ]
 
-        # Use cosine distance calculation
-        distance_calc = f"{table_name}.vec <=> $1::vector"
+        # Handle binary vectors for INT1 quantization type
+        if self.quantization_type == VectorQuantizationType.INT1:
+            # Convert query vector to binary format
+            binary_query = quantize_vector_to_binary(query_vector)
+            # Use binary column and binary-specific distance measures
+            if (
+                imeasure_obj == IndexMeasure.hamming_distance
+                or imeasure_obj == IndexMeasure.jaccard_distance
+            ):
+                distance_calc = f"{table_name}.vec_binary {search_settings.index_measure.pgvector_repr} $1::bit({self.dimension})"
+                query_param = binary_query
+            else:
+                # For non-binary distance measures, use regular vec column with binarized query
+                distance_calc = f"{table_name}.vec {search_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
+                query_param = str(query_vector)
+        else:
+            # Standard float vector handling
+            distance_calc = f"{table_name}.vec {search_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
+            query_param = str(query_vector)
 
         if search_settings.include_values:
             cols.append(f"({distance_calc}) AS distance")
@@ -189,7 +317,7 @@ class PostgresVectorHandler(VectorHandler):
         select_clause = ", ".join(cols)
 
         where_clause = ""
-        params: list[Union[str, int]] = [str(query_vector)]
+        params: list[Union[str, int]] = [query_param]
         if search_settings.filters:
             where_clause = self._build_filters(search_settings.filters, params)
             where_clause = f"WHERE {where_clause}"
@@ -202,6 +330,7 @@ class PostgresVectorHandler(VectorHandler):
         LIMIT ${len(params) + 1}
         OFFSET ${len(params) + 2}
         """
+        print("query = ", query)
 
         params.extend([search_settings.search_limit, search_settings.offset])
 
@@ -538,6 +667,7 @@ class PostgresVectorHandler(VectorHandler):
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
         index_name: Optional[str] = None,
+        index_column: Optional[str] = None,
         concurrently: bool = True,
     ) -> None:
         """
@@ -574,7 +704,17 @@ class PostgresVectorHandler(VectorHandler):
 
         if table_name == VectorTableName.VECTORS:
             table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"  # TODO - Fix bug in vector table naming convention
-            col_name = "vec"
+            if index_column:
+                col_name = index_column
+            else:
+                col_name = (
+                    "vec"
+                    if (
+                        index_measure != IndexMeasure.hamming_distance
+                        and index_measure != IndexMeasure.jaccard_distance
+                    )
+                    else "vec_binary"
+                )
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
@@ -592,6 +732,7 @@ class PostgresVectorHandler(VectorHandler):
             col_name = "embedding"
         else:
             raise ArgError("invalid table name")
+
         if index_method not in (
             IndexMethod.ivfflat,
             IndexMethod.hnsw,
@@ -634,7 +775,7 @@ class PostgresVectorHandler(VectorHandler):
 
         index_name = (
             index_name
-            or f"ix_{ops}_{index_method}__{time.strftime('%Y%m%d%H%M%S')}"
+            or f"ix_{ops}_{index_method}__{col_name}_{time.strftime('%Y%m%d%H%M%S')}"
         )
 
         create_index_sql = f"""

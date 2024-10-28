@@ -152,6 +152,7 @@ class PostgresDBProvider(DatabaseProvider):
             self.project_name,
             self.connection_manager,
             self.dimension,
+            self.quantization_type,
             self.enable_fts,
         )
         self.kg_handler = PostgresKGHandler(
