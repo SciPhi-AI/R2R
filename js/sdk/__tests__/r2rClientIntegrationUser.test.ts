@@ -30,9 +30,16 @@ const baseUrl = "http://localhost:7272";
  *     - updateFiles
  *     X ingestChunks
  *     X updateChunks
+ *     X createVectorIndex
+ *     X listVectorIndices
+ *     X deleteVectorIndex
  *    Management:
  *     - serverStats
  *     X updatePrompt
+ *     X addPrompt
+ *     X getPrompt
+ *     X getAllPrompts
+ *     X deletePrompt
  *     X analytics
  *     X logs
  *     - appSettings
@@ -41,7 +48,6 @@ const baseUrl = "http://localhost:7272";
  *     X downloadFile
  *     - documentsOverview
  *     - documentChunks
- *     X inspectKnowledgeGraph
  *     X collectionsOverview
  *     X createCollection
  *     X getCollection
@@ -66,8 +72,15 @@ const baseUrl = "http://localhost:7272";
  *     X getPreviousBranch
  *     X branchAtMessage
  *     X deleteConversation
- *    Restructure:
+ *    Knowledge Graphs:
+ *     X createGraph
  *     X enrichGraph
+ *     X getEntities
+ *     X getTriples
+ *     X getCommunities
+ *     X getTunedPrompt
+ *     X deduplicateEntities
+ *     X deleteGraphForCollection
  *    Retrieval:
  *     - search
  *     X rag

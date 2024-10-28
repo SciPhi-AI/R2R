@@ -219,12 +219,12 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve entities from."
+            ),
             entity_level: Optional[EntityLevel] = Query(
                 default=EntityLevel.DOCUMENT,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
-            ),
-            collection_id: Optional[UUID] = Query(
-                None, description="Collection ID to retrieve entities from."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
             limit: int = Query(
@@ -444,10 +444,10 @@ class KGRouter(BaseRouter):
         @self.router.delete("/delete_graph_for_collection")
         @self.base_endpoint
         async def delete_graph_for_collection(
-            collection_id: UUID = Body(
+            collection_id: UUID = Body(  # FIXME: This should be a path parameter
                 ..., description="Collection ID to delete graph for."
             ),
-            cascade: bool = Body(
+            cascade: bool = Body(  # FIXME: This should be a query parameter
                 default=False,
                 description="Whether to cascade the deletion, and delete entities and triples belonging to the collection.",
             ),
