@@ -93,7 +93,7 @@ class KGMixins:
             "limit": limit,
             "entity_level": entity_level,
             "entity_ids": (
-                ",".join(entity_ids) if entity_ids is not None else ""
+                ",".join(entity_ids) if entity_ids is not None else None
             ),
         }
 
