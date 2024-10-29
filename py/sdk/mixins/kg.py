@@ -68,10 +68,10 @@ class KGMixins:
     async def get_entities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
+        entity_level: Optional[str] = None,
+        entity_ids: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        entity_level: Optional[str] = "collection",
-        entity_ids: Optional[list[str]] = None,
     ) -> dict:
         """
         Retrieve entities from the knowledge graph.
@@ -89,12 +89,10 @@ class KGMixins:
 
         params = {
             "collection_id": collection_id,
+            "entity_level": entity_level,
+            "entity_ids": entity_ids,
             "offset": offset,
             "limit": limit,
-            "entity_level": entity_level,
-            "entity_ids": (
-                ",".join(entity_ids) if entity_ids is not None else ""
-            ),
         }
 
         params = {k: v for k, v in params.items() if v is not None}
@@ -104,10 +102,10 @@ class KGMixins:
     async def get_triples(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Retrieve triples from the knowledge graph.
@@ -125,12 +123,10 @@ class KGMixins:
 
         params = {
             "collection_id": collection_id,
+            "entity_names": entity_names,
+            "triple_ids": triple_ids,
             "offset": offset,
             "limit": limit,
-            "entity_names": entity_names,
-            "triple_ids": (
-                ",".join(triple_ids) if triple_ids is not None else ""
-            ),
         }
 
         params = {k: v for k, v in params.items() if v is not None}
@@ -140,10 +136,10 @@ class KGMixins:
     async def get_communities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Retrieve communities from the knowledge graph.
@@ -161,10 +157,10 @@ class KGMixins:
 
         params = {
             "collection_id": collection_id,
-            "offset": offset,
-            "limit": limit,
             "levels": levels,
             "community_numbers": community_numbers,
+            "offset": offset,
+            "limit": limit,
         }
 
         params = {k: v for k, v in params.items() if v is not None}

@@ -528,50 +528,56 @@ class PostgresKGHandler(KGHandler):
 
     async def get_communities(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = -1,
     ) -> dict:
-
-        query_parts = [
-            f"""
-            SELECT id, community_number, collection_id, level, name, summary, findings, rating, rating_explanation
-            FROM {self._get_table_name('community_report')} WHERE collection_id = $1 ORDER BY community_number LIMIT $2 OFFSET $3
-            """
-        ]
-        params = [collection_id, limit, offset]
+        conditions = []
+        params: list = [collection_id]
+        param_index = 2
 
         if levels is not None:
-            query_parts.append(f"AND level = ANY(${len(params) + 1})")
+            conditions.append(f"level = ANY(${param_index})")
             params.append(levels)
+            param_index += 1
 
         if community_numbers is not None:
-            query_parts.append(
-                f"AND community_number = ANY(${len(params) + 1})"
-            )
+            conditions.append(f"community_number = ANY(${param_index})")
             params.append(community_numbers)
+            param_index += 1
 
-        QUERY = " ".join(query_parts)
+        pagination_params = []
+        if offset:
+            pagination_params.append(f"OFFSET ${param_index}")
+            params.append(offset)
+            param_index += 1
 
-        communities = await self.connection_manager.fetch_query(QUERY, params)
-        communities = [
-            CommunityReport(**community) for community in communities
-        ]
+        if limit != -1:
+            pagination_params.append(f"LIMIT ${param_index}")
+            params.append(limit)
+            param_index += 1
+
+        pagination_clause = " ".join(pagination_params)
+
+        query = f"""
+            SELECT id, community_number, collection_id, level, name, summary, findings, rating, rating_explanation, COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name('community_report')}
+            WHERE collection_id = $1
+            {" AND " + " AND ".join(conditions) if conditions else ""}
+            ORDER BY community_number
+            {pagination_clause}
+        """
+
+        results = await self.connection_manager.fetch_query(query, params)
+        total_entries = results[0]["total_entries"] if results else 0
+        communities = [CommunityReport(**community) for community in results]
 
         return {
             "communities": communities,
-            "total_entries": (await self.get_community_count(collection_id)),
+            "total_entries": total_entries,
         }
-
-    async def get_community_count(self, collection_id: UUID) -> int:
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("community_report")} WHERE collection_id = $1
-        """
-        return (
-            await self.connection_manager.fetch_query(QUERY, [collection_id])
-        )[0]["count"]
 
     async def add_community_report(
         self, community_report: CommunityReport
@@ -1115,43 +1121,48 @@ class PostgresKGHandler(KGHandler):
 
     async def get_entities(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        collection_id: Optional[UUID] = None,
         entity_ids: Optional[list[str]] = None,
         entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         conditions = []
         params: list = [collection_id]
+        param_index = 2
 
         if entity_ids:
-            conditions.append(f"id = ANY(${len(params) + 1})")
+            conditions.append(f"id = ANY(${param_index})")
             params.append(entity_ids)
+            param_index += 1
 
         if entity_names:
-            conditions.append(f"name = ANY(${len(params) + 1})")
+            conditions.append(f"name = ANY(${param_index})")
             params.append(entity_names)
+            param_index += 1
+
+        pagination_params = []
+        if offset:
+            pagination_params.append(f"OFFSET ${param_index}")
+            params.append(offset)
+            param_index += 1
 
         if limit != -1:
-            params.extend([offset, limit])
-            offset_limit_clause = (
-                f"OFFSET ${len(params) - 1} LIMIT ${len(params)}"
-            )
-        else:
-            params.append(offset)
-            offset_limit_clause = f"OFFSET ${len(params)}"
+            pagination_params.append(f"LIMIT ${param_index}")
+            params.append(limit)
+            param_index += 1
+
+        pagination_clause = " ".join(pagination_params)
 
         if entity_table_name == "collection_entity":
-            # entity deduplicated table has document_ids, not document_id.
-            # we directly use the collection_id to get the entities list.
             query = f"""
             SELECT id, name, description, extraction_ids, document_ids
             FROM {self._get_table_name(entity_table_name)}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY id
-            {offset_limit_clause}
+            {pagination_clause}
             """
         else:
             query = f"""
@@ -1163,11 +1174,10 @@ class PostgresKGHandler(KGHandler):
             )
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY id
-            {offset_limit_clause}
-        """
+            {pagination_clause}
+            """
 
         results = await self.connection_manager.fetch_query(query, params)
-
         entities = [Entity(**entity) for entity in results]
 
         total_entries = await self.get_entity_count(
@@ -1178,24 +1188,40 @@ class PostgresKGHandler(KGHandler):
 
     async def get_triples(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = -1,
     ) -> dict:
         conditions = []
-        params = [str(collection_id)]
+        params: list = [str(collection_id)]
+        param_index = 2
 
         if triple_ids:
-            conditions.append(f"id = ANY(${len(params) + 1})")
-            params.append([str(ele) for ele in triple_ids])  # type: ignore
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(triple_ids)
+            param_index += 1
 
         if entity_names:
             conditions.append(
-                f"subject = ANY(${len(params) + 1}) or object = ANY(${len(params) + 1})"
+                f"subject = ANY(${param_index}) or object = ANY(${param_index})"
             )
-            params.append([str(ele) for ele in entity_names])  # type: ignore
+            params.append(entity_names)
+            param_index += 1
+
+        pagination_params = []
+        if offset:
+            pagination_params.append(f"OFFSET ${param_index}")
+            params.append(offset)
+            param_index += 1
+
+        if limit != -1:
+            pagination_params.append(f"LIMIT ${param_index}")
+            params.append(limit)
+            param_index += 1
+
+        pagination_clause = " ".join(pagination_params)
 
         query = f"""
             SELECT id, subject, predicate, object, description
@@ -1206,9 +1232,8 @@ class PostgresKGHandler(KGHandler):
             )
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY id
-            OFFSET ${len(params) + 1} LIMIT ${len(params) + 2}
+            {pagination_clause}
         """
-        params.extend([offset, limit])  # type: ignore
 
         triples = await self.connection_manager.fetch_query(query, params)
         triples = [Triple(**triple) for triple in triples]
