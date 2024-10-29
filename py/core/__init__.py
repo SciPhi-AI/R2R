@@ -236,6 +236,7 @@ __all__ = [
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    "OllamaEmbeddingProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteLLMCompletionProvider",

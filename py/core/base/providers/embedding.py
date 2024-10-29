@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import time
 from abc import abstractmethod
 from enum import Enum
@@ -14,7 +15,6 @@ from ..abstractions import (
     VectorSearchResult,
     default_embedding_prefixes,
 )
-import random
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger()
@@ -44,7 +44,7 @@ class EmbeddingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["litellm", "openai"]
+        return ["litellm", "openai", "ollama"]
 
 
 class EmbeddingProvider(Provider):
