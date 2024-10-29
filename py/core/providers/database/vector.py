@@ -3,7 +3,7 @@ import json
 import logging
 import time
 import uuid
-from typing import Any, Optional, Tuple, TypedDict, Union
+from typing import Any, Optional, TypedDict, Union
 from uuid import UUID
 
 from core.base import (
@@ -63,7 +63,7 @@ class PostgresVectorHandler(VectorHandler):
 
     async def create_tables(self):
         # Check for old table name first
-        check_query = f"""
+        check_query = """
         SELECT EXISTS (
             SELECT FROM pg_tables
             WHERE schemaname = $1
@@ -160,6 +160,10 @@ class PostgresVectorHandler(VectorHandler):
         ]
         await self.connection_manager.execute_many(query, params)
 
+    def _format_vector(self, vector: list[float]) -> str:
+        """Convert a list of floats to PostgreSQL vector format"""
+        return f"[{','.join(str(x) for x in vector)}]"
+
     async def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
@@ -168,28 +172,28 @@ class PostgresVectorHandler(VectorHandler):
         except ValueError:
             raise ValueError("Invalid index measure")
 
-        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
-        cols = [
-            f"{table_name}.extraction_id",
-            f"{table_name}.document_id",
-            f"{table_name}.user_id",
-            f"{table_name}.collection_ids",
-            f"{table_name}.text",
+        base_cols = [
+            "extraction_id",
+            "document_id",
+            "user_id",
+            "collection_ids",
+            "text",
         ]
 
-        # Use cosine distance calculation
-        distance_calc = f"{table_name}.vec <=> $1::vector"
+        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
+
+        cols = [f"{table_name}.{col}" for col in base_cols]
+        distance_calc = f"{table_name}.vec <=> $1::vector"  # Use cosine distance calculation
 
         if search_settings.include_values:
-            cols.append(f"({distance_calc}) AS distance")
-
+            cols.append(f"{distance_calc} AS distance")
         if search_settings.include_metadatas:
             cols.append(f"{table_name}.metadata")
 
         select_clause = ", ".join(cols)
 
         where_clause = ""
-        params: list[Union[str, int]] = [str(query_vector)]
+        params: list[str | int] = [self._format_vector(query_vector)]
         if search_settings.filters:
             where_clause = self._build_filters(search_settings.filters, params)
             where_clause = f"WHERE {where_clause}"
@@ -199,8 +203,7 @@ class PostgresVectorHandler(VectorHandler):
         FROM {table_name}
         {where_clause}
         ORDER BY {distance_calc}
-        LIMIT ${len(params) + 1}
-        OFFSET ${len(params) + 2}
+        LIMIT $2 OFFSET $3
         """
 
         params.extend([search_settings.search_limit, search_settings.offset])
@@ -236,40 +239,43 @@ class PostgresVectorHandler(VectorHandler):
                 "Full-text search is not enabled for this collection."
             )
 
-        where_clauses = []
-        params: list[Union[str, int]] = [query_text]
+        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
+
+        cols = [
+            f"{table_name}.extraction_id",
+            f"{table_name}.document_id",
+            f"{table_name}.user_id",
+            f"{table_name}.collection_ids",
+            f"{table_name}.text",
+            f"{table_name}.metadata",
+            f"ts_rank({table_name}.fts, websearch_to_tsquery('english', $1), 32) as rank",
+        ]
+
+        select_clause = ", ".join(cols)
+
+        where_components = ["fts @@ websearch_to_tsquery('english', $1)"]
+        params: list[str | int] = [query_text]
 
         if search_settings.filters:
             filters_clause = self._build_filters(
                 search_settings.filters, params
             )
-            where_clauses.append(filters_clause)
+            where_components.append(filters_clause)
 
-        if where_clauses:
-            where_clause = (
-                "WHERE "
-                + " AND ".join(where_clauses)
-                + " AND fts @@ websearch_to_tsquery('english', $1)"
-            )
-        else:
-            where_clause = "WHERE fts @@ websearch_to_tsquery('english', $1)"
+        where_clause = "WHERE " + " AND ".join(where_components)
 
         query = f"""
-            SELECT
-                extraction_id, document_id, user_id, collection_ids, text, metadata,
-                ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
-            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            SELECT {select_clause}
+            FROM {table_name}
             {where_clause}
+            ORDER BY rank DESC
+            LIMIT $2 OFFSET $3
         """
 
-        query += f"""
-            ORDER BY rank DESC
-            OFFSET ${len(params)+1} LIMIT ${len(params)+2}
-        """
         params.extend(
             [
-                search_settings.offset,
                 search_settings.hybrid_search_settings.full_text_limit,
+                search_settings.offset,
             ]
         )
 
@@ -334,15 +340,15 @@ class PostgresVectorHandler(VectorHandler):
         )
         rrf_k = search_settings.hybrid_search_settings.rrf_k
 
-        combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {}
-
-        for rank, result in enumerate(semantic_results, 1):
-            combined_results[result.extraction_id] = {
+        combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {
+            result.extraction_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
                 "rrf_score": 0.0,  # Initialize with 0, will be calculated later
             }
+            for rank, result in enumerate(semantic_results, 1)
+        }
 
         for rank, result in enumerate(full_text_results, 1):
             if result.extraction_id in combined_results:
