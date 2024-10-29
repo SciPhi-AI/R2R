@@ -669,18 +669,13 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_communities(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         """Get communities for a collection."""
-        pass
-
-    @abstractmethod
-    async def get_community_count(self, collection_id: UUID) -> int:
-        """Get total number of communities for a collection."""
         pass
 
     @abstractmethod
@@ -739,12 +734,12 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_entities(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        collection_id: Optional[UUID] = None,
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "document_entity",
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         """Get entities from storage."""
         pass
@@ -752,11 +747,11 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_triples(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[UUID] = None,
         entity_names: Optional[List[str]] = None,
         triple_ids: Optional[List[str]] = None,
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         """Get triples from storage."""
         pass
@@ -1544,20 +1539,20 @@ class DatabaseProvider(Provider):
 
     async def get_communities(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         """Forward to KG handler get_communities method."""
         return await self.kg_handler.get_communities(
-            collection_id, offset, limit, levels, community_numbers
+            collection_id,
+            levels,
+            community_numbers,
+            offset,
+            limit,
         )
-
-    async def get_community_count(self, collection_id: UUID) -> int:
-        """Forward to KG handler get_community_count method."""
-        return await self.kg_handler.get_community_count(collection_id)
 
     async def add_community_report(
         self, community_report: CommunityReport
@@ -1617,34 +1612,38 @@ class DatabaseProvider(Provider):
     # Entity and Triple operations
     async def get_entities(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        collection_id: Optional[UUID],
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "document_entity",
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         """Forward to KG handler get_entities method."""
         return await self.kg_handler.get_entities(
             collection_id,
-            offset,
-            limit,
             entity_ids,
             entity_names,
             entity_table_name,
+            offset,
+            limit,
         )
 
     async def get_triples(
         self,
-        collection_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[UUID] = None,
         entity_names: Optional[List[str]] = None,
         triple_ids: Optional[List[str]] = None,
+        offset: int = 0,
+        limit: int = -1,
     ) -> dict:
         """Forward to KG handler get_triples method."""
         return await self.kg_handler.get_triples(
-            collection_id, offset, limit, entity_names, triple_ids
+            collection_id,
+            entity_names,
+            triple_ids,
+            offset,
+            limit,
         )
 
     async def get_entity_count(
