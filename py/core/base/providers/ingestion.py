@@ -18,14 +18,7 @@ class IngestionConfig(ProviderConfig):
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
     )
-
-    audio_transcription_model: str
-
-    vision_img_prompt_name: Optional[str] = None
-    vision_img_model: str
-
-    vision_pdf_prompt_name: Optional[str] = None
-    vision_pdf_model: str
+    extra_parsers: dict[str, str] = {}
 
     audio_transcription_model: str
 
