@@ -18,6 +18,7 @@ class IngestionConfig(ProviderConfig):
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
     )
+    extra_parsers: dict[str, str] = {}
 
     audio_transcription_model: str
 
