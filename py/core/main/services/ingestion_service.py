@@ -660,6 +660,7 @@ class IngestionServiceAdapter:
             "index_method": IndexMethod(data["index_method"]),
             "index_measure": IndexMeasure(data["index_measure"]),
             "index_name": data["index_name"],
+            "index_column": data["index_column"],
             "index_arguments": data["index_arguments"],
             "concurrently": data["concurrently"],
         }

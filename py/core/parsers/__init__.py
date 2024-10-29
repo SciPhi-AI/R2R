@@ -7,9 +7,10 @@ __all__ = [
     "AudioParser",
     "DOCXParser",
     "ImageParser",
-    "PDFParser",
+    "VLMPDFParser",
+    "BasicPDFParser",
     "PDFParserUnstructured",
-    "PDFParserMarker",
+    "VLMPDFParser",
     "PPTParser",
     # Structured parsers
     "CSVParser",

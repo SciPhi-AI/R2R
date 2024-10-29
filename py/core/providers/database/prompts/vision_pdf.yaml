@@ -1,0 +1,42 @@
+vision_pdf:
+  template: >
+    Convert this PDF page to markdown format, preserving all content and formatting. Follow these guidelines:
+
+    Text:
+    - Maintain the original text hierarchy (headings, paragraphs, lists)
+    - Preserve any special formatting (bold, italic, underline)
+    - Include all footnotes, citations, and references
+    - Keep text in its original reading order
+
+    Tables:
+    - Recreate tables using markdown table syntax
+    - Preserve all headers, rows, and columns
+    - Maintain alignment and formatting where possible
+    - Include any table captions or notes
+
+    Equations:
+    - Convert mathematical equations using LaTeX notation
+    - Preserve equation numbers if present
+    - Include any surrounding context or references
+
+    Images:
+    - Enclose image descriptions within [FIG] and [/FIG] tags
+    - Include detailed descriptions of:
+      * Main subject matter
+      * Text overlays or captions
+      * Charts, graphs, or diagrams
+      * Relevant colors, patterns, or visual elements
+    - Maintain image placement relative to surrounding text
+
+    Additional Elements:
+    - Include page numbers if visible
+    - Preserve headers and footers
+    - Maintain sidebars or callout boxes
+    - Keep any special symbols or characters
+
+    Quality Requirements:
+    - Ensure 100% content preservation
+    - Maintain logical document flow
+    - Verify all markdown syntax is valid
+    - Double-check completeness before submitting
+  input_types: {}

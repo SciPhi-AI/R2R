@@ -44,9 +44,12 @@ class IndexMeasure(str, Enum):
         max_inner_product (str): The maximum inner product measure for indexing.
     """
 
-    cosine_distance = "cosine_distance"
     l2_distance = "l2_distance"
     max_inner_product = "max_inner_product"
+    cosine_distance = "cosine_distance"
+    l1_distance = "l1_distance"
+    hamming_distance = "hamming_distance"
+    jaccard_distance = "jaccard_distance"
 
     def __str__(self) -> str:
         return self.value
@@ -54,9 +57,23 @@ class IndexMeasure(str, Enum):
     @property
     def ops(self) -> str:
         return {
-            IndexMeasure.cosine_distance: "_cosine_ops",
             IndexMeasure.l2_distance: "_l2_ops",
             IndexMeasure.max_inner_product: "_ip_ops",
+            IndexMeasure.cosine_distance: "_cosine_ops",
+            IndexMeasure.l1_distance: "_l1_ops",
+            IndexMeasure.hamming_distance: "_hamming_ops",
+            IndexMeasure.jaccard_distance: "_jaccard_ops",
+        }[self]
+
+    @property
+    def pgvector_repr(self) -> str:
+        return {
+            IndexMeasure.l2_distance: "<->",
+            IndexMeasure.max_inner_product: "<#>",
+            IndexMeasure.cosine_distance: "<=>",
+            IndexMeasure.l1_distance: "<+>",
+            IndexMeasure.hamming_distance: "<~>",
+            IndexMeasure.jaccard_distance: "<%>",
         }[self]
 
 
@@ -90,13 +107,6 @@ class IndexArgsHNSW(R2RSerializable):
 
     m: Optional[int] = 16
     ef_construction: Optional[int] = 64
-
-
-INDEX_MEASURE_TO_SQLA_ACC = {
-    IndexMeasure.cosine_distance: lambda x: x.cosine_distance,
-    IndexMeasure.l2_distance: lambda x: x.l2_distance,
-    IndexMeasure.max_inner_product: lambda x: x.max_inner_product,
-}
 
 
 class VectorTableName(str, Enum):

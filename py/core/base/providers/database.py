@@ -571,6 +571,7 @@ class VectorHandler(Handler):
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
         index_name: Optional[str] = None,
+        index_column: Optional[str] = None,
         concurrently: bool = True,
     ) -> None:
         pass
@@ -1452,6 +1453,7 @@ class DatabaseProvider(Provider):
             Union[IndexArgsIVFFlat, IndexArgsHNSW]
         ] = None,
         index_name: Optional[str] = None,
+        index_column: Optional[str] = None,
         concurrently: bool = True,
     ) -> None:
         return await self.vector_handler.create_index(
@@ -1460,6 +1462,7 @@ class DatabaseProvider(Provider):
             index_method,
             index_arguments,
             index_name,
+            index_column,
             concurrently,
         )
 

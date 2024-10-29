@@ -49,6 +49,8 @@ class DocumentType(str, Enum):
     TIFF = "tiff"
     JPG = "jpg"
     SVG = "svg"
+    WEBP = "webp"
+    ICO = "ico"
 
     # Markdown
     MD = "md"

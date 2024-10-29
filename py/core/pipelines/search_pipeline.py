@@ -103,9 +103,9 @@ class SearchPipeline(AsyncPipeline):
         await enqueue_task
 
         vector_search_results = (
-            await vector_search_task if use_vector_search else None
+            await vector_search_task if use_vector_search else []
         )
-        kg_results = await kg_task if do_kg else None
+        kg_results = await kg_task if do_kg else []
 
         return AggregateSearchResult(
             vector_search_results=vector_search_results,

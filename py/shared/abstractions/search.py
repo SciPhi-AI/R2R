@@ -6,10 +6,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from shared.abstractions.graph import EntityLevel
-
 from .base import R2RSerializable
+from .graph import EntityLevel
 from .llm import GenerationConfig
+from .vector import IndexMeasure
 
 
 class VectorSearchResult(R2RSerializable):
@@ -163,22 +163,6 @@ class AggregateSearchResult(R2RSerializable):
             ),
             "kg_search_results": self.kg_search_results or None,
         }
-
-
-# TODO - stop duplication of this enum, move collections primitives to 'abstractions'
-class IndexMeasure(str, Enum):
-    """
-    An enum representing the types of distance measures available for indexing.
-
-    Attributes:
-        cosine_distance (str): The cosine distance measure for indexing.
-        l2_distance (str): The Euclidean (L2) distance measure for indexing.
-        max_inner_product (str): The maximum inner product measure for indexing.
-    """
-
-    cosine_distance = "cosine_distance"
-    l2_distance = "l2_distance"
-    max_inner_product = "max_inner_product"
 
 
 class HybridSearchSettings(R2RSerializable):

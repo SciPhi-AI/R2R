@@ -106,6 +106,9 @@ __all__ = [
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
+    # Email provider
+    "EmailConfig",
+    "EmailProvider",
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",

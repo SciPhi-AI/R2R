@@ -12,6 +12,7 @@ from core.base import (
     AuthProvider,
     CryptoProvider,
     DatabaseProvider,
+    EmailProvider,
     R2RException,
     Token,
     TokenData,
@@ -33,11 +34,12 @@ class R2RAuthProvider(AuthProvider):
         config: AuthConfig,
         crypto_provider: CryptoProvider,
         database_provider: DatabaseProvider,
+        email_provider: EmailProvider,
     ):
-        super().__init__(config, crypto_provider)
+        super().__init__(
+            config, crypto_provider, database_provider, email_provider
+        )
         logger.debug(f"Initializing R2RAuthProvider with config: {config}")
-        self.crypto_provider = crypto_provider
-        self.database_provider = database_provider
         self.secret_key = (
             config.secret_key or os.getenv("R2R_SECRET_KEY") or DEFAULT_R2R_SK
         )
@@ -157,7 +159,10 @@ class R2RAuthProvider(AuthProvider):
             )
             new_user.verification_code_expiry = expiry
             # TODO - Integrate email provider(s)
-            # self.providers.email.send_verification_email(new_user.email, verification_code)
+
+            await self.email_provider.send_verification_email(
+                new_user.email, verification_code
+            )
         else:
             expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
 
@@ -301,7 +306,7 @@ class R2RAuthProvider(AuthProvider):
         )
 
         # TODO: Integrate with email provider to send reset link
-        # self.email_provider.send_reset_email(email, reset_token)
+        await self.email_provider.send_password_reset_email(email, reset_token)
 
         return {"message": "If the email exists, a reset link has been sent"}
 

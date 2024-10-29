@@ -8,6 +8,7 @@ from core.base.pipes import AsyncPipe
 from core.providers import (
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
@@ -26,7 +27,9 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             OpenAICompletionProvider, LiteLLMCompletionProvider
         ],
         embedding_provider: Union[
-            LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
+            LiteLLMEmbeddingProvider,
+            OpenAIEmbeddingProvider,
+            OllamaEmbeddingProvider,
         ],
         logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
