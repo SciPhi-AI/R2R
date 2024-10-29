@@ -16,8 +16,6 @@ logger = logging.getLogger()
 class ImageParser(AsyncParser[DataType]):
     """A parser for image data using vision models."""
 
-    DEFAULT_IMG_VISION_PROMPT_NAME = "vision_img"
-
     def __init__(
         self,
         config: IngestionConfig,
@@ -56,7 +54,6 @@ class ImageParser(AsyncParser[DataType]):
         if not self.vision_prompt_text:
             self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
                 prompt_name=self.config.vision_img_prompt_name
-                or self.DEFAULT_IMG_VISION_PROMPT_NAME
             )
         try:
             # Verify model supports vision

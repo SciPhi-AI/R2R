@@ -12,7 +12,7 @@ class EmailConfig(ProviderConfig):
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None
     from_email: Optional[str] = None
-    use_tls: bool = True
+    use_tls: Optional[bool] = True
 
     @property
     def supported_providers(self) -> list[str]:

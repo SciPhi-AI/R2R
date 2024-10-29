@@ -25,8 +25,6 @@ logger = logging.getLogger()
 class VLMPDFParser(AsyncParser[DataType]):
     """A parser for PDF documents using vision models for page processing."""
 
-    DEFAULT_PDF_VISION_PROMPT_NAME = "vision_pdf"
-
     def __init__(
         self,
         config: IngestionConfig,
@@ -142,7 +140,6 @@ class VLMPDFParser(AsyncParser[DataType]):
         if not self.vision_prompt_text:
             self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
                 prompt_name=self.config.vision_pdf_prompt_name
-                or self.DEFAULT_PDF_VISION_PROMPT_NAME
             )
 
         temp_dir = None

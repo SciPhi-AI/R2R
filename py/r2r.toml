@@ -70,9 +70,13 @@ batch_size = 256
 
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-large"
-base_dimension = 3072
-quantization_settings = { quantization_type = "INT1" }
+# RECOMMENDED - For advanced applications,
+# use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
+# base_model = "openai/text-embedding-3-large"
+# base_dimension = 3072
+# quantization_settings = { quantization_type = "INT1" }
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
@@ -116,4 +120,4 @@ provider = "simple"
 provider = "r2r"
 
 [email]
-provider = "smtp"
+provider = "mock_console"
