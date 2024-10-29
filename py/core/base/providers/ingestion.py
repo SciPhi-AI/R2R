@@ -20,13 +20,13 @@ class IngestionConfig(ProviderConfig):
     )
     extra_parsers: dict[str, str] = {}
 
-    audio_transcription_model: str
+    audio_transcription_model: str = "openai/whisper-1"
 
     vision_img_prompt_name: Optional[str] = None
-    vision_img_model: str
+    vision_img_model: str = "openai/gpt-4-mini"
 
     vision_pdf_prompt_name: Optional[str] = None
-    vision_pdf_model: str
+    vision_pdf_model: str = "openai/gpt-4-mini"
 
     @property
     def supported_providers(self) -> list[str]:
