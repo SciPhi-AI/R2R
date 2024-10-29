@@ -116,4 +116,4 @@ provider = "simple"
 provider = "r2r"
 
 [email]
-provider = "smtp"
+provider = "mock_console"

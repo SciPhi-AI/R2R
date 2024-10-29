@@ -174,7 +174,7 @@ def auth_config(app_config):
 @pytest.fixture(scope="function")
 def email_provider(app_config):
     return ConsoleMockEmailProvider(
-        EmailConfig(provider="mock_console", app=app_config)
+        EmailConfig(provider="console_mock", app=app_config)
     )
 
 
