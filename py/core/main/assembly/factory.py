@@ -32,6 +32,7 @@ from core.providers import (
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
@@ -181,7 +182,11 @@ class R2RProviderFactory:
     @staticmethod
     def create_embedding_provider(
         embedding: EmbeddingConfig, *args, **kwargs
-    ) -> Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]:
+    ) -> Union[
+        LiteLLMEmbeddingProvider,
+        OllamaEmbeddingProvider,
+        OpenAIEmbeddingProvider,
+    ]:
         embedding_provider: Optional[EmbeddingProvider] = None
 
         if embedding.provider == "openai":
@@ -197,6 +202,11 @@ class R2RProviderFactory:
             from core.providers import LiteLLMEmbeddingProvider
 
             embedding_provider = LiteLLMEmbeddingProvider(embedding)
+
+        elif embedding.provider == "ollama":
+            from core.providers import OllamaEmbeddingProvider
+
+            embedding_provider = OllamaEmbeddingProvider(embedding)
 
         else:
             raise ValueError(
@@ -252,7 +262,11 @@ class R2RProviderFactory:
             Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]
         ] = None,
         embedding_provider_override: Optional[
-            Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]
+            Union[
+                LiteLLMEmbeddingProvider,
+                OpenAIEmbeddingProvider,
+                OllamaEmbeddingProvider,
+            ]
         ] = None,
         ingestion_provider_override: Optional[
             Union[R2RIngestionProvider, UnstructuredIngestionProvider]

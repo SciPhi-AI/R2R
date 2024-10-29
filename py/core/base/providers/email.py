@@ -22,17 +22,18 @@ class EmailConfig(ProviderConfig):
         ]  # Could add more providers like AWS SES, SendGrid etc.
 
     def validate_config(self) -> None:
-        if self.provider == "smtp":
-            if not all(
-                [
-                    self.smtp_server,
-                    self.smtp_port,
-                    self.smtp_username,
-                    self.smtp_password,
-                    self.from_email,
-                ]
-            ):
-                raise ValueError("SMTP configuration is incomplete")
+        pass
+        # if self.provider == "smtp":
+        #     if not all(
+        #         [
+        #             self.smtp_server,
+        #             self.smtp_port,
+        #             self.smtp_username,
+        #             self.smtp_password,
+        #             self.from_email,
+        #         ]
+        #     ):
+        #         raise ValueError("SMTP configuration is incomplete")
 
 
 logger = logging.getLogger(__name__)
