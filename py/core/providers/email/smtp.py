@@ -1,18 +1,20 @@
+import asyncio
 import logging
 import os
-from abc import ABC, abstractmethod
+import smtplib
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
-from aiosmtplib import SMTP
-
 from core.base import EmailConfig, EmailProvider
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class AsyncSMTPEmailProvider(EmailProvider):
+    """Email provider implementation using Brevo SMTP relay"""
+
     def __init__(self, config: EmailConfig):
         super().__init__(config)
         self.smtp_server = config.smtp_server or os.getenv("R2R_SMTP_SERVER")
@@ -35,16 +37,36 @@ class AsyncSMTPEmailProvider(EmailProvider):
         if not self.smtp_password:
             raise ValueError("SMTP password is required")
 
-        self.from_email: Optional[str] = config.from_email or os.getenv(
-            "R2R_FROM_EMAIL"
+        self.from_email: Optional[str] = (
+            config.from_email
+            or os.getenv("R2R_FROM_EMAIL")
+            or self.smtp_username
         )
-        if not self.from_email:
-            raise ValueError("From email is required")
+        self.ssl_context = ssl.create_default_context()
 
-        self.use_tls = (
-            config.use_tls
-            or os.getenv("R2R_SMTP_USE_TLS", "true").lower() == "true"
-        )
+    async def _send_email_sync(self, msg: MIMEMultipart) -> None:
+        """Synchronous email sending wrapped in asyncio executor"""
+        loop = asyncio.get_running_loop()
+
+        def _send():
+            with smtplib.SMTP_SSL(
+                self.smtp_server,
+                self.smtp_port,
+                context=self.ssl_context,
+                timeout=30,
+            ) as server:
+                logger.info("Connected to SMTP server")
+                server.login(self.smtp_username, self.smtp_password)
+                logger.info("Login successful")
+                server.send_message(msg)
+                logger.info("Message sent successfully!")
+
+        try:
+            await loop.run_in_executor(None, _send)
+        except Exception as e:
+            error_msg = f"Failed to send email: {str(e)}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     async def send_email(
         self,
@@ -54,7 +76,7 @@ class AsyncSMTPEmailProvider(EmailProvider):
         html_body: Optional[str] = None,
     ) -> None:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject  # type: ignore
+        msg["Subject"] = subject
         msg["From"] = self.from_email  # type: ignore
         msg["To"] = to_email
 
@@ -63,58 +85,66 @@ class AsyncSMTPEmailProvider(EmailProvider):
             msg.attach(MIMEText(html_body, "html"))
 
         try:
-            smtp = SMTP(
-                hostname=self.smtp_server,
-                port=int(self.smtp_port) if self.smtp_port else None,
-                use_tls=self.use_tls,
-            )
-
-            await smtp.connect()
-            if self.smtp_username and self.smtp_password:
-                await smtp.login(self.smtp_username, self.smtp_password)
-
-            await smtp.send_message(msg)
-            await smtp.quit()
-
+            logger.info("Initializing SMTP connection...")
+            async with asyncio.timeout(30):  # Overall timeout
+                await self._send_email_sync(msg)
+        except asyncio.TimeoutError:
+            error_msg = "Operation timed out while trying to send email"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
         except Exception as e:
-            logger.error(f"Failed to send email: {str(e)}")
-            raise
+            error_msg = f"Failed to send email: {str(e)}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     async def send_verification_email(
         self, to_email: str, verification_code: str
     ) -> None:
-        subject = "Verify Your Email Address"
         body = f"""
-        Thank you for registering! Please verify your email address by entering the following code:
+        Please verify your email address by entering the following code:
 
-        {verification_code}
+        Verification code: {verification_code}
 
-        This code will expire in 24 hours.
+        If you did not request this verification, please ignore this email.
         """
+
         html_body = f"""
-        <h2>Email Verification</h2>
-        <p>Thank you for registering! Please verify your email address by entering the following code:</p>
-        <h3>{verification_code}</h3>
-        <p>This code will expire in 24 hours.</p>
+        <p>Please verify your email address by entering the following code:</p>
+        <p style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+            Verification code: {verification_code}
+        </p>
+        <p>If you did not request this verification, please ignore this email.</p>
         """
-        await self.send_email(to_email, subject, body, html_body)
+
+        await self.send_email(
+            to_email=to_email,
+            subject="Please verify your email address",
+            body=body,
+            html_body=html_body,
+        )
 
     async def send_password_reset_email(
         self, to_email: str, reset_token: str
     ) -> None:
-        subject = "Password Reset Request"
         body = f"""
-        We received a request to reset your password. Use the following code to reset your password:
+        You have requested to reset your password.
 
-        {reset_token}
+        Reset token: {reset_token}
 
-        This code will expire in 1 hour. If you didn't request this reset, please ignore this email.
+        If you did not request a password reset, please ignore this email.
         """
+
         html_body = f"""
-        <h2>Password Reset Request</h2>
-        <p>We received a request to reset your password. Use the following code to reset your password:</p>
-        <h3>{reset_token}</h3>
-        <p>This code will expire in 1 hour.</p>
-        <p>If you didn't request this reset, please ignore this email.</p>
+        <p>You have requested to reset your password.</p>
+        <p style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+            Reset token: {reset_token}
+        </p>
+        <p>If you did not request a password reset, please ignore this email.</p>
         """
-        await self.send_email(to_email, subject, body, html_body)
+
+        await self.send_email(
+            to_email=to_email,
+            subject="Password Reset Request",
+            body=body,
+            html_body=html_body,
+        )

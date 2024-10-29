@@ -102,7 +102,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ):  #  -> WrappedKGCreationResponse:  # type: ignore
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings.
             If document IDs are not provided, the graph will be created on all documents in the system.
@@ -170,7 +170,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
+        ):  # -> WrappedKGEnrichmentResponse:
             """
             This endpoint enriches the graph with additional information.
             It creates communities of nodes based on their similarity and adds embeddings to the graph.

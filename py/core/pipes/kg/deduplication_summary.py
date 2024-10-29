@@ -9,6 +9,7 @@ from core.base.pipes import AsyncPipe
 from core.providers import (
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
@@ -30,7 +31,9 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ],
         embedding_provider: Union[
-            LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider
+            LiteLLMEmbeddingProvider,
+            OpenAIEmbeddingProvider,
+            OllamaEmbeddingProvider,
         ],
         config: AsyncPipe.PipeConfig,
         logging_provider: SqlitePersistentLoggingProvider,
