@@ -6,44 +6,44 @@ runs:
     - name: User registration and login
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_registration_and_login
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_registration_and_login
 
     - name: Duplicate user registration
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_duplicate_user_registration
+      run: poetry run python tests/integration/runner_sdk_basic.py test_duplicate_user_registration
 
     - name: Token refresh
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_token_refresh
+      run: poetry run python tests/integration/runner_sdk_basic.py test_token_refresh
 
     - name: User document management
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_document_management
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_document_management
 
     - name: User search and RAG
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_search_and_rag
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_search_and_rag
 
     - name: User password management
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_password_management
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_password_management
 
     - name: User profile management
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_profile_management
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_profile_management
 
     - name: User overview
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_overview
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_overview
 
     - name: User logout
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_logout
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_logout

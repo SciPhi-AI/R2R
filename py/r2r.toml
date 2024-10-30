@@ -97,8 +97,8 @@ chunk_overlap = 512
 excluded_parsers = ["mp4"]
 
 audio_transcription_model="openai/whisper-1"
-vision_img_model = "gpt-4o-mini"
-vision_pdf_model = "gpt-4o-mini"
+vision_img_model = "openai/gpt-4o-mini"
+vision_pdf_model = "openai/gpt-4o-mini"
 # vision_img_prompt_name = "vision_img" # optional, default is "vision_img"
 # vision_pdf_prompt_name = "vision_pdf" # optional, default is "vision_pdf"
 

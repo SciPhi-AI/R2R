@@ -16,6 +16,7 @@ class KGMixins:
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
         kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
+        run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
         Create a graph from the given settings.
@@ -32,6 +33,7 @@ class KGMixins:
             "collection_id": str(collection_id) if collection_id else None,
             "run_type": str(run_type) if run_type else None,
             "kg_creation_settings": kg_creation_settings or {},
+            "run_with_orchestration": run_with_orchestration or True,
         }
 
         return await self._make_request("POST", "create_graph", json=data)  # type: ignore
@@ -43,6 +45,7 @@ class KGMixins:
         kg_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
+        run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
         Perform graph enrichment over the entire graph.
@@ -61,6 +64,7 @@ class KGMixins:
             "collection_id": str(collection_id) if collection_id else None,
             "run_type": str(run_type) if run_type else None,
             "kg_enrichment_settings": kg_enrichment_settings or {},
+            "run_with_orchestration": run_with_orchestration or True,
         }
 
         return await self._make_request("POST", "enrich_graph", json=data)  # type: ignore
