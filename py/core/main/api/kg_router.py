@@ -102,7 +102,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph creation process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ):  #  -> WrappedKGCreationResponse:  # type: ignore
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings.
             If document IDs are not provided, the graph will be created on all documents in the system.
@@ -170,7 +170,7 @@ class KGRouter(BaseRouter):
                 description="Settings for the graph enrichment process.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
+        ):  # -> WrappedKGEnrichmentResponse:
             """
             This endpoint enriches the graph with additional information.
             It creates communities of nodes based on their similarity and adds embeddings to the graph.
@@ -219,19 +219,21 @@ class KGRouter(BaseRouter):
         @self.router.get("/entities")
         @self.base_endpoint
         async def get_entities(
+            collection_id: Optional[UUID] = Query(
+                None, description="Collection ID to retrieve entities from."
+            ),
             entity_level: Optional[EntityLevel] = Query(
                 default=EntityLevel.DOCUMENT,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
             ),
-            collection_id: Optional[UUID] = Query(
-                None, description="Collection ID to retrieve entities from."
+            entity_ids: Optional[list[str]] = Query(
+                None, description="Entity IDs to filter by."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
             limit: int = Query(
-                100, ge=1, le=1000, description="Limit for pagination."
-            ),
-            entity_ids: Optional[list[str]] = Query(
-                None, description="Entity IDs to filter by."
+                100,
+                ge=-1,
+                description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGEntitiesResponse:
@@ -255,10 +257,10 @@ class KGRouter(BaseRouter):
 
             return await self.service.get_entities(
                 collection_id,
-                offset,
-                limit,
                 entity_ids,
                 entity_table_name,
+                offset,
+                limit,
             )
 
         @self.router.get("/triples")
@@ -267,15 +269,17 @@ class KGRouter(BaseRouter):
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve triples from."
             ),
-            offset: int = Query(0, ge=0, description="Offset for pagination."),
-            limit: int = Query(
-                100, ge=1, le=1000, description="Limit for pagination."
-            ),
             entity_names: Optional[list[str]] = Query(
                 None, description="Entity names to filter by."
             ),
             triple_ids: Optional[list[str]] = Query(
                 None, description="Triple IDs to filter by."
+            ),
+            offset: int = Query(0, ge=0, description="Offset for pagination."),
+            limit: int = Query(
+                100,
+                ge=-1,
+                description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGTriplesResponse:
@@ -292,10 +296,10 @@ class KGRouter(BaseRouter):
 
             return await self.service.get_triples(
                 collection_id,
-                offset,
-                limit,
                 entity_names,
                 triple_ids,
+                offset,
+                limit,
             )
 
         @self.router.get("/communities")
@@ -304,15 +308,17 @@ class KGRouter(BaseRouter):
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve communities from."
             ),
-            offset: int = Query(0, ge=0, description="Offset for pagination."),
-            limit: int = Query(
-                100, ge=1, le=1000, description="Limit for pagination."
-            ),
             levels: Optional[list[int]] = Query(
                 None, description="Levels to filter by."
             ),
             community_numbers: Optional[list[int]] = Query(
                 None, description="Community numbers to filter by."
+            ),
+            offset: int = Query(0, ge=0, description="Offset for pagination."),
+            limit: int = Query(
+                100,
+                ge=-1,
+                description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedKGCommunitiesResponse:
@@ -329,10 +335,10 @@ class KGRouter(BaseRouter):
 
             return await self.service.get_communities(
                 collection_id,
-                offset,
-                limit,
                 levels,
                 community_numbers,
+                offset,
+                limit,
             )
 
         @self.router.post("/deduplicate_entities")
@@ -444,10 +450,10 @@ class KGRouter(BaseRouter):
         @self.router.delete("/delete_graph_for_collection")
         @self.base_endpoint
         async def delete_graph_for_collection(
-            collection_id: UUID = Body(
+            collection_id: UUID = Body(  # FIXME: This should be a path parameter
                 ..., description="Collection ID to delete graph for."
             ),
-            cascade: bool = Body(
+            cascade: bool = Body(  # FIXME: This should be a query parameter
                 default=False,
                 description="Whether to cascade the deletion, and delete entities and triples belonging to the collection.",
             ),

@@ -2,7 +2,7 @@ import asyncclick as click
 from asyncclick import pass_context
 from asyncclick.exceptions import Exit
 
-from r2r import R2RAsyncClient
+from sdk import R2RAsyncClient
 
 
 @click.group()

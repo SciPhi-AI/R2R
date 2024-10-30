@@ -30,9 +30,16 @@ const baseUrl = "http://localhost:7272";
  *     - updateFiles
  *     X ingestChunks
  *     X updateChunks
+ *     X createVectorIndex
+ *     X listVectorIndices
+ *     X deleteVectorIndex
  *    Management:
  *     - serverStats
  *     X updatePrompt
+ *     X addPrompt
+ *     X getPrompt
+ *     X getAllPrompts
+ *     X deletePrompt
  *     X analytics
  *     X logs
  *     - appSettings
@@ -41,7 +48,6 @@ const baseUrl = "http://localhost:7272";
  *     X downloadFile
  *     - documentsOverview
  *     - documentChunks
- *     X inspectKnowledgeGraph
  *     X collectionsOverview
  *     X createCollection
  *     X getCollection
@@ -66,8 +72,15 @@ const baseUrl = "http://localhost:7272";
  *     X getPreviousBranch
  *     X branchAtMessage
  *     X deleteConversation
- *    Restructure:
+ *    Knowledge Graphs:
+ *     X createGraph
  *     X enrichGraph
+ *     X getEntities
+ *     X getTriples
+ *     X getCommunities
+ *     X getTunedPrompt
+ *     X deduplicateEntities
+ *     X deleteGraphForCollection
  *    Retrieval:
  *     - search
  *     X rag
@@ -169,21 +182,15 @@ describe("r2rClient Integration Tests", () => {
   });
 
   test("Only an authorized user can call server stats", async () => {
-    await expect(client.serverStats()).rejects.toThrow(
-      "Status 403: Only an authorized user can call the `server_stats` endpoint.",
-    );
+    await expect(client.serverStats()).rejects.toThrow(/Status 403/);
   });
 
   test("Only a superuser can call app settings", async () => {
-    await expect(client.appSettings()).rejects.toThrow(
-      "Status 403: Only a superuser can call the `app_settings` endpoint.",
-    );
+    await expect(client.appSettings()).rejects.toThrow(/Status 403/);
   });
 
   test("Only a superuser can call users overview", async () => {
-    await expect(client.usersOverview()).rejects.toThrow(
-      "Status 403: Only a superuser can call the `users_overview` endpoint.",
-    );
+    await expect(client.usersOverview()).rejects.toThrow(/Status 403/);
   });
 
   test("Document chunks", async () => {

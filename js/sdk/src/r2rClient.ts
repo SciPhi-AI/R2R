@@ -21,6 +21,10 @@ import {
   RefreshTokenResponse,
   VectorSearchSettings,
   KGSearchSettings,
+  KGRunType,
+  KGCreationSettings,
+  KGEnrichmentSettings,
+  KGEntityDeduplicationSettings,
   GenerationConfig,
   RawChunk,
 } from "./models";
@@ -717,6 +721,89 @@ export class r2rClient {
     );
   }
 
+  /**
+   * Create a vector index for similarity search.
+   * @param options The options for creating the vector index
+   * @returns Promise resolving to the creation response
+   */
+  @feature("createVectorIndex")
+  async createVectorIndex(options: {
+    tableName: string;
+    indexMethod: "hnsw" | "ivfflat" | "auto";
+    indexMeasure: "cosine_distance" | "l2_distance" | "max_inner_product";
+    indexArguments?: {
+      m?: number; // HNSW: Number of connections per element
+      ef_construction?: number; // HNSW: Size of dynamic candidate list
+      n_lists?: number; // IVFFlat: Number of clusters/inverted lists
+    };
+    indexName?: string;
+    concurrently?: boolean;
+  }): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const data = {
+      table_name: options.tableName,
+      index_method: options.indexMethod,
+      index_measure: options.indexMeasure,
+      index_arguments: options.indexArguments,
+      index_name: options.indexName,
+      concurrently: options.concurrently ?? true,
+    };
+
+    return await this._makeRequest("POST", "create_vector_index", {
+      data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  /**
+   * List existing vector indices for a table.
+   * @param options The options for listing vector indices
+   * @returns Promise resolving to the list of indices
+   */
+  @feature("listVectorIndices")
+  async listVectorIndices(options: {
+    tableName?: string;
+  }): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, string> = {};
+    if (options.tableName) {
+      params.table_name = options.tableName;
+    }
+
+    return await this._makeRequest("GET", "list_vector_indices", { params });
+  }
+
+  /**
+   * Delete a vector index from a table.
+   * @param options The options for deleting the vector index
+   * @returns Promise resolving to the deletion response
+   */
+  @feature("deleteVectorIndex")
+  async deleteVectorIndex(options: {
+    indexName: string;
+    tableName?: string;
+    concurrently?: boolean;
+  }): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const data = {
+      index_name: options.indexName,
+      table_name: options.tableName,
+      concurrently: options.concurrently ?? true,
+    };
+
+    return await this._makeRequest("DELETE", "delete_vector_index", {
+      data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
   // -----------------------------------------------------------------------------
   //
   // Management
@@ -770,6 +857,78 @@ export class r2rClient {
         "Content-Type": "application/json",
       },
     });
+  }
+
+  /**
+   * Add a new prompt to the system.
+   * @returns A promise that resolves to the response from the server.
+   * @param name The name of the prompt.
+   * @param template The template for the prompt.
+   * @param input_types The input types for the prompt.
+   */
+  @feature("addPrompt")
+  async addPrompt(
+    name: string,
+    template: string,
+    input_types: Record<string, string>,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const data: Record<string, any> = { name, template, input_types };
+
+    return await this._makeRequest("POST", "add_prompt", {
+      data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  /**
+   * Get a prompt from the system.
+   * @param name The name of the prompt to retrieve.
+   * @param inputs Inputs for the prompt.
+   * @param prompt_override Override for the prompt template.
+   * @returns
+   */
+  @feature("getPrompt")
+  async getPrompt(
+    name: string,
+    inputs?: Record<string, any>,
+    prompt_override?: string,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, any> = {};
+    if (inputs) {
+      params["inputs"] = JSON.stringify(inputs);
+    }
+    if (prompt_override) {
+      params["prompt_override"] = prompt_override;
+    }
+
+    return await this._makeRequest("GET", `get_prompt/${name}`, { params });
+  }
+
+  /**
+   * Get all prompts from the system.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("getAllPrompts")
+  async getAllPrompts(): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return await this._makeRequest("GET", "get_all_prompts");
+  }
+
+  /**
+   * Delete a prompt from the system.
+   * @param prompt_name The name of the prompt to delete.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("deletePrompt")
+  async deletePrompt(prompt_name: string): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return await this._makeRequest("DELETE", `delete_prompt/${prompt_name}`);
   }
 
   /**
@@ -956,29 +1115,6 @@ export class r2rClient {
       params,
     });
   }
-
-  // /**
-  //  * Inspect the knowledge graph associated with your R2R deployment.
-  //  * @param limit The maximum number of nodes to return. Defaults to 100.
-  //  * @returns A promise that resolves to the response from the server.
-  //  */
-  // @feature("inspectKnowledgeGraph")
-  // async inspectKnowledgeGraph(
-  //   offset?: number,
-  //   limit?: number,
-  // ): Promise<Record<string, any>> {
-  //   this._ensureAuthenticated();
-
-  //   const params: Record<string, number> = {};
-  //   if (offset !== undefined) {
-  //     params.offset = offset;
-  //   }
-  //   if (limit !== undefined) {
-  //     params.limit = limit;
-  //   }
-
-  //   return this._makeRequest("GET", "inspect_knowledge_graph", { params });
-  // }
 
   /**
    * Get an overview of existing collections.
@@ -1262,7 +1398,7 @@ export class r2rClient {
 
     return this._makeRequest(
       "GET",
-      `get_document_collections/${encodeURIComponent(documentId)}`,
+      `document_collections/${encodeURIComponent(documentId)}`,
       { params },
     );
   }
@@ -1462,18 +1598,256 @@ export class r2rClient {
 
   // -----------------------------------------------------------------------------
   //
-  // Restructure
+  // Knowledge Graphs
   //
   // -----------------------------------------------------------------------------
 
   /**
+   * Create a graph from the given settings.
+   * @returns A promise that resolves to the response from the server.
+   *
+   * @param collection_id The ID of the collection to create the graph for.
+   * @param run_type The type of run to perform.
+   * @param kg_creation_settings Settings for the graph creation process.
+   */
+  @feature("createGraph")
+  async createGraph(
+    collection_id?: string,
+    run_type?: KGRunType,
+    kg_creation_settings?: KGCreationSettings | Record<string, any>,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+
+    const json_data: Record<string, any> = {
+      collection_id,
+      run_type,
+      kg_creation_settings,
+    };
+
+    Object.keys(json_data).forEach(
+      (key) => json_data[key] === undefined && delete json_data[key],
+    );
+
+    return await this._makeRequest("POST", "create_graph", { data: json_data });
+  }
+  /**
    * Perform graph enrichment over the entire graph.
    * @returns A promise that resolves to the response from the server.
+   *
+   * @param collection_id The ID of the collection to enrich the graph for.
+   * @param run_type The type of run to perform.
+   * @param kg_enrichment_settings Settings for the graph enrichment process.
    */
   @feature("enrichGraph")
-  async enrichGraph(): Promise<any> {
+  async enrichGraph(
+    collection_id?: string,
+    run_type?: KGRunType,
+    kg_enrichment_settings?: KGEnrichmentSettings | Record<string, any>,
+  ): Promise<any> {
     this._ensureAuthenticated();
-    return await this._makeRequest("POST", "enrich_graph");
+
+    const json_data: Record<string, any> = {
+      collection_id,
+      run_type,
+      kg_enrichment_settings,
+    };
+
+    Object.keys(json_data).forEach(
+      (key) => json_data[key] === undefined && delete json_data[key],
+    );
+
+    return await this._makeRequest("POST", "enrich_graph", { data: json_data });
+  }
+
+  /**
+   * Retrieve entities from the knowledge graph.
+   * @returns A promise that resolves to the response from the server.
+   * @param collection_id The ID of the collection to retrieve entities for.
+   * @param offset The offset for pagination.
+   * @param limit The limit for pagination.
+   * @param entity_level The level of entity to filter by.
+   * @param entity_ids Entity IDs to filter by.
+   * @returns
+   */
+  @feature("getEntities")
+  async getEntities(
+    collection_id?: string,
+    offset?: number,
+    limit?: number,
+    entity_level?: string,
+    entity_ids?: string[],
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, any> = {};
+    if (collection_id !== undefined) {
+      params.collection_id = collection_id;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+    if (entity_level !== undefined) {
+      params.entity_level = entity_level;
+    }
+    if (entity_ids !== undefined) {
+      params.entity_ids = entity_ids;
+    }
+
+    return this._makeRequest("GET", `entities`, { params });
+  }
+
+  /**
+   * Retrieve triples from the knowledge graph.
+   * @returns A promise that resolves to the response from the server.
+   * @param collection_id The ID of the collection to retrieve entities for.
+   * @param offset The offset for pagination.
+   * @param limit The limit for pagination.
+   * @param entity_level The level of entity to filter by.
+   * @param triple_ids Triple IDs to filter by.
+   */
+  @feature("getTriples")
+  async getTriples(
+    collection_id?: string,
+    offset?: number,
+    limit?: number,
+    entity_level?: string,
+    triple_ids?: string[],
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, any> = {};
+    if (collection_id !== undefined) {
+      params.collection_id = collection_id;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+    if (entity_level !== undefined) {
+      params.entity_level = entity_level;
+    }
+    if (triple_ids !== undefined) {
+      params.entity_ids = triple_ids;
+    }
+
+    return this._makeRequest("GET", `triples`, { params });
+  }
+
+  /**
+   * Retrieve communities from the knowledge graph.
+   * @param collection_id The ID of the collection to retrieve entities for.
+   * @param offset The offset for pagination.
+   * @param limit The limit for pagination.
+   * @param levels Levels to filter by.
+   * @param community_numbers Community numbers to filter by.
+   * @returns
+   */
+  @feature("getCommunities")
+  async getCommunities(
+    collection_id?: string,
+    offset?: number,
+    limit?: number,
+    levels?: number,
+    community_numbers?: number[],
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, any> = {};
+    if (collection_id !== undefined) {
+      params.collection_id = collection_id;
+    }
+    if (offset !== undefined) {
+      params.offset = offset;
+    }
+    if (limit !== undefined) {
+      params.limit = limit;
+    }
+    if (levels !== undefined) {
+      params.levels = levels;
+    }
+    if (community_numbers !== undefined) {
+      params.community_numbers = community_numbers;
+    }
+
+    return this._makeRequest("GET", `communities`, { params });
+  }
+
+  @feature("getTunedPrompt")
+  async getTunedPrompt(
+    prompt_name: string,
+    collection_id?: string,
+    documents_offset?: number,
+    documents_limit?: number,
+    chunk_offset?: number,
+    chunk_limit?: number,
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const params: Record<string, any> = { prompt_name };
+    if (collection_id !== undefined) {
+      params.collection_id = collection_id;
+    }
+    if (documents_offset !== undefined) {
+      params.documents_offset = documents_offset;
+    }
+    if (documents_limit !== undefined) {
+      params.documents_limit = documents_limit;
+    }
+    if (chunk_offset !== undefined) {
+      params.chunk_offset = chunk_offset;
+    }
+    if (chunk_limit !== undefined) {
+      params.chunk_limit = chunk_limit;
+    }
+
+    return this._makeRequest("GET", `tuned_prompt`, { params });
+  }
+
+  @feature("deduplicateEntities")
+  async deduplicateEntities(
+    collections_id?: string,
+    run_type?: KGRunType,
+    deduplication_settings?:
+      | KGEntityDeduplicationSettings
+      | Record<string, any>,
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const json_data: Record<string, any> = {
+      collections_id,
+      run_type,
+      deduplication_settings,
+    };
+
+    Object.keys(json_data).forEach(
+      (key) => json_data[key] === undefined && delete json_data[key],
+    );
+
+    return await this._makeRequest("POST", "deduplicate_entities", {
+      data: json_data,
+    });
+  }
+
+  @feature("deleteGraphForCollection")
+  async deleteGraphForCollection(
+    collection_id: string,
+    cascade: boolean = false,
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const json_data: Record<string, any> = {
+      collection_id,
+      cascade,
+    };
+
+    return await this._makeRequest("DELETE", `delete_graph`, {
+      data: json_data,
+    });
   }
 
   // -----------------------------------------------------------------------------
@@ -1627,88 +2001,6 @@ export class r2rClient {
         "Content-Type": "application/json",
       },
       responseType: "stream",
-    });
-  }
-  /**
-   * Create a vector index for similarity search.
-   * @param options The options for creating the vector index
-   * @returns Promise resolving to the creation response
-   */
-  @feature("createVectorIndex")
-  async createVectorIndex(options: {
-    tableName: string;
-    indexMethod: "hnsw" | "ivfflat" | "auto";
-    indexMeasure: "cosine_distance" | "l2_distance" | "max_inner_product";
-    indexArguments?: {
-      m?: number; // HNSW: Number of connections per element
-      ef_construction?: number; // HNSW: Size of dynamic candidate list
-      n_lists?: number; // IVFFlat: Number of clusters/inverted lists
-    };
-    indexName?: string;
-    concurrently?: boolean;
-  }): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data = {
-      table_name: options.tableName,
-      index_method: options.indexMethod,
-      index_measure: options.indexMeasure,
-      index_arguments: options.indexArguments,
-      index_name: options.indexName,
-      concurrently: options.concurrently ?? true,
-    };
-
-    return await this._makeRequest("POST", "create_vector_index", {
-      data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
-  /**
-   * List existing vector indices for a table.
-   * @param options The options for listing vector indices
-   * @returns Promise resolving to the list of indices
-   */
-  @feature("listVectorIndices")
-  async listVectorIndices(options: {
-    tableName?: string;
-  }): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string> = {};
-    if (options.tableName) {
-      params.table_name = options.tableName;
-    }
-
-    return await this._makeRequest("GET", "list_vector_indices", { params });
-  }
-
-  /**
-   * Delete a vector index from a table.
-   * @param options The options for deleting the vector index
-   * @returns Promise resolving to the deletion response
-   */
-  @feature("deleteVectorIndex")
-  async deleteVectorIndex(options: {
-    indexName: string;
-    tableName?: string;
-    concurrently?: boolean;
-  }): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data = {
-      index_name: options.indexName,
-      table_name: options.tableName,
-      concurrently: options.concurrently ?? true,
-    };
-
-    return await this._makeRequest("DELETE", "delete_vector_index", {
-      data,
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
   }
 }

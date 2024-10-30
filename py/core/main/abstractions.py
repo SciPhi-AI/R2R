@@ -11,6 +11,7 @@ from core.providers import (
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDBProvider,
@@ -27,7 +28,11 @@ class R2RProviders(BaseModel):
     auth: Union[R2RAuthProvider, SupabaseAuthProvider]
     database: PostgresDBProvider
     ingestion: Union[R2RIngestionProvider, UnstructuredIngestionProvider]
-    embedding: Union[LiteLLMEmbeddingProvider, OpenAIEmbeddingProvider]
+    embedding: Union[
+        LiteLLMEmbeddingProvider,
+        OpenAIEmbeddingProvider,
+        OllamaEmbeddingProvider,
+    ]
     llm: Union[LiteLLMCompletionProvider, OpenAICompletionProvider]
     orchestration: Union[
         HatchetOrchestrationProvider, SimpleOrchestrationProvider

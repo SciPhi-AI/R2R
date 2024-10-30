@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
@@ -67,7 +68,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                await asyncio.sleep(backoff)
+                await asyncio.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     async def _execute_with_backoff_async_stream(
@@ -90,7 +91,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                await asyncio.sleep(backoff)
+                await asyncio.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     def _execute_with_backoff_sync(self, task: dict[str, Any]):
@@ -106,7 +107,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                time.sleep(backoff)
+                time.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     def _execute_with_backoff_sync_stream(
@@ -125,7 +126,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                time.sleep(backoff)
+                time.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     @abstractmethod

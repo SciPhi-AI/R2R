@@ -6,7 +6,7 @@ if __name__ == "__main__":
     )  # Replace with your R2R deployment URL
 
     # Register a new user
-    user_result = client.register("user11123@test.com", "password123")
+    user_result = client.register("owen@sciphi.ai", "password123")
     print(user_result)
 
     # # Uncomment when running with authentication

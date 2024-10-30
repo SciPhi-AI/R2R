@@ -27,6 +27,14 @@ class IngestionConfig(ProviderConfig):
     vision_pdf_prompt_name: Optional[str] = None
     vision_pdf_model: str
 
+    audio_transcription_model: str = "openai/whisper-1"
+
+    vision_img_prompt_name: str = "vision_img"
+    vision_img_model: str = "openai/gpt-4-mini"
+
+    vision_pdf_prompt_name: str = "vision_pdf"
+    vision_pdf_model: str = "openai/gpt-4-mini"
+
     @property
     def supported_providers(self) -> list[str]:
         return ["r2r", "unstructured_local", "unstructured_api"]
