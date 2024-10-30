@@ -202,23 +202,21 @@ class R2RIngestionProvider(IngestionProvider):
         else:
             t0 = time.time()
             contents = ""
-            parser_overrides = ingestion_config_override.get(
-                "parser_overrides", {}
+
+            def check_vlm(model_name: str) -> bool:
+                return "gpt-4o" in model_name
+
+            is_not_vlm = not check_vlm(
+                ingestion_config_override.get("vision_pdf_model")
+                or self.config.vision_pdf_model
             )
-            if document.document_type.value in parser_overrides:
+
+            if document.document_type == DocumentType.PDF and is_not_vlm:
                 logger.info(
-                    f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
+                    f"Reverting to basic PDF parser as the provided is not a proper VLM model."
                 )
-                # TODO - Cleanup this approach to be less hardcoded
-                if (
-                    document.document_type != DocumentType.PDF
-                    or parser_overrides[DocumentType.PDF.value] != "zerox"
-                ):
-                    raise ValueError(
-                        "Only Zerox PDF parser override is available."
-                    )
                 async for text in self.parsers[
-                    f"zerox_{DocumentType.PDF.value}"
+                    f"basic_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):
                     contents += text + "\n"
             else:

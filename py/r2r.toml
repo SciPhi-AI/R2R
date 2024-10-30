@@ -15,7 +15,6 @@ require_email_verification = true
 default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
-
 [completion]
 provider = "litellm"
 concurrent_request_limit = 256
