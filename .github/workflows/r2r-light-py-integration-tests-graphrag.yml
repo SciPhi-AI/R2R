@@ -26,6 +26,9 @@ jobs:
           - sdk-graphrag
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
       TELEMETRY_ENABLED: 'false'
       R2R_POSTGRES_HOST: localhost
       R2R_POSTGRES_DBNAME: postgres
