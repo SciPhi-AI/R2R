@@ -36,7 +36,8 @@ services:
       -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     build:
       context: .
       args:

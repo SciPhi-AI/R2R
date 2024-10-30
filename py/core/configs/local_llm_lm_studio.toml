@@ -1,0 +1,28 @@
+[agent]
+provider = "litellm"
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+  [agent.generation_config]
+  model = "openai/llama-3.2-3b-instruct"
+
+[completion]
+provider = "litellm"
+
+  [completion.generation_config]
+  model = "openai/llama-3.2-3b-instruct"
+
+[embedding]
+provider = "litellm"
+base_model = "openai/text-embedding-nomic-embed-text-v1.5-embedding"
+base_dimension = 768
+
+[orchestration]
+provider = "simple"
+
+
+[ingestion]
+vision_img_model = "openai/llama3.2-vision"
+vision_pdf_model = "openai/llama3.2-vision"
+  [ingestion.extra_parsers]
+    pdf = "basic"

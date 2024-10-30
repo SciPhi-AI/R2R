@@ -270,7 +270,8 @@ services:
       retries: 5
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     build:
       context: .
       args:
@@ -352,6 +353,8 @@ services:
       '
     networks:
       - r2r-network
+    extra_hosts:
+      - host.docker.internal:host-gateway
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v2/health"]
       interval: 6s
@@ -361,8 +364,6 @@ services:
     volumes:
       - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
       - hatchet_api_key:/hatchet_api_key:ro
-    extra_hosts:
-      - host.docker.internal:host-gateway
     depends_on:
       setup-token:
         condition: service_completed_successfully

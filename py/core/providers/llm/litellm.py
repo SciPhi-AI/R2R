@@ -1,5 +1,9 @@
 import logging
+import os
 from typing import Any
+
+import litellm
+from litellm import acompletion, completion
 
 from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
@@ -10,18 +14,18 @@ logger = logging.getLogger()
 class LiteLLMCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
-        try:
-            from litellm import acompletion, completion
 
-            self.acompletion = acompletion
-            self.completion = completion
-            logger.debug("LiteLLM imported successfully")
-        except ImportError:
-            logger.error("Failed to import LiteLLM")
-            raise ImportError(
-                "Please install the `litellm` package to use the LiteLLMCompletionProvider."
+        # Allow LiteLLM to automatically drop parameters that are not supported by the model
+        litellm.drop_params = True
+
+        self.acompletion = acompletion
+        self.completion = completion
+        self.api_base = os.getenv("API_BASE")
+
+        if not config.provider:
+            raise ValueError(
+                "Must set provider in order to initialize `LiteLLMEmbeddingProvider`."
             )
-
         if config.provider != "litellm":
             logger.error(f"Invalid provider: {config.provider}")
             raise ValueError(
@@ -35,8 +39,12 @@ class LiteLLMCompletionProvider(CompletionProvider):
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
-            "api_base": generation_config.api_base,
         }
+        if generation_config.api_base is not None:
+            args["api_base"] = generation_config.api_base
+        else:
+            logger.info(f"Using API base: {self.api_base}")
+            args["api_base"] = self.api_base
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:
