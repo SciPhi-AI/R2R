@@ -11,7 +11,7 @@ from asyncclick import pass_context
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from core.base.abstractions import IndexMeasure, IndexMethod, VectorTableName
+from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
 
 async def ingest_files_from_urls(client, urls):
