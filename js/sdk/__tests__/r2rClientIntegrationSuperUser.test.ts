@@ -34,9 +34,16 @@ let newCollectionId: string;
  *     - updateFiles
  *     - ingestChunks
  *     - updateChunks
+ *     X createVectorIndex
+ *     X listVectorIndices
+ *     X deleteVectorIndex
  *    Management:
  *     - serverStats
  *     X updatePrompt
+ *     X addPrompt
+ *     X getPrompt
+ *     X getAllPrompts
+ *     X deletePrompt
  *     - analytics
  *     - logs
  *     - appSettings
@@ -45,7 +52,6 @@ let newCollectionId: string;
  *     X downloadFile
  *     - documentsOverview
  *     - documentChunks
- *     X inspectKnowledgeGraph
  *     X collectionsOverview
  *     - createCollection
  *     - getCollection
@@ -70,8 +76,15 @@ let newCollectionId: string;
  *     X getPreviousBranch
  *     X branchAtMessage
  *     - deleteConversation
- *    Restructure:
+ *    Knowledge Graphs:
+ *     X createGraph
  *     X enrichGraph
+ *     X getEntities
+ *     X getTriples
+ *     X getCommunities
+ *     X getTunedPrompt
+ *     X deduplicateEntities
+ *     X deleteGraphForCollection
  *    Retrieval:
  *     - search
  *     - rag

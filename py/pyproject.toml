@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.2.35"
+version = "3.2.36"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -17,7 +17,6 @@ packages = [
     { include = "shared", from = "." },
     { include = "core", from = "." },
     { include = "cli", from = "." },
-
 ]
 
 [tool.poetry.dependencies]

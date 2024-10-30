@@ -9,49 +9,45 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./js/sdk
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TELEMETRY_ENABLED: 'false'
+      R2R_POSTGRES_HOST: localhost
+      R2R_POSTGRES_DBNAME: postgres
+      R2R_POSTGRES_PORT: '5432'
+      R2R_POSTGRES_PASSWORD: postgres
+      R2R_POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-light
         with:
-          python-version: "3.x"
+          os: ubuntu-latest
 
-      - name: Install R2R
-        run: |
-          python -m pip install --upgrade pip
-          pip install r2r
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ubuntu-latest
 
-      - name: Start R2R server
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          r2r serve --docker
-          sleep 60
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
 
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
           node-version: "20.x"
 
-      - name: Install dependencies
+      - name: Install JS SDK dependencies
+        working-directory: ./js/sdk
         run: npm ci
 
       - name: Check if R2R server is running
         run: |
           curl http://localhost:7272/v2/health || echo "Server not responding"
 
-      - name: Display R2R server logs if server not responding
-        if: failure()
-        run: docker logs r2r-r2r-1
-
       - name: Run integration tests
+        working-directory: ./js/sdk
         run: npm run test
-
-      - name: Display R2R server logs if tests fail
-        if: failure()
-        run: docker logs r2r-r2r-1
