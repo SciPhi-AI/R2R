@@ -531,7 +531,11 @@ class IngestionService(Service):
             metadata=chunk["metadata"],
         )
 
-    async def chunk_enrichment(self, document_id: UUID, chunk_enrichment_settings: ChunkEnrichmentSettings) -> int:
+    async def chunk_enrichment(
+        self,
+        document_id: UUID,
+        chunk_enrichment_settings: ChunkEnrichmentSettings,
+    ) -> int:
         # just call the pipe on every chunk of the document
 
         # get all document_chunks

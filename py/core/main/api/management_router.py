@@ -888,7 +888,6 @@ class ManagementRouter(BaseRouter):
             await self.service.delete_conversation(conversation_id)
             return None  # type: ignore
 
-
         @self.router.get("/r2r_project_name")
         @self.base_endpoint
         async def r2r_project_name(

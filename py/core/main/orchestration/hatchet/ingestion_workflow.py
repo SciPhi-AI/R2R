@@ -15,7 +15,10 @@ from core.base import (
     increment_version,
 )
 from core.base.abstractions import DocumentInfo, R2RException
-from core.utils import generate_default_user_collection_id, update_settings_from_dict
+from core.utils import (
+    generate_default_user_collection_id,
+    update_settings_from_dict,
+)
 
 from ...services import IngestionService, IngestionServiceAdapter
 
@@ -249,10 +252,10 @@ def hatchet_ingestion_factory(
                 document_info = documents_overview[0]
 
                 # Update the document status to FAILED
-                if (
-                    document_info.ingestion_status
-                    not in [IngestionStatus.SUCCESS, IngestionStatus.ENRICHED]
-                ):
+                if document_info.ingestion_status not in [
+                    IngestionStatus.SUCCESS,
+                    IngestionStatus.ENRICHED,
+                ]:
                     await self.ingestion_service.update_document_status(
                         document_info,
                         status=IngestionStatus.FAILED,
