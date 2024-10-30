@@ -138,11 +138,11 @@ class IngestionRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:  # type: ignore
             """
-            Ingest files into the system.
+            Ingests files into R2R, resulting in stored `Document` objects. Each document has corresponding `Chunk` objects which are used in vector indexing and search.
 
-            This endpoint supports multipart/form-data requests, enabling you to ingest files and their associated metadatas into R2R.
+            This endpoint supports multipart/form-data requests.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive collection permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access.
             """
             # Check if the user is a superuser
             if not auth_user.is_superuser:
@@ -257,11 +257,11 @@ class IngestionRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedUpdateResponse:
             """
-            Update existing files in the system.
+            Ingests updated files into R2R, updating the corresponding `Document` and `Chunk` objects from previous ingestion.
 
             This endpoint supports multipart/form-data requests, enabling you to update files and their associated metadatas into R2R.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive collection permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only update their own files.
             """
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
@@ -366,11 +366,9 @@ class IngestionRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
             """
-            Ingest text chunks into the system.
+            Ingests `Chunk` objects into the system as raw text and associated metadata.
 
-            This endpoint supports multipart/form-data requests, enabling you to ingest pre-parsed text chunks into R2R.
-
-            A valid user authentication token is required to access this endpoint, as regular users can only ingest chunks for their own access. More expansive collection permissioning is under development.
+            A valid user authentication token is required to access this endpoint, as regular users can only ingest chunks for their own access.
             """
             if document_id:
                 try:
@@ -437,6 +435,12 @@ class IngestionRouter(BaseRouter):
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedUpdateResponse:
+            """
+            Updates a previously ingested `Chunk` object into the system as raw text and associated metadata.
+
+            A valid user authentication token is required to access this endpoint, as regular users can only ingest chunks for their own access.
+            """
+
             try:
                 workflow_input = {
                     "document_id": str(document_id),
