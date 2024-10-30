@@ -1,0 +1,82 @@
+name: R2R Full Python Integration Test (ubuntu)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - dev
+      - dev-minor
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        test_category:
+          - cli-ingestion
+          - cli-retrieval
+          - sdk-ingestion
+          - sdk-retrieval
+          - sdk-auth
+          - sdk-collections
+          - sdk-prompts
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TELEMETRY_ENABLED: 'false'
+      R2R_PROJECT_NAME: r2r_default
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-full
+        with:
+          os: ${{ matrix.os }}
+
+      - name: Setup and start Docker
+        uses: ./.github/actions/setup-docker
+
+      - name: Login Docker
+        uses: ./.github/actions/login-docker
+        with:
+          docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+
+      - name: Start R2R Full server
+        uses: ./.github/actions/start-r2r-full
+
+      - name: Run CLI Ingestion Tests
+        if: matrix.test_category == 'cli-ingestion'
+        uses: ./.github/actions/run-cli-ingestion-tests
+
+      - name: Run CLI Retrieval Tests
+        if: matrix.test_category == 'cli-retrieval'
+        uses: ./.github/actions/run-cli-retrieval-tests
+
+      - name: Run SDK Ingestion Tests
+        if: matrix.test_category == 'sdk-ingestion'
+        uses: ./.github/actions/run-sdk-ingestion-tests
+
+      - name: Run SDK Retrieval Tests
+        if: matrix.test_category == 'sdk-retrieval'
+        uses: ./.github/actions/run-sdk-retrieval-tests
+
+      - name: Run SDK Auth Tests
+        if: matrix.test_category == 'sdk-auth'
+        uses: ./.github/actions/run-sdk-auth-tests
+
+      - name: Run SDK Collections Tests
+        if: matrix.test_category == 'sdk-collections'
+        uses: ./.github/actions/run-sdk-collections-tests
+
+      - name: Run SDK Prompt Tests
+        if: matrix.test_category == 'sdk-prompts'
+        uses: ./.github/actions/run-sdk-prompt-management-tests
