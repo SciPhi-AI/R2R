@@ -586,7 +586,7 @@ def test_user_password_management():
     print("Testing: User password management")
 
     client.login("user_test@example.com", "password123")
-    
+
     # Change password
     client.change_password("password123", "new_password")
     # Request password reset
@@ -595,6 +595,9 @@ def test_user_password_management():
     # Confirm password reset (after user receives reset token)
     # reset_confirm_result = client.confirm_password_reset("reset_token_here", "password123")
     # print(f"Reset Confirm Result:\n{reset_confirm_result}")
+
+    # Change password back to the original password
+    client.change_password("new_password", "password123")
 
     print("User password management test passed")
     print("~" * 100)
