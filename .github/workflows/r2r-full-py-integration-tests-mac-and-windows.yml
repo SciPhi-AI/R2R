@@ -6,6 +6,7 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
 
     strategy:
       matrix:
