@@ -83,7 +83,7 @@ jobs:
         if: matrix.test_category == 'sdk-collections'
         uses: ./.github/actions/run-sdk-collections-tests
         continue-on-error: true
-
+        
       - name: Run SDK Prompt Tests
         if: matrix.test_category == 'sdk-prompts'
         uses: ./.github/actions/run-sdk-prompt-management-tests
