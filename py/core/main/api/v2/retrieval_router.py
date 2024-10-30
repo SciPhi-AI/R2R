@@ -26,7 +26,7 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from ..services.retrieval_service import RetrievalService
+from ...services.retrieval_service import RetrievalService
 from .base_router import BaseRouter
 
 

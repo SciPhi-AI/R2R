@@ -37,8 +37,8 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from ...base.logger.base import RunType
-from ..services.management_service import ManagementService
+from ....base.logger.base import RunType
+from ...services.management_service import ManagementService
 from .base_router import BaseRouter
 
 

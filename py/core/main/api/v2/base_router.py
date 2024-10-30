@@ -13,7 +13,7 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from ..services.base import Service
+from ...services.base import Service
 
 logger = logging.getLogger()
 

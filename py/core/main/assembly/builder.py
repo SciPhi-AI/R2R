@@ -17,11 +17,12 @@ from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RProviders
-from ..api.auth_router import AuthRouter
-from ..api.ingestion_router import IngestionRouter
-from ..api.kg_router import KGRouter
-from ..api.management_router import ManagementRouter
-from ..api.retrieval_router import RetrievalRouter
+from ..api.v2.auth_router import AuthRouter
+from ..api.v2.ingestion_router import IngestionRouter
+from ..api.v2.kg_router import KGRouter
+from ..api.v2.management_router import ManagementRouter
+from ..api.v2.retrieval_router import RetrievalRouter
+from ..api.v3.document_router import DocumentRouter
 from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
@@ -249,6 +250,11 @@ class R2RBuilder:
                 services["kg"],
                 orchestration_provider=orchestration_provider,
             ).get_router(),
+            "document_router": DocumentRouter(
+                providers,
+                services,
+                orchestration_provider=orchestration_provider,
+            ),
         }
 
         return R2RApp(

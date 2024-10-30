@@ -27,7 +27,7 @@ from core.utils import (
     update_settings_from_dict,
 )
 
-from ..services.kg_service import KgService
+from ...services.kg_service import KgService
 from .base_router import BaseRouter
 
 logger = logging.getLogger()

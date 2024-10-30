@@ -11,11 +11,12 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from .api.auth_router import AuthRouter
-from .api.ingestion_router import IngestionRouter
-from .api.kg_router import KGRouter
-from .api.management_router import ManagementRouter
-from .api.retrieval_router import RetrievalRouter
+from .api.v2.auth_router import AuthRouter
+from .api.v2.ingestion_router import IngestionRouter
+from .api.v2.kg_router import KGRouter
+from .api.v2.management_router import ManagementRouter
+from .api.v2.retrieval_router import RetrievalRouter
+from .api.v3.document_router import DocumentRouter
 from .config import R2RConfig
 
 
@@ -31,6 +32,7 @@ class R2RApp:
         management_router: ManagementRouter,
         retrieval_router: RetrievalRouter,
         kg_router: KGRouter,
+        document_router: DocumentRouter,
     ):
         self.config = config
         self.ingestion_router = ingestion_router
@@ -39,6 +41,7 @@ class R2RApp:
         self.auth_router = auth_router
         self.kg_router = kg_router
         self.orchestration_provider = orchestration_provider
+        self.document_router = document_router
         self.app = FastAPI()
 
         @self.app.exception_handler(R2RException)
@@ -61,8 +64,9 @@ class R2RApp:
         self.app.include_router(self.retrieval_router, prefix="/v2")
         self.app.include_router(self.auth_router, prefix="/v2")
         self.app.include_router(self.kg_router, prefix="/v2")
+        self.app.include_router(self.document_router, prefix="/v3")
 
-        @self.app.get("/v2/openapi_spec")
+        @self.app.get("/openapi_spec")
         async def openapi_spec():
             return get_openapi(
                 title="R2R Application API",
