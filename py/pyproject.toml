@@ -21,7 +21,7 @@ packages = [
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.11,<3.13"
+python = ">=3.10,<3.13"
 
 alembic = "^1.13.3"
 asyncclick = "^8.1.7.2"
