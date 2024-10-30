@@ -123,6 +123,19 @@ class IngestionStatus(str, Enum):
     FAILED = "failed"
     SUCCESS = "success"
 
+    def __str__(self):
+        return self.value
+
+    @property
+    def table_name(self) -> str:
+        """Returns the table name this status applies to."""
+        return "document_info"
+
+    @property
+    def id_column(self) -> str:
+        """Returns the id column this status applies to."""
+        return "document_id"
+
 
 class KGExtractionStatus(str, Enum):
     """Status of KG Creation per document."""
@@ -135,6 +148,16 @@ class KGExtractionStatus(str, Enum):
     def __str__(self):
         return self.value
 
+    @property
+    def table_name(self) -> str:
+        """Returns the table name this status applies to."""
+        return "document_info"
+
+    @property
+    def id_column(self) -> str:
+        """Returns the id column this status applies to."""
+        return "document_id"
+
 
 class KGEnrichmentStatus(str, Enum):
     """Status of KG Enrichment per collection."""
@@ -146,6 +169,16 @@ class KGEnrichmentStatus(str, Enum):
 
     def __str__(self):
         return self.value
+
+    @property
+    def table_name(self) -> str:
+        """Returns the table name this status applies to."""
+        return "collections"
+
+    @property
+    def id_column(self) -> str:
+        """Returns the id column this status applies to."""
+        return "collection_id"
 
 
 class DocumentInfo(R2RSerializable):

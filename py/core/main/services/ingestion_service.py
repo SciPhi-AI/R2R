@@ -457,7 +457,9 @@ class IngestionService(Service):
                     for neighbor in semantic_neighbors
                 )
 
-        context_chunk_ids = list(
+        # weird behavior, sometimes we get UUIDs
+        # FIXME: figure out why
+        context_chunk_ids_str = list(
             set(
                 [
                     str(context_chunk_id)
@@ -465,8 +467,10 @@ class IngestionService(Service):
                 ]
             )
         )
-        context_chunk_ids = [
-            UUID(context_chunk_id) for context_chunk_id in context_chunk_ids
+
+        context_chunk_ids_uuid = [
+            UUID(context_chunk_id)
+            for context_chunk_id in context_chunk_ids_str
         ]
 
         context_chunk_texts = [
@@ -476,7 +480,7 @@ class IngestionService(Service):
                     "chunk_order"
                 ],
             )
-            for context_chunk_id in context_chunk_ids
+            for context_chunk_id in context_chunk_ids_uuid
         ]
 
         # sort by chunk_order

@@ -19,6 +19,8 @@ class IngestionConfig(ProviderConfig):
         ChunkEnrichmentSettings()
     )
 
+    extra_parsers: dict[str, str] = {}
+
     audio_transcription_model: str = "openai/whisper-1"
 
     vision_img_prompt_name: str = "vision_img"
