@@ -10,6 +10,8 @@ from ..abstractions import R2RException, Token, TokenData
 from ..api.models import UserResponse
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
+from .database import DatabaseProvider
+from .email import EmailProvider
 
 logger = logging.getLogger()
 
@@ -33,8 +35,17 @@ class AuthConfig(ProviderConfig):
 
 class AuthProvider(Provider, ABC):
     security = HTTPBearer(auto_error=False)
+    crypto_provider: CryptoProvider
+    email_provider: EmailProvider
+    database_provider: DatabaseProvider
 
-    def __init__(self, config: AuthConfig, crypto_provider: CryptoProvider):
+    def __init__(
+        self,
+        config: AuthConfig,
+        crypto_provider: CryptoProvider,
+        database_provider: DatabaseProvider,
+        email_provider: EmailProvider,
+    ):
         if not isinstance(config, AuthConfig):
             raise ValueError(
                 "AuthProvider must be initialized with an AuthConfig"
@@ -43,6 +54,8 @@ class AuthProvider(Provider, ABC):
         self.admin_email = config.default_admin_email
         self.admin_password = config.default_admin_password
         self.crypto_provider = crypto_provider
+        self.database_provider = database_provider
+        self.email_provider = email_provider
         super().__init__(config)
         self.config: AuthConfig = config  # for type hinting
 

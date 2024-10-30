@@ -45,7 +45,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
     assert inserted_document.id == document_info.id
     assert inserted_document.collection_ids == document_info.collection_ids
     assert inserted_document.user_id == document_info.user_id
-    assert inserted_document.type == document_info.document_type
+    assert inserted_document.document_type == document_info.document_type
     assert inserted_document.metadata == document_info.metadata
     assert inserted_document.title == document_info.title
     assert inserted_document.version == document_info.version

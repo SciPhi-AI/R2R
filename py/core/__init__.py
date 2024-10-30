@@ -134,6 +134,9 @@ __all__ = [
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
+    # Email provider
+    "EmailConfig",
+    "EmailProvider",
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
@@ -192,9 +195,9 @@ __all__ = [
     "AudioParser",
     "DOCXParser",
     "ImageParser",
-    "PDFParser",
+    "VLMPDFParser",
+    "BasicPDFParser",
     "PDFParserUnstructured",
-    "PDFParserMarker",
     "PPTParser",
     # Structured parsers
     "CSVParser",
@@ -233,6 +236,7 @@ __all__ = [
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    "OllamaEmbeddingProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteLLMCompletionProvider",

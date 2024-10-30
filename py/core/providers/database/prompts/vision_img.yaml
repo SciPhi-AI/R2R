@@ -1,0 +1,4 @@
+vision_img:
+  template: >
+    First, provide a title for the image, then explain everything that you see. Be very thorough in your analysis as a user will need to understand the image without seeing it. If it is possible to transcribe the image to text directly, then do so. The more detail you provide, the better the user will understand the image.
+  input_types: {}

@@ -11,7 +11,7 @@ from asyncclick import pass_context
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from core.base.abstractions import IndexMeasure, IndexMethod, VectorTableName
+from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
 
 async def ingest_files_from_urls(client, urls):
@@ -243,6 +243,7 @@ async def create_vector_index(
     index_measure,
     index_arguments,
     index_name,
+    index_column,
     no_concurrent,
 ):
     """Create a vector index for similarity search."""
@@ -254,6 +255,7 @@ async def create_vector_index(
             index_measure=index_measure,
             index_arguments=index_arguments,
             index_name=index_name,
+            index_column=index_column,
             concurrently=not no_concurrent,
         )
     click.echo(json.dumps(response, indent=2))

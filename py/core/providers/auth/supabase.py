@@ -10,6 +10,7 @@ from core.base import (
     AuthProvider,
     CryptoProvider,
     DatabaseProvider,
+    EmailProvider,
     R2RException,
     Token,
     TokenData,
@@ -29,8 +30,11 @@ class SupabaseAuthProvider(AuthProvider):
         config: AuthConfig,
         crypto_provider: CryptoProvider,
         database_provider: DatabaseProvider,
+        email_provider: EmailProvider,
     ):
-        super().__init__(config, crypto_provider)
+        super().__init__(
+            config, crypto_provider, database_provider, email_provider
+        )
         self.supabase_url = config.extra_fields.get(
             "supabase_url", None
         ) or os.getenv("SUPABASE_URL")

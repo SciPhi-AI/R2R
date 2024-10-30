@@ -585,8 +585,7 @@ def test_user_search_and_rag():
 def test_user_password_management():
     print("Testing: User password management")
 
-    # Test for duplicate user
-    client.login("password_mgmt@example.com", "password123")
+    client.login("user_test@example.com", "password123")
 
     # Change password
     client.change_password("password123", "new_password")
@@ -596,6 +595,9 @@ def test_user_password_management():
     # Confirm password reset (after user receives reset token)
     # reset_confirm_result = client.confirm_password_reset("reset_token_here", "password123")
     # print(f"Reset Confirm Result:\n{reset_confirm_result}")
+
+    # Change password back to the original password
+    client.change_password("new_password", "password123")
 
     print("User password management test passed")
     print("~" * 100)
@@ -1988,6 +1990,228 @@ def test_get_prompt():
     assert isinstance(response, dict)
     assert "results" in response
     assert "You are a helpful agent." in response["results"]["message"]
+
+
+def test_add_prompt():
+    print("Testing: Add Prompt")
+
+    # Test adding a new prompt
+    prompt_data = {
+        "name": "test_prompt",
+        "template": "This is a test prompt with {input_var}",
+        "input_types": {"input_var": "string"},
+    }
+
+    add_result = client.add_prompt(
+        name=prompt_data["name"],
+        template=prompt_data["template"],
+        input_types=prompt_data["input_types"],
+    )["results"]
+
+    # Verify the prompt was added successfully
+    assert add_result["name"] == prompt_data["name"]
+    assert add_result["template"] == prompt_data["template"]
+    assert add_result["input_types"] == prompt_data["input_types"]
+    assert "prompt_id" in add_result
+    assert "created_at" in add_result
+    assert "updated_at" in add_result
+
+    print("Add prompt test passed")
+    print("~" * 100)
+
+
+def test_update_prompt():
+    print("Testing: Update Prompt")
+
+    # Update an existing prompt
+    updated_template = "This is an updated test prompt with {input_var}"
+    updated_input_types = {"input_var": "string", "new_var": "integer"}
+
+    update_result = client.update_prompt(
+        name="test_prompt",
+        template=updated_template,
+        input_types=updated_input_types,
+    )["results"]
+
+    # Verify the prompt was updated successfully
+    assert update_result["template"] == updated_template
+    assert update_result["input_types"] == updated_input_types
+    assert update_result["name"] == "test_prompt"
+    assert "updated_at" in update_result
+
+    # Test partial updates
+    template_only_update = "Template only update with {input_var}"
+    template_update_result = client.update_prompt(
+        name="test_prompt", template=template_only_update
+    )["results"]
+
+    assert template_update_result["template"] == template_only_update
+    assert template_update_result["input_types"] == updated_input_types
+
+    print("Update prompt test passed")
+    print("~" * 100)
+
+
+def test_get_prompt():
+    print("Testing: Get Prompt")
+
+    # Test getting a prompt without inputs
+    basic_result = client.get_prompt("test_prompt")["results"]
+    assert "message" in basic_result
+
+    # Test getting a prompt with inputs
+    inputs = {"input_var": "test value"}
+    result_with_inputs = client.get_prompt("test_prompt", inputs=inputs)[
+        "results"
+    ]
+    assert "message" in result_with_inputs
+    assert "test value" in result_with_inputs["message"]
+
+    # Test getting a prompt with override
+    override_template = "Override template with {input_var}"
+    result_with_override = client.get_prompt(
+        "test_prompt", inputs=inputs, prompt_override=override_template
+    )["results"]
+    assert "message" in result_with_override
+    assert (
+        "Override template with test value" in result_with_override["message"]
+    )
+
+    print("Get prompt test passed")
+    print("~" * 100)
+
+
+def test_get_all_prompts():
+    print("Testing: Get All Prompts")
+
+    result = client.get_all_prompts()["results"]
+
+    # Verify structure of the response
+    assert "prompts" in result
+    prompts = result["prompts"]
+
+    # Verify our test prompt is in the list
+    test_prompt = prompts.get("test_prompt")
+    assert test_prompt is not None
+    assert test_prompt["name"] == "test_prompt"
+    assert "template" in test_prompt
+    assert "input_types" in test_prompt
+    assert "prompt_id" in test_prompt
+    assert "created_at" in test_prompt
+    assert "updated_at" in test_prompt
+
+    # Verify required system prompts exist
+    required_prompts = {"default_system", "rag_agent", "hyde"}
+    assert all(prompt in prompts for prompt in required_prompts)
+
+    print("Get all prompts test passed")
+    print("~" * 100)
+
+
+def test_delete_prompt():
+    print("Testing: Delete Prompt")
+
+    # First, verify the prompt exists
+    all_prompts_before = client.get_all_prompts()["results"]["prompts"]
+    assert "test_prompt" in all_prompts_before
+
+    # Delete the prompt
+    delete_result = client.delete_prompt("test_prompt")["results"]
+    assert delete_result["message"] == "Prompt deleted successfully"
+
+    # Verify the prompt was deleted
+    all_prompts_after = client.get_all_prompts()["results"]["prompts"]
+    assert "test_prompt" not in all_prompts_after
+
+    # Test deleting a non-existent prompt
+    try:
+        client.delete_prompt("non_existent_prompt")
+        assert False, "Expected an error when deleting non-existent prompt"
+    except Exception as e:
+        assert "not found" in str(e).lower()
+
+    print("Delete prompt test passed")
+    print("~" * 100)
+
+
+def test_prompt_error_handling():
+    print("Testing: Prompt Error Handling")
+
+    # Test adding a prompt with invalid input types
+    try:
+        client.add_prompt(
+            name="invalid_prompt",
+            template="Test template",
+            input_types={"var": "invalid_type"},
+        )
+        assert False, "Expected an error for invalid input type"
+    except Exception as e:
+        assert "invalid input type" in str(e).lower()
+
+    # Test adding a prompt with invalid template
+    try:
+        client.add_prompt(
+            name="invalid_prompt",
+            template="Template with {undefined_var}",
+            input_types={"other_var": "string"},
+        )
+        assert False, "Expected an error for undefined template variable"
+    except Exception as e:
+        assert "undefined variable" in str(e).lower()
+
+    # Test updating a non-existent prompt
+    try:
+        client.update_prompt(
+            name="non_existent_prompt", template="New template"
+        )
+        assert False, "Expected an error when updating non-existent prompt"
+    except Exception as e:
+        assert "not found" in str(e).lower()
+
+    print("Prompt error handling test passed")
+    print("~" * 100)
+
+
+def test_prompt_access_control():
+    print("Testing: Prompt Access Control")
+
+    # Create a new non-admin user
+    client.register("prompt_test_user@example.com", "password123")
+    client.login("prompt_test_user@example.com", "password123")
+
+    # Test that non-admin user can't add prompts
+    try:
+        client.add_prompt(
+            name="unauthorized_prompt",
+            template="Test template",
+            input_types={"var": "string"},
+        )
+        assert False, "Expected an error for unauthorized prompt creation"
+    except Exception as e:
+        assert "unauthorized" in str(e).lower()
+
+    # Test that non-admin user can't update system prompts
+    try:
+        client.update_prompt(
+            name="default_system", template="Modified system prompt"
+        )
+        assert False, "Expected an error for unauthorized prompt update"
+    except Exception as e:
+        assert "unauthorized" in str(e).lower()
+
+    # Test that non-admin user can't delete prompts
+    try:
+        client.delete_prompt("default_system")
+        assert False, "Expected an error for unauthorized prompt deletion"
+    except Exception as e:
+        assert "unauthorized" in str(e).lower()
+
+    # Verify that non-admin user can still get prompts
+    get_result = client.get_prompt("default_system")
+    assert "message" in get_result["results"]
+
+    print("Prompt access control test passed")
+    print("~" * 100)
 
 
 def create_client(base_url):
