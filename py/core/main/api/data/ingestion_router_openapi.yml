@@ -172,6 +172,7 @@ create_vector_index:
     index_method: "The indexing method to use. Options: hnsw, ivfflat, auto. Default: hnsw"
     index_measure: "Distance measure for vector comparisons. Options: cosine_distance, l2_distance, max_inner_product. Default: cosine_distance"
     index_name: "Optional custom name for the index. If not provided, one will be auto-generated"
+    index_column: "The column containing the vectors to index. Default: `vec`, or `vec_binary` when using hamming or jaccard distance."
     index_arguments: "Configuration parameters for the chosen index method. For HNSW: {m: int, ef_construction: int}. For IVFFlat: {n_lists: int}"
     concurrently: "Whether to create the index concurrently. Default: true"
 

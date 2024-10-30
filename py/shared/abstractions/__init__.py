@@ -52,10 +52,15 @@ from .search import (
 )
 from .user import Token, TokenData, UserStats
 from .vector import (
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexMeasure,
+    IndexMethod,
     StorageResult,
     Vector,
     VectorEntry,
     VectorQuantizationType,
+    VectorTableName,
     VectorType,
 )
 
@@ -124,6 +129,11 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexMethod",
+    "IndexMeasure",
+    "IndexArgsIVFFlat",
+    "IndexArgsHNSW",
+    "VectorTableName",
     "VectorQuantizationType",
     "StorageResult",
 ]

@@ -3,12 +3,25 @@ from typing import AsyncGenerator
 
 from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
+from core.base.providers import (
+    CompletionProvider,
+    DatabaseProvider,
+    IngestionConfig,
+)
 
 
 class PPTParser(AsyncParser[DataType]):
     """A parser for PPT data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from pptx import Presentation
 

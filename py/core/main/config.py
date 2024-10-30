@@ -1,7 +1,6 @@
 import logging
 import os
 from enum import Enum
-from pathlib import Path
 from typing import Any, Optional
 
 import toml
@@ -14,6 +13,7 @@ from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
+from ..base.providers.email import EmailConfig
 from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
@@ -41,6 +41,7 @@ class R2RConfig:
         "app": [],
         "completion": ["provider"],
         "crypto": ["provider"],
+        "email": ["provider"],
         "auth": ["provider"],
         "embedding": [
             "provider",
@@ -63,6 +64,7 @@ class R2RConfig:
     crypto: CryptoConfig
     database: DatabaseConfig
     embedding: EmbeddingConfig
+    email: EmailConfig
     ingestion: IngestionConfig
     logging: PersistentLoggingConfig
     agent: AgentConfig
@@ -113,6 +115,7 @@ class R2RConfig:
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
         self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
+        self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore

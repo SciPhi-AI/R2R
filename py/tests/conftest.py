@@ -12,6 +12,7 @@ from core import (
     BCryptConfig,
     CompletionConfig,
     DatabaseConfig,
+    EmailConfig,
     EmbeddingConfig,
     PersistentLoggingConfig,
     SqlitePersistentLoggingProvider,
@@ -29,6 +30,7 @@ from core.base import (
 )
 from core.providers import (
     BCryptProvider,
+    ConsoleMockEmailProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     PostgresDBProvider,
@@ -170,11 +172,24 @@ def auth_config(app_config):
 
 
 @pytest.fixture(scope="function")
+def email_provider(app_config):
+    return ConsoleMockEmailProvider(
+        EmailConfig(provider="console_mock", app=app_config)
+    )
+
+
+@pytest.fixture(scope="function")
 async def r2r_auth_provider(
-    auth_config, crypto_provider, temporary_postgres_db_provider
+    auth_config,
+    crypto_provider,
+    temporary_postgres_db_provider,
+    email_provider,
 ):
     auth_provider = R2RAuthProvider(
-        auth_config, crypto_provider, temporary_postgres_db_provider
+        auth_config,
+        crypto_provider,
+        temporary_postgres_db_provider,
+        email_provider,
     )
     await auth_provider.initialize()
     yield auth_provider
