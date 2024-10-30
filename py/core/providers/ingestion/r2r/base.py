@@ -211,7 +211,13 @@ class R2RIngestionProvider(IngestionProvider):
                 or self.config.vision_pdf_model
             )
 
-            if document.document_type == DocumentType.PDF and is_not_vlm:
+            has_not_poppler = not bool(
+                shutil.which("pdftoppm")
+            )  # Check if poppler is installed
+
+            if document.document_type == DocumentType.PDF and (
+                is_not_vlm or has_not_poppler
+            ):
                 logger.info(
                     f"Reverting to basic PDF parser as the provided is not a proper VLM model."
                 )
