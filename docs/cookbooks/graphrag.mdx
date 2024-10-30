@@ -321,7 +321,7 @@ r2r create-graph --collection-id=<optional> --run
 from r2r import R2RClient
 
 client = R2RClient("http://localhost:7272")
-kg_search_settings = { 'run_mode': 'estimate' }
+kg_search_settings = { 'run_type': 'estimate' }
 estimate = client.create_graph(collection_id=collection_id, kg_search_settings=kg_search_settings)
 print(estimate)
 # This will run a cost estimation step to give you an estimate of the cost of the graph creation process.
@@ -330,7 +330,7 @@ print(estimate)
 Time taken: 0.21 seconds
 {
   "results": {
-    "message": "These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_mode=\"run\"` in the client.",
+    "message": "These are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type=\"run\"` in the client.",
     "document_count": 2,
     "number_of_jobs_created": 3,
     "total_chunks": 29,
@@ -344,7 +344,7 @@ Time taken: 0.21 seconds
 }
 
 # Then, you can run the graph creation process with:
-kg_search_settings = { 'run_mode': 'run' }
+kg_search_settings = { 'run_type': 'run' }
 client.create_graph(collection_id=collection_id, kg_search_settings=kg_search_settings)
 
 # Example response for R2R Light
@@ -410,7 +410,7 @@ r2r enrich-graph --collection-id=122fdf6a-e116-546b-a8f6-e4cb2e2c0a09 --run
 from r2r import R2RClient
 
 client = R2RClient("http://localhost:7272")
-kg_search_settings = { 'run_mode': 'estimate' }
+kg_search_settings = { 'run_type': 'estimate' }
 collection_id = "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09" # optional, if not specified, the default collection will be used.
 estimate = client.enrich_graph(collection_id=collection_id, kg_search_settings=kg_search_settings)
 print(estimate)
@@ -431,7 +431,7 @@ Time taken: 0.22 seconds
 }
 
 # Now, you can run the graph enrichment process with:
-kg_search_settings = { 'run_mode': 'run' }
+kg_search_settings = { 'run_type': 'run' }
 client.enrich_graph(collection_id=collection_id, kg_search_settings=kg_search_settings)
 
 # Example Response with R2R Light
