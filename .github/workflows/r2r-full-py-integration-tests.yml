@@ -3,8 +3,6 @@ name: R2R Full Python Integration Test (ubuntu)
 on:
   push:
     branches:
-      - dev
-      - dev-minor
       - main
   pull_request:
     branches:

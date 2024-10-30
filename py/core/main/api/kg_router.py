@@ -101,6 +101,7 @@ class KGRouter(BaseRouter):
                 default=None,
                 description="Settings for the graph creation process.",
             ),
+            run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):  #  -> WrappedKGCreationResponse:  # type: ignore
             """
@@ -139,18 +140,29 @@ class KGRouter(BaseRouter):
                 return await self.service.get_creation_estimate(
                     collection_id, server_kg_creation_settings
                 )
-
-            # Otherwise, create the graph
             else:
-                workflow_input = {
-                    "collection_id": str(collection_id),
-                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                    "user": auth_user.json(),
-                }
 
-                return await self.orchestration_provider.run_workflow(  # type: ignore
-                    "create-graph", {"request": workflow_input}, {}
-                )
+                # Otherwise, create the graph
+                if run_with_orchestration:
+                    workflow_input = {
+                        "collection_id": str(collection_id),
+                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                        "user": auth_user.json(),
+                    }
+
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "create-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    logger.info("Running create-graph without orchestration.")
+                    simple_kg = simple_kg_factory(self.service)
+                    await simple_kg["create-graph"](workflow_input)
+                    return {
+                        "message": "Graph created successfully.",
+                        "task_id": None,
+                    }
 
         @self.router.post(
             "/enrich_graph",
@@ -169,6 +181,7 @@ class KGRouter(BaseRouter):
                 default=None,
                 description="Settings for the graph enrichment process.",
             ),
+            run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):  # -> WrappedKGEnrichmentResponse:
             """
@@ -206,15 +219,26 @@ class KGRouter(BaseRouter):
 
             # Otherwise, run the enrichment workflow
             else:
-                workflow_input = {
-                    "collection_id": str(collection_id),
-                    "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-                    "user": auth_user.json(),
-                }
+                if run_with_orchestration:
+                    workflow_input = {
+                        "collection_id": str(collection_id),
+                        "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+                        "user": auth_user.json(),
+                    }
 
-                return await self.orchestration_provider.run_workflow(  # type: ignore
-                    "enrich-graph", {"request": workflow_input}, {}
-                )
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "enrich-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    logger.info("Running enrich-graph without orchestration.")
+                    simple_kg = simple_kg_factory(self.service)
+                    await simple_kg["enrich-graph"](workflow_input)
+                    return {
+                        "message": "Graph enriched successfully.",
+                        "task_id": None,
+                    }
 
         @self.router.get("/entities")
         @self.base_endpoint

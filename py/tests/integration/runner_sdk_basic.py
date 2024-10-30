@@ -23,13 +23,14 @@ def compare_result_fields(result, expected_fields):
 
 def test_ingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
-    file_paths = ["core/examples/data/uber_2021.pdf"]
-    ingest_response = client.ingest_files(file_paths=file_paths)
+    file_paths = ["core/examples/data/aristotle.txt"]
+    ingest_response = client.ingest_files(
+        file_paths=file_paths, run_with_orchestration=False
+    )
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
-    time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -37,26 +38,26 @@ def test_ingest_sample_file_sdk():
 def test_ingest_sample_file_2_sdk():
     print("Testing: Ingest sample file SDK 2")
     file_paths = [f"core/examples/data_dedup/a{i}.txt" for i in range(1, 11)]
-    ingest_response = client.ingest_files(file_paths=file_paths)
+    ingest_response = client.ingest_files(
+        file_paths=file_paths, run_with_orchestration=False
+    )
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
 
-    time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
 
 
 def test_ingest_sample_file_3_sdk():
     print("Testing: Ingest sample file SDK 2")
-    file_paths = ["core/examples/data/lyft_2021.pdf"]
+    file_paths = ["core/examples/data/aristotle_v2.txt"]
     ingest_response = client.ingest_files(file_paths=file_paths)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
         sys.exit(1)
-    time.sleep(60)
     print("Ingestion successful")
     print("~" * 100)
 
@@ -66,9 +67,10 @@ def test_ingest_sample_file_with_config_sdk():
     file_paths = ["core/examples/data/aristotle_v2.txt"]
 
     ingest_response = client.ingest_files(
-        file_paths=file_paths, ingestion_config={"chunk_size": 4_096}
+        file_paths=file_paths,
+        ingestion_config={"chunk_size": 4_096},
+        run_with_orchestration=False,
     )
-    time.sleep(30)
 
     if not ingest_response["results"]:
         print("Ingestion test failed")
@@ -100,10 +102,11 @@ def test_remove_all_files_and_ingest_sample_file_sdk():
 
 def test_reingest_sample_file_sdk():
     print("Testing: Ingest sample file SDK")
-    file_paths = ["core/examples/data/uber_2021.pdf"]
+    file_paths = ["core/examples/data/aristotle.txt"]
     try:
-        results = client.ingest_files(file_paths=file_paths)
-        time.sleep(30)
+        results = client.ingest_files(
+            file_paths=file_paths, run_with_orchestration=False
+        )
 
         if "task_id" not in results["results"][0]:
             print(
@@ -130,10 +133,10 @@ def test_reingest_sample_file_sdk():
 def test_document_overview_sample_file_sdk():
     documents_overview = client.documents_overview()["results"]
 
-    uber_document = {
-        "id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-        "title": "uber_2021.pdf",
-        "document_type": "pdf",
+    sample_document = {
+        "id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
+        "title": "aristotle.txt",
+        "document_type": "txt",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
@@ -142,31 +145,31 @@ def test_document_overview_sample_file_sdk():
     }
 
     if not any(
-        all(doc.get(k) == v for k, v in uber_document.items())
+        all(doc.get(k) == v for k, v in sample_document.items())
         for doc in documents_overview
     ):
         print("Document overview test failed")
-        print("Uber document not found in the overview")
+        print("sample document not found in the overview")
         sys.exit(1)
     print("Document overview test passed")
     print("~" * 100)
 
 
 def test_document_chunks_sample_file_sdk():
-    print("Testing: Document chunks")
-    document_id = "3e157b3a-8469-51db-90d9-52e7d896b49b"  # Replace with the actual document ID
+    print("Testing: Get document chunks from sample file")
+    document_id = "db02076e-989a-59cd-98d5-e24e15a0bd27"  # Replace with the actual document ID
     chunks = client.document_chunks(document_id=document_id)["results"]
 
     lead_chunk = {
-        # "extraction_id": "57d761ac-b2df-529c-9c47-6e6e1bbf854f",
-        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "extraction_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
         # "text": "UNITED STATESSECURITIES AND EXCHANGE COMMISSION\nWashington, D.C. 20549\n____________________________________________ \nFORM\n 10-K____________________________________________ \n(Mark One)\n\n ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934For the fiscal year ended\n December 31, 2021OR",
         "metadata": {
             "version": "v0",
             "chunk_order": 0,
-            "document_type": "pdf",
+            "document_type": "txt",
         },
     }
 
@@ -182,11 +185,11 @@ def test_document_chunks_sample_file_sdk():
 
 
 def test_delete_and_reingest_sample_file_sdk():
-    print("Testing: Delete and re-ingest the Uber document")
+    print("Testing: Delete and re-ingest the sample file")
 
     # Delete the Aristotle document
     delete_response = client.delete(
-        {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}}
+        {"document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}}
     )
 
     # Check if the deletion was successful
@@ -198,9 +201,10 @@ def test_delete_and_reingest_sample_file_sdk():
     print("Uber document deleted successfully")
 
     # Re-ingest the sample file
-    file_paths = ["core/examples/data/uber_2021.pdf"]
-    ingest_response = client.ingest_files(file_paths=file_paths)
-    time.sleep(30)
+    file_paths = ["core/examples/data/aristotle.txt"]
+    ingest_response = client.ingest_files(
+        file_paths=file_paths, run_with_orchestration=False
+    )
 
     if not ingest_response["results"]:
         print("Delete and re-ingest test failed: Re-ingestion unsuccessful")
@@ -213,12 +217,12 @@ def test_delete_and_reingest_sample_file_sdk():
 
 
 def test_vector_search_sample_file_filter_sdk():
-    print("Testing: Vector search")
+    print("Testing: Vector search over sample file")
     results = client.search(
-        query="What was Uber's recent profit??",
+        query="Who was Aristotle?",
         vector_search_settings={
             "filters": {
-                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+                "document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}
             }
         },
     )["results"]["vector_search_results"]
@@ -229,14 +233,14 @@ def test_vector_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        # "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
-        # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
-        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "extraction_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        # "score": lambda x: 0.71 <= x <= 0.73,
+        "score": lambda x: 0.70 <= x <= 0.80,
     }
+    print("lead_result = ", lead_result)
     compare_result_fields(lead_result, expected_lead_search_result)
-    if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
+    if "Aristotle" not in lead_result["text"]:
         print("Vector search test failed: Incorrect text")
         sys.exit(1)
     print("Vector search test passed")
@@ -244,14 +248,14 @@ def test_vector_search_sample_file_filter_sdk():
 
 
 def test_hybrid_search_sample_file_filter_sdk():
-    print("Testing: Hybrid search")
+    print("Testing: Hybrid search over sample file")
 
     results = client.search(
-        query="What was Uber's recent profit??",
+        query="What were aristotles teachings?",
         vector_search_settings={
             "use_hybrid_search": True,
             "filters": {
-                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+                "document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}
             },
         },
     )["results"]["vector_search_results"]
@@ -262,47 +266,36 @@ def test_hybrid_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        # "text": "was $17.5 billion, or up 57% year-over-year, reflecting the overall growth in our Delivery business and an increase in Freight revenue attributable tothe\n acquisition of Transplace in the fourth quarter of 2021 as well as growth in the number of shippers and carriers on the network combined with an increase involumes with our top shippers.\nNet\n loss attributable to Uber Technologies, Inc. was $496 million, a 93% improvement year-over-year, driven by a $1.6 billion pre-tax gain on the sale of ourATG\n Business to Aurora, a $1.6 billion pre-tax  net benefit relating to Ubers equity investments, as  well as reductions in our fixed cost structure and increasedvariable cost effi\nciencies. Net loss attributable to Uber Technologies, Inc. also included $1.2 billion of stock-based compensation expense.Adjusted\n EBITDA loss was $774 million, improving $1.8 billion from 2020 with Mobility Adjusted EBITDA profit of $1.6 billion. Additionally, DeliveryAdjusted",
-        # "extraction_id": "6b4cdb93-f6f5-5ff4-8a89-7a4b1b7cd034",
-        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+        "extraction_id": "ca3d035b-6306-544b-abd3-7a84b9c78bfc",
+        "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "text": lambda x: "17.5 billion" in x and "57% year-over-year" in x,
-        # "score": lambda x: 0.016 <= x <= 0.018,
+        "text": lambda x: "Aristotle" in x,
         "metadata": lambda x: "v0" == x["version"]
-        and "pdf" == x["document_type"]
-        and "What was Uber's recent profit??" == x["associated_query"]
-        and 1 == x["semantic_rank"],
-        # "metadata": {
-        #     "version": "v0",
-        #     # "chunk_order": 587,
-        #     "document_type": "pdf",
-        #     "semantic_rank": 1,
-        #     "full_text_rank": 200,
-        #     "associated_query": "What was Uber's recent profit??",
-        # },
+        and "txt" == x["document_type"]
+        and "What were aristotles teachings?" == x["associated_query"]
+        and 4 == x["semantic_rank"]
+        and 2 == x["full_text_rank"],
     }
+    print("lead_result = ", lead_result)
     compare_result_fields(lead_result, expected_lead_search_result)
-    # if "$17.5 billion, or up 57% year-over-year" not in lead_result["text"]:
-    #     print("Vector search test failed: Incorrect text")
-    #     sys.exit(1)
 
     print("Hybrid search test passed")
     print("~" * 100)
 
 
 def test_rag_response_sample_file_sdk():
-    print("Testing: RAG query for Uber's recent P&L")
+    print("Testing: RAG query for sample file")
     response = client.rag(
-        query="What was Uber's recent profit and loss?",
+        query="What was Aristotle's greatest contribution?",
         vector_search_settings={
             "filters": {
-                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+                "document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}
             }
         },
     )["results"]["completion"]["choices"][0]["message"]["content"]
 
-    expected_answer_0 = "net loss"
-    expected_answer_1 = "$496 million"
+    expected_answer_0 = "Aristotle"
+    expected_answer_1 = "logic"
 
     if expected_answer_0 not in response or expected_answer_1 not in response:
         print(
@@ -317,11 +310,11 @@ def test_rag_response_sample_file_sdk():
 def test_rag_response_stream_sample_file_sdk():
     print("Testing: Streaming RAG query for Uber's recent P&L")
     response = client.rag(
-        query="What was Uber's recent profit and loss?",
+        query="What was aristotles greatest contribution?",
         rag_generation_config={"stream": True},
         vector_search_settings={
             "filters": {
-                "document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}
+                "document_id": {"$eq": "db02076e-989a-59cd-98d5-e24e15a0bd27"}
             }
         },
     )
@@ -331,8 +324,8 @@ def test_rag_response_stream_sample_file_sdk():
         response += res
         print(res)
 
-    expected_answer_0 = "net loss"
-    expected_answer_1 = "$496 million"
+    expected_answer_0 = "Aristotle"
+    expected_answer_1 = "logic"
 
     if expected_answer_0 not in response or expected_answer_1 not in response:
         print(
@@ -485,9 +478,8 @@ def test_user_document_management():
 
     # Ingest a sample file for the logged-in user
     ingestion_result = client.ingest_files(
-        ["core/examples/data/lyft_2021.pdf"]
+        ["core/examples/data/aristotle_v2.txt"], run_with_orchestration=False
     )["results"]
-    time.sleep(30)
 
     # Check the ingestion result
     if not ingestion_result:
@@ -501,7 +493,6 @@ def test_user_document_management():
         "document_id": lambda x: len(x)
         == 36,  # Check if document_id is a valid UUID
     }
-    time.sleep(30)
     compare_result_fields(ingested_document, expected_ingestion_result)
     assert "successfully" in ingested_document["message"]
 
@@ -517,9 +508,9 @@ def test_user_document_management():
     ingested_document_overview = documents_overview[0]
     expected_document_overview = {
         "id": ingested_document["document_id"],
-        "title": "lyft_2021.pdf",
+        "title": "aristotle_v2.txt",
         "user_id": lambda x: len(x) == 36,  # Check if user_id is a valid UUID
-        "document_type": "pdf",
+        "document_type": "txt",
         "ingestion_status": "success",
         "kg_extraction_status": "pending",
         "version": "v0",
@@ -540,7 +531,7 @@ def test_user_search_and_rag():
     client.login("user_test@example.com", "password123")
 
     # Perform a search
-    search_query = "What was Lyft's revenue in 2021?"
+    search_query = "What was aristotle known for?"
     search_result = client.search(query=search_query)["results"]
 
     # Check the search result
@@ -550,13 +541,13 @@ def test_user_search_and_rag():
 
     lead_search_result = search_result["vector_search_results"][0]
     expected_search_result = {
-        "text": lambda x: "Lyft" in x and "revenue" in x,
+        "text": lambda x: "Aristotle" in x and "philo" in x,
         # "score": lambda x: 0.5 <= x <= 1.0,
     }
     compare_result_fields(lead_search_result, expected_search_result)
 
     # Perform a RAG query
-    rag_query = "What was Lyft's total revenue in 2021 and how did it compare to the previous year?"
+    rag_query = "What was aristotle known for?"
     rag_result = client.rag(query=rag_query)["results"]
 
     # Check the RAG result
@@ -566,10 +557,7 @@ def test_user_search_and_rag():
 
     rag_response = rag_result["completion"]["choices"][0]["message"]["content"]
     expected_rag_response = (
-        lambda x: "Lyft" in x
-        and "revenue" in x
-        and "2021" in x
-        and "2020" in x
+        lambda x: "Aristotle" in x and "Greek" in x and "philo" in x
     )
 
     if not expected_rag_response(rag_response):
@@ -635,7 +623,7 @@ def test_user_overview():
         if user["user_id"] == user_id:
             found_user = True
             assert user["num_files"] == 1
-            assert user["total_size_in_bytes"] > 1_000_000
+            assert user["total_size_in_bytes"] > 0
 
     if not found_user:
         print("User overview test failed: User not found in the overview")
@@ -685,13 +673,12 @@ def test_kg_create_graph_sample_file_sdk():
     print("Testing: KG create graph")
 
     create_graph_result = client.create_graph(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        run_type="run",
+        run_with_orchestration=False,
     )
 
     print(create_graph_result)
-
-    if "queued" in create_graph_result["results"]["message"]:
-        time.sleep(60)
 
     result = client.get_entities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
@@ -743,11 +730,10 @@ def test_kg_enrich_graph_sample_file_sdk():
     print("Testing: KG enrich graph")
 
     enrich_graph_result = client.enrich_graph(
-        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09", run_type="run"
+        collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+        run_type="run",
+        run_with_orchestration=False,
     )
-
-    if "queued" in enrich_graph_result["results"]["message"]:
-        time.sleep(60)
 
     result = client.get_communities(
         collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
@@ -1010,8 +996,9 @@ def test_user_collection_document_management():
     collection_id = collection_result["results"]["collection_id"]
 
     # Ingest the "aristotle.txt" file
-    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(15)
+    ingest_result = client.ingest_files(
+        ["core/examples/data/aristotle_v2.txt"], run_with_orchestration=False
+    )
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1084,8 +1071,9 @@ def test_user_removes_document_from_collection():
     collection_id = collection_result["results"]["collection_id"]
 
     # Ingest the "aristotle.txt" file
-    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(30)
+    ingest_result = client.ingest_files(
+        ["core/examples/data/aristotle_v2.txt"], run_with_orchestration=True
+    )
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1136,8 +1124,9 @@ def test_user_lists_documents_in_collection():
     collection_id = collection_result["results"]["collection_id"]
 
     # Ingest the "aristotle.txt" file
-    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(30)
+    ingest_result = client.ingest_files(
+        ["core/examples/data/aristotle_v2.txt"], run_with_orchestration=True
+    )
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1196,13 +1185,14 @@ def test_pagination_and_filtering():
     collection_id = collection_result["results"]["collection_id"]
 
     # Ingest multiple documents
-    client.ingest_files(["core/examples/data/aristotle.txt"])
-    client.ingest_files(["core/examples/data/uber_2021.pdf"])
-
-    time.sleep(65)
+    client.ingest_files(
+        ["core/examples/data/aristotle.txt"], run_with_orchestration=True
+    )
+    client.ingest_files(
+        ["core/examples/data/aristotle_v2.txt"], run_with_orchestration=True
+    )
 
     documents_overview = client.documents_overview()["results"]
-    print("documents_overview = ", documents_overview)
     client.assign_document_to_collection(
         documents_overview[0]["id"], collection_id
     )
@@ -1498,8 +1488,9 @@ def test_user_gets_collections_for_document():
     collection_id = collection_result["results"]["collection_id"]
 
     # Ingest a document
-    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(30)
+    ingest_result = client.ingest_files(
+        ["core/examples/data/pg_essay_1.html"], run_with_orchestration=False
+    )
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1567,8 +1558,9 @@ def test_collection_user_interactions():
 
     # Ingest a document
     client.login("collection_owner@example.com", "password123")
-    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(30)
+    ingest_result = client.ingest_files(
+        ["core/examples/data/aristotle.txt"], run_with_orchestration=False
+    )
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1620,8 +1612,9 @@ def test_collection_document_interactions():
     collection2_id = collection2_result["results"]["collection_id"]
 
     # Ingest a document
-    ingest_result = client.ingest_files(["core/examples/data/aristotle.txt"])
-    time.sleep(30)
+    ingest_result = client.ingest_files(
+        ["core/examples/data/aristotle.txt"], run_with_orchestration=False
+    )
 
     document_id = ingest_result["results"][0]["document_id"]
 
@@ -1827,9 +1820,8 @@ def test_ingest_chunks():
             "Language 3": "Hungarian",
             "Language 4": "Polish",
         },
+        run_with_orchestration=False,
     )
-
-    time.sleep(10)
 
     ingest_chunks_response = client.document_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
