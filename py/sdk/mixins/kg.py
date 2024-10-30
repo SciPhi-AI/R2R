@@ -67,11 +67,11 @@ class KGMixins:
 
     async def get_entities(
         self,
-        collection_id: str,
-        offset: int = 0,
-        limit: int = 100,
-        entity_level: Optional[str] = "collection",
+        collection_id: Optional[Union[UUID, str]] = None,
+        entity_level: Optional[str] = None,
         entity_ids: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Retrieve entities from the knowledge graph.
@@ -86,24 +86,26 @@ class KGMixins:
         Returns:
             dict: A dictionary containing the retrieved entities and total count.
         """
+
         params = {
-            "entity_level": entity_level,
             "collection_id": collection_id,
+            "entity_level": entity_level,
+            "entity_ids": entity_ids,
             "offset": offset,
             "limit": limit,
         }
-        if entity_ids:
-            params["entity_ids"] = ",".join(entity_ids)
+
+        params = {k: v for k, v in params.items() if v is not None}
 
         return await self._make_request("GET", "entities", params=params)  # type: ignore
 
     async def get_triples(
         self,
-        collection_id: str,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[Union[UUID, str]] = None,
         entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Retrieve triples from the knowledge graph.
@@ -118,27 +120,26 @@ class KGMixins:
         Returns:
             dict: A dictionary containing the retrieved triples and total count.
         """
+
         params = {
             "collection_id": collection_id,
+            "entity_names": entity_names,
+            "triple_ids": triple_ids,
             "offset": offset,
             "limit": limit,
         }
 
-        if entity_names:
-            params["entity_names"] = entity_names
-
-        if triple_ids:
-            params["triple_ids"] = ",".join(triple_ids)
+        params = {k: v for k, v in params.items() if v is not None}
 
         return await self._make_request("GET", "triples", params=params)  # type: ignore
 
     async def get_communities(
         self,
-        collection_id: str,
-        offset: int = 0,
-        limit: int = 100,
+        collection_id: Optional[Union[UUID, str]] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Retrieve communities from the knowledge graph.
@@ -153,16 +154,16 @@ class KGMixins:
         Returns:
             dict: A dictionary containing the retrieved communities.
         """
+
         params = {
             "collection_id": collection_id,
+            "levels": levels,
+            "community_numbers": community_numbers,
             "offset": offset,
             "limit": limit,
         }
 
-        if levels:
-            params["levels"] = levels
-        if community_numbers:
-            params["community_numbers"] = community_numbers
+        params = {k: v for k, v in params.items() if v is not None}
 
         return await self._make_request("GET", "communities", params=params)  # type: ignore
 
