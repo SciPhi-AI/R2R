@@ -7,9 +7,6 @@ max_characters = 1_024
 combine_under_n_chars = 128
 overlap = 256
 
-    [ingestion.extra_parsers]
-    pdf = "zerox"
-
 [orchestration]
 provider = "hatchet"
 kg_creation_concurrency_lipmit = 32

@@ -4,7 +4,7 @@ from contextlib import ExitStack
 from typing import Optional, Union
 from uuid import UUID
 
-from core.base import IndexMeasure, IndexMethod, VectorTableName
+from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
 
 class IngestionMixins:
@@ -205,6 +205,7 @@ class IngestionMixins:
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_arguments: Optional[dict] = None,
         index_name: Optional[str] = None,
+        index_column: Optional[list[str]] = None,
         concurrently: bool = True,
     ) -> dict:
         """
@@ -227,6 +228,7 @@ class IngestionMixins:
             "index_measure": index_measure,
             "index_arguments": index_arguments,
             "index_name": index_name,
+            "index_column": index_column,
             "concurrently": concurrently,
         }
         return await self._make_request(  # type: ignore

@@ -27,6 +27,7 @@ jobs:
           - sdk-retrieval
           - sdk-auth
           - sdk-collections
+          - sdk-prompts
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: 'false'
@@ -81,4 +82,9 @@ jobs:
       - name: Run SDK Collections Tests
         if: matrix.test_category == 'sdk-collections'
         uses: ./.github/actions/run-sdk-collections-tests
+        continue-on-error: true
+
+      - name: Run SDK Prompt Tests
+        if: matrix.test_category == 'sdk-prompts'
+        uses: ./.github/actions/run-sdk-prompt-management-tests
         continue-on-error: true
