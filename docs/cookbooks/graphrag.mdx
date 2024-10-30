@@ -456,8 +456,10 @@ You can see the list of communities in the graph using the following API endpoin
 
 A knowledge graph search performs similarity search on the entity and community description embeddings.
 
-```bash
 
+<Tabs>
+<Tab title="CLI">
+```bash
 r2r search --query="Who is Aristotle?" --use-kg-search
 
 # The answer will be returned in JSON format and contains results from entities, relationships and communities. Following is a snippet of the output:
@@ -477,17 +479,137 @@ Vector search results:
 ]
 
 KG search results:
-{
-  'local_result': {
-    'query': 'Who is Aristotle?',
-    'entities': {'0': {'name': 'Aristotle', 'description': 'Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...'}},
-    'relationships': {},
-    'communities': {'0': {'summary': '```json\n{\n    "title": "Aristotle and His Contributions",\n    "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.",\n    "rating": 9.5,\n    "rating_explanation": "The impact severity rating is high due to Aristotle's foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.",\n    "findings": [\n        {\n            "summary": "Aristotle's Foundational Role in Logic",\n            "explanation": "Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six bo ...}}}}
+[
+  {
+    "method": "local",
+    "content": {
+      "name": "Aristotle",
+      "description": "Aristotle was an ancient Greek philosopher and polymath.",
+      "metadata": null
+    },
+    "result_type": "entity",
+    "extraction_ids": [
+      "56b82827-f6c5-5f52-af98-bde5441c1c0d",
+      "1ad47232-453b-5d1a-841c-3912403cbe21",
+      "a6d061ee-d5e1-568a-8910-6e86e196b82e",
+      "bef9569b-c17b-5bdc-85a1-42b143ba4ceb"
+    ],
+    "metadata": {
+      "associated_query": "Who is Aristotle?"
+    }
   },
-  'global_result': None
-}
+  {
+    "method": "local",
+    "content": {
+      "name": "Aristotle and His Contributions",
+      "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.",
+      "rating": 9.5,
+      "rating_explanation": "The impact severity rating is high due to Aristotle's foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.",
+      "findings": [
+        " Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six books, which were later translated into Arabic and Latin, played a crucial role in the development of logic and philosophy. [Data: Entities (15561), Relationships (14388, 14389)]",
+        "Aristotle's contributions to biology were foundational, laying the groundwork for the study of living organisms. His works on plants, animals, and human physiology have influenced medical science and continue to be referenced in modern biological research. [Data: Entities (15561), Relationships (14388, 14389)]",
+        "Aristotle's political theories, including his concept of the 'mixed constitution' and his ideas on the ideal state, have been influential in shaping political thought and governance. His works on ethics and politics have been studied and debated for centuries, influencing thinkers from antiquity to the present day. [Data: Entities (15561), Relationships (14388, 14389)]",
+        "Aristotle's influence on economics is evident in his theories on value, supply, and demand, which laid the groundwork for modern economic thought. His ideas on the 'golden mean' and the concept of the 'invisible hand' have been referenced in numerous economic theories and continue to be studied in modern economic analysis. [Data: Entities (15561), Relationships (14388, 14389)]",
+        "Aristotle's teachings on rhetoric and persuasion have been studied and debated for centuries, influencing thinkers from antiquity to the present day. His works on rhetoric and persuasion have been referenced in numerous philosophical and literary texts, highlighting his enduring influence on the study of communication and persuasion. [Data: Entities (15561), Relationships (14388, 14389)]"
+      ],
+      "metadata": null
+    },
+    "result_type": "community",
+    "extraction_ids": null,
+    "metadata": {
+      "associated_query": "Who is Aristotle?"
+    }
+  }
+]
 Time taken: 2.39 seconds
 ```
+</Tab>
+
+<Tab title="SDK">
+```python
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+query = "Who is Aristotle?"
+kg_search_settings = { 'use_kg_search': True }
+result = client.search(query, kg_search_settings=kg_search_settings)
+print(result)
+
+# Example Response
+{
+  "results": {
+    "vector_search_results": [
+      {
+        "extraction_id": "9737dbd9-f92c-5907-9439-452d836bfb93",
+        "document_id": "d8958aee-405f-5159-a295-7c6a51a381c9",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "collection_ids": [
+          "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+        ],
+        "score": 0.7393344796100582,
+        "text": "Aristotle was an ancient Greek philosopher and polymath, recognized as the father of various fields including logic, biology, and political science. He authored significant works such as the *Nicomachean Ethics* and *Politics*, where he explored concepts of virtue, governance, and the nature of reality, while also critiquing Platos ideas. His teachings and observations laid the groundwork for numerous disciplines, influencing thinkers ...",
+        "metadata": {
+          "version": "v0",
+          "chunk_order": 27,
+          "document_type": "pdf",
+          "unstructured_filetype": "application/pdf",
+          "unstructured_languages": [
+            "eng"
+          ],
+          "unstructured_page_number": 6,
+          "partitioned_by_unstructured": true,
+          "associated_query": "Who is Aristotle?"
+        }
+      },
+      ....
+    ],
+    "kg_search_results": [
+      {
+        "method": "local",
+        "content": {
+          "name": "Aristotle",
+          "description": "Aristotle was an ancient Greek philosopher and polymath.",
+          "metadata": null
+        },
+        "result_type": "entity",
+        "extraction_ids": [
+          "56b82827-f6c5-5f52-af98-bde5441c1c0d",
+          "1ad47232-453b-5d1a-841c-3912403cbe21",
+          "a6d061ee-d5e1-568a-8910-6e86e196b82e",
+          "bef9569b-c17b-5bdc-85a1-42b143ba4ceb"
+        ],
+        "metadata": {
+          "associated_query": "Who is Aristotle?"
+        }
+      },
+      {
+        "method": "local",
+        "content": {
+          "name": "Aristotle and His Contributions",
+          "summary": "The community revolves around Aristotle, an ancient Greek philosopher and polymath, who made significant contributions to various fields including logic, biology, political science, and economics. His works, such as 'Politics' and 'Nicomachean Ethics', have influenced numerous disciplines and thinkers from antiquity through the Middle Ages and beyond. The relationships between his various works and the fields he contributed to highlight his profound impact on Western thought.",
+          "rating": 9.5,
+          "rating_explanation": "The impact severity rating is high due to Aristotle's foundational influence on multiple disciplines and his enduring legacy in Western philosophy and science.",
+          "findings": [
+            " Aristotle is credited with the earliest study of formal logic, and his conception of it was the dominant form of Western logic until the 19th-century advances in mathematical logic. His works compiled into a set of six books, which were later translated into Arabic and Latin, played a crucial role in the development of logic and philosophy. [Data: Entities (15561), Relationships (14388, 14389)]",
+            "Aristotle's contributions to biology were foundational, laying the groundwork for the study of living organisms. His works on plants, animals, and human physiology have influenced medical science and continue to be referenced in modern biological research. [Data: Entities (15561), Relationships (14388, 14389)]",
+            "Aristotle's political theories, including his concept of the 'mixed constitution' and his ideas on the ideal state, have been influential in shaping political thought and governance. His works on ethics and politics have been studied and debated for centuries, influencing thinkers from antiquity to the present day. [Data: Entities (15561), Relationships (14388, 14389)]",
+            "Aristotle's influence on economics is evident in his theories on value, supply, and demand, which laid the groundwork for modern economic thought. His ideas on the 'golden mean' and the concept of the 'invisible hand' have been referenced in numerous economic theories and continue to be studied in modern economic analysis. [Data: Entities (15561), Relationships (14388, 14389)]",
+            "Aristotle's teachings on rhetoric and persuasion have been studied and debated for centuries, influencing thinkers from antiquity to the present day. His works on rhetoric and persuasion have been referenced in numerous philosophical and literary texts, highlighting his enduring influence on the study of communication and persuasion. [Data: Entities (15561), Relationships (14388, 14389)]"
+          ],
+          "metadata": null
+        },
+        "result_type": "community",
+        "extraction_ids": null,
+        "metadata": {
+          "associated_query": "Who is Aristotle?"
+        }
+      },...
+    ]
+  }
+}
+```
+</Tab>
+</Tabs>
 
 # Conclusion
 
