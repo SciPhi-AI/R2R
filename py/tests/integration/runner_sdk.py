@@ -585,6 +585,8 @@ def test_user_search_and_rag():
 def test_user_password_management():
     print("Testing: User password management")
 
+    client.login("user_test@example.com", "password123")
+    
     # Change password
     client.change_password("password123", "new_password")
     # Request password reset
