@@ -93,10 +93,6 @@ class KGMixins:
             "entity_ids": entity_ids,
             "offset": offset,
             "limit": limit,
-            "entity_level": entity_level,
-            "entity_ids": (
-                ",".join(entity_ids) if entity_ids is not None else ""
-            ),
         }
 
         params = {k: v for k, v in params.items() if v is not None}
@@ -165,8 +161,6 @@ class KGMixins:
             "community_numbers": community_numbers,
             "offset": offset,
             "limit": limit,
-            "levels": levels,
-            "community_numbers": community_numbers,
         }
 
         params = {k: v for k, v in params.items() if v is not None}

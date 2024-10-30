@@ -301,30 +301,40 @@ class PostgresVectorHandler(VectorHandler):
             # Convert query vector to binary format
             binary_query = quantize_vector_to_binary(query_vector)
             # TODO - Put depth multiplier in config / settings
-            extended_limit = search_settings.search_limit * 20  # Get 20x candidates for re-ranking
+            extended_limit = (
+                search_settings.search_limit * 20
+            )  # Get 20x candidates for re-ranking
+            where_clause = ""
 
-            if (imeasure_obj == IndexMeasure.hamming_distance or 
-                imeasure_obj == IndexMeasure.jaccard_distance):
+            if imeasure_obj in [
+                IndexMeasure.hamming_distance,
+                IndexMeasure.jaccard_distance,
+            ]:
                 binary_search_measure_repr = imeasure_obj.pgvector_repr
             else:
-                binary_search_measure_repr = IndexMeasure.hamming_distance.pgvector_repr
+                binary_search_measure_repr = (
+                    IndexMeasure.hamming_distance.pgvector_repr
+                )
 
             # Use binary column and binary-specific distance measures for first stage
             stage1_distance = f"{table_name}.vec_binary {binary_search_measure_repr} $1::bit({self.dimension})"
             stage1_param = binary_query
 
             cols = [f"{table_name}.{col}" for col in base_cols]
-            cols.append(f"{table_name}.vec")  # Need original vector for re-ranking
+            cols.append(
+                f"{table_name}.vec"
+            )  # Need original vector for re-ranking
 
             if search_settings.include_metadatas:
                 cols.append(f"{table_name}.metadata")
 
             select_clause = ", ".join(cols)
-            where_clause = ""
             params.append(stage1_param)
 
             if search_settings.filters:
-                where_clause = self._build_filters(search_settings.filters, params)
+                where_clause = self._build_filters(
+                    search_settings.filters, params
+                )
                 where_clause = f"WHERE {where_clause}"
 
             # First stage: Get candidates using binary search
@@ -352,12 +362,14 @@ class PostgresVectorHandler(VectorHandler):
             LIMIT ${len(params) + 3}
             """
 
-            params.extend([
-                extended_limit,  # First stage limit
-                search_settings.offset,
-                search_settings.search_limit,  # Final limit
-                str(query_vector),  # For re-ranking
-            ])
+            params.extend(
+                [
+                    extended_limit,  # First stage limit
+                    search_settings.offset,
+                    search_settings.search_limit,  # Final limit
+                    str(query_vector),  # For re-ranking
+                ]
+            )
 
         else:
             # Standard float vector handling
@@ -370,11 +382,12 @@ class PostgresVectorHandler(VectorHandler):
                 cols.append(f"{table_name}.metadata")
 
             select_clause = ", ".join(cols)
-            where_clause = ""
             params.append(str(query_vector))
 
             if search_settings.filters:
-                where_clause = self._build_filters(search_settings.filters, params)
+                where_clause = self._build_filters(
+                    search_settings.filters, params
+                )
                 where_clause = f"WHERE {where_clause}"
 
             query = f"""
@@ -385,7 +398,9 @@ class PostgresVectorHandler(VectorHandler):
             LIMIT ${len(params) + 1}
             OFFSET ${len(params) + 2}
             """
-            params.extend([search_settings.search_limit, search_settings.offset])
+            params.extend(
+                [search_settings.search_limit, search_settings.offset]
+            )
 
         results = await self.connection_manager.fetch_query(query, params)
 
@@ -396,7 +411,11 @@ class PostgresVectorHandler(VectorHandler):
                 user_id=UUID(str(result["user_id"])),
                 collection_ids=result["collection_ids"],
                 text=result["text"],
-                score=(1 - float(result["distance"])) if "distance" in result else -1,
+                score=(
+                    (1 - float(result["distance"]))
+                    if "distance" in result
+                    else -1
+                ),
                 metadata=(
                     json.loads(result["metadata"])
                     if search_settings.include_metadatas
