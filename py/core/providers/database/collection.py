@@ -352,14 +352,14 @@ class PostgresCollectionHandler(CollectionHandler):
         """Get an overview of collections, optionally filtered by collection IDs, with pagination."""
         query = f"""
             WITH collection_overview AS (
-                SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at,
+                SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, g.kg_enrichment_status,
                     COUNT(DISTINCT u.user_id) AS user_count,
                     COUNT(DISTINCT d.document_id) AS document_count
                 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} g
                 LEFT JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
                 LEFT JOIN {self._get_table_name('document_info')} d ON g.collection_id = ANY(d.collection_ids)
                 {' WHERE g.collection_id = ANY($1)' if collection_ids else ''}
-                GROUP BY g.collection_id, g.name, g.description, g.created_at, g.updated_at
+                GROUP BY g.collection_id, g.name, g.description, g.created_at, g.updated_at, g.kg_enrichment_status
             ),
             counted_overview AS (
                 SELECT *, COUNT(*) OVER() AS total_entries
@@ -393,6 +393,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 updated_at=row["updated_at"],
                 user_count=row["user_count"],
                 document_count=row["document_count"],
+                kg_enrichment_status=row["kg_enrichment_status"],
             )
             for row in results
         ]

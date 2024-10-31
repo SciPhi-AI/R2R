@@ -55,6 +55,8 @@ class AnalyticsResponse(BaseModel):
 class AppSettingsResponse(BaseModel):
     config: dict[str, Any]
     prompts: dict[str, Any]
+    r2r_project_name: str
+    # r2r_version: str
 
 
 class ScoreCompletionResponse(BaseModel):
@@ -126,6 +128,7 @@ class CollectionOverviewResponse(BaseModel):
     updated_at: datetime
     user_count: int
     document_count: int
+    kg_enrichment_status: str
 
 
 class ConversationOverviewResponse(BaseModel):

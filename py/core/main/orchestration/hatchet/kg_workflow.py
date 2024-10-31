@@ -9,7 +9,7 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-from core.base.abstractions import KGExtractionStatus
+from core.base.abstractions import KGEnrichmentStatus, KGExtractionStatus
 
 from ...services import KgService
 
@@ -26,6 +26,10 @@ def hatchet_kg_factory(
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
+
+            if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -291,8 +295,8 @@ def hatchet_kg_factory(
                         key=f"{i}/{total_workflows}_entity_deduplication_part",
                     )
                 )
-            await asyncio.gather(*workflows)
 
+            await asyncio.gather(*workflows)
             return {
                 "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
             }
@@ -384,26 +388,50 @@ def hatchet_kg_factory(
             for i in range(total_workflows):
                 offset = i * parallel_communities
                 workflows.append(
-                    context.aio.spawn_workflow(
-                        "kg-community-summary",
-                        {
-                            "request": {
-                                "offset": offset,
-                                "limit": min(
-                                    parallel_communities,
-                                    num_communities - offset,
-                                ),
-                                "collection_id": collection_id,
-                                **input_data["kg_enrichment_settings"],
-                            }
-                        },
-                        key=f"{i}/{total_workflows}_community_summary",
-                    )
+                    (
+                        await context.aio.spawn_workflow(
+                            "kg-community-summary",
+                            {
+                                "request": {
+                                    "offset": offset,
+                                    "limit": min(
+                                        parallel_communities,
+                                        num_communities - offset,
+                                    ),
+                                    "collection_id": str(collection_id),
+                                    **input_data["kg_enrichment_settings"],
+                                }
+                            },
+                            key=f"{i}/{total_workflows}_community_summary",
+                        )
+                    ).result()
                 )
-            await asyncio.gather(*workflows)
+
+            results = await asyncio.gather(*workflows)
+
+            logger.info(f"Ran {len(results)} workflows for community summary")
+
+            # set status to success
+            await self.kg_service.providers.database.set_workflow_status(
+                id=collection_id,
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.SUCCESS,
+            )
+
             return {
-                "result": f"Successfully spawned summary workflows for {num_communities} communities."
+                "result": f"Successfully completed enrichment for collection {collection_id} in {len(results)} workflows."
             }
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            collection_id = context.workflow_input()["request"][
+                "collection_id"
+            ]
+            await self.kg_service.providers.database.set_workflow_status(
+                id=collection_id,
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.FAILED,
+            )
 
     @orchestration_provider.workflow(
         name="kg-community-summary", timeout="360m"

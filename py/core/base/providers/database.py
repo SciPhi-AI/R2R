@@ -1140,7 +1140,10 @@ class DatabaseProvider(Provider):
         return await self.document_handler.get_workflow_status(id, status_type)
 
     async def set_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str, status: str
+        self,
+        id: Union[UUID, list[UUID]],
+        status_type: str,
+        status: str,
     ):
         return await self.document_handler.set_workflow_status(
             id, status_type, status
