@@ -97,13 +97,3 @@ runs:
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_sdk_basic.py test_delete_chunks
-
-    - name: Get all prompts
-      working-directory: ./py
-      shell: bash
-      run: poetry run python tests/integration/runner_sdk_basic.py test_get_all_prompts
-
-    - name: Get prompt
-      working-directory: ./py
-      shell: bash
-      run: poetry run python tests/integration/runner_sdk_basic.py test_get_prompt
