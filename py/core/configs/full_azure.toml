@@ -34,7 +34,7 @@ max_characters = 1_024
 combine_under_n_chars = 128
 overlap = 256
   [ingestion.extra_parsers]
-    pdf = "basic"
+    pdf = "zerox"
 
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
