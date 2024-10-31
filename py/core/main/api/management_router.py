@@ -840,6 +840,21 @@ class ManagementRouter(BaseRouter):
                 "new_branch_id": new_branch_id,
             }
 
+        @self.router.patch("/messages/{message_id}/metadata")
+        @self.base_endpoint
+        async def update_message_metadata(
+            message_id: str = Path(..., description="Message ID"),
+            metadata: dict = Body(..., description="Metadata to update"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """Update metadata for a specific message.
+
+            The provided metadata will be merged with existing metadata.
+            New keys will be added, existing keys will be updated.
+            """
+            await self.service.update_message_metadata(message_id, metadata)
+            return "ok"
+
         @self.router.get("/branches_overview/{conversation_id}")
         @self.base_endpoint
         async def branches_overview(

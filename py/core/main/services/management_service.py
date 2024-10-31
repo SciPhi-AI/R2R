@@ -713,6 +713,14 @@ class ManagementService(Service):
             message_id, new_content
         )
 
+    @telemetry_event("addMessageMetadata")
+    async def update_message_metadata(
+        self, message_id: str, metadata: dict, auth_user=None
+    ):
+        await self.logging_connection.update_message_metadata(
+            message_id, metadata
+        )
+
     @telemetry_event("BranchesOverview")
     async def branches_overview(
         self, conversation_id: str, auth_user=None

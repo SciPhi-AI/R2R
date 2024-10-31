@@ -1532,6 +1532,23 @@ export class r2rClient {
   }
 
   /**
+   * Update the metadata of a message in an existing conversation.
+   * @param message_id The ID of the message to update.
+   * @param metadata The updated metadata.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("updateMessageMetadata")
+  async updateMessageMetadata(
+    message_id: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return this._makeRequest("PATCH", `messages/${message_id}/metadata`, {
+      data: metadata,
+    });
+  }
+
+  /**
    * Get an overview of branches in a conversation.
    * @param conversationId The ID of the conversation to get branches for.
    * @returns A promise that resolves to the response from the server.

@@ -430,6 +430,47 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         await self.conn.commit()
         return new_message_id, new_branch_id
 
+    async def update_message_metadata(
+        self, message_id: str, metadata: dict
+    ) -> None:
+        """Update metadata for a specific message."""
+
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        try:
+            await self.conn.execute("BEGIN TRANSACTION")
+
+            cursor = await self.conn.execute(
+                "SELECT metadata FROM messages WHERE id = ?",
+                (message_id,),
+            )
+            row = await cursor.fetchone()
+            if not row:
+                raise ValueError(f"Message {message_id} not found")
+            current_metadata_json = row[0]
+            current_metadata = (
+                json.loads(current_metadata_json)
+                if current_metadata_json
+                else {}
+            )
+
+            updated_metadata = {**current_metadata, **metadata}
+            updated_metadata_json = json.dumps(updated_metadata)
+
+            await self.conn.execute(
+                "UPDATE messages SET metadata = ? WHERE id = ?",
+                (updated_metadata_json, message_id),
+            )
+
+            await self.conn.commit()
+
+        except Exception as e:
+            await self.conn.rollback()
+            raise e
+
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
     ) -> Tuple[str, list[Message]]:
