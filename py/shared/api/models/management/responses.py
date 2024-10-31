@@ -133,6 +133,11 @@ class ConversationOverviewResponse(BaseModel):
     created_at: datetime
 
 
+class VerificationResult(BaseModel):
+    verification_code: str
+    expiry: datetime
+
+
 class AddUserResponse(BaseModel):
     result: bool
 
@@ -165,6 +170,7 @@ WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
+WrappedVerificationResult = ResultsWrapper[VerificationResult]
 WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
     list[ConversationOverviewResponse]
 ]

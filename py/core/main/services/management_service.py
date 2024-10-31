@@ -740,3 +740,23 @@ class ManagementService(Service):
     @telemetry_event("DeleteConversation")
     async def delete_conversation(self, conversation_id: str, auth_user=None):
         await self.logging_connection.delete_conversation(conversation_id)
+
+    @telemetry_event("GetUserVerificationCode")
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        """
+        Get only the verification code data for a specific user.
+        This method should be called after superuser authorization has been verified.
+        """
+        verification_data = (
+            await self.providers.database.get_user_verification_data(user_id)
+        )
+        return {
+            "verification_code": verification_data["verification_data"][
+                "verification_code"
+            ],
+            "expiry": verification_data["verification_data"][
+                "verification_code_expiry"
+            ],
+        }
