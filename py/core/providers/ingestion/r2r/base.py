@@ -1,6 +1,5 @@
 # type: ignore
 import logging
-import shutil
 import time
 from typing import Any, AsyncGenerator, Optional, Union
 
@@ -42,7 +41,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.HTM: parsers.HTMLParser,
         DocumentType.JSON: parsers.JSONParser,
         DocumentType.MD: parsers.MDParser,
-        DocumentType.PDF: parsers.VLMPDFParser,
+        DocumentType.PDF: parsers.BasicPDFParser,
         DocumentType.PPTX: parsers.PPTParser,
         DocumentType.TXT: parsers.TextParser,
         DocumentType.XLSX: parsers.XLSXParser,
@@ -51,8 +50,6 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.JPG: parsers.ImageParser,
         DocumentType.PNG: parsers.ImageParser,
         DocumentType.SVG: parsers.ImageParser,
-        DocumentType.WEBP: parsers.ImageParser,
-        DocumentType.ICO: parsers.ImageParser,
         DocumentType.MP3: parsers.AudioParser,
     }
 
@@ -60,9 +57,17 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,
-            "basic": parsers.BasicPDFParser,
+            "zerox": parsers.VLMPDFParser,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
+    }
+
+    IMAGE_TYPES = {
+        DocumentType.GIF,
+        DocumentType.JPG,
+        DocumentType.JPEG,
+        DocumentType.PNG,
+        DocumentType.SVG,
     }
 
     def __init__(
@@ -203,27 +208,23 @@ class R2RIngestionProvider(IngestionProvider):
         else:
             t0 = time.time()
             contents = ""
-
-            def check_vlm(model_name: str) -> bool:
-                return "gpt-4o" in model_name
-
-            is_not_vlm = not check_vlm(
-                ingestion_config_override.get("vision_pdf_model")
-                or self.config.vision_pdf_model
+            parser_overrides = ingestion_config_override.get(
+                "parser_overrides", {}
             )
-
-            has_not_poppler = not bool(
-                shutil.which("pdftoppm")
-            )  # Check if poppler is installed
-
-            if document.document_type == DocumentType.PDF and (
-                is_not_vlm or has_not_poppler
-            ):
+            if document.document_type.value in parser_overrides:
                 logger.info(
-                    f"Reverting to basic PDF parser as the provided is not a proper VLM model."
+                    f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
                 )
+                # TODO - Cleanup this approach to be less hardcoded
+                if (
+                    document.document_type != DocumentType.PDF
+                    or parser_overrides[DocumentType.PDF.value] != "zerox"
+                ):
+                    raise ValueError(
+                        "Only Zerox PDF parser override is available."
+                    )
                 async for text in self.parsers[
-                    f"basic_{DocumentType.PDF.value}"
+                    f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):
                     contents += text + "\n"
             else:

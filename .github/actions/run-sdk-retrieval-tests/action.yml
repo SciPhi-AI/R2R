@@ -7,25 +7,25 @@ runs:
     - name: Ingest sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_ingest_sample_file_sdk
+      run: poetry run python tests/integration/runner_sdk_basic.py test_ingest_sample_file_sdk
 
     - name: Vector search sample file filter (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_vector_search_sample_file_filter_sdk
+      run: poetry run python tests/integration/runner_sdk_basic.py test_vector_search_sample_file_filter_sdk
 
     - name: Hybrid search sample file filter (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_hybrid_search_sample_file_filter_sdk
+      run: poetry run python tests/integration/runner_sdk_basic.py test_hybrid_search_sample_file_filter_sdk
 
     - name: RAG response sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_rag_response_sample_file_sdk
+      run: poetry run python tests/integration/runner_sdk_basic.py test_rag_response_sample_file_sdk
 
 
     - name: Agent response sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_conversation_history_sdk
+      run: poetry run python tests/integration/runner_sdk_basic.py test_conversation_history_sdk

@@ -23,7 +23,7 @@ class ManagementMixins:
         Returns:
             dict: The response from the server.
         """
-        data: dict = {name: name}
+        data: dict = {"name": name}
         if template is not None:
             data["template"] = template
         if input_types is not None:

@@ -169,13 +169,24 @@ class CacheablePromptHandler(PromptHandler):
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
-        """Update a prompt and invalidate relevant caches"""
+        """Public method to update a prompt with proper cache invalidation"""
+        # First invalidate all caches for this prompt
+        self._template_cache.invalidate(name)
+        cache_keys_to_invalidate = [
+            key
+            for key in self._prompt_cache._cache.keys()
+            if key.startswith(f"{name}:") or key == name
+        ]
+        for key in cache_keys_to_invalidate:
+            self._prompt_cache.invalidate(key)
+
+        # Perform the update
         await self._update_prompt_impl(name, template, input_types)
 
-        # Invalidate all cached versions of this prompt
-        for key in list(self._prompt_cache._cache.keys()):
-            if key.startswith(f"{name}:"):
-                self._prompt_cache.invalidate(key)
+        # Force refresh template cache
+        template_info = await self._get_template_info(name)
+        if template_info:
+            self._template_cache.set(name, template_info)
 
     @abstractmethod
     async def _update_prompt_impl(
@@ -185,6 +196,11 @@ class CacheablePromptHandler(PromptHandler):
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
         """Implementation of prompt update logic"""
+        pass
+
+    @abstractmethod
+    async def _get_template_info(self, prompt_name: str) -> Optional[dict]:
+        """Get template info with caching"""
         pass
 
 
@@ -321,7 +337,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
 
         return template
 
-    async def _get_template_info(self, prompt_name: str) -> Optional[dict]:
+    async def _get_template_info(self, prompt_name: str) -> Optional[dict]:  # type: ignore
         """Get template info with caching"""
         cached = self._template_cache.get(prompt_name)
         if cached is not None:
@@ -358,28 +374,60 @@ class PostgresPromptHandler(CacheablePromptHandler):
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
-        """Implementation of database prompt update"""
+        """Implementation of database prompt update with proper connection handling"""
         if not template and not input_types:
             return
 
-        updates = []
-        params = [name]
+        # Clear caches first
+        self._template_cache.invalidate(name)
+        for key in list(self._prompt_cache._cache.keys()):
+            if key.startswith(f"{name}:"):
+                self._prompt_cache.invalidate(key)
+
+        # Build update query
+        set_clauses = []
+        params = [name]  # First parameter is always the name
+        param_index = 2  # Start from 2 since $1 is name
+
         if template:
-            updates.append(f"template = ${len(params) + 1}")
+            set_clauses.append(f"template = ${param_index}")
             params.append(template)
+            param_index += 1
+
         if input_types:
-            updates.append(f"input_types = ${len(params) + 1}")
+            set_clauses.append(f"input_types = ${param_index}")
             params.append(json.dumps(input_types))
+            param_index += 1
+
+        set_clauses.append("updated_at = CURRENT_TIMESTAMP")
 
         query = f"""
         UPDATE {self._get_table_name("prompts")}
-        SET {', '.join(updates)}
-        WHERE name = $1;
+        SET {', '.join(set_clauses)}
+        WHERE name = $1
+        RETURNING prompt_id, template, input_types;
         """
 
-        result = await self.connection_manager.execute_query(query, params)
-        if result == "UPDATE 0":
-            raise ValueError(f"Prompt template '{name}' not found")
+        try:
+            # Execute update and get returned values
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+
+            if not result:
+                raise ValueError(f"Prompt template '{name}' not found")
+
+            # Update in-memory state
+            if name in self.prompts:
+                if template:
+                    self.prompts[name]["template"] = template
+                if input_types:
+                    self.prompts[name]["input_types"] = input_types
+                self.prompts[name]["updated_at"] = datetime.now().isoformat()
+
+        except Exception as e:
+            logger.error(f"Failed to update prompt {name}: {str(e)}")
+            raise
 
     async def create_tables(self):
         """Create the necessary tables for storing prompts."""
