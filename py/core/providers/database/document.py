@@ -293,7 +293,10 @@ class PostgresDocumentHandler(DocumentHandler):
         result = list(
             map(
                 await self._get_status_from_table(
-                    ids, out_model.table_name, out_model.value, out_model.id_column
+                    ids,
+                    out_model.table_name(),
+                    status_type,
+                    out_model.id_column(),
                 ),
                 out_model,
             )
@@ -315,7 +318,11 @@ class PostgresDocumentHandler(DocumentHandler):
         out_model = self._get_status_model(status_type)
 
         return await self._set_status_in_table(
-            ids, status, out_model.table_name, out_model.value, out_model.id_column
+            ids,
+            status,
+            out_model.table_name(),
+            status_type,
+            out_model.id_column(),
         )
 
     async def get_document_ids_by_status(
@@ -337,12 +344,8 @@ class PostgresDocumentHandler(DocumentHandler):
             status = [status]
 
         out_model = self._get_status_model(status_type)
-        print(out_model)
-        print(out_model.table_name)
-        print(out_model.value)
-        print(collection_id)
         result = await self._get_ids_from_table(
-            status, out_model.table_name, str(out_model), collection_id
+            status, out_model.table_name(), status_type, collection_id
         )
         return result
 

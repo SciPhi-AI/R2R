@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional, Union, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -126,14 +126,12 @@ class IngestionStatus(str, Enum):
     def __str__(self):
         return self.value
 
-    @property
-    def table_name(self) -> str:
-        """Returns the table name this status applies to."""
+    @classmethod
+    def table_name(cls) -> str:
         return "document_info"
 
-    @property
-    def id_column(self) -> str:
-        """Returns the id column this status applies to."""
+    @classmethod
+    def id_column(cls) -> str:
         return "document_id"
 
 
@@ -148,14 +146,12 @@ class KGExtractionStatus(str, Enum):
     def __str__(self):
         return self.value
 
-    @property
-    def table_name(self) -> str:
-        """Returns the table name this status applies to."""
+    @classmethod
+    def table_name(cls) -> str:
         return "document_info"
 
-    @property
-    def id_column(self) -> str:
-        """Returns the id column this status applies to."""
+    @classmethod
+    def id_column(cls) -> str:
         return "document_id"
 
 
@@ -170,14 +166,12 @@ class KGEnrichmentStatus(str, Enum):
     def __str__(self):
         return self.value
 
-    @property
-    def table_name(self) -> str:
-        """Returns the table name this status applies to."""
+    @classmethod
+    def table_name(cls) -> str:
         return "collections"
 
-    @property
-    def id_column(self) -> str:
-        """Returns the id column this status applies to."""
+    @classmethod
+    def id_column(cls) -> str:
         return "collection_id"
 
 

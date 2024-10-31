@@ -26,6 +26,10 @@ def hatchet_kg_factory(
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
+
+            if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -384,24 +388,28 @@ def hatchet_kg_factory(
             for i in range(total_workflows):
                 offset = i * parallel_communities
                 workflows.append(
-                    context.aio.spawn_workflow(
-                        "kg-community-summary",
-                        {
-                            "request": {
-                                "offset": offset,
-                                "limit": min(
-                                    parallel_communities,
-                                    num_communities - offset,
-                                ),
-                                "collection_id": collection_id,
-                                **input_data["kg_enrichment_settings"],
-                            }
-                        },
-                        key=f"{i}/{total_workflows}_community_summary",
-                    )
+                    (
+                        await context.aio.spawn_workflow(
+                            "kg-community-summary",
+                            {
+                                "request": {
+                                    "offset": offset,
+                                    "limit": min(
+                                        parallel_communities,
+                                        num_communities - offset,
+                                    ),
+                                    "collection_id": str(collection_id),
+                                    **input_data["kg_enrichment_settings"],
+                                }
+                            },
+                            key=f"{i}/{total_workflows}_community_summary",
+                        )
+                    ).result()
                 )
 
             results = await asyncio.gather(*workflows)
+
+            logger.info(f"Ran {len(results)} workflows for community summary")
 
             # set status to success
             await self.kg_service.providers.database.set_workflow_status(

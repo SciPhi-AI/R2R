@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import uuid
 
 from core import GenerationConfig
 from core import R2RException
@@ -15,6 +16,10 @@ def simple_kg_factory(service: KgService):
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
+
+            if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
