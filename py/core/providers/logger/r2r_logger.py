@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from uuid import UUID
 from fastapi.responses import StreamingResponse
 import csv
