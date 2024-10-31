@@ -137,6 +137,39 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 status_code=500,
             )
 
+
+    async def kg_description_entity_deduplication(
+        self, collection_id: UUID, **kwargs
+    ):  
+
+        entities = (
+            await self.database_provider.get_entities(
+                collection_id=collection_id, offset=0, limit=-1, extra_columns=["description_embedding"]
+            )
+        )["entities"]
+
+        logger.info(
+            f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {collection_id}"
+        )
+
+        # deduplicate entities by name
+        deduplicated_entities: dict[str, dict[str, list[str]]] = {}
+
+        deduplication_source_keys = [
+            "extraction_ids",
+            "document_id",
+            "attributes",
+        ]
+        deduplication_target_keys = [
+            "extraction_ids",
+            "document_ids",
+            "attributes",
+        ]
+        deduplication_keys = list(
+            zip(deduplication_source_keys, deduplication_target_keys)
+        )
+
+
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
@@ -153,11 +186,14 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             "kg_entity_deduplication_type"
         ]
 
-        if kg_entity_deduplication_type != KGEntityDeduplicationType.BY_NAME:
-            raise NotImplementedError(
-                f"KGEntityDeduplicationPipe: Deduplication type {kg_entity_deduplication_type} not implemented"
-            )
-        async for result in self.kg_named_entity_deduplication(
-            collection_id, **kwargs
-        ):
-            yield result
+        if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
+            async for result in self.kg_named_entity_deduplication(
+                collection_id, **kwargs
+            ):
+                yield result
+
+        elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_DESCRIPTION:
+            async for result in self.kg_description_entity_deduplication(
+                collection_id, **kwargs
+            ):
+                yield result
