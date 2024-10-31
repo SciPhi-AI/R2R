@@ -785,7 +785,7 @@ class ManagementRouter(BaseRouter):
                         message="Non-superusers cannot query other users' conversations",
                         status_code=403,
                     )
-                user_ids = auth_user.id
+                user_ids = [auth_user.id]
 
             conversations_overview_response = (
                 await self.service.conversations_overview(
