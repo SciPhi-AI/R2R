@@ -63,6 +63,7 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
+    WrappedVerificationResult,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
@@ -81,6 +82,7 @@ __all__ = [
     "UserResponse",
     "WrappedTokenResponse",
     "WrappedUserResponse",
+    "WrappedVerificationResult",
     "WrappedGenericMessageResponse",
     # Ingestion Responses
     "IngestionResponse",

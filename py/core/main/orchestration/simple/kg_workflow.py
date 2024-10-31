@@ -34,7 +34,6 @@ def simple_kg_factory(service: KgService):
             **input_data["kg_creation_settings"],
         )
 
-        print("document_ids = ", document_ids)
         logger.info(
             f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}"
         )

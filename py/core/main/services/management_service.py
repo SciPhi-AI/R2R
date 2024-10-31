@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
 from uuid import UUID
+from fastapi.responses import StreamingResponse
 
 import toml
 
@@ -674,20 +675,33 @@ class ManagementService(Service):
             conversation_id, branch_id
         )
 
+    async def verify_conversation_access(
+        self, conversation_id: str, user_id: UUID
+    ) -> bool:
+        return await self.logging_connection.verify_conversation_access(
+            conversation_id, user_id
+        )
+
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> str:
-        return await self.logging_connection.create_conversation()
+    async def create_conversation(
+        self, user_id: Optional[UUID] = None, auth_user=None
+    ) -> str:
+        return await self.logging_connection.create_conversation(
+            user_id=user_id
+        )
 
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
         self,
         conversation_ids: Optional[list[UUID]] = None,
+        user_ids: Optional[UUID | list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations_overview(
             conversation_ids=conversation_ids,
+            user_ids=user_ids,
             offset=offset,
             limit=limit,
         )
@@ -711,6 +725,22 @@ class ManagementService(Service):
     ) -> Tuple[str, str]:
         return await self.logging_connection.edit_message(
             message_id, new_content
+        )
+
+    @telemetry_event("updateMessageMetadata")
+    async def update_message_metadata(
+        self, message_id: str, metadata: dict, auth_user=None
+    ):
+        await self.logging_connection.update_message_metadata(
+            message_id, metadata
+        )
+
+    @telemetry_event("exportMessagesToCSV")
+    async def export_messages_to_csv(
+        self, chunk_size: int = 1000, return_type: str = "stream"
+    ) -> Union[StreamingResponse, str]:
+        return await self.logging_connection.export_messages_to_csv(
+            chunk_size, return_type
         )
 
     @telemetry_event("BranchesOverview")
@@ -740,3 +770,23 @@ class ManagementService(Service):
     @telemetry_event("DeleteConversation")
     async def delete_conversation(self, conversation_id: str, auth_user=None):
         await self.logging_connection.delete_conversation(conversation_id)
+
+    @telemetry_event("GetUserVerificationCode")
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        """
+        Get only the verification code data for a specific user.
+        This method should be called after superuser authorization has been verified.
+        """
+        verification_data = (
+            await self.providers.database.get_user_verification_data(user_id)
+        )
+        return {
+            "verification_code": verification_data["verification_data"][
+                "verification_code"
+            ],
+            "expiry": verification_data["verification_data"][
+                "verification_code_expiry"
+            ],
+        }

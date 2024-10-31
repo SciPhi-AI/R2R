@@ -485,6 +485,16 @@ class UserHandler(Handler):
     ) -> dict[str, Union[list[UserStats], int]]:
         pass
 
+    @abstractmethod
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        """
+        Get verification data for a specific user.
+        This method should be called after superuser authorization has been verified.
+        """
+        pass
+
 
 class VectorHandler(Handler):
     def __init__(self, *args, **kwargs):
@@ -1367,6 +1377,11 @@ class DatabaseProvider(Provider):
         return await self.user_handler.get_users_overview(
             user_ids, offset, limit
         )
+
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        return await self.user_handler.get_user_verification_data(user_id)
 
     # Vector handler methods
     async def upsert(self, entry: VectorEntry) -> None:
