@@ -4,6 +4,7 @@ from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
 from uuid import UUID
 
 import toml
+import os
 
 from core.base import (
     AnalysisTypes,
@@ -25,6 +26,9 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
+
+from importlib.metadata import version as get_version
+
 
 logger = logging.getLogger()
 
@@ -196,6 +200,8 @@ class ManagementService(Service):
         return {
             "config": config_dict,
             "prompts": prompts,
+            "project_name": os.environ["R2R_PROJECT_NAME"],
+            "r2r_version": get_version("r2r"),
         }
 
     @telemetry_event("UsersOverview")

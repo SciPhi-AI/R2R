@@ -887,10 +887,3 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedDeleteResponse:
             await self.service.delete_conversation(conversation_id)
             return None  # type: ignore
-
-        @self.router.get("/r2r_project_name")
-        @self.base_endpoint
-        async def r2r_project_name(
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> dict:
-            return {"project_name": os.environ["R2R_PROJECT_NAME"]}
