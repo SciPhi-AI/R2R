@@ -409,11 +409,13 @@ class IngestionRouter(BaseRouter):
 
                 simple_ingestor = simple_ingestion_factory(self.service)
                 await simple_ingestor["ingest-chunks"](workflow_input)
-                return {  # type: ignore
-                    "message": "Ingestion task completed successfully.",
-                    "document_id": str(document_uuid),
-                    "task_id": None,
-                }
+                return [
+                    {  # type: ignore
+                        "message": "Ingestion task completed successfully.",
+                        "document_id": str(document_uuid),
+                        "task_id": None,
+                    }
+                ]
 
         @self.router.put(
             "/update_chunk/{document_id}/{extraction_id}",

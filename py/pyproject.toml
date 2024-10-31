@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.2.36"
+version = "3.2.37"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -21,7 +21,7 @@ packages = [
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.11,<3.13"
+python = ">=3.10,<3.13"
 
 alembic = "^1.13.3"
 asyncclick = "^8.1.7.2"

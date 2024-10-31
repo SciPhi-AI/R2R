@@ -6,104 +6,104 @@ runs:
     - name: Ingest sample file (SDK)
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_ingest_sample_file_sdk
+      run: poetry run python tests/integration/runner_sdk_basic.py test_ingest_sample_file_sdk
 
     - name: User creates collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_creates_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_creates_collection
 
     - name: User updates collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_updates_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_updates_collection
 
     - name: User lists collections
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_lists_collections
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_lists_collections
 
     - name: User collection document management
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_collection_document_management
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_collection_document_management
 
     - name: User removes document from collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_removes_document_from_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_removes_document_from_collection
 
     - name: User lists documents in collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_lists_documents_in_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_lists_documents_in_collection
 
     - name: Pagination and filtering
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_pagination_and_filtering
+      run: poetry run python tests/integration/runner_sdk_basic.py test_pagination_and_filtering
 
     - name: Advanced collection management
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_advanced_collection_management
+      run: poetry run python tests/integration/runner_sdk_basic.py test_advanced_collection_management
 
     - name: User gets collection details
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_gets_collection_details
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_gets_collection_details
 
     - name: User adds user to collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_adds_user_to_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_adds_user_to_collection
 
     - name: User removes user from collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_removes_user_from_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_removes_user_from_collection
 
     - name: User lists users in collection
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_lists_users_in_collection
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_lists_users_in_collection
 
     - name: User gets collections for user
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_gets_collections_for_user
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_gets_collections_for_user
 
     - name: User gets collections for document
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_gets_collections_for_document
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_gets_collections_for_document
 
     - name: User permissions
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_user_permissions
+      run: poetry run python tests/integration/runner_sdk_basic.py test_user_permissions
 
     - name: Ingest chunks
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_ingest_chunks
+      run: poetry run python tests/integration/runner_sdk_basic.py test_ingest_chunks
 
     - name: Update chunks
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_update_chunks
+      run: poetry run python tests/integration/runner_sdk_basic.py test_update_chunks
 
     - name: Delete chunks
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_delete_chunks
+      run: poetry run python tests/integration/runner_sdk_basic.py test_delete_chunks
 
     - name: Get all prompts
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_get_all_prompts
+      run: poetry run python tests/integration/runner_sdk_basic.py test_get_all_prompts
 
     - name: Get prompt
       working-directory: ./py
       shell: bash
-      run: poetry run python tests/integration/runner_sdk.py test_get_prompt
+      run: poetry run python tests/integration/runner_sdk_basic.py test_get_prompt

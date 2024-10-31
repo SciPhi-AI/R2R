@@ -86,7 +86,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.JPG: [parsers.ImageParser],
         DocumentType.PNG: [parsers.ImageParser],
         DocumentType.SVG: [parsers.ImageParser],
-        DocumentType.PDF: [parsers.VLMPDFParser],
         DocumentType.MP3: [parsers.AudioParser],
         DocumentType.JSON: [parsers.JSONParser],  # type: ignore
         DocumentType.HTML: [parsers.HTMLParser],  # type: ignore
@@ -96,9 +95,18 @@ class UnstructuredIngestionProvider(IngestionProvider):
     EXTRA_PARSERS = {
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
         DocumentType.PDF: {
-            "basic": parsers.BasicPDFParser,
+            "unstructured": parsers.PDFParserUnstructured,
+            "zerox": parsers.VLMPDFParser,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
+    }
+
+    IMAGE_TYPES = {
+        DocumentType.GIF,
+        DocumentType.JPG,
+        DocumentType.JPEG,
+        DocumentType.PNG,
+        DocumentType.SVG,
     }
 
     def __init__(
@@ -109,7 +117,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ],
     ):
-
         super().__init__(config, database_provider, llm_provider)
         self.config: UnstructuredIngestionConfig = config
         self.database_provider: PostgresDBProvider = database_provider
@@ -149,7 +156,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
 
             self.client = httpx.AsyncClient()
 
-        super().__init__(config, database_provider, llm_provider)
         self.parsers: dict[DocumentType, AsyncParser] = {}
         self._initialize_parsers()
 
@@ -228,25 +234,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
         )
         elements = []
 
-        # allow user to re-override places where unstructured is overriden above
-        # e.g.
-        # "ingestion_config": {
-        #     ...,
-        #     "parser_overrides": {
-        #         "pdf": "unstructured"
-        #     }
-        # }
-        reoverride_with_unst = (
-            parser_overrides.get(document.document_type.value, None)
-            == "unstructured"
-        )
-
         # TODO - Cleanup this approach to be less hardcoded
         # TODO - Remove code duplication between Unstructured & R2R
-        if (
-            document.document_type.value in parser_overrides
-            and not reoverride_with_unst
-        ):
+        if document.document_type.value in parser_overrides:
             logger.info(
                 f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
             )
@@ -257,10 +247,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
             ):
                 elements.append(element)
 
-        elif (
-            document.document_type in self.R2R_FALLBACK_PARSERS.keys()
-            and not reoverride_with_unst
-        ):
+        elif document.document_type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(
                 f"Parsing {document.document_type}: {document.id} with fallback parser"
             )
