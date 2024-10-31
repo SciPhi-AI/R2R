@@ -71,6 +71,7 @@ let newCollectionId: string;
  *     - createConversation
  *     - addMessage
  *     X updateMessage
+ *     X updateMessageMetadata
  *     X branchesOverview
  *     X getNextBranch
  *     X getPreviousBranch

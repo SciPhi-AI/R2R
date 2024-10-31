@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set, Union
+from typing import Optional, Set, Union
 from uuid import UUID
 
 import psutil
@@ -878,6 +878,35 @@ class ManagementRouter(BaseRouter):
                 "new_message_id": new_message_id,
                 "new_branch_id": new_branch_id,
             }
+
+        @self.router.patch("/messages/{message_id}/metadata")
+        @self.base_endpoint
+        async def update_message_metadata(
+            message_id: str = Path(..., description="Message ID"),
+            metadata: dict = Body(..., description="Metadata to update"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """Update metadata for a specific message.
+
+            The provided metadata will be merged with existing metadata.
+            New keys will be added, existing keys will be updated.
+            """
+            await self.service.update_message_metadata(message_id, metadata)
+            return "ok"
+
+        @self.router.get("/export/messages")
+        @self.base_endpoint
+        async def export_messages(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only an authorized user can call the `export/messages` endpoint.",
+                    403,
+                )
+            return await self.service.export_messages_to_csv(
+                return_type="stream"
+            )
 
         @self.router.get("/branches_overview/{conversation_id}")
         @self.base_endpoint

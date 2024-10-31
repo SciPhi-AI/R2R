@@ -739,6 +739,25 @@ class ManagementMixins:
             "PUT", f"update_message/{message_id}", data=message
         )
 
+    async def update_message_metadata(
+        self,
+        message_id: str,
+        metadata: dict[str, Any],
+    ) -> dict:
+        """
+        Update the metadata of a message.
+
+        Args:
+            message_id (str): The ID of the message to update.
+            metadata (dict[str, Any]): The metadata to update.
+
+        Returns:
+            dict: The response from the server.
+        """
+        return await self._make_request(  # type: ignore
+            "PATCH", f"messages/{message_id}/metadata", data=metadata
+        )
+
     async def branches_overview(
         self,
         conversation_id: Union[str, UUID],

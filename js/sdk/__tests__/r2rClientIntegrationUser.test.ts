@@ -67,6 +67,7 @@ const baseUrl = "http://localhost:7272";
  *     - createConversation
  *     - addMessage
  *     X updateMessage
+ *     X updateMessageMetadata
  *     X branchesOverview
  *     X getNextBranch
  *     X getPreviousBranch
