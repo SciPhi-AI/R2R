@@ -196,3 +196,19 @@ class AuthMixins:
             self.access_token = None
             self._refresh_token = None
             raise ValueError("Invalid tokens provided")
+
+    async def get_user_verification_code(
+        self, user_id: Union[str, UUID]
+    ) -> dict:
+        """
+        Retrieves only the verification code for a specific user. Requires superuser access.
+
+        Args:
+            user_id (Union[str, UUID]): The ID of the user to get verification code for.
+
+        Returns:
+            dict: Contains verification code and its expiry date
+        """
+        return await self._make_request(  # type: ignore
+            "GET", f"user/{user_id}/verification_data"
+        )
