@@ -200,8 +200,8 @@ class ManagementService(Service):
         return {
             "config": config_dict,
             "prompts": prompts,
-            "project_name": os.environ["R2R_PROJECT_NAME"],
-            "r2r_version": get_version("r2r"),
+            "r2r_project_name": os.environ["R2R_PROJECT_NAME"],
+            # "r2r_version": get_version("r2r"),
         }
 
     @telemetry_event("UsersOverview")
