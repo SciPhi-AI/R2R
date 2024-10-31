@@ -91,7 +91,7 @@ export interface DocumentInfoDialogProps {
 
 export interface DocumentChunk {
   fragment_id: string;
-  extraction_id: string;
+  chunk_id: string;
   document_id: string;
   user_id: string;
   group_ids: string[];
@@ -321,7 +321,7 @@ export interface UserContextProps {
 
 export interface VectorSearchResult {
   fragment_id: string;
-  extraction_id: string;
+  chunk_id: string;
   document_id: string;
   user_id: string;
   group_ids: string[];

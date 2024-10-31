@@ -59,7 +59,7 @@ def sample_chunks(
 ):
     return [
         VectorEntry(
-            extraction_id=extraction_ids[0],
+            chunk_id=extraction_ids[0],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -72,7 +72,7 @@ def sample_chunks(
             metadata={"chunk_order": 0},
         ),
         VectorEntry(
-            extraction_id=extraction_ids[1],
+            chunk_id=extraction_ids[1],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -85,7 +85,7 @@ def sample_chunks(
             metadata={"chunk_order": 1},
         ),
         VectorEntry(
-            extraction_id=extraction_ids[2],
+            chunk_id=extraction_ids[2],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -228,4 +228,4 @@ async def test_chunk_enrichment_basic(
 #     Creates 200 RawChunks ("Chunk number {0-199}"), ingests and enriches them all to verify concurrent processing handles large batch correctly
 
 # test_vector_storage:
-#     Ingests chunks, enriches them, then verifies get_document_vectors() returns vectors with correct structure including vector data and extraction_id fields
+#     Ingests chunks, enriches them, then verifies get_document_vectors() returns vectors with correct structure including vector data and chunk_id fields

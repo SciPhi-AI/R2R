@@ -168,7 +168,7 @@ class IngestionMixins:
     async def update_chunks(
         self,
         document_id: UUID,
-        extraction_id: UUID,
+        chunk_id: UUID,
         text: str,
         metadata: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = None,
@@ -178,7 +178,7 @@ class IngestionMixins:
 
         Args:
             document_id (UUID): The ID of the document containing the chunk.
-            extraction_id (UUID): The ID of the chunk to update.
+            chunk_id (UUID): The ID of the chunk to update.
             text (str): The new text content of the chunk.
             metadata (Optional[dict]): Metadata dictionary for the chunk.
             run_with_orchestration (Optional[bool]): Whether to run the update through orchestration.
@@ -196,7 +196,7 @@ class IngestionMixins:
         # Remove None values from payload
         data = {k: v for k, v in data.items() if v is not None}
 
-        return await self._make_request("PUT", f"update_chunk/{document_id}/{extraction_id}", json=data)  # type: ignore
+        return await self._make_request("PUT", f"update_chunk/{document_id}/{chunk_id}", json=data)  # type: ignore
 
     async def create_vector_index(
         self,

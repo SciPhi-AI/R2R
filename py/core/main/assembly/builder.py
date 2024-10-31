@@ -23,6 +23,7 @@ from ..api.v2.kg_router import KGRouter
 from ..api.v2.management_router import ManagementRouter
 from ..api.v2.retrieval_router import RetrievalRouter
 from ..api.v3.document_router import DocumentRouter
+from ..api.v3.chunk_router import ChunkRouter
 from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
@@ -251,6 +252,11 @@ class R2RBuilder:
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "document_router": DocumentRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "chunk_router": ChunkRouter(
                 providers=providers,
                 services=services,
                 orchestration_provider=orchestration_provider,

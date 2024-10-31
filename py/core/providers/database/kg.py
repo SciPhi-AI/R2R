@@ -944,10 +944,10 @@ class PostgresKGHandler(KGHandler):
         self, document_id: UUID
     ) -> list[str]:
         QUERY = f"""
-            SELECT DISTINCT unnest(extraction_ids) AS extraction_id FROM {self._get_table_name("chunk_entity")} WHERE document_id = $1
+            SELECT DISTINCT unnest(extraction_ids) AS chunk_id FROM {self._get_table_name("chunk_entity")} WHERE document_id = $1
         """
         return [
-            item["extraction_id"]
+            item["chunk_id"]
             for item in await self.connection_manager.fetch_query(
                 QUERY, [document_id]
             )

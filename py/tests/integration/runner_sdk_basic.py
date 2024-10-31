@@ -161,7 +161,7 @@ def test_document_chunks_sample_file_sdk():
     chunks = client.document_chunks(document_id=document_id)["results"]
 
     lead_chunk = {
-        "extraction_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
+        "chunk_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
         "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
@@ -233,7 +233,7 @@ def test_vector_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        "extraction_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
+        "chunk_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
         "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "score": lambda x: 0.70 <= x <= 0.80,
@@ -266,7 +266,7 @@ def test_hybrid_search_sample_file_filter_sdk():
 
     lead_result = results[0]
     expected_lead_search_result = {
-        "extraction_id": "ca3d035b-6306-544b-abd3-7a84b9c78bfc",
+        "chunk_id": "ca3d035b-6306-544b-abd3-7a84b9c78bfc",
         "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "text": lambda x: "Aristotle" in x,
@@ -1797,19 +1797,19 @@ def test_ingest_chunks():
     client.ingest_chunks(
         chunks=[
             {
-                # extraction_id should be 21acd7c0-fe60-572e-89b1-3ae71861bbb3
+                # chunk_id should be 21acd7c0-fe60-572e-89b1-3ae71861bbb3
                 "text": "Hello, world!",
             },
             {
-                # extraction_id should be 7c1871cd-0f6a-52c1-84d8-3365c29251b3
+                # chunk_id should be 7c1871cd-0f6a-52c1-84d8-3365c29251b3
                 "text": "Hallo, Welt!",
             },
             {
-                # extraction_id should be bccdb72f-ac9f-5708-81eb-b4d781ed9fe2
+                # chunk_id should be bccdb72f-ac9f-5708-81eb-b4d781ed9fe2
                 "text": "Szia, világ!",
             },
             {
-                # extraction_id should be 0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc
+                # chunk_id should be 0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc
                 "text": "Dzień dobry, świecie!",
             },
         ],
@@ -1827,21 +1827,21 @@ def test_ingest_chunks():
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
     )
 
-    # Assert that the extraction_id is correct
+    # Assert that the chunk_id is correct
     assert (
-        ingest_chunks_response["results"][0]["extraction_id"]
+        ingest_chunks_response["results"][0]["chunk_id"]
         == "21acd7c0-fe60-572e-89b1-3ae71861bbb3"
     )
     assert (
-        ingest_chunks_response["results"][1]["extraction_id"]
+        ingest_chunks_response["results"][1]["chunk_id"]
         == "7c1871cd-0f6a-52c1-84d8-3365c29251b3"
     )
     assert (
-        ingest_chunks_response["results"][2]["extraction_id"]
+        ingest_chunks_response["results"][2]["chunk_id"]
         == "bccdb72f-ac9f-5708-81eb-b4d781ed9fe2"
     )
     assert (
-        ingest_chunks_response["results"][3]["extraction_id"]
+        ingest_chunks_response["results"][3]["chunk_id"]
         == "0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc"
     )
 
@@ -1851,25 +1851,25 @@ def test_update_chunks():
 
     client.update_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
-        extraction_id="21acd7c0-fe60-572e-89b1-3ae71861bbb3",
+        chunk_id="21acd7c0-fe60-572e-89b1-3ae71861bbb3",
         text="Goodbye, world!",
     )
 
     client.update_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
-        extraction_id="7c1871cd-0f6a-52c1-84d8-3365c29251b3",
+        chunk_id="7c1871cd-0f6a-52c1-84d8-3365c29251b3",
         text="Auf Wiedersehen, Welt!",
     )
 
     client.update_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
-        extraction_id="bccdb72f-ac9f-5708-81eb-b4d781ed9fe2",
+        chunk_id="bccdb72f-ac9f-5708-81eb-b4d781ed9fe2",
         text="Viszlát, világ!",
     )
 
     client.update_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672",
-        extraction_id="0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc",
+        chunk_id="0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc",
         text="Dobranoc, świecie!",
     )
 
@@ -1897,16 +1897,16 @@ def test_delete_chunks():
     print("Testing: Delete chunks")
 
     client.delete(
-        {"extraction_id": {"$eq": "21acd7c0-fe60-572e-89b1-3ae71861bbb3"}}
+        {"chunk_id": {"$eq": "21acd7c0-fe60-572e-89b1-3ae71861bbb3"}}
     )
     client.delete(
-        {"extraction_id": {"$eq": "7c1871cd-0f6a-52c1-84d8-3365c29251b3"}}
+        {"chunk_id": {"$eq": "7c1871cd-0f6a-52c1-84d8-3365c29251b3"}}
     )
     client.delete(
-        {"extraction_id": {"$eq": "bccdb72f-ac9f-5708-81eb-b4d781ed9fe2"}}
+        {"chunk_id": {"$eq": "bccdb72f-ac9f-5708-81eb-b4d781ed9fe2"}}
     )
     client.delete(
-        {"extraction_id": {"$eq": "0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc"}}
+        {"chunk_id": {"$eq": "0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc"}}
     )
     try:
         client.document_chunks(

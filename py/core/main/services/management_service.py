@@ -234,7 +234,7 @@ class ManagementService(Service):
                 "document_id",
                 "user_id",
                 "collection_ids",
-                "extraction_id",
+                "chunk_id",
             }
 
             if not filters:
@@ -249,7 +249,7 @@ class ManagementService(Service):
                         message=f"Invalid filter field: {field}",
                     )
 
-            for field in ["document_id", "user_id", "extraction_id"]:
+            for field in ["document_id", "user_id", "chunk_id"]:
                 if field in filters:
                     op = next(iter(filters[field].keys()))
                     try:

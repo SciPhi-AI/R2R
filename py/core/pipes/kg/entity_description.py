@@ -88,8 +88,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
             # potentially slow at scale, but set to avoid duplicates
             unique_extraction_ids = set()
             for entity in entities:
-                for extraction_id in entity.extraction_ids:
-                    unique_extraction_ids.add(extraction_id)
+                for chunk_id in entity.extraction_ids:
+                    unique_extraction_ids.add(chunk_id)
 
             out_entity = Entity(
                 name=entities[0].name,

@@ -116,7 +116,7 @@ class MultiSearchPipe(AsyncPipe):
         document_queries: dict[UUID, set[str]] = {}
         for query, results in all_results.items():
             for rank, result in enumerate(results, 1):
-                doc_id = result.extraction_id
+                doc_id = result.chunk_id
                 if doc_id not in document_scores:
                     document_scores[doc_id] = 0
                     document_results[doc_id] = result

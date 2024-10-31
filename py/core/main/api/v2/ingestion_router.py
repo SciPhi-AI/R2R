@@ -418,14 +418,14 @@ class IngestionRouter(BaseRouter):
                 ]
 
         @self.router.put(
-            "/update_chunk/{document_id}/{extraction_id}",
+            "/update_chunk/{document_id}/{chunk_id}",
         )
         @self.base_endpoint
         async def update_chunk_app(
             document_id: UUID = Path(
                 ..., description="The document ID of the chunk to update"
             ),
-            extraction_id: UUID = Path(
+            chunk_id: UUID = Path(
                 ..., description="The extraction ID of the chunk to update"
             ),
             text: str = Body(
@@ -446,7 +446,7 @@ class IngestionRouter(BaseRouter):
             try:
                 workflow_input = {
                     "document_id": str(document_id),
-                    "extraction_id": str(extraction_id),
+                    "chunk_id": str(chunk_id),
                     "text": text,
                     "metadata": metadata,
                     "user": auth_user.model_dump_json(),

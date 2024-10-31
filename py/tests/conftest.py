@@ -59,7 +59,7 @@ def sample_entries(dimension, num_entries):
         vector_data = [random.random() for _ in range(dimension)]
         metadata = {"key": f"value_id_{id_value}", "raw_key": id_value}
         return VectorEntry(
-            extraction_id=uuid.uuid4(),
+            chunk_id=uuid.uuid4(),
             document_id=uuid.uuid4(),
             user_id=uuid.uuid4(),
             collection_ids=[uuid.uuid4()],

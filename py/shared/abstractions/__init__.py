@@ -2,13 +2,14 @@ from .base import AsyncSyncMeta, R2RSerializable, syncable
 from .document import (
     DataType,
     Document,
-    DocumentExtraction,
+    DocumentChunk,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
     RawChunk,
+    UnprocessedChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
@@ -74,13 +75,14 @@ __all__ = [
     # Document abstractions
     "DataType",
     "Document",
-    "DocumentExtraction",
+    "DocumentChunk",
     "DocumentInfo",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     "RawChunk",
+    "UnprocessedChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",

@@ -9,7 +9,7 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     DatabaseProvider,
-    DocumentExtraction,
+    DocumentChunk,
     Entity,
     GenerationConfig,
     KGExtraction,
@@ -67,7 +67,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
     async def extract_kg(
         self,
-        extractions: list[DocumentExtraction],
+        extractions: list[DocumentChunk],
         generation_config: GenerationConfig,
         max_knowledge_triples: int,
         entity_types: list[str],
@@ -247,8 +247,8 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
         # Then create the extractions from the results
         extractions = [
-            DocumentExtraction(
-                id=extraction["extraction_id"],
+            DocumentChunk(
+                id=extraction["chunk_id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
                 collection_ids=extraction["collection_ids"],

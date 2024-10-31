@@ -121,7 +121,7 @@ const extractionId = "aeba6400-1bd0-5ee9-8925-04732d675434";
 
 const updateResponse = await client.updateChunks({
   document_id: documentId,
-  extraction_id: extractionId,
+  chunk_id: extractionId,
   text: "Updated chunk content...",
   metadata: {
     source: "manual_edit",
@@ -150,7 +150,7 @@ const updateResponse = await client.updateChunks({
     The ID of the document containing the chunk to update.
   </ParamField>
 
-  <ParamField path="extraction_id" type="string" required>
+  <ParamField path="chunk_id" type="string" required>
     The ID of the specific chunk to update.
   </ParamField>
 
@@ -247,7 +247,7 @@ These chunks represent the atomic units of text after processing.
           'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath...',
           'user_id': '2acb499e-8428-543b-bd85-0d9098718220',
           'document_id': '9fbe403b-c11c-5aae-8ade-ef22980c3ad1',
-          'extraction_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
+          'chunk_id': 'aeba6400-1bd0-5ee9-8925-04732d675434',
           'fragment_id': 'f48bcdad-4155-52a4-8c9d-8ba06e996ba3',
           'metadata': {
             'title': 'aristotle.txt',

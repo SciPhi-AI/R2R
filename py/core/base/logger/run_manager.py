@@ -6,11 +6,11 @@ from uuid import UUID
 
 from core.base.api.models import UserResponse
 from core.base.logger.base import RunType
-from core.base.utils import generate_run_id
+from core.base.utils import generate_id
 
 from .base import PersistentLoggingProvider
 
-run_id_var = contextvars.ContextVar("run_id", default=generate_run_id())
+run_id_var = contextvars.ContextVar("run_id", default=generate_id())
 
 
 class RunManager:
@@ -21,7 +21,7 @@ class RunManager:
     async def set_run_info(self, run_type: str, run_id: Optional[UUID] = None):
         run_id = run_id or run_id_var.get()
         if run_id is None:
-            run_id = generate_run_id()
+            run_id = generate_id()
             token = run_id_var.set(run_id)
             self.run_info[run_id] = {"run_type": run_type}
         else:

@@ -108,7 +108,7 @@ def _generate_id_from_label(label: str) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
 
-def generate_run_id() -> UUID:
+def generate_id() -> UUID:
     """
     Generates a unique run id
     """

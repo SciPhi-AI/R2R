@@ -107,11 +107,11 @@ To update specific chunks within existing documents in your R2R deployment, you 
 
 ```python
 document_id = "9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-extraction_id = "aeba6400-1bd0-5ee9-8925-04732d675434"
+chunk_id = "aeba6400-1bd0-5ee9-8925-04732d675434"
 
 update_response = client.update_chunks(
     document_id=document_id,
-    extraction_id=extraction_id,
+    chunk_id=chunk_id,
     text="Updated chunk content with new information...",
     metadata={
         "source": "manual_edit",
@@ -124,7 +124,7 @@ update_response = client.update_chunks(
 The `update_chunks` method accepts the following parameters:
 
 - `document_id` (required): The ID of the document containing the chunk you want to update.
-- `extraction_id` (required): The ID of the specific chunk you want to update.
+- `chunk_id` (required): The ID of the specific chunk you want to update.
 - `text` (required): The new text content that will replace the existing chunk text.
 - `metadata` (optional): A metadata dictionary that will replace the existing chunk metadata.
 - `run_with_orchestration` (optional): Whether to run the update through orchestration (default: true).
@@ -153,7 +153,7 @@ delete_response = client.delete(
 # For chunks
 delete_response = client.delete(
     {
-        "extraction_id": {"$eq": "extraction1_id"}
+        "chunk_id": {"$eq": "extraction1_id"}
     }
 )
 ```

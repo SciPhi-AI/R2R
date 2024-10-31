@@ -186,7 +186,22 @@ class DocumentInfo(R2RSerializable):
         }
 
 
-class DocumentExtraction(R2RSerializable):
+class UnprocessedChunk(R2RSerializable):
+    """An extraction from a document."""
+    id: Optional[UUID] = None
+    document_id: Optional[UUID] = None
+    collection_ids: list[UUID] = []
+    metadata: dict = {}
+    text: str
+
+class UpdateChunk(R2RSerializable):
+    """An extraction from a document."""
+    id: UUID
+    metadata: Optional[dict] = None
+    text: str
+
+
+class DocumentChunk(R2RSerializable):
     """An extraction from a document."""
 
     id: UUID

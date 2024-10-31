@@ -172,7 +172,7 @@ def test_vector_search_sample_file_filter_cli():
 
     expected_lead_search_result = {
         "text": "Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.",
-        "extraction_id": "ff8accdb-791e-5b6d-a83a-5adc32c4222c",
+        "chunk_id": "ff8accdb-791e-5b6d-a83a-5adc32c4222c",
         "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         # "score": lambda x: 0.77 <= x <= 0.79,
@@ -209,7 +209,7 @@ def test_hybrid_search_sample_file_filter_cli():
     # lead_result = results[0]
     # expected_lead_search_result = {
     #     "text": "Life\nIn general, the details of Aristotle's life are not well-established. The biographies written in ancient times are often speculative and historians only agree on a few salient points.[B]\n\nAristotle was born in 384 BC[C] in Stagira, Chalcidice,[2] about 55 km (34 miles) east of modern-day Thessaloniki.[3][4] His father, Nicomachus, was the personal physician to King Amyntas of Macedon. While he was young, Aristotle learned about biology and medical information, which was taught by his father.[5] Both of Aristotle's parents died when he was about thirteen, and Proxenus of Atarneus became his guardian.[6] Although little information about Aristotle's childhood has survived, he probably spent some time within the Macedonian palace, making his first connections with the Macedonian monarchy.[7]",
-    #     "extraction_id": "f6f5cfb6-8654-5e1c-b574-849a8a313452",
+    #     "chunk_id": "f6f5cfb6-8654-5e1c-b574-849a8a313452",
     #     "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
     #     "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
     #     "score": lambda x: 0.016 <= x <= 0.018,

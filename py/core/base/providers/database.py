@@ -558,7 +558,7 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+    async def get_chunk(self, chunk_id: UUID) -> Optional[dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -1441,8 +1441,8 @@ class DatabaseProvider(Provider):
             document_id, offset, limit, include_vectors
         )
 
-    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
-        return await self.vector_handler.get_chunk(extraction_id)
+    async def get_chunk(self, chunk_id: UUID) -> Optional[dict[str, Any]]:
+        return await self.vector_handler.get_chunk(chunk_id)
 
     async def create_index(
         self,

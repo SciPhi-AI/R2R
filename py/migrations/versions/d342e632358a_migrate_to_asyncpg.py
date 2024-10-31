@@ -55,7 +55,7 @@ def upgrade() -> None:
     # Create the new table
     op.create_table(
         new_vector_table_name,
-        sa.Column("extraction_id", postgresql.UUID(), nullable=False),
+        sa.Column("chunk_id", postgresql.UUID(), nullable=False),
         sa.Column("document_id", postgresql.UUID(), nullable=False),
         sa.Column("user_id", postgresql.UUID(), nullable=False),
         sa.Column(
@@ -74,7 +74,7 @@ def upgrade() -> None:
         sa.Column(
             "metadata", postgresql.JSONB(), server_default="{}", nullable=False
         ),
-        sa.PrimaryKeyConstraint("extraction_id"),
+        sa.PrimaryKeyConstraint("chunk_id"),
         schema=project_name,
     )
 
@@ -114,9 +114,9 @@ def upgrade() -> None:
     op.execute(
         f"""
         INSERT INTO {project_name}.{new_vector_table_name}
-            (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            (chunk_id, document_id, user_id, collection_ids, vec, text, metadata)
         SELECT
-            extraction_id,
+            chunk_id,
             document_id,
             user_id,
             collection_ids,

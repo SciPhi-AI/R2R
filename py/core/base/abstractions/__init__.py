@@ -2,13 +2,15 @@ from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
 from shared.abstractions.document import (
     DataType,
     Document,
-    DocumentExtraction,
+    DocumentChunk,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
     RawChunk,
+    UnprocessedChunk,
+    UpdateChunk,
 )
 from shared.abstractions.embedding import (
     EmbeddingPurpose,
@@ -87,13 +89,15 @@ __all__ = [
     # Document abstractions
     "DataType",
     "Document",
-    "DocumentExtraction",
+    "DocumentChunk",
     "DocumentInfo",
     "DocumentType",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
     "RawChunk",
+    "UnprocessedChunk",
+    "UpdateChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",

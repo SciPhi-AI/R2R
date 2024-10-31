@@ -18,7 +18,7 @@ __all__ = [
     # Document abstractions
     "DataType",
     "Document",
-    "DocumentExtraction",
+    "DocumentChunk",
     "DocumentInfo",
     "IngestionStatus",
     "KGExtractionStatus",
@@ -132,7 +132,7 @@ __all__ = [
     "format_search_results_for_stream",
     "validate_uuid",
     # ID generation
-    "generate_run_id",
+    "generate_id",
     "generate_document_id",
     "generate_extraction_id",
     "generate_default_user_collection_id",

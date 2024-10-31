@@ -88,7 +88,7 @@
         "vector_search_results": [
           {
             "fragment_id": "ced2d47c-524c-58d3-8cc3-0d474312fb00",
-            "extraction_id": "b4451d80-760d-5e0f-93bc-cc0a89b1630d",
+            "chunk_id": "b4451d80-760d-5e0f-93bc-cc0a89b1630d",
             "document_id": "55d7b67e-c717-5e89-a956-61580475199d",
             "user_id": "a34207e5-9b1a-5fe3-8a02-9ff56464b112",
             "group_ids": [],
@@ -102,7 +102,7 @@
           },
           {
             "fragment_id": "2b30d8c0-d037-5ca7-9961-08e2a13a25cd",
-            "extraction_id": "eae05bf5-f732-53b3-80e5-a6e39d5a23d3",
+            "chunk_id": "eae05bf5-f732-53b3-80e5-a6e39d5a23d3",
             "document_id": "653c933c-867d-5588-b6cd-54d9412a8ffa",
             "user_id": "a34207e5-9b1a-5fe3-8a02-9ff56464b112",
             "group_ids": [],
@@ -145,7 +145,7 @@
         "vector_search_results": [
           {
             "fragment_id": "4f3e93df-099c-58a7-a5cf-c40ba5ae76c1",
-            "extraction_id": "838aa00a-2d5a-588c-9aa1-2553ae514024",
+            "chunk_id": "838aa00a-2d5a-588c-9aa1-2553ae514024",
             "document_id": "6a7d57a8-0bab-55df-8674-a94b1ecd6492",
             "user_id": "4404314d-12a1-5299-9f7a-adfac07a5a3b",
             "group_ids": [],

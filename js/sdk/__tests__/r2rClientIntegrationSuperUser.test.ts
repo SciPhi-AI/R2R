@@ -283,8 +283,8 @@ describe("r2rClient Integration Tests", () => {
 
     const targetId = "c043aa2c-80e8-59ed-a390-54f1947ea32b";
     const updatedChunk = response.results.find(
-      (chunk: { extraction_id: string; text: string }) =>
-        String(chunk.extraction_id) === targetId,
+      (chunk: { chunk_id: string; text: string }) =>
+        String(chunk.chunk_id) === targetId,
     );
 
     expect(updatedChunk).toBeDefined();
@@ -294,7 +294,7 @@ describe("r2rClient Integration Tests", () => {
   test("Delete the updated chunk", async () => {
     await expect(
       client.delete({
-        extraction_id: {
+        chunk_id: {
           $eq: "c043aa2c-80e8-59ed-a390-54f1947ea32b",
         },
       }),

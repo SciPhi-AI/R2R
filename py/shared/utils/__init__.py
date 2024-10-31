@@ -10,7 +10,7 @@ from .base_utils import (
     generate_default_user_collection_id,
     generate_document_id,
     generate_extraction_id,
-    generate_run_id,
+    generate_id,
     generate_user_id,
     increment_version,
     llm_cost_per_million_tokens,
@@ -26,7 +26,7 @@ __all__ = [
     "format_search_results_for_stream",
     "format_search_results_for_llm",
     # ID generation
-    "generate_run_id",
+    "generate_id",
     "generate_document_id",
     "generate_extraction_id",
     "generate_default_user_collection_id",

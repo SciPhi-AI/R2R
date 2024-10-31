@@ -9,7 +9,7 @@ from core.base import (
     AsyncParser,
     ChunkingStrategy,
     Document,
-    DocumentExtraction,
+    DocumentChunk,
     DocumentType,
     IngestionConfig,
     IngestionProvider,
@@ -17,7 +17,7 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-from core.base.abstractions import DocumentExtraction
+from core.base.abstractions import DocumentChunk
 from core.utils import generate_extraction_id
 
 from ...database import PostgresDBProvider
@@ -164,7 +164,7 @@ class R2RIngestionProvider(IngestionProvider):
 
     def chunk(
         self,
-        parsed_document: Union[str, DocumentExtraction],
+        parsed_document: Union[str, DocumentChunk],
         ingestion_config_override: dict,
     ) -> AsyncGenerator[Any, None]:
 
@@ -173,7 +173,7 @@ class R2RIngestionProvider(IngestionProvider):
             text_spliiter = self._build_text_splitter(
                 ingestion_config_override
             )
-        if isinstance(parsed_document, DocumentExtraction):
+        if isinstance(parsed_document, DocumentChunk):
             parsed_document = parsed_document.data
 
         if isinstance(parsed_document, str):
@@ -193,7 +193,7 @@ class R2RIngestionProvider(IngestionProvider):
         document: Document,
         ingestion_config_override: dict,
     ) -> AsyncGenerator[
-        Union[DocumentExtraction, R2RDocumentProcessingError], None
+        Union[DocumentChunk, R2RDocumentProcessingError], None
     ]:
         if document.document_type not in self.parsers:
             yield R2RDocumentProcessingError(
@@ -235,7 +235,7 @@ class R2RIngestionProvider(IngestionProvider):
             iteration = 0
             chunks = self.chunk(contents, ingestion_config_override)
             for chunk in chunks:
-                extraction = DocumentExtraction(
+                extraction = DocumentChunk(
                     id=generate_extraction_id(document.id, iteration),
                     document_id=document.id,
                     user_id=document.user_id,

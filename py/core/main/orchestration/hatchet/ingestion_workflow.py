@@ -8,7 +8,7 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
 
 from core.base import (
-    DocumentExtraction,
+    DocumentChunk,
     IngestionStatus,
     OrchestrationProvider,
     generate_extraction_id,
@@ -379,7 +379,7 @@ def hatchet_ingestion_factory(
             document_id = document_info.id
 
             extractions = [
-                DocumentExtraction(
+                DocumentChunk(
                     id=generate_extraction_id(document_id, i),
                     document_id=document_id,
                     collection_ids=[],
@@ -521,14 +521,14 @@ def hatchet_ingestion_factory(
                     else parsed_data["document_id"]
                 )
                 extraction_uuid = (
-                    UUID(parsed_data["extraction_id"])
-                    if isinstance(parsed_data["extraction_id"], str)
-                    else parsed_data["extraction_id"]
+                    UUID(parsed_data["chunk_id"])
+                    if isinstance(parsed_data["chunk_id"], str)
+                    else parsed_data["chunk_id"]
                 )
 
                 await self.ingestion_service.update_chunk_ingress(
                     document_id=document_uuid,
-                    extraction_id=extraction_uuid,
+                    chunk_id=extraction_uuid,
                     text=parsed_data.get("text"),
                     user=parsed_data["user"],
                     metadata=parsed_data.get("metadata"),

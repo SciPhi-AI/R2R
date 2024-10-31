@@ -4,7 +4,7 @@ from uuid import UUID
 
 from litellm import AuthenticationError
 
-from core.base import DocumentExtraction, R2RException, increment_version
+from core.base import DocumentChunk, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
     generate_extraction_id,
@@ -202,7 +202,7 @@ def simple_ingestion_factory(service: IngestionService):
             document_id = document_info.id
 
             extractions = [
-                DocumentExtraction(
+                DocumentChunk(
                     id=generate_extraction_id(document_id, i),
                     document_id=document_id,
                     collection_ids=[],
@@ -272,14 +272,14 @@ def simple_ingestion_factory(service: IngestionService):
                 else parsed_data["document_id"]
             )
             extraction_uuid = (
-                UUID(parsed_data["extraction_id"])
-                if isinstance(parsed_data["extraction_id"], str)
-                else parsed_data["extraction_id"]
+                UUID(parsed_data["chunk_id"])
+                if isinstance(parsed_data["chunk_id"], str)
+                else parsed_data["chunk_id"]
             )
 
             await service.update_chunk_ingress(
                 document_id=document_uuid,
-                extraction_id=extraction_uuid,
+                chunk_id=extraction_uuid,
                 text=parsed_data.get("text"),
                 user=parsed_data["user"],
                 metadata=parsed_data.get("metadata"),

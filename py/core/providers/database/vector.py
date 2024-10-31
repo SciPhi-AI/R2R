@@ -73,7 +73,7 @@ class PostgresVectorHandler(VectorHandler):
     TABLE_NAME = VectorTableName.VECTORS
 
     COLUMN_VARS = [
-        "extraction_id",
+        "chunk_id",
         "document_id",
         "user_id",
         "collection_ids",
@@ -121,7 +121,7 @@ class PostgresVectorHandler(VectorHandler):
 
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (
-            extraction_id UUID PRIMARY KEY,
+            chunk_id UUID PRIMARY KEY,
             document_id UUID,
             user_id UUID,
             collection_ids UUID[],
@@ -153,9 +153,9 @@ class PostgresVectorHandler(VectorHandler):
             # For quantized vectors, use vec_binary column
             query = f"""
             INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (extraction_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
+            (chunk_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
-            ON CONFLICT (extraction_id) DO UPDATE SET
+            ON CONFLICT (chunk_id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
             user_id = EXCLUDED.user_id,
             collection_ids = EXCLUDED.collection_ids,
@@ -167,7 +167,7 @@ class PostgresVectorHandler(VectorHandler):
             await self.connection_manager.execute_query(
                 query,
                 (
-                    entry.extraction_id,
+                    entry.chunk_id,
                     entry.document_id,
                     entry.user_id,
                     entry.collection_ids,
@@ -183,9 +183,9 @@ class PostgresVectorHandler(VectorHandler):
             # For regular vectors, use vec column only
             query = f"""
             INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            (chunk_id, document_id, user_id, collection_ids, vec, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (extraction_id) DO UPDATE SET
+            ON CONFLICT (chunk_id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
             user_id = EXCLUDED.user_id,
             collection_ids = EXCLUDED.collection_ids,
@@ -197,7 +197,7 @@ class PostgresVectorHandler(VectorHandler):
             await self.connection_manager.execute_query(
                 query,
                 (
-                    entry.extraction_id,
+                    entry.chunk_id,
                     entry.document_id,
                     entry.user_id,
                     entry.collection_ids,
@@ -216,9 +216,9 @@ class PostgresVectorHandler(VectorHandler):
             # For quantized vectors, use vec_binary column
             query = f"""
             INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (extraction_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
+            (chunk_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
-            ON CONFLICT (extraction_id) DO UPDATE SET
+            ON CONFLICT (chunk_id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
             user_id = EXCLUDED.user_id,
             collection_ids = EXCLUDED.collection_ids,
@@ -229,7 +229,7 @@ class PostgresVectorHandler(VectorHandler):
             """
             bin_params = [
                 (
-                    entry.extraction_id,
+                    entry.chunk_id,
                     entry.document_id,
                     entry.user_id,
                     entry.collection_ids,
@@ -248,9 +248,9 @@ class PostgresVectorHandler(VectorHandler):
             # For regular vectors, use vec column only
             query = f"""
             INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            (chunk_id, document_id, user_id, collection_ids, vec, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (extraction_id) DO UPDATE SET
+            ON CONFLICT (chunk_id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
             user_id = EXCLUDED.user_id,
             collection_ids = EXCLUDED.collection_ids,
@@ -260,7 +260,7 @@ class PostgresVectorHandler(VectorHandler):
             """
             params = [
                 (
-                    entry.extraction_id,
+                    entry.chunk_id,
                     entry.document_id,
                     entry.user_id,
                     entry.collection_ids,
@@ -283,7 +283,7 @@ class PostgresVectorHandler(VectorHandler):
 
         table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
         cols = [
-            f"{table_name}.extraction_id",
+            f"{table_name}.chunk_id",
             f"{table_name}.document_id",
             f"{table_name}.user_id",
             f"{table_name}.collection_ids",
@@ -342,7 +342,7 @@ class PostgresVectorHandler(VectorHandler):
             )
             -- Second stage: Re-rank using original vectors
             SELECT
-                extraction_id,
+                chunk_id,
                 document_id,
                 user_id,
                 collection_ids,
@@ -399,7 +399,7 @@ class PostgresVectorHandler(VectorHandler):
 
         return [
             VectorSearchResult(
-                extraction_id=UUID(str(result["extraction_id"])),
+                chunk_id=UUID(str(result["chunk_id"])),
                 document_id=UUID(str(result["document_id"])),
                 user_id=UUID(str(result["user_id"])),
                 collection_ids=result["collection_ids"],
@@ -446,7 +446,7 @@ class PostgresVectorHandler(VectorHandler):
 
         query = f"""
             SELECT
-                extraction_id, document_id, user_id, collection_ids, text, metadata,
+                chunk_id, document_id, user_id, collection_ids, text, metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
             FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
             {where_clause}
@@ -466,7 +466,7 @@ class PostgresVectorHandler(VectorHandler):
         results = await self.connection_manager.fetch_query(query, params)
         return [
             VectorSearchResult(
-                extraction_id=UUID(str(r["extraction_id"])),
+                chunk_id=UUID(str(r["chunk_id"])),
                 document_id=UUID(str(r["document_id"])),
                 user_id=UUID(str(r["user_id"])),
                 collection_ids=r["collection_ids"],
@@ -527,7 +527,7 @@ class PostgresVectorHandler(VectorHandler):
         combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {}
 
         for rank, result in enumerate(semantic_results, 1):
-            combined_results[result.extraction_id] = {
+            combined_results[result.chunk_id] = {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
@@ -535,10 +535,10 @@ class PostgresVectorHandler(VectorHandler):
             }
 
         for rank, result in enumerate(full_text_results, 1):
-            if result.extraction_id in combined_results:
-                combined_results[result.extraction_id]["full_text_rank"] = rank
+            if result.chunk_id in combined_results:
+                combined_results[result.chunk_id]["full_text_rank"] = rank
             else:
-                combined_results[result.extraction_id] = {
+                combined_results[result.chunk_id] = {
                     "semantic_rank": semantic_limit,
                     "full_text_rank": rank,
                     "data": result,
@@ -572,7 +572,7 @@ class PostgresVectorHandler(VectorHandler):
 
         return [
             VectorSearchResult(
-                extraction_id=result["data"].extraction_id,
+                chunk_id=result["data"].chunk_id,
                 document_id=result["data"].document_id,
                 user_id=result["data"].user_id,
                 collection_ids=result["data"].collection_ids,
@@ -596,15 +596,15 @@ class PostgresVectorHandler(VectorHandler):
         query = f"""
         DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE {where_clause}
-        RETURNING extraction_id, document_id, text;
+        RETURNING chunk_id, document_id, text;
         """
 
         results = await self.connection_manager.fetch_query(query, params)
 
         return {
-            str(result["extraction_id"]): {
+            str(result["chunk_id"]): {
                 "status": "deleted",
-                "extraction_id": str(result["extraction_id"]),
+                "chunk_id": str(result["chunk_id"]),
                 "document_id": str(result["document_id"]),
                 "text": result["text"],
             }
@@ -664,7 +664,7 @@ class PostgresVectorHandler(VectorHandler):
         limit_clause = f"LIMIT {limit}" if limit > -1 else ""
 
         query = f"""
-        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
+        SELECT chunk_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         WHERE document_id = $1
         ORDER BY (metadata->>'chunk_order')::integer
@@ -682,7 +682,7 @@ class PostgresVectorHandler(VectorHandler):
             total = results[0].get("total", 0)
             chunks = [
                 {
-                    "extraction_id": result["extraction_id"],
+                    "chunk_id": result["chunk_id"],
                     "document_id": result["document_id"],
                     "user_id": result["user_id"],
                     "collection_ids": result["collection_ids"],
@@ -697,20 +697,20 @@ class PostgresVectorHandler(VectorHandler):
 
         return {"results": chunks, "total_entries": total}
 
-    async def get_chunk(self, extraction_id: UUID) -> Optional[dict[str, Any]]:
+    async def get_chunk(self, chunk_id: UUID) -> Optional[dict[str, Any]]:
         query = f"""
-        SELECT extraction_id, document_id, user_id, collection_ids, text, metadata
+        SELECT chunk_id, document_id, user_id, collection_ids, text, metadata
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-        WHERE extraction_id = $1;
+        WHERE chunk_id = $1;
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, (extraction_id,)
+            query, (chunk_id,)
         )
 
         if result:
             return {
-                "extraction_id": result["extraction_id"],
+                "chunk_id": result["chunk_id"],
                 "document_id": result["document_id"],
                 "user_id": result["user_id"],
                 "collection_ids": result["collection_ids"],
@@ -1160,13 +1160,13 @@ class PostgresVectorHandler(VectorHandler):
         query = f"""
         WITH target_vector AS (
             SELECT vec FROM {table_name}
-            WHERE document_id = $1 AND extraction_id = $2
+            WHERE document_id = $1 AND chunk_id = $2
         )
-        SELECT t.extraction_id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
+        SELECT t.chunk_id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
         FROM {table_name} t, target_vector tv
         WHERE (t.vec <=> tv.vec) >= $3
             AND t.document_id = $1
-            AND t.extraction_id != $2
+            AND t.chunk_id != $2
         ORDER BY similarity ASC
         LIMIT $4
         """
@@ -1177,7 +1177,7 @@ class PostgresVectorHandler(VectorHandler):
 
         return [
             {
-                "extraction_id": str(r["extraction_id"]),
+                "chunk_id": str(r["chunk_id"]),
                 "text": r["text"],
                 "metadata": json.loads(r["metadata"]),
                 "document_id": str(r["document_id"]),

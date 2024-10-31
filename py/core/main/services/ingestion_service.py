@@ -8,7 +8,7 @@ from uuid import UUID
 
 from core.base import (
     Document,
-    DocumentExtraction,
+    DocumentChunk,
     DocumentInfo,
     DocumentType,
     IngestionStatus,
@@ -206,7 +206,7 @@ class IngestionService(Service):
 
     async def parse_file(
         self, document_info: DocumentInfo, ingestion_config: dict
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[DocumentChunk, None]:
         return await self.pipes.parsing_pipe.run(
             input=self.pipes.parsing_pipe.Input(
                 message=Document(
@@ -232,7 +232,7 @@ class IngestionService(Service):
         return await self.pipes.embedding_pipe.run(
             input=self.pipes.embedding_pipe.Input(
                 message=[
-                    DocumentExtraction.from_dict(chunk)
+                    DocumentChunk.from_dict(chunk)
                     for chunk in chunked_documents
                 ]
             ),
@@ -356,7 +356,7 @@ class IngestionService(Service):
     async def update_chunk_ingress(
         self,
         document_id: UUID,
-        extraction_id: UUID,
+        chunk_id: UUID,
         text: str,
         user: UserResponse,
         metadata: Optional[dict] = None,
@@ -371,14 +371,14 @@ class IngestionService(Service):
         if not existing_chunks["results"]:
             raise R2RException(
                 status_code=404,
-                message=f"Chunk with extraction_id {extraction_id} not found.",
+                message=f"Chunk with chunk_id {chunk_id} not found.",
             )
 
-        existing_chunk = await self.providers.database.get_chunk(extraction_id)
+        existing_chunk = await self.providers.database.get_chunk(chunk_id)
         if not existing_chunk:
             raise R2RException(
                 status_code=404,
-                message=f"Chunk with id {extraction_id} not found",
+                message=f"Chunk with id {chunk_id} not found",
             )
 
         if (
@@ -401,7 +401,7 @@ class IngestionService(Service):
 
         # Create updated extraction
         extraction_data = {
-            "id": extraction_id,
+            "id": chunk_id,
             "document_id": document_id,
             "collection_ids": kwargs.get(
                 "collection_ids", existing_chunk["collection_ids"]
@@ -411,7 +411,7 @@ class IngestionService(Service):
             "metadata": merged_metadata,
         }
 
-        extraction = DocumentExtraction(**extraction_data).model_dump()
+        extraction = DocumentChunk(**extraction_data).model_dump()
 
         embedding_generator = await self.embed_document([extraction])
         embeddings = [
@@ -438,14 +438,14 @@ class IngestionService(Service):
         for enrichment_strategy in chunk_enrichment_settings.strategies:
             if enrichment_strategy == ChunkEnrichmentStrategy.NEIGHBORHOOD:
                 context_chunk_ids.extend(
-                    document_chunks[chunk_idx - prev]["extraction_id"]
+                    document_chunks[chunk_idx - prev]["chunk_id"]
                     for prev in range(
                         1, chunk_enrichment_settings.backward_chunks + 1
                     )
                     if chunk_idx - prev >= 0
                 )
                 context_chunk_ids.extend(
-                    document_chunks[chunk_idx + next]["extraction_id"]
+                    document_chunks[chunk_idx + next]["chunk_id"]
                     for next in range(
                         1, chunk_enrichment_settings.forward_chunks + 1
                     )
@@ -454,12 +454,12 @@ class IngestionService(Service):
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
                 semantic_neighbors = await self.providers.database.get_semantic_neighbors(
                     document_id=document_id,
-                    chunk_id=chunk["extraction_id"],
+                    chunk_id=chunk["chunk_id"],
                     limit=chunk_enrichment_settings.semantic_neighbors,
                     similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
                 )
                 context_chunk_ids.extend(
-                    neighbor["extraction_id"]
+                    neighbor["chunk_id"]
                     for neighbor in semantic_neighbors
                 )
 
@@ -516,8 +516,8 @@ class IngestionService(Service):
         chunk["metadata"]["original_text"] = chunk["text"]
 
         return VectorEntry(
-            extraction_id=uuid.uuid5(
-                uuid.NAMESPACE_DNS, str(chunk["extraction_id"])
+            chunk_id=uuid.uuid5(
+                uuid.NAMESPACE_DNS, str(chunk["chunk_id"])
             ),
             vector=Vector(data=data, type=VectorType.FIXED, length=len(data)),
             document_id=document_id,
@@ -543,7 +543,7 @@ class IngestionService(Service):
 
         new_vector_entries = []
         document_chunks_dict = {
-            chunk["extraction_id"]: chunk for chunk in document_chunks
+            chunk["chunk_id"]: chunk for chunk in document_chunks
         }
 
         tasks = []
@@ -585,6 +585,16 @@ class IngestionService(Service):
 
         return len(new_vector_entries)
 
+
+    # TODO - This should return a typed object
+    async def get_chunk(
+        self,
+        # document_id: UUID,
+        chunk_id: UUID,
+        *args: Any,
+        **kwargs: Any,
+    ) -> dict:
+        return await self.providers.database.get_chunk(chunk_id)
 
 class IngestionServiceAdapter:
     @staticmethod
@@ -642,7 +652,7 @@ class IngestionServiceAdapter:
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "document_id": UUID(data["document_id"]),
-            "extraction_id": UUID(data["extraction_id"]),
+            "chunk_id": UUID(data["chunk_id"]),
             "text": data["text"],
             "metadata": data.get("metadata"),
             "collection_ids": data.get("collection_ids", []),

@@ -50,7 +50,7 @@ __all__ = [
     # Document abstractions
     "DataType",
     "Document",
-    "DocumentExtraction",
+    "DocumentChunk",
     "DocumentInfo",
     "IngestionStatus",
     "KGExtractionStatus",
@@ -151,7 +151,7 @@ __all__ = [
     "TextSplitter",
     "run_pipeline",
     "to_async_generator",
-    "generate_run_id",
+    "generate_id",
     "increment_version",
     "EntityType",
     "RelationshipType",

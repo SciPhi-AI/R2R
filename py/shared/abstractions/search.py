@@ -15,7 +15,7 @@ from .vector import IndexMeasure
 class VectorSearchResult(R2RSerializable):
     """Result of a search operation."""
 
-    extraction_id: UUID
+    chunk_id: UUID
     document_id: UUID
     user_id: Optional[UUID]
     collection_ids: list[UUID]
@@ -24,14 +24,14 @@ class VectorSearchResult(R2RSerializable):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"VectorSearchResult(id={self.extraction_id}, document_id={self.document_id}, score={self.score})"
+        return f"VectorSearchResult(id={self.chunk_id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
         return self.__str__()
 
     def as_dict(self) -> dict:
         return {
-            "extraction_id": self.extraction_id,
+            "chunk_id": self.chunk_id,
             "document_id": self.document_id,
             "user_id": self.user_id,
             "collection_ids": self.collection_ids,
@@ -42,7 +42,7 @@ class VectorSearchResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+            "chunk_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],

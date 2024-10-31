@@ -17,7 +17,7 @@ from core.base import (
     AsyncParser,
     ChunkingStrategy,
     Document,
-    DocumentExtraction,
+    DocumentChunk,
     DocumentType,
     RecursiveCharacterTextSplitter,
 )
@@ -210,7 +210,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         file_content: bytes,
         document: Document,
         ingestion_config_override: dict,
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[DocumentChunk, None]:
 
         ingestion_config = copy(
             {
@@ -356,7 +356,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
             metadata["partitioned_by_unstructured"] = True
             metadata["chunk_order"] = iteration
             # creating the text extraction
-            yield DocumentExtraction(
+            yield DocumentChunk(
                 id=generate_extraction_id(document.id, iteration),
                 document_id=document.id,
                 user_id=document.user_id,
