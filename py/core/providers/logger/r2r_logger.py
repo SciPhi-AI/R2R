@@ -5,6 +5,9 @@ import uuid
 from datetime import datetime
 from typing import Optional, Tuple, Union
 from uuid import UUID
+from fastapi.responses import StreamingResponse
+import csv
+import io
 
 from core.base import Message
 from core.base.logger.base import (
@@ -470,6 +473,87 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         except Exception as e:
             await self.conn.rollback()
             raise e
+
+    async def export_messages_to_csv(
+        self, chunk_size: int = 1000, return_type: str = "stream"
+    ) -> Union[StreamingResponse, str]:
+        """
+        Export messages table to CSV format.
+
+        Args:
+            chunk_size: Number of records to process at once
+            return_type: Either "stream" or "string"
+
+        Returns:
+            StreamingResponse or string depending on return_type
+        """
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        async def generate_csv():
+            buffer = io.StringIO()
+            writer = csv.writer(buffer)
+
+            # Write headers
+            async with self.conn.execute(
+                "SELECT * FROM messages LIMIT 1"
+            ) as cursor:
+                column_names = [
+                    description[0] for description in cursor.description
+                ]
+                writer.writerow(column_names)
+                yield buffer.getvalue()
+                buffer.seek(0)
+                buffer.truncate()
+
+            # Stream rows in chunks
+            offset = 0
+            while True:
+                async with self.conn.execute(
+                    "SELECT * FROM messages LIMIT ? OFFSET ?",
+                    (chunk_size, offset),
+                ) as cursor:
+                    rows = await cursor.fetchall()
+                    if not rows:
+                        break
+
+                    for row in rows:
+                        writer.writerow(row)
+                    chunk_data = buffer.getvalue()
+                    yield chunk_data
+                    buffer.seek(0)
+                    buffer.truncate()
+
+                offset += chunk_size
+
+        if return_type == "stream":
+            return StreamingResponse(
+                generate_csv(),
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": "attachment; filename=messages.csv"
+                },
+            )
+        else:
+            # For string return, accumulate all data
+            csv_data = io.StringIO()
+            writer = csv.writer(csv_data)
+
+            async with self.conn.execute(
+                "SELECT * FROM messages LIMIT 1"
+            ) as cursor:
+                column_names = [
+                    description[0] for description in cursor.description
+                ]
+                writer.writerow(column_names)
+
+            async with self.conn.execute("SELECT * FROM messages") as cursor:
+                rows = await cursor.fetchall()
+                writer.writerows(rows)
+
+            return csv_data.getvalue()
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None

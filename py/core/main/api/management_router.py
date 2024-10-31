@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set, Union
+from typing import Optional, Set, Union
 from uuid import UUID
 
 import psutil
@@ -854,6 +854,20 @@ class ManagementRouter(BaseRouter):
             """
             await self.service.update_message_metadata(message_id, metadata)
             return "ok"
+
+        @self.router.get("/export/messages")
+        @self.base_endpoint
+        async def export_messages(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only an authorized user can call the `server_stats` endpoint.",
+                    403,
+                )
+            return await self.service.export_messages_to_csv(
+                return_type="stream"
+            )
 
         @self.router.get("/branches_overview/{conversation_id}")
         @self.base_endpoint

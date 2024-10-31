@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
 from uuid import UUID
+from fastapi.responses import StreamingResponse
 
 import toml
 
@@ -713,12 +714,20 @@ class ManagementService(Service):
             message_id, new_content
         )
 
-    @telemetry_event("addMessageMetadata")
+    @telemetry_event("updateMessageMetadata")
     async def update_message_metadata(
         self, message_id: str, metadata: dict, auth_user=None
     ):
         await self.logging_connection.update_message_metadata(
             message_id, metadata
+        )
+
+    @telemetry_event("exportMessagesToCSV")
+    async def export_messages_to_csv(
+        self, chunk_size: int = 1000, return_type: str = "stream"
+    ) -> Union[StreamingResponse, str]:
+        return await self.logging_connection.export_messages_to_csv(
+            chunk_size, return_type
         )
 
     @telemetry_event("BranchesOverview")
