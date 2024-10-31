@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from ..models import Token, UserResponse
+from ...models import Token, UserResponse
 
 
 class AuthMixins:

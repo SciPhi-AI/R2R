@@ -2,7 +2,7 @@ import json
 from typing import Any, Optional, Union
 from uuid import UUID
 
-from ..models import Message
+from ...models import Message
 
 
 class ManagementMixins:

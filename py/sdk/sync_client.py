@@ -2,6 +2,7 @@ import asyncio
 
 from .async_client import R2RAsyncClient
 from .utils import SyncClientMetaclass
+from .v3.document import SyncDocumentSDK
 
 
 class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
@@ -17,6 +18,7 @@ class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.documents = SyncDocumentSDK(self.documents)
 
     def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         async_gen = super()._make_streaming_request(method, endpoint, **kwargs)

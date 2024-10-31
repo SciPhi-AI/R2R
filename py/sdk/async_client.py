@@ -6,7 +6,7 @@ import httpx
 from shared.abstractions import R2RException
 
 from .base.base_client import BaseClient
-from .mixins import (
+from .v2.mixins import (
     AuthMixins,
     IngestionMixins,
     KGMixins,
@@ -14,6 +14,7 @@ from .mixins import (
     RetrievalMixins,
     ServerMixins,
 )
+from .v3.document import DocumentSDK
 
 
 class R2RAsyncClient(
@@ -44,6 +45,7 @@ class R2RAsyncClient(
     ):
         super().__init__(base_url, prefix, timeout)
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
+        self.documents = DocumentSDK(self)
 
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         url = self._get_full_url(endpoint)

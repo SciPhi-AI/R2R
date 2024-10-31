@@ -251,10 +251,10 @@ class R2RBuilder:
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "document_router": DocumentRouter(
-                providers,
-                services,
+                providers=providers,
+                services=services,
                 orchestration_provider=orchestration_provider,
-            ),
+            ).get_router(),
         }
 
         return R2RApp(

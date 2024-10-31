@@ -17,13 +17,18 @@ from core.providers import (
 )
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
-from ..v2.base_router import BaseRouter
-from .document_responses import DocumentIngestionResponse, DocumentResponse
+from .base_router import BaseRouterV3
+from .chunk_responses import ChunkResponse
+from .document_responses import (
+    CollectionResponse,
+    DocumentIngestionResponse,
+    DocumentResponse,
+)
 
 logger = logging.getLogger()
 
 
-class DocumentRouter(BaseRouter):
+class DocumentRouter(BaseRouterV3):
     def __init__(
         self,
         providers,
@@ -33,40 +38,20 @@ class DocumentRouter(BaseRouter):
         ],
         run_type: RunType = RunType.INGESTION,
     ):
-        super().__init__(services, orchestration_provider, run_type)
-        self.providers = providers
-        self.services = services
-
-    def _register_workflows(self):
-        self.orchestration_provider.register_workflows(
-            Workflow.INGESTION,
-            self.services.ingestion,
-            {
-                "ingest-document": (
-                    "Ingest document task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
-                    else "Ingestion task completed successfully."
-                ),
-                "update-document": (
-                    "Update file task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
-                    else "Update task queued successfully."
-                ),
-            },
-        )
+        super().__init__(providers, services, orchestration_provider, run_type)
 
     def _setup_routes(self):
         @self.router.post("/documents")
         @self.base_endpoint
-        async def ingest_documents(
-            file: Optional[UploadFile] = File(...),
+        async def ingest_document(
+            file: Optional[UploadFile] = File(None),
             content: Optional[str] = Form(None),
             document_id: Optional[Json[UUID]] = Form(None),
             metadata: Optional[Json[dict]] = Form(None),
             ingestion_config: Optional[Json[dict]] = Form(None),
             run_with_orchestration: Optional[bool] = Form(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[list[DocumentIngestionResponse]]:
+        ) -> ResultsWrapper[DocumentIngestionResponse]:
             """
             Creates a new `Document` object from an input file or text content. Each document has corresponding `Chunk` objects which are used in vector indexing and search.
 
@@ -85,6 +70,7 @@ class DocumentRouter(BaseRouter):
                     message="Both a file and content cannot be provided.",
                 )
             # Check if the user is a superuser
+            metadata = metadata or {}
             if not auth_user.is_superuser:
                 if "user_id" in metadata and (
                     not auth_user.is_superuser
@@ -99,7 +85,6 @@ class DocumentRouter(BaseRouter):
 
             if file:
                 file_data = await self._process_file(file)
-
                 content_length = len(file_data["content"])
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
 
@@ -107,24 +92,29 @@ class DocumentRouter(BaseRouter):
                 document_id = document_id or generate_document_id(
                     file_data["filename"], auth_user.id
                 )
-            else:
+            elif content:
                 content_length = len(content)
                 file_content = BytesIO(content.encode("utf-8"))
                 document_id = document_id or generate_document_id(
                     content, auth_user.id
                 )
                 file_data = {
-                    "filename": f"{document_id}.txt",
+                    "filename": "N/A",
                     "content_type": "text/plain",
                 }
+            else:
+                raise R2RException(
+                    status_code=422,
+                    message="Either a file or content must be provided.",
+                )
 
             workflow_input = {
-                "file_datas": [file_data],
-                "document_ids": [str(document_id)],
-                "metadatas": [metadata],
+                "file_data": file_data,
+                "document_id": str(document_id),
+                "metadata": metadata,
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
-                "file_sizes_in_bytes": [content_length],
+                "size_in_bytes": content_length,
                 "is_update": False,
             }
 
@@ -137,7 +127,7 @@ class DocumentRouter(BaseRouter):
             )
             if run_with_orchestration:
                 raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
-                    "ingest-documents",
+                    "ingest-files",
                     {"request": workflow_input},
                     options={
                         "additional_metadata": {
@@ -146,7 +136,7 @@ class DocumentRouter(BaseRouter):
                     },
                 )
                 raw_message["document_id"] = str(document_id)
-                return raw_message
+                return raw_message  # type: ignore
             else:
                 logger.info(
                     f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
@@ -154,9 +144,11 @@ class DocumentRouter(BaseRouter):
                 # TODO - Clean up implementation logic here to be more explicitly `synchronous`
                 from core.main.orchestration import simple_ingestion_factory
 
-                simple_ingestor = simple_ingestion_factory(self.service)
+                simple_ingestor = simple_ingestion_factory(
+                    self.services["ingestion"]
+                )
                 await simple_ingestor["ingest-files"](workflow_input)
-                return {
+                return {  # type: ignore
                     "message": "Ingestion task completed successfully.",
                     "document_id": str(document_id),
                     "task_id": None,
@@ -167,14 +159,14 @@ class DocumentRouter(BaseRouter):
         )
         @self.base_endpoint
         async def update_document(
-            file: Optional[UploadFile] = File(...),
+            file: Optional[UploadFile] = File(None),
             content: Optional[str] = Form(None),
             document_id: UUID = Path(...),
-            metadata: Optional[Json[list[dict]]] = Form(None),
+            metadata: Optional[Json[dict]] = Form(None),
             ingestion_config: Optional[Json[dict]] = Form(None),
             run_with_orchestration: Optional[bool] = Form(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[list[DocumentIngestionResponse]]:
+        ) -> ResultsWrapper[DocumentIngestionResponse]:
             """
             Ingests updated files into R2R, updating the corresponding `Document` and `Chunk` objects from previous ingestion.
 
@@ -192,6 +184,8 @@ class DocumentRouter(BaseRouter):
                     status_code=422,
                     message="Both a file and content cannot be provided.",
                 )
+            metadata = metadata or {}  # type: ignore
+
             # Check if the user is a superuser
             if not auth_user.is_superuser:
                 if "user_id" in metadata and metadata["user_id"] != str(
@@ -208,11 +202,11 @@ class DocumentRouter(BaseRouter):
                 content_length = len(file_data["content"])
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
                 file_data.pop("content", None)
-            else:
+            elif content:
                 content_length = len(content)
                 file_content = BytesIO(content.encode("utf-8"))
                 file_data = {
-                    "filename": f"{document_id}.txt",
+                    "filename": f"N/A",
                     "content_type": "text/plain",
                 }
 
@@ -221,6 +215,11 @@ class DocumentRouter(BaseRouter):
                     file_data["filename"],
                     file_content,
                     file_data["content_type"],
+                )
+            else:
+                raise R2RException(
+                    status_code=422,
+                    message="Either a file or content must be provided.",
                 )
 
             workflow_input = {
@@ -237,10 +236,10 @@ class DocumentRouter(BaseRouter):
 
             if run_with_orchestration:
                 raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
-                    "update-documents", {"request": workflow_input}, {}
+                    "update-files", {"request": workflow_input}, {}
                 )
                 raw_message["message"] = "Update task queued successfully."
-                raw_message["document_ids"] = workflow_input["document_ids"]
+                raw_message["document_id"] = workflow_input["document_ids"][0]
 
                 return raw_message  # type: ignore
             else:
@@ -248,11 +247,13 @@ class DocumentRouter(BaseRouter):
                 # TODO - Clean up implementation logic here to be more explicitly `synchronous`
                 from core.main.orchestration import simple_ingestion_factory
 
-                simple_ingestor = simple_ingestion_factory(self.service)
+                simple_ingestor = simple_ingestion_factory(
+                    self.services["ingestion"]
+                )
                 await simple_ingestor["update-files"](workflow_input)
                 return {  # type: ignore
                     "message": "Update task completed successfully.",
-                    "document_ids": workflow_input["document_ids"],
+                    "document_id": workflow_input["document_ids"],
                     "task_id": None,
                 }
 
@@ -277,17 +278,17 @@ class DocumentRouter(BaseRouter):
             document_uuids = [
                 UUID(document_id) for document_id in document_ids
             ]
-            documents_overview_response = (
-                await self.service.management.documents_overview(
-                    user_ids=request_user_ids,
-                    collection_ids=filter_collection_ids,
-                    document_ids=document_uuids,
-                    offset=offset,
-                    limit=limit,
-                )
+            documents_overview_response = await self.services[
+                "management"
+            ].documents_overview(
+                user_ids=request_user_ids,
+                collection_ids=filter_collection_ids,
+                document_ids=document_uuids,
+                offset=offset,
+                limit=limit,
             )
 
-            return (
+            return (  # type: ignore
                 documents_overview_response["results"],
                 {
                     "total_entries": documents_overview_response[
@@ -312,12 +313,12 @@ class DocumentRouter(BaseRouter):
                 None if auth_user.is_superuser else auth_user.collection_ids
             )
 
-            documents_overview_response = (
-                await self.service.management.documents_overview(
-                    user_ids=request_user_ids,
-                    collection_ids=filter_collection_ids,
-                    document_ids=[document_id],
-                )
+            documents_overview_response = await self.services[
+                "management"
+            ].documents_overview(
+                user_ids=request_user_ids,
+                collection_ids=filter_collection_ids,
+                document_ids=[document_id],
             )
             results = documents_overview_response["results"]
             if len(results) == 0:
@@ -325,46 +326,54 @@ class DocumentRouter(BaseRouter):
 
             return results[0]
 
-        # Put this onto the chunk page
+        @self.router.get("/documents/{document_id}/chunks")
+        @self.base_endpoint
+        async def get_document_chunks(
+            document_id: UUID = Path(...),
+            offset: Optional[int] = Query(0, ge=0),
+            limit: Optional[int] = Query(100, ge=0),
+            include_vectors: Optional[bool] = Query(False),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
+            """
+            Get chunks for a specific document.
+            """
+            document_chunks = await self.services[
+                "management"
+            ].document_chunks(document_id, offset, limit, include_vectors)
 
-        # @self.router.get("/documents/{document_id}/chunks")
-        # @self.base_endpoint
-        # async def get_document_chunks(
-        #     document_id: UUID = Path(...),
-        #     offset: Optional[int] = Query(0, ge=0),
-        #     limit: Optional[int] = Query(100, ge=0),
-        #     include_vectors: Optional[bool] = Query(False),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> PaginatedResultsWrapper[list[DocumentResponse]]:
-        #     """
-        #     Get chunks for a specific document.
-        #     """
-        #     document_chunks = await self.service.document_chunks(
-        #         document_id, offset, limit, include_vectors
-        #     )
+            if not document_chunks["results"]:
+                raise R2RException(
+                    "No chunks found for the given document ID.", 404
+                )
 
-        #     if not document_chunks["results"]:
-        #         raise R2RException("No chunks found for the given document ID.", 404)
+            is_owner = str(
+                document_chunks["results"][0].get("user_id")
+            ) == str(auth_user.id)
+            document_collections = await self.services[
+                "management"
+            ].document_collections(document_id, 0, -1)
 
-        #     is_owner = str(document_chunks["results"][0].get("user_id")) == str(auth_user.id)
-        #     document_collections = await self.service.document_collections(document_id, 0, -1)
+            user_has_access = (
+                is_owner
+                or set(auth_user.collection_ids).intersection(
+                    {
+                        ele.collection_id
+                        for ele in document_collections["results"]
+                    }
+                )
+                != set()
+            )
 
-        #     user_has_access = (
-        #         is_owner or
-        #         set(auth_user.collection_ids).intersection(
-        #             {ele.collection_id for ele in document_collections["results"]}
-        #         ) != set()
-        #     )
+            if not user_has_access and not auth_user.is_superuser:
+                raise R2RException(
+                    "Not authorized to access this document's chunks.", 403
+                )
 
-        #     if not user_has_access and not auth_user.is_superuser:
-        #         raise R2RException(
-        #             "Not authorized to access this document's chunks.", 403
-        #         )
-
-        #     return (
-        #         document_chunks["results"],
-        #         {"total_entries": document_chunks["total_entries"]}
-        #     )
+            return (  # type: ignore
+                document_chunks["results"],
+                {"total_entries": document_chunks["total_entries"]},
+            )
 
         @self.router.get(
             "/documents/{document_id}/download",
@@ -373,7 +382,7 @@ class DocumentRouter(BaseRouter):
         @self.base_endpoint
         async def get_document_file(
             document_id: str = Path(..., description="Document ID"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Download a file by its corresponding document ID.
@@ -387,7 +396,7 @@ class DocumentRouter(BaseRouter):
                     status_code=422, message="Invalid document ID format."
                 )
 
-            file_tuple = await self.service.management.download_file(
+            file_tuple = await self.services["management"].download_file(
                 document_uuid
             )
             if not file_tuple:
@@ -431,14 +440,14 @@ class DocumentRouter(BaseRouter):
                     {"document_id": {"$eq": document_id}},
                 ]
             }
-            await self.services.management.delete(filters=filters)
+            await self.services["management"].delete(filters=filters)
             return None
 
-        @self.router.delete("/documents/filtered")
+        @self.router.delete("/documents/by-filter")
         @self.base_endpoint
         async def delete_document_by_id(
             filters: str = Query(..., description="JSON-encoded filters"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[None]:
             """
             Delete documents based on provided filters.
@@ -467,20 +476,26 @@ class DocumentRouter(BaseRouter):
 
             return await self.service.management.delete(filters=filters_dict)
 
-        # Put this onto the collection page
-        # @self.router.get("/documents/{document_id}/collections")
-        # @self.base_endpoint
-        # async def get_document_collections(
-        #     document_id: UUID = Path(...),
-        #     offset: int = Query(0, ge=0),
-        #     limit: int = Query(100, ge=1, le=1000),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> WrappedCollectionListResponse:
-        #     """
-        #     Get collections that contain a specific document.
-        #     """
-        #     if not auth_user.is_superuser:
-        #         document = await self.service.get
+        @self.router.get("/documents/{document_id}/collections")
+        @self.base_endpoint
+        async def get_document_collections(
+            document_id: str = Path(..., description="Document ID"),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> ResultsWrapper[list[CollectionResponse]]:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can get the collections belonging to a document.",
+                    403,
+                )
+            document_collections_response = await self.services[
+                "management"
+            ].document_collections(document_id, offset, limit)
+
+            return document_collections_response["results"], {  # type: ignore
+                "total_entries": document_collections_response["total_entries"]
+            }
 
     @staticmethod
     async def _process_file(file):

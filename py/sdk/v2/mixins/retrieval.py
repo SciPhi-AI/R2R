@@ -1,7 +1,7 @@
 import logging
 from typing import AsyncGenerator, Optional, Union
 
-from ..models import (
+from ...models import (
     GenerationConfig,
     KGSearchSettings,
     Message,

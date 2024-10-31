@@ -115,12 +115,12 @@ class IngestionService(Service):
                 ):
                     raise R2RException(
                         status_code=409,
-                        message=f"Must increment version number before attempting to overwrite document {document_id}. Use the `update_files` endpoint if you are looking to update the existing version.",
+                        message=f"Document {document_id} already exists. Increment the version to overwrite existing document. Otherwise, submit a POST request to `/documents/{document_id}` to update the existing version.",
                     )
                 elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                     raise R2RException(
                         status_code=409,
-                        message=f"Document {document_id} was already ingested and is not in a failed state.",
+                        message=f"Document {document_id} is currently ingesting.",
                     )
 
             await self.providers.database.upsert_documents_overview(
@@ -147,7 +147,9 @@ class IngestionService(Service):
         version: str,
         size_in_bytes: int,
     ) -> DocumentInfo:
-        file_extension = file_name.split(".")[-1].lower()
+        file_extension = (
+            file_name.split(".")[-1].lower() if file_name != "N/A" else "txt"
+        )
         if file_extension.upper() not in DocumentType.__members__:
             raise R2RException(
                 status_code=415,
@@ -162,7 +164,11 @@ class IngestionService(Service):
             user_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
             document_type=DocumentType[file_extension.upper()],
-            title=metadata.get("title", file_name.split("/")[-1]),
+            title=(
+                metadata.get("title", file_name.split("/")[-1])
+                if file_name != "N/A"
+                else "N/A"
+            ),
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,

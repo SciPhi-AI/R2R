@@ -22,9 +22,12 @@ def simple_ingestion_factory(service: IngestionService):
             from core.base import IngestionStatus
             from core.main import IngestionServiceAdapter
 
+            print("a")
             parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
                 input_data
             )
+            print("b")
+
             is_update = parsed_data["is_update"]
 
             ingestion_result = await service.ingest_file_ingress(**parsed_data)
