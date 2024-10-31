@@ -862,7 +862,7 @@ class ManagementRouter(BaseRouter):
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only an authorized user can call the `server_stats` endpoint.",
+                    "Only an authorized user can call the `export/messages` endpoint.",
                     403,
                 )
             return await self.service.export_messages_to_csv(
