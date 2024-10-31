@@ -674,20 +674,33 @@ class ManagementService(Service):
             conversation_id, branch_id
         )
 
+    async def verify_conversation_access(
+        self, conversation_id: str, user_id: UUID
+    ) -> bool:
+        return await self.logging_connection.verify_conversation_access(
+            conversation_id, user_id
+        )
+
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> str:
-        return await self.logging_connection.create_conversation()
+    async def create_conversation(
+        self, user_id: Optional[UUID] = None, auth_user=None
+    ) -> str:
+        return await self.logging_connection.create_conversation(
+            user_id=user_id
+        )
 
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
         self,
         conversation_ids: Optional[list[UUID]] = None,
+        user_ids: Optional[UUID | list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations_overview(
             conversation_ids=conversation_ids,
+            user_ids=user_ids,
             offset=offset,
             limit=limit,
         )

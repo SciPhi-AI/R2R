@@ -131,6 +131,8 @@ class CollectionOverviewResponse(BaseModel):
 class ConversationOverviewResponse(BaseModel):
     conversation_id: UUID
     created_at: datetime
+    user_id: Optional[UUID] = None
+    name: Optional[str] = None
 
 
 class VerificationResult(BaseModel):
