@@ -435,6 +435,19 @@ def hatchet_kg_factory(
             logger.info(f"Ran {len(results)} workflows for community summary")
 
             # set status to success
+            # for all documents in the collection, set kg_creation_status to ENRICHED
+            document_ids = await self.kg_service.providers.database.get_document_ids_by_status(
+                status_type="kg_creation_status",
+                status=KGExtractionStatus.SUCCESS,
+                collection_id=collection_id,
+            )
+
+            await self.kg_service.providers.database.set_workflow_status(
+                id=document_ids,
+                status_type="kg_creation_status",
+                status=KGExtractionStatus.ENRICHED,
+            )
+
             await self.kg_service.providers.database.set_workflow_status(
                 id=collection_id,
                 status_type="kg_enrichment_status",

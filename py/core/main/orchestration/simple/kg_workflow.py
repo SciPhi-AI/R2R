@@ -115,7 +115,7 @@ def simple_kg_factory(service: KgService):
                 status=KGEnrichmentStatus.FAILED,
             )
 
-            raise R2RException(f"Error in enriching graph: {e}", 500)
+            raise e
 
     async def kg_community_summary(input_data):
 

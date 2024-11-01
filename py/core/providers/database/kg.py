@@ -8,6 +8,7 @@ import asyncpg
 from asyncpg.exceptions import PostgresError, UndefinedTableError
 
 from core.base import (
+    Community,
     CommunityReport,
     Entity,
     KGExtraction,
@@ -610,6 +611,23 @@ class PostgresKGHandler(KGHandler):
             QUERY, [tuple(non_null_attrs.values())]
         )
 
+    async def _create_graph_and_cluster(self, triples: list[Triple], leiden_params: dict[str, Any]) -> Any:
+
+        G = self.nx.Graph()
+        for triple in triples:
+            G.add_edge(
+                triple.subject,
+                triple.object,
+                weight=triple.weight,
+                id=triple.id,
+            )
+
+        hierarchical_communities = await self._compute_leiden_communities(
+            G, leiden_params
+        )
+
+        return hierarchical_communities
+
     async def _cluster_and_add_communities(self, triples: list[Triple], triple_ids_cache: dict[str, list[int]], leiden_params: dict[str, Any], collection_id: UUID) -> None:
 
         # clear if there is any old information
@@ -623,19 +641,9 @@ class PostgresKGHandler(KGHandler):
         """
         await self.connection_manager.execute_query(QUERY, [collection_id])
 
-        G = self.nx.Graph()
-        for triple in triples:
-            G.add_edge(
-                triple.subject,
-                triple.object,
-                weight=triple.weight,
-                id=triple.id,
-            )
-
         start_time = time.time()
-        hierarchical_communities = await self._compute_leiden_communities(
-            G, leiden_params
-        )
+
+        hierarchical_communities = await self._create_graph_and_cluster(triples, leiden_params)
 
         logger.info(
             f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
@@ -679,7 +687,7 @@ class PostgresKGHandler(KGHandler):
             SELECT kg_enrichment_status FROM {self._get_table_name("collections")} WHERE collection_id = $1
         """
         status = (await self.connection_manager.fetchrow_query(QUERY, [collection_id]))["kg_enrichment_status"]
-        if status in [KGEnrichmentStatus.PENDING, KGEnrichmentStatus.FAILED]:
+        if status == KGEnrichmentStatus.PENDING:
             return False
 
         # check the number of entities in the cache. 
@@ -746,11 +754,15 @@ class PostgresKGHandler(KGHandler):
             communities_dict[community["node"]].append(community)
 
         QUERY = f"""
-            SELECT document_id FROM {self._get_table_name("document_info")} WHERE collection_ids = ANY($1) and kg_extraction_status == $2
+            SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids) and kg_extraction_status = $2
         """
+
         new_document_ids = await self.connection_manager.fetch_query(QUERY, [collection_id, KGExtractionStatus.SUCCESS])
 
         new_triple_ids = await self.get_all_triples(collection_id, new_document_ids)
+        new_document_ids = new_document_ids[1:]
+
+        import pdb; pdb.set_trace()
 
         # community mapping for new triples
         updated_communities = set()
@@ -758,11 +770,15 @@ class PostgresKGHandler(KGHandler):
         for triple in new_triple_ids:
             # bias towards subject
             if triple.subject in communities_dict:
-                updated_communities.add(communities_dict[triple.subject])
+                for community in communities_dict[triple.subject]:
+                    updated_communities.add(community['cluster'])
             elif triple.object in communities_dict:
-                updated_communities.add(communities_dict[triple.object])
+                for community in communities_dict[triple.object]:
+                    updated_communities.add(community['cluster'])
             else:
                 new_triples.append(triple)
+
+        import pdb; pdb.set_trace()
 
         # delete the communities information for the updated communities
         QUERY = f"""
@@ -770,18 +786,22 @@ class PostgresKGHandler(KGHandler):
         """
         await self.connection_manager.execute_query(QUERY, [collection_id, updated_communities])
 
-        hierarchical_communities = await self._compute_leiden_communities(new_triples, leiden_params)
+        import pdb; pdb.set_trace()
+        hierarchical_communities_output = await self._create_graph_and_cluster(new_triples, leiden_params)
 
-        # update the community info table with the new clusters by adding an offset of max_cluster_id to the cluster ids
-        for community in hierarchical_communities:
-            community.cluster += max_cluster_id
-            if community.parent_cluster is not None:
-                community.parent_cluster += max_cluster_id
+        communities = []
+        for community in hierarchical_communities_output:
+            communities.append(Community(
+                node=community.node,
+                cluster=community.cluster + max_cluster_id,
+                parent_cluster=community.parent_cluster + max_cluster_id,
+                level=community.level,
+                is_final_cluster=community.is_final_cluster,
+                triple_ids=community.triple_ids,
+            ))
 
-        await self.add_communities(hierarchical_communities)
-
-        num_communities = max([item.cluster for item in hierarchical_communities]) + 1
-
+        await self.add_communities(communities)
+        num_communities = max([item.cluster for item in communities]) + 1
         return num_communities
 
     async def perform_graph_clustering(
