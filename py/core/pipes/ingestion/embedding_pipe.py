@@ -40,9 +40,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
-    async def embed(
-        self, extractions: list[DocumentChunk]
-    ) -> list[float]:
+    async def embed(self, extractions: list[DocumentChunk]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [extraction.data for extraction in extractions],  # type: ignore
             EmbeddingProvider.PipeStage.BASE,

@@ -1,9 +1,10 @@
 import json
+from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
+
 
 class ChunkSDK:
     """
@@ -31,14 +32,10 @@ class ChunkSDK:
             dict: Creation results containing processed chunk information
         """
         data = {}
-        data["raw_chunks"] = chunks # json.dumps(chunks)
+        data["raw_chunks"] = chunks  # json.dumps(chunks)
         if run_with_orchestration != None:
             data["run_with_orchestration"] = run_with_orchestration
-        return await self.client._make_request(
-            "POST",
-            "chunks",
-            json=data
-        )
+        return await self.client._make_request("POST", "chunks", json=data)
 
     async def update(
         self,
@@ -81,7 +78,6 @@ class ChunkSDK:
             f"chunks/{id}",
         )
 
-
     async def list_by_document(
         self,
         document_id: Union[str, UUID],
@@ -109,11 +105,8 @@ class ChunkSDK:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
         return await self.client._make_request(
-            "GET",
-            f"documents/{str(document_id)}/chunks",
-            params=params
+            "GET", f"documents/{str(document_id)}/chunks", params=params
         )
-
 
     async def search(
         self,
@@ -147,18 +140,22 @@ class ChunkSDK:
         }
 
         if filter_document_ids:
-            params["filter_document_ids"] = [str(doc_id) for doc_id in filter_document_ids]
+            params["filter_document_ids"] = [
+                str(doc_id) for doc_id in filter_document_ids
+            ]
         if filter_extraction_ids:
-            params["filter_extraction_ids"] = [str(ext_id) for ext_id in filter_extraction_ids]
+            params["filter_extraction_ids"] = [
+                str(ext_id) for ext_id in filter_extraction_ids
+            ]
         if filter_collection_ids:
-            params["filter_collection_ids"] = [str(col_id) for col_id in filter_collection_ids]
+            params["filter_collection_ids"] = [
+                str(col_id) for col_id in filter_collection_ids
+            ]
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
         return await self.client._make_request(
-            "GET",
-            "chunks/search",
-            params=params
+            "GET", "chunks/search", params=params
         )
 
     async def delete(
@@ -171,10 +168,7 @@ class ChunkSDK:
         Args:
             chunk_id (Union[str, UUID]): ID of chunk to delete
         """
-        await self.client._make_request(
-            "DELETE",
-            f"chunks/{str(chunk_id)}"
-        )
+        await self.client._make_request("DELETE", f"chunks/{str(chunk_id)}")
 
     async def reprocess(
         self,
@@ -192,9 +186,46 @@ class ChunkSDK:
         return await self.client._make_request(
             "POST",
             "chunks/reprocess",
-            json={"chunk_ids": [str(chunk_id) for chunk_id in chunk_ids]}
+            json={"chunk_ids": [str(chunk_id) for chunk_id in chunk_ids]},
         )
-    
+
+    async def list_chunks(
+        self,
+        offset: int = 0,
+        limit: int = 10,
+        sort_by: str = "created_at",
+        sort_order: str = "DESC",
+        metadata_filter: Optional[Dict[str, Any]] = None,
+        include_vectors: bool = False,
+    ) -> dict:
+        """
+        List chunks with pagination support.
+
+        Args:
+            offset (int, optional): Number of records to skip. Defaults to 0.
+            limit (int, optional): Maximum number of records to return. Defaults to 10.
+            sort_by (str, optional): Field to sort by. Defaults to 'created_at'.
+            sort_order (str, optional): Sort order ('ASC' or 'DESC'). Defaults to 'DESC'.
+            metadata_filter (Optional[Dict[str, Any]], optional): Filter by metadata. Defaults to None.
+            include_vectors (bool, optional): Include vector data in response. Defaults to False.
+
+        Returns:
+            dict: Dictionary containing:
+                - results: List of chunks
+                - page_info: Pagination information
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
+            "include_vectors": include_vectors,
+        }
+
+        if metadata_filter:
+            params["metadata_filter"] = json.dumps(metadata_filter)
+
+        return await self.client._make_request("GET", "chunks", params=params)
 
 
 class SyncChunkSDK:

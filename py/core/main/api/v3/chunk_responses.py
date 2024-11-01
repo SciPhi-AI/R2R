@@ -12,7 +12,9 @@ class ChunkResponse(BaseModel):
     metadata: dict[str, Any]
     vector: Optional[list[float]] = None
 
+
 class ChunkIngestionResponse(BaseModel):
     """Response model for chunk ingestion"""
-    message: str 
+
+    message: str
     document_id: UUID

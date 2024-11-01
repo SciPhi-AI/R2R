@@ -459,8 +459,7 @@ class IngestionService(Service):
                     similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
                 )
                 context_chunk_ids.extend(
-                    neighbor["chunk_id"]
-                    for neighbor in semantic_neighbors
+                    neighbor["chunk_id"] for neighbor in semantic_neighbors
                 )
 
         context_chunk_ids = list(set(context_chunk_ids))
@@ -516,9 +515,7 @@ class IngestionService(Service):
         chunk["metadata"]["original_text"] = chunk["text"]
 
         return VectorEntry(
-            chunk_id=uuid.uuid5(
-                uuid.NAMESPACE_DNS, str(chunk["chunk_id"])
-            ),
+            chunk_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk["chunk_id"])),
             vector=Vector(data=data, type=VectorType.FIXED, length=len(data)),
             document_id=document_id,
             user_id=chunk["user_id"],
@@ -585,6 +582,19 @@ class IngestionService(Service):
 
         return len(new_vector_entries)
 
+    # TODO - This should return a typed object
+    async def list_chunks(
+        self,
+        offset: int = 0,
+        limit: int = 10,
+        filters: Optional[dict[str, Any]] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "DESC",
+        include_vectors: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -> dict:
+        return await self.providers.database.list_chunks()
 
     # TODO - This should return a typed object
     async def get_chunk(
@@ -595,6 +605,7 @@ class IngestionService(Service):
         **kwargs: Any,
     ) -> dict:
         return await self.providers.database.get_chunk(chunk_id)
+
 
 class IngestionServiceAdapter:
     @staticmethod

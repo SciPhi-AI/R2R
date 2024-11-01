@@ -601,6 +601,18 @@ class VectorHandler(Handler):
     ) -> list[dict[str, Any]]:
         pass
 
+    @abstractmethod
+    async def list_chunks(
+        self,
+        offset: int = 0,
+        limit: int = 10,
+        filters: Optional[dict[str, Any]] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "DESC",
+        include_vectors: bool = False,
+    ) -> dict[str, Any]:
+        pass
+
 
 class KGHandler(Handler):
     """Base handler for Knowledge Graph operations."""
@@ -1912,3 +1924,16 @@ class DatabaseProvider(Provider):
     async def branch_at_message(self, message_id: str) -> str:
         """Create a new branch starting at a specific message."""
         return await self.logging_handler.branch_at_message(message_id)
+
+    async def list_chunks(
+        self,
+        offset: int = 0,
+        limit: int = 10,
+        filters: Optional[dict[str, Any]] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "DESC",
+        include_vectors: bool = False,
+    ) -> dict[str, Any]:
+        return await self.vector_handler.list_chunks(
+            offset, limit, filters, sort_by, sort_order, include_vectors
+        )

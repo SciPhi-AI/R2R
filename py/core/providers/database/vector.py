@@ -1186,6 +1186,123 @@ class PostgresVectorHandler(VectorHandler):
             for r in results
         ]
 
+    async def list_chunks(
+        self,
+        offset: int = 0,
+        limit: int = 10,
+        filters: Optional[dict[str, Any]] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "DESC",
+        include_vectors: bool = False,
+    ) -> dict[str, Any]:
+        """
+        List chunks with pagination support.
+
+        Args:
+            offset (int, optional): Number of records to skip. Defaults to 0.
+            limit (int, optional): Maximum number of records to return. Defaults to 10.
+            filters (dict, optional): Dictionary of filters to apply. Defaults to None.
+            sort_by (str, optional): Column to sort by. Defaults to 'created_at'.
+            sort_order (str, optional): Sort order ('ASC' or 'DESC'). Defaults to 'DESC'.
+            include_vectors (bool, optional): Whether to include vector data. Defaults to False.
+
+        Returns:
+            dict: Dictionary containing:
+                - results: List of chunk records
+                - total_entries: Total number of chunks matching the filters
+                - page_info: Pagination information
+        """
+        # Validate sort parameters
+        valid_sort_columns = {
+            "created_at": "metadata->>'created_at'",
+            "updated_at": "metadata->>'updated_at'",
+            "chunk_order": "metadata->>'chunk_order'",
+            "text": "text",
+        }
+
+        if sort_by not in valid_sort_columns:
+            raise ValueError(
+                f"Invalid sort_by parameter. Must be one of {list(valid_sort_columns.keys())}"
+            )
+
+        if sort_order.upper() not in ["ASC", "DESC"]:
+            raise ValueError("Sort order must be either 'ASC' or 'DESC'")
+
+        # Build the select clause
+        vector_select = ", vec" if include_vectors else ""
+        select_clause = f"""
+            chunk_id, document_id, user_id, collection_ids,
+            text, metadata{vector_select}, COUNT(*) OVER() AS total
+        """
+
+        # Build the where clause if filters are provided
+        where_clause = ""
+        params: list[Union[str, int, bytes]] = []
+        if filters:
+            where_clause = self._build_filters(filters, params)
+            where_clause = f"WHERE {where_clause}"
+
+        # Build the ORDER BY clause
+        order_clause = f"ORDER BY {valid_sort_columns[sort_by]} {sort_order}"
+
+        # Construct the final query
+        query = f"""
+        SELECT {select_clause}
+        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        {where_clause}
+        {order_clause}
+        LIMIT $%s
+        OFFSET $%s
+        """
+
+        # Add pagination parameters
+        params.extend([limit, offset])
+        param_indices = list(range(1, len(params) + 1))
+        formatted_query = query % tuple(param_indices)
+
+        # Execute the query
+        results = await self.connection_manager.fetch_query(
+            formatted_query, params
+        )
+
+        # Process results
+        chunks = []
+        total = 0
+        if results:
+            total = results[0].get("total", 0)
+            chunks = [
+                {
+                    "chunk_id": str(result["chunk_id"]),
+                    "document_id": str(result["document_id"]),
+                    "user_id": str(result["user_id"]),
+                    "collection_ids": result["collection_ids"],
+                    "text": result["text"],
+                    "metadata": json.loads(result["metadata"]),
+                    "vector": (
+                        json.loads(result["vec"]) if include_vectors else None
+                    ),
+                }
+                for result in results
+            ]
+
+        # Calculate pagination info
+        total_pages = (total + limit - 1) // limit if limit > 0 else 1
+        current_page = (offset // limit) + 1 if limit > 0 else 1
+
+        page_info = {
+            "total_entries": total,
+            "total_pages": total_pages,
+            "current_page": current_page,
+            "limit": limit,
+            "offset": offset,
+            "has_previous": offset > 0,
+            "has_next": offset + limit < total,
+            "previous_offset": max(0, offset - limit) if offset > 0 else None,
+            "next_offset": offset + limit if offset + limit < total else None,
+        }
+
+        return {"results": chunks, "page_info": page_info}
+
     def _get_index_options(
         self,
         method: IndexMethod,
