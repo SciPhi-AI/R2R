@@ -27,6 +27,7 @@ from core.base import (
 )
 from core.base.abstractions import (
     DocumentInfo,
+    DocumentSearchSettings,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -518,6 +519,12 @@ class VectorHandler(Handler):
     async def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
+        pass
+
+    @abstractmethod
+    async def search_documents(
+        self, query_text: str, settings: DocumentSearchSettings
+    ) -> list[dict]:
         pass
 
     @abstractmethod
@@ -1415,6 +1422,11 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.hybrid_search(
             query_text, query_vector, search_settings, *args, **kwargs
         )
+
+    async def search_documents(
+        self, query_text: str, settings: DocumentSearchSettings
+    ) -> list[dict]:
+        return await self.vector_handler.search_documents(query_text, settings)
 
     async def delete(
         self, filters: dict[str, Any]
