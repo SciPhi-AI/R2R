@@ -16,8 +16,9 @@ from .api.v2.ingestion_router import IngestionRouter
 from .api.v2.kg_router import KGRouter
 from .api.v2.management_router import ManagementRouter
 from .api.v2.retrieval_router import RetrievalRouter
-from .api.v3.document_router import DocumentRouter
 from .api.v3.chunk_router import ChunkRouter
+from .api.v3.document_router import DocumentRouter
+from .api.v3.indices_router import IndicesRouter
 from .config import R2RConfig
 
 
@@ -35,6 +36,7 @@ class R2RApp:
         kg_router: KGRouter,
         document_router: DocumentRouter,
         chunk_router: ChunkRouter,
+        index_router: IndicesRouter,
     ):
         self.config = config
         self.ingestion_router = ingestion_router
@@ -45,6 +47,7 @@ class R2RApp:
         self.orchestration_provider = orchestration_provider
         self.document_router = document_router
         self.chunk_router = chunk_router
+        self.index_router = index_router
         self.app = FastAPI()
 
         @self.app.exception_handler(R2RException)
@@ -62,13 +65,15 @@ class R2RApp:
 
     def _setup_routes(self):
         # Include routers in the app
-        self.app.include_router(self.ingestion_router, prefix="/v2")
-        self.app.include_router(self.management_router, prefix="/v2")
-        self.app.include_router(self.retrieval_router, prefix="/v2")
-        self.app.include_router(self.auth_router, prefix="/v2")
-        self.app.include_router(self.kg_router, prefix="/v2")
+        # self.app.include_router(self.ingestion_router, prefix="/v2")
+        # self.app.include_router(self.management_router, prefix="/v2")
+        # self.app.include_router(self.retrieval_router, prefix="/v2")
+        # self.app.include_router(self.auth_router, prefix="/v2")
+        # self.app.include_router(self.kg_router, prefix="/v2")
+
         self.app.include_router(self.document_router, prefix="/v3")
         self.app.include_router(self.chunk_router, prefix="/v3")
+        self.app.include_router(self.index_router, prefix="/v3")
 
         @self.app.get("/openapi_spec")
         async def openapi_spec():

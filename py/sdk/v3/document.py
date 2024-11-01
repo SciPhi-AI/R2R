@@ -21,7 +21,7 @@ class DocumentSDK:
         self,
         file_path: Optional[str] = None,
         content: Optional[str] = None,
-        document_id: Optional[Union[str, UUID]] = None,
+        id: Optional[Union[str, UUID]] = None,
         metadata: Optional[dict] = None,
         ingestion_config: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
@@ -37,8 +37,8 @@ class DocumentSDK:
         data = {}
         files = None
 
-        if document_id:
-            data["document_id"] = json.dumps(str(document_id))
+        if id:
+            data["id"] = json.dumps(str(id))
         if metadata:
             data["metadata"] = json.dumps(metadata)
         if ingestion_config:
@@ -71,7 +71,7 @@ class DocumentSDK:
 
     async def update(
         self,
-        document_id: Union[str, UUID],
+        id: Union[str, UUID],
         file_path: Optional[str] = None,
         content: Optional[str] = None,
         metadata: Optional[dict] = None,
@@ -82,7 +82,7 @@ class DocumentSDK:
         Update an existing document.
 
         Args:
-            document_id (Union[str, UUID]): ID of document to update
+            id (Union[str, UUID]): ID of document to update
             file_path (Optional[str]): Path to the new file
             content (Optional[str]): New text content
             metadata (Optional[dict]): Updated metadata
@@ -119,7 +119,7 @@ class DocumentSDK:
             try:
                 result = await self.client._make_request(
                     "POST",
-                    f"documents/{str(document_id)}",
+                    f"documents/{str(id)}",
                     data=data,
                     files=files,
                 )
@@ -130,29 +130,27 @@ class DocumentSDK:
         else:
             data["content"] = content  # type: ignore
             return await self.client._make_request(
-                "POST", f"documents/{str(document_id)}", data=data
+                "POST", f"documents/{str(id)}", data=data
             )
 
     async def retrieve(
         self,
-        document_id: Union[str, UUID],
+        id: Union[str, UUID],
     ) -> dict:
         """
         Get a specific document by ID.
 
         Args:
-            document_id (Union[str, UUID]): ID of document to retrieve
+            id (Union[str, UUID]): ID of document to retrieve
 
         Returns:
             dict: Document information
         """
-        return await self.client._make_request(
-            "GET", f"documents/{str(document_id)}"
-        )
+        return await self.client._make_request("GET", f"documents/{str(id)}")
 
     async def list(
         self,
-        document_ids: Optional[List[Union[str, UUID]]] = None,
+        ids: Optional[List[Union[str, UUID]]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -160,7 +158,7 @@ class DocumentSDK:
         List documents with pagination.
 
         Args:
-            document_ids (Optional[List[Union[str, UUID]]]): Optional list of document IDs to filter by
+            ids (Optional[List[Union[str, UUID]]]): Optional list of document IDs to filter by
             offset (Optional[int]): Pagination offset
             limit (Optional[int]): Maximum number of documents to return
 
@@ -171,8 +169,8 @@ class DocumentSDK:
             "offset": offset,
             "limit": limit,
         }
-        if document_ids:
-            params["document_ids"] = [str(doc_id) for doc_id in document_ids]  # type: ignore
+        if ids:
+            params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
 
         return await self.client._make_request(
             "GET", "documents", params=params
@@ -180,38 +178,36 @@ class DocumentSDK:
 
     async def download(
         self,
-        document_id: Union[str, UUID],
+        id: Union[str, UUID],
     ) -> BytesIO:
         """
         Download a document's file content.
 
         Args:
-            document_id (Union[str, UUID]): ID of document to download
+            id (Union[str, UUID]): ID of document to download
 
         Returns:
             BytesIO: File content as a binary stream
         """
         return await self.client._make_request(
-            "GET", f"documents/{str(document_id)}/download"
+            "GET", f"documents/{str(id)}/download"
         )
 
     async def delete(
         self,
-        document_id: Union[str, UUID],
+        id: Union[str, UUID],
     ) -> None:
         """
         Delete a specific document.
 
         Args:
-            document_id (Union[str, UUID]): ID of document to delete
+            id (Union[str, UUID]): ID of document to delete
         """
-        await self.client._make_request(
-            "DELETE", f"documents/{str(document_id)}"
-        )
+        await self.client._make_request("DELETE", f"documents/{str(id)}")
 
     async def list_chunks(
         self,
-        document_id: Union[str, UUID],
+        id: Union[str, UUID],
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
         include_vectors: Optional[bool] = False,
@@ -220,7 +216,7 @@ class DocumentSDK:
         Get chunks for a specific document.
 
         Args:
-            document_id (Union[str, UUID]): ID of document to retrieve chunks for
+            id (Union[str, UUID]): ID of document to retrieve chunks for
             offset (Optional[int]): Pagination offset
             limit (Optional[int]): Maximum number of chunks to return
             include_vectors (Optional[bool]): Whether to include vector embeddings in the response
@@ -235,12 +231,12 @@ class DocumentSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"documents/{str(document_id)}/chunks", params=params
+            "GET", f"documents/{str(id)}/chunks", params=params
         )
 
     async def list_collections(
         self,
-        document_id: Union[str, UUID],
+        id: Union[str, UUID],
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
         include_vectors: Optional[bool] = False,
@@ -249,7 +245,7 @@ class DocumentSDK:
         Get chunks for a specific document.
 
         Args:
-            document_id (Union[str, UUID]): ID of document to retrieve chunks for
+            id (Union[str, UUID]): ID of document to retrieve chunks for
             offset (Optional[int]): Pagination offset
             limit (Optional[int]): Maximum number of chunks to return
             include_vectors (Optional[bool]): Whether to include vector embeddings in the response
@@ -264,7 +260,7 @@ class DocumentSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"documents/{str(document_id)}/collections", params=params
+            "GET", f"documents/{str(id)}/collections", params=params
         )
 
     async def delete_by_filter(

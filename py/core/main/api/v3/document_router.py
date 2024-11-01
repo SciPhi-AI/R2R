@@ -46,7 +46,7 @@ class DocumentRouter(BaseRouterV3):
         async def ingest_document(
             file: Optional[UploadFile] = File(None),
             content: Optional[str] = Form(None),
-            document_id: Optional[Json[UUID]] = Form(None),
+            id: Optional[Json[UUID]] = Form(None),
             metadata: Optional[Json[dict]] = Form(None),
             ingestion_config: Optional[Json[dict]] = Form(None),
             run_with_orchestration: Optional[bool] = Form(True),
@@ -150,18 +150,18 @@ class DocumentRouter(BaseRouterV3):
                 await simple_ingestor["ingest-files"](workflow_input)
                 return {  # type: ignore
                     "message": "Ingestion task completed successfully.",
-                    "document_id": str(document_id),
+                    "document_id": str(id),
                     "task_id": None,
                 }
 
         @self.router.post(
-            "/documents/{document_id}",
+            "/documents/{id}",
         )
         @self.base_endpoint
         async def update_document(
             file: Optional[UploadFile] = File(None),
             content: Optional[str] = Form(None),
-            document_id: UUID = Path(...),
+            id: UUID = Path(...),
             metadata: Optional[Json[dict]] = Form(None),
             ingestion_config: Optional[Json[dict]] = Form(None),
             run_with_orchestration: Optional[bool] = Form(True),
@@ -211,7 +211,7 @@ class DocumentRouter(BaseRouterV3):
                 }
 
                 await self.providers.database.store_file(
-                    document_id,
+                    id,
                     file_data["filename"],
                     file_content,
                     file_data["content_type"],
@@ -224,7 +224,7 @@ class DocumentRouter(BaseRouterV3):
 
             workflow_input = {
                 "file_datas": [file_data],
-                "document_ids": [str(document_id)],
+                "document_ids": [str(id)],
                 "metadatas": [metadata],
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
@@ -260,7 +260,7 @@ class DocumentRouter(BaseRouterV3):
         @self.router.get("/documents")
         @self.base_endpoint
         async def get_documents(
-            document_ids: list[str] = Query([]),
+            ids: list[str] = Query([]),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=-1),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -275,9 +275,7 @@ class DocumentRouter(BaseRouterV3):
                 None if auth_user.is_superuser else auth_user.collection_ids
             )
 
-            document_uuids = [
-                UUID(document_id) for document_id in document_ids
-            ]
+            document_uuids = [UUID(document_id) for document_id in ids]
             documents_overview_response = await self.services[
                 "management"
             ].documents_overview(
@@ -297,10 +295,10 @@ class DocumentRouter(BaseRouterV3):
                 },
             )
 
-        @self.router.get("/documents/{document_id}")
+        @self.router.get("/documents/{id}")
         @self.base_endpoint
         async def get_document(
-            document_id: UUID = Path(...),
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[DocumentResponse]:
             """
@@ -318,7 +316,7 @@ class DocumentRouter(BaseRouterV3):
             ].documents_overview(
                 user_ids=request_user_ids,
                 collection_ids=filter_collection_ids,
-                document_ids=[document_id],
+                document_ids=[id],
             )
             results = documents_overview_response["results"]
             if len(results) == 0:
@@ -326,10 +324,10 @@ class DocumentRouter(BaseRouterV3):
 
             return results[0]
 
-        @self.router.get("/documents/{document_id}/chunks")
+        @self.router.get("/documents/{id}/chunks")
         @self.base_endpoint
         async def get_document_chunks(
-            document_id: UUID = Path(...),
+            id: UUID = Path(...),
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
@@ -340,7 +338,7 @@ class DocumentRouter(BaseRouterV3):
             """
             document_chunks = await self.services[
                 "management"
-            ].document_chunks(document_id, offset, limit, include_vectors)
+            ].document_chunks(id, offset, limit, include_vectors)
 
             if not document_chunks["results"]:
                 raise R2RException(
@@ -352,7 +350,7 @@ class DocumentRouter(BaseRouterV3):
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
-            ].document_collections(document_id, 0, -1)
+            ].document_collections(id, 0, -1)
 
             user_has_access = (
                 is_owner
@@ -376,12 +374,12 @@ class DocumentRouter(BaseRouterV3):
             )
 
         @self.router.get(
-            "/documents/{document_id}/download",
+            "/documents/{id}/download",
             response_class=StreamingResponse,
         )
         @self.base_endpoint
         async def get_document_file(
-            document_id: str = Path(..., description="Document ID"),
+            id: str = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
@@ -390,7 +388,7 @@ class DocumentRouter(BaseRouterV3):
             # TODO: Add a check to see if the user has access to the file
 
             try:
-                document_uuid = UUID(document_id)
+                document_uuid = UUID(id)
             except ValueError:
                 raise R2RException(
                     status_code=422, message="Invalid document ID format."
@@ -425,10 +423,10 @@ class DocumentRouter(BaseRouterV3):
                 },
             )
 
-        @self.router.delete("/documents/{document_id}")
+        @self.router.delete("/documents/{id}")
         @self.base_endpoint
         async def delete_document_by_id(
-            document_id: UUID = Path(...),
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[None]:
             """
@@ -437,7 +435,7 @@ class DocumentRouter(BaseRouterV3):
             filters = {
                 "$and": [
                     {"$eq": str(auth_user.id)},
-                    {"document_id": {"$eq": document_id}},
+                    {"document_id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
@@ -476,10 +474,10 @@ class DocumentRouter(BaseRouterV3):
 
             return await self.service.management.delete(filters=filters_dict)
 
-        @self.router.get("/documents/{document_id}/collections")
+        @self.router.get("/documents/{id}/collections")
         @self.base_endpoint
         async def get_document_collections(
-            document_id: str = Path(..., description="Document ID"),
+            id: str = Path(..., description="Document ID"),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -491,7 +489,7 @@ class DocumentRouter(BaseRouterV3):
                 )
             document_collections_response = await self.services[
                 "management"
-            ].document_collections(document_id, offset, limit)
+            ].document_collections(id, offset, limit)
 
             return document_collections_response["results"], {  # type: ignore
                 "total_entries": document_collections_response["total_entries"]

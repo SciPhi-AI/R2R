@@ -48,11 +48,9 @@ class ChunkSDK:
         Update an existing chunk.
 
         Args:
-            chunk_id (Union[str, UUID]): ID of chunk to update
-            text (Optional[str]): New text content
-            metadata (Optional[dict]): Updated metadata
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
-
+            chunk (dict[str, str]): Chunk to update. Should contain:
+                - id: UUID of the chunk
+                - metadata: Dictionary of metadata
         Returns:
             dict: Update results containing processed chunk information
         """
@@ -163,34 +161,15 @@ class ChunkSDK:
 
     async def delete(
         self,
-        chunk_id: Union[str, UUID],
+        id: Union[str, UUID],
     ) -> None:
         """
         Delete a specific chunk.
 
         Args:
-            chunk_id (Union[str, UUID]): ID of chunk to delete
+            id (Union[str, UUID]): ID of chunk to delete
         """
-        await self.client._make_request("DELETE", f"chunks/{str(chunk_id)}")
-
-    async def reprocess(
-        self,
-        chunk_ids: List[Union[str, UUID]],
-    ) -> dict:
-        """
-        Reprocess specific chunks to update their embeddings.
-
-        Args:
-            chunk_ids (List[Union[str, UUID]]): List of chunk IDs to reprocess
-
-        Returns:
-            dict: Reprocessing results
-        """
-        return await self.client._make_request(
-            "POST",
-            "chunks/reprocess",
-            json={"chunk_ids": [str(chunk_id) for chunk_id in chunk_ids]},
-        )
+        await self.client._make_request("DELETE", f"chunks/{str(id)}")
 
     async def list_chunks(
         self,

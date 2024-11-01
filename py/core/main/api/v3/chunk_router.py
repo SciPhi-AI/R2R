@@ -180,7 +180,7 @@ class ChunkRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def search_chunks(
-            query: str = Body(..., d),
+            query: str = Body(...),
             vector_search_settings: VectorSearchSettings = Body(
                 default_factory=VectorSearchSettings,
             ),
@@ -208,19 +208,18 @@ class ChunkRouter(BaseRouterV3):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
             )
-            print("results = ", results)
             return results["vector_search_results"]
 
-        @self.router.get("/chunks/{chunk_id}")
+        @self.router.get("/chunks/{id}")
         @self.base_endpoint
         async def retrieve_chunk(
-            chunk_id: UUID = Path(...),
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[ChunkResponse]:
             """
             Get a specific chunk by its ID.
             """
-            chunk = await self.services["ingestion"].get_chunk(chunk_id)
+            chunk = await self.services["ingestion"].get_chunk(id)
             if not chunk:
                 raise R2RException("Chunk not found", 404)
 
@@ -241,9 +240,10 @@ class ChunkRouter(BaseRouterV3):
                 # vector = chunk["vector"] # TODO - Add include vector flag
             )
 
-        @self.router.post("/chunks/{chunk_id}")
+        @self.router.post("/chunks/{id}")
         @self.base_endpoint
         async def update_chunk(
+            id: UUID = Path(...),
             chunk_update: Json[UpdateChunk] = Body(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[ChunkResponse]:
@@ -284,24 +284,32 @@ class ChunkRouter(BaseRouterV3):
                 # vector = existing_chunk.get('vector')
             )
 
-        @self.router.delete("/chunks/{chunk_id}")
+        @self.router.post("/chunks/{id}/enrich")
+        @self.base_endpoint
+        async def enrich_chunk(
+            id: Json[UUID] = Path(...),
+            enrichment_config: Json[dict] = Body(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> ResultsWrapper[ChunkResponse]:
+            """
+            Update existing chunks with new content.
+            """
+            pass
+
+        @self.router.delete("/chunks/{id}")
         @self.base_endpoint
         async def delete_chunk(
-            chunk_id: Json[UUID] = Path(...),
+            id: Json[UUID] = Path(...),
         ) -> ResultsWrapper[ChunkResponse]:
             """
             Update existing chunks with new content.
             """
             # Get the existing chunk to get its chunk_id
-            existing_chunk = await self.services["ingestion"].get_chunk(
-                chunk_id
-            )
+            existing_chunk = await self.services["ingestion"].get_chunk(id)
             if existing_chunk is None:
                 raise R2RException(f"Chunk {id} not found", 404)
 
-            await self.services["management"].delete(
-                {"$eq": {"chunk_id": chunk_id}}
-            )
+            await self.services["management"].delete({"$eq": {"chunk_id": id}})
             return None
 
         @self.router.get("/chunks")
