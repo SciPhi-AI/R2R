@@ -22,11 +22,11 @@ from shared.abstractions import (
     VectorSearchSettings,
 )
 from shared.api.models import (
+    CombinedSearchResponse,
     KGCreationResponse,
     KGEnrichmentResponse,
     KGEntityDeduplicationResponse,
     RAGResponse,
-    SearchResponse,
     UserResponse,
 )
 
@@ -56,6 +56,6 @@ __all__ = [
     "KGCreationResponse",
     "KGEnrichmentResponse",
     "RAGResponse",
-    "SearchResponse",
+    "CombinedSearchResponse",
     "UserResponse",
 ]

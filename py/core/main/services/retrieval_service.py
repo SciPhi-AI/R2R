@@ -15,7 +15,11 @@ from core.base import (
     manage_run,
     to_async_generator,
 )
-from core.base.api.models import RAGResponse, SearchResponse, UserResponse
+from core.base.api.models import (
+    CombinedSearchResponse,
+    RAGResponse,
+    UserResponse,
+)
 from core.base.logger.base import RunType
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -56,7 +60,7 @@ class RetrievalService(Service):
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         *args,
         **kwargs,
-    ) -> SearchResponse:
+    ) -> CombinedSearchResponse:
         async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             t0 = time.time()
             if (

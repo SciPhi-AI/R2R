@@ -51,12 +51,13 @@ from shared.api.models.management.responses import (
     WrappedUsersInCollectionResponse,
 )
 from shared.api.models.retrieval.responses import (
+    CombinedSearchResponse,
     RAGAgentResponse,
     RAGResponse,
-    SearchResponse,
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
+    WrappedVectorSearchResponse,
 )
 
 __all__ = [
@@ -110,10 +111,11 @@ __all__ = [
     "WrappedCollectionOverviewResponse",
     "WrappedConversationsOverviewResponse",
     # Retrieval Responses
-    "SearchResponse",
+    "CombinedSearchResponse",
     "RAGResponse",
     "RAGAgentResponse",
     "WrappedSearchResponse",
+    "WrappedVectorSearchResponse",
     "WrappedRAGResponse",
     "WrappedRAGAgentResponse",
 ]

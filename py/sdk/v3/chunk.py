@@ -3,7 +3,10 @@ from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from shared.abstractions import VectorSearchSettings
+
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
+from ..models import CombinedSearchResponse
 
 
 class ChunkSDK:
@@ -226,6 +229,35 @@ class ChunkSDK:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
         return await self.client._make_request("GET", "chunks", params=params)
+
+    async def search(
+        self,
+        query: str,
+        vector_search_settings: Optional[
+            Union[dict, VectorSearchSettings]
+        ] = None,
+    ) -> CombinedSearchResponse:
+        """
+        Conduct a vector and/or KG search.
+
+        Args:
+            query (str): The query to search for.
+            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+
+        Returns:
+            CombinedSearchResponse: The search response.
+        """
+        if vector_search_settings and not isinstance(
+            vector_search_settings, dict
+        ):
+            vector_search_settings = vector_search_settings.model_dump()
+
+        data = {
+            "query": query,
+            "vector_search_settings": vector_search_settings or {},
+        }
+        return await self.client._make_request("POST", "chunks/search", json=data)  # type: ignore
 
 
 class SyncChunkSDK:

@@ -7,7 +7,7 @@ from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import ResultsWrapper
 
 
-class SearchResponse(BaseModel):
+class CombinedSearchResponse(BaseModel):
     vector_search_results: list[VectorSearchResult] = Field(
         ...,
         description="List of vector search results",
@@ -35,7 +35,7 @@ class RAGResponse(BaseModel):
         ...,
         description="The generated completion from the RAG process",
     )
-    search_results: SearchResponse = Field(
+    search_results: CombinedSearchResponse = Field(
         ...,
         description="The search results used for the RAG process",
     )
@@ -145,6 +145,7 @@ class RAGAgentResponse(BaseModel):
 
 WrappedCompletionResponse = ResultsWrapper[LLMChatCompletion]
 # Create wrapped versions of the responses
-WrappedSearchResponse = ResultsWrapper[SearchResponse]
+WrappedVectorSearchResponse = ResultsWrapper[list[VectorSearchResult]]
+WrappedSearchResponse = ResultsWrapper[CombinedSearchResponse]
 WrappedRAGResponse = ResultsWrapper[RAGResponse]
 WrappedRAGAgentResponse = ResultsWrapper[RAGAgentResponse]

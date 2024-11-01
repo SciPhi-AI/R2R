@@ -2,11 +2,11 @@ import logging
 from typing import AsyncGenerator, Optional, Union
 
 from ...models import (
+    CombinedSearchResponse,
     GenerationConfig,
     KGSearchSettings,
     Message,
     RAGResponse,
-    SearchResponse,
     VectorSearchSettings,
 )
 
@@ -21,7 +21,7 @@ class RetrievalMixins:
             Union[dict, VectorSearchSettings]
         ] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
-    ) -> SearchResponse:
+    ) -> CombinedSearchResponse:
         """
         Conduct a vector and/or KG search.
 
@@ -31,7 +31,7 @@ class RetrievalMixins:
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
 
         Returns:
-            SearchResponse: The search response.
+            CombinedSearchResponse: The search response.
         """
         if vector_search_settings and not isinstance(
             vector_search_settings, dict

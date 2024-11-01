@@ -1,17 +1,22 @@
 import logging
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 from pydantic import Json
 
 from core.base import (
+    GenerationConfig,
+    KGSearchSettings,
+    Message,
     R2RException,
     RawChunk,
     RunType,
     UnprocessedChunk,
     UpdateChunk,
+    VectorSearchSettings,
 )
+from core.base.api.models import WrappedVectorSearchResponse
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -38,6 +43,49 @@ class ChunkRouter(BaseRouterV3):
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
+
+    def _select_filters(
+        self,
+        auth_user: Any,
+        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+    ) -> dict[str, Any]:
+        selected_collections = {
+            str(cid) for cid in set(search_settings.selected_collection_ids)
+        }
+
+        if auth_user.is_superuser:
+            if selected_collections:
+                # For superusers, we only filter by selected collections
+                filters = {
+                    "collection_ids": {"$overlap": list(selected_collections)}
+                }
+            else:
+                filters = {}
+        else:
+            user_collections = set(auth_user.collection_ids)
+
+            if selected_collections:
+                allowed_collections = user_collections.intersection(
+                    selected_collections
+                )
+            else:
+                allowed_collections = user_collections
+            # for non-superusers, we filter by user_id and selected & allowed collections
+            filters = {
+                "$or": [
+                    {"user_id": {"$eq": auth_user.id}},
+                    {
+                        "collection_ids": {
+                            "$overlap": list(allowed_collections)
+                        }
+                    },
+                ]  # type: ignore
+            }
+
+        if search_settings.filters != {}:
+            filters = {"$and": [filters, search_settings.filters]}  # type: ignore
+
+        return filters
 
     def _setup_routes(self):
         @self.router.post("/chunks")
@@ -126,6 +174,42 @@ class ChunkRouter(BaseRouterV3):
                     responses.append(raw_message)
 
             return responses
+
+        @self.router.post(
+            "/chunks/search",
+        )
+        @self.base_endpoint
+        async def search_chunks(
+            query: str = Body(..., d),
+            vector_search_settings: VectorSearchSettings = Body(
+                default_factory=VectorSearchSettings,
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedVectorSearchResponse:  # type: ignore
+            # TODO - Deduplicate this code by sharing the code on the retrieval router
+            """
+            Perform a search query on the vector database and knowledge graph.
+
+            This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
+            Filters can be applied to various fields such as document_id, and internal metadata values.
+
+
+            Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+            """
+
+            vector_search_settings.filters = self._select_filters(
+                auth_user, vector_search_settings
+            )
+
+            kg_search_settings = KGSearchSettings(use_kg_search=False)
+
+            results = await self.services["retrieval"].search(
+                query=query,
+                vector_search_settings=vector_search_settings,
+                kg_search_settings=kg_search_settings,
+            )
+            print("results = ", results)
+            return results["vector_search_results"]
 
         @self.router.get("/chunks/{chunk_id}")
         @self.base_endpoint
