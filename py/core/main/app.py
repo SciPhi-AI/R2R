@@ -16,9 +16,10 @@ from .api.v2.ingestion_router import IngestionRouter
 from .api.v2.kg_router import KGRouter
 from .api.v2.management_router import ManagementRouter
 from .api.v2.retrieval_router import RetrievalRouter
-from .api.v3.chunk_router import ChunkRouter
-from .api.v3.document_router import DocumentRouter
+from .api.v3.chunks_router import ChunksRouter
+from .api.v3.documents_router import DocumentsRouter
 from .api.v3.indices_router import IndicesRouter
+from .api.v3.users_router import UsersRouter
 from .config import R2RConfig
 
 
@@ -34,9 +35,10 @@ class R2RApp:
         management_router: ManagementRouter,
         retrieval_router: RetrievalRouter,
         kg_router: KGRouter,
-        document_router: DocumentRouter,
-        chunk_router: ChunkRouter,
-        index_router: IndicesRouter,
+        documents_router: DocumentsRouter,
+        chunks_router: ChunksRouter,
+        indices_router: IndicesRouter,
+        users_router: UsersRouter,
     ):
         self.config = config
         self.ingestion_router = ingestion_router
@@ -45,9 +47,10 @@ class R2RApp:
         self.auth_router = auth_router
         self.kg_router = kg_router
         self.orchestration_provider = orchestration_provider
-        self.document_router = document_router
-        self.chunk_router = chunk_router
-        self.index_router = index_router
+        self.documents_router = documents_router
+        self.chunks_router = chunks_router
+        self.users_router = users_router
+        self.indices_router = indices_router
         self.app = FastAPI()
 
         @self.app.exception_handler(R2RException)
@@ -71,10 +74,11 @@ class R2RApp:
         # self.app.include_router(self.auth_router, prefix="/v2")
         # self.app.include_router(self.kg_router, prefix="/v2")
 
-        self.app.include_router(self.document_router, prefix="/v3")
-        self.app.include_router(self.chunk_router, prefix="/v3")
-        self.app.include_router(self.index_router, prefix="/v3")
-
+        self.app.include_router(self.documents_router, prefix="/v3")
+        self.app.include_router(self.chunks_router, prefix="/v3")
+        self.app.include_router(self.indices_router, prefix="/v3")
+        self.app.include_router(self.users_router, prefix="/v3")
+                
         @self.app.get("/openapi_spec")
         async def openapi_spec():
             return get_openapi(

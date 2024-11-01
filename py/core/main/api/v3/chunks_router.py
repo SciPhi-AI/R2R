@@ -25,14 +25,34 @@ from core.utils import generate_id
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
-from .chunk_responses import ChunkIngestionResponse, ChunkResponse
+
+from typing import Any, Optional
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class ChunkResponse(BaseModel):
+    document_id: UUID
+    id: UUID
+    collection_ids: list[UUID]
+    text: str
+    metadata: dict[str, Any]
+    vector: Optional[list[float]] = None
+
+
+class ChunkIngestionResponse(BaseModel):
+    """Response model for chunk ingestion"""
+
+    message: str
+    document_id: UUID
 
 logger = logging.getLogger()
 
 MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
 
-class ChunkRouter(BaseRouterV3):
+class ChunksRouter(BaseRouterV3):
     def __init__(
         self,
         providers,
