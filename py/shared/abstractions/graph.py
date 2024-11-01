@@ -228,6 +228,33 @@ class Community(BaseModel):
 
 
 @dataclass
+class CommunityInfo(BaseModel):
+    """A protocol for a community in the system."""
+
+    node: str
+    cluster: int
+    parent_cluster: int | None
+    level: int
+    is_final_cluster: bool
+    triple_ids: Optional[list[int]] = None
+    collection_id: uuid.UUID
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "CommunityInfo":
+        return CommunityInfo(
+            node=d["node"],
+            cluster=d["cluster"],
+            parent_cluster=d["parent_cluster"],
+            level=d["level"],
+            is_final_cluster=d["is_final_cluster"],
+            triple_ids=d["triple_ids"],
+            collection_id=d["collection_id"],
+        )
+
+@dataclass
 class CommunityReport(BaseModel):
     """Defines an LLM-generated summary report of a community."""
 

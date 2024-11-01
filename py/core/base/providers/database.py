@@ -680,7 +680,7 @@ class KGHandler(Handler):
 
     # Community management
     @abstractmethod
-    async def add_communities(self, communities: List[Any]) -> None:
+    async def add_community_info(self, communities: List[Any]) -> None:
         """Add communities to storage."""
         pass
 
@@ -1566,9 +1566,9 @@ class DatabaseProvider(Provider):
         return await self.kg_handler.upsert_embeddings(data, table_name)
 
     # Community methods
-    async def add_communities(self, communities: List[Any]) -> None:
+    async def add_community_info(self, communities: List[Any]) -> None:
         """Forward to KG handler add_communities method."""
-        return await self.kg_handler.add_communities(communities)
+        return await self.kg_handler.add_community_info(communities)
 
     async def get_communities(
         self,
