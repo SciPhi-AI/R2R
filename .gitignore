@@ -32,3 +32,5 @@ dist/
 *.test
 go.work
 go.work.sum
+
+.vscode/

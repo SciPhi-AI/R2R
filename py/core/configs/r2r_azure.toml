@@ -1,4 +1,8 @@
 # A config which overrides all instances of `openai` with `azure` in the `r2r.toml` config
+[agent]
+  [agent.generation_config]
+  model = "azure/gpt-4o"
+
 [completion]
   [completion.generation_config]
   model = "azure/gpt-4o"

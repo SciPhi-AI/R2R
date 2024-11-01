@@ -3,6 +3,10 @@
   [completion.generation_config]
   model = "azure/gpt-4o"
 
+[agent]
+  [agent.generation_config]
+  model = "azure/gpt-4o"
+
 # KG settings
 batch_size = 256
 
