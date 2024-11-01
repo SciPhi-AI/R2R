@@ -500,19 +500,20 @@ class PostgresKGHandler(KGHandler):
                 for property_name in property_names
             }
 
-    async def get_all_triples(self, collection_id: UUID) -> list[Triple]:
+    async def get_all_triples(self, collection_id: UUID, document_ids: Optional[list[UUID]] = None) -> list[Triple]:
 
         # getting all documents for a collection
-        QUERY = f"""
-            select distinct document_id from {self._get_table_name("document_info")} where $1 = ANY(collection_ids)
-        """
-        document_ids = await self.connection_manager.fetch_query(
-            QUERY, [collection_id]
-        )
-        document_ids = [doc_id["document_id"] for doc_id in document_ids]
+        if document_ids is None:
+            QUERY = f"""
+                select distinct document_id from {self._get_table_name("document_info")} where $1 = ANY(collection_ids)
+            """
+            document_ids = await self.connection_manager.fetch_query(
+                QUERY, [collection_id]
+            )
+            document_ids = [doc_id["document_id"] for doc_id in document_ids]
 
         QUERY = f"""
-            SELECT id, subject, predicate, weight, object FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1)
+            SELECT id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1)
         """
         triples = await self.connection_manager.fetch_query(
             QUERY, [document_ids]
@@ -608,6 +609,116 @@ class PostgresKGHandler(KGHandler):
             QUERY, [tuple(non_null_attrs.values())]
         )
 
+    async def _cluster_and_add_communities(self, triple_ids_cache: dict[str, list[int]], leiden_params: dict[str, Any], collection_id: UUID) -> None:
+
+        start_time = time.time()
+        hierarchical_communities = await self._compute_leiden_communities(
+            G, leiden_params
+        )
+
+        logger.info(
+            f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
+        )
+
+        def triple_ids(node: str) -> list[int]:
+            return triple_ids_cache.get(node, [])
+
+        logger.info(
+            f"Cached {len(triple_ids_cache)} triple ids, time {time.time() - start_time:.2f} seconds."
+        )
+
+        # upsert the communities into the database.
+        inputs = [
+            (
+                str(item.node),
+                item.cluster,
+                item.parent_cluster,
+                item.level,
+                item.is_final_cluster,
+                triple_ids(item.node),
+                collection_id,
+            )
+            for item in hierarchical_communities
+        ]
+
+        await self.add_communities(inputs)
+
+        num_communities = len(
+            {item.cluster for item in hierarchical_communities}
+        )
+
+        logger.info(
+            f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
+        )
+
+    async def _use_community_cache(self, collection_id: UUID, triple_ids_cache: dict[str, list[int]]) -> bool:
+
+        # check the number of entities in the cache. 
+        QUERY = f"""
+            SELECT COUNT(distinct node) FROM {self._get_table_name("community_info")} WHERE collection_id = $1
+        """
+        num_entities = await self.connection_manager.fetch_query(QUERY, [collection_id])
+        
+        # a hard threshold of 80% of the entities in the cache.
+        if num_entities > 0.8 * len(triple_ids_cache):
+            return True
+        else:
+            return False
+
+
+    async def _get_triple_ids_cache(self, triples: list[Triple]) -> dict[str, list[int]]:
+
+        # caching the triple ids
+        triple_ids_cache = dict[str, list[int]]()
+        for triple in triples:
+            if (
+                triple.subject not in triple_ids_cache
+                and triple.subject is not None
+            ):
+                triple_ids_cache[triple.subject] = []
+            if (
+                triple.object not in triple_ids_cache
+                and triple.object is not None
+            ):
+                triple_ids_cache[triple.object] = []
+            if triple.subject is not None and triple.id is not None:
+                triple_ids_cache[triple.subject].append(triple.id)
+            if triple.object is not None and triple.id is not None:
+                triple_ids_cache[triple.object].append(triple.id)
+
+        return triple_ids_cache
+    
+    
+    async def _incremental_clustering(self, triple_ids_cache: dict[str, list[int]], leiden_params: dict[str, Any], collection_id: UUID) -> None:
+        QUERY = f"""
+            SELECT node, cluster, is_final_cluster FROM {self._get_table_name("community_info")} WHERE collection_id = $1
+        """
+        communities = await self.connection_manager.fetch_query(QUERY, [collection_id])
+        # basically group by node
+        communities_dict = {}
+        for community in communities:
+            if community["node"] not in communities_dict:
+                communities_dict[community["node"]] = []
+            communities_dict[community["node"]].append(community)
+
+        QUERY = f"""
+            SELECT document_id FROM {self._get_table_name("document_info")} WHERE collection_id = $1 and kg_extraction_status == $2
+        """
+        new_document_ids = await self.connection_manager.fetch_query(QUERY, [collection_id, KGExtractionStatus.SUCCESS])
+
+        new_triple_ids = await self.get_all_triples(new_document_ids)
+
+        max_cluster_id = max([community["cluster"] for community in communities])
+
+        new_communities = []
+        changed_communities = []
+        for subject in triple_ids_cache:
+            if subject not in communities:
+                new_communities.append(subject)
+            else:
+                changed_communities.append(subject)
+
+
     async def perform_graph_clustering(
         self,
         collection_id: UUID,
@@ -646,62 +757,12 @@ class PostgresKGHandler(KGHandler):
 
         logger.info("Computing Leiden communities started.")
 
-        hierarchical_communities = await self._compute_leiden_communities(
-            G, leiden_params
-        )
+        triple_ids_cache = await self._get_triple_ids_cache(triples)
 
-        logger.info(
-            f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
-        )
-
-        # caching the triple ids
-        triple_ids_cache = dict[str, list[int]]()
-        for triple in triples:
-            if (
-                triple.subject not in triple_ids_cache
-                and triple.subject is not None
-            ):
-                triple_ids_cache[triple.subject] = []
-            if (
-                triple.object not in triple_ids_cache
-                and triple.object is not None
-            ):
-                triple_ids_cache[triple.object] = []
-            if triple.subject is not None and triple.id is not None:
-                triple_ids_cache[triple.subject].append(triple.id)
-            if triple.object is not None and triple.id is not None:
-                triple_ids_cache[triple.object].append(triple.id)
-
-        def triple_ids(node: str) -> list[int]:
-            return triple_ids_cache.get(node, [])
-
-        logger.info(
-            f"Cached {len(triple_ids_cache)} triple ids, time {time.time() - start_time:.2f} seconds."
-        )
-
-        # upsert the communities into the database.
-        inputs = [
-            (
-                str(item.node),
-                item.cluster,
-                item.parent_cluster,
-                item.level,
-                item.is_final_cluster,
-                triple_ids(item.node),
-                collection_id,
-            )
-            for item in hierarchical_communities
-        ]
-
-        await self.add_communities(inputs)
-
-        num_communities = len(
-            {item.cluster for item in hierarchical_communities}
-        )
-
-        logger.info(
-            f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
-        )
+        if await self._use_community_cache(collection_id, triple_ids_cache):
+            await self._incremental_clustering(triple_ids_cache, leiden_params, collection_id)
+        else:
+            await self._cluster_and_add_communities(triple_ids_cache, leiden_params, collection_id)
 
         return num_communities
 
