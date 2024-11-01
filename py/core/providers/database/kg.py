@@ -694,7 +694,9 @@ class PostgresKGHandler(KGHandler):
             SELECT node, cluster, is_final_cluster FROM {self._get_table_name("community_info")} WHERE collection_id = $1
         """
         communities = await self.connection_manager.fetch_query(QUERY, [collection_id])
-        # basically group by node
+        max_cluster_id = max([community["cluster"] for community in communities])
+
+        # TODO: modify query to get a dict grouped by node (without aggregation)
         communities_dict = {}
         for community in communities:
             if community["node"] not in communities_dict:
@@ -706,17 +708,18 @@ class PostgresKGHandler(KGHandler):
         """
         new_document_ids = await self.connection_manager.fetch_query(QUERY, [collection_id, KGExtractionStatus.SUCCESS])
 
-        new_triple_ids = await self.get_all_triples(new_document_ids)
+        new_triple_ids = await self.get_all_triples(collection_id, new_document_ids)
 
-        max_cluster_id = max([community["cluster"] for community in communities])
+        # community mapping for new triples
 
-        new_communities = []
-        changed_communities = []
-        for subject in triple_ids_cache:
-            if subject not in communities:
-                new_communities.append(subject)
+        updated_communities = set()
+        triple_community_dict = {}
+        for triple in new_triple_ids:
+            if triple.subject in communities_dict:
+                updated_communities.add(communities_dict[cluster])
             else:
-                changed_communities.append(subject)
+                triple_community_dict[triple.subject] = [triple.id]
+
 
 
     async def perform_graph_clustering(
