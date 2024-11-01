@@ -161,6 +161,7 @@ class KGEnrichmentStatus(str, Enum):
 
     PENDING = "pending"
     PROCESSING = "processing"
+    OUTDATED = "outdated"
     SUCCESS = "success"
     FAILED = "failed"
 

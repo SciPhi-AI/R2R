@@ -151,7 +151,7 @@ def hatchet_kg_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    @orchestration_provider.workflow(name="create-graph", timeout="360m")
+    @orchestration_provider.workflow(name="create-graph", timeout="600m")
     class CreateGraphWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
@@ -201,7 +201,7 @@ def hatchet_kg_factory(
                 )
                 results.append(
                     (
-                        context.aio.spawn_workflow(
+                        await context.aio.spawn_workflow(
                             "kg-extract",
                             {
                                 "request": {
@@ -218,7 +218,7 @@ def hatchet_kg_factory(
                             },
                             key=f"kg-extract-{cnt}/{len(document_ids)}",
                         )
-                    )
+                    ).result()
                 )
 
             if not document_ids:
@@ -231,6 +231,29 @@ def hatchet_kg_factory(
             results = await asyncio.gather(*results)
             return {
                 "result": f"successfully ran graph creation workflows for {len(results)} documents"
+            }
+
+        @orchestration_provider.step(retries=1, parents=["kg_extraction_ingress"])
+        async def update_enrichment_status(self, context: Context) -> dict:
+
+            enrichment_status = await self.kg_service.providers.database.get_workflow_status(
+                id=context.workflow_input()["request"]["collection_id"],
+                status_type="kg_enrichment_status",
+            )
+
+            if enrichment_status == KGEnrichmentStatus.SUCCESS:
+                await self.kg_service.providers.database.set_workflow_status(
+                    id=context.workflow_input()["request"]["collection_id"],
+                    status_type="kg_enrichment_status",
+                    status=KGEnrichmentStatus.OUTDATED,
+                )
+
+                logger.info(
+                    f"Updated enrichment status for collection {context.workflow_input()['request']['collection_id']} to OUTDATED because an older enrichment was already successful"
+                )
+
+            return {
+                "result": f"updated enrichment status for collection {context.workflow_input()['request']['collection_id']} to OUTDATED because an older enrichment was already successful"
             }
 
     @orchestration_provider.workflow(
