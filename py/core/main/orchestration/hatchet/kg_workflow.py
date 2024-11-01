@@ -233,12 +233,16 @@ def hatchet_kg_factory(
                 "result": f"successfully ran graph creation workflows for {len(results)} documents"
             }
 
-        @orchestration_provider.step(retries=1, parents=["kg_extraction_ingress"])
+        @orchestration_provider.step(
+            retries=1, parents=["kg_extraction_ingress"]
+        )
         async def update_enrichment_status(self, context: Context) -> dict:
 
-            enrichment_status = await self.kg_service.providers.database.get_workflow_status(
-                id=context.workflow_input()["request"]["collection_id"],
-                status_type="kg_enrichment_status",
+            enrichment_status = (
+                await self.kg_service.providers.database.get_workflow_status(
+                    id=context.workflow_input()["request"]["collection_id"],
+                    status_type="kg_enrichment_status",
+                )
             )
 
             if enrichment_status == KGEnrichmentStatus.SUCCESS:

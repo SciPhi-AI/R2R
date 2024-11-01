@@ -862,7 +862,9 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+    async def get_all_triples(
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+    ) -> List[Triple]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1728,8 +1730,12 @@ class DatabaseProvider(Provider):
             collection_id, kg_deduplication_settings
         )
 
-    async def get_all_triples(self, collection_id: UUID, document_ids: Optional[list[UUID]] = None) -> List[Triple]:
-        return await self.kg_handler.get_all_triples(collection_id, document_ids)
+    async def get_all_triples(
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+    ) -> List[Triple]:
+        return await self.kg_handler.get_all_triples(
+            collection_id, document_ids
+        )
 
     async def update_entity_descriptions(self, entities: list[Entity]):
         return await self.kg_handler.update_entity_descriptions(entities)

@@ -138,7 +138,6 @@ async def update_files(
 @click.option(
     "--v2", is_flag=True, help="use aristotle_v2.txt (a smaller file)"
 )
-
 @click.option(
     "--v3", is_flag=True, help="use aristotle_v3.txt (a larger file)"
 )
@@ -146,7 +145,7 @@ async def update_files(
 async def ingest_sample_file(ctx, v2=False, v3=False):
     """Ingest the first sample file into R2R."""
     sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle{'_v2' if v2 else ''}{'_v3' if v3 else ''}.txt"
-    client=ctx.obj
+    client = ctx.obj
 
     with timer():
         response = await ingest_files_from_urls(client, [sample_file_url])

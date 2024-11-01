@@ -236,8 +236,8 @@ class CommunityInfo(BaseModel):
     parent_cluster: int | None
     level: int
     is_final_cluster: bool
-    triple_ids: Optional[list[int]] = None
     collection_id: uuid.UUID
+    triple_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -253,6 +253,7 @@ class CommunityInfo(BaseModel):
             triple_ids=d["triple_ids"],
             collection_id=d["collection_id"],
         )
+
 
 @dataclass
 class CommunityReport(BaseModel):
