@@ -815,7 +815,6 @@ class PostgresKGHandler(KGHandler):
         new_triple_ids = await self.get_all_triples(
             collection_id, new_document_ids
         )
-        new_document_ids = new_document_ids[1:]
 
         # community mapping for new triples
         updated_communities = set()
