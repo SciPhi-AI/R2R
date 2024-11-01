@@ -6,6 +6,9 @@
 system_instruction_name = "rag_agent"
 tool_names = ["search"]
 
+  [agent.generation_config]
+  model = "openai/gpt-4o"
+
 [auth]
 provider = "r2r"
 access_token_lifetime_in_minutes = 60

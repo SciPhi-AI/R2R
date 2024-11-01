@@ -6,6 +6,8 @@ from uuid import UUID
 
 from core import R2RStreamingRAGAgent
 from core.base import (
+    DocumentSearchSettings,
+    EmbeddingPurpose,
     GenerationConfig,
     KGSearchSettings,
     Message,
@@ -113,6 +115,18 @@ class RetrievalService(Service):
             )
 
             return results.as_dict()
+
+    @telemetry_event("SearchDocuments")
+    async def search_documents(
+        self,
+        query: str,
+        settings: DocumentSearchSettings,
+    ) -> list[dict]:
+
+        return await self.providers.database.search_documents(
+            query_text=query,
+            settings=settings,
+        )
 
     @telemetry_event("Completion")
     async def completion(
