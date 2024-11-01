@@ -202,7 +202,10 @@ class PostgresDocumentHandler(DocumentHandler):
             SELECT {status_type} FROM {self._get_table_name(table_name)}
             WHERE {column_name} = ANY($1)
         """
-        return await self.connection_manager.fetch_query(query, [ids])
+        return [
+            row[status_type]
+            for row in await self.connection_manager.fetch_query(query, [ids])
+        ]
 
     async def _get_ids_from_table(
         self,
@@ -288,19 +291,17 @@ class PostgresDocumentHandler(DocumentHandler):
         Returns:
             The workflow status for the given document or list of documents.
         """
+
         ids = [id] if isinstance(id, UUID) else id
         out_model = self._get_status_model(status_type)
-        result = list(
-            map(
-                await self._get_status_from_table(
-                    ids,
-                    out_model.table_name(),
-                    status_type,
-                    out_model.id_column(),
-                ),
-                out_model,
-            )
+        result = await self._get_status_from_table(
+            ids,
+            out_model.table_name(),
+            status_type,
+            out_model.id_column(),
         )
+
+        result = [out_model[status.upper()] for status in result]
         return result[0] if isinstance(id, UUID) else result
 
     async def set_workflow_status(

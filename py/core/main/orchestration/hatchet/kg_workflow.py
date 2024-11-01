@@ -240,14 +240,18 @@ def hatchet_kg_factory(
 
             enrichment_status = (
                 await self.kg_service.providers.database.get_workflow_status(
-                    id=context.workflow_input()["request"]["collection_id"],
+                    id=uuid.UUID(
+                        context.workflow_input()["request"]["collection_id"]
+                    ),
                     status_type="kg_enrichment_status",
                 )
             )
 
             if enrichment_status == KGEnrichmentStatus.SUCCESS:
                 await self.kg_service.providers.database.set_workflow_status(
-                    id=context.workflow_input()["request"]["collection_id"],
+                    id=uuid.UUID(
+                        context.workflow_input()["request"]["collection_id"]
+                    ),
                     status_type="kg_enrichment_status",
                     status=KGEnrichmentStatus.OUTDATED,
                 )
@@ -441,14 +445,14 @@ def hatchet_kg_factory(
             # set status to success
             # for all documents in the collection, set kg_creation_status to ENRICHED
             document_ids = await self.kg_service.providers.database.get_document_ids_by_status(
-                status_type="kg_creation_status",
+                status_type="kg_extraction_status",
                 status=KGExtractionStatus.SUCCESS,
                 collection_id=collection_id,
             )
 
             await self.kg_service.providers.database.set_workflow_status(
                 id=document_ids,
-                status_type="kg_creation_status",
+                status_type="kg_extraction_status",
                 status=KGExtractionStatus.ENRICHED,
             )
 
