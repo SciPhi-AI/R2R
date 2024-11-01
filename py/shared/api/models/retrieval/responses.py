@@ -148,9 +148,9 @@ class DocumentSearchResult(BaseModel):
         ...,
         description="The document ID",
     )
-    title: Optional[str] = Field(
+    metadata: Optional[dict] = Field(
         None,
-        description="The title of the document",
+        description="The metadata of the document",
     )
     score: float = Field(
         ...,

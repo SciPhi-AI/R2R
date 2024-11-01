@@ -1203,13 +1203,14 @@ class PostgresVectorHandler(VectorHandler):
     ) -> list[dict[str, Any]]:
         """
         Search for documents based on their metadata fields and/or body text.
+        Joins with document_info table to get complete document metadata.
 
         Args:
             query_text (str): The search query text
-            settings (DocumentSearchSettings): Search settings including search preferences, metadata keys, and filters
+            settings (DocumentSearchSettings): Search settings including search preferences and filters
 
         Returns:
-            list[dict[str, Any]]: List of documents with their search scores
+            list[dict[str, Any]]: List of documents with their search scores and complete metadata
         """
         where_clauses = []
         params: list[Union[str, int, bytes]] = [query_text]
@@ -1217,19 +1218,18 @@ class PostgresVectorHandler(VectorHandler):
         # Build the dynamic metadata field search expression
         metadata_fields_expr = " || ' ' || ".join(
             [
-                f"COALESCE(metadata->>{psql_quote_literal(key)}, '')"
+                f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
                 for key in settings.metadata_keys
             ]
         )
 
-        # Base query that handles both metadata and body search
         query = f"""
             WITH
             -- Metadata search scores
             metadata_scores AS (
-                SELECT DISTINCT ON (document_id)
-                    document_id,
-                    {", ".join([f"metadata->>'{key}' as {key}" for key in settings.metadata_keys])},
+                SELECT DISTINCT ON (v.document_id)
+                    v.document_id,
+                    d.metadata as doc_metadata,
                     CASE WHEN $1 = '' THEN 0.0
                     ELSE
                         ts_rank_cd(
@@ -1238,8 +1238,9 @@ class PostgresVectorHandler(VectorHandler):
                             32
                         )
                     END as metadata_rank
-                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-                WHERE metadata IS NOT NULL
+                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
+                LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
+                WHERE v.metadata IS NOT NULL
             ),
             -- Body search scores
             body_scores AS (
@@ -1257,11 +1258,11 @@ class PostgresVectorHandler(VectorHandler):
                 {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
                 GROUP BY document_id
             ),
-            -- Combined scores with debugging info
+            -- Combined scores with document metadata
             combined_scores AS (
                 SELECT
                     COALESCE(m.document_id, b.document_id) as document_id,
-                    {", ".join([f"m.{key}" for key in settings.metadata_keys])},
+                    m.doc_metadata as metadata,
                     COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
                     COALESCE(b.body_rank, 0) as debug_body_rank,
                     CASE
@@ -1280,7 +1281,7 @@ class PostgresVectorHandler(VectorHandler):
                     ({str(settings.search_over_metadata).lower()} AND m.metadata_rank > 0) OR
                     ({str(settings.search_over_body).lower()} AND b.body_rank > 0)
                 )
-            """
+        """
 
         # Add any additional filters
         if settings.filters:
@@ -1294,21 +1295,15 @@ class PostgresVectorHandler(VectorHandler):
             )
             SELECT
                 document_id,
-                {metadata_keys},
+                metadata,
                 rank as score,
                 debug_metadata_rank,
                 debug_body_rank
             FROM combined_scores
             WHERE rank > 0
-            ORDER BY rank DESC, {primary_sort_key} ASC
+            ORDER BY rank DESC
             OFFSET ${offset_param} LIMIT ${limit_param}
         """.format(
-            metadata_keys=", ".join(settings.metadata_keys),
-            primary_sort_key=(
-                settings.metadata_keys[0]
-                if settings.metadata_keys
-                else "document_id"
-            ),
             offset_param=len(params) + 1,
             limit_param=len(params) + 2,
         )
@@ -1319,11 +1314,15 @@ class PostgresVectorHandler(VectorHandler):
         # Execute query
         results = await self.connection_manager.fetch_query(query, params)
 
-        # Format results with debug info and all metadata fields
+        # Format results with complete document metadata
         return [
             {
                 "document_id": str(r["document_id"]),
-                **{key: r[key] for key in settings.metadata_keys},
+                "metadata": (
+                    json.loads(r["metadata"])
+                    if isinstance(r["metadata"], str)
+                    else r["metadata"]
+                ),
                 "score": float(r["score"]),
                 "debug_metadata_rank": float(r["debug_metadata_rank"]),
                 "debug_body_rank": float(r["debug_body_rank"]),
