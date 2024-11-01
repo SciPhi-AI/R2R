@@ -131,7 +131,6 @@ class RetrievalRouter(BaseRouter):
                 query=query,
                 settings=settings,
             )
-            print("results = ", results)
             return results
 
         @self.router.post(
