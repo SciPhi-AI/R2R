@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any
 
 import litellm
@@ -20,7 +19,6 @@ class LiteLLMCompletionProvider(CompletionProvider):
 
         self.acompletion = acompletion
         self.completion = completion
-        self.api_base = os.getenv("API_BASE")
 
         if not config.provider:
             raise ValueError(
@@ -39,12 +37,8 @@ class LiteLLMCompletionProvider(CompletionProvider):
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
+            "api_base": generation_config.api_base,
         }
-        if generation_config.api_base is not None:
-            args["api_base"] = generation_config.api_base
-        else:
-            logger.info(f"Using API base: {self.api_base}")
-            args["api_base"] = self.api_base
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:

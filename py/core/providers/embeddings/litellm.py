@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any
 
 import litellm
@@ -46,14 +45,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
-        self.api_base = os.getenv("API_BASE")
-        if self.api_base:
-            logger.info(f"Using API base: {self.api_base}")
 
     def _get_embedding_kwargs(self, **kwargs):
         return {
             "model": self.base_model,
-            "api_base": self.api_base,
+            "dimensions": self.base_dimension,
         } | kwargs
 
     async def _execute_task(self, task: dict[str, Any]) -> list[list[float]]:

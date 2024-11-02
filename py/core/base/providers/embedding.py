@@ -37,7 +37,6 @@ class EmbeddingConfig(ProviderConfig):
     quantization_settings: VectorQuantizationSettings = (
         VectorQuantizationSettings()
     )
-    api_base: Optional[str] = None
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:

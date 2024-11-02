@@ -59,11 +59,3 @@ provider = "postgres"
 
 [orchestration]
 provider = "simple"
-
-
-[ingestion]
-vision_img_model = "ollama/llama3.2-vision"
-vision_pdf_model = "ollama/llama3.2-vision"
-
-  [ingestion.extra_parsers]
-    pdf = "zerox"
