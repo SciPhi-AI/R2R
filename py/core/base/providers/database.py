@@ -756,6 +756,7 @@ class KGHandler(Handler):
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "document_entity",
+        extra_columns: Optional[List[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -1651,6 +1652,7 @@ class DatabaseProvider(Provider):
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "document_entity",
+        extra_columns: Optional[List[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -1660,6 +1662,7 @@ class DatabaseProvider(Provider):
             entity_ids,
             entity_names,
             entity_table_name,
+            extra_columns,
             offset,
             limit,
         )

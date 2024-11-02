@@ -1325,6 +1325,7 @@ class PostgresKGHandler(KGHandler):
         entity_ids: Optional[list[str]] = None,
         entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
+        extra_columns: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -1357,7 +1358,7 @@ class PostgresKGHandler(KGHandler):
 
         if entity_table_name == "collection_entity":
             query = f"""
-            SELECT id, name, description, extraction_ids, document_ids
+            SELECT id, name, description, extraction_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
@@ -1366,7 +1367,7 @@ class PostgresKGHandler(KGHandler):
             """
         else:
             query = f"""
-            SELECT id, name, description, extraction_ids, document_id
+            SELECT id, name, description, extraction_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
