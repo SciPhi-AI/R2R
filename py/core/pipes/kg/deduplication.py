@@ -140,7 +140,8 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
     async def kg_description_entity_deduplication(
         self, collection_id: UUID, **kwargs
-    ):  
+    ):
+        from sklearn.cluster import DBSCAN
 
         entities = (
             await self.database_provider.get_entities(
@@ -165,10 +166,81 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             "document_ids",
             "attributes",
         ]
+
         deduplication_keys = list(
             zip(deduplication_source_keys, deduplication_target_keys)
         )
 
+        embeddings = [entity.description_embedding for entity in entities]
+
+        # TODO: make eps a config, make it very strict for now
+        clustering = DBSCAN(eps=0.1, min_samples=2, metric='cosine').fit(embeddings)
+        labels = clustering.labels_
+
+        # for all labels in the same cluster, we can deduplicate them by name
+        deduplicated_entities = {}
+        for id, label in enumerate(labels):
+            if label != -1:
+                if label not in deduplicated_entities:
+                    deduplicated_entities[label] = []
+                deduplicated_entities[label].append(entities[id])
+
+        # upsert deduplcated entities in the collection_entity table
+        deduplicated_entities_list = []
+        for label, entities in deduplicated_entities.items():
+            longest_name = ""
+            aliases = []
+            descriptions = []
+
+            for entity in entities:
+                aliases.extend(entity["name"])
+                descriptions.append(entity['description'])
+                if len(entity["name"]) > len(longest_name):
+                    longest_name = entity["name"]
+
+            descriptions.sort(key=len, reverse=True)
+            description = "\n".join(descriptions[:5])
+
+            # Collect all extraction IDs from entities in the cluster
+            extraction_ids = set()
+            document_ids = set()
+            for entity in entities:
+                if entity.extraction_ids:
+                    extraction_ids.update(entity.extraction_ids)
+                if entity.document_id:
+                    document_ids.add(entity.document_id)
+            
+            extraction_ids = list(extraction_ids)
+            document_ids = list(document_ids)
+
+            deduplicated_entities_list.append(
+                Entity(
+                    name=longest_name,
+                    description=description,
+                    collection_id=collection_id,
+                    extraction_ids=extraction_ids,
+                    document_ids=document_ids,
+                    attributes={
+                        "aliases": aliases,
+                    },
+                )
+            )
+
+        logger.info(
+            f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
+        )
+        await self.database_provider.add_entities(
+            deduplicated_entities_list,
+            table_name="collection_entity",
+            conflict_columns=["name", "collection_id", "attributes"],
+        )
+
+
+    async def kg_llm_entity_deduplication(
+        self, collection_id: UUID, **kwargs
+    ):
+        # TODO: implement LLM based entity deduplication
+        raise NotImplementedError("LLM entity deduplication is not implemented yet")
 
     async def _run_logic(
         self,
@@ -194,6 +266,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
         elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_DESCRIPTION:
             async for result in self.kg_description_entity_deduplication(
+                collection_id, **kwargs
+            ):
+                yield result
+
+        elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM:
+            async for result in self.kg_llm_entity_deduplication(
                 collection_id, **kwargs
             ):
                 yield result
