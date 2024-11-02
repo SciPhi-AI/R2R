@@ -141,6 +141,7 @@ class KGExtractionStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
+    ENRICHED = "enriched"
     FAILED = "failed"
 
     def __str__(self):
@@ -160,6 +161,7 @@ class KGEnrichmentStatus(str, Enum):
 
     PENDING = "pending"
     PROCESSING = "processing"
+    OUTDATED = "outdated"
     SUCCESS = "success"
     FAILED = "failed"
 

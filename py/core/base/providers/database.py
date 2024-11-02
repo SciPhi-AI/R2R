@@ -680,7 +680,7 @@ class KGHandler(Handler):
 
     # Community management
     @abstractmethod
-    async def add_communities(self, communities: List[Any]) -> None:
+    async def add_community_info(self, communities: List[Any]) -> None:
         """Add communities to storage."""
         pass
 
@@ -862,7 +862,9 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+    async def get_all_triples(
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+    ) -> List[Triple]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1566,9 +1568,9 @@ class DatabaseProvider(Provider):
         return await self.kg_handler.upsert_embeddings(data, table_name)
 
     # Community methods
-    async def add_communities(self, communities: List[Any]) -> None:
+    async def add_community_info(self, communities: List[Any]) -> None:
         """Forward to KG handler add_communities method."""
-        return await self.kg_handler.add_communities(communities)
+        return await self.kg_handler.add_community_info(communities)
 
     async def get_communities(
         self,
@@ -1728,8 +1730,12 @@ class DatabaseProvider(Provider):
             collection_id, kg_deduplication_settings
         )
 
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
-        return await self.kg_handler.get_all_triples(collection_id)
+    async def get_all_triples(
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+    ) -> List[Triple]:
+        return await self.kg_handler.get_all_triples(
+            collection_id, document_ids
+        )
 
     async def update_entity_descriptions(self, entities: list[Entity]):
         return await self.kg_handler.update_entity_descriptions(entities)

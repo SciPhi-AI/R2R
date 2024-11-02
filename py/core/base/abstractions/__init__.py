@@ -27,6 +27,7 @@ from shared.abstractions.graph import (
     KGExtraction,
     RelationshipType,
     Triple,
+    CommunityInfo,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
