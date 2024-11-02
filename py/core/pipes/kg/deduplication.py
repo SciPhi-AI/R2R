@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Optional, Union
 from uuid import UUID
-
+import json
 from core.base import AsyncState, R2RException
 from core.base.abstractions import Entity, KGEntityDeduplicationType
 from core.base.pipes import AsyncPipe
@@ -137,7 +137,6 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 status_code=500,
             )
 
-
     async def kg_description_entity_deduplication(
         self, collection_id: UUID, **kwargs
     ):
@@ -145,16 +144,21 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
         entities = (
             await self.database_provider.get_entities(
-                collection_id=collection_id, offset=0, limit=-1, extra_columns=["description_embedding"]
+                collection_id=collection_id,
+                offset=0,
+                limit=-1,
+                extra_columns=["description_embedding"],
             )
         )["entities"]
+
+        for entity in entities:
+            entity.description_embedding = json.loads(
+                entity.description_embedding
+            )
 
         logger.info(
             f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {collection_id}"
         )
-
-        # deduplicate entities by name
-        deduplicated_entities: dict[str, dict[str, list[str]]] = {}
 
         deduplication_source_keys = [
             "extraction_ids",
@@ -173,12 +177,24 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
         embeddings = [entity.description_embedding for entity in entities]
 
+        logger.info(
+            f"KGEntityDeduplicationPipe: Running DBSCAN clustering on {len(embeddings)} embeddings"
+        )
         # TODO: make eps a config, make it very strict for now
-        clustering = DBSCAN(eps=0.1, min_samples=2, metric='cosine').fit(embeddings)
+        clustering = DBSCAN(eps=0.1, min_samples=2, metric="cosine").fit(
+            embeddings
+        )
         labels = clustering.labels_
 
+        # Log clustering results
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        n_noise = list(labels).count(-1)
+        logger.info(
+            f"KGEntityDeduplicationPipe: Found {n_clusters} clusters and {n_noise} noise points"
+        )
+
         # for all labels in the same cluster, we can deduplicate them by name
-        deduplicated_entities = {}
+        deduplicated_entities: dict[int, list] = {}
         for id, label in enumerate(labels):
             if label != -1:
                 if label not in deduplicated_entities:
@@ -189,14 +205,13 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         deduplicated_entities_list = []
         for label, entities in deduplicated_entities.items():
             longest_name = ""
-            aliases = []
             descriptions = []
-
+            aliases = set()
             for entity in entities:
-                aliases.extend(entity["name"])
-                descriptions.append(entity['description'])
-                if len(entity["name"]) > len(longest_name):
-                    longest_name = entity["name"]
+                aliases.add(entity.name)
+                descriptions.append(entity.description)
+                if len(entity.name) > len(longest_name):
+                    longest_name = entity.name
 
             descriptions.sort(key=len, reverse=True)
             description = "\n".join(descriptions[:5])
@@ -209,19 +224,19 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                     extraction_ids.update(entity.extraction_ids)
                 if entity.document_id:
                     document_ids.add(entity.document_id)
-            
-            extraction_ids = list(extraction_ids)
-            document_ids = list(document_ids)
+
+            extraction_ids_list = list(extraction_ids)
+            document_ids_list = list(document_ids)
 
             deduplicated_entities_list.append(
                 Entity(
                     name=longest_name,
                     description=description,
                     collection_id=collection_id,
-                    extraction_ids=extraction_ids,
-                    document_ids=document_ids,
+                    extraction_ids=extraction_ids_list,
+                    document_ids=document_ids_list,
                     attributes={
-                        "aliases": aliases,
+                        "aliases": list(aliases),
                     },
                 )
             )
@@ -235,12 +250,16 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             conflict_columns=["name", "collection_id", "attributes"],
         )
 
+        yield {
+            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
+            "num_entities": len(deduplicated_entities),
+        }
 
-    async def kg_llm_entity_deduplication(
-        self, collection_id: UUID, **kwargs
-    ):
+    async def kg_llm_entity_deduplication(self, collection_id: UUID, **kwargs):
         # TODO: implement LLM based entity deduplication
-        raise NotImplementedError("LLM entity deduplication is not implemented yet")
+        raise NotImplementedError(
+            "LLM entity deduplication is not implemented yet"
+        )
 
     async def _run_logic(
         self,
@@ -259,19 +278,36 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         ]
 
         if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
+            logger.info(
+                f"KGEntityDeduplicationPipe: Running named entity deduplication for collection {collection_id}"
+            )
             async for result in self.kg_named_entity_deduplication(
                 collection_id, **kwargs
             ):
                 yield result
 
-        elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_DESCRIPTION:
-            async for result in self.kg_description_entity_deduplication(
+        elif (
+            kg_entity_deduplication_type
+            == KGEntityDeduplicationType.BY_DESCRIPTION
+        ):
+            logger.info(
+                f"KGEntityDeduplicationPipe: Running description entity deduplication for collection {collection_id}"
+            )
+            async for result in self.kg_description_entity_deduplication(  # type: ignore
                 collection_id, **kwargs
             ):
                 yield result
 
         elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM:
-            async for result in self.kg_llm_entity_deduplication(
+            logger.info(
+                f"KGEntityDeduplicationPipe: Running LLM entity deduplication for collection {collection_id}"
+            )
+            async for result in self.kg_llm_entity_deduplication(  # type: ignore
                 collection_id, **kwargs
             ):
                 yield result
+
+        else:
+            raise ValueError(
+                f"Invalid kg_entity_deduplication_type: {kg_entity_deduplication_type}"
+            )
