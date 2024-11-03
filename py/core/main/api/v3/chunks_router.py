@@ -1,14 +1,12 @@
 import logging
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import Json
+from pydantic import BaseModel, Json
 
 from core.base import (
-    GenerationConfig,
     KGSearchSettings,
-    Message,
     R2RException,
     RawChunk,
     RunType,
@@ -26,11 +24,6 @@ from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
 
-from typing import Any, Optional
-from uuid import UUID
-
-from pydantic import BaseModel
-
 
 class ChunkResponse(BaseModel):
     document_id: UUID
@@ -46,6 +39,7 @@ class ChunkIngestionResponse(BaseModel):
 
     message: str
     document_id: UUID
+
 
 logger = logging.getLogger()
 
@@ -111,11 +105,12 @@ class ChunksRouter(BaseRouterV3):
         @self.router.post("/chunks")
         @self.base_endpoint
         async def create_chunks(
-            raw_chunks: Json[list[UnprocessedChunk]] = Body(...),
+            raw_chunks: Json[list[UnprocessedChunk]] = Body(
+                ..., description="List of chunks to create"
+            ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[list[ChunkIngestionResponse]]:
-            print("run_with_orchestration = ", run_with_orchestration)
             """
             Create multiple chunks and process them through the ingestion pipeline.
             """

@@ -9,7 +9,7 @@ from uuid import UUID
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
 
 
-class DocumentSDK:
+class DocumentsSDK:
     """
     SDK for interacting with documents in the v3 API.
     """
@@ -280,9 +280,9 @@ class DocumentSDK:
 
 
 class SyncDocumentSDK:
-    """Synchronous wrapper for DocumentSDK"""
+    """Synchronous wrapper for DocumentsSDK"""
 
-    def __init__(self, async_sdk: DocumentSDK):
+    def __init__(self, async_sdk: DocumentsSDK):
         self._async_sdk = async_sdk
 
         # Get all attributes from the instance

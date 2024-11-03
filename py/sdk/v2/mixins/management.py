@@ -233,7 +233,7 @@ class ManagementMixins:
             "GET", "documents_overview", params=params
         )
 
-    async def document_chunks(
+    async def list_document_chunks(
         self,
         document_id: str,
         offset: Optional[int] = None,
@@ -258,11 +258,11 @@ class ManagementMixins:
             params["include_vectors"] = include_vectors
         if not params:
             return await self._make_request(  # type: ignore
-                "GET", f"document_chunks/{document_id}"
+                "GET", f"list_document_chunks/{document_id}"
             )
         else:
             return await self._make_request(  # type: ignore
-                "GET", f"document_chunks/{document_id}", params=params
+                "GET", f"list_document_chunks/{document_id}", params=params
             )
 
     async def collections_overview(

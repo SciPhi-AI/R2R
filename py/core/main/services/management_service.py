@@ -327,7 +327,7 @@ class ManagementService(Service):
 
             for document_id in document_ids_to_purge:
                 remaining_chunks = (
-                    await self.providers.database.get_document_chunks(
+                    await self.providers.database.list_document_chunks(
                         document_id
                     )
                 )
@@ -374,7 +374,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DocumentChunks")
-    async def document_chunks(
+    async def list_document_chunks(
         self,
         document_id: UUID,
         offset: int = 0,
@@ -383,7 +383,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return await self.providers.database.get_document_chunks(
+        return await self.providers.database.list_document_chunks(
             document_id,
             offset=offset,
             limit=limit,

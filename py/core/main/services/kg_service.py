@@ -471,7 +471,7 @@ class KgService(Service):
 
         for document in documents:
             chunks_response = (
-                await self.providers.database.get_document_chunks(
+                await self.providers.database.list_document_chunks(
                     document.id,
                     offset=chunks_offset,
                     limit=chunks_limit,

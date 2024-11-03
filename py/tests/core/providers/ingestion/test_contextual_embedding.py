@@ -188,15 +188,15 @@ async def test_chunk_enrichment_basic(
     await ingestion_service.chunk_enrichment(sample_document_id)
 
     # document chunks
-    document_chunks = (
-        await ingestion_service.providers.database.get_document_chunks(
+    list_document_chunks = (
+        await ingestion_service.providers.database.list_document_chunks(
             sample_document_id
         )
     )
 
-    assert len(document_chunks["results"]) == len(sample_chunks)
+    assert len(list_document_chunks["results"]) == len(sample_chunks)
 
-    for document_chunk in document_chunks["results"]:
+    for document_chunk in list_document_chunks["results"]:
         assert (
             document_chunk["metadata"]["chunk_enrichment_status"] == "success"
         )

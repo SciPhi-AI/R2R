@@ -2,15 +2,16 @@ import base64
 import json
 import logging
 import mimetypes
+from datetime import datetime
 from io import BytesIO
-from typing import Optional, Union
+from typing import Any, Optional, TypeVar, Union
 from uuid import UUID
 
 from fastapi import Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic import Json
+from pydantic import BaseModel, Field, Json
 
-from core.base import R2RException, RunType, Workflow, generate_document_id
+from core.base import R2RException, RunType, generate_document_id
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -19,13 +20,6 @@ from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
 from .chunks_router import ChunkResponse
-from datetime import datetime
-from typing import Any, Optional, TypeVar
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-
-from shared.api.models.base import ResultsWrapper
 
 T = TypeVar("T")
 
@@ -92,23 +86,48 @@ class DocumentsRouter(BaseRouterV3):
         super().__init__(providers, services, orchestration_provider, run_type)
 
     def _setup_routes(self):
-        @self.router.post("/documents")
+        @self.router.post(
+            "/documents",
+            status_code=202,
+            summary="Create a new document",
+        )
         @self.base_endpoint
-        async def ingest_document(
-            file: Optional[UploadFile] = File(None),
-            content: Optional[str] = Form(None),
-            id: Optional[Json[UUID]] = Form(None),
-            metadata: Optional[Json[dict]] = Form(None),
-            ingestion_config: Optional[Json[dict]] = Form(None),
-            run_with_orchestration: Optional[bool] = Form(True),
+        async def create_document(
+            file: Optional[UploadFile] = File(
+                None,
+                description="The file to ingest. Either a file or content must be provided, but not both.",
+            ),
+            content: Optional[str] = Form(
+                None,
+                description="The text content to ingest. Either a file or content must be provided, but not both.",
+            ),
+            id: Optional[Json[UUID]] = Form(
+                None,
+                description="The ID of the document. If not provided, a new ID will be generated.",
+            ),
+            metadata: Optional[Json[dict]] = Form(
+                None,
+                description="Metadata to associate with the document, such as title, description, or custom fields.",
+            ),
+            ingestion_config: Optional[Json[dict]] = Form(
+                None,
+                description="An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration.",
+            ),
+            run_with_orchestration: Optional[bool] = Form(
+                True,
+                description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[DocumentIngestionResponse]:
             """
-            Creates a new `Document` object from an input file or text content. Each document has corresponding `Chunk` objects which are used in vector indexing and search.
+            Creates a new Document object from an input file or text content. The document will be processed
+            to create chunks for vector indexing and search.
 
-            This endpoint supports multipart/form-data requests.
+            Either a file or text content must be provided, but not both. Regular users can only create
+            documents for themselves, while superusers can create documents for any user.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access.
+            The ingestion process runs asynchronously and its progress can be tracked using the returned
+            task_id.
             """
             if not file and not content:
                 raise R2RException(
@@ -140,15 +159,13 @@ class DocumentsRouter(BaseRouterV3):
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
 
                 file_data.pop("content", None)
-                document_id = document_id or generate_document_id(
+                document_id = id or generate_document_id(
                     file_data["filename"], auth_user.id
                 )
             elif content:
                 content_length = len(content)
                 file_content = BytesIO(content.encode("utf-8"))
-                document_id = document_id or generate_document_id(
-                    content, auth_user.id
-                )
+                document_id = id or generate_document_id(content, auth_user.id)
                 file_data = {
                     "filename": "N/A",
                     "content_type": "text/plain",
@@ -207,23 +224,45 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.post(
             "/documents/{id}",
+            summary="Update a document",
         )
         @self.base_endpoint
         async def update_document(
-            file: Optional[UploadFile] = File(None),
-            content: Optional[str] = Form(None),
-            id: UUID = Path(...),
-            metadata: Optional[Json[dict]] = Form(None),
-            ingestion_config: Optional[Json[dict]] = Form(None),
-            run_with_orchestration: Optional[bool] = Form(True),
+            file: Optional[UploadFile] = File(
+                None,
+                description="The file to ingest. Either a file or content must be provided, but not both.",
+            ),
+            content: Optional[str] = Form(
+                None,
+                description="The text content to ingest. Either a file or content must be provided, but not both.",
+            ),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document. If not provided, a new ID will be generated.",
+            ),
+            metadata: Optional[Json[dict]] = Form(
+                None,
+                description="Metadata to associate with the document, such as title, description, or custom fields.",
+            ),
+            ingestion_config: Optional[Json[dict]] = Form(
+                None,
+                description="An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration.",
+            ),
+            run_with_orchestration: Optional[bool] = Form(
+                True,
+                description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[DocumentIngestionResponse]:
             """
-            Ingests updated files into R2R, updating the corresponding `Document` and `Chunk` objects from previous ingestion.
+            Updates an existing document with new content and/or metadata. This will trigger
+            reprocessing of the document's chunks and knowledge graph data.
 
-            This endpoint supports multipart/form-data requests, enabling you to update files and their associated metadatas into R2R.
+            Either a new file or text content must be provided, but not both. The update process
+            runs asynchronously and its progress can be tracked using the returned task_id.
 
-            A valid user authentication token is required to access this endpoint, as regular users can only update their own files.
+            Regular users can only update their own documents. Superusers can update any document.
+            All previous document versions are preserved in the system.
             """
             if not file and not content:
                 raise R2RException(
@@ -308,16 +347,36 @@ class DocumentsRouter(BaseRouterV3):
                     "task_id": None,
                 }
 
-        @self.router.get("/documents")
+        @self.router.get(
+            "/documents",
+            summary="List documents",
+        )
         @self.base_endpoint
         async def get_documents(
-            ids: list[str] = Query([]),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=-1),
+            ids: list[str] = Query(
+                [],
+                description="A list of document IDs to retrieve. If not provided, all documents will be returned.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="The offset of the first document to retrieve.",
+            ),
+            limit: int = Query(
+                100,
+                ge=-1,
+                le=1000,
+                description="The maximum number of documents to retrieve. If set to -1, all documents will be returned, otherwise up to 1,000 documents will be returned.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[DocumentResponse]]:
             """
-            Get a list of documents with pagination.
+            Returns a paginated list of documents the authenticated user has access to.
+
+            Results can be filtered by providing specific document IDs. Regular users will only see
+            documents they own or have access to through collections. Superusers can see all documents.
+
+            The documents are returned in order of last modification, with most recent first.
             """
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
@@ -346,14 +405,26 @@ class DocumentsRouter(BaseRouterV3):
                 },
             )
 
-        @self.router.get("/documents/{id}")
+        @self.router.get(
+            "/documents/{id}",
+            summary="Retrieve a document",
+        )
         @self.base_endpoint
         async def get_document(
-            id: UUID = Path(...),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[DocumentResponse]:
             """
-            Get a specific document by its ID.
+            Retrieves detailed information about a specific document by its ID.
+
+            This endpoint returns the document's metadata, status, and system information. It does not
+            return the document's content - use the `/documents/{id}/download` endpoint for that.
+
+            Users can only retrieve documents they own or have access to through collections.
+            Superusers can retrieve any document.
             """
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
@@ -377,27 +448,50 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get("/documents/{id}/chunks")
         @self.base_endpoint
-        async def get_document_chunks(
-            id: UUID = Path(...),
-            offset: Optional[int] = Query(0, ge=0),
-            limit: Optional[int] = Query(100, ge=0),
-            include_vectors: Optional[bool] = Query(False),
+        async def list_chunks(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve chunks for.",
+            ),
+            offset: Optional[int] = Query(
+                0,
+                ge=0,
+                description="The offset of the first chunk to retrieve.",
+            ),
+            limit: Optional[int] = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of chunks to retrieve, up to 20,000.",
+            ),
+            include_vectors: Optional[bool] = Query(
+                False,
+                description="Whether to include vector embeddings in the response.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
             """
-            Get chunks for a specific document.
-            """
-            document_chunks = await self.services[
-                "management"
-            ].document_chunks(id, offset, limit, include_vectors)
+            Retrieves the text chunks that were generated from a document during ingestion.
+            Chunks represent semantic sections of the document and are used for retrieval
+            and analysis.
 
-            if not document_chunks["results"]:
+            Users can only access chunks from documents they own or have access to through
+            collections. Vector embeddings are only included if specifically requested.
+
+            Results are returned in chunk sequence order, representing their position in
+            the original document.
+            """
+            list_document_chunks = await self.services[
+                "management"
+            ].list_document_chunks(id, offset, limit, include_vectors)
+
+            if not list_document_chunks["results"]:
                 raise R2RException(
                     "No chunks found for the given document ID.", 404
                 )
 
             is_owner = str(
-                document_chunks["results"][0].get("user_id")
+                list_document_chunks["results"][0].get("user_id")
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
@@ -420,13 +514,14 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             return (  # type: ignore
-                document_chunks["results"],
-                {"total_entries": document_chunks["total_entries"]},
+                list_document_chunks["results"],
+                {"total_entries": list_document_chunks["total_entries"]},
             )
 
         @self.router.get(
             "/documents/{id}/download",
             response_class=StreamingResponse,
+            summary="Download document content",
         )
         @self.base_endpoint
         async def get_document_file(
@@ -434,7 +529,12 @@ class DocumentsRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Download a file by its corresponding document ID.
+            Downloads the original file content of a document.
+
+            For uploaded files, returns the original file with its proper MIME type.
+            For text-only documents, returns the content as plain text.
+
+            Users can only download documents they own or have access to through collections.
             """
             # TODO: Add a check to see if the user has access to the file
 
@@ -474,14 +574,19 @@ class DocumentsRouter(BaseRouterV3):
                 },
             )
 
-        @self.router.delete("/documents/{id}")
+        @self.router.delete(
+            "/documents/{id}",
+            summary="Delete a document",
+        )
         @self.base_endpoint
         async def delete_document_by_id(
-            id: UUID = Path(...),
+            id: UUID = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[None]:
             """
-            Delete a specific document.
+            Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
+
+            NOTE - Deletions do not yet impact the knowledge graph or other derived data. This feature is planned for a future release.
             """
             filters = {
                 "$and": [
@@ -492,14 +597,17 @@ class DocumentsRouter(BaseRouterV3):
             await self.services["management"].delete(filters=filters)
             return None
 
-        @self.router.delete("/documents/by-filter")
+        @self.router.delete(
+            "/documents/by-filter",
+            summary="Delete documents by filter",
+        )
         @self.base_endpoint
-        async def delete_document_by_id(
+        async def delete_document_by_filter(
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[None]:
             """
-            Delete documents based on provided filters.
+            Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
             """
 
             try:
@@ -525,14 +633,36 @@ class DocumentsRouter(BaseRouterV3):
 
             return await self.service.management.delete(filters=filters_dict)
 
-        @self.router.get("/documents/{id}/collections")
+        @self.router.get(
+            "/documents/{id}/collections",
+            summary="List document collections",
+        )
         @self.base_endpoint
         async def get_document_collections(
             id: str = Path(..., description="Document ID"),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="The offset of the first collection to retrieve.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="The maximum number of collections to retrieve, up to 1,000.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[list[CollectionResponse]]:
+            """
+            Retrieves all collections that contain the specified document. This endpoint is restricted
+            to superusers only and provides a system-wide view of document organization.
+
+            Collections are used to organize documents and manage access control. A document can belong
+            to multiple collections, and users can access documents through collection membership.
+
+            The results are paginated and ordered by collection creation date, with the most recently
+            created collections appearing first.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get the collections belonging to a document.",

@@ -364,7 +364,7 @@ class IngestionService(Service):
         **kwargs: Any,
     ) -> dict:
         # Verify chunk exists and user has access
-        existing_chunks = await self.providers.database.get_document_chunks(
+        existing_chunks = await self.providers.database.list_document_chunks(
             document_id=document_id, limit=1
         )
 
@@ -430,7 +430,7 @@ class IngestionService(Service):
         chunk: dict,
         document_id: UUID,
         chunk_enrichment_settings: ChunkEnrichmentSettings,
-        document_chunks: list[dict],
+        list_document_chunks: list[dict],
         document_chunks_dict: dict,
     ) -> VectorEntry:
         # get chunks in context
@@ -438,18 +438,18 @@ class IngestionService(Service):
         for enrichment_strategy in chunk_enrichment_settings.strategies:
             if enrichment_strategy == ChunkEnrichmentStrategy.NEIGHBORHOOD:
                 context_chunk_ids.extend(
-                    document_chunks[chunk_idx - prev]["chunk_id"]
+                    list_document_chunks[chunk_idx - prev]["chunk_id"]
                     for prev in range(
                         1, chunk_enrichment_settings.backward_chunks + 1
                     )
                     if chunk_idx - prev >= 0
                 )
                 context_chunk_ids.extend(
-                    document_chunks[chunk_idx + next]["chunk_id"]
+                    list_document_chunks[chunk_idx + next]["chunk_id"]
                     for next in range(
                         1, chunk_enrichment_settings.forward_chunks + 1
                     )
-                    if chunk_idx + next < len(document_chunks)
+                    if chunk_idx + next < len(list_document_chunks)
                 )
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
                 semantic_neighbors = await self.providers.database.get_semantic_neighbors(
@@ -531,28 +531,28 @@ class IngestionService(Service):
         chunk_enrichment_settings = (
             self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
         )
-        # get all document_chunks
-        document_chunks = (
-            await self.providers.database.get_document_chunks(
+        # get all list_document_chunks
+        list_document_chunks = (
+            await self.providers.database.list_document_chunks(
                 document_id=document_id,
             )
         )["results"]
 
         new_vector_entries = []
         document_chunks_dict = {
-            chunk["chunk_id"]: chunk for chunk in document_chunks
+            chunk["chunk_id"]: chunk for chunk in list_document_chunks
         }
 
         tasks = []
         total_completed = 0
-        for chunk_idx, chunk in enumerate(document_chunks):
+        for chunk_idx, chunk in enumerate(list_document_chunks):
             tasks.append(
                 self._get_enriched_chunk_text(
                     chunk_idx,
                     chunk,
                     document_id,
                     chunk_enrichment_settings,
-                    document_chunks,
+                    list_document_chunks,
                     document_chunks_dict,
                 )
             )
@@ -561,13 +561,13 @@ class IngestionService(Service):
                 new_vector_entries.extend(await asyncio.gather(*tasks))
                 total_completed += 128
                 logger.info(
-                    f"Completed {total_completed} out of {len(document_chunks)} chunks for document {document_id}"
+                    f"Completed {total_completed} out of {len(list_document_chunks)} chunks for document {document_id}"
                 )
                 tasks = []
 
         new_vector_entries.extend(await asyncio.gather(*tasks))
         logger.info(
-            f"Completed enrichment of {len(document_chunks)} chunks for document {document_id}"
+            f"Completed enrichment of {len(list_document_chunks)} chunks for document {document_id}"
         )
 
         # delete old chunks from vector db

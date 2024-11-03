@@ -241,7 +241,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         )
 
         # First get the chunks response
-        chunks_response = await self.database_provider.get_document_chunks(
+        chunks_response = await self.database_provider.list_document_chunks(
             document_id=document_id
         )
 
@@ -256,7 +256,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 metadata=extraction["metadata"],
             )
             for extraction in (
-                await self.database_provider.get_document_chunks(
+                await self.database_provider.list_document_chunks(
                     document_id=document_id
                 )
             )["results"]

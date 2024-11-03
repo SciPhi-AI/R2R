@@ -284,11 +284,11 @@ class ManagementRouter(BaseRouter):
             return await self.service.delete(filters=filters_dict)
 
         @self.router.get(
-            "/download_file/{document_id}", response_class=StreamingResponse
+            "/download_file/{id}", response_class=StreamingResponse
         )
         @self.base_endpoint
         async def download_file_app(
-            document_id: str = Path(..., description="Document ID"),
+            id: str = Path(..., description="Document ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
             """
@@ -297,7 +297,7 @@ class ManagementRouter(BaseRouter):
             # TODO: Add a check to see if the user has access to the file
 
             try:
-                document_uuid = UUID(document_id)
+                document_uuid = UUID(id)
             except ValueError:
                 raise R2RException(
                     status_code=422, message="Invalid document ID format."
@@ -366,7 +366,7 @@ class ManagementRouter(BaseRouter):
                 "total_entries": documents_overview_response["total_entries"]
             }
 
-        @self.router.get("/document_chunks/{document_id}")
+        @self.router.get("/list_document_chunks/{document_id}")
         @self.base_endpoint
         async def document_chunks_app(
             document_id: str = Path(...),
@@ -377,11 +377,11 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedDocumentChunkResponse:
             document_uuid = UUID(document_id)
 
-            document_chunks = await self.service.document_chunks(
+            list_document_chunks = await self.service.list_document_chunks(
                 document_uuid, offset, limit, include_vectors
             )
 
-            document_chunks_result = document_chunks["results"]
+            document_chunks_result = list_document_chunks["results"]
 
             if not document_chunks_result:
                 raise R2RException(
@@ -411,12 +411,12 @@ class ManagementRouter(BaseRouter):
 
             if not user_has_access and not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can arbitrarily call document_chunks.",
+                    "Only a superuser can arbitrarily call list_document_chunks.",
                     403,
                 )
 
             return document_chunks_result, {  # type: ignore
-                "total_entries": document_chunks["total_entries"]
+                "total_entries": list_document_chunks["total_entries"]
             }
 
         @self.router.get("/collections_overview")

@@ -2,8 +2,8 @@ import asyncio
 
 from .async_client import R2RAsyncClient
 from .utils import SyncClientMetaclass
-from .v3.document import SyncDocumentSDK
-from .v3.chunk import SyncChunkSDK
+from .v3.chunks import SyncChunkSDK
+from .v3.documents import SyncDocumentSDK
 
 
 class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):

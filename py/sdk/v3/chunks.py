@@ -9,7 +9,7 @@ from ..base.base_client import sync_generator_wrapper, sync_wrapper
 from ..models import CombinedSearchResponse
 
 
-class ChunkSDK:
+class ChunksSDK:
     """
     SDK for interacting with chunks in the v3 API.
     """
@@ -240,9 +240,9 @@ class ChunkSDK:
 
 
 class SyncChunkSDK:
-    """Synchronous wrapper for ChunkSDK"""
+    """Synchronous wrapper for ChunksSDK"""
 
-    def __init__(self, async_sdk: ChunkSDK):
+    def __init__(self, async_sdk: ChunksSDK):
         self._async_sdk = async_sdk
 
         # Get all attributes from the instance

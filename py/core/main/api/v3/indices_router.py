@@ -14,14 +14,6 @@ from core.base.abstractions import (
     IndexMethod,
     VectorTableName,
 )
-
-# from core.base.api.models import (
-#     WrappedCreateIndexResponse,
-#     WrappedDeleteIndexResponse,
-#     WrappedGetIndexResponse,
-#     WrappedListIndicesResponse,
-#     WrappedUpdateIndexResponse,
-# )
 from core.base.api.models import (  # WrappedUpdateResponse,
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,

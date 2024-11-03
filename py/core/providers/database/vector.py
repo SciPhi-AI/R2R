@@ -653,7 +653,7 @@ class PostgresVectorHandler(VectorHandler):
         )
         return None
 
-    async def get_document_chunks(
+    async def list_document_chunks(
         self,
         document_id: UUID,
         offset: int = 0,
@@ -682,7 +682,7 @@ class PostgresVectorHandler(VectorHandler):
             total = results[0].get("total", 0)
             chunks = [
                 {
-                    "chunk_id": result["chunk_id"],
+                    "id": result["chunk_id"],
                     "document_id": result["document_id"],
                     "user_id": result["user_id"],
                     "collection_ids": result["collection_ids"],

@@ -548,7 +548,7 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_document_chunks(
+    async def list_document_chunks(
         self,
         document_id: UUID,
         offset: int = 0,
@@ -1442,14 +1442,14 @@ class DatabaseProvider(Provider):
             collection_id
         )
 
-    async def get_document_chunks(
+    async def list_document_chunks(
         self,
         document_id: UUID,
         offset: int = 0,
         limit: int = -1,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
-        return await self.vector_handler.get_document_chunks(
+        return await self.vector_handler.list_document_chunks(
             document_id, offset, limit, include_vectors
         )
 

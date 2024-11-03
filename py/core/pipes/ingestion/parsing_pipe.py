@@ -2,12 +2,7 @@ import logging
 from typing import AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    DatabaseProvider,
-    Document,
-    DocumentChunk,
-)
+from core.base import AsyncState, DatabaseProvider, Document, DocumentChunk
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider

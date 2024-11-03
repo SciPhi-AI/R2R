@@ -23,8 +23,12 @@ from ..api.v2.kg_router import KGRouter
 from ..api.v2.management_router import ManagementRouter
 from ..api.v2.retrieval_router import RetrievalRouter
 from ..api.v3.chunks_router import ChunksRouter
+from ..api.v3.collections_router import CollectionsRouter
+from ..api.v3.conversations_router import ConversationsRouter
 from ..api.v3.documents_router import DocumentsRouter
 from ..api.v3.indices_router import IndicesRouter
+from ..api.v3.prompts_router import PromptsRouter
+from ..api.v3.retrieval_router import RetrievalRouterV3
 from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
 from ..config import R2RConfig
@@ -269,6 +273,26 @@ class R2RBuilder:
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "users_router": UsersRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "collections_router": CollectionsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "conversations_router": ConversationsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "prompts_router": PromptsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "retrieval_router_v3": RetrievalRouterV3(
                 providers=providers,
                 services=services,
                 orchestration_provider=orchestration_provider,

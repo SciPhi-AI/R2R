@@ -136,7 +136,9 @@ async def documents_overview(ctx, document_ids, offset, limit):
     help="Should the vector be included in the response chunks",
 )
 @pass_context
-async def document_chunks(ctx, document_id, offset, limit, include_vectors):
+async def list_document_chunks(
+    ctx, document_id, offset, limit, include_vectors
+):
     """Get chunks of a specific document."""
     client = ctx.obj
     if not document_id:
@@ -144,7 +146,7 @@ async def document_chunks(ctx, document_id, offset, limit, include_vectors):
         return
 
     with timer():
-        chunks_data = await client.document_chunks(
+        chunks_data = await client.list_document_chunks(
             document_id, offset, limit, include_vectors
         )
 

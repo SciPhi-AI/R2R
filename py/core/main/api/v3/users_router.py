@@ -1,17 +1,20 @@
+import datetime
 import logging
 from typing import List, Optional
 from uuid import UUID
-from fastapi import Depends, Path, Query, Body
-from pydantic import Json
+
+from fastapi import Body, Depends, Path, Query
+from pydantic import BaseModel, Field, Json
 
 from core.base import R2RException
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+
 from .base_router import BaseRouterV3
-import datetime
-from pydantic import BaseModel, Field
+
 
 class UserResponse(BaseModel):
     """Detailed user information response"""
+
     id: UUID
     username: str
     email: str
@@ -23,8 +26,10 @@ class UserResponse(BaseModel):
     collection_ids: List[UUID]
     metadata: Optional[dict]
 
+
 class UserOverviewResponse(BaseModel):
     """Summary user information for list views"""
+
     id: UUID
     username: str
     email: str
@@ -33,8 +38,10 @@ class UserOverviewResponse(BaseModel):
     collection_count: int
     created_at: str
 
+
 class UserCollectionResponse(BaseModel):
     """Collection information associated with a user"""
+
     collection_id: UUID
     name: str
     description: Optional[str]
@@ -42,18 +49,24 @@ class UserCollectionResponse(BaseModel):
     updated_at: str
     document_count: int
 
+
 class UserActivityResponse(BaseModel):
     """User activity statistics"""
+
     total_documents: int
     total_collections: int
     last_activity: Optional[str]
     recent_collections: List[UUID]
     recent_documents: List[UUID]
 
+
 logger = logging.getLogger()
 
+
 class UsersRouter(BaseRouterV3):
-    def __init__(self, providers, services, orchestration_provider=None, run_type=None):
+    def __init__(
+        self, providers, services, orchestration_provider=None, run_type=None
+    ):
         super().__init__(providers, services, orchestration_provider, run_type)
 
     def _setup_routes(self):
@@ -66,7 +79,7 @@ class UsersRouter(BaseRouterV3):
             email: Optional[str] = Query(None),
             is_active: Optional[bool] = Query(None),
             is_superuser: Optional[bool] = Query(None),
-            sort_by: Optional[str] = Query("created_at"),
+            sort_by: Optional[str] = Query(None),
             sort_order: Optional[str] = Query("desc"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[List[UserOverviewResponse]]:
@@ -85,20 +98,6 @@ class UsersRouter(BaseRouterV3):
             """
             Get detailed information about a specific user.
             Users can only access their own information unless they are superusers.
-            """
-            pass
-
-        @self.router.get("/users/{user_id}/activity")
-        @self.base_endpoint
-        async def get_user_activity(
-            user_id: UUID = Path(...),
-            start_date: Optional[str] = Query(None),
-            end_date: Optional[str] = Query(None),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[UserActivityResponse]:
-            """
-            Get activity statistics for a specific user.
-            Users can only access their own activity unless they are superusers.
             """
             pass
 
@@ -142,7 +141,7 @@ class UsersRouter(BaseRouterV3):
             """
             pass
 
-        @self.router.patch("/users/{user_id}")
+        @self.router.post("/users/{user_id}")
         @self.base_endpoint
         async def update_user(
             user_id: UUID = Path(...),
@@ -157,29 +156,5 @@ class UsersRouter(BaseRouterV3):
             Update user information.
             Users can only update their own information unless they are superusers.
             Superuser status can only be modified by existing superusers.
-            """
-            pass
-
-        @self.router.post("/users/{user_id}/deactivate")
-        @self.base_endpoint
-        async def deactivate_user(
-            user_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[UserResponse]:
-            """
-            Deactivate a user account.
-            Only accessible by superusers.
-            """
-            pass
-
-        @self.router.post("/users/{user_id}/reactivate")
-        @self.base_endpoint
-        async def reactivate_user(
-            user_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[UserResponse]:
-            """
-            Reactivate a deactivated user account.
-            Only accessible by superusers.
             """
             pass

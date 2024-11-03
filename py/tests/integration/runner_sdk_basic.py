@@ -158,7 +158,7 @@ def test_document_overview_sample_file_sdk():
 def test_document_chunks_sample_file_sdk():
     print("Testing: Get document chunks from sample file")
     document_id = "db02076e-989a-59cd-98d5-e24e15a0bd27"  # Replace with the actual document ID
-    chunks = client.document_chunks(document_id=document_id)["results"]
+    chunks = client.list_document_chunks(document_id=document_id)["results"]
 
     lead_chunk = {
         "chunk_id": "70c96e8f-e5d3-5912-b79b-13c5793f17b5",
@@ -1572,7 +1572,7 @@ def test_collection_user_interactions():
     # Try to access the document as a user not in the collection
     client.login("user_interactions_test@example.com", "password123")
     try:
-        client.document_chunks(document_id)
+        client.list_document_chunks(document_id)
         print(
             "Collection user interactions test failed: User able to access document in a collection they are not a member of"
         )
@@ -1586,8 +1586,8 @@ def test_collection_user_interactions():
 
     # Try to access the document as a user in the collection
     client.login("user_interactions_test@example.com", "password123")
-    document_chunks = client.document_chunks(document_id)
-    if not document_chunks["results"]:
+    list_document_chunks = client.list_document_chunks(document_id)
+    if not list_document_chunks["results"]:
         print(
             "Collection user interactions test failed: User unable to access document in a collection they are a member of"
         )
@@ -1823,7 +1823,7 @@ def test_ingest_chunks():
         run_with_orchestration=False,
     )
 
-    ingest_chunks_response = client.document_chunks(
+    ingest_chunks_response = client.list_document_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
     )
 
@@ -1873,7 +1873,7 @@ def test_update_chunks():
         text="Dobranoc, świecie!",
     )
 
-    ingest_chunks_response = client.document_chunks(
+    ingest_chunks_response = client.list_document_chunks(
         document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
     )
 
@@ -1909,7 +1909,7 @@ def test_delete_chunks():
         {"chunk_id": {"$eq": "0d3d0fdd-5a13-55a7-8f42-8443f3ad7fbc"}}
     )
     try:
-        client.document_chunks(
+        client.list_document_chunks(
             document_id="82346fd6-7479-4a49-a16a-88b5f91a3672"
         )
     except R2RException as e:

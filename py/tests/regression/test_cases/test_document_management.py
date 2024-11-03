@@ -83,7 +83,7 @@ class TestDocumentManagement(BaseTest):
     def document_chunks_test(self, client):
         try:
             # Now delete the file
-            chunks_response = client.document_chunks(
+            chunks_response = client.list_document_chunks(
                 TestDocumentManagement.CHUNKS_FILE_ID
             )
             return chunks_response
