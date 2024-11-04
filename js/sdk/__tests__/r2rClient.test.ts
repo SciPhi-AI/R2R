@@ -351,6 +351,7 @@ describe("R2RClient", () => {
         chunks,
         documentId,
         metadata,
+        undefined,
         run_with_orchestration,
       );
 
