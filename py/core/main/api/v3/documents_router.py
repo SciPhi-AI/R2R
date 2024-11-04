@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import mimetypes
+import textwrap
 from datetime import datetime
 from io import BytesIO
 from typing import Any, Optional, TypeVar, Union
@@ -61,6 +62,23 @@ class DocumentResponse(BaseModel):
     collection_ids: list[UUID]
     metadata: dict[str, Any]
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                "title": "My Document",
+                "user_id": "3c10c8ff-4deb-43d8-a322-e92551ae1c96",
+                "document_type": "text",
+                "created_at": "2021-09-01T12:00:00Z",
+                "updated_at": "2021-09-01T12:00:00Z",
+                "ingestion_status": "success",
+                "kg_extraction_status": "success",
+                "version": "1",
+                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
+                "metadata": {"key": "value"},
+            }
+        }
+
 
 class CollectionResponse(BaseModel):
     collection_id: UUID
@@ -68,6 +86,17 @@ class CollectionResponse(BaseModel):
     description: Optional[str]
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "collection_id": "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                "name": "My Collection",
+                "description": "A collection of documents.",
+                "created_at": "2021-09-01T12:00:00Z",
+                "updated_at": "2021-09-01T12:00:00Z",
+            }
+        }
 
 
 logger = logging.getLogger()
@@ -90,6 +119,38 @@ class DocumentsRouter(BaseRouterV3):
             "/documents",
             status_code=202,
             summary="Create a new document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                  from r2r import R2RClient
+
+                                                  client = R2RClient("http://localhost:7272")
+                                                  # when using auth, do client.login(...)
+
+                                                  result = client.documents.create(
+                                                    file_path="pg_essay_1.html",
+                                                    metadata={"metadata_1":"some random metadata"},
+                                                    id=None
+                                                  )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                  curl -X POST "https://api.example.com/v3/documents" \\
+                                                  -H "Content-Type: multipart/form-data" \\
+                                                  -H "Authorization: Bearer YOUR_API_KEY" \\
+                                                  -F "file=@pg_essay_1.html;type=text/html" \\
+                                                  -F 'metadata={}' \\
+                                                  -F 'id=null'"""
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def create_document(
@@ -225,6 +286,35 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.post(
             "/documents/{id}",
             summary="Update a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                              from r2r import R2RClient
+
+                                                              client = R2RClient("http://localhost:7272")
+                                                              # when using auth, do client.login(...)
+
+                                                              result = client.documents.update(
+                                                                file_path="pg_essay_1.html",
+                                                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                                              )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                              curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1" \
+                                                              -H "Content-Type: multipart/form-data" \
+                                                              -H "Authorization: Bearer YOUR_API_KEY" \
+                                                              -F "file=@pg_essay_1.html;type=text/plain" """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def update_document(
@@ -350,6 +440,33 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.get(
             "/documents",
             summary="List documents",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                              from r2r import R2RClient
+
+                                                              client = R2RClient("http://localhost:7272")
+                                                              # when using auth, do client.login(...)
+
+                                                              result = client.documents.list(
+                                                                limit=10,
+                                                                offset=0
+                                                              )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                              curl -X GET "https://api.example.com/v3/documents" \
+                                                              -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def get_documents(
@@ -408,6 +525,32 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.get(
             "/documents/{id}",
             summary="Retrieve a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                              from r2r import R2RClient
+
+                                                              client = R2RClient("http://localhost:7272")
+                                                              # when using auth, do client.login(...)
+
+                                                              result = client.documents.retrieve(
+                                                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                                              )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                              curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1" \
+                                                              -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def get_document(
@@ -446,7 +589,36 @@ class DocumentsRouter(BaseRouterV3):
 
             return results[0]
 
-        @self.router.get("/documents/{id}/chunks")
+        @self.router.get(
+            "/documents/{id}/chunks",
+            summary="List document chunks",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                                from r2r import R2RClient
+
+                                                                client = R2RClient("http://localhost:7272")
+                                                                # when using auth, do client.login(...)
+
+                                                                result = client.documents.list_chunks(
+                                                                  id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                                                )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                                curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks" \
+                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def list_chunks(
             id: UUID = Path(
@@ -522,12 +694,38 @@ class DocumentsRouter(BaseRouterV3):
             "/documents/{id}/download",
             response_class=StreamingResponse,
             summary="Download document content",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                            from r2r import R2RClient
+
+                                                            client = R2RClient("http://localhost:7272")
+                                                            # when using auth, do client.login(...)
+
+                                                            result = client.documents.download(
+                                                              id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                                                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download" \
+                                                            -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def get_document_file(
             id: str = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> StreamingResponse:
             """
             Downloads the original file content of a document.
 
@@ -577,6 +775,32 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.delete(
             "/documents/{id}",
             summary="Delete a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                            from r2r import R2RClient
+
+                                                            client = R2RClient("http://localhost:7272")
+                                                            # when using auth, do client.login(...)
+
+                                                            result = client.documents.delete(
+                                                              id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \
+                                                            -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def delete_document_by_id(
@@ -636,6 +860,32 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.get(
             "/documents/{id}/collections",
             summary="List document collections",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                                                            from r2r import R2RClient
+
+                                                            client = R2RClient("http://localhost:7272")
+                                                            # when using auth, do client.login(...)
+
+                                                            result = client.documents.list_collections(
+                                                              id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
+                                                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                                                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections" \
+                                                            -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def get_document_collections(

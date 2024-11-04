@@ -26,6 +26,8 @@ from .base_router import BaseRouterV3
 
 
 class ChunkResponse(BaseModel):
+    """Response model representing a chunk with its metadata and content."""
+
     document_id: UUID
     id: UUID
     collection_ids: list[UUID]
@@ -33,12 +35,34 @@ class ChunkResponse(BaseModel):
     metadata: dict[str, Any]
     vector: Optional[list[float]] = None
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
+                "text": "Sample chunk content",
+                "metadata": {"key": "value"},
+                "vector": [0.1, 0.2, 0.3],
+            }
+        }
+
 
 class ChunkIngestionResponse(BaseModel):
     """Response model for chunk ingestion"""
 
     message: str
     document_id: UUID
+    task_id: Optional[UUID] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Ingestion task completed successfully",
+                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+            }
+        }
 
 
 logger = logging.getLogger()
@@ -102,7 +126,54 @@ class ChunksRouter(BaseRouterV3):
         return filters
 
     def _setup_routes(self):
-        @self.router.post("/chunks")
+        @self.router.post(
+            "/chunks",
+            summary="Create Chunks",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+# when using auth, do client.login(...)
+
+result = client.chunks.create(
+    chunks=[
+        {
+            "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+            "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+            "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+            "metadata": {"key": "value"},
+            "text": "Some text content"
+        }
+    ],
+    run_with_orchestration=False
+)
+""",
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": """
+curl -X POST "https://api.example.com/v3/chunks" \\
+     -H "Content-Type: application/json" \\
+     -H "Authorization: Bearer YOUR_API_KEY" \\
+     -d '{
+       "chunks": [{
+         "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+         "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+         "metadata": {"key": "value"},
+         "text": "Some text content"
+       }],
+       "run_with_orchestration": false
+     }'
+""",
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def create_chunks(
             raw_chunks: Json[list[UnprocessedChunk]] = Body(
@@ -111,8 +182,14 @@ class ChunksRouter(BaseRouterV3):
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[list[ChunkIngestionResponse]]:
-            """
+            f"""
             Create multiple chunks and process them through the ingestion pipeline.
+
+            This endpoint allows creating multiple chunks at once, optionally associating them
+            with documents and collections. The chunks will be processed asynchronously if
+            run_with_orchestration is True.
+
+            Maximum of {MAX_CHUNKS_PER_REQUEST} chunks can be created in a single request.
             """
             default_document_id = generate_id()
             if len(raw_chunks) > MAX_CHUNKS_PER_REQUEST:
@@ -192,6 +269,26 @@ class ChunksRouter(BaseRouterV3):
 
         @self.router.post(
             "/chunks/search",
+            summary="Search Chunks",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+results = client.chunks.search(
+    query="search query",
+    vector_search_settings={
+        "limit": 10,
+        "min_score": 0.7
+    }
+)
+""",
+                    }
+                ]
+            },
         )
         @self.base_endpoint
         async def search_chunks(
@@ -203,11 +300,10 @@ class ChunksRouter(BaseRouterV3):
         ) -> WrappedVectorSearchResponse:  # type: ignore
             # TODO - Deduplicate this code by sharing the code on the retrieval router
             """
-            Perform a search query on the vector database and knowledge graph.
+            Perform a semantic search query over all stored chunks.
 
             This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
             Filters can be applied to various fields such as document_id, and internal metadata values.
-
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
@@ -225,7 +321,23 @@ class ChunksRouter(BaseRouterV3):
             )
             return results["vector_search_results"]
 
-        @self.router.get("/chunks/{id}")
+        @self.router.get(
+            "/chunks/{id}",
+            summary="Retrieve Chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+chunk = client.chunks.retrieve(id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa")
+""",
+                    }
+                ]
+            },
+        )
         @self.base_endpoint
         async def retrieve_chunk(
             id: UUID = Path(...),
@@ -233,6 +345,9 @@ class ChunksRouter(BaseRouterV3):
         ) -> ResultsWrapper[ChunkResponse]:
             """
             Get a specific chunk by its ID.
+
+            Returns the chunk's content, metadata, and associated document/collection information.
+            Users can only retrieve chunks they own or have access to through collections.
             """
             chunk = await self.services["ingestion"].get_chunk(id)
             if not chunk:
@@ -255,7 +370,27 @@ class ChunksRouter(BaseRouterV3):
                 # vector = chunk["vector"] # TODO - Add include vector flag
             )
 
-        @self.router.post("/chunks/{id}")
+        @self.router.post(
+            "/chunks/{id}",
+            summary="Update Chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+result = client.chunks.update(
+    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+    text="Updated content",
+    metadata={"key": "new value"}
+)
+""",
+                    }
+                ]
+            },
+        )
         @self.base_endpoint
         async def update_chunk(
             id: UUID = Path(...),
@@ -263,7 +398,10 @@ class ChunksRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[ChunkResponse]:
             """
-            Update existing chunks with new content.
+            Update an existing chunk's content and/or metadata.
+
+            The chunk's vectors will be automatically recomputed based on the new content.
+            Users can only update chunks they own unless they are superusers.
             """
             # Get the existing chunk to get its chunk_id
             existing_chunk = await self.services["ingestion"].get_chunk(
@@ -299,7 +437,26 @@ class ChunksRouter(BaseRouterV3):
                 # vector = existing_chunk.get('vector')
             )
 
-        @self.router.post("/chunks/{id}/enrich")
+        @self.router.post(
+            "/chunks/{id}/enrich",
+            summary="Enrich Chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+result = client.chunks.enrich(
+    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+    enrichment_config={"key": "value"}
+)
+""",
+                    }
+                ]
+            },
+        )
         @self.base_endpoint
         async def enrich_chunk(
             id: Json[UUID] = Path(...),
@@ -307,17 +464,45 @@ class ChunksRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[ChunkResponse]:
             """
-            Update existing chunks with new content.
+            Enrich a chunk with additional processing and metadata.
+
+            This endpoint allows adding additional enrichments to an existing chunk,
+            such as entity extraction, classification, or custom processing defined
+            in the enrichment_config.
+
+            Users can only enrich chunks they own unless they are superusers.
             """
             pass
 
-        @self.router.delete("/chunks/{id}")
+        @self.router.delete(
+            "/chunks/{id}",
+            summary="Delete Chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+result = client.chunks.delete(
+    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+)
+""",
+                    }
+                ]
+            },
+        )
         @self.base_endpoint
         async def delete_chunk(
             id: Json[UUID] = Path(...),
         ) -> ResultsWrapper[ChunkResponse]:
             """
-            Update existing chunks with new content.
+            Delete a specific chunk by ID.
+
+            This permanently removes the chunk and its associated vector embeddings.
+            The parent document remains unchanged. Users can only delete chunks they
+            own unless they are superusers.
             """
             # Get the existing chunk to get its chunk_id
             existing_chunk = await self.services["ingestion"].get_chunk(id)
@@ -327,7 +512,30 @@ class ChunksRouter(BaseRouterV3):
             await self.services["management"].delete({"$eq": {"chunk_id": id}})
             return None
 
-        @self.router.get("/chunks")
+        @self.router.get(
+            "/chunks",
+            summary="List Chunks",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+results = client.chunks.list(
+    offset=0,
+    limit=10,
+    sort_by="created_at",
+    sort_order="DESC",
+    metadata_filter={"key": "value"},
+    include_vectors=False
+)
+""",
+                    }
+                ]
+            },
+        )
         @self.base_endpoint
         async def list_chunks(
             offset: int = Query(
@@ -356,8 +564,11 @@ class ChunksRouter(BaseRouterV3):
 
             Returns a paginated list of chunks that the user has access to.
             Results can be filtered and sorted based on various parameters.
-            """
-            # Build filters
+            Vector embeddings are only included if specifically requested.
+
+            Regular users can only list chunks they own or have access to through
+            collections. Superusers can list all chunks in the system.
+            """  # Build filters
             filters = {}
 
             # Add user access control filter

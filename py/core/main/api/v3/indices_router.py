@@ -84,46 +84,337 @@ class IndicesRouter(BaseRouterV3):
         super().__init__(providers, services, orchestration_provider, run_type)
 
     def _setup_routes(self):
-        @self.router.post("/indices")
+
+        @self.router.post(
+            "/indices",
+            summary="Create Vector Index",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+# when using auth, do client.login(...)
+
+# Create an HNSW index for efficient similarity search
+result = client.indices.create(
+    config={
+        "table_name": "vectors",  # The table containing vector embeddings
+        "index_method": "hnsw",   # Hierarchical Navigable Small World graph
+        "index_measure": "cosine_distance",  # Similarity measure
+        "index_arguments": {
+            "m": 16,              # Number of connections per layer
+            "ef_construction": 64,# Size of dynamic candidate list for construction
+            "ef": 40,            # Size of dynamic candidate list for search
+        },
+        "index_name": "my_document_embeddings_idx",
+        "index_column": "embedding",
+        "concurrently": True     # Build index without blocking table writes
+    },
+    run_with_orchestration=True  # Run as orchestrated task for large indices
+)
+
+# Create an IVF-Flat index for balanced performance
+result = client.indices.create(
+    config={
+        "table_name": "vectors",
+        "index_method": "ivf_flat", # Inverted File with Flat storage
+        "index_measure": "l2_distance",
+        "index_arguments": {
+            "lists": 100,         # Number of cluster centroids
+            "probe": 10,          # Number of clusters to search
+        },
+        "index_name": "my_ivf_embeddings_idx",
+        "index_column": "embedding",
+        "concurrently": True
+    }
+)""",
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": """
+# Create HNSW Index
+curl -X POST "https://api.example.com/indices" \\
+    -H "Content-Type: application/json" \\
+    -H "Authorization: Bearer YOUR_API_KEY" \\
+    -d '{
+    "config": {
+        "table_name": "vectors",
+        "index_method": "hnsw",
+        "index_measure": "cosine_distance",
+        "index_arguments": {
+        "m": 16,
+        "ef_construction": 64,
+        "ef": 40
+        },
+        "index_name": "my_document_embeddings_idx",
+        "index_column": "embedding",
+        "concurrently": true
+    },
+    "run_with_orchestration": true
+    }'
+
+# Create IVF-Flat Index
+curl -X POST "https://api.example.com/indices" \\
+    -H "Content-Type: application/json" \\
+    -H "Authorization: Bearer YOUR_API_KEY" \\
+    -d '{
+    "config": {
+        "table_name": "vectors",
+        "index_method": "ivf_flat",
+        "index_measure": "l2_distance",
+        "index_arguments": {
+        "lists": 100,
+        "probe": 10
+        },
+        "index_name": "my_ivf_embeddings_idx",
+        "index_column": "embedding",
+        "concurrently": true
+    }
+    }'""",
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def create_index(
-            config: IndexConfig = Body(...),
-            run_with_orchestration: Optional[bool] = Body(True),
+            config: IndexConfig = Body(
+                ...,
+                description="Configuration for the vector index",
+                example={
+                    "table_name": "vectors",
+                    "index_method": "hnsw",
+                    "index_measure": "cosine_distance",
+                    "index_arguments": {
+                        "m": 16,
+                        "ef_construction": 64,
+                        "ef": 40,
+                    },
+                    "index_name": "my_document_embeddings_idx",
+                    "index_column": "embedding",
+                    "concurrently": True,
+                },
+            ),
+            run_with_orchestration: Optional[bool] = Body(
+                True,
+                description="Whether to run index creation as an orchestrated task (recommended for large indices)",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
             """
-            Create a new index with the specified configuration.
+            Create a new vector similarity search index in the database.
+
+            This endpoint creates a database index optimized for efficient similarity search over vector embeddings.
+            It supports two main indexing methods:
+
+            1. HNSW (Hierarchical Navigable Small World):
+               - Best for: High-dimensional vectors requiring fast approximate nearest neighbor search
+               - Pros: Very fast search, good recall, memory-resident for speed
+               - Cons: Slower index construction, more memory usage
+               - Key parameters:
+                 * m: Number of connections per layer (higher = better recall but more memory)
+                 * ef_construction: Build-time search width (higher = better recall but slower build)
+                 * ef: Query-time search width (higher = better recall but slower search)
+
+            2. IVF-Flat (Inverted File with Flat Storage):
+               - Best for: Balance between build speed, search speed, and recall
+               - Pros: Faster index construction, less memory usage
+               - Cons: Slightly slower search than HNSW
+               - Key parameters:
+                 * lists: Number of clusters (usually sqrt(n) where n is number of vectors)
+                 * probe: Number of nearest clusters to search
+
+            Supported similarity measures:
+            - cosine_distance: Best for comparing semantic similarity
+            - l2_distance: Best for comparing absolute distances
+            - ip_distance: Best for comparing raw dot products
+
+            Notes:
+            - Index creation can be resource-intensive for large datasets
+            - Use run_with_orchestration=True for large indices to prevent timeouts
+            - The 'concurrently' option allows other operations while building
+            - Index names must be unique per table
             """
             # TODO: Implement index creation logic
             pass
 
-        @self.router.get("/indices")
+        @self.router.get(
+            "/indices",
+            summary="List Vector Indices",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+
+# List all indices
+indices = client.indices.list(
+    offset=0,
+    limit=10,
+    filter_by={"table_name": "vectors"}
+)
+
+# Print index details
+for idx in indices:
+    print(f"Index: {idx['name']}")
+    print(f"Method: {idx['method']}")
+    print(f"Size: {idx['size_bytes'] / 1024 / 1024:.2f} MB")
+    print(f"Row count: {idx['row_count']}")""",
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": """
+curl -X GET "https://api.example.com/indices?offset=0&limit=10" \\
+     -H "Authorization: Bearer YOUR_API_KEY" \\
+     -H "Content-Type: application/json"
+
+# With filters
+curl -X GET "https://api.example.com/indices?offset=0&limit=10&filter_by={\"table_name\":\"vectors\"}" \\
+     -H "Authorization: Bearer YOUR_API_KEY" \\
+     -H "Content-Type: application/json"
+""",
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def list_indices(
-            offset: int = Query(0, ge=0),
-            limit: int = Query(10, ge=1, le=100),
-            filter_by: Optional[Json[dict]] = Query(None),
+            offset: int = Query(
+                0, ge=0, description="Number of records to skip"
+            ),
+            limit: int = Query(
+                10,
+                ge=1,
+                le=100,
+                description="Maximum number of records to return",
+            ),
+            filter_by: Optional[Json[dict]] = Query(
+                None,
+                description='Filter criteria for indices (e.g., {"table_name": "vectors"})',
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedListVectorIndicesResponse:
             """
-            List available indices with pagination support.
+            List existing vector similarity search indices with pagination support.
+
+            Returns details about each index including:
+            - Name and table name
+            - Indexing method and parameters
+            - Size and row count
+            - Creation timestamp and last updated
+            - Performance statistics (if available)
+
+            The response can be filtered using the filter_by parameter to narrow down results
+            based on table name, index method, or other attributes.
             """
             # TODO: Implement index listing logic
             pass
 
-        @self.router.get("/indices/{id}")
+        @self.router.get(
+            "/indices/{id}",
+            summary="Get Vector Index Details",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+
+# Get detailed information about a specific index
+index = client.indices.get("550e8400-e29b-41d4-a716-446655440000")
+
+# Access index details
+print(f"Index Method: {index['method']}")
+print(f"Parameters: {index['parameters']}")
+print(f"Performance Stats: {index['stats']}")""",
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": """
+curl -X GET "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
+     -H "Authorization: Bearer YOUR_API_KEY"
+""",
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def get_index(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):  #  -> WrappedGetIndexResponse:
             """
-            Get details of a specific index.
+            Get detailed information about a specific vector index.
+
+            Returns comprehensive information about the index including:
+            - Configuration details (method, measure, parameters)
+            - Current size and row count
+            - Build progress (if still under construction)
+            - Performance statistics:
+                * Average query time
+                * Memory usage
+                * Cache hit rates
+                * Recent query patterns
+            - Maintenance information:
+                * Last vacuum
+                * Fragmentation level
+                * Recommended optimizations
             """
             # TODO: Implement get index logic
             pass
 
-        @self.router.put("/indices/{id}")
+        @self.router.put(
+            "/indices/{id}",
+            summary="Update Vector Index",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+
+# Update HNSW index parameters
+result = client.indices.update(
+    "550e8400-e29b-41d4-a716-446655440000",
+    config={
+        "index_arguments": {
+            "ef": 80,  # Increase search quality
+            "m": 24    # Increase connections per layer
+        },
+        "concurrently": True
+    },
+    run_with_orchestration=True
+)""",
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": """
+curl -X PUT "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
+     -H "Content-Type: application/json" \\
+     -H "Authorization: Bearer YOUR_API_KEY" \\
+     -d '{
+       "config": {
+         "index_arguments": {
+           "ef": 80,
+           "m": 24
+         },
+         "concurrently": true
+       },
+       "run_with_orchestration": true
+     }'""",
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def update_index(
             id: UUID = Path(...),
@@ -137,7 +428,37 @@ class IndicesRouter(BaseRouterV3):
             # TODO: Implement index update logic
             pass
 
-        @self.router.delete("/indices/{id}")
+        @self.router.delete(
+            "/indices/{id}",
+            summary="Delete Vector Index",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient("http://localhost:7272")
+
+# Delete an index with orchestration for cleanup
+result = client.indices.delete(
+    "550e8400-e29b-41d4-a716-446655440000",
+    run_with_orchestration=True
+)""",
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": """
+curl -X DELETE "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
+     -H "Content-Type: application/json" \\
+     -H "Authorization: Bearer YOUR_API_KEY" \\
+     -d '{
+       "run_with_orchestration": true
+     }'""",
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def delete_index(
             id: UUID = Path(...),
@@ -145,7 +466,19 @@ class IndicesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDeleteVectorIndexResponse:
             """
-            Delete an existing index.
+            Delete an existing vector similarity search index.
+
+            This endpoint removes the specified index from the database. Important considerations:
+
+            - Deletion is permanent and cannot be undone
+            - Underlying vector data remains intact
+            - Queries will fall back to sequential scan
+            - Running queries during deletion may be slower
+            - Use run_with_orchestration=True for large indices to prevent timeouts
+            - Consider index dependencies before deletion
+
+            The operation returns immediately but cleanup may continue in background
+            when run_with_orchestration=True.
             """
             # TODO: Implement index deletion logic
             pass
