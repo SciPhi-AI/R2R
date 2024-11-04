@@ -462,6 +462,17 @@ export class r2rClient {
     });
   }
 
+  /**
+   * Generates a new verification code and sends a reset email to the user.
+   * @param email The email address of the user to send the reset email to.
+   * @returns A promise that resolves to the verification code and message from the server.
+   */
+  @feature("sendResetEmail")
+  async sendResetEmail(email: string): Promise<Record<string, any>> {
+    return await this._makeRequest("POST", "send_reset_email", {
+      data: { email },
+    });
+  }
   // -----------------------------------------------------------------------------
   //
   // Ingestion

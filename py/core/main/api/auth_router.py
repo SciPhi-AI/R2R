@@ -282,3 +282,21 @@ class AuthRouter(BaseRouter):
                 )
             result = await self.service.get_user_verification_data(user_uuid)
             return result
+
+        # Add to AuthRouter class (auth_router.py)
+        @self.router.post(
+            "/send_reset_email", response_model=WrappedVerificationResult
+        )
+        @self.base_endpoint
+        async def send_reset_email_app(
+            email: EmailStr = Body(..., description="User's email address"),
+        ):
+            """
+            Generate a new verification code and send a reset email to the user.
+            Returns the verification code and success message.
+
+            This endpoint is particularly useful for sandbox/testing environments
+            where direct access to verification codes is needed.
+            """
+            result = await self.service.send_reset_email(email)
+            return result
