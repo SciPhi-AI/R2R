@@ -700,8 +700,8 @@ export class r2rClient {
     chunks: RawChunk[],
     documentId?: string,
     metadata?: Record<string, any>,
-    collection_ids?: string[],
     run_with_orchestration?: boolean,
+    collection_ids?: string[],
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
     let inputData: Record<string, any> = {
