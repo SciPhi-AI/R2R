@@ -20,6 +20,7 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
+    CommunityInfo,
     CommunityReport,
     Entity,
     EntityLevel,
@@ -27,7 +28,6 @@ from shared.abstractions.graph import (
     KGExtraction,
     RelationshipType,
     Triple,
-    CommunityInfo,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,

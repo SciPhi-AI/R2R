@@ -494,6 +494,7 @@ export class r2rClient {
       document_ids?: string[];
       user_ids?: (string | null)[];
       ingestion_config?: Record<string, any>;
+      collection_ids?: string[];
       run_with_orchestration?: boolean;
     } = {},
   ): Promise<any> {
@@ -560,6 +561,9 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+      collection_ids: options.collection_ids
+        ? JSON.stringify(options.collection_ids)
+        : undefined,
       run_with_orchestration:
         options.run_with_orchestration != undefined
           ? String(options.run_with_orchestration)
@@ -601,6 +605,7 @@ export class r2rClient {
       document_ids: string[];
       metadatas?: Record<string, any>[];
       ingestion_config?: Record<string, any>;
+      collection_ids?: string[];
       run_with_orchestration?: boolean;
     },
   ): Promise<any> {
@@ -642,6 +647,9 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+      collection_ids: options.collection_ids
+        ? JSON.stringify(options.collection_ids)
+        : undefined,
       run_with_orchestration:
         options.run_with_orchestration != undefined
           ? String(options.run_with_orchestration)
@@ -675,6 +683,7 @@ export class r2rClient {
     chunks: RawChunk[],
     documentId?: string,
     metadata?: Record<string, any>,
+    collection_ids?: string[],
     run_with_orchestration?: boolean,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
@@ -682,6 +691,7 @@ export class r2rClient {
       chunks: chunks,
       document_id: documentId,
       metadata: metadata,
+      collection_ids: collection_ids,
       run_with_orchestration: run_with_orchestration,
     };
 
