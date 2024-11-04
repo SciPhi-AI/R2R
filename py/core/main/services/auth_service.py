@@ -203,3 +203,17 @@ class AuthService(Service):
                 "verification_code_expiry"
             ],
         }
+
+    @telemetry_event("SendResetEmail")
+    async def send_reset_email(self, email: str) -> dict:
+        """
+        Generate a new verification code and send a reset email to the user.
+        Returns the verification code for testing/sandbox environments.
+
+        Args:
+            email (str): The email address of the user
+
+        Returns:
+            dict: Contains verification_code and message
+        """
+        return await self.providers.auth.send_reset_email(email)
