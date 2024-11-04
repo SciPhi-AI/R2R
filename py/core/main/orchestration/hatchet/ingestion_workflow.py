@@ -154,17 +154,32 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                # TODO: Move logic onto the `management service`
-                collection_id = generate_default_user_collection_id(
-                    document_info.user_id
+                collection_ids = context.workflow_input()["request"].get(
+                    "collection_ids"
                 )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
 
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
                 server_chunk_enrichment_settings = getattr(
@@ -450,16 +465,32 @@ def hatchet_ingestion_factory(
 
             try:
                 # TODO - Move logic onto the `management service`
-                collection_id = generate_default_user_collection_id(
-                    document_info.user_id
+                collection_ids = context.workflow_input()["request"].get(
+                    "collection_ids"
                 )
-                await self.ingestion_service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await self.ingestion_service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"

@@ -3,11 +3,10 @@ import logging
 import math
 import uuid
 
-from core import GenerationConfig
-from core import R2RException
+from core import GenerationConfig, R2RException
+from core.base.abstractions import KGEnrichmentStatus
 
 from ...services import KgService
-from core.base.abstractions import KGEnrichmentStatus
 
 logger = logging.getLogger()
 

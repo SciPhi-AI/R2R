@@ -17,11 +17,11 @@ from core.base import (
     Triple,
 )
 from core.base.abstractions import (
-    EntityLevel,
     CommunityInfo,
-    KGEnrichmentStatus,
+    EntityLevel,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEnrichmentStatus,
     KGEntityDeduplicationSettings,
     VectorQuantizationType,
 )

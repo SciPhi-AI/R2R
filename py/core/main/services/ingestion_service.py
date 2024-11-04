@@ -73,6 +73,7 @@ class IngestionService(Service):
         metadata: Optional[dict] = None,
         version: Optional[str] = None,
         is_update: bool = False,
+        collection_ids: Optional[list[UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -634,6 +635,7 @@ class IngestionServiceAdapter:
             "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],
+            "collection_ids": data.get("collection_ids", []),
         }
 
     @staticmethod
