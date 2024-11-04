@@ -379,11 +379,44 @@ def simple_ingestion_factory(service: IngestionService):
                 message=f"Error during vector index deletion: {str(e)}",
             )
 
+    async def update_document_metadata(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_update_document_metadata_input(
+                    input_data
+                )
+            )
+
+            document_id = parsed_data["document_id"]
+            metadata = parsed_data["metadata"]
+            user = parsed_data["user"]
+
+            await service.update_document_metadata(
+                document_id=document_id,
+                metadata=metadata,
+                user=user,
+            )
+
+            return {
+                "message": "Document metadata update completed successfully.",
+                "document_id": str(document_id),
+                "task_id": None,
+            }
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during document metadata update: {str(e)}",
+            )
+
     return {
         "ingest-files": ingest_files,
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
         "update-chunk": update_chunk,
+        "update-document-metadata": update_document_metadata,
         "create-vector-index": create_vector_index,
         "delete-vector-index": delete_vector_index,
     }

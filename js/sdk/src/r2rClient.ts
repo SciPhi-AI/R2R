@@ -678,6 +678,23 @@ export class r2rClient {
     });
   }
 
+  /**
+   * Update the metadata of an existing document.
+   * @param documentId The ID of the document to update.
+   * @param metadata The new metadata to merge with existing metadata.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("updateDocumentMetadata")
+  async updateDocumentMetadata(
+    documentId: string,
+    metadata: Record<string, any>
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return await this._makeRequest("POST", `update_document_metadata/${documentId}`, {
+      data: metadata,
+    });
+  }
+
   @feature("ingestChunks")
   async ingestChunks(
     chunks: RawChunk[],

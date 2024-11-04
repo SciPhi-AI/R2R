@@ -314,3 +314,30 @@ class IngestionMixins:
         return await self._make_request(  # type: ignore
             "DELETE", "delete_vector_index", json=data
         )
+
+    async def update_document_metadata(
+        self,
+        document_id: Union[str, UUID],
+        metadata: dict,
+    ) -> dict:
+        """
+        Update the metadata of an existing document.
+
+        Args:
+            document_id (Union[str, UUID]): The ID of the document to update.
+            metadata (dict): The new metadata to merge with existing metadata.
+            run_with_orchestration (Optional[bool]): Whether to run the update through orchestration.
+
+        Returns:
+            dict: Update results containing the status of the metadata update.
+        """
+        data = {
+            "metadata": metadata,
+        }
+
+        # Remove None values from payload
+        data = {k: v for k, v in data.items() if v is not None}
+
+        return await self._make_request(  # type: ignore
+            "POST", f"update_document_metadata/{document_id}", json=metadata
+        )

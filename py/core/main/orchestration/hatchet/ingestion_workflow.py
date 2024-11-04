@@ -659,10 +659,57 @@ def hatchet_ingestion_factory(
 
             return {"status": "Vector index deleted successfully."}
 
+    @orchestration_provider.workflow(
+        name="update-document-metadata",
+        timeout="30m",
+    )
+    class HatchetUpdateDocumentMetadataWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="30m")
+        async def update_document_metadata(self, context: Context) -> dict:
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_update_document_metadata_input(
+                    input_data
+                )
+
+                document_id = UUID(parsed_data["document_id"])
+                metadata = parsed_data["metadata"]
+                user = parsed_data["user"]
+
+                await self.ingestion_service.update_document_metadata(
+                    document_id=document_id,
+                    metadata=metadata,
+                    user=user,
+                )
+
+                return {
+                    "message": "Document metadata update completed successfully.",
+                    "document_id": str(document_id),
+                    "task_id": context.workflow_run_id(),
+                }
+
+            except Exception as e:
+                raise R2RException(
+                    status_code=500,
+                    message=f"Error during document metadata update: {str(e)}",
+                )
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            # Handle failure case if necessary
+            pass
+
+    # Add this to the workflows dictionary in hatchet_ingestion_factory
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     update_chunks_workflow = HatchetUpdateChunkWorkflow(service)
+    update_document_metadata_workflow = HatchetUpdateDocumentMetadataWorkflow(
+        service
+    )
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
     delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 
@@ -671,6 +718,7 @@ def hatchet_ingestion_factory(
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "update_chunk": update_chunks_workflow,
+        "update_document_metadata": update_document_metadata_workflow,
         "create_vector_index": create_vector_index_workflow,
         "delete_vector_index": delete_vector_index_workflow,
     }
