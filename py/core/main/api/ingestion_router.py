@@ -122,7 +122,7 @@ class IngestionRouter(BaseRouter):
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
             ),
-            collection_ids: Optional[Json[list[UUID]]] = Form(
+            collection_ids: Optional[Json[list[list[UUID]]]] = Form(
                 None,
                 description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
             ),
@@ -248,7 +248,7 @@ class IngestionRouter(BaseRouter):
             document_ids: Optional[Json[list[UUID]]] = Form(
                 None, description=ingest_files_descriptions.get("document_ids")
             ),
-            collection_ids: Optional[Json[list[UUID]]] = Form(
+            collection_ids: Optional[Json[list[list[UUID]]]] = Form(
                 None,
                 description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
             ),
@@ -369,7 +369,7 @@ class IngestionRouter(BaseRouter):
             metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
-            collection_ids: Optional[Json[list[UUID]]] = Body(
+            collection_ids: Optional[Json[list[list[UUID]]]] = Body(
                 None,
                 description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
             ),

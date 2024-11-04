@@ -172,6 +172,17 @@ def hatchet_ingestion_factory(
                     )
                 else:
                     for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
@@ -483,6 +494,17 @@ def hatchet_ingestion_factory(
                     )
                 else:
                     for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title or "N/A",
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
