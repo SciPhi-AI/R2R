@@ -9,6 +9,7 @@ from shared.api.models.auth.responses import (
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
     WrappedIngestionResponse,
+    WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
@@ -72,6 +73,7 @@ __all__ = [
     "IngestionResponse",
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
+    "WrappedMetadataUpdateResponse",
     # Restructure Responses
     "KGCreationResponse",
     "WrappedKGCreationResponse",

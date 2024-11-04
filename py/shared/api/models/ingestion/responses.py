@@ -76,6 +76,7 @@ class SelectVectorIndexResponse(BaseModel):
 
 
 WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
+WrappedMetadataUpdateResponse = ResultsWrapper[IngestionResponse]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
 WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
 WrappedListVectorIndicesResponse = ResultsWrapper[ListVectorIndicesResponse]
