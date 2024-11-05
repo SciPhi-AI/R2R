@@ -5,7 +5,9 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from core.base import R2RException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from .assembly import R2RBuilder, R2RConfig
@@ -116,6 +118,18 @@ logger.info(
 
 # Create the FastAPI app
 app = FastAPI(lifespan=lifespan)
+
+
+@app.exception_handler(R2RException)
+async def r2r_exception_handler(request: Request, exc: R2RException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "message": exc.message,
+            "error_type": type(exc).__name__,
+        },
+    )
+
 
 # Add CORS middleware
 app.add_middleware(
