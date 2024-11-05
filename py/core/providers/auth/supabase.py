@@ -222,3 +222,6 @@ class SupabaseAuthProvider(AuthProvider):
     async def clean_expired_blacklisted_tokens(self):
         # Not applicable for Supabase, tokens are managed by Supabase
         pass
+
+    async def send_reset_email(self, email: str) -> dict[str, str]:
+        raise NotImplementedError("send_reset_email is not used with Supabase")

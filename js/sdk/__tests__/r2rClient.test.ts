@@ -352,6 +352,7 @@ describe("R2RClient", () => {
         documentId,
         metadata,
         run_with_orchestration,
+        undefined,
       );
 
       expect(result).toEqual(mockResponse);

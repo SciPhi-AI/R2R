@@ -35,7 +35,7 @@ def psql_quote_literal(value: str) -> str:
     This is a simple implementation - in production, you should use proper parameterization
     or your database driver's quoting functions.
     """
-    return f"'{value.replace("'", "''")}'"
+    return "'" + value.replace("'", "''") + "'"
 
 
 def index_measure_to_ops(
