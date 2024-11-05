@@ -68,7 +68,6 @@ class BaseClient:
             "verify_email",
         ]:
             headers.update(self._get_auth_header())
-
         if (
             kwargs.get("params", None) == {}
             or kwargs.get("params", None) is None

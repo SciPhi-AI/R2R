@@ -366,7 +366,7 @@ from r2r import R2RClient
 client = R2RClient("http://localhost:7272")
 
 # Get detailed information about a specific index
-index = client.indices.get("550e8400-e29b-41d4-a716-446655440000")
+index = client.indices.get("index_1")
 
 # Access index details
 print(f"Index Method: {index['method']}")
@@ -376,7 +376,7 @@ print(f"Performance Stats: {index['stats']}")""",
                     {
                         "lang": "Shell",
                         "source": """
-curl -X GET "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
+curl -X GET "https://api.example.com/indices/vectors/index_1" \\
      -H "Authorization: Bearer YOUR_API_KEY"
 """,
                     },

@@ -383,7 +383,7 @@ class PostgresUserHandler(UserHandler):
             raise R2RException(
                 status_code=400, message="User already in collection"
             )
-        return None
+        return True
 
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
@@ -405,7 +405,7 @@ class PostgresUserHandler(UserHandler):
                 status_code=400,
                 message="User is not a member of the specified collection",
             )
-        return None
+        return True
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = -1

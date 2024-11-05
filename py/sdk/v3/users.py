@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
+from ..models import Token, UserResponse
 
 
 class UsersSDK:
@@ -13,6 +14,156 @@ class UsersSDK:
 
     def __init__(self, client):
         self.client = client
+
+    # New authentication methods
+    async def register(self, email: str, password: str) -> UserResponse:
+        """
+        Register a new user.
+
+        Args:
+            email (str): User's email address
+            password (str): User's password
+
+        Returns:
+            UserResponse: New user information
+        """
+        data = {"email": email, "password": password}
+        return await self.client._make_request(
+            "POST", "users/register", json=data
+        )
+
+    async def verify_email(self, email: str, verification_code: str) -> dict:
+        """
+        Verify a user's email address.
+
+        Args:
+            email (str): User's email address
+            verification_code (str): Verification code sent to email
+
+        Returns:
+            dict: Verification result
+        """
+        data = {"email": email, "verification_code": verification_code}
+        return await self.client._make_request(
+            "POST", "users/verify-email", json=data
+        )
+
+    async def login(self, email: str, password: str) -> dict[str, Token]:
+        """
+        Log in a user.
+
+        Args:
+            email (str): User's email address
+            password (str): User's password
+
+        Returns:
+            dict[str, Token]: Access and refresh tokens
+        """
+        data = {"username": email, "password": password}
+        response = await self.client._make_request(
+            "POST", "users/login", data=data
+        )
+        self.client.access_token = response["results"]["access_token"]["token"]
+        self.client._refresh_token = response["results"]["refresh_token"][
+            "token"
+        ]
+        return response
+
+    async def login_with_token(self, access_token: str) -> dict[str, Token]:
+        """
+        Log in using an existing access token.
+
+        Args:
+            access_token (str): Existing access token
+
+        Returns:
+            dict[str, Token]: Token information
+        """
+        self.client.access_token = access_token
+        try:
+            await self.client._make_request("GET", "users/me")
+            return {
+                "access_token": Token(
+                    token=access_token, token_type="access_token"
+                ),
+            }
+        except Exception:
+            self.access_token = None
+            self.client._refresh_token = None
+            raise ValueError("Invalid token provided")
+
+    async def logout(self) -> dict:
+        """Log out the current user."""
+        response = await self.client._make_request("POST", "users/logout")
+        self.client.access_token = None
+        self.client._refresh_token = None
+        return response
+
+    async def refresh_token(self) -> dict[str, Token]:
+        """Refresh the access token using the refresh token."""
+        response = await self.client._make_request(
+            "POST",
+            "users/refresh-token",
+            json=self.client._refresh_token,
+        )
+        self.client.access_token = response["results"]["access_token"]["token"]
+        self.client._refresh_token = response["results"]["refresh_token"][
+            "token"
+        ]
+        return response
+
+    async def change_password(
+        self, current_password: str, new_password: str
+    ) -> dict:
+        """
+        Change the user's password.
+
+        Args:
+            current_password (str): Current password
+            new_password (str): New password
+
+        Returns:
+            dict: Change password result
+        """
+        data = {
+            "current_password": current_password,
+            "new_password": new_password,
+        }
+        return await self.client._make_request(
+            "POST", "users/change-password", json=data
+        )
+
+    async def request_password_reset(self, email: str) -> dict:
+        """
+        Request a password reset.
+
+        Args:
+            email (str): User's email address
+
+        Returns:
+            dict: Password reset request result
+        """
+        return await self.client._make_request(
+            "POST", "users/request-password-reset", json=email
+        )
+
+    async def reset_password(
+        self, reset_token: str, new_password: str
+    ) -> dict:
+        """
+        Reset password using a reset token.
+
+        Args:
+            reset_token (str): Password reset token
+            new_password (str): New password
+
+        Returns:
+            dict: Password reset result
+        """
+        data = {"reset_token": reset_token, "new_password": new_password}
+        return await self.client._make_request(
+            "POST", "users/reset-password", json=data
+        )
 
     async def list(
         self,
@@ -78,11 +229,11 @@ class UsersSDK:
     async def update(
         self,
         id: Union[str, UUID],
-        username: Optional[str] = None,
         email: Optional[str] = None,
-        is_active: Optional[bool] = None,
         is_superuser: Optional[bool] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
     ) -> dict:
         """
         Update user information.
@@ -90,8 +241,6 @@ class UsersSDK:
         Args:
             id (Union[str, UUID]): User ID to update
             username (Optional[str]): New username
-            email (Optional[str]): New email address
-            is_active (Optional[bool]): Update active status
             is_superuser (Optional[bool]): Update superuser status
             metadata (Optional[Dict[str, Any]]): Update user metadata
 
@@ -99,19 +248,21 @@ class UsersSDK:
             dict: Updated user information
         """
         data = {}
-        if username is not None:
-            data["username"] = username
         if email is not None:
             data["email"] = email
-        if is_active is not None:
-            data["is_active"] = is_active
         if is_superuser is not None:
             data["is_superuser"] = is_superuser
-        if metadata is not None:
-            data["metadata"] = metadata
+        if name is not None:
+            data["name"] = name
+        if bio is not None:
+            data["bio"] = bio
+        if profile_picture is not None:
+            data["profile_picture"] = profile_picture
 
         return await self.client._make_request(
-            "POST", f"users/{str(id)}", json=data
+            "POST",
+            f"users/{str(id)}",
+            json=data,  #  if len(data.keys()) != 1 else list(data.values())[0]
         )
 
     async def list_collections(
@@ -172,7 +323,7 @@ class UsersSDK:
             bool: True if successful
         """
         return await self.client._make_request(
-            "DELETE", f"users/{str(id)}/collections/{str(collection_id)}"
+            "POST", f"users/{str(id)}/collections/{str(collection_id)}"
         )
 
 
