@@ -564,6 +564,7 @@ class VectorHandler(Handler):
     @abstractmethod
     async def create_index(
         self,
+        name: Optional[str] = None,
         table_name: Optional[VectorTableName] = None,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_method: IndexMethod = IndexMethod.auto,
@@ -578,7 +579,7 @@ class VectorHandler(Handler):
 
     @abstractmethod
     async def list_indices(
-        self, table_name: Optional[VectorTableName] = None
+        self, offset: int = 0, limit: int = 10, filters: Optional[dict] = None
     ) -> list[dict]:
         pass
 
@@ -1479,9 +1480,9 @@ class DatabaseProvider(Provider):
         )
 
     async def list_indices(
-        self, table_name: Optional[VectorTableName] = None
+        self, offset: int = 0, limit: int = 10, filters: Optional[dict] = None
     ) -> list[dict]:
-        return await self.vector_handler.list_indices(table_name)
+        return await self.vector_handler.list_indices(offset, limit, filters)
 
     async def delete_index(
         self,

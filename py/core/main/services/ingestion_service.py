@@ -15,6 +15,7 @@ from core.base import (
     R2RException,
     RawChunk,
     RunManager,
+    UnprocessedChunk,
     Vector,
     VectorEntry,
     VectorType,
@@ -655,7 +656,10 @@ class IngestionServiceAdapter:
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadata": data["metadata"],
             "document_id": data["document_id"],
-            "chunks": [RawChunk.from_dict(chunk) for chunk in data["chunks"]],
+            "chunks": [
+                UnprocessedChunk.from_dict(chunk) for chunk in data["chunks"]
+            ],
+            "id": data.get("id"),
         }
 
     @staticmethod

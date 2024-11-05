@@ -267,7 +267,7 @@ client = R2RClient("http://localhost:7272")
 # client.login(...)
 
 # List users with filters
-users = client.list_users(
+users = client.users.list(
     offset=0,
     limit=100,
     username="john",
@@ -340,7 +340,9 @@ client = R2RClient("http://localhost:7272")
 # client.login(...)
 
 # Get user details
-user = client.get_user("550e8400-e29b-41d4-a716-446655440000")
+users = users.retrieve(
+    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+)
 """,
                     },
                     {
@@ -502,7 +504,7 @@ curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-4466554400
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[None]:
+        ) -> ResultsWrapper[bool]:
             """
             Remove a user from a collection.
             Requires either superuser status or access to the collection.

@@ -182,14 +182,16 @@ curl -X POST "https://api.example.com/v3/chunks" \\
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[list[ChunkIngestionResponse]]:
-            f"""
+            """
             Create multiple chunks and process them through the ingestion pipeline.
 
             This endpoint allows creating multiple chunks at once, optionally associating them
             with documents and collections. The chunks will be processed asynchronously if
             run_with_orchestration is True.
 
-            Maximum of {MAX_CHUNKS_PER_REQUEST} chunks can be created in a single request.
+            Maximum of 100,000 chunks can be created in a single request.
+
+            Note, it is not yet possible to add chunks to an existing document using this endpoint.
             """
             default_document_id = generate_id()
             if len(raw_chunks) > MAX_CHUNKS_PER_REQUEST:
@@ -212,9 +214,10 @@ curl -X POST "https://api.example.com/v3/chunks" \\
                 document_id = document_id or default_document_id
                 # Convert UnprocessedChunks to RawChunks for ingestion
                 raw_chunks_for_doc = [
-                    RawChunk(
+                    UnprocessedChunk(
                         text=chunk.text if hasattr(chunk, "text") else "",
                         metadata=chunk.metadata,
+                        id=chunk.id,
                     )
                     for chunk in doc_chunks
                 ]
@@ -228,6 +231,9 @@ curl -X POST "https://api.example.com/v3/chunks" \\
                     "metadata": {},  # Base metadata for the document
                     "user": auth_user.model_dump_json(),
                 }
+
+                # TODO - Modify create_chunks so that we can add chunks to existing document
+                # TODO - Modify create_chunks so that we can add chunks to existing document
 
                 if run_with_orchestration:
                     # Run ingestion with orchestration
@@ -384,9 +390,11 @@ from r2r import R2RClient
 
 client = R2RClient("http://localhost:7272")
 result = client.chunks.update(
-    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-    text="Updated content",
-    metadata={"key": "new value"}
+    {
+        "id": first_chunk_id,
+        "text": "Updated content",
+        "metadata": {"key": "new value"}
+    }
 )
 """,
                     }
@@ -498,7 +506,7 @@ result = client.chunks.delete(
         @self.base_endpoint
         async def delete_chunk(
             id: Json[UUID] = Path(...),
-        ) -> ResultsWrapper[ChunkResponse]:
+        ) -> ResultsWrapper[bool]:
             """
             Delete a specific chunk by ID.
 
@@ -512,7 +520,7 @@ result = client.chunks.delete(
                 raise R2RException(f"Chunk {id} not found", 404)
 
             await self.services["management"].delete({"$eq": {"chunk_id": id}})
-            return None
+            return True
 
         @self.router.get(
             "/chunks",

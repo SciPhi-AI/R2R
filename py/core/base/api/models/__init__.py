@@ -6,6 +6,7 @@ from shared.api.models.auth.responses import (
     WrappedTokenResponse,
     WrappedUserResponse,
 )
+from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
     IngestionResponse,
@@ -147,4 +148,6 @@ __all__ = [
     "WrappedCompletionResponse",
     "WrappedRAGResponse",
     "WrappedRAGAgentResponse",
+    "PaginatedResultsWrapper",
+    "ResultsWrapper",
 ]

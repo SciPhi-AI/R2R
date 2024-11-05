@@ -4,6 +4,9 @@ from .async_client import R2RAsyncClient
 from .utils import SyncClientMetaclass
 from .v3.chunks import SyncChunkSDK
 from .v3.documents import SyncDocumentSDK
+from .v3.indices import SyncIndexSDK
+from .v3.retrieval import SyncRetrievalSDK
+from .v3.users import SyncUsersSDK
 
 
 class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
@@ -21,6 +24,9 @@ class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
         super().__init__(*args, **kwargs)
         self.documents = SyncDocumentSDK(self.documents)
         self.chunks = SyncChunkSDK(self.chunks)
+        self.retrieval = SyncRetrievalSDK(self.retrieval)
+        self.indices = SyncIndexSDK(self.indices)
+        self.users = SyncUsersSDK(self.users)
 
     def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         async_gen = super()._make_streaming_request(method, endpoint, **kwargs)

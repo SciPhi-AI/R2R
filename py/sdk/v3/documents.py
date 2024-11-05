@@ -203,7 +203,9 @@ class DocumentsSDK:
         Args:
             id (Union[str, UUID]): ID of document to delete
         """
-        await self.client._make_request("DELETE", f"documents/{str(id)}")
+        return await self.client._make_request(
+            "DELETE", f"documents/{str(id)}"
+        )
 
     async def list_chunks(
         self,
@@ -274,7 +276,7 @@ class DocumentsSDK:
             filters (Dict[str, Any]): Filters to apply when selecting documents to delete
         """
         filters_json = json.dumps(filters)
-        await self.client._make_request(
+        return await self.client._make_request(
             "DELETE", "documents/by-filter", params={"filters": filters_json}
         )
 

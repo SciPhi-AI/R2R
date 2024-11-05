@@ -171,7 +171,7 @@ class ChunksSDK:
         """
         await self.client._make_request("DELETE", f"chunks/{str(id)}")
 
-    async def list_chunks(
+    async def list(
         self,
         offset: int = 0,
         limit: int = 10,

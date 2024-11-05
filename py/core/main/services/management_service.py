@@ -228,6 +228,8 @@ class ManagementService(Service):
         NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
         NOTE: This method assumes that filters delete entire contents of any touched documents.
         """
+        ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
+        ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
 
         def validate_filters(filters: dict[str, Any]) -> None:
             ALLOWED_FILTERS = {
@@ -235,6 +237,10 @@ class ManagementService(Service):
                 "user_id",
                 "collection_ids",
                 "chunk_id",
+                # TODO - Modify these checks such that they can be used PROPERLY for nested filters
+                # TODO - Modify these checks such that they can be used PROPERLY for nested filters
+                "$and",
+                "$or",
             }
 
             if not filters:

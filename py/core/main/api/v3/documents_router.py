@@ -142,11 +142,11 @@ class DocumentsRouter(BaseRouterV3):
                         "source": textwrap.dedent(
                             """
                                                   curl -X POST "https://api.example.com/v3/documents" \\
-                                                  -H "Content-Type: multipart/form-data" \\
-                                                  -H "Authorization: Bearer YOUR_API_KEY" \\
-                                                  -F "file=@pg_essay_1.html;type=text/html" \\
-                                                  -F 'metadata={}' \\
-                                                  -F 'id=null'"""
+                                                    -H "Content-Type: multipart/form-data" \\
+                                                    -H "Authorization: Bearer YOUR_API_KEY" \\
+                                                    -F "file=@pg_essay_1.html;type=text/html" \\
+                                                    -F 'metadata={}' \\
+                                                    -F 'id=null' """
                         ),
                     },
                 ]
@@ -279,7 +279,7 @@ class DocumentsRouter(BaseRouterV3):
                 await simple_ingestor["ingest-files"](workflow_input)
                 return {  # type: ignore
                     "message": "Ingestion task completed successfully.",
-                    "document_id": str(id),
+                    "document_id": str(document_id),
                     "task_id": None,
                 }
 
@@ -307,10 +307,10 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1" \
-                                                              -H "Content-Type: multipart/form-data" \
-                                                              -H "Authorization: Bearer YOUR_API_KEY" \
-                                                              -F "file=@pg_essay_1.html;type=text/plain" """
+                                                              curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                                                                -H "Content-Type: multipart/form-data"  \\
+                                                                -H "Authorization: Bearer YOUR_API_KEY"  \\
+                                                                -F "file=@pg_essay_1.html;type=text/plain" """
                         ),
                     },
                 ]
@@ -491,8 +491,8 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X GET "https://api.example.com/v3/documents" \
-                                                              -H "Authorization: Bearer YOUR_API_KEY" """
+                                                              curl -X GET "https://api.example.com/v3/documents"  \\
+                                                                -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
                 ]
@@ -575,8 +575,8 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1" \
-                                                              -H "Authorization: Bearer YOUR_API_KEY" """
+                                                              curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                                                                -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
                 ]
@@ -642,8 +642,8 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                                curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks" \
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                                                                curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
+                                                                    -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
                 ]
@@ -744,8 +744,8 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download" \
-                                                            -H "Authorization: Bearer YOUR_API_KEY" """
+                                                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download"  \\
+                                                                -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
                 ]
@@ -825,8 +825,8 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \
-                                                            -H "Authorization: Bearer YOUR_API_KEY" """
+                                                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \\
+                                                                -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
                 ]
@@ -844,12 +844,12 @@ class DocumentsRouter(BaseRouterV3):
             """
             filters = {
                 "$and": [
-                    {"$eq": str(auth_user.id)},
+                    {"user_id": {"$eq": str(auth_user.id)}},
                     {"document_id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return None
+            return True
 
         @self.router.delete(
             "/documents/by-filter",
@@ -874,7 +874,7 @@ class DocumentsRouter(BaseRouterV3):
                         "source": textwrap.dedent(
                             """
                             curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
-                            -H "Authorization: Bearer YOUR_API_KEY"
+                                -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
                     },
@@ -936,8 +936,8 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections" \
-                                                            -H "Authorization: Bearer YOUR_API_KEY" """
+                                                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
+                                                                -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
                 ]
@@ -958,7 +958,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="The maximum number of collections to retrieve, up to 1,000.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[list[CollectionResponse]]:
+        ) -> PaginatedResultsWrapper[list[CollectionResponse]]:
             """
             Retrieves all collections that contain the specified document. This endpoint is restricted
             to superusers only and provides a system-wide view of document organization.

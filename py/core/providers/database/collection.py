@@ -14,8 +14,8 @@ from core.base import (
 from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
 from core.base.api.models import CollectionOverviewResponse, CollectionResponse
 from core.utils import (
-    generate_collection_id_from_name,
     generate_default_user_collection_id,
+    generate_id_from_label,
 )
 
 from .base import PostgresConnectionManager
@@ -58,7 +58,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 user_id
             )
         else:
-            default_collection_uuid = generate_collection_id_from_name(
+            default_collection_uuid = generate_id_from_label(
                 self.config.default_collection_name
             )
 

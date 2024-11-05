@@ -19,6 +19,7 @@ from core.base import (
     VectorSearchResult,
     VectorSearchSettings,
     VectorTableName,
+    generate_id_from_label,
 )
 
 from .base import PostgresConnectionManager
@@ -995,75 +996,108 @@ class PostgresVectorHandler(VectorHandler):
         return where_clause
 
     async def list_indices(
-        self, table_name: Optional[VectorTableName] = None
-    ) -> list[dict[str, Any]]:
-        """
-        Lists all vector indices for the specified table.
+        self,
+        offset: int = 0,
+        limit: int = 10,
+        filters: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        where_clauses = []
+        params: list[Any] = [self.project_name]  # Start with schema name
+        param_count = 1
 
-        Args:
-            table_name (VectorTableName, optional): The table to list indices for.
-                If None, defaults to VECTORS table.
+        # Handle filtering
+        if filters:
+            if "table_name" in filters:
+                where_clauses.append(f"i.tablename = ${param_count + 1}")
+                params.append(filters["table_name"])
+                param_count += 1
+            if "index_method" in filters:
+                where_clauses.append(f"am.amname = ${param_count + 1}")
+                params.append(filters["index_method"])
+                param_count += 1
+            if "index_name" in filters:
+                where_clauses.append(
+                    f"LOWER(i.indexname) LIKE LOWER(${param_count + 1})"
+                )
+                params.append(f"%{filters['index_name']}%")
+                param_count += 1
 
-        Returns:
-            List[dict]: List of indices with their properties
+        where_clause = " AND ".join(where_clauses) if where_clauses else ""
+        if where_clause:
+            where_clause = "AND " + where_clause
 
-        Raises:
-            ArgError: If an invalid table name is provided
-        """
-        if table_name == VectorTableName.VECTORS:
-            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"
-            col_name = "vec"
-        elif table_name == VectorTableName.ENTITIES_DOCUMENT:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
-            )
-            col_name = "description_embedding"
-        elif table_name == VectorTableName.ENTITIES_COLLECTION:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
-            )
-        elif table_name == VectorTableName.COMMUNITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
-            )
-            col_name = "embedding"
-        else:
-            raise ArgError("invalid table name")
-
-        query = """
-        SELECT
-            i.indexname as name,
-            i.indexdef as definition,
-            am.amname as method,
-            pg_relation_size(c.oid) as size_in_bytes,
-            COALESCE(psat.idx_scan, 0) as number_of_scans,
-            COALESCE(psat.idx_tup_read, 0) as tuples_read,
-            COALESCE(psat.idx_tup_fetch, 0) as tuples_fetched
-        FROM pg_indexes i
-        JOIN pg_class c ON c.relname = i.indexname
-        JOIN pg_am am ON c.relam = am.oid
-        LEFT JOIN pg_stat_user_indexes psat ON psat.indexrelname = i.indexname
-            AND psat.schemaname = i.schemaname
-        WHERE i.schemaname || '.' || i.tablename = $1
-        AND i.indexdef LIKE $2;
-        """
-
-        results = await self.connection_manager.fetch_query(
-            query, (table_name_str, f"%({col_name}%")
+        query = f"""
+        WITH index_info AS (
+            SELECT
+                i.indexname as name,
+                i.tablename as table_name,
+                i.indexdef as definition,
+                am.amname as method,
+                pg_relation_size(c.oid) as size_in_bytes,
+                c.reltuples::bigint as row_estimate,
+                COALESCE(psat.idx_scan, 0) as number_of_scans,
+                COALESCE(psat.idx_tup_read, 0) as tuples_read,
+                COALESCE(psat.idx_tup_fetch, 0) as tuples_fetched,
+                COUNT(*) OVER() as total_count
+            FROM pg_indexes i
+            JOIN pg_class c ON c.relname = i.indexname
+            JOIN pg_am am ON c.relam = am.oid
+            LEFT JOIN pg_stat_user_indexes psat ON psat.indexrelname = i.indexname
+                AND psat.schemaname = i.schemaname
+            WHERE i.schemaname = $1
+            AND i.indexdef LIKE '%vector%'
+            {where_clause}
         )
+        SELECT *
+        FROM index_info
+        ORDER BY name
+        LIMIT ${param_count + 1}
+        OFFSET ${param_count + 2}
+        """
 
-        return [
-            {
-                "name": result["name"],
-                "definition": result["definition"],
-                "method": result["method"],
-                "size_in_bytes": result["size_in_bytes"],
-                "number_of_scans": result["number_of_scans"],
-                "tuples_read": result["tuples_read"],
-                "tuples_fetched": result["tuples_fetched"],
-            }
-            for result in results
-        ]
+        # Add limit and offset to params
+        params.extend([limit, offset])
+
+        results = await self.connection_manager.fetch_query(query, params)
+
+        indices = []
+        total_entries = 0
+
+        if results:
+            total_entries = results[0]["total_count"]
+            for result in results:
+                index_info = {
+                    "name": result["name"],
+                    "table_name": result["table_name"],
+                    "definition": result["definition"],
+                    "method": result["method"],
+                    "size_in_bytes": result["size_in_bytes"],
+                    "row_estimate": result["row_estimate"],
+                    "number_of_scans": result["number_of_scans"],
+                    "tuples_read": result["tuples_read"],
+                    "tuples_fetched": result["tuples_fetched"],
+                }
+                indices.append(index_info)
+
+        # Calculate pagination info
+        total_pages = (total_entries + limit - 1) // limit if limit > 0 else 1
+        current_page = (offset // limit) + 1 if limit > 0 else 1
+
+        page_info = {
+            "total_entries": total_entries,
+            "total_pages": total_pages,
+            "current_page": current_page,
+            "limit": limit,
+            "offset": offset,
+            "has_previous": offset > 0,
+            "has_next": offset + limit < total_entries,
+            "previous_offset": max(0, offset - limit) if offset > 0 else None,
+            "next_offset": (
+                offset + limit if offset + limit < total_entries else None
+            ),
+        }
+
+        return {"indices": indices, "page_info": page_info}
 
     async def delete_index(
         self,

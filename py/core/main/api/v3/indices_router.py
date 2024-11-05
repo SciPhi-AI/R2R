@@ -1,3 +1,12 @@
+# TODO - Move indices to 'id' basis
+# TODO - Move indices to 'id' basis
+
+# TODO - Implement update index
+# TODO - Implement update index
+
+# TODO - Implement index data model
+# TODO - Implement index data model
+
 import logging
 from typing import Any, Optional, Union
 from uuid import UUID
@@ -61,6 +70,7 @@ class IndexConfig(BaseModel):
     #     description=create_vector_descriptions.get("concurrently"),
     # ),
     # auth_user=Depends(self.service.providers.auth.auth_wrapper),
+    name: Optional[str] = None
     table_name: Optional[str] = VectorTableName.VECTORS
     index_method: Optional[str] = IndexMethod.hnsw
     index_measure: Optional[str] = IndexMeasure.cosine_distance
@@ -85,6 +95,8 @@ class IndicesRouter(BaseRouterV3):
 
     def _setup_routes(self):
 
+        ## TODO - Allow developer to pass the index id with the request
+        ## TODO - Allow developer to pass the index id with the request
         @self.router.post(
             "/indices",
             summary="Create Vector Index",
@@ -182,7 +194,7 @@ curl -X POST "https://api.example.com/indices" \\
         async def create_index(
             config: IndexConfig = Body(
                 ...,
-                description="Configuration for the vector index",
+                description="Configuration for the vector index, acceptable table_name values are 'vectors', 'document_entity', 'document_collections'",
                 example={
                     "table_name": "vectors",
                     "index_method": "hnsw",
@@ -204,7 +216,8 @@ curl -X POST "https://api.example.com/indices" \\
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCreateVectorIndexResponse:
             """
-            Create a new vector similarity search index in the database.
+            Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'document_entity', 'document_collections'.
+            Vectors correspond to the chunks of text that are indexed for similarity search, whereas document_entity and document_collections are created during knowledge graph construction.
 
             This endpoint creates a database index optimized for efficient similarity search over vector embeddings.
             It supports two main indexing methods:
@@ -238,7 +251,29 @@ curl -X POST "https://api.example.com/indices" \\
             - Index names must be unique per table
             """
             # TODO: Implement index creation logic
-            pass
+            logger.info(
+                f"Creating vector index for {config.table_name} with method {config.index_method}, measure {config.index_measure}, concurrently {config.concurrently}"
+            )
+
+            raw_message = await self.orchestration_provider.run_workflow(
+                "create-vector-index",
+                {
+                    "request": {
+                        "table_name": config.table_name,
+                        "index_method": config.index_method,
+                        "index_measure": config.index_measure,
+                        "index_name": config.index_name,
+                        "index_column": config.index_column,
+                        "index_arguments": config.index_arguments,
+                        "concurrently": config.concurrently,
+                    },
+                },
+                options={
+                    "additional_metadata": {},
+                },
+            )
+
+            return raw_message  # type: ignore
 
         @self.router.get(
             "/indices",
@@ -256,7 +291,7 @@ client = R2RClient("http://localhost:7272")
 indices = client.indices.list(
     offset=0,
     limit=10,
-    filter_by={"table_name": "vectors"}
+    filters={"table_name": "vectors"}
 )
 
 # Print index details
@@ -274,7 +309,7 @@ curl -X GET "https://api.example.com/indices?offset=0&limit=10" \\
      -H "Content-Type: application/json"
 
 # With filters
-curl -X GET "https://api.example.com/indices?offset=0&limit=10&filter_by={\"table_name\":\"vectors\"}" \\
+curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_name\":\"vectors\"}" \\
      -H "Authorization: Bearer YOUR_API_KEY" \\
      -H "Content-Type: application/json"
 """,
@@ -293,7 +328,7 @@ curl -X GET "https://api.example.com/indices?offset=0&limit=10&filter_by={\"tabl
                 le=100,
                 description="Maximum number of records to return",
             ),
-            filter_by: Optional[Json[dict]] = Query(
+            filters: Optional[Json[dict]] = Query(
                 None,
                 description='Filter criteria for indices (e.g., {"table_name": "vectors"})',
             ),
@@ -313,10 +348,13 @@ curl -X GET "https://api.example.com/indices?offset=0&limit=10&filter_by={\"tabl
             based on table name, index method, or other attributes.
             """
             # TODO: Implement index listing logic
-            pass
+            indices = await self.providers.database.list_indices(
+                offset=offset, limit=limit, filters=filters
+            )
+            return {"indices": indices["indices"]}, indices["page_info"]  # type: ignore
 
         @self.router.get(
-            "/indices/{id}",
+            "/indices/{table_name}/{index_name}",
             summary="Get Vector Index Details",
             openapi_extra={
                 "x-codeSamples": [
@@ -347,9 +385,15 @@ curl -X GET "https://api.example.com/indices/550e8400-e29b-41d4-a716-44665544000
         )
         @self.base_endpoint
         async def get_index(
-            id: UUID = Path(...),
+            table_name: VectorTableName = Path(
+                ...,
+                description="The table of vector embeddings to delete (e.g. `vectors`, `document_entity`, `document_collections`)",
+            ),
+            index_name: str = Path(
+                ..., description="The name of the index to delete"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  #  -> WrappedGetIndexResponse:
+        ) -> dict:  #  -> WrappedGetIndexResponse:
             """
             Get detailed information about a specific vector index.
 
@@ -368,68 +412,77 @@ curl -X GET "https://api.example.com/indices/550e8400-e29b-41d4-a716-44665544000
                 * Recommended optimizations
             """
             # TODO: Implement get index logic
-            pass
+            indices = await self.providers.database.list_indices(
+                filters={"index_name": index_name, "table_name": table_name}
+            )
+            if len(indices["indices"]) != 1:
+                raise R2RException(
+                    f"Index '{index_name}' not found", status_code=404
+                )
+            return {"index": indices["indices"][0]}
 
-        @self.router.put(
-            "/indices/{id}",
-            summary="Update Vector Index",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+        # TODO - Implement update index
+        # TODO - Implement update index
+        #         @self.router.post(
+        #             "/indices/{name}",
+        #             summary="Update Vector Index",
+        #             openapi_extra={
+        #                 "x-codeSamples": [
+        #                     {
+        #                         "lang": "Python",
+        #                         "source": """
+        # from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
+        # client = R2RClient("http://localhost:7272")
 
-# Update HNSW index parameters
-result = client.indices.update(
-    "550e8400-e29b-41d4-a716-446655440000",
-    config={
-        "index_arguments": {
-            "ef": 80,  # Increase search quality
-            "m": 24    # Increase connections per layer
-        },
-        "concurrently": True
-    },
-    run_with_orchestration=True
-)""",
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": """
-curl -X PUT "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
-     -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -d '{
-       "config": {
-         "index_arguments": {
-           "ef": 80,
-           "m": 24
-         },
-         "concurrently": true
-       },
-       "run_with_orchestration": true
-     }'""",
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def update_index(
-            id: UUID = Path(...),
-            config: IndexConfig = Body(...),
-            run_with_orchestration: Optional[bool] = Body(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  # -> WrappedUpdateIndexResponse:
-            """
-            Update an existing index's configuration.
-            """
-            # TODO: Implement index update logic
-            pass
+        # # Update HNSW index parameters
+        # result = client.indices.update(
+        #     "550e8400-e29b-41d4-a716-446655440000",
+        #     config={
+        #         "index_arguments": {
+        #             "ef": 80,  # Increase search quality
+        #             "m": 24    # Increase connections per layer
+        #         },
+        #         "concurrently": True
+        #     },
+        #     run_with_orchestration=True
+        # )""",
+        #                     },
+        #                     {
+        #                         "lang": "Shell",
+        #                         "source": """
+        # curl -X PUT "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
+        #      -H "Content-Type: application/json" \\
+        #      -H "Authorization: Bearer YOUR_API_KEY" \\
+        #      -d '{
+        #        "config": {
+        #          "index_arguments": {
+        #            "ef": 80,
+        #            "m": 24
+        #          },
+        #          "concurrently": true
+        #        },
+        #        "run_with_orchestration": true
+        #      }'""",
+        #                     },
+        #                 ]
+        #             },
+        #         )
+        #         @self.base_endpoint
+        #         async def update_index(
+        #             id: UUID = Path(...),
+        #             config: IndexConfig = Body(...),
+        #             run_with_orchestration: Optional[bool] = Body(True),
+        #             auth_user=Depends(self.providers.auth.auth_wrapper),
+        #         ):  # -> WrappedUpdateIndexResponse:
+        #             """
+        #             Update an existing index's configuration.
+        #             """
+        #             # TODO: Implement index update logic
+        #             pass
 
         @self.router.delete(
-            "/indices/{id}",
+            "/indices/{table_name}/{index_name}",
             summary="Delete Vector Index",
             openapi_extra={
                 "x-codeSamples": [
@@ -442,27 +495,34 @@ client = R2RClient("http://localhost:7272")
 
 # Delete an index with orchestration for cleanup
 result = client.indices.delete(
-    "550e8400-e29b-41d4-a716-446655440000",
+    index_name="index_1",
     run_with_orchestration=True
 )""",
                     },
                     {
                         "lang": "Shell",
                         "source": """
-curl -X DELETE "https://api.example.com/indices/550e8400-e29b-41d4-a716-446655440000" \\
+curl -X DELETE "https://api.example.com/indices/index_1" \\
      -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -d '{
-       "run_with_orchestration": true
-     }'""",
+     -H "Authorization: Bearer YOUR_API_KEY" """,
                     },
                 ]
             },
         )
         @self.base_endpoint
         async def delete_index(
-            id: UUID = Path(...),
-            run_with_orchestration: Optional[bool] = Body(True),
+            table_name: VectorTableName = Path(
+                default=...,
+                description="The table of vector embeddings to delete (e.g. `vectors`, `document_entity`, `document_collections`)",
+            ),
+            index_name: str = Path(
+                ..., description="The name of the index to delete"
+            ),
+            # concurrently: bool = Body(
+            #     default=True,
+            #     description="Whether to delete the index concurrently (recommended for large indices)",
+            # ),
+            # run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDeleteVectorIndexResponse:
             """
@@ -477,8 +537,24 @@ curl -X DELETE "https://api.example.com/indices/550e8400-e29b-41d4-a716-44665544
             - Use run_with_orchestration=True for large indices to prevent timeouts
             - Consider index dependencies before deletion
 
-            The operation returns immediately but cleanup may continue in background
-            when run_with_orchestration=True.
+            The operation returns immediately but cleanup may continue in background.
             """
-            # TODO: Implement index deletion logic
-            pass
+            logger.info(
+                f"Deleting vector index {index_name} from table {table_name}"
+            )
+
+            raw_message = await self.orchestration_provider.run_workflow(
+                "delete-vector-index",
+                {
+                    "request": {
+                        "index_name": index_name,
+                        "table_name": table_name,
+                        "concurrently": True,
+                    },
+                },
+                options={
+                    "additional_metadata": {},
+                },
+            )
+
+            return raw_message  # type: ignore

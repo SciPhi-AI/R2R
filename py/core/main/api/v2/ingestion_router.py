@@ -572,7 +572,7 @@ class IngestionRouter(BaseRouter):
                 description=list_vector_indices_descriptions.get("table_name"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedListVectorIndicesResponse:
+        ):
             indices = await self.service.providers.database.list_indices(
                 table_name=table_name
             )

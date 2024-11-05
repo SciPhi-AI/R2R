@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from shared.api.models.base import ResultsWrapper
+from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 T = TypeVar("T")
 
@@ -78,6 +78,8 @@ class SelectVectorIndexResponse(BaseModel):
 WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
 WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
-WrappedListVectorIndicesResponse = ResultsWrapper[ListVectorIndicesResponse]
+WrappedListVectorIndicesResponse = PaginatedResultsWrapper[
+    ListVectorIndicesResponse
+]
 WrappedDeleteVectorIndexResponse = ResultsWrapper[DeleteVectorIndexResponse]
 WrappedSelectVectorIndexResponse = ResultsWrapper[SelectVectorIndexResponse]

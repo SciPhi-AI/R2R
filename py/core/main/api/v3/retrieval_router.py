@@ -197,7 +197,7 @@ curl -X POST "https://api.example.com/retrieval/search" \\
                 auth_user, kg_search_settings
             )
 
-            results = await self.service.search(
+            results = await self.services["retrieval"].search(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -313,7 +313,7 @@ curl -X POST "https://api.example.com/retrieval/rag" \\
                 auth_user, vector_search_settings
             )
 
-            response = await self.service.rag(
+            response = await self.services["retrieval"].rag(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -486,7 +486,7 @@ curl -X POST "https://api.example.com/retrieval/rag" \\
 
             kg_search_settings.filters = vector_search_settings.filters
             try:
-                response = await self.service.agent(
+                response = await self.services["retrieval"].agent(
                     message=message,
                     messages=messages,
                     vector_search_settings=vector_search_settings,
@@ -613,7 +613,7 @@ curl -X POST "https://api.example.com/retrieval/completion" \\
             system message at the start. Each message should have a 'role' and 'content'.
             """
 
-            return await self.service.completion(
+            return await self.services["retrieval"].completion(
                 messages=messages,
                 generation_config=generation_config,
             )

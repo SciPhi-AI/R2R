@@ -16,6 +16,9 @@ from .v2.mixins import (
 )
 from .v3.chunks import ChunksSDK
 from .v3.documents import DocumentsSDK
+from .v3.indices import IndicesSDK
+from .v3.retrieval import RetrievalSDK
+from .v3.users import UsersSDK
 
 
 class R2RAsyncClient(
@@ -48,6 +51,9 @@ class R2RAsyncClient(
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
         self.documents = DocumentsSDK(self)
         self.chunks = ChunksSDK(self)
+        self.retrieval = RetrievalSDK(self)
+        self.indices = IndicesSDK(self)
+        self.users = UsersSDK(self)
 
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         url = self._get_full_url(endpoint)

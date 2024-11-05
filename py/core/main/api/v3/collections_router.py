@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
+    ResultsWrapper,
     WrappedAddUserResponse,
     WrappedCollectionListResponse,
     WrappedCollectionResponse,
@@ -348,7 +349,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the collection to delete",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ) -> ResultsWrapper[bool]:
             """
             Delete an existing collection.
 
@@ -566,7 +567,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the document to remove",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ) -> ResultsWrapper[bool]:
             """
             Remove a document from a collection.
 
@@ -774,7 +775,7 @@ class CollectionsRouter(BaseRouterV3):
                 ..., description="The unique identifier of the user to remove"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ) -> ResultsWrapper[bool]:
             """
             Remove a user from a collection.
 
