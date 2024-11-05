@@ -56,7 +56,7 @@ class R2RConfig:
         "database": ["provider"],
         "agent": ["generation_config"],
         "orchestration": ["provider"],
-        "user": ["default_role", "roles"],  # Add required user config keys
+        "user": ["default_role"],
     }
 
     app: AppConfig
@@ -70,7 +70,7 @@ class R2RConfig:
     logging: PersistentLoggingConfig
     agent: AgentConfig
     orchestration: OrchestrationConfig
-    user: UserConfig  # Add user config attribute
+    user: UserConfig
 
     def __init__(self, config_data: dict[str, Any]):
         """
@@ -124,9 +124,7 @@ class R2RConfig:
         self.logging = PersistentLoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
-        self.user = UserConfig.create(
-            **self.user, app=self.app
-        )  # Initialize user config
+        self.user = UserConfig.create(**self.user, app=self.app)  # type: ignore
 
         # override GenerationConfig defaults
         GenerationConfig.set_default(

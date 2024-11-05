@@ -173,6 +173,9 @@ class R2RProviderFactory:
                 quantization_type=quantization_type,
             )
             await database_provider.initialize()
+            logger.info(
+                f"Database provider initialized with user config: {self.config.user}"
+            )
             return database_provider
         else:
             raise ValueError(

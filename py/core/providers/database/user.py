@@ -24,6 +24,9 @@ class PostgresUserHandler(UserHandler):
         super().__init__(project_name, connection_manager)
         self.crypto_provider = crypto_provider
         self.user_config = user_config
+        print(
+            f"User handler initialized with roles: {list(user_config.roles.keys())}"
+        )
 
     async def create_tables(self):
         query = f"""

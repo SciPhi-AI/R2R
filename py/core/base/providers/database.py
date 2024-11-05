@@ -208,12 +208,23 @@ class UserConfig(ProviderConfig):
     default_role: str = "default"
     roles: dict[str, RoleLimits] = {
         "default": RoleLimits(),
-        "premium": RoleLimits(),
-        "admin": RoleLimits(),
     }
 
-    def get_role_limits(self, role: str) -> RoleLimits:
-        return self.roles.get(role, self.roles[self.default_role])
+    def validate_config(self) -> None:
+        """Validate the user configuration."""
+        if not self.default_role:
+            raise ValueError("default_role must be specified")
+        if not self.roles:
+            raise ValueError("roles must be specified")
+        if self.default_role not in self.roles:
+            raise ValueError(
+                f"default_role '{self.default_role}' must exist in roles"
+            )
+
+    @property
+    def supported_providers(self) -> list[str]:
+        """Define supported providers - not applicable for UserConfig but required by ProviderConfig."""
+        return ["r2r"]  # Only r2r provider is supported for user configuration
 
 
 class Handler(ABC):

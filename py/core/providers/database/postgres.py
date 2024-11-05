@@ -81,6 +81,12 @@ class PostgresDBProvider(DatabaseProvider):
     ):
         super().__init__(config)
 
+        # Get user config from app config
+        self.user_config = getattr(config.app, "user", UserConfig())
+        logger.info(
+            f"Initialized database with user roles: {list(self.user_config.roles.keys())}"
+        )
+
         env_vars = [
             ("user", "R2R_POSTGRES_USER", "POSTGRES_USER"),
             ("password", "R2R_POSTGRES_PASSWORD", "POSTGRES_PASSWORD"),
@@ -176,6 +182,13 @@ class PostgresDBProvider(DatabaseProvider):
         self.logging_handler = PostgresLoggingHandler(
             self.project_name, self.connection_manager
         )
+
+        # Extract UserConfig from the main config
+        self.user_config = getattr(config.app, "user", UserConfig())
+        logger.info(
+            f"Initialized database with user roles: {list(self.user_config.roles.keys())}"
+        )
+        logger.info(f"Default role: {self.user_config.default_role}")
 
     async def initialize(self):
         logger.info("Initializing `PostgresDBProvider`.")

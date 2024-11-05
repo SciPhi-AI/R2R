@@ -119,7 +119,6 @@ log_info_table = "log_info"
 [orchestration]
 provider = "simple"
 
-
 [prompt]
 provider = "r2r"
 
@@ -130,19 +129,13 @@ provider = "console_mock"
 default_role = "default"
 
   [user.default]
-  max_files = null
-  max_chunks = null
-  max_queries = null
-  max_queries_window = null
+  max_files = inf
+  max_chunks = inf
+  max_queries = inf
+  max_queries_window = inf
 
   [user.basic]
   max_files = 1000
   max_chunks = 10000
   max_queries = 1000
   max_queries_window = 1440  # 24 hours
-
-  [user.admin]
-  max_files = null  # null means unlimited
-  max_chunks = null
-  max_queries = null
-  max_queries_window = null
