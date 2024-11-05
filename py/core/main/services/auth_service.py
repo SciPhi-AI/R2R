@@ -183,3 +183,37 @@ class AuthService(Service):
         await self.providers.database.clean_expired_blacklisted_tokens(
             max_age_hours, current_time
         )
+
+    @telemetry_event("GetUserVerificationCode")
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        """
+        Get only the verification code data for a specific user.
+        This method should be called after superuser authorization has been verified.
+        """
+        verification_data = (
+            await self.providers.database.get_user_verification_data(user_id)
+        )
+        return {
+            "verification_code": verification_data["verification_data"][
+                "verification_code"
+            ],
+            "expiry": verification_data["verification_data"][
+                "verification_code_expiry"
+            ],
+        }
+
+    @telemetry_event("SendResetEmail")
+    async def send_reset_email(self, email: str) -> dict:
+        """
+        Generate a new verification code and send a reset email to the user.
+        Returns the verification code for testing/sandbox environments.
+
+        Args:
+            email (str): The email address of the user
+
+        Returns:
+            dict: Contains verification_code and message
+        """
+        return await self.providers.auth.send_reset_email(email)

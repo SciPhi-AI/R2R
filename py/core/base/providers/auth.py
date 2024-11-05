@@ -152,3 +152,7 @@ class AuthProvider(Provider, ABC):
     @abstractmethod
     async def logout(self, token: str) -> dict[str, str]:
         pass
+
+    @abstractmethod
+    async def send_reset_email(self, email: str) -> dict[str, str]:
+        pass

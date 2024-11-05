@@ -12,6 +12,7 @@ from shared.api.models.ingestion.responses import (
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedListVectorIndicesResponse,
+    WrappedMetadataUpdateResponse,
     WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
 )
@@ -89,6 +90,7 @@ __all__ = [
     "IngestionResponse",
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
+    "WrappedMetadataUpdateResponse",
     "CreateVectorIndexResponse",
     "WrappedCreateVectorIndexResponse",
     "WrappedListVectorIndicesResponse",

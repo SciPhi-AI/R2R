@@ -73,6 +73,7 @@ class IngestionService(Service):
         metadata: Optional[dict] = None,
         version: Optional[str] = None,
         is_update: bool = False,
+        collection_ids: Optional[list[UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -593,6 +594,40 @@ class IngestionService(Service):
 
         return len(new_vector_entries)
 
+    async def update_document_metadata(
+        self,
+        document_id: UUID,
+        metadata: dict,
+        user: UserResponse,
+    ) -> None:
+        # Verify document exists and user has access
+        existing_document = (
+            await self.providers.database.get_documents_overview(
+                filter_document_ids=[document_id],
+                filter_user_ids=[user.id],
+            )
+        )
+
+        if not existing_document["results"]:
+            raise R2RException(
+                status_code=404,
+                message=f"Document with id {document_id} not found or you don't have access.",
+            )
+
+        existing_document = existing_document["results"][0]
+
+        # Merge metadata
+        merged_metadata = {
+            **existing_document.metadata,  # type: ignore
+            **metadata,
+        }
+
+        # Update document metadata
+        existing_document.metadata = merged_metadata  # type: ignore
+        await self.providers.database.upsert_documents_overview(
+            existing_document  # type: ignore
+        )
+
 
 class IngestionServiceAdapter:
     @staticmethod
@@ -634,6 +669,7 @@ class IngestionServiceAdapter:
             "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],
+            "collection_ids": data.get("collection_ids", []),
         }
 
     @staticmethod
@@ -696,4 +732,12 @@ class IngestionServiceAdapter:
         return {
             "index_name": input_data["index_name"],
             "table_name": input_data.get("table_name"),
+        }
+
+    @staticmethod
+    def parse_update_document_metadata_input(data: dict) -> dict:
+        return {
+            "document_id": data["document_id"],
+            "metadata": data["metadata"],
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
         }

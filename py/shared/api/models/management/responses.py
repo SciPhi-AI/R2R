@@ -143,6 +143,7 @@ class ConversationOverviewResponse(BaseModel):
 class VerificationResult(BaseModel):
     verification_code: str
     expiry: datetime
+    message: Optional[str] = None
 
 
 class AddUserResponse(BaseModel):

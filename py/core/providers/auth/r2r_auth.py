@@ -337,3 +337,43 @@ class R2RAuthProvider(AuthProvider):
 
     async def clean_expired_blacklisted_tokens(self):
         await self.database_provider.clean_expired_blacklisted_tokens()
+
+    async def send_reset_email(self, email: str) -> dict:
+        """
+        Generate a new verification code and send a reset email to the user.
+        Returns the verification code for testing/sandbox environments.
+
+        Args:
+            email (str): The email address of the user
+
+        Returns:
+            dict: Contains verification_code and message
+
+        Raises:
+            R2RException: If user is not found
+        """
+        user = await self.database_provider.get_user_by_email(email)
+        if not user:
+            raise R2RException(status_code=404, message="User not found")
+
+        # Generate new verification code
+        verification_code = self.crypto_provider.generate_verification_code()
+        expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        # Store the verification code
+        await self.database_provider.store_verification_code(
+            user.id,
+            verification_code,
+            expiry,
+        )
+
+        # Send verification email
+        await self.email_provider.send_verification_email(
+            email, verification_code
+        )
+
+        return {
+            "verification_code": verification_code,
+            "expiry": expiry,
+            "message": f"Verification email sent successfully to {email}",
+        }
