@@ -94,18 +94,16 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint allows authenticated users to create a new collection with a specified name
             and optional description. The user creating the collection is automatically added as a member.
-
-            Args:
-                config (CollectionConfig): The configuration for the new collection, including name and description.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedCollectionResponse: Details of the newly created collection.
-
-            Raises:
-                R2RException: If there's an error in creating the collection.
             """
-            pass
+            collection = await self.services["management"].create_collection(
+                name=config.name, description=config.description
+            )
+            # Add the creating user to the collection
+            await self.services["management"].add_user_to_collection(
+                auth_user.id, collection.collection_id
+            )
+            print("collection = ", collection)
+            return collection
 
         @self.router.get(
             "/collections",
@@ -174,22 +172,15 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint returns a paginated list of collections that the authenticated user has access to.
             It supports filtering by collection name and sorting options.
-
-            Args:
-                offset (int): The number of collections to skip (for pagination).
-                limit (int): The maximum number of collections to return (1-1000).
-                name (str, optional): Filter collections by name (case-insensitive partial match).
-                sort_by (str, optional): The field to sort the results by.
-                sort_order (str, optional): The order to sort the results ("asc" or "desc").
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedCollectionListResponse: A paginated list of collections and total count.
-
-            Raises:
-                R2RException: If there's an error in retrieving the collections.
             """
-            pass
+
+            list_collections_response = await self.services[
+                "management"
+            ].list_collections(offset=offset, limit=min(max(limit, 1), 1000))
+
+            return list_collections_response["results"], {
+                "total_entries": list_collections_response["total_entries"]
+            }
 
         @self.router.get(
             "/collections/{id}",
@@ -233,18 +224,18 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint retrieves detailed information about a single collection identified by its UUID.
             The user must have access to the collection to view its details.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedCollectionResponse: Detailed information about the requested collection.
-
-            Raises:
-                R2RException: If the collection is not found or the user doesn't have access.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            result = await self.services["management"].get_collection(id)
+            return result
 
         @self.router.post(
             "/collections/{id}",
@@ -298,19 +289,19 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint allows updating the name and description of an existing collection.
             The user must have appropriate permissions to modify the collection.
-
-            Args:
-                id (UUID): The unique identifier of the collection to update.
-                config (CollectionConfig): The new configuration for the collection.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedCollectionResponse: Updated details of the collection.
-
-            Raises:
-                R2RException: If the collection is not found or the user doesn't have permission to update it.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            return await self.services["management"].update_collection(
+                id, name=config.name, description=config.description
+            )
 
         @self.router.delete(
             "/collections/{id}",
@@ -356,18 +347,18 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint allows deletion of a collection identified by its UUID.
             The user must have appropriate permissions to delete the collection.
             Deleting a collection removes all associations but does not delete the documents within it.
-
-            Args:
-                id (UUID): The unique identifier of the collection to delete.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedDeleteResponse: Confirmation of the deletion.
-
-            Raises:
-                R2RException: If the collection is not found or the user doesn't have permission to delete it.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            await self.services["management"].delete_collection(id)
+            return True, {}
 
         @self.router.post(
             "/collections/{id}/documents/{document_id}",
@@ -410,7 +401,19 @@ class CollectionsRouter(BaseRouterV3):
             """
             Add a document to a collection.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            result = await self.services[
+                "management"
+            ].assign_document_to_collection(document_id, id)
+            return result
 
         @self.router.get(
             "/collections/{id}/documents",
@@ -478,22 +481,25 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint retrieves a paginated list of documents associated with a specific collection.
             It supports sorting options to customize the order of returned documents.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                offset (int): The number of documents to skip (for pagination).
-                limit (int): The maximum number of documents to return (1-1000).
-                sort_by (str, optional): The field to sort the documents by.
-                sort_order (str, optional): The order to sort the documents ("asc" or "desc").
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedDocumentOverviewResponse: A paginated list of documents in the collection.
-
-            Raises:
-                R2RException: If the collection is not found or the user doesn't have access.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            documents_in_collection_response = await self.services[
+                "management"
+            ].documents_in_collection(id, offset, limit)
+
+            return documents_in_collection_response["results"], {
+                "total_entries": documents_in_collection_response[
+                    "total_entries"
+                ]
+            }
 
         @self.base_endpoint
         async def add_document_to_collection(
@@ -573,19 +579,20 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint removes the association between a document and a collection.
             It does not delete the document itself. The user must have permissions to modify the collection.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                document_id (UUID): The unique identifier of the document to remove.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedDeleteResponse: Confirmation of the document removal from the collection.
-
-            Raises:
-                R2RException: If the collection or document is not found, or if the user lacks necessary permissions.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            await self.services["management"].add_document_to_collection(
+                document_id, id
+            )
+            return True, {}
 
         @self.router.get(
             "/collections/{id}/users",
@@ -653,22 +660,27 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint retrieves a paginated list of users who have access to a specific collection.
             It supports sorting options to customize the order of returned users.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                offset (int): The number of users to skip (for pagination).
-                limit (int): The maximum number of users to return (1-1000).
-                sort_by (str, optional): The field to sort the users by.
-                sort_order (str, optional): The order to sort the users ("asc" or "desc").
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedUsersInCollectionResponse: A paginated list of users with access to the collection.
-
-            Raises:
-                R2RException: If the collection is not found or the user doesn't have permission to view its members.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            users_in_collection_response = await self.services[
+                "management"
+            ].get_users_in_collection(
+                collection_id=id,
+                offset=offset,
+                limit=min(max(limit, 1), 1000),
+            )
+
+            return users_in_collection_response["results"], {
+                "total_entries": users_in_collection_response["total_entries"]
+            }
 
         @self.router.post(
             "/collections/{id}/users/{user_id}",
@@ -718,20 +730,20 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint grants a user access to a specific collection.
             The authenticated user must have admin permissions for the collection to add new users.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                user_id (UUID): The unique identifier of the user to add.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedAddUserResponse: Confirmation of the user addition to the collection.
-
-            Raises:
-                R2RException: If the collection is not found, the user to be added doesn't exist,
-                              or if the authenticated user lacks necessary permissions.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            result = await self.services["management"].add_user_to_collection(
+                user_id, id
+            )
+            return result
 
         @self.router.delete(
             "/collections/{id}/users/{user_id}",
@@ -781,17 +793,17 @@ class CollectionsRouter(BaseRouterV3):
 
             This endpoint revokes a user's access to a specific collection.
             The authenticated user must have admin permissions for the collection to remove users.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                user_id (UUID): The unique identifier of the user to remove.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedDeleteResponse: Confirmation of the user removal from the collection.
-
-            Raises:
-                R2RException: If the collection is not found, the user to be removed doesn't exist,
-                              or if the authenticated user lacks necessary permissions.
             """
-            pass
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
+            await self.services["management"].remove_user_from_collection(
+                user_id, id
+            )
+            return True
