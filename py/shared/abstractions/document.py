@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union, ClassVar
+from typing import ClassVar, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -141,6 +141,7 @@ class KGExtractionStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
+    ENRICHED = "enriched"
     FAILED = "failed"
 
     def __str__(self):
@@ -160,6 +161,7 @@ class KGEnrichmentStatus(str, Enum):
 
     PENDING = "pending"
     PROCESSING = "processing"
+    OUTDATED = "outdated"
     SUCCESS = "success"
     FAILED = "failed"
 

@@ -462,6 +462,17 @@ export class r2rClient {
     });
   }
 
+  /**
+   * Generates a new verification code and sends a reset email to the user.
+   * @param email The email address of the user to send the reset email to.
+   * @returns A promise that resolves to the verification code and message from the server.
+   */
+  @feature("sendResetEmail")
+  async sendResetEmail(email: string): Promise<Record<string, any>> {
+    return await this._makeRequest("POST", "send_reset_email", {
+      data: { email },
+    });
+  }
   // -----------------------------------------------------------------------------
   //
   // Ingestion
@@ -483,6 +494,7 @@ export class r2rClient {
       document_ids?: string[];
       user_ids?: (string | null)[];
       ingestion_config?: Record<string, any>;
+      collection_ids?: string[];
       run_with_orchestration?: boolean;
     } = {},
   ): Promise<any> {
@@ -549,6 +561,9 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+      collection_ids: options.collection_ids
+        ? JSON.stringify(options.collection_ids)
+        : undefined,
       run_with_orchestration:
         options.run_with_orchestration != undefined
           ? String(options.run_with_orchestration)
@@ -590,6 +605,7 @@ export class r2rClient {
       document_ids: string[];
       metadatas?: Record<string, any>[];
       ingestion_config?: Record<string, any>;
+      collection_ids?: string[];
       run_with_orchestration?: boolean;
     },
   ): Promise<any> {
@@ -631,6 +647,9 @@ export class r2rClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+      collection_ids: options.collection_ids
+        ? JSON.stringify(options.collection_ids)
+        : undefined,
       run_with_orchestration:
         options.run_with_orchestration != undefined
           ? String(options.run_with_orchestration)
@@ -659,18 +678,37 @@ export class r2rClient {
     });
   }
 
+  /**
+   * Update the metadata of an existing document.
+   * @param documentId The ID of the document to update.
+   * @param metadata The new metadata to merge with existing metadata.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("updateDocumentMetadata")
+  async updateDocumentMetadata(
+    documentId: string,
+    metadata: Record<string, any>
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return await this._makeRequest("POST", `update_document_metadata/${documentId}`, {
+      data: metadata,
+    });
+  }
+
   @feature("ingestChunks")
   async ingestChunks(
     chunks: RawChunk[],
     documentId?: string,
     metadata?: Record<string, any>,
     run_with_orchestration?: boolean,
+    collection_ids?: string[],
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
     let inputData: Record<string, any> = {
       chunks: chunks,
       document_id: documentId,
       metadata: metadata,
+      collection_ids: collection_ids,
       run_with_orchestration: run_with_orchestration,
     };
 

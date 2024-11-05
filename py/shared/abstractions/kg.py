@@ -21,6 +21,7 @@ class KGEntityDeduplicationType(str, Enum):
 
     BY_NAME = "by_name"
     BY_DESCRIPTION = "by_description"
+    BY_LLM = "by_llm"
 
     def __str__(self):
         return self.value

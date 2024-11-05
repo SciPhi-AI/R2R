@@ -67,18 +67,43 @@ def simple_ingestion_factory(service: IngestionService):
                 document_info, status=IngestionStatus.SUCCESS
             )
 
+            collection_ids = parsed_data.get("collection_ids")
+
             try:
-                # TODO - Move logic onto management service
-                collection_id = generate_default_user_collection_id(
-                    str(document_info.user_id)
-                )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_info.id, collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -229,18 +254,44 @@ def simple_ingestion_factory(service: IngestionService):
                 document_info, status=IngestionStatus.SUCCESS
             )
 
+            collection_ids = parsed_data.get("collection_ids")
+
             try:
                 # TODO - Move logic onto management service
-                collection_id = generate_default_user_collection_id(
-                    str(document_info.user_id)
-                )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -328,11 +379,44 @@ def simple_ingestion_factory(service: IngestionService):
                 message=f"Error during vector index deletion: {str(e)}",
             )
 
+    async def update_document_metadata(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_update_document_metadata_input(
+                    input_data
+                )
+            )
+
+            document_id = parsed_data["document_id"]
+            metadata = parsed_data["metadata"]
+            user = parsed_data["user"]
+
+            await service.update_document_metadata(
+                document_id=document_id,
+                metadata=metadata,
+                user=user,
+            )
+
+            return {
+                "message": "Document metadata update completed successfully.",
+                "document_id": str(document_id),
+                "task_id": None,
+            }
+
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message=f"Error during document metadata update: {str(e)}",
+            )
+
     return {
         "ingest-files": ingest_files,
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
         "update-chunk": update_chunk,
+        "update-document-metadata": update_document_metadata,
         "create-vector-index": create_vector_index,
         "delete-vector-index": delete_vector_index,
     }

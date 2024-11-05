@@ -1,10 +1,11 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
 import mimetypes
+import os
 from datetime import datetime, timezone
 from typing import Optional, Set, Union
 from uuid import UUID
-import os
+
 import psutil
 from fastapi import Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
@@ -30,7 +31,6 @@ from core.base.api.models import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
-    WrappedVerificationResult,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria
 from core.providers import (
@@ -964,28 +964,3 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedDeleteResponse:
             await self.service.delete_conversation(conversation_id)
             return None  # type: ignore
-
-        @self.router.get("/user/{user_id}/verification_data")
-        @self.base_endpoint
-        async def get_user_verification_code(
-            user_id: str = Path(..., description="User ID"),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedVerificationResult:
-            """
-            Get only the verification code for a specific user.
-            Only accessible by superusers.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    status_code=403,
-                    message="Only superusers can access verification codes",
-                )
-
-            try:
-                user_uuid = UUID(user_id)
-            except ValueError:
-                raise R2RException(
-                    status_code=400, message="Invalid user ID format"
-                )
-
-            return await self.service.get_user_verification_data(user_uuid)

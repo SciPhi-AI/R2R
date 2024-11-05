@@ -1,11 +1,12 @@
 import logging
+import os
 from collections import defaultdict
+from importlib.metadata import version as get_version
 from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
 from uuid import UUID
-from fastapi.responses import StreamingResponse
 
 import toml
-import os
+from fastapi.responses import StreamingResponse
 
 from core.base import (
     AnalysisTypes,
@@ -27,9 +28,6 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
-
-from importlib.metadata import version as get_version
-
 
 logger = logging.getLogger()
 
@@ -776,23 +774,3 @@ class ManagementService(Service):
     @telemetry_event("DeleteConversation")
     async def delete_conversation(self, conversation_id: str, auth_user=None):
         await self.logging_connection.delete_conversation(conversation_id)
-
-    @telemetry_event("GetUserVerificationCode")
-    async def get_user_verification_data(
-        self, user_id: UUID, *args, **kwargs
-    ) -> dict:
-        """
-        Get only the verification code data for a specific user.
-        This method should be called after superuser authorization has been verified.
-        """
-        verification_data = (
-            await self.providers.database.get_user_verification_data(user_id)
-        )
-        return {
-            "verification_code": verification_data["verification_data"][
-                "verification_code"
-            ],
-            "expiry": verification_data["verification_data"][
-                "verification_code_expiry"
-            ],
-        }

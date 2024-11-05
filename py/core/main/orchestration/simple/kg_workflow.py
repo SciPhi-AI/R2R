@@ -3,11 +3,10 @@ import logging
 import math
 import uuid
 
-from core import GenerationConfig
-from core import R2RException
+from core import GenerationConfig, R2RException
+from core.base.abstractions import KGEnrichmentStatus
 
 from ...services import KgService
-from core.base.abstractions import KGEnrichmentStatus
 
 logger = logging.getLogger()
 
@@ -76,6 +75,10 @@ def simple_kg_factory(service: KgService):
             num_communities = num_communities[0]["num_communities"]
             # TODO - Do not hardcode the number of parallel communities,
             # make it a configurable parameter at runtime & add server-side defaults
+
+            if num_communities == 0:
+                raise R2RException("No communities found", 400)
+
             parallel_communities = min(100, num_communities)
 
             total_workflows = math.ceil(num_communities / parallel_communities)
@@ -111,7 +114,7 @@ def simple_kg_factory(service: KgService):
                 status=KGEnrichmentStatus.FAILED,
             )
 
-            raise R2RException(f"Error in enriching graph: {e}")
+            raise e
 
     async def kg_community_summary(input_data):
 

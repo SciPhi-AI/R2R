@@ -154,17 +154,43 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                # TODO: Move logic onto the `management service`
-                collection_id = generate_default_user_collection_id(
-                    document_info.user_id
+                collection_ids = context.workflow_input()["request"].get(
+                    "collection_ids"
                 )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
 
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
                 server_chunk_enrichment_settings = getattr(
@@ -450,16 +476,43 @@ def hatchet_ingestion_factory(
 
             try:
                 # TODO - Move logic onto the `management service`
-                collection_id = generate_default_user_collection_id(
-                    document_info.user_id
+                collection_ids = context.workflow_input()["request"].get(
+                    "collection_ids"
                 )
-                await self.ingestion_service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await self.ingestion_service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title or "N/A",
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -606,10 +659,57 @@ def hatchet_ingestion_factory(
 
             return {"status": "Vector index deleted successfully."}
 
+    @orchestration_provider.workflow(
+        name="update-document-metadata",
+        timeout="30m",
+    )
+    class HatchetUpdateDocumentMetadataWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="30m")
+        async def update_document_metadata(self, context: Context) -> dict:
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_update_document_metadata_input(
+                    input_data
+                )
+
+                document_id = UUID(parsed_data["document_id"])
+                metadata = parsed_data["metadata"]
+                user = parsed_data["user"]
+
+                await self.ingestion_service.update_document_metadata(
+                    document_id=document_id,
+                    metadata=metadata,
+                    user=user,
+                )
+
+                return {
+                    "message": "Document metadata update completed successfully.",
+                    "document_id": str(document_id),
+                    "task_id": context.workflow_run_id(),
+                }
+
+            except Exception as e:
+                raise R2RException(
+                    status_code=500,
+                    message=f"Error during document metadata update: {str(e)}",
+                )
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            # Handle failure case if necessary
+            pass
+
+    # Add this to the workflows dictionary in hatchet_ingestion_factory
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     update_chunks_workflow = HatchetUpdateChunkWorkflow(service)
+    update_document_metadata_workflow = HatchetUpdateDocumentMetadataWorkflow(
+        service
+    )
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
     delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 
@@ -618,6 +718,7 @@ def hatchet_ingestion_factory(
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "update_chunk": update_chunks_workflow,
+        "update_document_metadata": update_document_metadata_workflow,
         "create_vector_index": create_vector_index_workflow,
         "delete_vector_index": delete_vector_index_workflow,
     }

@@ -20,6 +20,7 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
+    CommunityInfo,
     CommunityReport,
     Entity,
     EntityLevel,

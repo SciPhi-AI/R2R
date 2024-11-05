@@ -393,7 +393,7 @@ async def test_get_community_details(
     await postgres_db_provider.add_triples(
         triples_raw_list, table_name="chunk_triple"
     )
-    await postgres_db_provider.add_communities(community_table_info)
+    await postgres_db_provider.add_community_info(community_table_info)
     await postgres_db_provider.add_community_report(community_report_list[0])
 
     community_level, entities, triples = (
