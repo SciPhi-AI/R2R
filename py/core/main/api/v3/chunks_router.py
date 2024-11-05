@@ -332,7 +332,9 @@ results = client.chunks.search(
 from r2r import R2RClient
 
 client = R2RClient("http://localhost:7272")
-chunk = client.chunks.retrieve(id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa")
+chunk = client.chunks.retrieve(
+    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+)
 """,
                     }
                 ]

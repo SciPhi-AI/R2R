@@ -351,91 +351,121 @@ class DocumentsRouter(BaseRouterV3):
             Either a new file or text content must be provided, but not both. The update process
             runs asynchronously and its progress can be tracked using the returned task_id.
 
+            Metadata can be updated to change the document's title, description, or other fields. These changes are additive w.r.t. the existing metadata, but for chunks and knowledge graph data, the update is a full replacement.
+
             Regular users can only update their own documents. Superusers can update any document.
             All previous document versions are preserved in the system.
             """
-            if not file and not content:
-                raise R2RException(
-                    status_code=422,
-                    message="Either a file or content must be provided.",
-                )
             if file and content:
                 raise R2RException(
                     status_code=422,
                     message="Both a file and content cannot be provided.",
                 )
-            metadata = metadata or {}  # type: ignore
 
-            # Check if the user is a superuser
-            if not auth_user.is_superuser:
-                if "user_id" in metadata and metadata["user_id"] != str(
-                    auth_user.id
-                ):
-                    raise R2RException(
-                        status_code=403,
-                        message="Non-superusers cannot set user_id in metadata.",
+            if (not file and not content) and metadata:
+                pass
+                # metadata update only
+                ## TODO - Uncomment after merging in `main`
+                # workflow_input = {
+                #     "document_id": str(id),
+                #     "metadata": metadata,
+                #     "user": auth_user.model_dump_json(),
+                # }
+
+                # logger.info(
+                #     "Running document metadata update without orchestration."
+                # )
+                # from core.main.orchestration import simple_ingestion_factory
+
+                # simple_ingestor = simple_ingestion_factory(self.service)
+                # await simple_ingestor["update-document-metadata"](
+                #     workflow_input
+                # )
+                # return {  # type: ignore
+                #     "message": "Update metadata task completed successfully.",
+                #     "id": str(document_id),
+                #     "task_id": None,
+                # }
+
+            else:
+                metadata = metadata or {}  # type: ignore
+
+                # Check if the user is a superuser
+                if not auth_user.is_superuser:
+                    if "user_id" in metadata and metadata["user_id"] != str(
+                        auth_user.id
+                    ):
+                        raise R2RException(
+                            status_code=403,
+                            message="Non-superusers cannot set user_id in metadata.",
+                        )
+                    metadata["user_id"] = str(auth_user.id)
+
+                if file:
+                    file_data = await self._process_file(file)
+                    content_length = len(file_data["content"])
+                    file_content = BytesIO(
+                        base64.b64decode(file_data["content"])
                     )
-                metadata["user_id"] = str(auth_user.id)
+                    file_data.pop("content", None)
+                elif content:
+                    content_length = len(content)
+                    file_content = BytesIO(content.encode("utf-8"))
+                    file_data = {
+                        "filename": f"N/A",
+                        "content_type": "text/plain",
+                    }
 
-            if file:
-                file_data = await self._process_file(file)
-                content_length = len(file_data["content"])
-                file_content = BytesIO(base64.b64decode(file_data["content"]))
-                file_data.pop("content", None)
-            elif content:
-                content_length = len(content)
-                file_content = BytesIO(content.encode("utf-8"))
-                file_data = {
-                    "filename": f"N/A",
-                    "content_type": "text/plain",
+                    await self.providers.database.store_file(
+                        id,
+                        file_data["filename"],
+                        file_content,
+                        file_data["content_type"],
+                    )
+                else:
+                    raise R2RException(
+                        status_code=422,
+                        message="Either a file or content must be provided.",
+                    )
+
+                workflow_input = {
+                    "file_datas": [file_data],
+                    "document_ids": [str(id)],
+                    "metadatas": [metadata],
+                    "ingestion_config": ingestion_config,
+                    "user": auth_user.model_dump_json(),
+                    "file_sizes_in_bytes": [content_length],
+                    "is_update": False,
+                    "user": auth_user.model_dump_json(),
+                    "is_update": True,
                 }
 
-                await self.providers.database.store_file(
-                    id,
-                    file_data["filename"],
-                    file_content,
-                    file_data["content_type"],
-                )
-            else:
-                raise R2RException(
-                    status_code=422,
-                    message="Either a file or content must be provided.",
-                )
+                if run_with_orchestration:
+                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                        "update-files", {"request": workflow_input}, {}
+                    )
+                    raw_message["message"] = "Update task queued successfully."
+                    raw_message["document_id"] = workflow_input[
+                        "document_ids"
+                    ][0]
 
-            workflow_input = {
-                "file_datas": [file_data],
-                "document_ids": [str(id)],
-                "metadatas": [metadata],
-                "ingestion_config": ingestion_config,
-                "user": auth_user.model_dump_json(),
-                "file_sizes_in_bytes": [content_length],
-                "is_update": False,
-                "user": auth_user.model_dump_json(),
-                "is_update": True,
-            }
+                    return raw_message  # type: ignore
+                else:
+                    logger.info("Running update without orchestration.")
+                    # TODO - Clean up implementation logic here to be more explicitly `synchronous`
+                    from core.main.orchestration import (
+                        simple_ingestion_factory,
+                    )
 
-            if run_with_orchestration:
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
-                    "update-files", {"request": workflow_input}, {}
-                )
-                raw_message["message"] = "Update task queued successfully."
-                raw_message["document_id"] = workflow_input["document_ids"][0]
-
-                return raw_message  # type: ignore
-            else:
-                logger.info("Running update without orchestration.")
-                # TODO - Clean up implementation logic here to be more explicitly `synchronous`
-                from core.main.orchestration import simple_ingestion_factory
-
-                simple_ingestor = simple_ingestion_factory(
-                    self.services["ingestion"]
-                )
-                await simple_ingestor["update-files"](workflow_input)
-                return {  # type: ignore
-                    "message": "Update task completed successfully.",
-                    "document_id": workflow_input["document_ids"],
-                    "task_id": None,
-                }
+                    simple_ingestor = simple_ingestion_factory(
+                        self.services["ingestion"]
+                    )
+                    await simple_ingestor["update-files"](workflow_input)
+                    return {  # type: ignore
+                        "message": "Update task completed successfully.",
+                        "document_id": workflow_input["document_ids"],
+                        "task_id": None,
+                    }
 
         @self.router.get(
             "/documents",
@@ -806,7 +836,7 @@ class DocumentsRouter(BaseRouterV3):
         async def delete_document_by_id(
             id: UUID = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[None]:
+        ) -> ResultsWrapper[Optional[bool]]:
             """
             Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
 
@@ -824,12 +854,38 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.delete(
             "/documents/by-filter",
             summary="Delete documents by filter",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.documents.delete_by_filter(
+                                filters='{"document_type": {"$eq": "text"}, "created_at": {"$lt": "2023-01-01T00:00:00Z"}}'
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def delete_document_by_filter(
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[None]:
+        ) -> ResultsWrapper[Optional[bool]]:
             """
             Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
             """
