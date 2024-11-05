@@ -10,6 +10,7 @@ from core.base import (
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,
+    UserConfig,
 )
 from core.providers import BCryptProvider
 from core.providers.database.base import PostgresConnectionManager
@@ -53,6 +54,7 @@ class PostgresDBProvider(DatabaseProvider):
     conn: Optional[Any]
 
     crypto_provider: BCryptProvider
+    user_config: UserConfig
     postgres_configuration_settings: PostgresConfigurationSettings
     default_collection_name: str
     default_collection_description: str
@@ -146,7 +148,10 @@ class PostgresDBProvider(DatabaseProvider):
             self.project_name, self.connection_manager, self.config
         )
         self.user_handler = PostgresUserHandler(
-            self.project_name, self.connection_manager, self.crypto_provider
+            self.project_name,
+            self.connection_manager,
+            self.crypto_provider,
+            self.user_config,
         )
         self.vector_handler = PostgresVectorHandler(
             self.project_name,

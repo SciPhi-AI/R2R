@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Union
 from uuid import UUID
 
-from core.base import CryptoProvider, UserHandler
+from core.base import CryptoProvider, UserHandler, UserConfig
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models import UserResponse
 from core.utils import generate_user_id
@@ -19,9 +19,11 @@ class PostgresUserHandler(UserHandler):
         project_name: str,
         connection_manager: PostgresConnectionManager,
         crypto_provider: CryptoProvider,
+        user_config: UserConfig,
     ):
         super().__init__(project_name, connection_manager)
         self.crypto_provider = crypto_provider
+        self.user_config = user_config
 
     async def create_tables(self):
         query = f"""
@@ -41,7 +43,8 @@ class PostgresUserHandler(UserHandler):
             reset_token_expiry TIMESTAMPTZ,
             collection_ids UUID[] NULL,
             created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            role TEXT DEFAULT 'default'
         );
         """
         await self.connection_manager.execute_query(query)
@@ -129,7 +132,15 @@ class PostgresUserHandler(UserHandler):
             collection_ids=result["collection_ids"],
         )
 
-    async def create_user(self, email: str, password: str) -> UserResponse:
+    async def create_user(
+        self, email: str, password: str, role: str = "default"
+    ) -> UserResponse:
+        """Modified create_user to include role"""
+        if role not in self.user_config.roles:
+            raise R2RException(
+                status_code=400, message=f"Invalid role: {role}"
+            )
+
         try:
             if await self.get_user_by_email(email):
                 raise R2RException(
@@ -143,12 +154,12 @@ class PostgresUserHandler(UserHandler):
         hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query = f"""
             INSERT INTO {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            (email, user_id, hashed_password, collection_ids)
-            VALUES ($1, $2, $3, $4)
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
+            (email, user_id, hashed_password, collection_ids, role)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids, role
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [email, generate_user_id(email), hashed_password, []]
+            query, [email, generate_user_id(email), hashed_password, [], role]
         )
 
         if not result:
@@ -160,6 +171,7 @@ class PostgresUserHandler(UserHandler):
             id=result["user_id"],
             email=result["email"],
             is_superuser=result["is_superuser"],
+            role=result["role"],
             is_active=result["is_active"],
             is_verified=result["is_verified"],
             created_at=result["created_at"],
@@ -613,3 +625,67 @@ class PostgresUserHandler(UserHandler):
                 ),
             }
         }
+
+    async def check_file_limit(self, user_id: UUID) -> bool:
+        """Check if user has reached their file limit"""
+        user = await self.get_user_by_id(user_id)
+        role_limits = self.user_config.get_role_limits(user.role)
+
+        if role_limits.max_files is None:
+            return True
+
+        # Get current file count
+        query = f"""
+            SELECT COUNT(*) FROM {self._get_table_name('document_info')}
+            WHERE user_id = $1
+        """
+        result = await self.connection_manager.fetchrow_query(query, [user_id])
+        return result[0] < role_limits.max_files
+
+    async def check_query_limit(self, user_id: UUID) -> bool:
+        """Check if user has reached their query limit"""
+        user = await self.get_user_by_id(user_id)
+        role_limits = self.user_config.get_role_limits(user.role)
+
+        if (
+            role_limits.max_queries is None
+            or role_limits.max_queries_window is None
+        ):
+            return True
+
+        # Get query count within window
+        window_start = datetime.utcnow() - timedelta(
+            minutes=role_limits.max_queries_window
+        )
+        query = f"""
+            SELECT COUNT(*) FROM {self._get_table_name('logs')}
+            WHERE user_id = $1 AND created_at > $2
+            AND run_type = 'query'
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [user_id, window_start]
+        )
+        return result[0] < role_limits.max_queries
+
+    async def increment_query_count(self, user_id: UUID) -> None:
+        """Increment user's query count"""
+        query = f"""
+            INSERT INTO {self._get_table_name('logs')}
+            (user_id, run_type, created_at)
+            VALUES ($1, 'query', NOW())
+        """
+        await self.connection_manager.execute_query(query, [user_id])
+
+    async def update_user_role(self, user_id: UUID, new_role: str) -> None:
+        """Update user's role"""
+        if new_role not in self.user_config.roles:
+            raise R2RException(
+                status_code=400, message=f"Invalid role: {new_role}"
+            )
+
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SET role = $1
+            WHERE user_id = $2
+        """
+        await self.connection_manager.execute_query(query, [new_role, user_id])

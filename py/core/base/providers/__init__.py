@@ -4,6 +4,7 @@ from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     CollectionHandler,
     DatabaseConfig,
+    UserConfig,
     DatabaseConnectionManager,
     DatabaseProvider,
     DocumentHandler,
@@ -51,6 +52,7 @@ __all__ = [
     "KGHandler",
     "PromptHandler",
     "FileHandler",
+    "UserConfig",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",

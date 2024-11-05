@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from shared.abstractions.base import R2RSerializable
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from ....abstractions.llm import Message
@@ -70,11 +71,12 @@ class UserOverviewResponse(BaseModel):
     document_ids: list[UUID]
 
 
-class UserResponse(BaseModel):
+class UserResponse(R2RSerializable):
     id: UUID
     email: str
     is_active: bool = True
     is_superuser: bool = False
+    role: str = "default"
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     is_verified: bool = False
@@ -175,6 +177,7 @@ WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
+WrappedUserResponse = ResultsWrapper[UserResponse]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]
 WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
     list[ConversationOverviewResponse]

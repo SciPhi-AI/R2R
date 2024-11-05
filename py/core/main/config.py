@@ -12,7 +12,7 @@ from ..base.logger.base import PersistentLoggingConfig
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
-from ..base.providers.database import DatabaseConfig
+from ..base.providers.database import DatabaseConfig, UserConfig
 from ..base.providers.email import EmailConfig
 from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.ingestion import IngestionConfig
@@ -56,6 +56,7 @@ class R2RConfig:
         "database": ["provider"],
         "agent": ["generation_config"],
         "orchestration": ["provider"],
+        "user": ["default_role", "roles"],  # Add required user config keys
     }
 
     app: AppConfig
@@ -69,6 +70,7 @@ class R2RConfig:
     logging: PersistentLoggingConfig
     agent: AgentConfig
     orchestration: OrchestrationConfig
+    user: UserConfig  # Add user config attribute
 
     def __init__(self, config_data: dict[str, Any]):
         """
@@ -122,6 +124,9 @@ class R2RConfig:
         self.logging = PersistentLoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
+        self.user = UserConfig.create(
+            **self.user, app=self.app
+        )  # Initialize user config
 
         # override GenerationConfig defaults
         GenerationConfig.set_default(

@@ -195,6 +195,27 @@ class DatabaseConnectionManager(ABC):
         pass
 
 
+class RoleLimits(BaseModel):
+    max_files: Optional[int] = None
+    max_chunks: Optional[int] = None
+    max_queries: Optional[int] = None
+    max_queries_window: Optional[int] = None  # in minutes
+    max_collections: Optional[int] = None
+    max_tokens_per_request: Optional[int] = None
+
+
+class UserConfig(ProviderConfig):
+    default_role: str = "default"
+    roles: dict[str, RoleLimits] = {
+        "default": RoleLimits(),
+        "premium": RoleLimits(),
+        "admin": RoleLimits(),
+    }
+
+    def get_role_limits(self, role: str) -> RoleLimits:
+        return self.roles.get(role, self.roles[self.default_role])
+
+
 class Handler(ABC):
     def __init__(
         self, project_name: str, connection_manager: DatabaseConnectionManager
