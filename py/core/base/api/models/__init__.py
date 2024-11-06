@@ -59,6 +59,7 @@ from shared.api.models.management.responses import (
     WrappedDocumentOverviewResponse,
     WrappedGetPromptsResponse,
     WrappedLogResponse,
+    WrappedMessageResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
@@ -139,6 +140,7 @@ __all__ = [
     "WrappedCollectionOverviewResponse",
     "WrappedDeleteResponse",
     "WrappedConversationsOverviewResponse",
+    "WrappedMessageResponse",
     # Retrieval Responses
     "CombinedSearchResponse",
     "RAGResponse",

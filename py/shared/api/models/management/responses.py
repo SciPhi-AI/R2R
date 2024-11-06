@@ -9,6 +9,10 @@ from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 from ....abstractions.llm import Message
 
 
+class MessageResponse(BaseModel):
+    message: str
+
+
 class UpdatePromptResponse(BaseModel):
     message: str
 
@@ -168,3 +172,4 @@ WrappedDeleteResponse = ResultsWrapper[None]
 WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
     list[ConversationOverviewResponse]
 ]
+WrappedMessageResponse = ResultsWrapper[MessageResponse]

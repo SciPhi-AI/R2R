@@ -14,6 +14,7 @@ from core.base.api.models import (
     WrappedCollectionResponse,
     WrappedDeleteResponse,
     WrappedDocumentOverviewResponse,
+    WrappedMessageResponse,
     WrappedUsersInCollectionResponse,
 )
 from core.providers import (
@@ -393,11 +394,12 @@ class CollectionsRouter(BaseRouterV3):
                 ]
             },
         )
+        @self.base_endpoint
         async def add_document_to_collection(
             id: UUID = Path(...),
             document_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
+        ) -> WrappedMessageResponse:
             """
             Add a document to a collection.
             """
@@ -413,6 +415,7 @@ class CollectionsRouter(BaseRouterV3):
             result = await self.services[
                 "management"
             ].assign_document_to_collection(document_id, id)
+            print("result = ", result)
             return result
 
         @self.router.get(
@@ -501,35 +504,6 @@ class CollectionsRouter(BaseRouterV3):
                 ]
             }
 
-        @self.base_endpoint
-        async def add_document_to_collection(
-            id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
-            document_id: UUID = Path(
-                ..., description="The unique identifier of the document to add"
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
-            """
-            Add a document to a collection.
-
-            This endpoint associates an existing document with a collection.
-            The user must have permissions to modify the collection and access to the document.
-
-            Args:
-                id (UUID): The unique identifier of the collection.
-                document_id (UUID): The unique identifier of the document to add.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedAddUserResponse: Confirmation of the document addition to the collection.
-
-            Raises:
-                R2RException: If the collection or document is not found, or if the user lacks necessary permissions.
-            """
-            pass
-
         @self.router.delete(
             "/collections/{id}/documents/{document_id}",
             summary="Remove document from collection",
@@ -589,7 +563,7 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["management"].add_document_to_collection(
+            await self.services["management"].remove_document_from_collection(
                 document_id, id
             )
             return True, {}

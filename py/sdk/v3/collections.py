@@ -110,7 +110,7 @@ class CollectionsSDK:
             data["description"] = description
 
         return await self.client._make_request(
-            "POST", f"collections/{str(id)}", json={"config": data}
+            "POST", f"collections/{str(id)}", json=data  # {"config": data}
         )
 
     async def delete(

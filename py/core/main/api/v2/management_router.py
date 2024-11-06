@@ -25,6 +25,7 @@ from core.base.api.models import (
     WrappedDocumentOverviewResponse,
     WrappedGetPromptsResponse,
     WrappedLogResponse,
+    WrappedMessageResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
