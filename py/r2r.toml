@@ -125,7 +125,8 @@ provider = "r2r"
 [email]
 provider = "console_mock"
 
-[user]
+[user_management]
+provider = "r2r"
 default_role = "default"
 
   [user.default]

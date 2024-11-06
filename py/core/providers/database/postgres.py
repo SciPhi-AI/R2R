@@ -10,7 +10,7 @@ from core.base import (
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,
-    UserConfig,
+    UserManagementConfig,
 )
 from core.providers import BCryptProvider
 from core.providers.database.base import PostgresConnectionManager
@@ -23,6 +23,7 @@ from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
+from core.providers.user_management import R2RUserManagementProvider
 
 from .base import SemaphoreConnectionPool
 
@@ -54,7 +55,6 @@ class PostgresDBProvider(DatabaseProvider):
     conn: Optional[Any]
 
     crypto_provider: BCryptProvider
-    user_config: UserConfig
     postgres_configuration_settings: PostgresConfigurationSettings
     default_collection_name: str
     default_collection_description: str
@@ -75,17 +75,12 @@ class PostgresDBProvider(DatabaseProvider):
         config: DatabaseConfig,
         dimension: int,
         crypto_provider: BCryptProvider,
+        user_management_provider: R2RUserManagementProvider,
         quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,
     ):
         super().__init__(config)
-
-        # Get user config from app config
-        self.user_config = getattr(config.app, "user", UserConfig())
-        logger.info(
-            f"Initialized database with user roles: {list(self.user_config.roles.keys())}"
-        )
 
         env_vars = [
             ("user", "R2R_POSTGRES_USER", "POSTGRES_USER"),
@@ -132,6 +127,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
+        self.user_management_provider = user_management_provider
         self.postgres_configuration_settings: PostgresConfigurationSettings = (
             self._get_postgres_configuration_settings(config)
         )
@@ -157,7 +153,7 @@ class PostgresDBProvider(DatabaseProvider):
             self.project_name,
             self.connection_manager,
             self.crypto_provider,
-            self.user_config,
+            self.user_management_provider,
         )
         self.vector_handler = PostgresVectorHandler(
             self.project_name,
@@ -182,13 +178,6 @@ class PostgresDBProvider(DatabaseProvider):
         self.logging_handler = PostgresLoggingHandler(
             self.project_name, self.connection_manager
         )
-
-        # Extract UserConfig from the main config
-        self.user_config = getattr(config.app, "user", UserConfig())
-        logger.info(
-            f"Initialized database with user roles: {list(self.user_config.roles.keys())}"
-        )
-        logger.info(f"Default role: {self.user_config.default_role}")
 
     async def initialize(self):
         logger.info("Initializing `PostgresDBProvider`.")

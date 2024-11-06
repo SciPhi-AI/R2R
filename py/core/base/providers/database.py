@@ -50,7 +50,6 @@ from core.base.api.models import (
     KGEnrichmentEstimationResponse,
     UserResponse,
 )
-from core.base.utils import _decorate_vector_type
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType
@@ -77,15 +76,6 @@ from ..abstractions import (
 from .base import ProviderConfig
 
 logger = logging.getLogger()
-
-
-def escape_braces(s: str) -> str:
-    """
-    Escape braces in a string.
-    This is a placeholder function - implement the actual logic as needed.
-    """
-    # Implement your escape_braces logic here
-    return s.replace("{", "{{").replace("}", "}}")
 
 
 logger = logging.getLogger()
@@ -193,38 +183,6 @@ class DatabaseConnectionManager(ABC):
     @abstractmethod
     async def initialize(self, pool: Any):
         pass
-
-
-class RoleLimits(BaseModel):
-    max_files: Optional[int] = None
-    max_chunks: Optional[int] = None
-    max_queries: Optional[int] = None
-    max_queries_window: Optional[int] = None  # in minutes
-    max_collections: Optional[int] = None
-    max_tokens_per_request: Optional[int] = None
-
-
-class UserConfig(ProviderConfig):
-    default_role: str = "default"
-    roles: dict[str, RoleLimits] = {
-        "default": RoleLimits(),
-    }
-
-    def validate_config(self) -> None:
-        """Validate the user configuration."""
-        if not self.default_role:
-            raise ValueError("default_role must be specified")
-        if not self.roles:
-            raise ValueError("roles must be specified")
-        if self.default_role not in self.roles:
-            raise ValueError(
-                f"default_role '{self.default_role}' must exist in roles"
-            )
-
-    @property
-    def supported_providers(self) -> list[str]:
-        """Define supported providers - not applicable for UserConfig but required by ProviderConfig."""
-        return ["r2r"]  # Only r2r provider is supported for user configuration
 
 
 class Handler(ABC):

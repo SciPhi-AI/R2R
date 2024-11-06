@@ -15,6 +15,7 @@ from core.base import (
     EmbeddingProvider,
     IngestionConfig,
     OrchestrationConfig,
+    UserManagementConfig,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
@@ -43,6 +44,7 @@ from core.providers import (
     SupabaseAuthProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
+    R2RUserManagementProvider,
 )
 
 
@@ -147,10 +149,22 @@ class R2RProviderFactory:
                 f"Orchestration provider {config.provider} not supported"
             )
 
+    @staticmethod
+    def create_user_management_provider(
+        user_management_config: UserManagementConfig, *args, **kwargs
+    ) -> R2RUserManagementProvider:
+        if user_management_config.provider == "r2r":
+            return R2RUserManagementProvider(user_management_config)
+        else:
+            raise ValueError(
+                f"User management provider {user_management_config.provider} not supported"
+            )
+
     async def create_database_provider(
         self,
         db_config: DatabaseConfig,
         crypto_provider: BCryptProvider,
+        user_management_provider: R2RUserManagementProvider,
         *args,
         **kwargs,
     ) -> PostgresDBProvider:
@@ -171,10 +185,11 @@ class R2RProviderFactory:
                 dimension,
                 crypto_provider=crypto_provider,
                 quantization_type=quantization_type,
+                user_management_provider=user_management_provider,
             )
             await database_provider.initialize()
             logger.info(
-                f"Database provider initialized with user config: {self.config.user}"
+                f"Database provider initialized with user config: {self.config.user_management}"
             )
             return database_provider
         else:
@@ -242,7 +257,7 @@ class R2RProviderFactory:
         """Creates an email provider based on configuration."""
         if not email_config:
             raise ValueError(
-                f"No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
+                "No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
             )
 
         if email_config.provider == "smtp":
@@ -298,10 +313,19 @@ class R2RProviderFactory:
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
+
+        user_management_provider = self.create_user_management_provider(
+            self.config.user_management
+        )
+
         database_provider = (
             database_provider_override
             or await self.create_database_provider(
-                self.config.database, crypto_provider, *args, **kwargs
+                self.config.database,
+                crypto_provider,
+                user_management_provider,
+                *args,
+                **kwargs,
             )
         )
 

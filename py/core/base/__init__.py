@@ -124,6 +124,9 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
+    # User management provider
+    "UserManagementConfig",
+    "UserManagementProvider",
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

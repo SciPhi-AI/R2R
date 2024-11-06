@@ -4,7 +4,6 @@ from .crypto import CryptoConfig, CryptoProvider
 from .database import (
     CollectionHandler,
     DatabaseConfig,
-    UserConfig,
     DatabaseConnectionManager,
     DatabaseProvider,
     DocumentHandler,
@@ -22,6 +21,7 @@ from .embedding import EmbeddingConfig, EmbeddingProvider
 from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
+from .user_management import UserManagementConfig, UserManagementProvider
 
 __all__ = [
     # Auth provider
@@ -52,7 +52,6 @@ __all__ = [
     "KGHandler",
     "PromptHandler",
     "FileHandler",
-    "UserConfig",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
@@ -66,4 +65,7 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
+    # User management provider
+    "UserManagementConfig",
+    "UserManagementProvider",
 ]
