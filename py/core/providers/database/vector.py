@@ -117,8 +117,6 @@ class PostgresVectorHandler(VectorHandler):
             # Warm text search indices
             f"SELECT count(*) FROM {table_name} WHERE text_search_vector @@ websearch_to_tsquery('dummy');",
             f"SELECT count(*) FROM {table_name} WHERE metadata_search_vector @@ websearch_to_tsquery('dummy');",
-            # Warm trigram indices
-            f"SELECT count(*) FROM {table_name} WHERE similarity(text_trigram_vector, 'dummy') > 0.3;",
             # Warm document-level indices
             f"SELECT count(*) FROM {mv_table} WHERE text_vector @@ websearch_to_tsquery('dummy');",
             f"SELECT count(*) FROM {mv_table} WHERE metadata_vector @@ websearch_to_tsquery('dummy');",
@@ -1386,13 +1384,12 @@ class PostgresVectorHandler(VectorHandler):
         settings: DocumentSearchSettings,
     ) -> list[dict[str, Any]]:
         """
-        Optimized document search implementation using materialized views and efficient querying patterns.
+        Optimized document search implementation using materialized views, efficient querying patterns,
+        and trigram similarity for fuzzy matching.
         """
         params: list[Union[str, int, bytes]] = [query_text]  # $1
-
-        # Use our optimized materialized view
         mv_table = self._get_table_name("document_search_mv")
-
+        
         # Build filter conditions if any
         filter_conditions = []
         if settings.filters:
@@ -1404,11 +1401,11 @@ class PostgresVectorHandler(VectorHandler):
         if query_text.strip():
             if settings.search_over_body:
                 search_conditions.append(
-                    f"text_vector @@ websearch_to_tsquery('simple', $1)"
+                    f"(text_vector @@ websearch_to_tsquery('simple', $1) OR similarity(full_text, $1) > 0.3)"
                 )
             if settings.search_over_metadata:
                 search_conditions.append(
-                    f"metadata_vector @@ websearch_to_tsquery('simple', $1)"
+                    f"(metadata_vector @@ websearch_to_tsquery('simple', $1) OR similarity(chunk_metadata::text, $1) > 0.3)"
                 )
 
         # Combine all conditions
@@ -1419,19 +1416,19 @@ class PostgresVectorHandler(VectorHandler):
             else ""
         )
 
-        # Calculate ranking score only when we have a search query
+        # Calculate ranking score including trigram similarity
         rank_calculation = """
-            CASE
-                WHEN $1 = '' THEN 1.0
-                ELSE (
-                    CASE WHEN {body_enabled} THEN
-                        ts_rank_cd(text_vector, websearch_to_tsquery('simple', $1)) * {title_weight}
-                    ELSE 0 END +
-                    CASE WHEN {metadata_enabled} THEN
-                        ts_rank_cd(metadata_vector, websearch_to_tsquery('simple', $1)) * {metadata_weight}
-                    ELSE 0 END
-                )
-            END
+        CASE
+        WHEN $1 = '' THEN 1.0
+        ELSE (
+            CASE WHEN {body_enabled} THEN
+                (ts_rank_cd(text_vector, websearch_to_tsquery('simple', $1)) + similarity(full_text, $1)) * {title_weight}
+            ELSE 0 END +
+            CASE WHEN {metadata_enabled} THEN
+                (ts_rank_cd(metadata_vector, websearch_to_tsquery('simple', $1)) + similarity(chunk_metadata::text, $1)) * {metadata_weight}
+            ELSE 0 END
+        )
+        END
         """.format(
             body_enabled=str(settings.search_over_body).lower(),
             metadata_enabled=str(settings.search_over_metadata).lower(),
@@ -1469,11 +1466,9 @@ class PostgresVectorHandler(VectorHandler):
                 SET LOCAL max_parallel_workers_per_gather = 4;
                 SET LOCAL parallel_tuple_cost = 0.1;
                 SET LOCAL parallel_setup_cost = 10;
-            """
+                """
             )
-
             results = await self.connection_manager.fetch_query(query, params)
-
             return [
                 {
                     "document_id": str(r["document_id"]),
@@ -1489,82 +1484,6 @@ class PostgresVectorHandler(VectorHandler):
         except Exception as e:
             logger.error(f"Error in document search: {e}")
             raise
-
-    # async def search_documents(
-    #     self,
-    #     query_text: str,
-    #     settings: DocumentSearchSettings,
-    # ) -> list[dict[str, Any]]:
-    #     """
-    #     Optimized document search using pre-computed indices and materialized views.
-    #     Fixed to properly handle score calculation and filtering.
-    #     """
-    #     params: list[Union[str, int, bytes]] = []
-    #     params.append(query_text)  # $1
-
-    #     mv_table = self._get_table_name('document_text_mv')
-    #     vectors_table = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
-
-    #     # Build filter conditions if any
-    #     filter_clause = ""
-    #     if settings.filters:
-    #         filter_clause = "AND " + self._build_filters(settings.filters, params)
-
-    #     query = f"""
-    #     WITH base_docs AS (
-    #         -- Start with the document_info table to avoid scanning all chunks
-    #         SELECT DISTINCT document_id, metadata as doc_metadata
-    #         FROM {self._get_table_name('document_info')}
-    #         WHERE true {filter_clause}
-    #     ),
-    #     scored_docs AS (
-    #         SELECT
-    #             d.document_id,
-    #             d.doc_metadata,
-    #             CASE WHEN $1 = '' THEN 0.0
-    #             ELSE (
-    #                 COALESCE(
-    #                     CASE WHEN {str(settings.search_over_body).lower()} THEN
-    #                         ts_rank_cd(mv.text_vector, websearch_to_tsquery('simple', $1), 32) * {settings.title_weight}
-    #                     ELSE 0 END,
-    #                     0
-    #                 ) +
-    #                 COALESCE(
-    #                     CASE WHEN {str(settings.search_over_metadata).lower()} THEN
-    #                         ts_rank_cd(v.metadata_search_vector, websearch_to_tsquery('simple', $1), 32) * {settings.metadata_weight}
-    #                     ELSE 0 END,
-    #                     0
-    #                 )
-    #             ) END as search_score
-    #         FROM base_docs d
-    #         -- Join with materialized view for document-level text search
-    #         LEFT JOIN {mv_table} mv ON d.document_id = mv.document_id
-    #         -- Join with vectors table for metadata search only when needed
-    #         LEFT JOIN {vectors_table} v ON d.document_id = v.document_id
-    #     )
-    #     SELECT
-    #         document_id,
-    #         doc_metadata as metadata,
-    #         search_score as score
-    #     FROM scored_docs
-    #     WHERE search_score > 0
-    #     ORDER BY search_score DESC
-    #     OFFSET ${len(params) + 1}
-    #     LIMIT ${len(params) + 2}
-    #     """
-
-    #     params.extend([settings.offset, settings.limit])
-
-    #     results = await self.connection_manager.fetch_query(query, params)
-
-    #     return [
-    #         {
-    #             "document_id": str(r["document_id"]),
-    #             "metadata": json.loads(r["metadata"]) if isinstance(r["metadata"], str) else r["metadata"],
-    #             "score": float(r["score"])
-    #         }
-    #         for r in results
-    #     ]
 
     def _get_index_options(
         self,
