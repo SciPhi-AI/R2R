@@ -127,6 +127,7 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
+            print("query = ", query)
             results = await self.service.search_documents(
                 query=query,
                 settings=settings,
