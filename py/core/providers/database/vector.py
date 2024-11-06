@@ -104,23 +104,57 @@ class PostgresVectorHandler(VectorHandler):
         self.enable_fts = enable_fts
         self.mv_name = f"{self._get_table_name('doc_text_mv')}"
 
+    async def warm_indices(self):
+        """
+        Enhanced index warming strategy for better performance.
+        """
+        logger.info("Starting enhanced index warm-up...")
+
+        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
+        mv_table = self._get_table_name("document_text_mv")
+
+        warming_queries = [
+            # Warm text search indices
+            f"SELECT count(*) FROM {table_name} WHERE text_search_vector @@ websearch_to_tsquery('dummy');",
+            f"SELECT count(*) FROM {table_name} WHERE metadata_search_vector @@ websearch_to_tsquery('dummy');",
+            # Warm trigram indices
+            f"SELECT count(*) FROM {table_name} WHERE similarity(text_trigram_vector, 'dummy') > 0.3;",
+            # Warm document-level indices
+            f"SELECT count(*) FROM {mv_table} WHERE text_vector @@ websearch_to_tsquery('dummy');",
+            f"SELECT count(*) FROM {mv_table} WHERE metadata_vector @@ websearch_to_tsquery('dummy');",
+            f"SELECT count(*) FROM {mv_table} WHERE similarity(combined_trigram_text, 'dummy') > 0.3;",
+            # Warm basic indices
+            f"SELECT count(DISTINCT document_id) FROM {table_name};",
+            f"SELECT count(*) FROM {table_name} WHERE collection_ids && ARRAY[]::uuid[];",
+            # Warm metadata index
+            f"SELECT count(*) FROM {table_name} WHERE metadata @> '{{}}';",
+        ]
+
+        start_time = time.time()
+        for query in warming_queries:
+            try:
+                await self.connection_manager.execute_query(query)
+            except Exception as e:
+                logger.error(f"Error warming index with query {query}: {e}")
+
+        duration = time.time() - start_time
+        logger.info(
+            f"Enhanced index warm-up completed in {duration:.2f} seconds"
+        )
+
     async def create_tables(self):
         """
         Creates optimized tables and indices for fast document search.
-        Key improvements:
-        1. Adds GIN indices on metadata and text
-        2. Enables necessary extensions
-        3. Sets optimal work memory
-        4. Creates computed columns for faster text search
+        Optimized for frozen schema without timestamp tracking.
         """
         # Check for old table name first
         check_query = f"""
-        SELECT EXISTS (
-            SELECT FROM pg_tables
-            WHERE schemaname = $1
-            AND tablename = $2
-        );
-        """
+            SELECT EXISTS (
+                SELECT FROM pg_tables
+                WHERE schemaname = $1
+                AND tablename = $2
+            );
+            """
         old_table_exists = await self.connection_manager.fetch_query(
             check_query, (self.project_name, self.project_name)
         )
@@ -135,103 +169,173 @@ class PostgresVectorHandler(VectorHandler):
 
         # Enable required extensions
         await self.connection_manager.execute_query(
-            "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+            """
+                CREATE EXTENSION IF NOT EXISTS pg_trgm;
+                CREATE EXTENSION IF NOT EXISTS btree_gin;
+                CREATE EXTENSION IF NOT EXISTS btree_gist;
+            """
         )
 
-        # Set optimal work_mem for better performance
-        await self.connection_manager.execute_query("SET work_mem = '256MB';")
+        # Optimize PostgreSQL settings for better performance
         await self.connection_manager.execute_query(
-            "SET maintenance_work_mem = '1GB';"
-        )
-        await self.connection_manager.execute_query(
-            "SET effective_cache_size = '4GB';"
+            """
+                -- Increase work memory for complex operations
+                SET work_mem = '256MB';
+
+                -- Increase maintenance work memory for index creation
+                SET maintenance_work_mem = '1GB';
+
+                -- Set effective cache size based on available system memory
+                SET effective_cache_size = '4GB';
+
+                -- Enable parallel query execution
+                SET max_parallel_workers_per_gather = 4;
+                SET parallel_setup_cost = 10;
+                SET parallel_tuple_cost = 0.1;
+            """
         )
 
+        # Setup binary column if using INT1 quantization
         binary_col = (
             ""
             if self.quantization_type != VectorQuantizationType.INT1
             else f"vec_binary bit({self.dimension}),"
         )
 
-        # Create main vectors table
-        query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (
-            extraction_id UUID PRIMARY KEY,
-            document_id UUID,
-            user_id UUID,
-            collection_ids UUID[],
-            vec vector({self.dimension}),
-            {binary_col}
-            text TEXT,
-            metadata JSONB,
-            text_search_vector tsvector GENERATED ALWAYS AS (
-                setweight(to_tsvector('simple', COALESCE(text, '')), 'B')
-            ) STORED,
-            metadata_search_vector tsvector GENERATED ALWAYS AS (
-                setweight(to_tsvector('simple', COALESCE(metadata::text, '')), 'A')
-            ) STORED
-        );
+        # Create main vectors table with optimized structure
+        main_table_query = f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (
+                extraction_id UUID PRIMARY KEY,
+                document_id UUID NOT NULL,
+                user_id UUID NOT NULL,
+                collection_ids UUID[],
+                vec vector({self.dimension}),
+                {binary_col}
+                text TEXT,
+                metadata JSONB,
+                text_search_vector tsvector GENERATED ALWAYS AS (
+                    setweight(to_tsvector('simple', COALESCE(text, '')), 'B')
+                ) STORED,
+                metadata_search_vector tsvector GENERATED ALWAYS AS (
+                    setweight(to_tsvector('simple', COALESCE(metadata::text, '')), 'A')
+                ) STORED
+            );
+            """
 
-        -- Basic indices
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id
+        # Create comprehensive indexing strategy
+        indexing_query = f"""
+            -- Basic indices for common lookups
+            CREATE INDEX IF NOT EXISTS idx_vectors_document_id
             ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id
+
+            CREATE INDEX IF NOT EXISTS idx_vectors_user_id
             ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids
+
+            CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids
             ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (collection_ids);
 
-        -- Text search indices
-        CREATE INDEX IF NOT EXISTS idx_vectors_text_search
+            -- Text search indices
+            CREATE INDEX IF NOT EXISTS idx_vectors_text_search
             ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
             USING GIN (text_search_vector);
-        CREATE INDEX IF NOT EXISTS idx_vectors_metadata_search
+
+            CREATE INDEX IF NOT EXISTS idx_vectors_metadata_search
             ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
             USING GIN (metadata_search_vector);
 
-        -- Metadata index for fast JSON operations
-        CREATE INDEX IF NOT EXISTS idx_vectors_metadata_json
+            -- Trigram index for fuzzy text search
+            CREATE INDEX IF NOT EXISTS idx_vectors_text_trigram
+            ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            USING GIST (text gist_trgm_ops);
+
+            -- Metadata indices
+            CREATE INDEX IF NOT EXISTS idx_vectors_metadata_gin
             ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
             USING GIN (metadata jsonb_path_ops);
 
-        -- Create statistics for better query planning
-        CREATE STATISTICS IF NOT EXISTS vectors_multi_stats (mcv)
+            -- Partial indices for common metadata fields
+            CREATE INDEX IF NOT EXISTS idx_vectors_metadata_status
+            ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} ((metadata->>'status'))
+            WHERE metadata->>'status' IS NOT NULL;
+
+            CREATE INDEX IF NOT EXISTS idx_vectors_metadata_type
+            ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} ((metadata->>'type'))
+            WHERE metadata->>'type' IS NOT NULL;
+
+            -- Combined search index
+            CREATE INDEX IF NOT EXISTS idx_vectors_combined_search
+            ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            USING GIN ((to_tsvector('simple', COALESCE(text, '')) ||
+                    to_tsvector('simple', COALESCE(metadata::text, ''))));
+
+            -- Create statistics for better query planning
+            CREATE STATISTICS IF NOT EXISTS vectors_multi_stats (mcv)
             ON document_id, user_id
             FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)};
-        """
+            """
 
-        await self.connection_manager.execute_query(query)
+        # Create materialized views for aggregated document data
+        materialized_views_query = f"""
+            -- Main document search materialized view
+            CREATE MATERIALIZED VIEW IF NOT EXISTS {self._get_table_name('document_search_mv')} AS
+            SELECT
+                document_id,
+                user_id,
+                string_agg(text, ' ') as full_text,
+                jsonb_object_agg(
+                    COALESCE(metadata->>'chunk_order', '0'),
+                    metadata
+                ) as chunk_metadata,
+                to_tsvector('simple', string_agg(text, ' ')) as text_vector,
+                to_tsvector('simple', string_agg(metadata::text, ' ')) as metadata_vector,
+                array_agg(extraction_id ORDER BY COALESCE((metadata->>'chunk_order')::int, 0)) as chunk_ids,
+                COUNT(*) as chunk_count
+            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            GROUP BY document_id, user_id;
 
-        # Create aggregate tables for performance
-        agg_query = f"""
-        CREATE MATERIALIZED VIEW IF NOT EXISTS {self._get_table_name('document_text_mv')} AS
-        SELECT
-            document_id,
-            string_agg(text, ' ') as combined_text,
-            setweight(to_tsvector('simple', string_agg(text, ' ')), 'B') as text_vector,
-            setweight(to_tsvector('simple', string_agg(metadata::text, ' ')), 'A') as metadata_vector,
-            COUNT(*) as chunk_count
-        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-        GROUP BY document_id;
+            -- Indices for materialized view
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_doc_search_mv_id
+            ON {self._get_table_name('document_search_mv')} (document_id);
 
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_document_text_mv_id
-            ON {self._get_table_name('document_text_mv')} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_document_text_mv_text
-            ON {self._get_table_name('document_text_mv')}
-            USING GIN (text_vector);
-        CREATE INDEX IF NOT EXISTS idx_document_text_mv_metadata
-            ON {self._get_table_name('document_text_mv')}
-            USING GIN (metadata_vector);
-        """
+            CREATE INDEX IF NOT EXISTS idx_doc_search_mv_user
+            ON {self._get_table_name('document_search_mv')} (user_id);
 
-        await self.connection_manager.execute_query(agg_query)
+            CREATE INDEX IF NOT EXISTS idx_doc_search_mv_text
+            ON {self._get_table_name('document_search_mv')} USING gin(text_vector);
+
+            CREATE INDEX IF NOT EXISTS idx_doc_search_mv_metadata
+            ON {self._get_table_name('document_search_mv')} USING gin(metadata_vector);
+
+            -- Create summary statistics materialized view
+            CREATE MATERIALIZED VIEW IF NOT EXISTS {self._get_table_name('document_stats_mv')} AS
+            SELECT
+                user_id,
+                COUNT(DISTINCT document_id) as total_documents,
+                COUNT(*) as total_chunks,
+                AVG(LENGTH(text)) as avg_chunk_length
+            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            GROUP BY user_id;
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_doc_stats_mv_user
+            ON {self._get_table_name('document_stats_mv')} (user_id);
+            """
+
+        # Execute all queries in order
+        await self.connection_manager.execute_query(main_table_query)
+        await self.connection_manager.execute_query(indexing_query)
+        await self.connection_manager.execute_query(materialized_views_query)
 
         # Analyze tables for better query planning
         analyze_query = f"""
-        ANALYZE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)};
-        ANALYZE {self._get_table_name('document_text_mv')};
-        """
-
+            ANALYZE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)};
+            ANALYZE {self._get_table_name('document_search_mv')};
+            ANALYZE {self._get_table_name('document_stats_mv')};
+            """
         await self.connection_manager.execute_query(analyze_query)
+
+        # Warm up indices
+        for _ in range(3):
+            await self.warm_indices()
 
     async def upsert(self, entry: VectorEntry) -> None:
         """
@@ -1282,141 +1386,185 @@ class PostgresVectorHandler(VectorHandler):
         settings: DocumentSearchSettings,
     ) -> list[dict[str, Any]]:
         """
-        High-performance document search maintaining compatibility with existing metadata structure.
-        Optimized for sub-100ms responses while keeping the original metadata handling.
+        Optimized document search implementation using materialized views and efficient querying patterns.
         """
-        where_clauses = []
-        params: list[Union[str, int, bytes]] = []
+        params: list[Union[str, int, bytes]] = [query_text]  # $1
 
-        # Build metadata field search expression using original approach
-        metadata_fields_expr = " || ' ' || ".join(
-            [
-                f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
-                for key in settings.metadata_keys
-            ]
+        # Use our optimized materialized view
+        mv_table = self._get_table_name("document_search_mv")
+
+        # Build filter conditions if any
+        filter_conditions = []
+        if settings.filters:
+            filter_clause = self._build_filters(settings.filters, params)
+            filter_conditions.append(filter_clause)
+
+        # Construct efficient search conditions
+        search_conditions = []
+        if query_text.strip():
+            if settings.search_over_body:
+                search_conditions.append(
+                    f"text_vector @@ websearch_to_tsquery('simple', $1)"
+                )
+            if settings.search_over_metadata:
+                search_conditions.append(
+                    f"metadata_vector @@ websearch_to_tsquery('simple', $1)"
+                )
+
+        # Combine all conditions
+        where_conditions = filter_conditions + search_conditions
+        where_clause = (
+            "WHERE " + " AND ".join(f"({cond})" for cond in where_conditions)
+            if where_conditions
+            else ""
         )
 
-        # Pre-process query for better performance
-        clean_query = re.sub(
-            r"[!@#$%^&*()+=\[\]{};:\\|,.<>/?~]", " ", query_text
+        # Calculate ranking score only when we have a search query
+        rank_calculation = """
+            CASE
+                WHEN $1 = '' THEN 1.0
+                ELSE (
+                    CASE WHEN {body_enabled} THEN
+                        ts_rank_cd(text_vector, websearch_to_tsquery('simple', $1)) * {title_weight}
+                    ELSE 0 END +
+                    CASE WHEN {metadata_enabled} THEN
+                        ts_rank_cd(metadata_vector, websearch_to_tsquery('simple', $1)) * {metadata_weight}
+                    ELSE 0 END
+                )
+            END
+        """.format(
+            body_enabled=str(settings.search_over_body).lower(),
+            metadata_enabled=str(settings.search_over_metadata).lower(),
+            title_weight=settings.title_weight,
+            metadata_weight=settings.metadata_weight,
         )
-        words = [word.strip() for word in clean_query.split() if word.strip()]
-        ts_query = " | ".join(f"{word}:*" for word in words) if words else ""
-
-        # Add query parameters
-        params.append(query_text)  # $1: original query text
-        params.append(ts_query)  # $2: processed ts_query
 
         query = f"""
-        WITH metadata_scores AS (
-            SELECT DISTINCT ON (v.document_id)
-                v.document_id,
-                v.metadata as vector_metadata,
-                d.metadata as doc_metadata,
-                CASE WHEN $1 = '' THEN 0.0
-                ELSE
-                    ts_rank_cd(
-                        setweight(to_tsvector('simple', {metadata_fields_expr}), 'A'),
-                        to_tsquery('simple', $2),
-                        32
-                    )
-                END as metadata_rank
-            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
-            LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
-            WHERE v.metadata IS NOT NULL
-            {"AND " + self._build_filters(settings.filters, params) if settings.filters else ""}
-        ),
-        body_scores AS (
+        WITH RankedResults AS (
             SELECT
                 document_id,
-                string_agg(text, ' ') as combined_text,
-                MAX(
-                    ts_rank_cd(
-                        setweight(to_tsvector('simple', text), 'B'),
-                        to_tsquery('simple', $2),
-                        32
-                    )
-                ) as body_rank
-            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            WHERE $1 != ''
-            GROUP BY document_id
-        ),
-        final_scores AS (
-            SELECT
-                m.document_id,
-                COALESCE(m.doc_metadata, m.vector_metadata) as metadata,
-                CASE
-                    WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
-                        COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
-                    WHEN {str(settings.search_over_metadata).lower()} THEN
-                        COALESCE(m.metadata_rank, 0)
-                    WHEN {str(settings.search_over_body).lower()} THEN
-                        COALESCE(b.body_rank, 0)
-                    ELSE 0
-                END as score,
-                COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
-                COALESCE(b.body_rank, 0) as debug_body_rank,
-                m.doc_metadata IS NOT NULL as has_doc_metadata
-            FROM metadata_scores m
-            LEFT JOIN body_scores b ON m.document_id = b.document_id
-            WHERE
-                CASE
-                    WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
-                        COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight} > 0
-                    WHEN {str(settings.search_over_metadata).lower()} THEN
-                        COALESCE(m.metadata_rank, 0) > 0
-                    WHEN {str(settings.search_over_body).lower()} THEN
-                        COALESCE(b.body_rank, 0) > 0
-                    ELSE FALSE
-                END
+                chunk_metadata->'0' as doc_metadata,
+                {rank_calculation} as search_score,
+                chunk_count
+            FROM {mv_table}
+            {where_clause}
         )
         SELECT
             document_id,
-            metadata,
-            score,
-            debug_metadata_rank,
-            debug_body_rank,
-            has_doc_metadata
-        FROM final_scores
-        ORDER BY score DESC
+            doc_metadata as metadata,
+            search_score as score
+        FROM RankedResults
+        WHERE search_score > 0
+        ORDER BY search_score DESC, chunk_count DESC
         OFFSET ${len(params) + 1}
         LIMIT ${len(params) + 2}
         """
 
         params.extend([settings.offset, settings.limit])
 
-        results = await self.connection_manager.fetch_query(query, params)
+        try:
+            # Enable parallel query execution for better performance
+            await self.connection_manager.execute_query(
+                """
+                SET LOCAL max_parallel_workers_per_gather = 4;
+                SET LOCAL parallel_tuple_cost = 0.1;
+                SET LOCAL parallel_setup_cost = 10;
+            """
+            )
 
-        # Process results to match the original format
-        return [
-            {
-                "document_id": str(r["document_id"]),
-                "metadata": (
-                    (
-                        # If we have document metadata, parse it from JSON if needed
+            results = await self.connection_manager.fetch_query(query, params)
+
+            return [
+                {
+                    "document_id": str(r["document_id"]),
+                    "metadata": (
                         json.loads(r["metadata"])
                         if isinstance(r["metadata"], str)
                         else r["metadata"]
-                    )
-                    if r["has_doc_metadata"]
-                    else (
-                        # If no document metadata, create the expected structure
-                        {
-                            "document": (
-                                json.loads(r["metadata"])
-                                if isinstance(r["metadata"], str)
-                                else r["metadata"]
-                            ),
-                            "document_id": str(r["document_id"]),
-                        }
-                    )
-                ),
-                "score": float(r["score"]),
-                "debug_metadata_rank": float(r["debug_metadata_rank"]),
-                "debug_body_rank": float(r["debug_body_rank"]),
-            }
-            for r in results
-        ]
+                    ),
+                    "score": float(r["score"]),
+                }
+                for r in results
+            ]
+        except Exception as e:
+            logger.error(f"Error in document search: {e}")
+            raise
+
+    # async def search_documents(
+    #     self,
+    #     query_text: str,
+    #     settings: DocumentSearchSettings,
+    # ) -> list[dict[str, Any]]:
+    #     """
+    #     Optimized document search using pre-computed indices and materialized views.
+    #     Fixed to properly handle score calculation and filtering.
+    #     """
+    #     params: list[Union[str, int, bytes]] = []
+    #     params.append(query_text)  # $1
+
+    #     mv_table = self._get_table_name('document_text_mv')
+    #     vectors_table = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
+
+    #     # Build filter conditions if any
+    #     filter_clause = ""
+    #     if settings.filters:
+    #         filter_clause = "AND " + self._build_filters(settings.filters, params)
+
+    #     query = f"""
+    #     WITH base_docs AS (
+    #         -- Start with the document_info table to avoid scanning all chunks
+    #         SELECT DISTINCT document_id, metadata as doc_metadata
+    #         FROM {self._get_table_name('document_info')}
+    #         WHERE true {filter_clause}
+    #     ),
+    #     scored_docs AS (
+    #         SELECT
+    #             d.document_id,
+    #             d.doc_metadata,
+    #             CASE WHEN $1 = '' THEN 0.0
+    #             ELSE (
+    #                 COALESCE(
+    #                     CASE WHEN {str(settings.search_over_body).lower()} THEN
+    #                         ts_rank_cd(mv.text_vector, websearch_to_tsquery('simple', $1), 32) * {settings.title_weight}
+    #                     ELSE 0 END,
+    #                     0
+    #                 ) +
+    #                 COALESCE(
+    #                     CASE WHEN {str(settings.search_over_metadata).lower()} THEN
+    #                         ts_rank_cd(v.metadata_search_vector, websearch_to_tsquery('simple', $1), 32) * {settings.metadata_weight}
+    #                     ELSE 0 END,
+    #                     0
+    #                 )
+    #             ) END as search_score
+    #         FROM base_docs d
+    #         -- Join with materialized view for document-level text search
+    #         LEFT JOIN {mv_table} mv ON d.document_id = mv.document_id
+    #         -- Join with vectors table for metadata search only when needed
+    #         LEFT JOIN {vectors_table} v ON d.document_id = v.document_id
+    #     )
+    #     SELECT
+    #         document_id,
+    #         doc_metadata as metadata,
+    #         search_score as score
+    #     FROM scored_docs
+    #     WHERE search_score > 0
+    #     ORDER BY search_score DESC
+    #     OFFSET ${len(params) + 1}
+    #     LIMIT ${len(params) + 2}
+    #     """
+
+    #     params.extend([settings.offset, settings.limit])
+
+    #     results = await self.connection_manager.fetch_query(query, params)
+
+    #     return [
+    #         {
+    #             "document_id": str(r["document_id"]),
+    #             "metadata": json.loads(r["metadata"]) if isinstance(r["metadata"], str) else r["metadata"],
+    #             "score": float(r["score"])
+    #         }
+    #         for r in results
+    #     ]
 
     def _get_index_options(
         self,
