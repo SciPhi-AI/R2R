@@ -129,14 +129,8 @@ provider = "console_mock"
 provider = "r2r"
 default_role = "default"
 
-  [user.default]
+  [user_management.roles.default]
   max_files = inf
   max_chunks = inf
   max_queries = inf
   max_queries_window = inf
-
-  [user.basic]
-  max_files = 1000
-  max_chunks = 10000
-  max_queries = 1000
-  max_queries_window = 1440  # 24 hours

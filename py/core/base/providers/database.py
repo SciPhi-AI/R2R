@@ -6,8 +6,6 @@ from typing import (
     Any,
     AsyncGenerator,
     BinaryIO,
-    Dict,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -648,14 +646,14 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
-    ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+    ) -> dict[str, dict[str, list[dict[str, Any]]]]:
         """Get entity map for a document."""
         pass
 
     @abstractmethod
     async def upsert_embeddings(
         self,
-        data: List[Tuple[Any]],
+        data: list[Tuple[Any]],
         table_name: str,
     ) -> None:
         """Upsert embeddings into storage."""
@@ -670,7 +668,7 @@ class KGHandler(Handler):
 
     # Community management
     @abstractmethod
-    async def add_community_info(self, communities: List[Any]) -> None:
+    async def add_community_info(self, communities: list[Any]) -> None:
         """Add communities to storage."""
         pass
 
@@ -703,14 +701,14 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_community_reports(
         self, collection_id: UUID
-    ) -> List[CommunityReport]:
+    ) -> list[CommunityReport]:
         """Get community reports for a collection."""
         pass
 
     @abstractmethod
     async def check_community_reports_exist(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> List[int]:
+    ) -> list[int]:
         """Check which community reports exist."""
         pass
 
@@ -718,7 +716,7 @@ class KGHandler(Handler):
     async def perform_graph_clustering(
         self,
         collection_id: UUID,
-        leiden_params: Dict[str, Any],
+        leiden_params: dict[str, Any],
     ) -> int:
         """Perform graph clustering."""
         pass
@@ -743,10 +741,10 @@ class KGHandler(Handler):
     async def get_entities(
         self,
         collection_id: Optional[UUID] = None,
-        entity_ids: Optional[List[str]] = None,
-        entity_names: Optional[List[str]] = None,
+        entity_ids: Optional[list[str]] = None,
+        entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
-        extra_columns: Optional[List[str]] = None,
+        extra_columns: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -757,8 +755,8 @@ class KGHandler(Handler):
     async def get_triples(
         self,
         collection_id: Optional[UUID] = None,
-        entity_names: Optional[List[str]] = None,
-        triple_ids: Optional[List[str]] = None,
+        entity_names: Optional[list[str]] = None,
+        triple_ids: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -855,7 +853,7 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_all_triples(
         self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
-    ) -> List[Triple]:
+    ) -> list[Triple]:
         raise NotImplementedError
 
     @abstractmethod
@@ -992,8 +990,8 @@ class LoggingHandler(Handler):
 
     @abstractmethod
     async def get_logs(
-        self, run_ids: List[UUID], limit_per_run: int = 10
-    ) -> List[Dict]:
+        self, run_ids: list[UUID], limit_per_run: int = 10
+    ) -> list[dict]:
         """Retrieve logs for specified run IDs."""
         pass
 
@@ -1003,8 +1001,8 @@ class LoggingHandler(Handler):
         offset: int = 0,
         limit: int = 100,
         run_type_filter: Optional[RunType] = None,
-        user_ids: Optional[List[UUID]] = None,
-    ) -> List[RunInfoLog]:
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         """Retrieve run information logs with filtering options."""
         pass
 
@@ -1022,10 +1020,10 @@ class LoggingHandler(Handler):
     @abstractmethod
     async def get_conversations_overview(
         self,
-        conversation_ids: Optional[List[UUID]] = None,
+        conversation_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = -1,
-    ) -> Dict[str, Union[List[Dict], int]]:
+    ) -> dict[str, Union[list[dict], int]]:
         """Get an overview of conversations with pagination."""
         pass
 
@@ -1036,7 +1034,7 @@ class LoggingHandler(Handler):
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[dict] = None,
     ) -> str:
         """Add a message to a conversation."""
         pass
@@ -1051,13 +1049,13 @@ class LoggingHandler(Handler):
     @abstractmethod
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> List[Tuple[str, Message]]:
+    ) -> list[Tuple[str, Message]]:
         """Retrieve all messages in a conversation branch."""
         pass
 
     # Branch management methods
     @abstractmethod
-    async def get_branches_overview(self, conversation_id: str) -> List[Dict]:
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         """Get an overview of all branches in a conversation."""
         pass
 
@@ -1546,20 +1544,20 @@ class DatabaseProvider(Provider):
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
-    ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+    ) -> dict[str, dict[str, list[dict[str, Any]]]]:
         """Forward to KG handler get_entity_map method."""
         return await self.kg_handler.get_entity_map(offset, limit, document_id)
 
     async def upsert_embeddings(
         self,
-        data: List[Tuple[Any]],
+        data: list[Tuple[Any]],
         table_name: str,
     ) -> None:
         """Forward to KG handler upsert_embeddings method."""
         return await self.kg_handler.upsert_embeddings(data, table_name)
 
     # Community methods
-    async def add_community_info(self, communities: List[Any]) -> None:
+    async def add_community_info(self, communities: list[Any]) -> None:
         """Forward to KG handler add_communities method."""
         return await self.kg_handler.add_community_info(communities)
 
@@ -1596,13 +1594,13 @@ class DatabaseProvider(Provider):
 
     async def get_community_reports(
         self, collection_id: UUID
-    ) -> List[CommunityReport]:
+    ) -> list[CommunityReport]:
         """Forward to KG handler get_community_reports method."""
         return await self.kg_handler.get_community_reports(collection_id)
 
     async def check_community_reports_exist(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> List[int]:
+    ) -> list[int]:
         """Forward to KG handler check_community_reports_exist method."""
         return await self.kg_handler.check_community_reports_exist(
             collection_id, offset, limit
@@ -1611,7 +1609,7 @@ class DatabaseProvider(Provider):
     async def perform_graph_clustering(
         self,
         collection_id: UUID,
-        leiden_params: Dict[str, Any],
+        leiden_params: dict[str, Any],
     ) -> int:
         """Forward to KG handler perform_graph_clustering method."""
         return await self.kg_handler.perform_graph_clustering(
@@ -1639,10 +1637,10 @@ class DatabaseProvider(Provider):
     async def get_entities(
         self,
         collection_id: Optional[UUID],
-        entity_ids: Optional[List[str]] = None,
-        entity_names: Optional[List[str]] = None,
+        entity_ids: Optional[list[str]] = None,
+        entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
-        extra_columns: Optional[List[str]] = None,
+        extra_columns: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -1660,8 +1658,8 @@ class DatabaseProvider(Provider):
     async def get_triples(
         self,
         collection_id: Optional[UUID] = None,
-        entity_names: Optional[List[str]] = None,
-        triple_ids: Optional[List[str]] = None,
+        entity_names: Optional[list[str]] = None,
+        triple_ids: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
     ) -> dict:
@@ -1725,7 +1723,7 @@ class DatabaseProvider(Provider):
 
     async def get_all_triples(
         self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
-    ) -> List[Triple]:
+    ) -> list[Triple]:
         return await self.kg_handler.get_all_triples(
             collection_id, document_ids
         )
@@ -1864,8 +1862,8 @@ class DatabaseProvider(Provider):
         offset: int = 0,
         limit: int = 100,
         run_type_filter: Optional[RunType] = None,
-        user_ids: Optional[List[UUID]] = None,
-    ) -> List[RunInfoLog]:
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         """Retrieve log info entries with filtering and pagination."""
         return await self.logging_handler.get_info_logs(
             offset, limit, run_type_filter, user_ids
@@ -1873,9 +1871,9 @@ class DatabaseProvider(Provider):
 
     async def get_logs(
         self,
-        run_ids: List[UUID],
+        run_ids: list[UUID],
         limit_per_run: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retrieve logs for specified run IDs with a per-run limit."""
         return await self.logging_handler.get_logs(run_ids, limit_per_run)
 
@@ -1889,10 +1887,10 @@ class DatabaseProvider(Provider):
 
     async def get_conversations_overview(
         self,
-        conversation_ids: Optional[List[UUID]] = None,
+        conversation_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = -1,
-    ) -> Dict[str, Union[List[Dict], int]]:
+    ) -> dict[str, Union[list[dict], int]]:
         """Get an overview of conversations with pagination."""
         return await self.logging_handler.get_conversations_overview(
             conversation_ids, offset, limit
@@ -1903,7 +1901,7 @@ class DatabaseProvider(Provider):
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[dict] = None,
     ) -> str:
         """Add a message to a conversation."""
         return await self.logging_handler.add_message(
@@ -1918,13 +1916,13 @@ class DatabaseProvider(Provider):
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> List[Tuple[str, Message]]:
+    ) -> list[Tuple[str, Message]]:
         """Retrieve all messages in a conversation branch."""
         return await self.logging_handler.get_conversation(
             conversation_id, branch_id
         )
 
-    async def get_branches_overview(self, conversation_id: str) -> List[Dict]:
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         """Get an overview of all branches in a conversation."""
         return await self.logging_handler.get_branches_overview(
             conversation_id

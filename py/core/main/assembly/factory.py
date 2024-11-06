@@ -188,9 +188,6 @@ class R2RProviderFactory:
                 user_management_provider=user_management_provider,
             )
             await database_provider.initialize()
-            logger.info(
-                f"Database provider initialized with user config: {self.config.user_management}"
-            )
             return database_provider
         else:
             raise ValueError(

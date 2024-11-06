@@ -1,27 +1,52 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Optional
-from pydantic import BaseModel
-
+from typing import Optional
+from pydantic import Field, field_validator, BaseModel
 from .base import Provider, ProviderConfig
+from abc import ABC
+
+
+Limit = Optional[int]
 
 
 class RoleLimits(BaseModel):
-    max_files: Optional[int] = None
-    max_chunks: Optional[int] = None
-    max_queries: Optional[int] = None
-    max_queries_window: Optional[int] = None
+    max_files: Limit = Field(
+        default=None,
+        description="Number of files allowed (None for no limit)",
+    )
+    max_chunks: Limit = Field(
+        default=None,
+        description="Number of chunks allowed (None for no limit)",
+    )
+    max_queries: Limit = Field(
+        default=None,
+        description="Number of queries allowed (None for no limit)",
+    )
+    max_queries_window: Limit = Field(
+        default=None, description="Query window size (None for no limit)"
+    )
+
+    @field_validator(
+        "max_files",
+        "max_chunks",
+        "max_queries",
+        "max_queries_window",
+        mode="before",
+    )
+    def parse_limit(cls, v):
+        return None if v is None or v == "inf" or v == float("inf") else v
+
+    def has_limit(self, field: str) -> bool:
+        """Check if a particular field has a numerical limit."""
+        return getattr(self, field) is not None
+
+    def get_limit(self, field: str) -> Optional[int]:
+        """Get the numerical limit for a field, or None if no limit."""
+        return getattr(self, field)
 
 
 class UserManagementConfig(ProviderConfig):
     default_role: str = "default"
-    roles: Dict[str, RoleLimits] = {
+    roles: dict[str, RoleLimits] = {
         "default": RoleLimits(),
-        "basic": RoleLimits(
-            max_files=1000,
-            max_chunks=10000,
-            max_queries=1000,
-            max_queries_window=1440,
-        ),
     }
 
     @property
@@ -29,15 +54,41 @@ class UserManagementConfig(ProviderConfig):
         return ["r2r"]
 
     def validate_config(self) -> None:
-        if not self.default_role in self.roles:
+        if self.default_role not in self.roles:
             raise ValueError(
                 f"Default role '{self.default_role}' not found in roles configuration"
             )
 
     def get_role_limits(self, role: str) -> RoleLimits:
-        if role not in self.roles:
-            return self.roles[self.default_role]
-        return self.roles[role]
+        default_limits = self.roles[self.default_role]
+
+        if role == self.default_role:
+            return default_limits
+
+        custom_limits = self.roles.get(role, RoleLimits())
+
+        return RoleLimits(
+            max_files=(
+                custom_limits.max_files
+                if custom_limits.has_limit("max_files")
+                else default_limits.max_files
+            ),
+            max_chunks=(
+                custom_limits.max_chunks
+                if custom_limits.has_limit("max_chunks")
+                else default_limits.max_chunks
+            ),
+            max_queries=(
+                custom_limits.max_queries
+                if custom_limits.has_limit("max_queries")
+                else default_limits.max_queries
+            ),
+            max_queries_window=(
+                custom_limits.max_queries_window
+                if custom_limits.has_limit("max_queries_window")
+                else default_limits.max_queries_window
+            ),
+        )
 
 
 class UserManagementProvider(Provider, ABC):
@@ -49,3 +100,11 @@ class UserManagementProvider(Provider, ABC):
         print(f"UserManagementProvider config: {config}")
         super().__init__(config)
         self.config: UserManagementConfig = config
+
+    def check_limit(
+        self, role: str, limit_type: str, current_value: int
+    ) -> bool:
+        """Check if a particular action would exceed the role's limits."""
+        limits = self.config.get_role_limits(role)
+        limit = limits.get_limit(limit_type)
+        return limit is None or current_value < limit
