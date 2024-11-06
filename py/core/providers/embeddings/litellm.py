@@ -24,15 +24,17 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     ) -> None:
         super().__init__(config)
 
+        # Allow LiteLLM to automatically drop parameters that are not supported by the model
+        litellm.drop_params = True
+
         self.litellm_embedding = embedding
         self.litellm_aembedding = aembedding
 
-        provider = config.provider
-        if not provider:
+        if not config.provider:
             raise ValueError(
                 "Must set provider in order to initialize `LiteLLMEmbeddingProvider`."
             )
-        if provider != "litellm":
+        if config.provider != "litellm":
             raise ValueError(
                 "LiteLLMEmbeddingProvider must be initialized with provider `litellm`."
             )
@@ -42,18 +44,13 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             )
 
         self.base_model = config.base_model
-        if "amazon" in self.base_model:
-            logger.warn("Amazon embedding model detected, dropping params")
-            litellm.drop_params = True
         self.base_dimension = config.base_dimension
 
     def _get_embedding_kwargs(self, **kwargs):
-        embedding_kwargs = {
+        return {
             "model": self.base_model,
             "dimensions": self.base_dimension,
-        }
-        embedding_kwargs.update(kwargs)
-        return embedding_kwargs
+        } | kwargs
 
     async def _execute_task(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]

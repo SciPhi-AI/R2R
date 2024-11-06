@@ -36,7 +36,8 @@ services:
       -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     build:
       context: .
       args:
@@ -98,6 +99,9 @@ services:
 
       # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+
+      # LM Studio
+      - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
 
     networks:
       - r2r-network

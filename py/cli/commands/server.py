@@ -280,6 +280,12 @@ async def serve(
             "Warning: `config-name` corresponds to an existing file. If you intended a custom config, use `config-path`."
         )
 
+    if config_name in ["local_llm", "full_local_llm"]:
+        click.secho(
+            "WARNING: `local_llm` and `full_local_llm` are deprecated and support for them will be removed. Please use `local_llm_ollama`, `local_llm_lm_studio`, `full_local_llm_ollama`, `full_local_llm_lm_studio`.",
+            fg="red",
+        )
+
     if build:
         click.echo(
             "`build` flag detected. Building Docker image from local repository..."
