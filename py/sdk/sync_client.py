@@ -6,6 +6,7 @@ from .v3.chunks import SyncChunkSDK
 from .v3.collections import SyncCollectionsSDK
 from .v3.conversations import SyncConversationSDK
 from .v3.documents import SyncDocumentSDK
+from .v3.graphs import SyncGraphsSDK
 from .v3.indices import SyncIndexSDK
 from .v3.prompts import SyncPromptsSDK
 from .v3.retrieval import SyncRetrievalSDK
@@ -33,6 +34,7 @@ class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
         self.prompts = SyncPromptsSDK(self.prompts)
         self.collections = SyncCollectionsSDK(self.collections)
         self.conversations = SyncConversationSDK(self.conversations)
+        self.graphs = SyncGraphsSDK(self.graphs)
 
     def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         async_gen = super()._make_streaming_request(method, endpoint, **kwargs)

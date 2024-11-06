@@ -18,6 +18,7 @@ from .v3.chunks import ChunksSDK
 from .v3.collections import CollectionsSDK
 from .v3.conversations import ConversationsSDK
 from .v3.documents import DocumentsSDK
+from .v3.graphs import GraphsSDK
 from .v3.indices import IndicesSDK
 from .v3.prompts import PromptsSDK
 from .v3.retrieval import RetrievalSDK
@@ -60,6 +61,7 @@ class R2RAsyncClient(
         self.collections = CollectionsSDK(self)
         self.conversations = ConversationsSDK(self)
         self.prompts = PromptsSDK(self)
+        self.graphs = GraphsSDK(self)
 
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         url = self._get_full_url(endpoint)
