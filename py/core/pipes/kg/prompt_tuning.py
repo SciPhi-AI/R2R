@@ -3,8 +3,9 @@ Pipe to tune the prompt for the KG model.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
+from fastapi import HTTPException
 
 from core.base import (
     AsyncState,
@@ -76,14 +77,15 @@ class KGPromptTuningPipe(AsyncPipe):
             )
 
             if not tuned_prompt:
-                raise R2RException(
-                    message="Failed to generate tuned prompt", status_code=500
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to generate tuned prompt",
                 )
 
             yield {"tuned_prompt": tuned_prompt.choices[0].message.content}
 
         except Exception as e:
-            logger.error(f"Error in prompt tuning: {str(e)}")
-            raise R2RException(
-                message=f"Error tuning prompt: {str(e)}", status_code=500
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error tuning prompt: {str(e)}",
             )

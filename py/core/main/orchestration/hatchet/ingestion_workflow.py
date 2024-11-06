@@ -3,6 +3,7 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 from uuid import UUID
+from fastapi import HTTPException
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
@@ -246,9 +247,9 @@ def hatchet_ingestion_factory(
                     message="Authentication error: Invalid API key or credentials.",
                 )
             except Exception as e:
-                raise R2RException(
+                raise HTTPException(
                     status_code=500,
-                    message=f"Error during ingestion: {str(e)}",
+                    detail=f"Error during ingestion: {str(e)}",
                 )
 
         @orchestration_provider.failure()
@@ -605,9 +606,9 @@ def hatchet_ingestion_factory(
                 }
 
             except Exception as e:
-                raise R2RException(
+                raise HTTPException(
                     status_code=500,
-                    message=f"Error during chunk update: {str(e)}",
+                    detail=f"Error during chunk update: {str(e)}",
                 )
 
         @orchestration_provider.failure()
@@ -692,9 +693,9 @@ def hatchet_ingestion_factory(
                 }
 
             except Exception as e:
-                raise R2RException(
+                raise HTTPException(
                     status_code=500,
-                    message=f"Error during document metadata update: {str(e)}",
+                    detail=f"Error during document metadata update: {str(e)}",
                 )
 
         @orchestration_provider.failure()

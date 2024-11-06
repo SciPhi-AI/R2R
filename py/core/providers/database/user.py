@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 from core.base import CryptoProvider, UserHandler
 from core.base.abstractions import R2RException, UserStats
@@ -152,8 +153,9 @@ class PostgresUserHandler(UserHandler):
         )
 
         if not result:
-            raise R2RException(
-                status_code=500, message="Failed to create user"
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create user",
             )
 
         return UserResponse(
@@ -192,8 +194,9 @@ class PostgresUserHandler(UserHandler):
         )
 
         if not result:
-            raise R2RException(
-                status_code=500, message="Failed to update user"
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to update user",
             )
 
         return UserResponse(

@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
+from fastapi import HTTPException
 
 import asyncpg
 from asyncpg.exceptions import PostgresError, UndefinedTableError
@@ -1628,15 +1629,15 @@ class PostgresKGHandler(KGHandler):
             logger.error(
                 f"Database error in get_deduplication_estimate: {str(e)}"
             )
-            raise R2RException(
-                message="An error occurred while fetching the deduplication estimate.",
+            raise HTTPException(
                 status_code=500,
+                detail="An error occurred while fetching the deduplication estimate.",
             )
         except Exception as e:
             logger.error(
                 f"Unexpected error in get_deduplication_estimate: {str(e)}"
             )
-            raise R2RException(
-                message="An unexpected error occurred while fetching the deduplication estimate.",
+            raise HTTPException(
                 status_code=500,
+                detail="An unexpected error occurred while fetching the deduplication estimate.",
             )
