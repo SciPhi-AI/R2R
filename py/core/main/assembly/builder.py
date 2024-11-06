@@ -26,6 +26,7 @@ from ..api.v3.chunks_router import ChunksRouter
 from ..api.v3.collections_router import CollectionsRouter
 from ..api.v3.conversations_router import ConversationsRouter
 from ..api.v3.documents_router import DocumentsRouter
+from ..api.v3.graph_router import GraphRouter
 from ..api.v3.indices_router import IndicesRouter
 from ..api.v3.prompts_router import PromptsRouter
 from ..api.v3.retrieval_router import RetrievalRouterV3
@@ -293,6 +294,11 @@ class R2RBuilder:
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "retrieval_router_v3": RetrievalRouterV3(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "graph_router": GraphRouter(
                 providers=providers,
                 services=services,
                 orchestration_provider=orchestration_provider,

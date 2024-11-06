@@ -20,6 +20,7 @@ from .api.v3.chunks_router import ChunksRouter
 from .api.v3.collections_router import CollectionsRouter
 from .api.v3.conversations_router import ConversationsRouter
 from .api.v3.documents_router import DocumentsRouter
+from .api.v3.graph_router import GraphRouter
 from .api.v3.indices_router import IndicesRouter
 from .api.v3.prompts_router import PromptsRouter
 from .api.v3.retrieval_router import RetrievalRouterV3
@@ -47,6 +48,7 @@ class R2RApp:
         conversations_router: ConversationsRouter,
         prompts_router: PromptsRouter,
         retrieval_router_v3: RetrievalRouterV3,
+        graph_router: GraphRouter,
     ):
         self.config = config
         self.ingestion_router = ingestion_router
@@ -63,6 +65,7 @@ class R2RApp:
         self.conversations_router = conversations_router
         self.prompts_router = prompts_router
         self.retrieval_router_v3 = retrieval_router_v3
+        self.graph_router = graph_router
         self.app = FastAPI()
 
         @self.app.exception_handler(R2RException)
@@ -94,6 +97,7 @@ class R2RApp:
         self.app.include_router(self.conversations_router, prefix="/v3")
         self.app.include_router(self.prompts_router, prefix="/v3")
         self.app.include_router(self.retrieval_router_v3, prefix="/v3")
+        self.app.include_router(self.graph_router, prefix="/v3")
 
         @self.app.get("/openapi_spec", include_in_schema=False)
         async def openapi_spec():
