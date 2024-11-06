@@ -4,6 +4,7 @@ from uuid import UUID
 
 from litellm import AuthenticationError
 
+from fastapi import HTTPException
 from core.base import DocumentExtraction, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
@@ -123,8 +124,8 @@ def simple_ingestion_factory(service: IngestionService):
                 await service.update_document_status(
                     document_info, status=IngestionStatus.FAILED
                 )
-            raise R2RException(
-                status_code=500, message=f"Error during ingestion: {str(e)}"
+            raise HTTPException(
+                status_code=500, detail=f"Error during ingestion: {str(e)}"
             )
 
     async def update_files(input_data):
@@ -302,9 +303,9 @@ def simple_ingestion_factory(service: IngestionService):
                 await service.update_document_status(
                     document_info, status=IngestionStatus.FAILED
                 )
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during chunk ingestion: {str(e)}",
+                detail=f"Error during chunk ingestion: {str(e)}",
             )
 
     async def update_chunk(input_data):
@@ -335,9 +336,9 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during chunk update: {str(e)}",
+                detail=f"Error during chunk update: {str(e)}",
             )
 
     async def create_vector_index(input_data):
@@ -354,9 +355,9 @@ def simple_ingestion_factory(service: IngestionService):
             await service.providers.database.create_index(**parsed_data)
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during vector index creation: {str(e)}",
+                detail=f"Error during vector index creation: {str(e)}",
             )
 
     async def delete_vector_index(input_data):
@@ -374,9 +375,9 @@ def simple_ingestion_factory(service: IngestionService):
             return {"status": "Vector index deleted successfully."}
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during vector index deletion: {str(e)}",
+                detail=f"Error during vector index deletion: {str(e)}",
             )
 
     async def update_document_metadata(input_data):
@@ -406,9 +407,9 @@ def simple_ingestion_factory(service: IngestionService):
             }
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during document metadata update: {str(e)}",
+                detail=f"Error during document metadata update: {str(e)}",
             )
 
     return {

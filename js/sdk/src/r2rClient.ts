@@ -246,9 +246,9 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("verifyEmail")
-  async verifyEmail(verification_code: string): Promise<any> {
+  async verifyEmail(email: string, verification_code: string): Promise<any> {
     return await this._makeRequest("POST", "verify_email", {
-      data: { verification_code },
+      data: { email, verification_code },
     });
   }
 
@@ -427,8 +427,11 @@ export class r2rClient {
    */
   @feature("requestPasswordReset")
   async requestPasswordReset(email: string): Promise<any> {
-    return this._makeRequest("POST", "request_password_reset", {
-      data: { email },
+    return await this._makeRequest("POST", "request_password_reset", {
+      data: JSON.stringify(email),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -687,12 +690,16 @@ export class r2rClient {
   @feature("updateDocumentMetadata")
   async updateDocumentMetadata(
     documentId: string,
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    return await this._makeRequest("POST", `update_document_metadata/${documentId}`, {
-      data: metadata,
-    });
+    return await this._makeRequest(
+      "POST",
+      `update_document_metadata/${documentId}`,
+      {
+        data: metadata,
+      },
+    );
   }
 
   @feature("ingestChunks")
@@ -1911,7 +1918,7 @@ export class r2rClient {
   //
   // -----------------------------------------------------------------------------
 
-    /**
+  /**
    * Search over documents.
    * @param query The query to search for.
    * @param settings Settings for the document search.
@@ -1949,7 +1956,9 @@ export class r2rClient {
       },
     };
 
-    return await this._makeRequest("POST", "search_documents", { data: json_data });
+    return await this._makeRequest("POST", "search_documents", {
+      data: json_data,
+    });
   }
 
   /**

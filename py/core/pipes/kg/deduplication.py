@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Union
 from uuid import UUID
+from fastapi import HTTPException
 
-from core.base import AsyncState, R2RException
+from core.base import AsyncState
 from core.base.abstractions import Entity, KGEntityDeduplicationType
 from core.base.pipes import AsyncPipe
 from core.providers import (
@@ -133,9 +134,9 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             logger.error(
                 f"KGEntityDeduplicationPipe: Error in entity deduplication: {str(e)}"
             )
-            raise R2RException(
-                message=f"KGEntityDeduplicationPipe: Error deduplicating entities: {str(e)}",
+            raise HTTPException(
                 status_code=500,
+                detail=f"KGEntityDeduplicationPipe: Error deduplicating entities: {str(e)}",
             )
 
     async def kg_description_entity_deduplication(

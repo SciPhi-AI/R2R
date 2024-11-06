@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Any, Optional, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 import asyncpg
 
@@ -427,6 +428,7 @@ class PostgresDocumentHandler(DocumentHandler):
             return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")
-            raise R2RException(
-                status_code=500, message="Database query failed"
+            raise HTTPException(
+                status_code=500,
+                detail="Database query failed",
             )

@@ -22,7 +22,7 @@ const baseUrl = "http://localhost:7272";
  *     - updateUser
  *     - refreshAccessToken
  *     - changePassword
- *     X requestPasswordReset
+ *     - requestPasswordReset
  *     X confirmPasswordReset
  *     - deleteUser
  *    Ingestion:
@@ -280,6 +280,12 @@ describe("r2rClient Integration Tests", () => {
   test("Change password", async () => {
     await expect(
       client.changePassword("password", "new_password"),
+    ).resolves.not.toThrow();
+  });
+
+  test("Request password reset", async () => {
+    await expect(
+      client.requestPasswordReset("newemail@example.com"),
     ).resolves.not.toThrow();
   });
 

@@ -98,18 +98,39 @@ describe("R2RClient", () => {
       const mockResponse = { success: true };
       mockAxiosInstance.request.mockResolvedValue({ data: mockResponse });
 
+      const email = "test@example.com";
       const verification_code = "123456";
-      const result = await client.verifyEmail(verification_code);
+      const result = await client.verifyEmail(email, verification_code);
 
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
         url: "verify_email",
-        data: JSON.stringify({ verification_code }),
+        data: JSON.stringify({ email, verification_code }),
         headers: {
           "Content-Type": "application/json",
         },
         responseType: "json",
+      });
+    });
+
+    test("requestPasswordReset should send POST request to /request_password_reset with correct data", async () => {
+      const mockResponse = { success: true };
+      mockAxiosInstance.request.mockResolvedValue({ data: mockResponse });
+
+      const email = "test@example.com";
+      const result = await client.requestPasswordReset(email);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith({
+        method: "POST",
+        url: "request_password_reset",
+        data: '"test@example.com"',
+        headers: {
+          "Content-Type": "application/json",
+        },
+        responseType: "json",
+        params: undefined,
       });
     });
 
@@ -258,26 +279,6 @@ describe("R2RClient", () => {
         }),
         headers: {
           Authorization: "Bearer access-token",
-          "Content-Type": "application/json",
-        },
-        responseType: "json",
-      });
-    });
-
-    test("requestPasswordReset should send POST request to /request_password_reset with correct data", async () => {
-      const mockResponse = { success: true };
-      mockAxiosInstance.request.mockResolvedValue({ data: mockResponse });
-
-      const email = "test@example.com";
-
-      const result = await client.requestPasswordReset(email);
-
-      expect(result).toEqual(mockResponse);
-      expect(mockAxiosInstance.request).toHaveBeenCalledWith({
-        method: "POST",
-        url: "request_password_reset",
-        data: JSON.stringify({ email }),
-        headers: {
           "Content-Type": "application/json",
         },
         responseType: "json",

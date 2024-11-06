@@ -6,7 +6,16 @@ from typing import Optional, Union
 from uuid import UUID
 
 import yaml
-from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
+from fastapi import (
+    Body,
+    Depends,
+    File,
+    Form,
+    Path,
+    Query,
+    UploadFile,
+    HTTPException,
+)
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, Workflow, generate_document_id
@@ -484,9 +493,9 @@ class IngestionRouter(BaseRouter):
                 }
 
             except Exception as e:
-                raise R2RException(
+                raise HTTPException(
                     status_code=500,
-                    message=f"Error updating document metadata: {str(e)}",
+                    detail=f"Error updating document metadata: {str(e)}",
                 )
 
         @self.router.put(
@@ -548,8 +557,8 @@ class IngestionRouter(BaseRouter):
                     }
 
             except Exception as e:
-                raise R2RException(
-                    status_code=500, message=f"Error updating chunk: {str(e)}"
+                raise HTTPException(
+                    status_code=500, detail=f"Error updating chunk: {str(e)}"
                 )
 
         create_vector_index_extras = self.openapi_extras.get(

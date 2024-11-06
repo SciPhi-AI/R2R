@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Optional
 from uuid import UUID
+from fastapi import HTTPException
 
 from core import R2RStreamingRAGAgent
 from core.base import (
@@ -203,12 +204,12 @@ class RetrievalService(Service):
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):
-                    raise R2RException(
+                    raise HTTPException(
                         status_code=502,
-                        message="Remote server not reachable or returned an invalid response",
+                        detail="Remote server not reachable or returned an invalid response",
                     ) from e
-                raise R2RException(
-                    status_code=500, message="Internal Server Error"
+                raise HTTPException(
+                    status_code=500, detail="Internal Server Error"
                 ) from e
 
     async def stream_rag_response(
@@ -398,12 +399,13 @@ class RetrievalService(Service):
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):
-                    raise R2RException(
+                    raise HTTPException(
                         status_code=502,
-                        message="Server not reachable or returned an invalid response",
+                        detail="Server not reachable or returned an invalid response",
                     )
-                raise R2RException(
-                    status_code=500, message="Internal Server Error"
+                raise HTTPException(
+                    status_code=500,
+                    detail="Internal Server Error",
                 )
 
 
