@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, Json
 
 from core.base import Message, R2RException, RunType
 from core.base.api.models import (
@@ -30,6 +30,10 @@ class MessageContent(BaseModel):
     metadata: Optional[dict] = Field(
         None, description="Additional metadata for the message"
     )
+
+
+class CreateConversationResponse(BaseModel):
+    conversation_id: UUID
 
 
 class ConversationsRouter(BaseRouterV3):
@@ -74,22 +78,15 @@ curl -X POST "https://api.example.com/v3/conversations" \\
         @self.base_endpoint
         async def create_conversation(
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedConversationResponse:
+        ) -> ResultsWrapper[CreateConversationResponse]:
             """
             Create a new conversation.
 
             This endpoint initializes a new conversation for the authenticated user.
-
-            Args:
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedConversationResponse: Details of the newly created conversation.
-
-            Raises:
-                R2RException: If there's an error in creating the conversation.
             """
-            return await self.services.management.create_conversation()
+            result = await self.services["management"].create_conversation()
+
+            return {"conversation_id": result}
 
         @self.router.get(
             "/conversations",
@@ -146,26 +143,13 @@ curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10&sort_by=
             List conversations with pagination and sorting options.
 
             This endpoint returns a paginated list of conversations for the authenticated user.
-
-            Args:
-                offset (int): The number of conversations to skip (for pagination).
-                limit (int): The maximum number of conversations to return (1-1000).
-                sort_by (str, optional): The field to sort the conversations by.
-                sort_order (str, optional): The order to sort the conversations ("asc" or "desc").
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedConversationsOverviewResponse: A paginated list of conversations and total count.
-
-            Raises:
-                R2RException: If there's an error in retrieving the conversations.
             """
-            conversations_response = (
-                await self.services.management.conversations_overview(
-                    conversation_ids=[],  # Empty list to get all conversations
-                    offset=offset,
-                    limit=limit,
-                )
+            conversations_response = await self.services[
+                "management"
+            ].conversations_overview(
+                conversation_ids=[],  # Empty list to get all conversations
+                offset=offset,
+                limit=limit,
             )
             return conversations_response["results"], {
                 "total_entries": conversations_response["total_entries"]
@@ -214,19 +198,8 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
             Get details of a specific conversation.
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
-
-            Args:
-                id (UUID): The unique identifier of the conversation.
-                branch_id (str, optional): The ID of the specific branch to retrieve.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedConversationResponse: Detailed information about the requested conversation.
-
-            Raises:
-                R2RException: If the conversation is not found or the user doesn't have access.
             """
-            return await self.services.management.get_conversation(
+            return await self.services["management"].get_conversation(
                 str(id),
                 branch_id,
             )
@@ -269,19 +242,9 @@ curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456
             Delete an existing conversation.
 
             This endpoint deletes a conversation identified by its UUID.
-
-            Args:
-                id (UUID): The unique identifier of the conversation to delete.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedDeleteResponse: Confirmation of the deletion.
-
-            Raises:
-                R2RException: If the conversation is not found or the user doesn't have permission to delete it.
             """
-            await self.services.management.delete_conversation(str(id))
-            return None
+            await self.services["management"].delete_conversation(str(id))
+            return True
 
         @self.router.post(
             "/conversations/{id}/messages",
@@ -321,8 +284,17 @@ curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-4
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
-            message_content: MessageContent = Body(
+            content: str = Body(
                 ..., description="The content of the message to add"
+            ),
+            role: str = Body(
+                ..., description="The role of the message to add"
+            ),
+            parent_id: Optional[str] = Body(
+                None, description="The ID of the parent message, if any"
+            ),
+            metadata: Optional[Json[dict]] = Body(
+                None, description="Additional metadata for the message"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> dict:
@@ -330,24 +302,13 @@ curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-4
             Add a new message to a conversation.
 
             This endpoint adds a new message to an existing conversation.
-
-            Args:
-                id (UUID): The unique identifier of the conversation.
-                message_content (MessageContent): The content of the message to add.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                dict: A dictionary containing the ID of the newly added message.
-
-            Raises:
-                R2RException: If the conversation is not found or the user doesn't have permission to add messages.
             """
-            message = Message(content=message_content.content)
-            message_id = await self.services.management.add_message(
+            message = Message(role=role, content=content)
+            message_id = await self.services["management"].add_message(
                 str(id),
                 message,
-                message_content.parent_id,
-                message_content.metadata,
+                parent_id,
+                metadata,
             )
             return {"message_id": message_id}
 
@@ -400,24 +361,10 @@ curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
             Update an existing message in a conversation.
 
             This endpoint updates the content of an existing message in a conversation.
-
-            Args:
-                id (UUID): The unique identifier of the conversation.
-                message_id (str): The ID of the message to update.
-                content (str): The new content for the message.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                dict: A dictionary containing the new message ID and new branch ID.
-
-            Raises:
-                R2RException: If the conversation or message is not found, or if the user doesn't have permission to update.
             """
-            new_message_id, new_branch_id = (
-                await self.services.management.edit_message(
-                    message_id, content
-                )
-            )
+            new_message_id, new_branch_id = await self.services[
+                "management"
+            ].edit_message(message_id, content)
             return {
                 "new_message_id": new_message_id,
                 "new_branch_id": new_branch_id,
@@ -460,18 +407,8 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
             List all branches in a conversation.
 
             This endpoint retrieves all branches associated with a specific conversation.
-
-            Args:
-                id (UUID): The unique identifier of the conversation.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                dict: A dictionary containing a list of branches in the conversation.
-
-            Raises:
-                R2RException: If the conversation is not found or the user doesn't have permission to view branches.
             """
-            branches = await self.services.management.branches_overview(
+            branches = await self.services["management"].branches_overview(
                 str(id)
             )
             return {"branches": branches}
