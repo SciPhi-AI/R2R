@@ -3,6 +3,7 @@ import math
 import time
 from typing import AsyncGenerator, Optional
 from uuid import UUID
+from fastapi import HTTPException
 
 from core.base import KGExtractionStatus, RunManager
 from core.base.abstractions import (
@@ -512,9 +513,9 @@ class KgService(Service):
             results.append(result)
 
         if not results:
-            raise R2RException(
-                message="No results generated from prompt tuning",
+            raise HTTPException(
                 status_code=500,
+                detail="No results generated from prompt tuning",
             )
 
         return results[0]

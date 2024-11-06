@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Dict
+from fastapi import HTTPException
 
 import jwt
 from fastapi import Depends
@@ -192,7 +192,7 @@ class R2RAuthProvider(AuthProvider):
         )
         return {"message": "Email verified successfully"}
 
-    async def login(self, email: str, password: str) -> Dict[str, Token]:
+    async def login(self, email: str, password: str) -> dict[str, Token]:
         logger = logging.getLogger()
         logger.debug(f"Attempting login for email: {email}")
 
@@ -209,8 +209,9 @@ class R2RAuthProvider(AuthProvider):
             logger.error(
                 f"Invalid hashed_password type: {type(user.hashed_password)}"
             )
-            raise R2RException(
-                status_code=500, message="Invalid password hash in database"
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid password hash in database",
             )
 
         try:
@@ -219,8 +220,9 @@ class R2RAuthProvider(AuthProvider):
             )
         except Exception as e:
             logger.error(f"Error during password verification: {str(e)}")
-            raise R2RException(
-                status_code=500, message="Error during password verification"
+            raise HTTPException(
+                status_code=500,
+                detail="Error during password verification",
             ) from e
 
         if not password_verified:
@@ -242,7 +244,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def refresh_access_token(
         self, refresh_token: str
-    ) -> Dict[str, Token]:
+    ) -> dict[str, Token]:
         token_data = await self.decode_token(refresh_token)
         if token_data.token_type != "refresh":
             raise R2RException(
@@ -267,13 +269,14 @@ class R2RAuthProvider(AuthProvider):
 
     async def change_password(
         self, user: UserResponse, current_password: str, new_password: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if not isinstance(user.hashed_password, str):
             logger.error(
                 f"Invalid hashed_password type: {type(user.hashed_password)}"
             )
-            raise R2RException(
-                status_code=500, message="Invalid password hash in database"
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid password hash in database",
             )
 
         if not self.crypto_provider.verify_password(
@@ -291,7 +294,7 @@ class R2RAuthProvider(AuthProvider):
         )
         return {"message": "Password changed successfully"}
 
-    async def request_password_reset(self, email: str) -> Dict[str, str]:
+    async def request_password_reset(self, email: str) -> dict[str, str]:
         user = await self.database_provider.get_user_by_email(email)
         if not user:
             # To prevent email enumeration, always return a success message
@@ -312,7 +315,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def confirm_password_reset(
         self, reset_token: str, new_password: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         user_id = await self.database_provider.get_user_id_by_reset_token(
             reset_token
         )
@@ -330,7 +333,7 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.remove_reset_token(user_id)
         return {"message": "Password reset successfully"}
 
-    async def logout(self, token: str) -> Dict[str, str]:
+    async def logout(self, token: str) -> dict[str, str]:
         # Add the token to a blacklist
         await self.database_provider.blacklist_token(token)
         return {"message": "Logged out successfully"}

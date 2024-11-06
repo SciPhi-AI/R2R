@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional, Sequence, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 from core.base import (
     Document,
@@ -135,8 +136,8 @@ class IngestionService(Service):
             logger.error(f"R2RException in ingest_file_ingress: {str(e)}")
             raise
         except Exception as e:
-            raise R2RException(
-                status_code=500, message=f"Error during ingestion: {str(e)}"
+            raise HTTPException(
+                status_code=500, detail=f"Error during ingestion: {str(e)}"
             )
 
     def _create_document_info_from_file(

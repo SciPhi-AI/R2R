@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID, uuid4
+from fastapi import HTTPException
 
 from core.base import (
     CollectionHandler,
@@ -495,9 +496,9 @@ class PostgresCollectionHandler(CollectionHandler):
             # Re-raise R2RExceptions as they are already handled
             raise
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"An error '{e}' occurred while assigning the document to the collection",
+                detail=f"An error '{e}' occurred while assigning the document to the collection",
             )
 
     async def document_collections(
