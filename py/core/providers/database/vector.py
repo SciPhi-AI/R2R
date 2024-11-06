@@ -1311,7 +1311,8 @@ class PostgresVectorHandler(VectorHandler):
         WITH metadata_scores AS (
             SELECT DISTINCT ON (v.document_id)
                 v.document_id,
-                v.metadata,
+                v.metadata as vector_metadata,
+                d.metadata as doc_metadata,
                 CASE WHEN $1 = '' THEN 0.0
                 ELSE
                     ts_rank_cd(
@@ -1321,6 +1322,7 @@ class PostgresVectorHandler(VectorHandler):
                     )
                 END as metadata_rank
             FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
+            LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
             WHERE v.metadata IS NOT NULL
             {"AND " + self._build_filters(settings.filters, params) if settings.filters else ""}
         ),
@@ -1342,7 +1344,7 @@ class PostgresVectorHandler(VectorHandler):
         final_scores AS (
             SELECT
                 m.document_id,
-                m.metadata,
+                COALESCE(m.doc_metadata, m.vector_metadata) as metadata,
                 CASE
                     WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
                         COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
@@ -1353,7 +1355,8 @@ class PostgresVectorHandler(VectorHandler):
                     ELSE 0
                 END as score,
                 COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
-                COALESCE(b.body_rank, 0) as debug_body_rank
+                COALESCE(b.body_rank, 0) as debug_body_rank,
+                m.doc_metadata IS NOT NULL as has_doc_metadata
             FROM metadata_scores m
             LEFT JOIN body_scores b ON m.document_id = b.document_id
             WHERE
@@ -1372,7 +1375,8 @@ class PostgresVectorHandler(VectorHandler):
             metadata,
             score,
             debug_metadata_rank,
-            debug_body_rank
+            debug_body_rank,
+            has_doc_metadata
         FROM final_scores
         ORDER BY score DESC
         OFFSET ${len(params) + 1}
@@ -1383,13 +1387,29 @@ class PostgresVectorHandler(VectorHandler):
 
         results = await self.connection_manager.fetch_query(query, params)
 
+        # Process results to match the original format
         return [
             {
                 "document_id": str(r["document_id"]),
                 "metadata": (
-                    json.dumps(r["metadata"])
-                    if not isinstance(r["metadata"], str)
-                    else r["metadata"]
+                    (
+                        # If we have document metadata, parse it from JSON if needed
+                        json.loads(r["metadata"])
+                        if isinstance(r["metadata"], str)
+                        else r["metadata"]
+                    )
+                    if r["has_doc_metadata"]
+                    else (
+                        # If no document metadata, create the expected structure
+                        {
+                            "document": (
+                                json.loads(r["metadata"])
+                                if isinstance(r["metadata"], str)
+                                else r["metadata"]
+                            ),
+                            "document_id": str(r["document_id"]),
+                        }
+                    )
                 ),
                 "score": float(r["score"]),
                 "debug_metadata_rank": float(r["debug_metadata_rank"]),
