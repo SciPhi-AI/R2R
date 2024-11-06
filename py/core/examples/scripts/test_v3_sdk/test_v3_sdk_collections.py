@@ -1,6 +1,5 @@
 from r2r import R2RClient
 
-first_ingested_document_id = "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
 user_email = "John.Doe1@email.com"
 
 client = R2RClient("http://localhost:7276", prefix="/v3")
@@ -20,7 +19,6 @@ result = client.users.login(
 )
 print("Login successful")
 
-collection_id = "b773f631-eff1-4ad7-bc00-9f10e5e554b3"
 # # Test 1: Create a new collection
 print("\n=== Test 1: Create Collection ===")
 create_result = client.collections.create(
@@ -52,9 +50,13 @@ update_result = client.collections.update(
 print("Updated collection:", update_result)
 
 # # Test 5: Add document to collection
+# list user documents
+documents = client.documents.list(limit=10, offset=0)
+print(documents)
+
 print("\n=== Test 5: Add Document to Collection ===")
 add_doc_result = client.collections.add_document(
-    id=collection_id, document_id=first_ingested_document_id
+    id=collection_id, document_id=documents["results"][0]["id"]
 )
 print("Added document to collection:", add_doc_result)
 
@@ -75,7 +77,7 @@ print("Collection users:", users_result)
 # Test 8: Remove document from collection
 print("\n=== Test 8: Remove Document from Collection ===")
 remove_doc_result = client.collections.remove_document(
-    id=collection_id, document_id=first_ingested_document_id
+    id=collection_id, document_id=documents["results"][0]["id"]
 )
 print("Removed document from collection:", remove_doc_result)
 

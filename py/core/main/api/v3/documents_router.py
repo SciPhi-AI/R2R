@@ -970,6 +970,8 @@ class DocumentsRouter(BaseRouterV3):
 
             The results are paginated and ordered by collection creation date, with the most recently
             created collections appearing first.
+
+            NOTE - This endpoint is only available to superusers, it will be extended to regular users in a future release.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
