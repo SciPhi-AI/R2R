@@ -296,7 +296,7 @@ class CollectionHandler(Handler):
     @abstractmethod
     async def list_collections(
         self, offset: int = 0, limit: int = -1
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
+    ) -> dict[str, Any]:
         """List collections with pagination."""
         pass
 
@@ -447,13 +447,13 @@ class UserHandler(Handler):
     @abstractmethod
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         pass
 
     @abstractmethod
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         pass
 
     @abstractmethod
@@ -558,13 +558,12 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_chunk(self, chunk_id: UUID) -> Optional[dict[str, Any]]:
+    async def get_chunk(self, chunk_id: UUID) -> dict:
         pass
 
     @abstractmethod
     async def create_index(
         self,
-        name: Optional[str] = None,
         table_name: Optional[VectorTableName] = None,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_method: IndexMethod = IndexMethod.auto,
@@ -580,7 +579,7 @@ class VectorHandler(Handler):
     @abstractmethod
     async def list_indices(
         self, offset: int = 0, limit: int = 10, filters: Optional[dict] = None
-    ) -> list[dict]:
+    ) -> dict:
         pass
 
     @abstractmethod
@@ -1198,7 +1197,7 @@ class DatabaseProvider(Provider):
 
     async def list_collections(
         self, offset: int = 0, limit: int = -1
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
+    ) -> dict[str, Any]:
         return await self.collection_handler.list_collections(offset, limit)
 
     async def get_collections_by_ids(
@@ -1339,14 +1338,14 @@ class DatabaseProvider(Provider):
 
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         return await self.user_handler.add_user_to_collection(
             user_id, collection_id
         )
 
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         return await self.user_handler.remove_user_from_collection(
             user_id, collection_id
         )
@@ -1454,7 +1453,7 @@ class DatabaseProvider(Provider):
             document_id, offset, limit, include_vectors
         )
 
-    async def get_chunk(self, chunk_id: UUID) -> Optional[dict[str, Any]]:
+    async def get_chunk(self, chunk_id: UUID) -> dict:
         return await self.vector_handler.get_chunk(chunk_id)
 
     async def create_index(
@@ -1481,7 +1480,7 @@ class DatabaseProvider(Provider):
 
     async def list_indices(
         self, offset: int = 0, limit: int = 10, filters: Optional[dict] = None
-    ) -> list[dict]:
+    ) -> dict:
         return await self.vector_handler.list_indices(offset, limit, filters)
 
     async def delete_index(

@@ -849,7 +849,7 @@ class DocumentsRouter(BaseRouterV3):
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return True
+            return True  # type: ignore
 
         @self.router.delete(
             "/documents/by-filter",
@@ -911,7 +911,9 @@ class DocumentsRouter(BaseRouterV3):
                         message=f"Invalid filter format for key: {key}",
                     )
 
-            return await self.service.management.delete(filters=filters_dict)
+            return await self.services["management"].delete(
+                filters=filters_dict
+            )
 
         @self.router.get(
             "/documents/{id}/collections",

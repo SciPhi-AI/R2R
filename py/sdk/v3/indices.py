@@ -1,19 +1,9 @@
 import json
 import logging
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import AsyncGenerator, Optional, Union
-from uuid import UUID
+from inspect import isasyncgenfunction, iscoroutinefunction
+from typing import Optional
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
-
-# from ..models import (
-#     IndexConfig,
-#     WrappedCreateVectorIndexResponse,
-#     WrappedListVectorIndicesResponse,
-#     WrappedGetIndexResponse,
-#     WrappedUpdateIndexResponse,
-#     WrappedDeleteVectorIndexResponse,
-# )
 
 logger = logging.getLogger()
 
@@ -63,7 +53,7 @@ class IndicesSDK:
         Returns:
             WrappedListVectorIndicesResponse: The response containing the list of indices.
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
         }

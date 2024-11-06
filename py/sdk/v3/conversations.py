@@ -42,7 +42,7 @@ class ConversationsSDK:
         Returns:
             dict: List of conversations and pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
         }

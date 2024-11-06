@@ -1,5 +1,4 @@
-from typing import List, Optional, Union
-from uuid import UUID
+from typing import Optional, Union
 
 from fastapi import Body, Depends, Path, Query
 from pydantic import BaseModel, Field, Json
@@ -7,7 +6,6 @@ from pydantic import BaseModel, Field, Json
 from core.base import R2RException, RunType
 from core.base.api.models import (
     ResultsWrapper,
-    WrappedDeleteResponse,
     WrappedGetPromptsResponse,
     WrappedPromptMessageResponse,
 )
@@ -86,23 +84,13 @@ curl -X POST "https://api.example.com/v3/prompts" \\
             Create a new prompt with the given configuration.
 
             This endpoint allows superusers to create a new prompt with a specified name, template, and input types.
-
-            Args:
-                config (PromptConfig): The configuration for the new prompt.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedPromptMessageResponse: Details of the newly created prompt.
-
-            Raises:
-                R2RException: If the user is not a superuser or if there's an error in creating the prompt.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can create prompts.",
                     403,
                 )
-            result = await self.services.add_prompt(
+            result = await self.services["management"].add_prompt(
                 config.name, config.template, config.input_types
             )
             return result
@@ -141,23 +129,14 @@ curl -X GET "https://api.example.com/v3/prompts" \\
             List all available prompts.
 
             This endpoint retrieves a list of all prompts in the system. Only superusers can access this endpoint.
-
-            Args:
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedGetPromptsResponse: A list of all available prompts.
-
-            Raises:
-                R2RException: If the user is not a superuser.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can list prompts.",
                     403,
                 )
-            result = await self.services.get_all_prompts()
-            return {"prompts": result}
+            result = await self.services["management"].get_all_prompts()
+            return {"prompts": result}  # type: ignore
 
         @self.router.get(
             "/prompts/{name}",
@@ -205,28 +184,16 @@ curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22nam
 
             This endpoint retrieves a specific prompt and allows for optional inputs and template override.
             Only superusers can access this endpoint.
-
-            Args:
-                name (str): The name of the prompt to retrieve.
-                inputs (dict, optional): JSON-encoded inputs for the prompt.
-                prompt_override (str, optional): An override for the prompt template.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedPromptMessageResponse: The requested prompt with applied inputs and/or override.
-
-            Raises:
-                R2RException: If the user is not a superuser or if the prompt is not found.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can retrieve prompts.",
                     403,
                 )
-            result = await self.services.get_prompt(
+            result = await self.services["management"].get_prompt(
                 name, inputs, prompt_override
             )
-            return result
+            return result  # type: ignore
 
         @self.router.put(
             "/prompts/{name}",
@@ -266,7 +233,7 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
             template: Optional[str] = Body(
                 None, description="Updated prompt template"
             ),
-            input_types: Optional[dict[str, str]] = Body(
+            input_types: Optional[Json[dict[str, str]]] = Body(
                 {}, description="Updated input types"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -275,28 +242,16 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
             Update an existing prompt's template and/or input types.
 
             This endpoint allows superusers to update the template and input types of an existing prompt.
-
-            Args:
-                name (str): The name of the prompt to update.
-                template (str, optional): The updated template string for the prompt.
-                input_types (dict, optional): The updated dictionary mapping input names to their types.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedPromptMessageResponse: The updated prompt details.
-
-            Raises:
-                R2RException: If the user is not a superuser or if the prompt is not found.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can update prompts.",
                     403,
                 )
-            result = await self.services.update_prompt(
+            result = await self.services["management"].update_prompt(
                 name, template, input_types
             )
-            return result
+            return result  # type: ignore
 
         @self.router.delete(
             "/prompts/{name}",
@@ -333,21 +288,11 @@ curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
             Delete a prompt by name.
 
             This endpoint allows superusers to delete an existing prompt.
-
-            Args:
-                name (str): The name of the prompt to delete.
-                auth_user: The authenticated user making the request.
-
-            Returns:
-                WrappedDeleteResponse: Confirmation of the deletion.
-
-            Raises:
-                R2RException: If the user is not a superuser or if the prompt is not found.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can delete prompts.",
                     403,
                 )
-            await self.services.delete_prompt(name)
-            return None
+            await self.services["management"].delete_prompt(name)
+            return True  # type: ignore

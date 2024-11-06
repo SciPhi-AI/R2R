@@ -203,7 +203,7 @@ curl -X POST "https://api.example.com/v3/chunks" \\
                 raise R2RException("No chunks provided", 400)
 
             # Group chunks by document_id for efficiency
-            chunks_by_document = {}
+            chunks_by_document: dict = {}
             for chunk in raw_chunks:
                 if chunk.document_id not in chunks_by_document:
                     chunks_by_document[chunk.document_id] = []
@@ -271,7 +271,7 @@ curl -X POST "https://api.example.com/v3/chunks" \\
                     }
                     responses.append(raw_message)
 
-            return responses
+            return responses  # type: ignore
 
         @self.router.post(
             "/chunks/search",
@@ -369,7 +369,7 @@ chunk = client.chunks.retrieve(
             ):
                 raise R2RException("Not authorized to access this chunk", 403)
 
-            return ChunkResponse(
+            return ChunkResponse(  # type: ignore
                 id=chunk["chunk_id"],
                 text=chunk["text"],
                 metadata=chunk["metadata"],
@@ -438,7 +438,8 @@ result = client.chunks.update(
                 self.services["ingestion"]
             )
             await simple_ingestor["update-chunk"](workflow_input)
-            return ChunkResponse(
+
+            return ChunkResponse(  # type: ignore
                 id=chunk_update.id,
                 text=chunk_update.text,
                 metadata=chunk_update.metadata or existing_chunk["metadata"],
@@ -447,42 +448,42 @@ result = client.chunks.update(
                 # vector = existing_chunk.get('vector')
             )
 
-        @self.router.post(
-            "/chunks/{id}/enrich",
-            summary="Enrich Chunk",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+        #         @self.router.post(
+        #             "/chunks/{id}/enrich",
+        #             summary="Enrich Chunk",
+        #             openapi_extra={
+        #                 "x-codeSamples": [
+        #                     {
+        #                         "lang": "Python",
+        #                         "source": """
+        # from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-result = client.chunks.enrich(
-    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-    enrichment_config={"key": "value"}
-)
-""",
-                    }
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def enrich_chunk(
-            id: Json[UUID] = Path(...),
-            enrichment_config: Json[dict] = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[ChunkResponse]:
-            """
-            Enrich a chunk with additional processing and metadata.
+        # client = R2RClient("http://localhost:7272")
+        # result = client.chunks.enrich(
+        #     id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #     enrichment_config={"key": "value"}
+        # )
+        # """,
+        #                     }
+        #                 ]
+        #             },
+        #         )
+        #         @self.base_endpoint
+        #         async def enrich_chunk(
+        #             id: Json[UUID] = Path(...),
+        #             enrichment_config: Json[dict] = Body(...),
+        #             auth_user=Depends(self.providers.auth.auth_wrapper),
+        #         ) -> ResultsWrapper[ChunkResponse]:
+        #             """
+        #             Enrich a chunk with additional processing and metadata.
 
-            This endpoint allows adding additional enrichments to an existing chunk,
-            such as entity extraction, classification, or custom processing defined
-            in the enrichment_config.
+        #             This endpoint allows adding additional enrichments to an existing chunk,
+        #             such as entity extraction, classification, or custom processing defined
+        #             in the enrichment_config.
 
-            Users can only enrich chunks they own unless they are superusers.
-            """
-            pass
+        #             Users can only enrich chunks they own unless they are superusers.
+        #             """
+        #             pass
 
         @self.router.delete(
             "/chunks/{id}",
@@ -520,7 +521,7 @@ result = client.chunks.delete(
                 raise R2RException(f"Chunk {id} not found", 404)
 
             await self.services["management"].delete({"$eq": {"chunk_id": id}})
-            return True
+            return True  # type: ignore
 
         @self.router.get(
             "/chunks",
@@ -613,4 +614,4 @@ results = client.chunks.list(
                 for chunk in results["results"]
             ]
 
-            return (chunks, results["page_info"])
+            return (chunks, results["page_info"])  # type: ignore

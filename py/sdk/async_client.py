@@ -19,6 +19,7 @@ from .v3.collections import CollectionsSDK
 from .v3.conversations import ConversationsSDK
 from .v3.documents import DocumentsSDK
 from .v3.indices import IndicesSDK
+from .v3.prompts import PromptsSDK
 from .v3.retrieval import RetrievalSDK
 from .v3.users import UsersSDK
 
@@ -58,6 +59,7 @@ class R2RAsyncClient(
         self.users = UsersSDK(self)
         self.collections = CollectionsSDK(self)
         self.conversations = ConversationsSDK(self)
+        self.prompts = PromptsSDK(self)
 
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         url = self._get_full_url(endpoint)

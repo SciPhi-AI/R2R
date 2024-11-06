@@ -574,8 +574,11 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
+
+            filters = {"table_name": table_name} if table_name else {}
             indices = await self.service.providers.database.list_indices(
-                table_name=table_name
+                # table_name=table_name
+                filters=filters
             )
             return {"indices": indices}  # type: ignore
 

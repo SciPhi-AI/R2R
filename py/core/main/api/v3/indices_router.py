@@ -74,8 +74,8 @@ class IndexConfig(BaseModel):
     table_name: Optional[str] = VectorTableName.VECTORS
     index_method: Optional[str] = IndexMethod.hnsw
     index_measure: Optional[str] = IndexMeasure.cosine_distance
-    index_arguments: Optional[dict] = Union[IndexArgsIVFFlat, IndexArgsHNSW]
-    index_name: str = None
+    index_arguments: Optional[Union[IndexArgsIVFFlat, IndexArgsHNSW]] = None
+    index_name: Optional[str] = None
     index_column: Optional[str] = None
     concurrently: bool = True
 

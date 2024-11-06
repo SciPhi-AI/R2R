@@ -698,7 +698,7 @@ class PostgresVectorHandler(VectorHandler):
 
         return {"results": chunks, "total_entries": total}
 
-    async def get_chunk(self, chunk_id: UUID) -> Optional[dict[str, Any]]:
+    async def get_chunk(self, chunk_id: UUID) -> dict:
         query = f"""
         SELECT chunk_id, document_id, user_id, collection_ids, text, metadata
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
@@ -718,7 +718,7 @@ class PostgresVectorHandler(VectorHandler):
                 "text": result["text"],
                 "metadata": json.loads(result["metadata"]),
             }
-        return None
+        raise ValueError(f"Chunk with ID {chunk_id} not found")
 
     async def create_index(
         self,
@@ -1000,7 +1000,7 @@ class PostgresVectorHandler(VectorHandler):
         offset: int = 0,
         limit: int = 10,
         filters: Optional[dict[str, Any]] = None,
-    ) -> dict[str, Any]:
+    ) -> dict:
         where_clauses = []
         params: list[Any] = [self.project_name]  # Start with schema name
         param_count = 1

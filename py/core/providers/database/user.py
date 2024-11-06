@@ -366,7 +366,7 @@ class PostgresUserHandler(UserHandler):
 
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 
@@ -387,7 +387,7 @@ class PostgresUserHandler(UserHandler):
 
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 

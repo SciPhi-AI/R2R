@@ -179,7 +179,7 @@ class CollectionsRouter(BaseRouterV3):
                 "management"
             ].list_collections(offset=offset, limit=min(max(limit, 1), 1000))
 
-            return list_collections_response["results"], {
+            return list_collections_response["results"], {  # type: ignore
                 "total_entries": list_collections_response["total_entries"]
             }
 
@@ -236,7 +236,7 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             result = await self.services["management"].get_collection(id)
-            return result
+            return result  # type: ignore
 
         @self.router.post(
             "/collections/{id}",
@@ -300,7 +300,7 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["management"].update_collection(
+            return await self.services["management"].update_collection(  # type: ignore
                 id, name=config.name, description=config.description
             )
 
@@ -359,7 +359,7 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             await self.services["management"].delete_collection(id)
-            return True, {}
+            return True  # type: ignore
 
         @self.router.post(
             "/collections/{id}/documents/{document_id}",
@@ -415,8 +415,7 @@ class CollectionsRouter(BaseRouterV3):
             result = await self.services[
                 "management"
             ].assign_document_to_collection(document_id, id)
-            print("result = ", result)
-            return result
+            return result  # type: ignore
 
         @self.router.get(
             "/collections/{id}/documents",
@@ -498,7 +497,7 @@ class CollectionsRouter(BaseRouterV3):
                 "management"
             ].documents_in_collection(id, offset, limit)
 
-            return documents_in_collection_response["results"], {
+            return documents_in_collection_response["results"], {  # type: ignore
                 "total_entries": documents_in_collection_response[
                     "total_entries"
                 ]
@@ -566,7 +565,7 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_document_from_collection(
                 document_id, id
             )
-            return True, {}
+            return True  # type: ignore
 
         @self.router.get(
             "/collections/{id}/users",
@@ -652,7 +651,7 @@ class CollectionsRouter(BaseRouterV3):
                 limit=min(max(limit, 1), 1000),
             )
 
-            return users_in_collection_response["results"], {
+            return users_in_collection_response["results"], {  # type: ignore
                 "total_entries": users_in_collection_response["total_entries"]
             }
 
@@ -717,7 +716,7 @@ class CollectionsRouter(BaseRouterV3):
             result = await self.services["management"].add_user_to_collection(
                 user_id, id
             )
-            return result
+            return result  # type: ignore
 
         @self.router.delete(
             "/collections/{id}/users/{user_id}",
@@ -780,4 +779,4 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_user_from_collection(
                 user_id, id
             )
-            return True
+            return True  # type: ignore

@@ -56,7 +56,7 @@ class CollectionsSDK:
         Returns:
             dict: List of collections and pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
         }
@@ -152,7 +152,7 @@ class CollectionsSDK:
         Returns:
             dict: List of documents and pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
         }
@@ -225,7 +225,7 @@ class CollectionsSDK:
         Returns:
             dict: List of users and pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
         }

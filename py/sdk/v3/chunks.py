@@ -34,7 +34,7 @@ class ChunksSDK:
         Returns:
             dict: Creation results containing processed chunk information
         """
-        data = {}
+        data: dict = {}
         data["raw_chunks"] = chunks  # json.dumps(chunks)
         if run_with_orchestration != None:
             data["run_with_orchestration"] = run_with_orchestration
@@ -98,7 +98,7 @@ class ChunksSDK:
         Returns:
             dict: List of chunks and pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
         }
@@ -107,56 +107,6 @@ class ChunksSDK:
 
         return await self.client._make_request(
             "GET", f"documents/{str(document_id)}/chunks", params=params
-        )
-
-    async def search(
-        self,
-        query: str,
-        filter_document_ids: Optional[List[Union[str, UUID]]] = None,
-        filter_extraction_ids: Optional[List[Union[str, UUID]]] = None,
-        filter_collection_ids: Optional[List[Union[str, UUID]]] = None,
-        metadata_filter: Optional[Dict[str, Any]] = None,
-        limit: int = 10,
-        min_score: float = 0.0,
-    ) -> dict:
-        """
-        Search chunks by semantic similarity.
-
-        Args:
-            query (str): Search query text
-            filter_document_ids (Optional[List[Union[str, UUID]]]): Filter by document IDs
-            filter_extraction_ids (Optional[List[Union[str, UUID]]]): Filter by extraction IDs
-            filter_collection_ids (Optional[List[Union[str, UUID]]]): Filter by collection IDs
-            metadata_filter (Optional[Dict[str, Any]]): Filter by metadata
-            limit (int): Maximum number of results to return
-            min_score (float): Minimum similarity score threshold
-
-        Returns:
-            dict: Search results with similarity scores
-        """
-        params = {
-            "query": query,
-            "limit": limit,
-            "min_score": min_score,
-        }
-
-        if filter_document_ids:
-            params["filter_document_ids"] = [
-                str(doc_id) for doc_id in filter_document_ids
-            ]
-        if filter_extraction_ids:
-            params["filter_extraction_ids"] = [
-                str(ext_id) for ext_id in filter_extraction_ids
-            ]
-        if filter_collection_ids:
-            params["filter_collection_ids"] = [
-                str(col_id) for col_id in filter_collection_ids
-            ]
-        if metadata_filter:
-            params["metadata_filter"] = json.dumps(metadata_filter)
-
-        return await self.client._make_request(
-            "GET", "chunks/search", params=params
         )
 
     async def delete(
@@ -196,7 +146,7 @@ class ChunksSDK:
                 - results: List of chunks
                 - page_info: Pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
             "sort_by": sort_by,

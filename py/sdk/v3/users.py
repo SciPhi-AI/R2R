@@ -192,7 +192,7 @@ class UsersSDK:
         Returns:
             dict: List of users and pagination information
         """
-        params = {
+        params: dict = {
             "offset": offset,
             "limit": limit,
             "sort_order": sort_order,
@@ -247,7 +247,7 @@ class UsersSDK:
         Returns:
             dict: Updated user information
         """
-        data = {}
+        data: dict = {}
         if email is not None:
             data["email"] = email
         if is_superuser is not None:

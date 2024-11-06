@@ -86,7 +86,7 @@ curl -X POST "https://api.example.com/v3/conversations" \\
             """
             result = await self.services["management"].create_conversation()
 
-            return {"conversation_id": result}
+            return {"conversation_id": result}  # type: ignore
 
         @self.router.get(
             "/conversations",
@@ -151,7 +151,7 @@ curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10&sort_by=
                 offset=offset,
                 limit=limit,
             )
-            return conversations_response["results"], {
+            return conversations_response["results"], {  # type: ignore
                 "total_entries": conversations_response["total_entries"]
             }
 
@@ -199,7 +199,7 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
-            return await self.services["management"].get_conversation(
+            return await self.services["management"].get_conversation(  # type: ignore
                 str(id),
                 branch_id,
             )
@@ -244,7 +244,7 @@ curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456
             This endpoint deletes a conversation identified by its UUID.
             """
             await self.services["management"].delete_conversation(str(id))
-            return True
+            return True  # type: ignore
 
         @self.router.post(
             "/conversations/{id}/messages",
@@ -310,7 +310,7 @@ curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-4
                 parent_id,
                 metadata,
             )
-            return {"message_id": message_id}
+            return {"message_id": message_id}  # type: ignore
 
         @self.router.put(
             "/conversations/{id}/messages/{message_id}",
@@ -365,7 +365,7 @@ curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
             new_message_id, new_branch_id = await self.services[
                 "management"
             ].edit_message(message_id, content)
-            return {
+            return {  # type: ignore
                 "new_message_id": new_message_id,
                 "new_branch_id": new_branch_id,
             }
@@ -411,7 +411,7 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
             branches = await self.services["management"].branches_overview(
                 str(id)
             )
-            return {"branches": branches}
+            return {"branches": branches}  # type: ignore
 
         # Commented endpoints to be published after more testing
         # @self.router.get("/conversations/{id}/branches/{branch_id}/next")

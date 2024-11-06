@@ -31,55 +31,42 @@ class UserResponse(BaseModel):
     id: UUID = Field(
         ...,
         description="Unique identifier for the user",
-        example="550e8400-e29b-41d4-a716-446655440000",
     )
     username: str = Field(
-        ..., description="User's login username", example="john.doe"
+        ...,
+        description="User's login username",
     )
     email: str = Field(
-        ..., description="User's email address", example="john.doe@example.com"
+        ...,
+        description="User's email address",
     )
     is_active: bool = Field(
         ...,
         description="Whether the user account is currently active",
-        example=True,
     )
     is_superuser: bool = Field(
         ...,
         description="Whether the user has superuser privileges",
-        example=False,
     )
     created_at: str = Field(
         ...,
         description="ISO formatted timestamp of when the user was created",
-        example="2024-03-15T14:30:00Z",
     )
     updated_at: str = Field(
         ...,
         description="ISO formatted timestamp of when the user was last updated",
-        example="2024-03-20T09:15:00Z",
     )
     last_login: Optional[str] = Field(
         None,
         description="ISO formatted timestamp of user's last login",
-        example="2024-03-22T16:45:00Z",
     )
     collection_ids: List[UUID] = Field(
         ...,
         description="List of collection IDs the user has access to",
-        example=[
-            "750e8400-e29b-41d4-a716-446655440000",
-            "850e8400-e29b-41d4-a716-446655440000",
-        ],
     )
     metadata: Optional[dict] = Field(
         None,
         description="Additional user metadata stored as key-value pairs",
-        example={
-            "department": "Engineering",
-            "title": "Senior Developer",
-            "location": "New York",
-        },
     )
 
     class Config:
@@ -106,135 +93,28 @@ class UserResponse(BaseModel):
         }
 
 
-# class UserOverviewResponse(BaseModel):
-#     """Summary user information for list views"""
-
-#     id: UUID = Field(
-#         ...,
-#         description="Unique identifier for the user",
-#         example="550e8400-e29b-41d4-a716-446655440000",
-#     )
-#     username: str = Field(
-#         ..., description="User's login username", example="john.doe"
-#     )
-#     email: str = Field(
-#         ..., description="User's email address", example="john.doe@example.com"
-#     )
-#     is_active: bool = Field(
-#         ...,
-#         description="Whether the user account is currently active",
-#         example=True,
-#     )
-#     is_superuser: bool = Field(
-#         ...,
-#         description="Whether the user has superuser privileges",
-#         example=False,
-#     )
-#     collection_count: int = Field(
-#         ...,
-#         description="Total number of collections the user has access to",
-#         example=5,
-#     )
-#     created_at: str = Field(
-#         ...,
-#         description="ISO formatted timestamp of when the user was created",
-#         example="2024-03-15T14:30:00Z",
-#     )
-
-#     class Config:
-#         json_schema_extra = {
-#             "example": {
-#                 "id": "550e8400-e29b-41d4-a716-446655440000",
-#                 "username": "john.doe",
-#                 "email": "john.doe@example.com",
-#                 "is_active": True,
-#                 "is_superuser": False,
-#                 "collection_count": 5,
-#                 "created_at": "2024-03-15T14:30:00Z",
-#             }
-#         }
-
-
-# class UserCollectionResponse(BaseModel):
-#     """Collection information associated with a user"""
-
-#     collection_id: UUID = Field(
-#         ...,
-#         description="Unique identifier for the collection",
-#         example="750e8400-e29b-41d4-a716-446655440000",
-#     )
-#     name: str = Field(
-#         ...,
-#         description="Name of the collection",
-#         example="Project Documentation",
-#     )
-#     description: Optional[str] = Field(
-#         None,
-#         description="Optional description of the collection",
-#         example="Technical documentation for the main project",
-#     )
-#     created_at: str = Field(
-#         ...,
-#         description="ISO formatted timestamp of when the collection was created",
-#         example="2024-03-15T14:30:00Z",
-#     )
-#     updated_at: str = Field(
-#         ...,
-#         description="ISO formatted timestamp of when the collection was last updated",
-#         example="2024-03-20T09:15:00Z",
-#     )
-#     document_count: int = Field(
-#         ...,
-#         description="Total number of documents in the collection",
-#         example=42,
-#     )
-
-#     class Config:
-#         json_schema_extra = {
-#             "example": {
-#                 "collection_id": "750e8400-e29b-41d4-a716-446655440000",
-#                 "name": "Project Documentation",
-#                 "description": "Technical documentation for the main project",
-#                 "created_at": "2024-03-15T14:30:00Z",
-#                 "updated_at": "2024-03-20T09:15:00Z",
-#                 "document_count": 42,
-#             }
-#         }
-
-
 class UserActivityResponse(BaseModel):
     """User activity statistics"""
 
     total_documents: int = Field(
         ...,
         description="Total number of documents owned by the user",
-        example=156,
     )
     total_collections: int = Field(
         ...,
         description="Total number of collections the user has access to",
-        example=8,
     )
     last_activity: Optional[str] = Field(
         None,
         description="ISO formatted timestamp of the user's last activity",
-        example="2024-03-22T16:45:00Z",
     )
     recent_collections: List[UUID] = Field(
         ...,
         description="List of recently accessed collection IDs",
-        example=[
-            "750e8400-e29b-41d4-a716-446655440000",
-            "850e8400-e29b-41d4-a716-446655440000",
-        ],
     )
     recent_documents: List[UUID] = Field(
         ...,
         description="List of recently accessed document IDs",
-        example=[
-            "950e8400-e29b-41d4-a716-446655440000",
-            "a50e8400-e29b-41d4-a716-446655440000",
-        ],
     )
 
     class Config:
@@ -653,7 +533,7 @@ curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&emai
             #     auth_user=Depends(self.providers.auth.auth_wrapper),
             # ) -> PaginatedResultsWrapper[List[UserOverviewResponse]]:
             user_ids: Optional[list[UUID]] = Query(
-                [], description="List of user IDs to filter by"
+                None, description="List of user IDs to filter by"
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination"),
             limit: int = Query(
@@ -675,13 +555,9 @@ curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&emai
                     403,
                 )
 
-            user_uuids = (
-                [UUID(user_id) for user_id in user_ids] if user_ids else None
-            )
-
             users_overview_response = await self.services[
                 "management"
-            ].users_overview(user_ids=user_uuids, offset=offset, limit=limit)
+            ].users_overview(user_ids=user_ids, offset=offset, limit=limit)
             return users_overview_response["results"], {  # type: ignore
                 "total_entries": users_overview_response["total_entries"]
             }
@@ -850,7 +726,7 @@ curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000
             await self.services["management"].add_user_to_collection(  # type: ignore
                 id, collection_id
             )
-            return True
+            return True  # type: ignore
 
         @self.router.post(
             "/users/{id}/collections/{collection_id}",
@@ -908,7 +784,7 @@ curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-4466554400
             await self.services["management"].remove_user_from_collection(  # type: ignore
                 id, collection_id
             )
-            return True
+            return True  # type: ignore
 
         @self.router.post(
             "/users/{id}",

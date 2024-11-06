@@ -560,7 +560,7 @@ class ManagementService(Service):
     @telemetry_event("AddUserToCollection")
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         return await self.providers.database.add_user_to_collection(
             user_id, collection_id
         )
@@ -568,7 +568,7 @@ class ManagementService(Service):
     @telemetry_event("RemoveUserFromCollection")
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> None:
+    ) -> bool:
         return await self.providers.database.remove_user_from_collection(
             user_id, collection_id
         )
