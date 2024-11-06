@@ -26,7 +26,7 @@ let newCollectionId: string;
  *     X updateUser
  *     - refreshAccessToken
  *     X changePassword
- *     X requestPasswordReset
+ *     - requestPasswordReset
  *     X confirmPasswordReset
  *     X deleteUser
  *    Ingestion:
@@ -239,6 +239,12 @@ describe("r2rClient Integration Tests", () => {
 
   test("Refresh access token", async () => {
     await expect(client.refreshAccessToken()).resolves.not.toThrow();
+  });
+
+  test("Request password reset", async () => {
+    await expect(
+      client.requestPasswordReset("admin@example.com"),
+    ).resolves.not.toThrow();
   });
 
   test("Get analytics", async () => {
