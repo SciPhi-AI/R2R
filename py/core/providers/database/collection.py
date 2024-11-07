@@ -3,6 +3,7 @@ import logging
 from typing import Any, Optional, Union
 from uuid import UUID, uuid4
 from fastapi import HTTPException
+from asyncpg.exceptions import UniqueViolationError
 
 from core.base import (
     CollectionHandler,
@@ -67,10 +68,8 @@ class PostgresCollectionHandler(CollectionHandler):
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-        if not name:
+        if not name and not collection_id:
             name = self.config.default_collection_name
-
-        if not collection_id:
             collection_id = generate_default_user_collection_id(user_id)
 
         query = f"""
@@ -86,20 +85,30 @@ class PostgresCollectionHandler(CollectionHandler):
             description,
         ]
 
-        result = await self.connection_manager.fetchrow_query(query, params)
-        if not result:
-            raise R2RException(status_code=404, message="Collection not found")
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+            if not result:
+                raise R2RException(
+                    status_code=404, message="Collection not found"
+                )
 
-        return CollectionResponse(
-            collection_id=result["collection_id"],
-            user_id=result["user_id"],
-            name=result["name"],
-            description=result["description"],
-            created_at=result["created_at"],
-            updated_at=result["updated_at"],
-            user_count=0,
-            document_count=0,
-        )
+            return CollectionResponse(
+                collection_id=result["collection_id"],
+                user_id=result["user_id"],
+                name=result["name"],
+                description=result["description"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                user_count=0,
+                document_count=0,
+            )
+        except UniqueViolationError:
+            raise R2RException(
+                status_code=409,
+                message="Collection with this ID already exists",
+            )
 
     async def update_collection(
         self,
