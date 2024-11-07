@@ -25,19 +25,15 @@ class ConversationsSDK:
 
     async def list(
         self,
-        offset: int = 0,
-        limit: int = 100,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = "desc",
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List conversations with pagination and sorting options.
 
         Args:
-            offset (int): Number of records to skip
-            limit (int): Maximum number of records to return
-            sort_by (Optional[str]): Field to sort by
-            sort_order (Optional[str]): Sort order (asc or desc)
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of conversations and pagination information
@@ -46,10 +42,6 @@ class ConversationsSDK:
             "offset": offset,
             "limit": limit,
         }
-        if sort_by:
-            params["sort_by"] = sort_by
-        if sort_order:
-            params["sort_order"] = sort_order
 
         return await self.client._make_request(
             "GET", "conversations", params=params

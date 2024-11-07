@@ -241,6 +241,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         )
 
         # First get the chunks response
+        # FIXME: Is this call really necessary?
         chunks_response = await self.database_provider.list_document_chunks(
             document_id=document_id
         )

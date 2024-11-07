@@ -227,7 +227,7 @@ class PostgresCollectionHandler(CollectionHandler):
             raise R2RException(status_code=404, message="Collection not found")
 
     async def list_collections(
-        self, offset: int = 0, limit: int = -1
+        self, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         """List collections with pagination."""
         query = f"""
@@ -289,7 +289,7 @@ class PostgresCollectionHandler(CollectionHandler):
         ]
 
     async def documents_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[DocumentInfo], int]]:
         """
         Get all documents in a specific collection with pagination.
@@ -345,9 +345,9 @@ class PostgresCollectionHandler(CollectionHandler):
 
     async def get_collections_overview(
         self,
+        offset: int,
+        limit: int,
         collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[CollectionOverviewResponse], int]]:
         """Get an overview of collections, optionally filtered by collection IDs, with pagination."""
         query = f"""
@@ -402,7 +402,7 @@ class PostgresCollectionHandler(CollectionHandler):
         return {"results": collections, "total_entries": total_entries}
 
     async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = -1
+        self, user_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
@@ -500,7 +500,7 @@ class PostgresCollectionHandler(CollectionHandler):
             )
 
     async def document_collections(
-        self, document_id: UUID, offset: int = 0, limit: int = -1
+        self, document_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         query = f"""
             SELECT g.collection_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries

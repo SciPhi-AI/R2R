@@ -507,13 +507,13 @@ class DocumentsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first document to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
-                ge=-1,
+                ge=1,
                 le=1000,
-                description="The maximum number of documents to retrieve. If set to -1, all documents will be returned, otherwise up to 1,000 documents will be returned.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[DocumentResponse]]:
@@ -951,13 +951,13 @@ class DocumentsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first collection to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of collections to retrieve, up to 1,000.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[CollectionResponse]]:

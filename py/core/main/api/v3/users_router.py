@@ -503,7 +503,7 @@ users = client.users.list(
                     {
                         "lang": "Shell",
                         "source": """
-curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false&sort_by=created_at&sort_order=desc" \\
+curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false" \\
      -H "Authorization: Bearer YOUR_API_KEY"
 """,
                     },
@@ -520,27 +520,21 @@ curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&emai
             #     email: Optional[str] = Query(None, example="john@example.com"),
             #     is_active: Optional[bool] = Query(None, example=True),
             #     is_superuser: Optional[bool] = Query(None, example=False),
-            #     sort_by: Optional[str] = Query(
-            #         None,
-            #         example="created_at",
-            #         description="Field to sort by (created_at, username, email)",
-            #     ),
-            #     sort_order: Optional[str] = Query(
-            #         "desc",
-            #         example="desc",
-            #         description="Sort order (asc or desc)",
-            #     ),
             #     auth_user=Depends(self.providers.auth.auth_wrapper),
             # ) -> PaginatedResultsWrapper[List[UserOverviewResponse]]:
             user_ids: Optional[list[UUID]] = Query(
                 None, description="List of user IDs to filter by"
             ),
-            offset: int = Query(0, ge=0, description="Offset for pagination"),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="Limit for pagination, max 1000",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):  #  -> WrappedUserOverviewResponse:
@@ -654,8 +648,17 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/
             id: UUID = Path(
                 ..., example="550e8400-e29b-41d4-a716-446655440000"
             ),
-            offset: int = Query(0, ge=0, example=0),
-            limit: int = Query(100, ge=1, le=1000, example=100),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[List[CollectionResponse]]:
             """

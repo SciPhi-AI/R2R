@@ -124,8 +124,6 @@ class CollectionsRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10,
                                 name="Sample",
-                                sort_by="created_at",
-                                sort_order="desc"
                             )
                         """
                         ),
@@ -134,7 +132,7 @@ class CollectionsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/collections?offset=0&limit=10&name=Sample&sort_by=created_at&sort_order=desc" \\
+                            curl -X GET "https://api.example.com/v3/collections?offset=0&limit=10&name=Sample" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
                         """
                         ),
@@ -144,27 +142,20 @@ class CollectionsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_collections(
+            name: Optional[str] = Query(
+                None,
+                description="Filter collections by name (case-insensitive partial match)",
+            ),
             offset: int = Query(
                 0,
                 ge=0,
-                description="The number of collections to skip (for pagination)",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of collections to return (1-1000)",
-            ),
-            name: Optional[str] = Query(
-                None,
-                description="Filter collections by name (case-insensitive partial match)",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the results by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the results ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCollectionListResponse:
@@ -177,7 +168,9 @@ class CollectionsRouter(BaseRouterV3):
 
             list_collections_response = await self.services[
                 "management"
-            ].list_collections(offset=offset, limit=min(max(limit, 1), 1000))
+            ].list_collections(
+                offset=offset, limit=min(max(limit, 1), 1000)
+            )  # TODO: Review if this limit check is really necessary anymore
 
             return list_collections_response["results"], {  # type: ignore
                 "total_entries": list_collections_response["total_entries"]
@@ -435,8 +428,6 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 offset=0,
                                 limit=10,
-                                sort_by="created_at",
-                                sort_order="desc"
                             )
                         """
                         ),
@@ -445,7 +436,7 @@ class CollectionsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents?offset=0&limit=10&sort_by=created_at&sort_order=desc" \\
+                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents?offset=0&limit=10" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
                         """
                         ),
@@ -461,20 +452,13 @@ class CollectionsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The number of documents to skip (for pagination)",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of documents to return (1-1000)",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the documents by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the documents ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDocumentOverviewResponse:
@@ -585,8 +569,6 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 offset=0,
                                 limit=10,
-                                sort_by="username",
-                                sort_order="asc"
                             )
                         """
                         ),
@@ -595,7 +577,7 @@ class CollectionsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users?offset=0&limit=10&sort_by=username&sort_order=asc" \\
+                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users?offset=0&limit=10" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
                         """
                         ),
@@ -611,20 +593,13 @@ class CollectionsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The number of users to skip (for pagination)",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of users to return (1-1000)",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the users by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the users ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedUsersInCollectionResponse:

@@ -104,15 +104,13 @@ client = R2RClient("http://localhost:7272")
 result = client.conversations.list(
     offset=0,
     limit=10,
-    sort_by="created_at",
-    sort_order="desc"
 )
 """,
                     },
                     {
                         "lang": "cURL",
                         "source": """
-curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10&sort_by=created_at&sort_order=desc" \\
+curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10" \\
      -H "Authorization: Bearer YOUR_API_KEY"
 """,
                     },
@@ -122,20 +120,15 @@ curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10&sort_by=
         @self.base_endpoint
         async def list_conversations(
             offset: int = Query(
-                0, ge=0, description="The number of conversations to skip"
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of conversations to return",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the conversations by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the conversations ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedConversationsOverviewResponse:

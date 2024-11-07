@@ -454,9 +454,10 @@ class IngestionService(Service):
                 )
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
                 semantic_neighbors = await self.providers.database.get_semantic_neighbors(
+                    offset=0,
+                    limit=chunk_enrichment_settings.semantic_neighbors,
                     document_id=document_id,
                     chunk_id=chunk["chunk_id"],
-                    limit=chunk_enrichment_settings.semantic_neighbors,
                     similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
                 )
                 context_chunk_ids.extend(
@@ -586,16 +587,19 @@ class IngestionService(Service):
     # TODO - This should return a typed object
     async def list_chunks(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
         include_vectors: bool = False,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        return await self.providers.database.list_chunks()
+        return await self.providers.database.list_chunks(
+            offset=offset,
+            limit=limit,
+            filters=filters,
+            include_vectors=include_vectors,
+        )
 
     # TODO - This should return a typed object
     async def get_chunk(

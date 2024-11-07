@@ -53,8 +53,8 @@ class ManagementService(Service):
     @telemetry_event("Logs")
     async def logs(
         self,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         run_type_filter: Optional[RunType] = None,
     ):
         if self.logging_connection is None:
@@ -201,16 +201,16 @@ class ManagementService(Service):
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
         *args,
         **kwargs,
     ):
         return await self.providers.database.get_users_overview(
-            user_ids,
             offset=offset,
             limit=limit,
+            user_ids=user_ids,
         )
 
     @telemetry_event("Delete")
@@ -363,36 +363,36 @@ class ManagementService(Service):
     @telemetry_event("DocumentsOverview")
     async def documents_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
     ):
         return await self.providers.database.get_documents_overview(
+            offset=offset,
+            limit=limit,
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("DocumentChunks")
     async def list_document_chunks(
         self,
+        offset: int,
+        limit: int,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
         include_vectors: bool = False,
         *args,
         **kwargs,
     ):
         return await self.providers.database.list_document_chunks(
-            document_id,
             offset=offset,
             limit=limit,
+            document_id=document_id,
             include_vectors=include_vectors,
         )
 
@@ -425,10 +425,12 @@ class ManagementService(Service):
 
     @telemetry_event("DocumentCollections")
     async def document_collections(
-        self, document_id: UUID, offset: int = 0, limit: int = 100
+        self, document_id: UUID, offset: int, limit: int
     ):
         return await self.providers.database.document_collections(
-            document_id, offset=offset, limit=limit
+            offset=offset,
+            limit=limit,
+            document_id=document_id,
         )
 
     def _process_relationships(
@@ -592,16 +594,16 @@ class ManagementService(Service):
     @telemetry_event("CollectionsOverview")
     async def collections_overview(
         self,
+        offset: int,
+        limit: int,
         collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
         *args,
         **kwargs,
     ):
         return await self.providers.database.get_collections_overview(
-            collection_ids,
             offset=offset,
             limit=limit,
+            collection_ids=collection_ids,
         )
 
     @telemetry_event("GetDocumentsInCollection")
@@ -687,15 +689,15 @@ class ManagementService(Service):
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations_overview(
-            conversation_ids=conversation_ids,
             offset=offset,
             limit=limit,
+            conversation_ids=conversation_ids,
         )
 
     @telemetry_event("AddMessage")

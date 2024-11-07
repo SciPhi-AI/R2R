@@ -572,13 +572,26 @@ class IngestionRouter(BaseRouter):
                 default=VectorTableName.VECTORS,
                 description=list_vector_indices_descriptions.get("table_name"),
             ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
 
             filters = {"table_name": table_name} if table_name else {}
             indices = await self.service.providers.database.list_indices(
+                offset=offset,
+                limit=limit,
                 # table_name=table_name
-                filters=filters
+                filters=filters,
             )
             return {"indices": indices}  # type: ignore
 

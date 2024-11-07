@@ -38,17 +38,17 @@ class IndicesSDK:
 
     async def list_indices(
         self,
-        offset: int = 0,
-        limit: int = 10,
         filters: Optional[dict] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 10,
     ) -> dict:
         """
         List existing vector similarity search indices with pagination support.
 
         Args:
-            offset (int): Number of records to skip.
-            limit (int): Maximum number of records to return.
             filters (Optional[dict]): Filter criteria for indices.
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100..
 
         Returns:
             WrappedListVectorIndicesResponse: The response containing the list of indices.

@@ -17,8 +17,6 @@ print("\n=== Test 1: List Chunks ===")
 list_result = client.chunks.list(
     offset=0,
     limit=10,
-    sort_by="created_at",
-    sort_order="DESC",
     metadata_filter={"key": "value"},
     include_vectors=False,
 )

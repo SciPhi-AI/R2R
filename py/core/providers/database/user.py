@@ -408,7 +408,7 @@ class PostgresUserHandler(UserHandler):
         return True
 
     async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[UserResponse], int]]:
         """
         Get all users in a specific collection with pagination.
@@ -503,9 +503,9 @@ class PostgresUserHandler(UserHandler):
 
     async def get_users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[UserStats], int]]:
         query = f"""
             WITH user_docs AS (

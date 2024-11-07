@@ -657,8 +657,8 @@ class PostgresVectorHandler(VectorHandler):
     async def list_document_chunks(
         self,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        offset: int,
+        limit: int,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         vector_select = ", vec" if include_vectors else ""
@@ -997,8 +997,8 @@ class PostgresVectorHandler(VectorHandler):
 
     async def list_indices(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
     ) -> dict:
         where_clauses = []
@@ -1184,9 +1184,10 @@ class PostgresVectorHandler(VectorHandler):
 
     async def get_semantic_neighbors(
         self,
+        offset: int,
+        limit: int,
         document_id: UUID,
         chunk_id: UUID,
-        limit: int = 10,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
 
@@ -1222,11 +1223,9 @@ class PostgresVectorHandler(VectorHandler):
 
     async def list_chunks(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         """
@@ -1236,8 +1235,6 @@ class PostgresVectorHandler(VectorHandler):
             offset (int, optional): Number of records to skip. Defaults to 0.
             limit (int, optional): Maximum number of records to return. Defaults to 10.
             filters (dict, optional): Dictionary of filters to apply. Defaults to None.
-            sort_by (str, optional): Column to sort by. Defaults to 'created_at'.
-            sort_order (str, optional): Sort order ('ASC' or 'DESC'). Defaults to 'DESC'.
             include_vectors (bool, optional): Whether to include vector data. Defaults to False.
 
         Returns:
@@ -1254,14 +1251,6 @@ class PostgresVectorHandler(VectorHandler):
             "text": "text",
         }
 
-        if sort_by not in valid_sort_columns:
-            raise ValueError(
-                f"Invalid sort_by parameter. Must be one of {list(valid_sort_columns.keys())}"
-            )
-
-        if sort_order.upper() not in ["ASC", "DESC"]:
-            raise ValueError("Sort order must be either 'ASC' or 'DESC'")
-
         # Build the select clause
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
@@ -1276,15 +1265,11 @@ class PostgresVectorHandler(VectorHandler):
             where_clause = self._build_filters(filters, params)
             where_clause = f"WHERE {where_clause}"
 
-        # Build the ORDER BY clause
-        order_clause = f"ORDER BY {valid_sort_columns[sort_by]} {sort_order}"
-
         # Construct the final query
         query = f"""
         SELECT {select_clause}
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         {where_clause}
-        {order_clause}
         LIMIT $%s
         OFFSET $%s
         """
