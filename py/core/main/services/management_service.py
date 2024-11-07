@@ -604,14 +604,6 @@ class ManagementService(Service):
             collection_id, offset=offset, limit=limit
         )
 
-    @telemetry_event("GetCollectionsForUser")
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[CollectionResponse] | int]:
-        return await self.providers.database.get_collections_for_user(
-            user_id, offset, limit
-        )
-
     @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100

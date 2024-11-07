@@ -188,33 +188,6 @@ class PostgresCollectionHandler(CollectionHandler):
         if not deleted:
             raise R2RException(status_code=404, message="Collection not found")
 
-    async def get_collections_by_ids(
-        self, collection_ids: list[UUID]
-    ) -> list[CollectionResponse]:
-        query = f"""
-            SELECT collection_id, name, description, created_at, updated_at
-            FROM {self._get_table_name("collections")}
-            WHERE collection_id = ANY($1)
-        """
-        results = await self.connection_manager.fetch_query(
-            query, [collection_ids]
-        )
-        if len(results) != len(collection_ids):
-            raise R2RException(
-                status_code=404,
-                message=f"These collections were not found: {set(collection_ids) - {row['collection_id'] for row in results}}",
-            )
-        return [
-            CollectionResponse(
-                collection_id=row["collection_id"],
-                name=row["name"],
-                description=row["description"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-            )
-            for row in results
-        ]
-
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[DocumentInfo], int]]:
@@ -363,40 +336,6 @@ class PostgresCollectionHandler(CollectionHandler):
                 status_code=500,
                 detail=f"An error occurred while fetching collections: {e}",
             )
-
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
-        query = f"""
-            SELECT g.collection_id, g.user_id, g.name, g.description, g.created_at, g.updated_at, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} g
-            JOIN {self._get_table_name('users')} u ON g.collection_id = ANY(u.collection_ids)
-            WHERE u.user_id = $1
-            ORDER BY g.name
-            OFFSET $2
-        """
-
-        params = [user_id, offset]
-        if limit != -1:
-            query += " LIMIT $3"
-            params.append(limit)
-
-        results = await self.connection_manager.fetch_query(query, params)
-
-        collections = [
-            CollectionResponse(
-                collection_id=row["collection_id"],
-                user_id=row["user_id"],
-                name=row["name"],
-                description=row["description"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-            )
-            for row in results
-        ]
-        total_entries = results[0]["total_entries"] if results else 0
-
-        return {"results": collections, "total_entries": total_entries}
 
     async def assign_document_to_collection_relational(
         self,

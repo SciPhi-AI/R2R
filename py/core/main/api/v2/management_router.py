@@ -714,10 +714,10 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             user_uuid = UUID(user_id)
-            user_collection_response = (
-                await self.service.get_collections_for_user(
-                    user_uuid, offset, limit
-                )
+            user_collection_response = await self.service.collections_overview(
+                offset=offset,
+                limit=limit,
+                user_ids=[user_uuid],
             )
 
             return user_collection_response["results"], {  # type: ignore

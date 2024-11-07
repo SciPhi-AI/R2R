@@ -283,12 +283,6 @@ class CollectionHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_collections_by_ids(
-        self, collection_ids: list[UUID]
-    ) -> list[CollectionResponse]:
-        pass
-
-    @abstractmethod
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[DocumentInfo], int]]:
@@ -302,12 +296,6 @@ class CollectionHandler(Handler):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
-        pass
-
-    @abstractmethod
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         pass
 
@@ -1168,13 +1156,6 @@ class DatabaseProvider(Provider):
             collection_id
         )
 
-    async def get_collections_by_ids(
-        self, collection_ids: list[UUID]
-    ) -> list[CollectionResponse]:
-        return await self.collection_handler.get_collections_by_ids(
-            collection_ids
-        )
-
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[DocumentInfo], int]]:
@@ -1196,13 +1177,6 @@ class DatabaseProvider(Provider):
             filter_user_ids=filter_user_ids,
             filter_document_ids=filter_document_ids,
             filter_collection_ids=filter_collection_ids,
-        )
-
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
-        return await self.collection_handler.get_collections_for_user(
-            user_id, offset, limit
         )
 
     async def assign_document_to_collection_relational(

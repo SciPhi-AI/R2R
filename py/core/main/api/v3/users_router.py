@@ -672,7 +672,11 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/
                 )
             user_collection_response = await self.services[
                 "management"
-            ].get_collections_for_user(id, offset, limit)
+            ].get_collections_overview(
+                offset=offset,
+                limit=limit,
+                filter_user_ids=[id],
+            )
             return user_collection_response["results"], {  # type: ignore
                 "total_entries": user_collection_response["total_entries"]
             }
