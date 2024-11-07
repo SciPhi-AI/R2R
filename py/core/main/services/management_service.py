@@ -332,10 +332,10 @@ class ManagementService(Service):
                 )
 
             for document_id in document_ids_to_purge:
-                remaining_chunks = (
-                    await self.providers.database.list_document_chunks(
-                        document_id
-                    )
+                remaining_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    offset=0,
+                    limit=1000,
+                    document_id=document_id,
                 )
                 if remaining_chunks["total_entries"] == 0:
                     try:

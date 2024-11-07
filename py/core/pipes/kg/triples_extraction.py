@@ -242,8 +242,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
         # First get the chunks response
         # FIXME: Is this call really necessary?
+        # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
         chunks_response = await self.database_provider.list_document_chunks(
-            document_id=document_id
+            offset=0, limit=100, document_id=document_id
         )
 
         # Then create the extractions from the results
@@ -257,8 +258,8 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 metadata=extraction["metadata"],
             )
             for extraction in (
-                await self.database_provider.list_document_chunks(
-                    document_id=document_id
+                await self.database_provider.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    offset=0, limit=100, document_id=document_id
                 )
             )["results"]
         ]

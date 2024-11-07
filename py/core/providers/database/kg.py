@@ -840,9 +840,12 @@ class PostgresKGHandler(KGHandler):
             f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1;",
         ]
 
+        # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
         document_ids_response = (
             await self.collection_handler.documents_in_collection(
-                collection_id
+                offset=0,
+                limit=100,
+                collection_id=collection_id,
             )
         )
 
@@ -908,8 +911,11 @@ class PostgresKGHandler(KGHandler):
             await self.connection_manager.execute_query(query, [document_id])
 
         # Check if this is the last document in the collection
+        # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
         documents = await self.collection_handler.documents_in_collection(
-            collection_id
+            offset=0,
+            limit=100,
+            collection_id=collection_id,
         )
         count = documents["total_entries"]
 

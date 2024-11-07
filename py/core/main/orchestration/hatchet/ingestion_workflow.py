@@ -179,7 +179,9 @@ def hatchet_ingestion_factory(
                     # we don't update the document_info when we assign document_to_collection_relational and document_to_collection_vector
                     # hack: get document_info again from DB
                     document_info = (
-                        await self.ingestion_service.providers.database.get_documents_overview(
+                        await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                            offset=0,
+                            limit=100,
                             filter_user_ids=[document_info.user_id],
                             filter_document_ids=[document_info.id],
                         )
@@ -228,8 +230,8 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.get_documents_overview(
-                        filter_document_ids=[document_id]
+                    await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        offset=0, limit=100, filter_document_ids=[document_id]
                     )
                 )["results"]
 
@@ -287,7 +289,9 @@ def hatchet_ingestion_factory(
                 )
 
             documents_overview = (
-                await self.ingestion_service.providers.database.get_documents_overview(
+                await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    offset=0,
+                    limit=100,
                     filter_document_ids=document_ids,
                     filter_user_ids=None if user.is_superuser else [user.id],
                 )
@@ -473,8 +477,8 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.get_documents_overview(
-                        filter_document_ids=[document_id]
+                    await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        offset=0, limit=100, filter_document_ids=[document_id]
                     )
                 )["results"]
 
