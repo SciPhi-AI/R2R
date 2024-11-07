@@ -184,9 +184,9 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         level = EntityLevel.DOCUMENT,
-        offset: int = 0,
-        limit: int = 100,
         include_embeddings: bool = False,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List entities in the graph.
@@ -194,9 +194,9 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID to list entities from
             level (EntityLevel): Entity level filter
-            offset (int): Pagination offset
-            limit (int): Maximum number of entities to return
             include_embeddings (bool): Whether to include vector embeddings
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of entities and pagination information
@@ -334,8 +334,8 @@ class GraphsSDK:
         source_id: Optional[Union[str, UUID]] = None,
         target_id: Optional[Union[str, UUID]] = None,
         relationship_type: Optional[str] = None,
-        offset: int = 0,
-        limit: int = 100,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List relationships in the graph.
@@ -345,8 +345,8 @@ class GraphsSDK:
             source_id (Optional[Union[str, UUID]]): Filter by source entity
             target_id (Optional[Union[str, UUID]]): Filter by target entity
             relationship_type (Optional[str]): Filter by relationship type
-            offset (int): Pagination offset
-            limit (int): Maximum number of relationships to return
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of relationships and pagination information
@@ -449,8 +449,8 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         level: Optional[int] = None,
-        offset: int = 0,
-        limit: int = 100,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List communities in the graph.
@@ -458,8 +458,8 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID to list communities from
             level (Optional[int]): Filter by community level
-            offset (int): Pagination offset
-            limit (int): Maximum number of communities to return
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of communities and pagination information
@@ -526,10 +526,10 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         prompt_name: str,
-        documents_offset: int = 0,
-        documents_limit: int = 100,
-        chunks_offset: int = 0,
-        chunks_limit: int = 100,
+        documents_offset: Optional[int] = 0,
+        documents_limit: Optional[int] = 100,
+        chunks_offset: Optional[int] = 0,
+        chunks_limit: Optional[int] = 100,
     ):  # -> WrappedKGTunePromptResponse:
         """
         Tune a graph-related prompt using collection data.
@@ -538,10 +538,10 @@ class GraphsSDK:
             collection_id (Union[str, UUID]): Collection ID to tune prompt for
             prompt_name (str): Name of prompt to tune (graphrag_triples_extraction_few_shot,
                              graphrag_entity_description, or graphrag_community_reports)
-            documents_offset (int): Document pagination offset
-            documents_limit (int): Maximum number of documents to use
-            chunks_offset (int): Chunk pagination offset
-            chunks_limit (int): Maximum number of chunks to use
+            documents_offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            documents_limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            chunks_offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            chunks_limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             WrappedKGTunePromptResponse: Tuned prompt results

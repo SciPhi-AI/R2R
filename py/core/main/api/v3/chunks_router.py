@@ -535,12 +535,10 @@ from r2r import R2RClient
 
 client = R2RClient("http://localhost:7272")
 results = client.chunks.list(
-    offset=0,
-    limit=10,
-    sort_by="created_at",
-    sort_order="DESC",
     metadata_filter={"key": "value"},
     include_vectors=False
+    offset=0,
+    limit=10,
 )
 """,
                     }
@@ -549,24 +547,22 @@ results = client.chunks.list(
         )
         @self.base_endpoint
         async def list_chunks(
-            offset: int = Query(
-                0, ge=0, description="Number of records to skip"
-            ),
-            limit: int = Query(
-                10,
-                ge=1,
-                le=100,
-                description="Maximum number of records to return",
-            ),
-            sort_by: str = Query("created_at", description="Field to sort by"),
-            sort_order: str = Query(
-                "DESC", regex="^(ASC|DESC)$", description="Sort order"
-            ),
             metadata_filter: Optional[Json[dict]] = Query(
                 None, description="Filter by metadata"
             ),
             include_vectors: bool = Query(
                 False, description="Include vector data in response"
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
@@ -593,12 +589,10 @@ results = client.chunks.list(
 
             # Get chunks using the vector handler's list_chunks method
             results = await self.services["ingestion"].list_chunks(
+                filters=filters,
+                include_vectors=include_vectors,
                 offset=offset,
                 limit=limit,
-                filters=filters,
-                sort_by=sort_by,
-                sort_order=sort_order,
-                include_vectors=include_vectors,
             )
 
             # Convert to response format

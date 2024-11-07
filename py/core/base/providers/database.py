@@ -226,11 +226,11 @@ class DocumentHandler(Handler):
     @abstractmethod
     async def get_documents_overview(
         self,
+        offset: int,
+        limit: int,
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Any]:
         pass
 
@@ -295,7 +295,7 @@ class CollectionHandler(Handler):
 
     @abstractmethod
     async def list_collections(
-        self, offset: int = 0, limit: int = -1
+        self, offset: int, limit: int
     ) -> dict[str, Any]:
         """List collections with pagination."""
         pass
@@ -308,22 +308,22 @@ class CollectionHandler(Handler):
 
     @abstractmethod
     async def documents_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[DocumentInfo], int]]:
         pass
 
     @abstractmethod
     async def get_collections_overview(
         self,
+        offset: int,
+        limit: int,
         collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[CollectionOverviewResponse], int]]:
         pass
 
     @abstractmethod
     async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = -1
+        self, user_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         pass
 
@@ -337,7 +337,7 @@ class CollectionHandler(Handler):
 
     @abstractmethod
     async def document_collections(
-        self, document_id: UUID, offset: int = 0, limit: int = -1
+        self, document_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         pass
 
@@ -458,7 +458,7 @@ class UserHandler(Handler):
 
     @abstractmethod
     async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[UserResponse], int]]:
         pass
 
@@ -479,9 +479,9 @@ class UserHandler(Handler):
     @abstractmethod
     async def get_users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[UserStats], int]]:
         pass
 
@@ -551,8 +551,8 @@ class VectorHandler(Handler):
     async def list_document_chunks(
         self,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        offset: int,
+        limit: int,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         pass
@@ -578,7 +578,7 @@ class VectorHandler(Handler):
 
     @abstractmethod
     async def list_indices(
-        self, offset: int = 0, limit: int = 10, filters: Optional[dict] = None
+        self, offset: int, limit: int, filters: Optional[dict] = None
     ) -> dict:
         pass
 
@@ -594,9 +594,10 @@ class VectorHandler(Handler):
     @abstractmethod
     async def get_semantic_neighbors(
         self,
+        offset: int,
+        limit: int,
         document_id: UUID,
         chunk_id: UUID,
-        limit: int = 10,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
         pass
@@ -604,11 +605,9 @@ class VectorHandler(Handler):
     @abstractmethod
     async def list_chunks(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         pass
@@ -682,11 +681,11 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_communities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Get communities for a collection."""
         pass
@@ -747,12 +746,12 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_entities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "document_entity",
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Get entities from storage."""
         pass
@@ -760,11 +759,11 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_triples(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[List[str]] = None,
         triple_ids: Optional[List[str]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Get triples from storage."""
         pass
@@ -962,10 +961,10 @@ class FileHandler(Handler):
     @abstractmethod
     async def get_files_overview(
         self,
+        offset: int,
+        limit: int,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_file_names: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = 100,
     ) -> list[dict]:
         """Get an overview of stored files."""
         pass
@@ -1002,8 +1001,8 @@ class LoggingHandler(Handler):
     @abstractmethod
     async def get_info_logs(
         self,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[List[UUID]] = None,
     ) -> List[RunInfoLog]:
@@ -1024,9 +1023,9 @@ class LoggingHandler(Handler):
     @abstractmethod
     async def get_conversations_overview(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[List[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> Dict[str, Union[List[Dict], int]]:
         """Get an overview of conversations with pagination."""
         pass
@@ -1122,18 +1121,18 @@ class DatabaseProvider(Provider):
 
     async def get_documents_overview(
         self,
+        offset: int,
+        limit: int,
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Any]:
         return await self.document_handler.get_documents_overview(
-            filter_user_ids,
-            filter_document_ids,
-            filter_collection_ids,
-            offset,
-            limit,
+            offset=offset,
+            limit=limit,
+            filter_user_ids=filter_user_ids,
+            filter_document_ids=filter_document_ids,
+            filter_collection_ids=filter_collection_ids,
         )
 
     async def get_workflow_status(
@@ -1196,7 +1195,7 @@ class DatabaseProvider(Provider):
         )
 
     async def list_collections(
-        self, offset: int = 0, limit: int = -1
+        self, offset: int, limit: int
     ) -> dict[str, Any]:
         return await self.collection_handler.list_collections(offset, limit)
 
@@ -1208,7 +1207,7 @@ class DatabaseProvider(Provider):
         )
 
     async def documents_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[DocumentInfo], int]]:
         return await self.collection_handler.documents_in_collection(
             collection_id, offset, limit
@@ -1216,16 +1215,18 @@ class DatabaseProvider(Provider):
 
     async def get_collections_overview(
         self,
+        offset: int,
+        limit: int,
         collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[CollectionOverviewResponse], int]]:
         return await self.collection_handler.get_collections_overview(
-            collection_ids, offset, limit
+            offset=offset,
+            limit=limit,
+            collection_ids=collection_ids,
         )
 
     async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = -1
+        self, user_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         return await self.collection_handler.get_collections_for_user(
             user_id, offset, limit
@@ -1241,7 +1242,7 @@ class DatabaseProvider(Provider):
         )
 
     async def document_collections(
-        self, document_id: UUID, offset: int = 0, limit: int = -1
+        self, document_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[CollectionResponse], int]]:
         return await self.collection_handler.document_collections(
             document_id, offset, limit
@@ -1351,7 +1352,7 @@ class DatabaseProvider(Provider):
         )
 
     async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[UserResponse], int]]:
         return await self.user_handler.get_users_in_collection(
             collection_id, offset, limit
@@ -1372,12 +1373,14 @@ class DatabaseProvider(Provider):
 
     async def get_users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[UserStats], int]]:
         return await self.user_handler.get_users_overview(
-            user_ids, offset, limit
+            offset=offset,
+            limit=limit,
+            user_ids=user_ids,
         )
 
     # Vector handler methods
@@ -1445,8 +1448,8 @@ class DatabaseProvider(Provider):
     async def list_document_chunks(
         self,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        offset: int,
+        limit: int,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         return await self.vector_handler.list_document_chunks(
@@ -1479,7 +1482,7 @@ class DatabaseProvider(Provider):
         )
 
     async def list_indices(
-        self, offset: int = 0, limit: int = 10, filters: Optional[dict] = None
+        self, offset: int, limit: int, filters: Optional[dict] = None
     ) -> dict:
         return await self.vector_handler.list_indices(offset, limit, filters)
 
@@ -1497,11 +1500,16 @@ class DatabaseProvider(Provider):
         self,
         document_id: UUID,
         chunk_id: UUID,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
         return await self.vector_handler.get_semantic_neighbors(
-            document_id, chunk_id, limit, similarity_threshold
+            offset=offset,
+            limit=limit,
+            document_id=document_id,
+            chunk_id=chunk_id,
+            similarity_threshold=similarity_threshold,
         )
 
     async def add_kg_extractions(
@@ -1554,19 +1562,19 @@ class DatabaseProvider(Provider):
 
     async def get_communities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Forward to KG handler get_communities method."""
         return await self.kg_handler.get_communities(
-            collection_id,
-            levels,
-            community_numbers,
-            offset,
-            limit,
+            offset=offset,
+            limit=limit,
+            collection_id=collection_id,
+            levels=levels,
+            community_numbers=community_numbers,
         )
 
     async def add_community_report(
@@ -1627,38 +1635,38 @@ class DatabaseProvider(Provider):
     # Entity and Triple operations
     async def get_entities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID],
         entity_ids: Optional[List[str]] = None,
         entity_names: Optional[List[str]] = None,
         entity_table_name: str = "document_entity",
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Forward to KG handler get_entities method."""
         return await self.kg_handler.get_entities(
-            collection_id,
-            entity_ids,
-            entity_names,
-            entity_table_name,
-            offset,
-            limit,
+            offset=offset,
+            limit=limit,
+            collection_id=collection_id,
+            entity_ids=entity_ids,
+            entity_names=entity_names,
+            entity_table_name=entity_table_name,
         )
 
     async def get_triples(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[List[str]] = None,
         triple_ids: Optional[List[str]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Forward to KG handler get_triples method."""
         return await self.kg_handler.get_triples(
-            collection_id,
-            entity_names,
-            triple_ids,
-            offset,
-            limit,
+            offset=offset,
+            limit=limit,
+            collection_id=collection_id,
+            entity_names=entity_names,
+            triple_ids=triple_ids,
         )
 
     async def get_entity_count(
@@ -1815,13 +1823,16 @@ class DatabaseProvider(Provider):
 
     async def get_files_overview(
         self,
+        offset: int,
+        limit: int,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_file_names: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = 100,
     ) -> list[dict]:
         return await self.file_handler.get_files_overview(
-            filter_document_ids, filter_file_names, offset, limit
+            offset=offset,
+            limit=limit,
+            filter_document_ids=filter_document_ids,
+            filter_file_names=filter_file_names,
         )
 
     async def log(
@@ -1844,8 +1855,8 @@ class DatabaseProvider(Provider):
 
     async def get_info_logs(
         self,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[List[UUID]] = None,
     ) -> List[RunInfoLog]:
@@ -1872,13 +1883,15 @@ class DatabaseProvider(Provider):
 
     async def get_conversations_overview(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[List[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> Dict[str, Union[List[Dict], int]]:
         """Get an overview of conversations with pagination."""
         return await self.logging_handler.get_conversations_overview(
-            conversation_ids, offset, limit
+            offset=offset,
+            limit=limit,
+            conversation_ids=conversation_ids,
         )
 
     async def add_message(
@@ -1927,13 +1940,11 @@ class DatabaseProvider(Provider):
 
     async def list_chunks(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         return await self.vector_handler.list_chunks(
-            offset, limit, filters, sort_by, sort_order, include_vectors
+            offset, limit, filters, include_vectors
         )

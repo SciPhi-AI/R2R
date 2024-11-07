@@ -568,9 +568,18 @@ class GraphRouter(BaseRouterV3):
         async def list_entities(
             collection_id: UUID = Path(...),
             level: EntityLevel = Query(EntityLevel.DOCUMENT),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
             # include_embeddings: bool = Query(False),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGEntitiesResponse: # PaginatedResultsWrapper[list[Entity]]:
             """Lists entities in the graph with filtering and pagination support.
@@ -922,8 +931,17 @@ class GraphRouter(BaseRouterV3):
             source_id: Optional[UUID] = Query(None),
             target_id: Optional[UUID] = Query(None),
             relationship_type: Optional[str] = Query(None),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Relationship]]:
             """Lists relationships (edges) between entities in the knowledge graph.
@@ -1289,8 +1307,17 @@ class GraphRouter(BaseRouterV3):
             levels: Optional[list[int]] = Query(
                 None, description="Levels to filter by."
             ),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGCommunitiesResponse: # PaginatedResultsWrapper[list[Community]]:
             """Lists communities in the graph with optional filtering and pagination.

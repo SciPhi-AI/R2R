@@ -101,7 +101,9 @@ class IngestionService(Service):
             )
 
             existing_document_info = (
-                await self.providers.database.get_documents_overview(
+                await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    offset=0,
+                    limit=100,
                     filter_user_ids=[user.id],
                     filter_document_ids=[document_id],
                 )
@@ -335,7 +337,9 @@ class IngestionService(Service):
         )
 
         existing_document_info = (
-            await self.providers.database.get_documents_overview(
+            await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                offset=0,
+                limit=100,
                 filter_user_ids=[user.id],
                 filter_document_ids=[document_id],
             )
@@ -365,8 +369,10 @@ class IngestionService(Service):
         **kwargs: Any,
     ) -> dict:
         # Verify chunk exists and user has access
-        existing_chunks = await self.providers.database.list_document_chunks(
-            document_id=document_id, limit=1
+        existing_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            offset=0,
+            limit=1,
+            document_id=document_id,
         )
 
         if not existing_chunks["results"]:
@@ -454,9 +460,10 @@ class IngestionService(Service):
                 )
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
                 semantic_neighbors = await self.providers.database.get_semantic_neighbors(
+                    offset=0,
+                    limit=chunk_enrichment_settings.semantic_neighbors,
                     document_id=document_id,
                     chunk_id=chunk["chunk_id"],
-                    limit=chunk_enrichment_settings.semantic_neighbors,
                     similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
                 )
                 context_chunk_ids.extend(
@@ -534,7 +541,9 @@ class IngestionService(Service):
         )
         # get all list_document_chunks
         list_document_chunks = (
-            await self.providers.database.list_document_chunks(
+            await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                offset=0,
+                limit=100,
                 document_id=document_id,
             )
         )["results"]
@@ -586,16 +595,19 @@ class IngestionService(Service):
     # TODO - This should return a typed object
     async def list_chunks(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
         include_vectors: bool = False,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        return await self.providers.database.list_chunks()
+        return await self.providers.database.list_chunks(
+            offset=offset,
+            limit=limit,
+            filters=filters,
+            include_vectors=include_vectors,
+        )
 
     # TODO - This should return a typed object
     async def get_chunk(

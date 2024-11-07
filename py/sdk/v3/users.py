@@ -167,27 +167,23 @@ class UsersSDK:
 
     async def list(
         self,
-        offset: int = 0,
-        limit: int = 100,
         username: Optional[str] = None,
         email: Optional[str] = None,
         is_active: Optional[bool] = None,
         is_superuser: Optional[bool] = None,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = "desc",
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List users with pagination and filtering options.
 
         Args:
-            offset (int): Number of records to skip
-            limit (int): Maximum number of records to return
             username (Optional[str]): Filter by username (partial match)
             email (Optional[str]): Filter by email (partial match)
             is_active (Optional[bool]): Filter by active status
             is_superuser (Optional[bool]): Filter by superuser status
-            sort_by (Optional[str]): Field to sort by (created_at, username, email)
-            sort_order (Optional[str]): Sort order (asc or desc)
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of users and pagination information
@@ -195,7 +191,6 @@ class UsersSDK:
         params: dict = {
             "offset": offset,
             "limit": limit,
-            "sort_order": sort_order,
         }
 
         if username:
@@ -206,8 +201,6 @@ class UsersSDK:
             params["is_active"] = is_active
         if is_superuser is not None:
             params["is_superuser"] = is_superuser
-        if sort_by:
-            params["sort_by"] = sort_by
 
         return await self.client._make_request("GET", "users", params=params)
 
@@ -268,16 +261,16 @@ class UsersSDK:
     async def list_collections(
         self,
         id: Union[str, UUID],
-        offset: int = 0,
-        limit: int = 100,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         Get all collections associated with a specific user.
 
         Args:
             id (Union[str, UUID]): User ID to get collections for
-            offset (int): Number of records to skip
-            limit (int): Maximum number of records to return
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of collections and pagination information

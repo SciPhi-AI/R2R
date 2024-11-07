@@ -34,8 +34,7 @@ class ChunksSDK:
         Returns:
             dict: Creation results containing processed chunk information
         """
-        data: dict = {}
-        data["raw_chunks"] = chunks  # json.dumps(chunks)
+        data: dict = {"raw_chunks": chunks}
         if run_with_orchestration != None:
             data["run_with_orchestration"] = run_with_orchestration
         return await self.client._make_request("POST", "chunks", json=data)
@@ -82,18 +81,18 @@ class ChunksSDK:
     async def list_by_document(
         self,
         document_id: Union[str, UUID],
+        metadata_filter: Optional[Dict[str, Any]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        metadata_filter: Optional[Dict[str, Any]] = None,
     ) -> dict:
         """
         List chunks for a specific document.
 
         Args:
             document_id (Union[str, UUID]): Document ID to get chunks for
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of chunks to return
             metadata_filter (Optional[Dict[str, Any]]): Filter chunks by metadata
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of chunks and pagination information
@@ -123,23 +122,19 @@ class ChunksSDK:
 
     async def list(
         self,
-        offset: int = 0,
-        limit: int = 10,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
-        metadata_filter: Optional[Dict[str, Any]] = None,
         include_vectors: bool = False,
+        metadata_filter: Optional[Dict[str, Any]] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List chunks with pagination support.
 
         Args:
-            offset (int, optional): Number of records to skip. Defaults to 0.
-            limit (int, optional): Maximum number of records to return. Defaults to 10.
-            sort_by (str, optional): Field to sort by. Defaults to 'created_at'.
-            sort_order (str, optional): Sort order ('ASC' or 'DESC'). Defaults to 'DESC'.
-            metadata_filter (Optional[Dict[str, Any]], optional): Filter by metadata. Defaults to None.
             include_vectors (bool, optional): Include vector data in response. Defaults to False.
+            metadata_filter (Optional[Dict[str, Any]], optional): Filter by metadata. Defaults to None.
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: Dictionary containing:
@@ -149,8 +144,6 @@ class ChunksSDK:
         params: dict = {
             "offset": offset,
             "limit": limit,
-            "sort_by": sort_by,
-            "sort_order": sort_order,
             "include_vectors": include_vectors,
         }
 

@@ -159,8 +159,8 @@ class DocumentsSDK:
 
         Args:
             ids (Optional[List[Union[str, UUID]]]): Optional list of document IDs to filter by
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of documents to return
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of documents and pagination information
@@ -210,18 +210,18 @@ class DocumentsSDK:
     async def list_chunks(
         self,
         id: Union[str, UUID],
+        include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        include_vectors: Optional[bool] = False,
     ) -> dict:
         """
         Get chunks for a specific document.
 
         Args:
             id (Union[str, UUID]): ID of document to retrieve chunks for
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of chunks to return
             include_vectors (Optional[bool]): Whether to include vector embeddings in the response
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of document chunks and pagination information
@@ -239,18 +239,18 @@ class DocumentsSDK:
     async def list_collections(
         self,
         id: Union[str, UUID],
+        include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        include_vectors: Optional[bool] = False,
     ) -> dict:
         """
         Get chunks for a specific document.
 
         Args:
             id (Union[str, UUID]): ID of document to retrieve chunks for
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of chunks to return
             include_vectors (Optional[bool]): Whether to include vector embeddings in the response
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of document chunks and pagination information

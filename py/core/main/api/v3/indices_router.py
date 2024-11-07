@@ -319,18 +319,20 @@ curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_
         )
         @self.base_endpoint
         async def list_indices(
-            offset: int = Query(
-                0, ge=0, description="Number of records to skip"
-            ),
-            limit: int = Query(
-                10,
-                ge=1,
-                le=100,
-                description="Maximum number of records to return",
-            ),
             filters: Optional[Json[dict]] = Query(
                 None,
                 description='Filter criteria for indices (e.g., {"table_name": "vectors"})',
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedListVectorIndicesResponse:

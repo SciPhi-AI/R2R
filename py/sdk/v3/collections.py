@@ -37,21 +37,17 @@ class CollectionsSDK:
 
     async def list(
         self,
-        offset: int = 0,
-        limit: int = 100,
         name: Optional[str] = None,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = "desc",
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List collections with pagination and filtering options.
 
         Args:
-            offset (int): Number of records to skip
-            limit (int): Maximum number of records to return
             name (Optional[str]): Filter collections by name
-            sort_by (Optional[str]): Field to sort by
-            sort_order (Optional[str]): Sort order (asc or desc)
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of collections and pagination information
@@ -62,10 +58,6 @@ class CollectionsSDK:
         }
         if name:
             params["name"] = name
-        if sort_by:
-            params["sort_by"] = sort_by
-        if sort_order:
-            params["sort_order"] = sort_order
 
         return await self.client._make_request(
             "GET", "collections", params=params
@@ -134,20 +126,16 @@ class CollectionsSDK:
     async def list_documents(
         self,
         id: Union[str, UUID],
-        offset: int = 0,
-        limit: int = 100,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = "desc",
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List all documents in a collection.
 
         Args:
             id (Union[str, UUID]): Collection ID
-            offset (int): Number of records to skip
-            limit (int): Maximum number of records to return
-            sort_by (Optional[str]): Field to sort by
-            sort_order (Optional[str]): Sort order (asc or desc)
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of documents and pagination information
@@ -156,10 +144,6 @@ class CollectionsSDK:
             "offset": offset,
             "limit": limit,
         }
-        if sort_by:
-            params["sort_by"] = sort_by
-        if sort_order:
-            params["sort_order"] = sort_order
 
         return await self.client._make_request(
             "GET", f"collections/{str(id)}/documents", params=params
@@ -207,20 +191,16 @@ class CollectionsSDK:
     async def list_users(
         self,
         id: Union[str, UUID],
-        offset: int = 0,
-        limit: int = 100,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = "desc",
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List all users in a collection.
 
         Args:
             id (Union[str, UUID]): Collection ID
-            offset (int): Number of records to skip
-            limit (int): Maximum number of records to return
-            sort_by (Optional[str]): Field to sort by
-            sort_order (Optional[str]): Sort order (asc or desc)
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of users and pagination information
@@ -229,10 +209,6 @@ class CollectionsSDK:
             "offset": offset,
             "limit": limit,
         }
-        if sort_by:
-            params["sort_by"] = sort_by
-        if sort_order:
-            params["sort_order"] = sort_order
 
         return await self.client._make_request(
             "GET", f"collections/{str(id)}/users", params=params

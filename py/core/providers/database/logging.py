@@ -149,8 +149,8 @@ class PostgresLoggingHandler(LoggingHandler):
 
     async def get_info_logs(
         self,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         run_type_filter: Optional[RunType] = None,
         user_ids: Optional[List[UUID]] = None,
     ) -> List[RunInfoLog]:
@@ -210,9 +210,9 @@ class PostgresLoggingHandler(LoggingHandler):
 
     async def get_conversations_overview(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[List[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> Dict[str, Union[List[Dict], int]]:
         """Get an overview of conversations with pagination."""
         query = """

@@ -341,11 +341,11 @@ class PostgresDocumentHandler(DocumentHandler):
 
     async def get_documents_overview(
         self,
+        offset: int,
+        limit: int,
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Any]:
         conditions = []
         params: list[Any] = []
