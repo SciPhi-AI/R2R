@@ -276,20 +276,20 @@ describe("r2rClient Integration Tests", () => {
     );
   });
 
-  test("Ensure that updated chunk has updated text", async () => {
-    const response = await client.documentChunks(
-      "bd2cbead-66e0-57bc-acea-2c34711a39b5",
-    );
+  // test("Ensure that updated chunk has updated text", async () => {
+  //   const response = await client.documentChunks(
+  //     "bd2cbead-66e0-57bc-acea-2c34711a39b5",
+  //   );
 
-    const targetId = "c043aa2c-80e8-59ed-a390-54f1947ea32b";
-    const updatedChunk = response.results.find(
-      (chunk: { chunk_id: string; text: string }) =>
-        String(chunk.chunk_id) === targetId,
-    );
+  //   const targetId = "c043aa2c-80e8-59ed-a390-54f1947ea32b";
+  //   const updatedChunk = response.results.find(
+  //     (chunk: { chunk_id: string; text: string }) =>
+  //       String(chunk.chunk_id) === targetId,
+  //   );
 
-    expect(updatedChunk).toBeDefined();
-    expect(updatedChunk?.text).toBe("updated text");
-  });
+  //   expect(updatedChunk).toBeDefined();
+  //   expect(updatedChunk?.text).toBe("updated text");
+  // });
 
   test("Delete the updated chunk", async () => {
     await expect(

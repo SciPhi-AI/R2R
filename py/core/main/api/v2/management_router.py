@@ -367,6 +367,59 @@ class ManagementRouter(BaseRouter):
                 "total_entries": documents_overview_response["total_entries"]
             }
 
+        @self.router.get("/document_chunks/{document_id}")
+        @self.base_endpoint
+        async def document_chunks_app(
+            document_id: str = Path(...),
+            offset: Optional[int] = Query(0, ge=0),
+            limit: Optional[int] = Query(100, ge=0),
+            include_vectors: Optional[bool] = Query(False),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedDocumentChunkResponse:
+            document_uuid = UUID(document_id)
+
+            document_chunks = await self.service.list_document_chunks(
+                document_uuid, offset, limit, include_vectors
+            )
+
+            document_chunks_result = document_chunks["results"]
+
+            if not document_chunks_result:
+                raise R2RException(
+                    "No chunks found for the given document ID.",
+                    404,
+                )
+
+            is_owner = str(document_chunks_result[0].get("user_id")) == str(
+                auth_user.id
+            )
+            document_collections = await self.service.document_collections(
+                document_uuid, 0, -1
+            )
+
+            user_has_access = (
+                is_owner
+                or set(auth_user.collection_ids).intersection(
+                    set(
+                        [
+                            ele.collection_id
+                            for ele in document_collections["results"]
+                        ]
+                    )
+                )
+                != set()
+            )
+
+            if not user_has_access and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can arbitrarily call document_chunks.",
+                    403,
+                )
+
+            return document_chunks_result, {  # type: ignore
+                "total_entries": document_chunks["total_entries"]
+            }
+
         @self.router.get("/list_document_chunks/{document_id}")
         @self.base_endpoint
         async def document_chunks_app(
