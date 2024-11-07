@@ -1,6 +1,26 @@
+import random
+import string
+
 from r2r import R2RClient
 
-user_email = "John.Doe1@email.com"
+# user_email = "John.Doe1@email.com"
+
+
+# Function to generate a random email
+def generate_random_email():
+    username_length = 8
+    username = "".join(
+        random.choices(
+            string.ascii_lowercase + string.digits, k=username_length
+        )
+    )
+    domain = random.choice(
+        ["example.com", "test.com", "fake.org", "random.net"]
+    )
+    return f"{username}@{domain}"
+
+
+user_email = generate_random_email()
 
 client = R2RClient("http://localhost:7276", prefix="/v3")
 
@@ -35,13 +55,19 @@ print("\n=== Test 5: Request Password Reset ===")
 reset_request_result = client.users.request_password_reset(email=user_email)
 print("Password reset request result:", reset_request_result)
 
+# logout, to use super user
+# Test 9: Logout user
+print("\n=== Test 6: Logout User ===")
+logout_result = client.users.logout()
+print("Logout result:", logout_result)
+
 # Test 6: List users
-print("\n=== Test 6: List Users ===")
+print("\n=== Test 7: List Users ===")
 users_list = client.users.list()
 print("Users list:", users_list)
 
 # Test 7: Retrieve user
-print("\n=== Test 7: Retrieve User ===")
+print("\n=== Test 8: Retrieve User ===")
 user_id = users_list["results"][0][
     "user_id"
 ]  # Assuming we have at least one user
@@ -49,11 +75,6 @@ user_details = client.users.retrieve(id=user_id)
 print("User details:", user_details)
 
 # Test 8: Update user
-print("\n=== Test 8: Update User ===")
+print("\n=== Test 9: Update User ===")
 update_result = client.users.update(user_id, name="Jane Doe")
 print("Update user result:", update_result)
-
-# Test 9: Logout user
-print("\n=== Test 9: Logout User ===")
-logout_result = client.users.logout()
-print("Logout result:", logout_result)

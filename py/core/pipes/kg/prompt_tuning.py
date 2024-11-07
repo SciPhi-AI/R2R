@@ -67,8 +67,8 @@ class KGPromptTuningPipe(AsyncPipe):
                 messages=await self.database_provider.prompt_handler.get_message_payload(
                     task_prompt_name="prompt_tuning_task",
                     task_inputs={
-                        "prompt_template": current_prompt.template,
-                        "input_types": str(current_prompt.input_types),
+                        "prompt_template": current_prompt["template"],
+                        "input_types": str(current_prompt["input_types"]),
                         "sample_data": chunks,
                     },
                 ),

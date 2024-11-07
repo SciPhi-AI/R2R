@@ -17,6 +17,8 @@ from core.base.api.models import (
     WrappedKGTriplesResponse,
     WrappedKGTunePromptResponse,
 )
+
+
 from core.base.logger.base import RunType
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -287,6 +289,7 @@ class KGRouter(BaseRouter):
                 limit,
             )
 
+
         @self.router.get("/triples")
         @self.base_endpoint
         async def get_triples(
@@ -432,7 +435,7 @@ class KGRouter(BaseRouter):
         async def get_tuned_prompt(
             prompt_name: str = Query(
                 ...,
-                description="The name of the prompt to tune. Valid options are 'kg_triples_extraction_prompt', 'kg_entity_description_prompt' and 'community_reports_prompt'.",
+                description="The name of the prompt to tune. Valid options are 'graphrag_triples_extraction_few_shot', 'graphrag_entity_description' and 'graphrag_community_reports'.",
             ),
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve communities from."

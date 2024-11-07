@@ -365,7 +365,7 @@ chunk = client.chunks.retrieve(
             # document = await self.services["management"].get_document(chunk.document_id)
             # TODO - Add collection ID check
             if not auth_user.is_superuser and str(auth_user.id) != str(
-                chunk.user_id
+                chunk["user_id"]
             ):
                 raise R2RException("Not authorized to access this chunk", 403)
 

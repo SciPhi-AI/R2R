@@ -1,7 +1,7 @@
 from r2r import R2RClient
 
-first_ingested_document_id = "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-first_ingested_file_path = "core/examples/data/pg_essay_1.html"
+first_ingested_document_id = "1b594aea-583a-5a4b-92f4-229d6e5eb886"
+first_ingested_file_path = "../../data/pg_essay_1.html"
 user_email = "John.Doe1@email.com"
 
 client = R2RClient("http://localhost:7276", prefix="/v3")
@@ -54,6 +54,7 @@ chunks_result = client.documents.list_chunks(id=first_ingested_document_id)
 print("Document chunks:", chunks_result)
 
 # Test 6: List document collections
+client.users.logout()
 print("\n=== Test 6: List Document Collections ===")
 collections_result = client.documents.list_collections(
     id=first_ingested_document_id, offset=0, limit=10

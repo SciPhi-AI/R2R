@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
+from core.base.abstractions import EntityLevel, KGRunType
 
 # from shared.abstractions import EntityLevel
 
@@ -14,6 +15,10 @@ from ..base.base_client import sync_generator_wrapper, sync_wrapper
 #     WrappedKGEntityDeduplicationResponse,
 #     WrappedKGTunePromptResponse,
 # )
+from ..models import (
+    KGCreationSettings,
+    KGRunType
+)
 
 
 class GraphsSDK:
@@ -27,7 +32,8 @@ class GraphsSDK:
     async def create(
         self,
         collection_id: Union[str, UUID],
-        settings: Optional[Dict[str, Any]] = None,
+        run_type: Optional[Union[str, KGRunType]] = None,
+        settings: Optional[Union[dict, KGCreationSettings]] = None,
         run_with_orchestration: Optional[bool] = True,
     ):  # -> WrappedKGCreationResponse:
         """
@@ -41,14 +47,17 @@ class GraphsSDK:
         Returns:
             WrappedKGCreationResponse: Creation results
         """
-        params = {"run_with_orchestration": run_with_orchestration}
-        data = {}
-        if settings:
-            data["settings"] = settings
+        if isinstance(settings, KGCreationSettings):
+            settings = settings.model_dump()
 
-        return await self.client._make_request(
-            "POST", f"graphs/{str(collection_id)}", json=data, params=params
-        )
+        data = {
+            # "collection_id": str(collection_id) if collection_id else None,
+            "run_type": str(run_type) if run_type else None,
+            "settings": settings or {},
+            "run_with_orchestration": run_with_orchestration or True,
+        }
+
+        return await self.client._make_request("POST", f"graphs/{collection_id}", json=data)  # type: ignore
 
     async def get_status(self, collection_id: Union[str, UUID]) -> dict:
         """
@@ -103,7 +112,7 @@ class GraphsSDK:
     async def get_entity(
         self,
         collection_id: Union[str, UUID],
-        entity_id: Union[str, UUID],
+        entity_id: Union[str, int],
         include_embeddings: bool = False,
     ) -> dict:
         """
@@ -174,7 +183,7 @@ class GraphsSDK:
     async def list_entities(
         self,
         collection_id: Union[str, UUID],
-        level,  # : EntityLevel = EntityLevel.DOCUMENT,
+        level = EntityLevel.DOCUMENT,
         include_embeddings: bool = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -363,6 +372,7 @@ class GraphsSDK:
     async def create_communities(
         self,
         collection_id: Union[str, UUID],
+        run_type: Optional[Union[str, KGRunType]] = None,
         settings: Optional[Dict[str, Any]] = None,
         run_with_orchestration: bool = True,
     ):  # -> WrappedKGCommunitiesResponse:
@@ -381,6 +391,9 @@ class GraphsSDK:
         data = {}
         if settings:
             data["settings"] = settings
+
+        if run_type:
+            data["run_type"] = str(run_type)
 
         return await self.client._make_request(
             "POST",
@@ -523,8 +536,8 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to tune prompt for
-            prompt_name (str): Name of prompt to tune (kg_triples_extraction_prompt,
-                             kg_entity_description_prompt, or community_reports_prompt)
+            prompt_name (str): Name of prompt to tune (graphrag_triples_extraction_few_shot,
+                             graphrag_entity_description, or graphrag_community_reports)
             documents_offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             documents_limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
             chunks_offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
