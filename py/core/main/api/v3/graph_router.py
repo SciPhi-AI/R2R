@@ -6,14 +6,15 @@ from uuid import UUID
 from fastapi import Body, Depends, Path, Query
 from pydantic import BaseModel, Field, Json
 
-from core.base import R2RException, RunType
-from core.base.abstractions import EntityLevel, KGRunType
+from core.base import R2RException, RunType, KGCreationSettings
+from core.base.abstractions import EntityLevel, KGRunType, Entity
 from core.base.api.models import (
-    WrappedKGCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
+    WrappedKGEntitiesResponse,
+    WrappedKGCommunitiesResponse
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -30,29 +31,29 @@ from .base_router import BaseRouterV3
 logger = logging.getLogger()
 
 
-class Entity(BaseModel):
-    """Model representing a graph entity."""
+# class Entity(BaseModel):
+#     """Model representing a graph entity."""
 
-    id: UUID
-    name: str
-    type: str
-    metadata: dict = Field(default_factory=dict)
-    level: EntityLevel
-    collection_ids: list[UUID]
-    embedding: Optional[list[float]] = None
+#     id: UUID
+#     name: str
+#     type: str
+#     metadata: dict = Field(default_factory=dict)
+#     level: EntityLevel
+#     collection_ids: list[UUID]
+#     embedding: Optional[list[float]] = None
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                "name": "John Smith",
-                "type": "PERSON",
-                "metadata": {"confidence": 0.95},
-                "level": "DOCUMENT",
-                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
-                "embedding": [0.1, 0.2, 0.3],
-            }
-        }
+#     class Config:
+#         json_schema_extra = {
+#             "example": {
+#                 "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+#                 "name": "John Smith",
+#                 "type": "PERSON",
+#                 "metadata": {"confidence": 0.95},
+#                 "level": "DOCUMENT",
+#                 "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
+#                 "embedding": [0.1, 0.2, 0.3],
+#             }
+#         }
 
 
 class Relationship(BaseModel):
@@ -132,9 +133,7 @@ class GraphRouter(BaseRouterV3):
                             result = client.graphs.create(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 settings={
-                                    "extraction_method": "spacy",
-                                    "entity_types": ["PERSON", "ORG", "GPE"],
-                                    "min_confidence": 0.8
+                                    "entity_types": ["PERSON", "ORG", "GPE"]
                                 }
                             )"""
                         ),
@@ -148,8 +147,7 @@ class GraphRouter(BaseRouterV3):
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                     "settings": {
-                                        "entity_types": ["PERSON", "ORG", "GPE"],
-                                        "min_confidence": 0.8
+                                        "entity_types": ["PERSON", "ORG", "GPE"]
                                     }
                                 }'"""
                         ),
@@ -160,14 +158,20 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_graph(
             collection_id: UUID = Path(
-                ..., description="Collection ID to create graph for"
+                default=...,
+                description="Collection ID to create graph for.",
             ),
-            settings: Optional[dict] = Body(
-                None, description="Graph creation settings"
+            run_type: Optional[KGRunType] = Body(
+                default=None,
+                description="Run type for the graph creation process.",
             ),
-            run_with_orchestration: bool = Query(True),
+            settings: Optional[KGCreationSettings] = Body(
+                default=None,
+                description="Settings for the graph creation process.",
+            ),
+            run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[WrappedKGCreationResponse]:
+        ) -> WrappedKGCreationResponse:
             """Creates a new knowledge graph by extracting entities and relationships from documents in a collection.
 
             The graph creation process involves:
@@ -176,36 +180,60 @@ class GraphRouter(BaseRouterV3):
             3. Building a connected knowledge graph structure
             """
 
+            settings = settings.dict() if settings else None
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can create graphs", 403)
+                logger.warning("Implement permission checks here.")
 
-            server_settings = (
+            logger.info(f"Running create-graph on collection {collection_id}")
+
+            # If no collection ID is provided, use the default user collection
+            if not collection_id:
+                collection_id = generate_default_user_collection_id(
+                    auth_user.id
+                )
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_kg_creation_settings = (
                 self.providers.database.config.kg_creation_settings
             )
+
             if settings:
-                server_settings = update_settings_from_dict(
-                    server_settings, settings
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_kg_creation_settings, settings
                 )
 
-            workflow_input = {
-                "collection_id": str(collection_id),
-                "kg_creation_settings": server_settings.model_dump_json(),
-                "user": auth_user.model_dump_json(),
-            }
-
-            if run_with_orchestration:
-                return await self.orchestration_provider.run_workflow(
-                    "create-graph", {"request": workflow_input}, {}
+            # If the run type is estimate, return an estimate of the creation cost
+            if run_type is KGRunType.ESTIMATE:
+                return await self.services["kg"].get_creation_estimate(
+                    collection_id, server_kg_creation_settings
                 )
             else:
-                from core.main.orchestration import simple_kg_factory
 
-                simple_kg = simple_kg_factory(self.services["kg"])
-                await simple_kg["create-graph"](workflow_input)
-                return {  # type: ignore
-                    "message": "Graph created successfully.",
-                    "task_id": None,
-                }
+                # Otherwise, create the graph
+                if run_with_orchestration:
+                    workflow_input = {
+                        "collection_id": str(collection_id),
+                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                        "user": auth_user.json(),
+                    }
+
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "create-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    logger.info("Running create-graph without orchestration.")
+                    simple_kg = simple_kg_factory(self.service)
+                    await simple_kg["create-graph"](workflow_input)
+                    return {
+                        "message": "Graph created successfully.",
+                        "task_id": None,
+                    }
 
         @self.router.get(
             "/graphs/{collection_id}",
@@ -252,13 +280,14 @@ class GraphRouter(BaseRouterV3):
             - Community statistics
             - Current settings
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can view graph status", 403
-                )
+            raise  NotImplementedError("Not implemented", 501)
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can view graph status", 403
+            #     )
 
-            status = await self.services["kg"].get_graph_status(collection_id)
-            return status  # type: ignore
+            # status = await self.services["kg"].get_graph_status(collection_id)
+            # return status  # type: ignore
 
         # @self.router.post(
         #     "/graphs/{collection_id}/enrich",
@@ -439,13 +468,14 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Creates a new entity in the graph."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can create entities", 403)
+            raise  NotImplementedError("Not implemented", 501)
+            # if not auth_user.is_superuser:
+            #     raise R2RException("Only superusers can create entities", 403)
 
-            new_entity = await self.services["kg"].create_entity(
-                collection_id, entity
-            )
-            return new_entity  # type: ignore
+            # new_entity = await self.services["kg"].create_entity(
+            #     collection_id, entity
+            # )
+            # return new_entity  # type: ignore
 
         @self.router.delete(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -490,13 +520,14 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[dict]:
             """Deletes an entity and optionally its relationships."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can delete entities", 403)
+            raise NotImplementedError("Not implemented", 501)
+            # if not auth_user.is_superuser:
+            #     raise R2RException("Only superusers can delete entities", 403)
 
-            await self.services["kg"].delete_entity(
-                collection_id, entity_id, cascade
-            )
-            return {"message": "Entity deleted successfully"}  # type: ignore
+            # await self.services["kg"].delete_entity(
+            #     collection_id, entity_id, cascade
+            # )
+            # return {"message": "Entity deleted successfully"}  # type: ignore
 
         @self.router.get(
             "/graphs/{collection_id}/entities",
@@ -539,9 +570,9 @@ class GraphRouter(BaseRouterV3):
             level: EntityLevel = Query(EntityLevel.DOCUMENT),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
-            include_embeddings: bool = Query(False),
+            # include_embeddings: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Entity]]:
+        ) -> WrappedKGEntitiesResponse: # PaginatedResultsWrapper[list[Entity]]:
             """Lists entities in the graph with filtering and pagination support.
 
             Entities represent the nodes in the knowledge graph, extracted from documents.
@@ -553,10 +584,16 @@ class GraphRouter(BaseRouterV3):
             - Community memberships
             - Optional vector embedding
             """
-            entities = await self.services["kg"].list_entities(
-                collection_id, level, offset, limit, include_embeddings
+            if level == EntityLevel.CHUNK:
+                entity_table_name = "chunk_entity"
+            elif level == EntityLevel.DOCUMENT:
+                entity_table_name = "document_entity"
+            else:
+                entity_table_name = "collection_entity"
+
+            return await self.services["kg"].list_entities(
+                collection_id=collection_id, entity_ids=[], entity_table_name=entity_table_name, offset=offset, limit=limit
             )
-            return entities  # type: ignore
 
         @self.router.get(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -565,17 +602,24 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_entity(
             collection_id: UUID = Path(...),
-            entity_id: UUID = Path(...),
-            include_embeddings: bool = Query(False),
+            level: EntityLevel = Query(EntityLevel.DOCUMENT),
+            entity_id: int = Path(...),
+            # include_embeddings: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Retrieves details of a specific entity."""
-            entity = await self.services["kg"].get_entity(
-                collection_id, entity_id, include_embeddings
-            )
-            if not entity:
-                raise R2RException("Entity not found", 404)
-            return entity
+
+            if level == EntityLevel.CHUNK:
+                entity_table_name = "chunk_entity"
+            elif level == EntityLevel.DOCUMENT:
+                entity_table_name = "document_entity"
+            else:
+                entity_table_name = "collection_entity"
+
+            result = (await self.services["kg"].list_entities(
+                collection_id=collection_id, entity_ids=[entity_id], entity_table_name=entity_table_name # , offset=offset, limit=limit
+            ))
+            return result['entities'][0]  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -631,13 +675,14 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Updates an existing entity."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can update entities", 403)
+            raise  NotImplementedError("Not implemented", 501)
+            # if not auth_user.is_superuser:
+            #     raise R2RException("Only superusers can update entities", 403)
 
-            updated_entity = await self.services["kg"].update_entity(
-                collection_id, entity_id, entity_update
-            )
-            return updated_entity  # type: ignore
+            # updated_entity = await self.services["kg"].update_entity(
+            #     collection_id, entity_id, entity_update
+            # )
+            # return updated_entity  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/entities/deduplicate",
@@ -823,15 +868,16 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Relationship]:
             """Creates a new relationship between entities."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can create relationships", 403
-                )
+            raise NotImplementedError("Not implemented", 501)
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can create relationships", 403
+            #     )
 
-            new_relationship = await self.services["kg"].create_relationship(
-                collection_id, relationship
-            )
-            return new_relationship  # type: ignore
+            # new_relationship = await self.services["kg"].create_relationship(
+            #     collection_id, relationship
+            # )
+            # return new_relationship  # type: ignore
 
         # Relationship operations
         @self.router.get(
@@ -888,16 +934,16 @@ class GraphRouter(BaseRouterV3):
             - Confidence score and metadata
             - Source documents and extractions
             """
-
-            relationships = await self.services["kg"].list_relationships(
-                collection_id,
-                source_id,
-                target_id,
-                relationship_type,
-                offset,
-                limit,
-            )
-            return relationships  # type: ignore
+            raise R2RException("Not implemented", 501)
+            # relationships = await self.services["kg"].list_relationships(
+            #     collection_id,
+            #     source_id,
+            #     target_id,
+            #     relationship_type,
+            #     offset,
+            #     limit,
+            # )
+            # return relationships  # type: ignore
 
         @self.router.get(
             "/graphs/{collection_id}/relationships/{relationship_id}",
@@ -910,12 +956,13 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Relationship]:
             """Retrieves details of a specific relationship."""
-            relationship = await self.services["kg"].get_relationship(
-                collection_id, relationship_id
-            )
-            if not relationship:
-                raise R2RException("Relationship not found", 404)
-            return relationship  # type: ignore
+            raise R2RException("Not implemented", 501)
+            # relationship = await self.services["kg"].get_relationship(
+            #     collection_id, relationship_id
+            # )
+            # if not relationship:
+            #     raise R2RException("Relationship not found", 404)
+            # return relationship  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/relationships/{relationship_id}",
@@ -971,17 +1018,18 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Relationship]:
             """Updates an existing relationship."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can update relationships", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can update relationships", 403
+            #     )
 
-            updated_relationship = await self.services[
-                "kg"
-            ].update_relationship(
-                collection_id, relationship_id, relationship_update
-            )
-            return updated_relationship  # type: ignore
+            # updated_relationship = await self.services[
+            #     "kg"
+            # ].update_relationship(
+            #     collection_id, relationship_id, relationship_update
+            # )
+            # return updated_relationship  # type: ignore
 
         @self.router.delete(
             "/graphs/{collection_id}/relationships/{relationship_id}",
@@ -1021,15 +1069,16 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[dict]:
             """Deletes a relationship."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can delete relationships", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can delete relationships", 403
+            #     )
 
-            await self.services["kg"].delete_relationship(
-                collection_id, relationship_id
-            )
-            return {"message": "Relationship deleted successfully"}  # type: ignore
+            # await self.services["kg"].delete_relationship(
+            #     collection_id, relationship_id
+            # )
+            # return {"message": "Relationship deleted successfully"}  # type: ignore
 
         # Community operations
         @self.router.post(
@@ -1049,11 +1098,7 @@ class GraphRouter(BaseRouterV3):
                             result = client.graphs.create_communities(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 settings={
-                                    "algorithm": "louvain",
-                                    "resolution": 1.0,
-                                    "min_community_size": 3,
-                                    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
-                                    "similarity_threshold": 0.7
+                                    "max_summary_input_length": 65536,
                                 }
                             )"""
                         ),
@@ -1067,11 +1112,7 @@ class GraphRouter(BaseRouterV3):
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                     "settings": {
-                                        "algorithm": "louvain",
-                                        "resolution": 1.0,
-                                        "min_community_size": 3,
-                                        "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
-                                        "similarity_threshold": 0.7
+                                        "max_summary_input_length": 65536,
                                     }
                                 }'"""
                         ),
@@ -1083,9 +1124,13 @@ class GraphRouter(BaseRouterV3):
         async def create_communities(
             collection_id: UUID = Path(...),
             settings: Optional[dict] = Body(None),
+            run_type: Optional[KGRunType] = Body(
+                default=None,
+                description="Run type for the graph creation process.",
+            ),
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[WrappedKGCommunitiesResponse]:
+        ) -> WrappedKGEnrichmentResponse:
             """Creates communities in the graph by analyzing entity relationships and similarities.
 
             Communities are created by:
@@ -1099,33 +1144,44 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can create communities", 403
                 )
 
-            server_settings = (
-                self.providers.database.config.community_detection_settings
+            # Apply runtime settings overrides
+            server_kg_enrichment_settings = (
+                self.providers.database.config.kg_enrichment_settings
             )
             if settings:
-                server_settings = update_settings_from_dict(
-                    server_settings, settings
+                server_kg_enrichment_settings = update_settings_from_dict(
+                    server_kg_enrichment_settings, settings
                 )
 
             workflow_input = {
                 "collection_id": str(collection_id),
-                "community_detection_settings": server_settings.model_dump_json(),
+                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
                 "user": auth_user.model_dump_json(),
             }
 
-            if run_with_orchestration:
-                return await self.orchestration_provider.run_workflow(  # type: ignore
-                    "create-communities", {"request": workflow_input}, {}
-                )
-            else:
-                from core.main.orchestration import simple_kg_factory
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
 
-                simple_kg = simple_kg_factory(self.services["kg"])
-                await simple_kg["create-communities"](workflow_input)
-                return {  # type: ignore
-                    "message": "Communities created successfully.",
-                    "task_id": None,
-                }
+            # If the run type is estimate, return an estimate of the enrichment cost
+            if run_type is KGRunType.ESTIMATE:
+                return await self.services["kg"].get_enrichment_estimate(
+                    collection_id, server_kg_enrichment_settings
+                )
+
+            else:
+                if run_with_orchestration:
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "enrich-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    simple_kg = simple_kg_factory(self.services["kg"])
+                    await simple_kg["enrich-graph"](workflow_input)
+                    return {  # type: ignore
+                        "message": "Communities created successfully.",
+                        "task_id": None,
+                    }
 
         @self.router.post(
             "/graphs/{collection_id}/communities/{community_id}",
@@ -1179,15 +1235,16 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Community]:
             """Updates a community's metadata."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can update communities", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can update communities", 403
+            #     )
 
-            updated_community = await self.services["kg"].update_community(
-                collection_id, community_id, community_update
-            )
-            return updated_community  # type: ignore
+            # updated_community = await self.services["kg"].update_community(
+            #     collection_id, community_id, community_update
+            # )
+            # return updated_community  # type: ignore
 
         @self.router.get(
             "/graphs/{collection_id}/communities",
@@ -1226,11 +1283,16 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def list_communities(
             collection_id: UUID = Path(...),
-            level: Optional[int] = Query(None),
+            community_numbers: Optional[list[int]] = Query(
+                None, description="Community numbers to filter by."
+            ),
+            levels: Optional[list[int]] = Query(
+                None, description="Levels to filter by."
+            ),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Community]]:
+        ) -> WrappedKGCommunitiesResponse: # PaginatedResultsWrapper[list[Community]]:
             """Lists communities in the graph with optional filtering and pagination.
 
             Each community represents a group of related entities with:
@@ -1241,7 +1303,7 @@ class GraphRouter(BaseRouterV3):
             - Impact rating and explanation
             """
             communities = await self.services["kg"].list_communities(
-                collection_id, level, offset, limit
+                collection_id, levels, community_numbers, offset, limit
             )
             return communities  # type: ignore
 
@@ -1256,12 +1318,13 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Community]:
             """Retrieves details of a specific community."""
-            community = await self.services["kg"].get_community(
-                collection_id, community_id
-            )
-            if not community:
-                raise R2RException("Community not found", 404)
-            return community  # type: ignore
+            raise NotImplementedError("Not implemented")
+            # community = await self.services["kg"].get_community(
+            #     collection_id, community_id
+            # )
+            # if not community:
+            #     raise R2RException("Community not found", 404)
+            # return community  # type: ignore
 
         @self.router.delete(
             "/graphs/{collection_id}/communities",
@@ -1318,18 +1381,19 @@ class GraphRouter(BaseRouterV3):
             Deletes communities from the graph. Can delete all communities or a specific level.
             This is useful when you want to recreate communities with different parameters.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can delete communities", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can delete communities", 403
+            #     )
 
-            await self.services["kg"].delete_communities(collection_id, level)
+            # await self.services["kg"].delete_communities(collection_id, level)
 
-            if level is not None:
-                return {  # type: ignore
-                    "message": f"Communities at level {level} deleted successfully"
-                }
-            return {"message": "All communities deleted successfully"}  # type: ignore
+            # if level is not None:
+            #     return {  # type: ignore
+            #         "message": f"Communities at level {level} deleted successfully"
+            #     }
+            # return {"message": "All communities deleted successfully"}  # type: ignore
 
         @self.router.delete(
             "/graphs/{collection_id}/communities/{community_id}",
@@ -1372,22 +1436,23 @@ class GraphRouter(BaseRouterV3):
             Deletes a specific community by ID.
             This operation will not affect other communities or the underlying entities.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can delete communities", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can delete communities", 403
+            #     )
 
-            # First check if community exists
-            community = await self.services["kg"].get_community(
-                collection_id, community_id
-            )
-            if not community:
-                raise R2RException("Community not found", 404)
+            # # First check if community exists
+            # community = await self.services["kg"].get_community(
+            #     collection_id, community_id
+            # )
+            # if not community:
+            #     raise R2RException("Community not found", 404)
 
-            await self.services["kg"].delete_community(
-                collection_id, community_id
-            )
-            return True  # type: ignore
+            # await self.services["kg"].delete_community(
+            #     collection_id, community_id
+            # )
+            # return True  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/tune-prompt",
@@ -1405,7 +1470,7 @@ class GraphRouter(BaseRouterV3):
 
                             result = client.graphs.tune_prompt(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                prompt_name="kg_triples_extraction_prompt",
+                                prompt_name="graphrag_triples_extraction_few_shot",
                                 documents_limit=100,
                                 chunks_limit=1000
                             )"""
@@ -1419,7 +1484,7 @@ class GraphRouter(BaseRouterV3):
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
-                                    "prompt_name": "kg_triples_extraction_prompt",
+                                    "prompt_name": "graphrag_triples_extraction_few_shot",
                                     "documents_limit": 100,
                                     "chunks_limit": 1000
                                 }'"""
@@ -1433,14 +1498,14 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             prompt_name: str = Body(
                 ...,
-                description="The prompt to tune. Valid options: kg_triples_extraction_prompt, kg_entity_description_prompt, community_reports_prompt",
+                description="The prompt to tune. Valid options: graphrag_triples_extraction_few_shot, graphrag_entity_description, graphrag_community_reports",
             ),
             documents_offset: int = Body(0, ge=0),
             documents_limit: int = Body(100, ge=1),
             chunks_offset: int = Body(0, ge=0),
             chunks_limit: int = Body(100, ge=1),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[WrappedKGTunePromptResponse]:
+        ) -> WrappedKGTunePromptResponse:
             """Tunes a graph operation prompt using collection data.
 
             Uses sample documents and chunks from the collection to tune prompts for:

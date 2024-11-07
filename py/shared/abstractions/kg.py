@@ -29,13 +29,13 @@ class KGEntityDeduplicationType(str, Enum):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    kg_triples_extraction_prompt: str = Field(
+    graphrag_triples_extraction_few_shot: str = Field(
         default="graphrag_triples_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",
         alias="graphrag_triples_extraction_few_shot_prompt",  # TODO - mark deprecated & remove
     )
 
-    kg_entity_description_prompt: str = Field(
+    graphrag_entity_description: str = Field(
         default="graphrag_entity_description",
         description="The prompt to use for entity description generation.",
         alias="graphrag_entity_description_prompt",  # TODO - mark deprecated & remove
@@ -109,10 +109,10 @@ class KGEnrichmentSettings(R2RSerializable):
         description="Force run the enrichment step even if graph creation is still in progress for some documents.",
     )
 
-    community_reports_prompt: str = Field(
+    graphrag_community_reports: str = Field(
         default="graphrag_community_reports",
         description="The prompt to use for knowledge graph enrichment.",
-        alias="community_reports_prompt",  # TODO - mark deprecated & remove
+        alias="graphrag_community_reports",  # TODO - mark deprecated & remove
     )
 
     max_summary_input_length: int = Field(

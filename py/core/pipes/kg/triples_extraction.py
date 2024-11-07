@@ -85,7 +85,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
         messages = await self.database_provider.prompt_handler.get_message_payload(
-            task_prompt_name=self.database_provider.config.kg_creation_settings.kg_triples_extraction_prompt,
+            task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_triples_extraction_few_shot,
             task_inputs={
                 "input": combined_extraction,
                 "max_knowledge_triples": max_knowledge_triples,
@@ -240,15 +240,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
         )
 
-        # First get the chunks response
-        chunks_response = await self.database_provider.list_document_chunks(
-            document_id=document_id
-        )
-
         # Then create the extractions from the results
         extractions = [
             DocumentChunk(
-                id=extraction["chunk_id"],
+                id=extraction["id"],
                 document_id=extraction["document_id"],
                 user_id=extraction["user_id"],
                 collection_ids=extraction["collection_ids"],

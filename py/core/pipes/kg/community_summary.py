@@ -155,7 +155,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 (
                     await self.llm_provider.aget_completion(
                         messages=await self.database_provider.prompt_handler.get_message_payload(
-                            task_prompt_name=self.database_provider.config.kg_enrichment_settings.community_reports_prompt,
+                            task_prompt_name=self.database_provider.config.kg_enrichment_settings.graphrag_community_reports,
                             task_inputs={
                                 "input_text": (
                                     await self.community_summary_prompt(

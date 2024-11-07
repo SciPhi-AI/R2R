@@ -103,7 +103,6 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].add_user_to_collection(
                 auth_user.id, collection.collection_id
             )
-            print("collection = ", collection)
             return collection
 
         @self.router.get(
