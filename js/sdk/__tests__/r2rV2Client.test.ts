@@ -12,7 +12,7 @@ describe("R2RClient", () => {
     mockAxiosInstance = {
       post: jest.fn(),
       request: jest.fn(),
-      defaults: { baseURL: "http://0.0.0.0:7272/v2" },
+      defaults: { baseURL: "http://0.0.0.0:7272" },
     };
 
     (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
@@ -23,7 +23,7 @@ describe("R2RClient", () => {
   describe("Mocked Tests", () => {
     test("should correctly set the baseURL with prefix", () => {
       expect((client as any).axiosInstance.defaults.baseURL).toBe(
-        "http://0.0.0.0:7272/v2",
+        "http://0.0.0.0:7272",
       );
     });
 
@@ -35,7 +35,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "GET",
-        url: "health",
+        url: "/v2/health",
         headers: {},
         responseType: "json",
       });
@@ -54,7 +54,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "register",
+        url: "/v2/register",
         data: JSON.stringify({ email, password }),
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +82,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse.results);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "login",
+        url: "/v2/login",
         data: "username=test%40example.com&password=password123",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -104,7 +104,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "verify_email",
+        url: "/v2/verify_email",
         data: JSON.stringify({ verification_code }),
         headers: {
           "Content-Type": "application/json",
@@ -125,7 +125,7 @@ describe("R2RClient", () => {
       expect(result).toEqual({});
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "logout",
+        url: "/v2/logout",
         headers: {
           Authorization: "Bearer access-token",
         },
@@ -147,7 +147,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "GET",
-        url: "user",
+        url: "/v2/user",
         headers: {
           Authorization: "Bearer access-token",
         },
@@ -181,7 +181,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "PUT",
-        url: "user",
+        url: "/v2/user",
         data: JSON.stringify({
           user_id: userId,
           email,
@@ -224,7 +224,7 @@ describe("R2RClient", () => {
 
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "refresh_access_token",
+        url: "/v2/refresh_access_token",
         data: "old-refresh-token",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -251,7 +251,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "change_password",
+        url: "/v2/change_password",
         data: JSON.stringify({
           current_password,
           new_password,
@@ -275,7 +275,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "request_password_reset",
+        url: "/v2/request_password_reset",
         data: JSON.stringify({ email }),
         headers: {
           "Content-Type": "application/json",
@@ -296,7 +296,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: `reset_password/${resetToken}`,
+        url: `/v2/reset_password/${resetToken}`,
         data: JSON.stringify({ new_password: newPassword }),
         headers: {
           "Content-Type": "application/json",
@@ -320,7 +320,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "DELETE",
-        url: `user/${userId}`,
+        url: `/v2/user/${userId}`,
         data: JSON.stringify({ password }),
         headers: {
           Authorization: "Bearer access-token",
@@ -357,7 +357,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "ingest_chunks",
+        url: "/v2/ingest_chunks",
         data: JSON.stringify({
           chunks,
           document_id: documentId,
@@ -396,7 +396,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "PUT",
-        url: `update_chunk/${documentId}/${extractionId}`,
+        url: `/v2/update_chunk/${documentId}/${extractionId}`,
         data: JSON.stringify({
           text,
           metadata,
@@ -424,7 +424,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "GET",
-        url: "server_stats",
+        url: "/v2/server_stats",
         headers: {
           Authorization: "Bearer access-token",
         },
@@ -448,7 +448,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "update_prompt",
+        url: "/v2/update_prompt",
         data: JSON.stringify({
           name,
           template,
@@ -478,7 +478,7 @@ describe("R2RClient", () => {
       expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: "GET",
-          url: "analytics",
+          url: "/v2/analytics",
           params: {
             filter_criteria: JSON.stringify(filter_criteria),
             analysis_types: JSON.stringify(analysis_types),
@@ -513,7 +513,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "search",
+        url: "/v2/search",
         data: JSON.stringify({
           query,
           vector_search_settings,
@@ -553,7 +553,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "rag",
+        url: "/v2/rag",
         data: JSON.stringify({
           query,
           vector_search_settings,
