@@ -231,7 +231,9 @@ def hatchet_ingestion_factory(
             try:
                 documents_overview = (
                     await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-                        offset=0, limit=100, filter_document_ids=[document_id]
+                        offset=0,
+                        limit=100,
+                        filter_document_ids=[document_id],
                     )
                 )["results"]
 
@@ -478,7 +480,9 @@ def hatchet_ingestion_factory(
             try:
                 documents_overview = (
                     await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-                        offset=0, limit=100, filter_document_ids=[document_id]
+                        offset=0,
+                        limit=100,
+                        filter_document_ids=[document_id],
                     )
                 )["results"]
 

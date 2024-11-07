@@ -387,6 +387,7 @@ class KgService(Service):
             offset=offset or 0,
             limit=limit or -1,
         )
+
     @telemetry_event("get_communities")
     async def get_communities(
         self,
@@ -422,7 +423,6 @@ class KgService(Service):
             offset=offset or 0,
             limit=limit or -1,
         )
-
 
     @telemetry_event("get_deduplication_estimate")
     async def get_deduplication_estimate(

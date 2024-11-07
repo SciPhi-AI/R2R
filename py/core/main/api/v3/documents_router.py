@@ -608,10 +608,12 @@ class DocumentsRouter(BaseRouterV3):
 
             documents_overview_response = await self.services[
                 "management"
-            ].documents_overview(
+            ].documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 user_ids=request_user_ids,
                 collection_ids=filter_collection_ids,
                 document_ids=[id],
+                offset=0,
+                limit=100,
             )
             results = documents_overview_response["results"]
             if len(results) == 0:

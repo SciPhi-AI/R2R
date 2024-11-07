@@ -370,9 +370,9 @@ class IngestionService(Service):
     ) -> dict:
         # Verify chunk exists and user has access
         existing_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            document_id=document_id,
             offset=0,
             limit=1,
-            document_id=document_id,
         )
 
         if not existing_chunks["results"]:
@@ -542,9 +542,9 @@ class IngestionService(Service):
         # get all list_document_chunks
         list_document_chunks = (
             await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                document_id=document_id,
                 offset=0,
                 limit=100,
-                document_id=document_id,
             )
         )["results"]
 

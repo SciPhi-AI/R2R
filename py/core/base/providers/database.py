@@ -1453,7 +1453,10 @@ class DatabaseProvider(Provider):
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         return await self.vector_handler.list_document_chunks(
-            document_id, offset, limit, include_vectors
+            document_id=document_id,
+            offset=offset,
+            limit=limit,
+            include_vectors=include_vectors,
         )
 
     async def get_chunk(self, chunk_id: UUID) -> dict:

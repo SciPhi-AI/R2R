@@ -296,23 +296,44 @@ class ManagementService(Service):
                 if result.get("document_id")
             )
 
-        relational_filters = {}
-        if "document_id" in filters:
-            relational_filters["filter_document_ids"] = [
-                filters["document_id"]["$eq"]
-            ]
-        if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [filters["user_id"]["$eq"]]
-        if "collection_ids" in filters:
-            relational_filters["filter_collection_ids"] = list(
-                filters["collection_ids"]["$in"]
-            )
+        # TODO: This might be appropriate to move elsewhere and revisit filter logic in other methods
+        def extract_filters(filters: dict[str, Any]) -> dict[str, list[str]]:
+            relational_filters = {}
 
+            def process_filter(filter_dict: dict[str, Any]):
+                if "document_id" in filter_dict:
+                    relational_filters.setdefault(
+                        "filter_document_ids", []
+                    ).append(filter_dict["document_id"]["$eq"])
+                if "user_id" in filter_dict:
+                    relational_filters.setdefault(
+                        "filter_user_ids", []
+                    ).append(filter_dict["user_id"]["$eq"])
+                if "collection_ids" in filter_dict:
+                    relational_filters.setdefault(
+                        "filter_collection_ids", []
+                    ).extend(filter_dict["collection_ids"]["$in"])
+
+            # Handle nested conditions
+            if "$and" in filters:
+                for condition in filters["$and"]:
+                    process_filter(condition)
+            elif "$or" in filters:
+                for condition in filters["$or"]:
+                    process_filter(condition)
+            else:
+                process_filter(filters)
+
+            return relational_filters
+
+        relational_filters = extract_filters(filters)
         if relational_filters:
             try:
                 documents_overview = (
-                    await self.providers.database.get_documents_overview(
-                        **relational_filters  # type: ignore
+                    await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        offset=0,
+                        limit=1000,
+                        **relational_filters,  # type: ignore
                     )
                 )["results"]
             except Exception as e:
@@ -333,9 +354,9 @@ class ManagementService(Service):
 
             for document_id in document_ids_to_purge:
                 remaining_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    document_id=document_id,
                     offset=0,
                     limit=1000,
-                    document_id=document_id,
                 )
                 if remaining_chunks["total_entries"] == 0:
                     try:
@@ -382,17 +403,17 @@ class ManagementService(Service):
     @telemetry_event("DocumentChunks")
     async def list_document_chunks(
         self,
+        document_id: UUID,
         offset: int,
         limit: int,
-        document_id: UUID,
         include_vectors: bool = False,
         *args,
         **kwargs,
     ):
         return await self.providers.database.list_document_chunks(
+            document_id=document_id,
             offset=offset,
             limit=limit,
-            document_id=document_id,
             include_vectors=include_vectors,
         )
 

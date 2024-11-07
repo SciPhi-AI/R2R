@@ -5,7 +5,7 @@ import { describe, test, beforeAll, expect } from "@jest/globals";
 const baseUrl = "http://localhost:7272";
 
 /**
- * Raskolnikov.txt will have an id of f9f61fc8-079c-52d0-910a-c657958e385b
+ * marmeladov.txt will have an id of 83ef5342-4275-5b75-92d6-692fa32f8523
  * The untitled document will have an id of 5556836e-a51c-57c7-916a-de76c79df2b6
  */
 describe("r2rClient V3 Documents Integration Tests", () => {
@@ -19,8 +19,8 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Create document with file path", async () => {
     const response = await client.documents.create({
-      file: { path: "examples/data/raskolnikov.txt", name: "raskolnikov.txt" },
-      metadata: { title: "raskolnikov.txt" },
+      file: { path: "examples/data/marmeladov.txt", name: "marmeladov.txt" },
+      metadata: { title: "marmeladov.txt" },
     });
 
     expect(response.results.document_id).toBeDefined();
@@ -94,7 +94,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Delete Raskolnikov.txt", async () => {
     const response = await client.documents.delete(
-      "f9f61fc8-079c-52d0-910a-c657958e385b",
+      "83ef5342-4275-5b75-92d6-692fa32f8523",
     );
 
     expect(response.results).toBeDefined();
