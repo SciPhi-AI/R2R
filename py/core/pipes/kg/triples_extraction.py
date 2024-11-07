@@ -252,7 +252,9 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             )
             for extraction in (
                 await self.database_provider.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-                    offset=0, limit=100, document_id=document_id
+                    document_id=document_id,
+                    offset=0,
+                    limit=100,
                 )
             )["results"]
         ]

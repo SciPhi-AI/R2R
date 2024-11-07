@@ -128,9 +128,11 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
         documents_overview = (
-            await service.providers.database.get_documents_overview(
-                filter_document_ids=document_ids,
+            await service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                offset=0,
+                limit=100,
                 filter_user_ids=None if user.is_superuser else [user.id],
+                filter_document_ids=document_ids,
             )
         )["results"]
 

@@ -18,7 +18,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
   test("Create new collection", async () => {
     const response = await client.collections.create("Test Collection");
-    console.log(response); // Keep this for debugging if needed
     expect(response).toBeTruthy();
     collectionId = response.results.collection_id; // Updated to use correct path
   });

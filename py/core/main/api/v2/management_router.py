@@ -379,7 +379,10 @@ class ManagementRouter(BaseRouter):
             document_uuid = UUID(document_id)
 
             document_chunks = await self.service.list_document_chunks(
-                document_uuid, offset, limit, include_vectors
+                document_id=document_uuid,
+                offset=offset,
+                limit=limit,
+                include_vectors=include_vectors,
             )
 
             document_chunks_result = document_chunks["results"]
@@ -432,7 +435,10 @@ class ManagementRouter(BaseRouter):
             document_uuid = UUID(document_id)
 
             list_document_chunks = await self.service.list_document_chunks(
-                document_uuid, offset, limit, include_vectors
+                document_id=document_uuid,
+                offset=offset,
+                limit=limit,
+                include_vectors=include_vectors,
             )
 
             document_chunks_result = list_document_chunks["results"]

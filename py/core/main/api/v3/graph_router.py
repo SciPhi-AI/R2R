@@ -14,7 +14,7 @@ from core.base.api.models import (
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
     WrappedKGEntitiesResponse,
-    WrappedKGCommunitiesResponse
+    WrappedKGCommunitiesResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -280,7 +280,7 @@ class GraphRouter(BaseRouterV3):
             - Community statistics
             - Current settings
             """
-            raise  NotImplementedError("Not implemented", 501)
+            raise NotImplementedError("Not implemented", 501)
             # if not auth_user.is_superuser:
             #     raise R2RException(
             #         "Only superusers can view graph status", 403
@@ -468,7 +468,7 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Creates a new entity in the graph."""
-            raise  NotImplementedError("Not implemented", 501)
+            raise NotImplementedError("Not implemented", 501)
             # if not auth_user.is_superuser:
             #     raise R2RException("Only superusers can create entities", 403)
 
@@ -581,7 +581,9 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGEntitiesResponse: # PaginatedResultsWrapper[list[Entity]]:
+        ) -> (
+            WrappedKGEntitiesResponse
+        ):  # PaginatedResultsWrapper[list[Entity]]:
             """Lists entities in the graph with filtering and pagination support.
 
             Entities represent the nodes in the knowledge graph, extracted from documents.
@@ -601,7 +603,11 @@ class GraphRouter(BaseRouterV3):
                 entity_table_name = "collection_entity"
 
             return await self.services["kg"].list_entities(
-                collection_id=collection_id, entity_ids=[], entity_table_name=entity_table_name, offset=offset, limit=limit
+                collection_id=collection_id,
+                entity_ids=[],
+                entity_table_name=entity_table_name,
+                offset=offset,
+                limit=limit,
             )
 
         @self.router.get(
@@ -625,10 +631,12 @@ class GraphRouter(BaseRouterV3):
             else:
                 entity_table_name = "collection_entity"
 
-            result = (await self.services["kg"].list_entities(
-                collection_id=collection_id, entity_ids=[entity_id], entity_table_name=entity_table_name # , offset=offset, limit=limit
-            ))
-            return result['entities'][0]  # type: ignore
+            result = await self.services["kg"].list_entities(
+                collection_id=collection_id,
+                entity_ids=[entity_id],
+                entity_table_name=entity_table_name,  # , offset=offset, limit=limit
+            )
+            return result["entities"][0]  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -684,7 +692,7 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Updates an existing entity."""
-            raise  NotImplementedError("Not implemented", 501)
+            raise NotImplementedError("Not implemented", 501)
             # if not auth_user.is_superuser:
             #     raise R2RException("Only superusers can update entities", 403)
 
@@ -1319,7 +1327,9 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCommunitiesResponse: # PaginatedResultsWrapper[list[Community]]:
+        ) -> (
+            WrappedKGCommunitiesResponse
+        ):  # PaginatedResultsWrapper[list[Community]]:
             """Lists communities in the graph with optional filtering and pagination.
 
             Each community represents a group of related entities with:
