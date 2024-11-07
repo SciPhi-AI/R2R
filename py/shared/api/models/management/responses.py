@@ -116,14 +116,7 @@ class DocumentChunkResponse(BaseModel):
 
 class CollectionResponse(BaseModel):
     collection_id: UUID
-    name: str
-    description: Optional[str]
-    created_at: datetime
-    updated_at: datetime
-
-
-class CollectionOverviewResponse(BaseModel):
-    collection_id: UUID
+    user_id: UUID
     name: str
     description: Optional[str]
     created_at: datetime
@@ -141,6 +134,7 @@ class AddUserResponse(BaseModel):
     result: bool
 
 
+# TODO: We should harmonize these more
 # Create wrapped versions of each response
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
 WrappedGetPromptsResponse = ResultsWrapper[AllPromptsResponse]
@@ -155,11 +149,11 @@ WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]
+
+# Collection Responses
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
-WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
-WrappedCollectionOverviewResponse = ResultsWrapper[
-    list[CollectionOverviewResponse]
-]
+WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
+
 WrappedAddUserResponse = ResultsWrapper[None]
 WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedUserCollectionResponse = PaginatedResultsWrapper[

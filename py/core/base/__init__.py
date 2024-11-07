@@ -136,7 +136,6 @@ __all__ = [
     "generate_document_id",
     "generate_extraction_id",
     "generate_default_user_collection_id",
-    "generate_id_from_label",
     "generate_user_id",
     "increment_version",
     "EntityType",

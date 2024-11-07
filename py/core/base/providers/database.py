@@ -42,14 +42,12 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import (
-    CollectionOverviewResponse,
     CollectionResponse,
     KGCreationEstimationResponse,
     KGDeduplicationEstimationResponse,
     KGEnrichmentEstimationResponse,
     UserResponse,
 )
-from core.base.utils import _decorate_vector_type
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType
@@ -258,26 +256,17 @@ class DocumentHandler(Handler):
 
 class CollectionHandler(Handler):
     @abstractmethod
-    async def create_default_collection(
-        self, user_id: Optional[UUID] = None
-    ) -> CollectionResponse:
-        pass
-
-    @abstractmethod
     async def collection_exists(self, collection_id: UUID) -> bool:
         pass
 
     @abstractmethod
     async def create_collection(
         self,
-        name: str,
+        user_id: UUID,
+        name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-        pass
-
-    @abstractmethod
-    async def get_collection(self, collection_id: UUID) -> CollectionResponse:
         pass
 
     @abstractmethod
@@ -291,13 +280,6 @@ class CollectionHandler(Handler):
 
     @abstractmethod
     async def delete_collection_relational(self, collection_id: UUID) -> None:
-        pass
-
-    @abstractmethod
-    async def list_collections(
-        self, offset: int, limit: int
-    ) -> dict[str, Any]:
-        """List collections with pagination."""
         pass
 
     @abstractmethod
@@ -317,8 +299,10 @@ class CollectionHandler(Handler):
         self,
         offset: int,
         limit: int,
-        collection_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[CollectionOverviewResponse], int]]:
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, Union[list[CollectionResponse], int]]:
         pass
 
     @abstractmethod
@@ -333,12 +317,6 @@ class CollectionHandler(Handler):
         document_id: UUID,
         collection_id: UUID,
     ) -> UUID:
-        pass
-
-    @abstractmethod
-    async def document_collections(
-        self, document_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
         pass
 
     @abstractmethod
@@ -1158,26 +1136,22 @@ class DatabaseProvider(Provider):
         )
 
     # Collection handler methods
-    async def create_default_collection(
-        self, user_id: Optional[UUID] = None
-    ) -> CollectionResponse:
-        return await self.collection_handler.create_default_collection(user_id)
-
     async def collection_exists(self, collection_id: UUID) -> bool:
         return await self.collection_handler.collection_exists(collection_id)
 
     async def create_collection(
         self,
-        name: str,
+        user_id: UUID,
+        name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
         return await self.collection_handler.create_collection(
-            name, description, collection_id
+            user_id=user_id,
+            name=name,
+            description=description,
+            collection_id=collection_id,
         )
-
-    async def get_collection(self, collection_id: UUID) -> CollectionResponse:
-        return await self.collection_handler.get_collection(collection_id)
 
     async def update_collection(
         self,
@@ -1193,11 +1167,6 @@ class DatabaseProvider(Provider):
         return await self.collection_handler.delete_collection_relational(
             collection_id
         )
-
-    async def list_collections(
-        self, offset: int, limit: int
-    ) -> dict[str, Any]:
-        return await self.collection_handler.list_collections(offset, limit)
 
     async def get_collections_by_ids(
         self, collection_ids: list[UUID]
@@ -1217,12 +1186,16 @@ class DatabaseProvider(Provider):
         self,
         offset: int,
         limit: int,
-        collection_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[CollectionOverviewResponse], int]]:
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, Union[list[CollectionResponse], int]]:
         return await self.collection_handler.get_collections_overview(
             offset=offset,
             limit=limit,
-            collection_ids=collection_ids,
+            filter_user_ids=filter_user_ids,
+            filter_document_ids=filter_document_ids,
+            filter_collection_ids=filter_collection_ids,
         )
 
     async def get_collections_for_user(
@@ -1239,13 +1212,6 @@ class DatabaseProvider(Provider):
     ) -> UUID:
         return await self.collection_handler.assign_document_to_collection_relational(
             document_id, collection_id
-        )
-
-    async def document_collections(
-        self, document_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
-        return await self.collection_handler.document_collections(
-            document_id, offset, limit
         )
 
     async def remove_document_from_collection_relational(

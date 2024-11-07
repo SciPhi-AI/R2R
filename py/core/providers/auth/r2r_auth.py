@@ -16,6 +16,7 @@ from core.base import (
     R2RException,
     Token,
     TokenData,
+    CollectionResponse,
 )
 from core.base.api.models import UserResponse
 
@@ -137,9 +138,9 @@ class R2RAuthProvider(AuthProvider):
     async def register(self, email: str, password: str) -> UserResponse:
         # Create new user and give them a default collection
         new_user = await self.database_provider.create_user(email, password)
-        default_collection = (
-            await self.database_provider.create_default_collection(
-                new_user.id,
+        default_collection: CollectionResponse = (
+            await self.database_provider.create_collection(
+                user_id=new_user.id,
             )
         )
 

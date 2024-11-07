@@ -10,8 +10,8 @@ from core.base import R2RException, RunType
 from core.base.api.models import (
     ResultsWrapper,
     WrappedAddUserResponse,
-    WrappedCollectionListResponse,
     WrappedCollectionResponse,
+    WrappedCollectionsResponse,
     WrappedDeleteResponse,
     WrappedDocumentOverviewResponse,
     WrappedMessageResponse,
@@ -85,6 +85,7 @@ class CollectionsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_collection(
+            # TODO: Adding an abstraction here for the collection config seems unnecessary
             config: CollectionConfig = Body(
                 ..., description="The configuration for the new collection"
             ),
@@ -97,7 +98,9 @@ class CollectionsRouter(BaseRouterV3):
             and optional description. The user creating the collection is automatically added as a member.
             """
             collection = await self.services["management"].create_collection(
-                name=config.name, description=config.description
+                user_id=auth_user.id,
+                name=config.name,
+                description=config.description,
             )
             # Add the creating user to the collection
             await self.services["management"].add_user_to_collection(
@@ -140,10 +143,10 @@ class CollectionsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def list_collections(
-            name: Optional[str] = Query(
-                None,
-                description="Filter collections by name (case-insensitive partial match)",
+        async def get_collections(
+            ids: list[str] = Query(
+                [],
+                description="A list of collection IDs to retrieve. If not provided, all collections will be returned.",
             ),
             offset: int = Query(
                 0,
@@ -157,23 +160,38 @@ class CollectionsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
+        ) -> WrappedCollectionsResponse:
             """
-            List collections the user has access to with pagination and filtering options.
+            Returns a paginated list of collections the authenticated user has access to.
 
-            This endpoint returns a paginated list of collections that the authenticated user has access to.
-            It supports filtering by collection name and sorting options.
+            Results can be filtered by providing specific collection IDs. Regular users will only see
+            collections they own or have access to. Superusers can see all documents.
+
+            The collections are returned in order of last modification, with most recent first.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
 
-            list_collections_response = await self.services[
+            collection_uuids = [UUID(collection_id) for collection_id in ids]
+
+            collections_overview_response = await self.services[
                 "management"
-            ].list_collections(
-                offset=offset, limit=min(max(limit, 1), 1000)
-            )  # TODO: Review if this limit check is really necessary anymore
+            ].collections_overview(
+                user_ids=requesting_user_id,
+                collection_ids=collection_uuids,
+                offset=offset,
+                limit=limit,
+            )
 
-            return list_collections_response["results"], {  # type: ignore
-                "total_entries": list_collections_response["total_entries"]
-            }
+            return (
+                collections_overview_response["results"],
+                {
+                    "total_entries": collections_overview_response[
+                        "total_entries"
+                    ]
+                },
+            )
 
         @self.router.get(
             "/collections/{id}",
@@ -227,8 +245,15 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
-            result = await self.services["management"].get_collection(id)
-            return result  # type: ignore
+            collections_overview_response = await self.services[
+                "management"
+            ].collections_overview(
+                user_ids=None,
+                collection_ids=[id],
+                offset=0,
+                limit=1,
+            )
+            return collections_overview_response["results"][0]
 
         @self.router.post(
             "/collections/{id}",
@@ -460,7 +485,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+        ) -> WrappedCollectionsResponse:
             """
             Get all documents in a collection with pagination and sorting options.
 
