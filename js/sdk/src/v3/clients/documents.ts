@@ -13,6 +13,16 @@ type FileInput = string | File | { path: string; name: string };
 export class DocumentsClient {
   constructor(private client: r2rClient) {}
 
+  /**
+   * Create a new document from either a file or content.
+   * @param file File to ingest
+   * @param content Content to ingest
+   * @param id Optional ID to assign to the document
+   * @param metadata Optional metadata to assign to the document
+   * @param ingestionConfig Optional ingestion configuration to use
+   * @param runWithOrchestration Optional flag to run with orchestration
+   * @returns
+   */
   async create(options: {
     file?: FileInput;
     content?: string;
@@ -109,6 +119,16 @@ export class DocumentsClient {
     });
   }
 
+  /**
+   * Update an existing document.
+   * @param id ID of document to update
+   * @param file Optional new file to ingest
+   * @param content Optional new text content
+   * @param metadata Optional new metadata
+   * @param ingestionConfig Custom ingestion configuration
+   * @param runWithOrchestration Whether to run with orchestration
+   * @returns
+   */
   async update(options: {
     id: string;
     file?: FileInput;
@@ -194,10 +214,24 @@ export class DocumentsClient {
     });
   }
 
-  async retrieve(id: string): Promise<any> {
-    return this.client.makeRequest("GET", `documents/${id}`);
+  /**
+   * Get a specific document by ID.
+   * @param ids Optional list of document IDs to filter by
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @returns
+   */
+  async retrieve(options: { id: string }): Promise<any> {
+    return this.client.makeRequest("GET", `documents/${options.id}`);
   }
 
+  /**
+   * List documents with pagination.
+   * @param ids Optional list of document IDs to filter by
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @returns
+   */
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -217,22 +251,44 @@ export class DocumentsClient {
     });
   }
 
-  async download(id: string): Promise<any> {
-    return this.client.makeRequest("GET", `documents/${id}/download`, {
+  /**
+   * Download a document's file content.
+   * @param id ID of document to download
+   * @returns
+   */
+  async download(options: { id: string }): Promise<any> {
+    return this.client.makeRequest("GET", `documents/${options.id}/download`, {
       responseType: "blob",
     });
   }
 
-  async list_chunks(options: {
+  /**
+   * Delete a specific document.
+   * @param id ID of document to delete
+   * @returns
+   */
+  async delete(options: { id: string }): Promise<any> {
+    return this.client.makeRequest("DELETE", `documents/${options.id}`);
+  }
+
+  /**
+   * Get chunks for a specific document.
+   * @param id Document ID to retrieve chunks for
+   * @param include_vectors Whether to include vectors in the response
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @returns
+   */
+  async listChunks(options: {
     id: string;
+    include_vectors?: boolean;
     offset?: number;
     limit?: number;
-    include_vectors?: boolean;
   }): Promise<any> {
     const params: Record<string, any> = {
+      include_vectors: options.include_vectors ?? false,
       offset: options.offset ?? 0,
       limit: options.limit ?? 100,
-      include_vectors: options.include_vectors ?? false,
     };
 
     return this.client.makeRequest("GET", `documents/${options.id}/chunks`, {
@@ -240,7 +296,14 @@ export class DocumentsClient {
     });
   }
 
-  async list_collections(options: {
+  /**
+   * List collections for a specific document.
+   * @param id ID of document to retrieve collections for
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @returns
+   */
+  async listCollections(options: {
     id: string;
     offset?: number;
     limit?: number;
@@ -259,13 +322,11 @@ export class DocumentsClient {
     );
   }
 
-  async delete_by_filter(filters: Record<string, any>): Promise<any> {
+  async deleteByFilter(options: {
+    filters: Record<string, any>;
+  }): Promise<any> {
     return this.client.makeRequest("DELETE", "documents/by-filter", {
-      data: filters,
+      data: options.filters,
     });
-  }
-
-  async delete(id: string): Promise<any> {
-    return this.client.makeRequest("DELETE", `documents/${id}`);
   }
 }

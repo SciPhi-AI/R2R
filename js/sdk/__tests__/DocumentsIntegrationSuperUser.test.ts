@@ -36,18 +36,19 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     expect(response.results.document_id).toBeDefined();
   });
 
-  // test("Update document", async () => {
-  //   const response = await client.documents.update({
-  //     id: documentId,
-  //     content: "Updated content",
-  //     metadata: { title: "Updated Test Document" },
-  //   });
+  test("Update document", async () => {
+    const response = await client.documents.update({
+      id: documentId,
+      content: "Updated content",
+    });
 
-  //   expect(response.results).toBeDefined();
-  // });
+    expect(response.results).toBeDefined();
+  });
 
   test("Retrieve document", async () => {
-    const response = await client.documents.retrieve(documentId);
+    const response = await client.documents.retrieve({
+      id: documentId,
+    });
 
     expect(response.results).toBeDefined();
     expect(response.results.id).toBe(documentId);
@@ -93,17 +94,17 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   });
 
   test("Delete Raskolnikov.txt", async () => {
-    const response = await client.documents.delete(
-      "83ef5342-4275-5b75-92d6-692fa32f8523",
-    );
+    const response = await client.documents.delete({
+      id: "83ef5342-4275-5b75-92d6-692fa32f8523",
+    });
 
     expect(response.results).toBeDefined();
   });
 
   test("Delete untitled document", async () => {
-    const response = await client.documents.delete(
-      "5556836e-a51c-57c7-916a-de76c79df2b6",
-    );
+    const response = await client.documents.delete({
+      id: "5556836e-a51c-57c7-916a-de76c79df2b6",
+    });
 
     expect(response.results).toBeDefined();
   });

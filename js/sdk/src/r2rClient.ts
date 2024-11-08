@@ -338,6 +338,7 @@ export class r2rClient extends BaseClient {
    * @param files
    * @param options
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.documents.create` instead.
    */
   @feature("ingestFiles")
   async ingestFiles(
@@ -446,6 +447,7 @@ export class r2rClient extends BaseClient {
    * @param files
    * @param options
    * @returns
+   * @deprecated Use `client.documents.update` instead.
    */
   @feature("updateFiles")
   async updateFiles(
@@ -914,6 +916,7 @@ export class r2rClient extends BaseClient {
    * Download the raw file associated with a document.
    * @param documentId The ID of the document to retrieve.
    * @returns A promise that resolves to a Blob representing the PDF.
+   * @deprecated Use `client.documents.download` instead.
    */
   @feature("downloadFile")
   async downloadFile(documentId: string): Promise<Blob> {
@@ -928,6 +931,7 @@ export class r2rClient extends BaseClient {
    * @param offset The offset to start listing documents from.
    * @param limit The maximum number of documents to return.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.documents.list` instead.
    */
   @feature("documentsOverview")
   async documentsOverview(
@@ -955,6 +959,7 @@ export class r2rClient extends BaseClient {
    * Get the chunks for a document.
    * @param document_id The ID of the document to get the chunks for.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.documents.listChunks` instead.
    */
   @feature("documentChunks")
   async documentChunks(
