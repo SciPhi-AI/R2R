@@ -1,10 +1,9 @@
 import logging
 import textwrap
-from typing import List, Optional, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
@@ -14,6 +13,7 @@ from core.base.api.models import (
     WrappedCollectionsResponse,
     WrappedDeleteResponse,
     WrappedDocumentOverviewResponse,
+    WrappedDocumentResponse,
     WrappedMessageResponse,
     WrappedUsersInCollectionResponse,
 )
@@ -21,18 +21,10 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
-
-
-class CollectionConfig(BaseModel):
-    name: str = Field(..., description="The name of the collection")
-    description: Optional[str] = Field(
-        None, description="An optional description of the collection"
-    )
 
 
 class CollectionsRouter(BaseRouterV3):
@@ -70,6 +62,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.create({
+                                    name: "My New Collection",
+                                    description: "This is a sample collection"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -85,9 +96,9 @@ class CollectionsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_collection(
-            # TODO: Adding an abstraction here for the collection config seems unnecessary
-            config: CollectionConfig = Body(
-                ..., description="The configuration for the new collection"
+            name: str = Body(..., description="The name of the collection"),
+            description: Optional[str] = Body(
+                None, description="An optional description of the collection"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
@@ -99,8 +110,8 @@ class CollectionsRouter(BaseRouterV3):
             """
             collection = await self.services["management"].create_collection(
                 user_id=auth_user.id,
-                name=config.name,
-                description=config.description,
+                name=name,
+                description=description,
             )
             # Add the creating user to the collection
             await self.services["management"].add_user_to_collection(
@@ -125,9 +136,24 @@ class CollectionsRouter(BaseRouterV3):
                             result = client.collections.list(
                                 offset=0,
                                 limit=10,
-                                name="Sample",
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.list();
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -207,8 +233,24 @@ class CollectionsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.collections.get("123e4567-e89b-12d3-a456-426614174000")
+                            result = client.collections.retrieve("123e4567-e89b-12d3-a456-426614174000")
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.retrieve({id: "123e4567-e89b-12d3-a456-426614174000"});
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -278,6 +320,26 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.update({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    name: "Updated Collection Name",
+                                    description: "Updated description"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -297,8 +359,9 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the collection to update",
             ),
-            config: CollectionConfig = Body(
-                ..., description="The new configuration for the collection"
+            name: str = Body(..., description="The name of the collection"),
+            description: Optional[str] = Body(
+                None, description="An optional description of the collection"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
@@ -318,7 +381,9 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             return await self.services["management"].update_collection(  # type: ignore
-                id, name=config.name, description=config.description
+                id,
+                name=name,
+                description=description,
             )
 
         @self.router.delete(
@@ -337,6 +402,22 @@ class CollectionsRouter(BaseRouterV3):
 
                             result = client.collections.delete("123e4567-e89b-12d3-a456-426614174000")
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.delete({id: "123e4567-e89b-12d3-a456-426614174000"});
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -400,6 +481,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.addDocument({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    documentId: "456e789a-b12c-34d5-e678-901234567890"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -457,6 +557,22 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.listDocuments({id: "123e4567-e89b-12d3-a456-426614174000"});
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -485,7 +601,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionsResponse:
+        ) -> WrappedDocumentResponse:
             """
             Get all documents in a collection with pagination and sorting options.
 
@@ -530,6 +646,25 @@ class CollectionsRouter(BaseRouterV3):
                                 "456e789a-b12c-34d5-e678-901234567890"
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.removeDocument({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    documentId: "456e789a-b12c-34d5-e678-901234567890"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -595,6 +730,24 @@ class CollectionsRouter(BaseRouterV3):
                                 limit=10,
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.listUsers({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -676,6 +829,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.addUser({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    userId: "789a012b-c34d-5e6f-g789-012345678901"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -736,6 +908,25 @@ class CollectionsRouter(BaseRouterV3):
                                 "789a012b-c34d-5e6f-g789-012345678901"
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.removeUser({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    userId: "789a012b-c34d-5e6f-g789-012345678901"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {

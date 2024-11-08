@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.abstractions.document import DocumentInfo
 
 from ....abstractions.llm import Message
 
@@ -116,7 +117,7 @@ class DocumentChunkResponse(BaseModel):
 
 class CollectionResponse(BaseModel):
     collection_id: UUID
-    user_id: UUID
+    user_id: Optional[UUID]
     name: str
     description: Optional[str]
     created_at: datetime
@@ -146,6 +147,9 @@ WrappedUserOverviewResponse = PaginatedResultsWrapper[
     list[UserOverviewResponse]
 ]
 WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
+
+# FIXME: Do we really need DocumentInfo and DocumentOverviewResponse? Can it just be a DocumentResponse?
+WrappedDocumentResponse = PaginatedResultsWrapper[list[DocumentInfo]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]

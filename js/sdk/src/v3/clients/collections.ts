@@ -1,4 +1,8 @@
 import { r2rClient } from "../../r2rClient";
+import {
+  WrappedCollectionResponse,
+  WrappedCollectionsResponse,
+} from "../../types";
 
 export class CollectionsClient {
   constructor(private client: r2rClient) {}
@@ -7,102 +11,183 @@ export class CollectionsClient {
    * Create a new collection.
    * @param name Name of the collection
    * @param description Optional description of the collection
-   * @returns Created collection information
+   * @returns A promise that resolves with the created collection
    */
-  async create(name: string, description?: string): Promise<any> {
-    const data = {
-      name,
-      ...(description && { description }),
-    };
-
-    return this.client.makeRequest("POST", "collections", { data });
+  async create(options: {
+    name: string;
+    description?: string;
+  }): Promise<WrappedCollectionResponse> {
+    return this.client.makeRequest("POST", "collections", {
+      data: options,
+    });
   }
 
-  // TODO: left a review comment about some inconsistency in the API. Review after that is addressed.
-  async list(options?: { offset?: number; limit?: number }): Promise<any> {
+  /**
+   * List collections with pagination and filtering options.
+   * @param ids Optional list of collection IDs to filter by
+   * @param offset Optional offset for pagination
+   * @param limit Optional limit for pagination
+   * @returns
+   */
+  async list(options?: {
+    ids?: string[];
+    offset?: number;
+    limit?: number;
+  }): Promise<WrappedCollectionsResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
     };
+
+    if (options?.ids && options.ids.length > 0) {
+      params.ids = options.ids;
+    }
 
     return this.client.makeRequest("GET", "collections", {
       params,
     });
   }
 
-  async retrieve(id: string): Promise<any> {
-    return this.client.makeRequest("GET", `collections/${id}`);
+  /**
+   * Get detailed information about a specific collection.
+   * @param id Collection ID to retrieve
+   * @returns
+   */
+  async retrieve(options: { id: string }): Promise<WrappedCollectionResponse> {
+    return this.client.makeRequest("GET", `collections/${options.id}`);
   }
 
-  async update(id: string, name?: string, description?: string): Promise<any> {
+  /**
+   * Update an existing collection.
+   * @param id Collection ID to update
+   * @param name Optional new name for the collection
+   * @param description Optional new description for the collection
+   * @returns
+   */
+  async update(options: {
+    id: string;
+    name?: string;
+    description?: string;
+  }): Promise<any> {
     const data = {
-      ...(name && { name }),
-      ...(description && { description }),
+      ...(options.name && { name: options.name }),
+      ...(options.description && { description: options.description }),
     };
 
-    return this.client.makeRequest("PATCH", `collections/${id}`, { data });
+    return this.client.makeRequest("POST", `collections/${options.id}`, {
+      data,
+    });
   }
 
-  async delete(id: string): Promise<any> {
-    return this.client.makeRequest("DELETE", `collections/${id}`);
+  /**
+   * Delete a collection.
+   * @param id Collection ID to delete
+   * @returns
+   */
+  async delete(options: { id: string }): Promise<any> {
+    return this.client.makeRequest("DELETE", `collections/${options.id}`);
   }
 
-  async list_documents(
-    id: string,
-    options?: {
-      offset?: number;
-      limit?: number;
-    },
-  ): Promise<any> {
+  /**
+   * List all documents in a collection.
+   * @param id Collection ID
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @returns
+   */
+  async listDocuments(options: {
+    id: string;
+    offset?: number;
+    limit?: number;
+  }): Promise<any> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
     };
 
-    return this.client.makeRequest("GET", `collections/${id}/documents`, {
-      params,
-    });
+    return this.client.makeRequest(
+      "GET",
+      `collections/${options.id}/documents`,
+      {
+        params,
+      },
+    );
   }
 
-  async add_document(id: string, documentId: string): Promise<any> {
+  /**
+   * Add a document to a collection.
+   * @param id Collection ID
+   * @param documentId Document ID to add
+   * @returns
+   */
+  async addDocument(options: { id: string; documentId: string }): Promise<any> {
     return this.client.makeRequest(
       "POST",
-      `collections/${id}/documents/${documentId}`,
+      `collections/${options.id}/documents/${options.documentId}`,
     );
   }
 
-  async remove_document(id: string, documentId: string): Promise<any> {
+  /**
+   * Remove a document from a collection.
+   * @param id Collection ID
+   * @param documentId Document ID to remove
+   * @returns
+   */
+  async removeDocument(options: {
+    id: string;
+    documentId: string;
+  }): Promise<any> {
     return this.client.makeRequest(
       "DELETE",
-      `collections/${id}/documents/${documentId}`,
+      `collections/${options.id}/documents/${options.documentId}`,
     );
   }
 
-  async list_users(
-    id: string,
-    options?: {
-      offset?: number;
-      limit?: number;
-    },
-  ): Promise<any> {
+  /**
+   * List all users in a collection.
+   * @param id Collection ID
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @returns
+   */
+  async listUsers(options: {
+    id: string;
+    offset?: number;
+    limit?: number;
+  }): Promise<any> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
     };
 
-    return this.client.makeRequest("GET", `collections/${id}/users`, {
+    return this.client.makeRequest("GET", `collections/${options.id}/users`, {
       params,
     });
   }
 
-  async add_user(id: string, userId: string): Promise<any> {
-    return this.client.makeRequest("POST", `collections/${id}/users/${userId}`);
+  /**
+   * Add a user to a collection.
+   * @param id Collection ID
+   * @param userId User ID to add
+   * @returns
+   */
+  async addUser(options: { id: string; userId: string }): Promise<any> {
+    return this.client.makeRequest(
+      "POST",
+      `collections/${options.id}/users/${options.userId}`,
+    );
   }
 
-  async remove_user(id: string, userId: string): Promise<any> {
+  /**
+   * Remove a user from a collection.
+   * @param id Collection ID
+   * @param userId User ID to remove
+   * @returns
+   */
+  async removeUser(options: { id: string; userId: string }): Promise<any> {
     return this.client.makeRequest(
       "DELETE",
-      `collections/${id}/users/${userId}`,
+      `collections/${options.id}/users/${options.userId}`,
     );
   }
 }

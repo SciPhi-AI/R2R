@@ -985,6 +985,7 @@ export class r2rClient extends BaseClient {
    * @param collectionIds List of collection IDs to get an overview for.
    * @param limit The maximum number of collections to return.
    * @param offset The offset to start listing collections from.
+   * @deprecated use `client.collections.list` instead
    * @returns
    */
   @feature("collectionsOverview")
@@ -1014,6 +1015,7 @@ export class r2rClient extends BaseClient {
    * @param name The name of the collection.
    * @param description The description of the collection.
    * @returns
+   * @deprecated use `client.collections.create` instead
    */
   @feature("createCollection")
   async createCollection(
@@ -1034,6 +1036,7 @@ export class r2rClient extends BaseClient {
    * Get a collection by its ID.
    * @param collectionId The ID of the collection to get.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.retrieve` instead
    */
   @feature("getCollection")
   async getCollection(collectionId: string): Promise<Record<string, any>> {
@@ -1050,6 +1053,7 @@ export class r2rClient extends BaseClient {
    * @param name The new name for the collection.
    * @param description The new description of the collection.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.update` instead
    */
   @feature("updateCollection")
   async updateCollection(
@@ -1077,6 +1081,7 @@ export class r2rClient extends BaseClient {
    * Delete a collection by its ID.
    * @param collectionId The ID of the collection to delete.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.delete` instead
    */
   @feature("deleteCollection")
   async deleteCollection(collectionId: string): Promise<Record<string, any>> {
@@ -1092,6 +1097,7 @@ export class r2rClient extends BaseClient {
    * @param offset The offset to start listing collections from.
    * @param limit The maximum numberof collections to return.
    * @returns
+   * @deprecated use `client.collections.list` instead
    */
   @feature("listCollections")
   async listCollections(
@@ -1116,6 +1122,7 @@ export class r2rClient extends BaseClient {
    * @param userId The ID of the user to add.
    * @param collectionId The ID of the collection to add the user to.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.addUser` instead
    */
   @feature("addUserToCollection")
   async addUserToCollection(
@@ -1133,6 +1140,7 @@ export class r2rClient extends BaseClient {
    * @param userId The ID of the user to remove.
    * @param collectionId The ID of the collection to remove the user from.
    * @returns
+   * @deprecated use `client.collections.removeUser` instead
    */
   @feature("removeUserFromCollection")
   async removeUserFromCollection(
@@ -1151,6 +1159,7 @@ export class r2rClient extends BaseClient {
    * @param offset The offset to start listing users from.
    * @param limit The maximum number of users to return.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.listUsers` instead
    */
   @feature("getUsersInCollection")
   async getUsersInCollection(
@@ -1208,6 +1217,7 @@ export class r2rClient extends BaseClient {
    * @param document_id The ID of the document to assign.
    * @param collection_id The ID of the collection to assign the document to.
    * @returns
+   * @deprecated use `client.collections.addDocument` instead
    */
   @feature("assignDocumentToCollection")
   async assignDocumentToCollection(
@@ -1226,6 +1236,7 @@ export class r2rClient extends BaseClient {
    * @param document_id The ID of the document to remove.
    * @param collection_id The ID of the collection to remove the document from.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.removeDocument` instead
    */
   @feature("removeDocumentFromCollection")
   async removeDocumentFromCollection(
@@ -1243,6 +1254,7 @@ export class r2rClient extends BaseClient {
    * Get all collections that a document is assigned to.
    * @param documentId The ID of the document to get collections for.
    * @returns
+   * @deprecated use `client.collections.listDocuments` instead
    */
   @feature("getDocumentCollections")
   async getDocumentCollections(
@@ -1273,6 +1285,7 @@ export class r2rClient extends BaseClient {
    * @param offset The offset to start listing documents from.
    * @param limit The maximum number of documents to return.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.collections.listDocuments` instead
    */
   @feature("getDocumentsInCollection")
   async getDocumentsInCollection(
