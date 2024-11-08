@@ -1,4 +1,6 @@
 import logging
+import textwrap
+
 from typing import Any, Optional, Union
 from uuid import UUID
 
@@ -133,43 +135,47 @@ class ChunksRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.chunks.create(
-    chunks=[
-        {
-            "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-            "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-            "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-            "metadata": {"key": "value"},
-            "text": "Some text content"
-        }
-    ],
-    run_with_orchestration=False
-)
-""",
+                            result = client.chunks.create(
+                                chunks=[
+                                    {
+                                        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                        "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+                                        "metadata": {"key": "value"},
+                                        "text": "Some text content"
+                                    }
+                                ],
+                                run_with_orchestration=False
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/chunks" \\
-     -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -d '{
-       "chunks": [{
-         "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-         "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-         "metadata": {"key": "value"},
-         "text": "Some text content"
-       }],
-       "run_with_orchestration": false
-     }'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/chunks" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "chunks": [{
+                                    "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                    "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                    "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+                                    "metadata": {"key": "value"},
+                                    "text": "Some text content"
+                                }],
+                                "run_with_orchestration": false
+                                }'
+                            """
+                        ),
                     },
                 ]
             },
@@ -280,18 +286,20 @@ curl -X POST "https://api.example.com/v3/chunks" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-results = client.chunks.search(
-    query="search query",
-    vector_search_settings={
-        "limit": 10,
-        "min_score": 0.7
-    }
-)
-""",
+                            client = R2RClient("http://localhost:7272")
+                            results = client.chunks.search(
+                                query="search query",
+                                vector_search_settings={
+                                    "limit": 10,
+                                    "min_score": 0.7
+                                }
+                            )
+                            """
+                        ),
                     }
                 ]
             },
@@ -334,14 +342,16 @@ results = client.chunks.search(
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-chunk = client.chunks.retrieve(
-    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-)
-""",
+                            client = R2RClient("http://localhost:7272")
+                            chunk = client.chunks.retrieve(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
                     }
                 ]
             },
@@ -385,18 +395,20 @@ chunk = client.chunks.retrieve(
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-result = client.chunks.update(
-    {
-        "id": first_chunk_id,
-        "text": "Updated content",
-        "metadata": {"key": "new value"}
-    }
-)
-""",
+                            client = R2RClient("http://localhost:7272")
+                            result = client.chunks.update(
+                                {
+                                    "id": first_chunk_id,
+                                    "text": "Updated content",
+                                    "metadata": {"key": "new value"}
+                                }
+                            )
+                            """
+                        ),
                     }
                 ]
             },
@@ -492,14 +504,16 @@ result = client.chunks.update(
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-result = client.chunks.delete(
-    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-)
-""",
+                            client = R2RClient("http://localhost:7272")
+                            result = client.chunks.delete(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
                     }
                 ]
             },
@@ -530,17 +544,19 @@ result = client.chunks.delete(
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-results = client.chunks.list(
-    metadata_filter={"key": "value"},
-    include_vectors=False
-    offset=0,
-    limit=10,
-)
-""",
+                            client = R2RClient("http://localhost:7272")
+                            results = client.chunks.list(
+                                metadata_filter={"key": "value"},
+                                include_vectors=False
+                                offset=0,
+                                limit=10,
+                            )
+                            """
+                        ),
                     }
                 ]
             },

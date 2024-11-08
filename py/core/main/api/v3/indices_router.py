@@ -8,10 +8,10 @@
 # TODO - Implement index data model
 
 import logging
-from typing import Any, Optional, Union
-from uuid import UUID
+import textwrap
 
-import yaml
+from typing import Optional, Union
+
 from fastapi import Body, Depends, Path, Query
 from pydantic import BaseModel, Json
 
@@ -104,88 +104,94 @@ class IndicesRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-# Create an HNSW index for efficient similarity search
-result = client.indices.create(
-    config={
-        "table_name": "vectors",  # The table containing vector embeddings
-        "index_method": "hnsw",   # Hierarchical Navigable Small World graph
-        "index_measure": "cosine_distance",  # Similarity measure
-        "index_arguments": {
-            "m": 16,              # Number of connections per layer
-            "ef_construction": 64,# Size of dynamic candidate list for construction
-            "ef": 40,            # Size of dynamic candidate list for search
-        },
-        "index_name": "my_document_embeddings_idx",
-        "index_column": "embedding",
-        "concurrently": True     # Build index without blocking table writes
-    },
-    run_with_orchestration=True  # Run as orchestrated task for large indices
-)
+                            # Create an HNSW index for efficient similarity search
+                            result = client.indices.create(
+                                config={
+                                    "table_name": "vectors",  # The table containing vector embeddings
+                                    "index_method": "hnsw",   # Hierarchical Navigable Small World graph
+                                    "index_measure": "cosine_distance",  # Similarity measure
+                                    "index_arguments": {
+                                        "m": 16,              # Number of connections per layer
+                                        "ef_construction": 64,# Size of dynamic candidate list for construction
+                                        "ef": 40,            # Size of dynamic candidate list for search
+                                    },
+                                    "index_name": "my_document_embeddings_idx",
+                                    "index_column": "embedding",
+                                    "concurrently": True     # Build index without blocking table writes
+                                },
+                                run_with_orchestration=True  # Run as orchestrated task for large indices
+                            )
 
-# Create an IVF-Flat index for balanced performance
-result = client.indices.create(
-    config={
-        "table_name": "vectors",
-        "index_method": "ivf_flat", # Inverted File with Flat storage
-        "index_measure": "l2_distance",
-        "index_arguments": {
-            "lists": 100,         # Number of cluster centroids
-            "probe": 10,          # Number of clusters to search
-        },
-        "index_name": "my_ivf_embeddings_idx",
-        "index_column": "embedding",
-        "concurrently": True
-    }
-)""",
+                            # Create an IVF-Flat index for balanced performance
+                            result = client.indices.create(
+                                config={
+                                    "table_name": "vectors",
+                                    "index_method": "ivf_flat", # Inverted File with Flat storage
+                                    "index_measure": "l2_distance",
+                                    "index_arguments": {
+                                        "lists": 100,         # Number of cluster centroids
+                                        "probe": 10,          # Number of clusters to search
+                                    },
+                                    "index_name": "my_ivf_embeddings_idx",
+                                    "index_column": "embedding",
+                                    "concurrently": True
+                                }
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-# Create HNSW Index
-curl -X POST "https://api.example.com/indices" \\
-    -H "Content-Type: application/json" \\
-    -H "Authorization: Bearer YOUR_API_KEY" \\
-    -d '{
-    "config": {
-        "table_name": "vectors",
-        "index_method": "hnsw",
-        "index_measure": "cosine_distance",
-        "index_arguments": {
-        "m": 16,
-        "ef_construction": 64,
-        "ef": 40
-        },
-        "index_name": "my_document_embeddings_idx",
-        "index_column": "embedding",
-        "concurrently": true
-    },
-    "run_with_orchestration": true
-    }'
+                        "source": textwrap.dedent(
+                            """
+                            # Create HNSW Index
+                            curl -X POST "https://api.example.com/indices" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "config": {
+                                    "table_name": "vectors",
+                                    "index_method": "hnsw",
+                                    "index_measure": "cosine_distance",
+                                    "index_arguments": {
+                                    "m": 16,
+                                    "ef_construction": 64,
+                                    "ef": 40
+                                    },
+                                    "index_name": "my_document_embeddings_idx",
+                                    "index_column": "embedding",
+                                    "concurrently": true
+                                },
+                                "run_with_orchestration": true
+                                }'
 
-# Create IVF-Flat Index
-curl -X POST "https://api.example.com/indices" \\
-    -H "Content-Type: application/json" \\
-    -H "Authorization: Bearer YOUR_API_KEY" \\
-    -d '{
-    "config": {
-        "table_name": "vectors",
-        "index_method": "ivf_flat",
-        "index_measure": "l2_distance",
-        "index_arguments": {
-        "lists": 100,
-        "probe": 10
-        },
-        "index_name": "my_ivf_embeddings_idx",
-        "index_column": "embedding",
-        "concurrently": true
-    }
-    }'""",
+                            # Create IVF-Flat Index
+                            curl -X POST "https://api.example.com/indices" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "config": {
+                                    "table_name": "vectors",
+                                    "index_method": "ivf_flat",
+                                    "index_measure": "l2_distance",
+                                    "index_arguments": {
+                                    "lists": 100,
+                                    "probe": 10
+                                    },
+                                    "index_name": "my_ivf_embeddings_idx",
+                                    "index_column": "embedding",
+                                    "concurrently": true
+                                }
+                                }'
+                                """
+                        ),
                     },
                 ]
             },
@@ -282,37 +288,42 @@ curl -X POST "https://api.example.com/indices" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
+                            client = R2RClient("http://localhost:7272")
 
-# List all indices
-indices = client.indices.list(
-    offset=0,
-    limit=10,
-    filters={"table_name": "vectors"}
-)
+                            # List all indices
+                            indices = client.indices.list(
+                                offset=0,
+                                limit=10,
+                                filters={"table_name": "vectors"}
+                            )
 
-# Print index details
-for idx in indices:
-    print(f"Index: {idx['name']}")
-    print(f"Method: {idx['method']}")
-    print(f"Size: {idx['size_bytes'] / 1024 / 1024:.2f} MB")
-    print(f"Row count: {idx['row_count']}")""",
+                            # Print index details
+                            for idx in indices:
+                                print(f"Index: {idx['name']}")
+                                print(f"Method: {idx['method']}")
+                                print(f"Size: {idx['size_bytes'] / 1024 / 1024:.2f} MB")
+                                print(f"Row count: {idx['row_count']}")
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/indices?offset=0&limit=10" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json"
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/indices?offset=0&limit=10" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json"
 
-# With filters
-curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_name\":\"vectors\"}" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json"
-""",
+                            # With filters
+                            curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_name\":\"vectors\"}" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json"
+                            """
+                        ),
                     },
                 ]
             },
@@ -362,25 +373,30 @@ curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
+                            client = R2RClient("http://localhost:7272")
 
-# Get detailed information about a specific index
-index = client.indices.get("index_1")
+                            # Get detailed information about a specific index
+                            index = client.indices.get("index_1")
 
-# Access index details
-print(f"Index Method: {index['method']}")
-print(f"Parameters: {index['parameters']}")
-print(f"Performance Stats: {index['stats']}")""",
+                            # Access index details
+                            print(f"Index Method: {index['method']}")
+                            print(f"Parameters: {index['parameters']}")
+                            print(f"Performance Stats: {index['stats']}")
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/indices/vectors/index_1" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/indices/vectors/index_1" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -490,23 +506,29 @@ curl -X GET "https://api.example.com/indices/vectors/index_1" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
+                            client = R2RClient("http://localhost:7272")
 
-# Delete an index with orchestration for cleanup
-result = client.indices.delete(
-    index_name="index_1",
-    run_with_orchestration=True
-)""",
+                            # Delete an index with orchestration for cleanup
+                            result = client.indices.delete(
+                                index_name="index_1",
+                                run_with_orchestration=True
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X DELETE "https://api.example.com/indices/index_1" \\
-     -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" """,
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/indices/index_1" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },

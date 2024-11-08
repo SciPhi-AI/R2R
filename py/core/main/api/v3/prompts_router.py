@@ -1,3 +1,4 @@
+import textwrap
 from typing import Optional, Union
 
 from fastapi import Body, Depends, Path, Query
@@ -48,27 +49,31 @@ class PromptsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.create(
-    name="greeting_prompt",
-    template="Hello, {name}!",
-    input_types={"name": "string"}
-)
-""",
+                            result = client.prompts.create(
+                                name="greeting_prompt",
+                                template="Hello, {name}!",
+                                input_types={"name": "string"}
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/prompts" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"name": "greeting_prompt", "template": "Hello, {name}!", "input_types": {"name": "string"}}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/prompts" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"name": "greeting_prompt", "template": "Hello, {name}!", "input_types": {"name": "string"}}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -102,21 +107,25 @@ curl -X POST "https://api.example.com/v3/prompts" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.list()
-""",
+                            result = client.prompts.list()
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/prompts" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                                curl -X GET "https://api.example.com/v3/prompts" \\
+                                    -H "Authorization: Bearer YOUR_API_KEY"
+                                """
+                        ),
                     },
                 ]
             },
@@ -145,25 +154,29 @@ curl -X GET "https://api.example.com/v3/prompts" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.get(
-    "greeting_prompt",
-    inputs={"name": "John"},
-    prompt_override="Hi, {name}!"
-)
-""",
+                            result = client.prompts.get(
+                                "greeting_prompt",
+                                inputs={"name": "John"},
+                                prompt_override="Hi, {name}!"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -202,27 +215,31 @@ curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22nam
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.update(
-    "greeting_prompt",
-    template="Greetings, {name}!",
-    input_types={"name": "string", "age": "integer"}
-)
-""",
+                            result = client.prompts.update(
+                                "greeting_prompt",
+                                template="Greetings, {name}!",
+                                input_types={"name": "string", "age": "integer"}
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"template": "Greetings, {name}!", "input_types": {"name": "string", "age": "integer"}}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"template": "Greetings, {name}!", "input_types": {"name": "string", "age": "integer"}}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -260,21 +277,25 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.delete("greeting_prompt")
-""",
+                            result = client.prompts.delete("greeting_prompt")
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },

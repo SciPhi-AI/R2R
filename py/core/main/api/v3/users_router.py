@@ -1,12 +1,11 @@
-import datetime
 import logging
 import textwrap
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr, Field, Json
+from pydantic import BaseModel, EmailStr, Field
 
 from core.base import R2RException
 from core.base.api.models import (
@@ -60,7 +59,7 @@ class UserResponse(BaseModel):
         None,
         description="ISO formatted timestamp of user's last login",
     )
-    collection_ids: List[UUID] = Field(
+    collection_ids: list[UUID] = Field(
         ...,
         description="List of collection IDs the user has access to",
     )
@@ -108,11 +107,11 @@ class UserActivityResponse(BaseModel):
         None,
         description="ISO formatted timestamp of the user's last activity",
     )
-    recent_collections: List[UUID] = Field(
+    recent_collections: list[UUID] = Field(
         ...,
         description="List of recently accessed collection IDs",
     )
-    recent_documents: List[UUID] = Field(
+    recent_documents: list[UUID] = Field(
         ...,
         description="List of recently accessed document IDs",
     )
@@ -488,24 +487,29 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# List users with filters
-users = client.users.list(
-    offset=0,
-    limit=100,
-)""",
+                            # List users with filters
+                            users = client.users.list(
+                                offset=0,
+                                limit=100,
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -564,24 +568,28 @@ curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&emai
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Get user details
-users = client.users.retrieve(
-    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-)
-""",
+                            # Get user details
+                            users = client.users.retrieve(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -619,26 +627,30 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000"
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Get user collections
-collections = client.get_user_collections(
-    "550e8400-e29b-41d4-a716-446655440000",
-    offset=0,
-    limit=100
-)
-""",
+                            # Get user collections
+                            collections = client.get_user_collections(
+                                "550e8400-e29b-41d4-a716-446655440000",
+                                offset=0,
+                                limit=100
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections?offset=0&limit=100" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections?offset=0&limit=100" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -689,25 +701,29 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Add user to collection
-client.users.add_user_to_collection(
-    id="550e8400-e29b-41d4-a716-446655440000",
-    collection_id="750e8400-e29b-41d4-a716-446655440000"
-)
-""",
+                            # Add user to collection
+                            client.users.add_user_to_collection(
+                                id="550e8400-e29b-41d4-a716-446655440000",
+                                collection_id="750e8400-e29b-41d4-a716-446655440000"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -743,25 +759,29 @@ curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Remove user from collection
-client.remove_user_from_collection(
-    id="550e8400-e29b-41d4-a716-446655440000",
-    collection_id="750e8400-e29b-41d4-a716-446655440000"
-)
-""",
+                            # Remove user from collection
+                            client.remove_user_from_collection(
+                                id="550e8400-e29b-41d4-a716-446655440000",
+                                collection_id="750e8400-e29b-41d4-a716-446655440000"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -801,30 +821,34 @@ curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-4466554400
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Update user
-updated_user = client.update_user(
-    "550e8400-e29b-41d4-a716-446655440000",
-    name="John Doe"
-)
-""",
+                            # Update user
+                            updated_user = client.update_user(
+                                "550e8400-e29b-41d4-a716-446655440000",
+                                name="John Doe"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{
-         "id": "550e8400-e29b-41d4-a716-446655440000",
-         "name": "John Doe",
-     }'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{
+                                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                                    "name": "John Doe",
+                                }'
+                            """
+                        ),
                     },
                 ]
             },

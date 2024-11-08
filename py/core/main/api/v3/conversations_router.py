@@ -1,5 +1,7 @@
 import logging
-from typing import List, Optional, Union
+import textwrap
+
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -56,21 +58,25 @@ class ConversationsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.create()
-""",
+                            result = client.conversations.create()
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/conversations" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/conversations" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -95,24 +101,28 @@ curl -X POST "https://api.example.com/v3/conversations" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.list(
-    offset=0,
-    limit=10,
-)
-""",
+                            result = client.conversations.list(
+                                offset=0,
+                                limit=10,
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -155,24 +165,28 @@ curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.get(
-    "123e4567-e89b-12d3-a456-426614174000",
-    branch_id="branch_1"
-)
-""",
+                            result = client.conversations.get(
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                branch_id="branch_1"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000?branch_id=branch_1" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000?branch_id=branch_1" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -204,21 +218,25 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
-""",
+                            result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -246,28 +264,32 @@ curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.add_message(
-    "123e4567-e89b-12d3-a456-426614174000",
-    content="Hello, world!",
-    parent_id="parent_message_id",
-    metadata={"key": "value"}
-)
-""",
+                            result = client.conversations.add_message(
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                content="Hello, world!",
+                                parent_id="parent_message_id",
+                                metadata={"key": "value"}
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"content": "Hello, world!", "parent_id": "parent_message_id", "metadata": {"key": "value"}}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"content": "Hello, world!", "parent_id": "parent_message_id", "metadata": {"key": "value"}}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -312,27 +334,31 @@ curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-4
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.update_message(
-    "123e4567-e89b-12d3-a456-426614174000",
-    "message_id_to_update",
-    content="Updated content"
-)
-""",
+                            result = client.conversations.update_message(
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "message_id_to_update",
+                                content="Updated content"
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"content": "Updated content"}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"content": "Updated content"}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -370,21 +396,25 @@ curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.list_branches("123e4567-e89b-12d3-a456-426614174000")
-""",
+                            result = client.conversations.list_branches("123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/branches" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/branches" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
