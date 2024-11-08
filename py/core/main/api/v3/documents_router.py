@@ -525,7 +525,7 @@ class DocumentsRouter(BaseRouterV3):
 
             The documents are returned in order of last modification, with most recent first.
             """
-            request_user_ids = (
+            requesting_user_id = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
             filter_collection_ids = (
@@ -536,7 +536,7 @@ class DocumentsRouter(BaseRouterV3):
             documents_overview_response = await self.services[
                 "management"
             ].documents_overview(
-                user_ids=request_user_ids,
+                user_ids=requesting_user_id,
                 collection_ids=filter_collection_ids,
                 document_ids=document_uuids,
                 offset=offset,
@@ -699,7 +699,9 @@ class DocumentsRouter(BaseRouterV3):
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
-            ].document_collections(id, 0, -1)
+            ].get_collections_overview(
+                offset=0, limit=-1, filter_document_ids=[id]
+            )
 
             user_has_access = (
                 is_owner
@@ -917,6 +919,8 @@ class DocumentsRouter(BaseRouterV3):
                 filters=filters_dict
             )
 
+        # TODO: If you want a list of Collection objects for which a document is in,
+        # you should be filtering over collections_overview with the list of collection ids
         @self.router.get(
             "/documents/{id}/collections",
             summary="List document collections",
@@ -980,12 +984,17 @@ class DocumentsRouter(BaseRouterV3):
                     "Only a superuser can get the collections belonging to a document.",
                     403,
                 )
-            document_collections_response = await self.services[
-                "management"
-            ].document_collections(id, offset, limit)
 
-            return document_collections_response["results"], {  # type: ignore
-                "total_entries": document_collections_response["total_entries"]
+            collections_response = await self.services[
+                "management"
+            ].get_collections_overview(
+                offset=offset,
+                limit=limit,
+                filter_document_ids=[UUID(id)],  # Convert string ID to UUID
+            )
+
+            return collections_response["results"], {  # type: ignore
+                "total_entries": collections_response["total_entries"]
             }
 
     @staticmethod

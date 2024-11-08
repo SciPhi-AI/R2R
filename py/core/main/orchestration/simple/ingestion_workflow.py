@@ -189,12 +189,10 @@ def simple_ingestion_factory(service: IngestionService):
             from core.base import IngestionStatus
             from core.main import IngestionServiceAdapter
 
-            print("input_data = ", input_data)
             parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
                 input_data
             )
 
-            print("parsed_data = ", parsed_data)
             document_info = await service.ingest_chunks_ingress(**parsed_data)
 
             await service.update_document_status(

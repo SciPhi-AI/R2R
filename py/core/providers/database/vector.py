@@ -19,7 +19,6 @@ from core.base import (
     VectorSearchResult,
     VectorSearchSettings,
     VectorTableName,
-    generate_id_from_label,
 )
 
 from .base import PostgresConnectionManager

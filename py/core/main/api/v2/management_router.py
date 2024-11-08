@@ -15,9 +15,8 @@ from core.base.api.models import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
-    WrappedCollectionListResponse,
-    WrappedCollectionOverviewResponse,
     WrappedCollectionResponse,
+    WrappedCollectionsResponse,
     WrappedConversationResponse,
     WrappedConversationsOverviewResponse,
     WrappedDeleteResponse,
@@ -396,8 +395,10 @@ class ManagementRouter(BaseRouter):
             is_owner = str(document_chunks_result[0].get("user_id")) == str(
                 auth_user.id
             )
-            document_collections = await self.service.document_collections(
-                document_uuid, 0, -1
+            document_collections = await self.service.collections_overview(
+                offset=0,
+                limit=-1,
+                document_ids=[document_uuid],
             )
 
             user_has_access = (
@@ -452,8 +453,10 @@ class ManagementRouter(BaseRouter):
             is_owner = str(document_chunks_result[0].get("user_id")) == str(
                 auth_user.id
             )
-            document_collections = await self.service.document_collections(
-                document_uuid, 0, -1
+            document_collections = await self.service.collections_overview(
+                offset=0,
+                limit=-1,
+                document_ids=[document_uuid],
             )
 
             user_has_access = (
@@ -479,6 +482,7 @@ class ManagementRouter(BaseRouter):
                 "total_entries": list_document_chunks["total_entries"]
             }
 
+        @self.router.get("/list_collections")
         @self.router.get("/collections_overview")
         @self.base_endpoint
         async def collections_overview_app(
@@ -486,7 +490,7 @@ class ManagementRouter(BaseRouter):
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionOverviewResponse:
+        ) -> WrappedCollectionsResponse:
             user_collections: Optional[Set[UUID]] = (
                 None
                 if auth_user.is_superuser
@@ -518,30 +522,13 @@ class ManagementRouter(BaseRouter):
                 )
             )
 
-            return collections_overview_response["results"], {  # type: ignore
+            return collections_overview_response["results"], {
                 "total_entries": collections_overview_response["total_entries"]
             }
 
-        @self.router.post("/create_collection")
-        @self.base_endpoint
-        async def create_collection_app(
-            name: str = Body(..., description="Collection name"),
-            description: Optional[str] = Body(
-                "", description="Collection description"
-            ),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionResponse:
-            collection_id = await self.service.create_collection(
-                name, description
-            )
-            await self.service.add_user_to_collection(  # type: ignore
-                auth_user.id, collection_id.collection_id
-            )
-            return collection_id
-
         @self.router.get("/get_collection/{collection_id}")
         @self.base_endpoint
-        async def get_collection_app(
+        async def get_single_collection_app(
             collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
@@ -555,8 +542,39 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            result = await self.service.get_collection(collection_uuid)
-            return result  # type: ignore
+            collections_overview_response = (
+                await self.service.collections_overview(
+                    collection_ids=[collection_id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+
+            if not collections_overview_response["results"]:
+                raise R2RException(
+                    status_code=404,
+                    message="Collection not found",
+                )
+
+            return collections_overview_response["results"][0]
+
+        @self.router.post("/create_collection")
+        @self.base_endpoint
+        async def create_collection_app(
+            name: str = Body(..., description="Collection name"),
+            description: Optional[str] = Body(
+                "", description="Collection description"
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedCollectionResponse:
+            collection_id = await self.service.create_collection(
+                auth_user.id, name, description
+            )
+            await self.service.add_user_to_collection(  # type: ignore
+                auth_user.id,
+                collection_id.collection_id,
+            )
+            return collection_id
 
         @self.router.put("/update_collection")
         @self.base_endpoint
@@ -581,7 +599,9 @@ class ManagementRouter(BaseRouter):
                 )
 
             return await self.service.update_collection(  # type: ignore
-                collection_uuid, name, description
+                collection_id=collection_uuid,
+                name=name,
+                description=description,
             )
 
         @self.router.delete("/delete_collection/{collection_id}")
@@ -601,26 +621,6 @@ class ManagementRouter(BaseRouter):
                 )
             await self.service.delete_collection(collection_uuid)
             return None  # type: ignore
-
-        @self.router.get("/list_collections")
-        @self.base_endpoint
-        async def list_collections_app(
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can call the list collections endpoint.",
-                    403,
-                )
-            list_collections_response = await self.service.list_collections(
-                offset=offset, limit=min(max(limit, 1), 1000)
-            )
-
-            return list_collections_response["results"], {  # type: ignore
-                "total_entries": list_collections_response["total_entries"]
-            }
 
         @self.router.post("/add_user_to_collection")
         @self.base_endpoint
@@ -717,10 +717,10 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             user_uuid = UUID(user_id)
-            user_collection_response = (
-                await self.service.get_collections_for_user(
-                    user_uuid, offset, limit
-                )
+            user_collection_response = await self.service.collections_overview(
+                offset=offset,
+                limit=limit,
+                user_ids=[user_uuid],
             )
 
             return user_collection_response["results"], {  # type: ignore
@@ -778,15 +778,17 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
+        ) -> WrappedCollectionsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get the collections belonging to a document.",
                     403,
                 )
             document_collections_response = (
-                await self.service.document_collections(
-                    document_id, offset, limit
+                await self.service.collections_overview(
+                    offset=offset,
+                    limit=limit,
+                    document_ids=[document_id],
                 )
             )
 

@@ -444,16 +444,6 @@ class ManagementService(Service):
         )
         return None
 
-    @telemetry_event("DocumentCollections")
-    async def document_collections(
-        self, document_id: UUID, offset: int, limit: int
-    ):
-        return await self.providers.database.document_collections(
-            offset=offset,
-            limit=limit,
-            document_id=document_id,
-        )
-
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
     ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
@@ -543,15 +533,16 @@ class ManagementService(Service):
 
     @telemetry_event("CreateCollection")
     async def create_collection(
-        self, name: str, description: str = ""
+        self,
+        user_id: UUID,
+        name: Optional[str] = None,
+        description: str = "",
     ) -> CollectionResponse:
         return await self.providers.database.create_collection(
-            name, description
+            user_id=user_id,
+            name=name,
+            description=description,
         )
-
-    @telemetry_event("GetCollection")
-    async def get_collection(self, collection_id: UUID) -> CollectionResponse:
-        return await self.providers.database.get_collection(collection_id)
 
     @telemetry_event("UpdateCollection")
     async def update_collection(
@@ -561,7 +552,7 @@ class ManagementService(Service):
         description: Optional[str] = None,
     ) -> CollectionResponse:
         return await self.providers.database.update_collection(
-            collection_id, name, description
+            collection_id=collection_id, name=name, description=description
         )
 
     @telemetry_event("DeleteCollection")
@@ -573,11 +564,20 @@ class ManagementService(Service):
         return True
 
     @telemetry_event("ListCollections")
-    async def list_collections(
-        self, offset: int = 0, limit: int = 100
+    async def collections_overview(
+        self,
+        offset: int,
+        limit: int,
+        user_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[UUID]] = None,
+        collection_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[CollectionResponse] | int]:
-        return await self.providers.database.list_collections(
-            offset=offset, limit=limit
+        return await self.providers.database.get_collections_overview(
+            offset=offset,
+            limit=limit,
+            filter_user_ids=user_ids,
+            filter_document_ids=document_ids,
+            filter_collection_ids=collection_ids,
         )
 
     @telemetry_event("AddUserToCollection")
@@ -602,29 +602,6 @@ class ManagementService(Service):
     ) -> dict[str, list[UserResponse] | int]:
         return await self.providers.database.get_users_in_collection(
             collection_id, offset=offset, limit=limit
-        )
-
-    @telemetry_event("GetCollectionsForUser")
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[CollectionResponse] | int]:
-        return await self.providers.database.get_collections_for_user(
-            user_id, offset, limit
-        )
-
-    @telemetry_event("CollectionsOverview")
-    async def collections_overview(
-        self,
-        offset: int,
-        limit: int,
-        collection_ids: Optional[list[UUID]] = None,
-        *args,
-        **kwargs,
-    ):
-        return await self.providers.database.get_collections_overview(
-            offset=offset,
-            limit=limit,
-            collection_ids=collection_ids,
         )
 
     @telemetry_event("GetDocumentsInCollection")

@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Optional, Tuple, Union
 from uuid import UUID
+from contextlib import asynccontextmanager
 
 from core.base import Message
 from core.base.logger.base import (
@@ -115,6 +116,16 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         if self.conn:
             await self.conn.close()
             self.conn = None
+
+    @asynccontextmanager
+    async def savepoint(self, name):
+        await self.conn.execute(f"SAVEPOINT {name}")
+        try:
+            yield
+            await self.conn.execute(f"RELEASE SAVEPOINT {name}")
+        except Exception:
+            await self.conn.execute(f"ROLLBACK TO SAVEPOINT {name}")
+            raise
 
     async def log(
         self,
@@ -598,8 +609,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 "Initialize the connection pool before attempting to log."
             )
 
-        # Begin a transaction
-        async with self.conn.execute("BEGIN TRANSACTION"):
+        async with self.savepoint("delete_conversation"):
             # Delete all message branches associated with the conversation
             await self.conn.execute(
                 "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)",
@@ -619,8 +629,6 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             await self.conn.execute(
                 "DELETE FROM conversations WHERE id = ?", (conversation_id,)
             )
-            # Commit the transaction
-            await self.conn.commit()
 
     async def get_logs(
         self,

@@ -138,13 +138,6 @@ def generate_default_user_collection_id(user_id: UUID) -> UUID:
     return _generate_id_from_label(str(user_id))
 
 
-def generate_id_from_label(collection_name: str) -> UUID:
-    """
-    Generates a unique collection id from a given collection name
-    """
-    return _generate_id_from_label(collection_name)
-
-
 def generate_user_id(email: str) -> UUID:
     """
     Generates a unique user id from a given email
