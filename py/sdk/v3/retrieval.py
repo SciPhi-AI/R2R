@@ -1,5 +1,5 @@
 import logging
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import AsyncGenerator, Optional, Union
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper

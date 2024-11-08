@@ -23,3 +23,23 @@ export type WrappedCollectionResponse = ResultsWrapper<CollectionResponse>;
 export type WrappedCollectionsResponse = PaginatedResultsWrapper<
   CollectionResponse[]
 >;
+
+// User types
+export interface UserResponse {
+  id: string;
+  email: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  updated_at: string;
+  is_verified: boolean;
+  collection_ids: string[];
+  hashed_password?: string;
+  verification_code_expiry?: string;
+  name?: string;
+  bio?: string;
+  profile_picture?: string;
+}
+
+export type WrappedUserResponse = ResultsWrapper<UserResponse>;
+export type WrappedUsersResponse = PaginatedResultsWrapper<UserResponse[]>;

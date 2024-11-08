@@ -73,6 +73,7 @@ class UserOverviewResponse(BaseModel):
     document_ids: list[UUID]
 
 
+# FIXME: Why are we redefining this and not using the model in py/shared/api/models/auth/responses.py?
 class UserResponse(BaseModel):
     id: UUID
     email: str

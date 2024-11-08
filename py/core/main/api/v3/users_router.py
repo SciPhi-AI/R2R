@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import EmailStr
 
 from core.base import R2RException
 from core.base.api.models import (
@@ -22,116 +22,6 @@ from core.base.api.models import (
 )
 
 from .base_router import BaseRouterV3
-
-
-class UserResponse(BaseModel):
-    """Detailed user information response"""
-
-    id: UUID = Field(
-        ...,
-        description="Unique identifier for the user",
-    )
-    username: str = Field(
-        ...,
-        description="User's login username",
-    )
-    email: str = Field(
-        ...,
-        description="User's email address",
-    )
-    is_active: bool = Field(
-        ...,
-        description="Whether the user account is currently active",
-    )
-    is_superuser: bool = Field(
-        ...,
-        description="Whether the user has superuser privileges",
-    )
-    created_at: str = Field(
-        ...,
-        description="ISO formatted timestamp of when the user was created",
-    )
-    updated_at: str = Field(
-        ...,
-        description="ISO formatted timestamp of when the user was last updated",
-    )
-    last_login: Optional[str] = Field(
-        None,
-        description="ISO formatted timestamp of user's last login",
-    )
-    collection_ids: list[UUID] = Field(
-        ...,
-        description="List of collection IDs the user has access to",
-    )
-    metadata: Optional[dict] = Field(
-        None,
-        description="Additional user metadata stored as key-value pairs",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "username": "john.doe",
-                "email": "john.doe@example.com",
-                "is_active": True,
-                "is_superuser": False,
-                "created_at": "2024-03-15T14:30:00Z",
-                "updated_at": "2024-03-20T09:15:00Z",
-                "last_login": "2024-03-22T16:45:00Z",
-                "collection_ids": [
-                    "750e8400-e29b-41d4-a716-446655440000",
-                    "850e8400-e29b-41d4-a716-446655440000",
-                ],
-                "metadata": {
-                    "department": "Engineering",
-                    "title": "Senior Developer",
-                    "location": "New York",
-                },
-            }
-        }
-
-
-class UserActivityResponse(BaseModel):
-    """User activity statistics"""
-
-    total_documents: int = Field(
-        ...,
-        description="Total number of documents owned by the user",
-    )
-    total_collections: int = Field(
-        ...,
-        description="Total number of collections the user has access to",
-    )
-    last_activity: Optional[str] = Field(
-        None,
-        description="ISO formatted timestamp of the user's last activity",
-    )
-    recent_collections: list[UUID] = Field(
-        ...,
-        description="List of recently accessed collection IDs",
-    )
-    recent_documents: list[UUID] = Field(
-        ...,
-        description="List of recently accessed document IDs",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "total_documents": 156,
-                "total_collections": 8,
-                "last_activity": "2024-03-22T16:45:00Z",
-                "recent_collections": [
-                    "750e8400-e29b-41d4-a716-446655440000",
-                    "850e8400-e29b-41d4-a716-446655440000",
-                ],
-                "recent_documents": [
-                    "950e8400-e29b-41d4-a716-446655440000",
-                    "a50e8400-e29b-41d4-a716-446655440000",
-                ],
-            }
-        }
 
 
 logger = logging.getLogger()
@@ -605,7 +495,7 @@ class UsersRouter(BaseRouterV3):
             Get detailed information about a specific user.
             Users can only access their own information unless they are superusers.
             """
-            if not auth_user.is_superuser and not auth_user.id == id:
+            if not auth_user.is_superuser and auth_user.id != id:
                 raise R2RException(
                     "Only a superuser can call the get `user` endpoint for other users.",
                     403,
@@ -745,13 +635,12 @@ class UsersRouter(BaseRouterV3):
                 )
 
             # TODO - Do we need a check on user access to the collection?
-            # TODO - Do we need a check on user access to the collection?
             await self.services["management"].add_user_to_collection(  # type: ignore
                 id, collection_id
             )
             return True  # type: ignore
 
-        @self.router.post(
+        @self.router.delete(
             "/users/{id}/collections/{collection_id}",
             summary="Remove User from Collection",
             response_model=ResultsWrapper[None],
@@ -807,7 +696,6 @@ class UsersRouter(BaseRouterV3):
                 )
 
             # TODO - Do we need a check on user access to the collection?
-            # TODO - Do we need a check on user access to the collection?
             await self.services["management"].remove_user_from_collection(  # type: ignore
                 id, collection_id
             )
@@ -854,7 +742,6 @@ class UsersRouter(BaseRouterV3):
             },
         )
         # TODO - Modify update user to have synced params with user object
-        # TODO - Modify update user to have synced params with user object
         @self.base_endpoint
         async def update_user(
             id: UUID = Path(..., description="ID of the user to update"),
@@ -882,12 +769,11 @@ class UsersRouter(BaseRouterV3):
                     "Only superusers can update the superuser status of a user",
                     403,
                 )
-            if not auth_user.is_superuser:
-                if not auth_user.id == id:
-                    raise R2RException(
-                        "Only superusers can update other users' information",
-                        403,
-                    )
+            if not auth_user.is_superuser and auth_user.id != id:
+                raise R2RException(
+                    "Only superusers can update other users' information",
+                    403,
+                )
 
             return await self.services["auth"].update_user(
                 user_id=id,

@@ -5,6 +5,7 @@ import { BaseClient } from "./baseClient";
 
 import { DocumentsClient } from "./v3/clients/documents";
 import { CollectionsClient } from "./v3/clients/collections";
+import { UsersClient } from "./v3/clients/users";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -32,12 +33,14 @@ import {
 export class r2rClient extends BaseClient {
   public readonly documents: DocumentsClient;
   public readonly collections: CollectionsClient;
+  public readonly users: UsersClient;
 
   constructor(baseURL: string, anonymousTelemetry = true) {
     super(baseURL, "", anonymousTelemetry);
 
     this.documents = new DocumentsClient(this);
     this.collections = new CollectionsClient(this);
+    this.users = new UsersClient(this);
 
     initializeTelemetry(this.anonymousTelemetry);
 
@@ -80,7 +83,11 @@ export class r2rClient extends BaseClient {
     return this._makeRequest(method, endpoint, options, "v3");
   }
 
-  setTokens(accessToken: string, refreshToken: string): void {
+  public getRefreshToken(): string | null {
+    return this.refreshToken;
+  }
+
+  setTokens(accessToken: string | null, refreshToken: string | null): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
   }
