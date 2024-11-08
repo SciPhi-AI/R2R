@@ -568,10 +568,11 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
             collection_id = await self.service.create_collection(
-                name, description
+                auth_user.id, name, description
             )
             await self.service.add_user_to_collection(  # type: ignore
-                auth_user.id, collection_id.collection_id
+                auth_user.id,
+                collection_id.collection_id,
             )
             return collection_id
 
@@ -598,7 +599,9 @@ class ManagementRouter(BaseRouter):
                 )
 
             return await self.service.update_collection(  # type: ignore
-                collection_uuid, name, description
+                collection_id=collection_uuid,
+                name=name,
+                description=description,
             )
 
         @self.router.delete("/delete_collection/{collection_id}")

@@ -138,10 +138,20 @@ class PostgresCollectionHandler(CollectionHandler):
         params.append(collection_id)
 
         query = f"""
-            UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
-            SET {', '.join(update_fields)}
-            WHERE collection_id = ${len(params)}
-            RETURNING collection_id, name, description, created_at, updated_at
+            WITH updated_collection AS (
+                UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+                SET {', '.join(update_fields)}
+                WHERE collection_id = ${len(params)}
+                RETURNING collection_id, user_id, name, description, created_at, updated_at
+            )
+            SELECT
+                uc.*,
+                COUNT(DISTINCT u.user_id) FILTER (WHERE u.user_id IS NOT NULL) as user_count,
+                COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
+            FROM updated_collection uc
+            LEFT JOIN {self._get_table_name('users')} u ON uc.collection_id = ANY(u.collection_ids)
+            LEFT JOIN {self._get_table_name('document_info')} d ON uc.collection_id = ANY(d.collection_ids)
+            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.created_at, uc.updated_at
         """
 
         result = await self.connection_manager.fetchrow_query(query, params)
@@ -150,10 +160,13 @@ class PostgresCollectionHandler(CollectionHandler):
 
         return CollectionResponse(
             collection_id=result["collection_id"],
+            user_id=result["user_id"],
             name=result["name"],
             description=result["description"],
             created_at=result["created_at"],
             updated_at=result["updated_at"],
+            user_count=result["user_count"],
+            document_count=result["document_count"],
         )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:

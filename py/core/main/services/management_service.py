@@ -552,7 +552,7 @@ class ManagementService(Service):
         description: Optional[str] = None,
     ) -> CollectionResponse:
         return await self.providers.database.update_collection(
-            collection_id, name, description
+            collection_id=collection_id, name=name, description=description
         )
 
     @telemetry_event("DeleteCollection")
