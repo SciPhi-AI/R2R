@@ -289,7 +289,6 @@ class KGRouter(BaseRouter):
                 limit,
             )
 
-
         @self.router.get("/triples")
         @self.base_endpoint
         async def get_triples(

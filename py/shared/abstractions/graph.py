@@ -58,6 +58,7 @@ class Entity(R2RSerializable):
 
     name: str
     id: Optional[int] = None
+    level: Optional[EntityLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[Union[list[float], str]] = None
@@ -88,7 +89,7 @@ class Entity(R2RSerializable):
                 self.attributes = self.attributes
 
 
-class Triple(R2RSerializable):
+class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: Optional[int] = None
@@ -142,10 +143,10 @@ class Triple(R2RSerializable):
         extraction_ids_key: str = "extraction_ids",
         document_id_key: str = "document_id",
         attributes_key: str = "attributes",
-    ) -> "Triple":
+    ) -> "Relationship":
         """Create a new relationship from the dict data."""
 
-        return Triple(
+        return Relationship(
             id=d[id_key],
             short_id=d.get(short_id_key),
             subject=d[source_key],
@@ -302,4 +303,4 @@ class KGExtraction(R2RSerializable):
     extraction_ids: list[uuid.UUID]
     document_id: uuid.UUID
     entities: list[Entity]
-    triples: list[Triple]
+    triples: list[Relationship]

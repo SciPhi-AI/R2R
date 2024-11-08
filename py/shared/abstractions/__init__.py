@@ -20,7 +20,7 @@ from .graph import (
     EntityType,
     KGExtraction,
     RelationshipType,
-    Triple,
+    Relationship,
 )
 from .kg import (
     KGCreationSettings,
@@ -96,7 +96,7 @@ __all__ = [
     "Community",
     "CommunityReport",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

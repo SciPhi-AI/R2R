@@ -22,7 +22,7 @@ from core.base import (
     Entity,
     KGExtraction,
     Message,
-    Triple,
+    Relationship,
     VectorEntry,
 )
 from core.base.abstractions import (
@@ -71,7 +71,7 @@ from ..abstractions import (
     KGExtraction,
     KGSearchSettings,
     RelationshipType,
-    Triple,
+    Relationship,
 )
 from .base import ProviderConfig
 
@@ -644,7 +644,7 @@ class KGHandler(Handler):
     @abstractmethod
     async def add_triples(
         self,
-        triples: list[Triple],
+        triples: list[Relationship],
         table_name: str = "chunk_triple",
     ) -> None:
         """Add triples to storage."""
@@ -701,7 +701,7 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_community_details(
         self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, list[Entity], list[Triple]]:
+    ) -> Tuple[int, list[Entity], list[Relationship]]:
         """Get detailed information about a community."""
         pass
 
@@ -743,7 +743,7 @@ class KGHandler(Handler):
         """Delete a node using document ID."""
         pass
 
-    # Entity and Triple management
+    # Entity and Relationship management
     @abstractmethod
     async def get_entities(
         self,
@@ -857,7 +857,7 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+    async def get_all_triples(self, collection_id: UUID) -> List[Relationship]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1527,7 +1527,7 @@ class DatabaseProvider(Provider):
 
     async def add_triples(
         self,
-        triples: list[Triple],
+        triples: list[Relationship],
         table_name: str = "chunk_triple",
     ) -> None:
         """Forward to KG handler add_triples method."""
@@ -1577,7 +1577,7 @@ class DatabaseProvider(Provider):
 
     async def get_community_details(
         self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, list[Entity], list[Triple]]:
+    ) -> Tuple[int, list[Entity], list[Relationship]]:
         """Forward to KG handler get_community_details method."""
         return await self.kg_handler.get_community_details(
             community_number, collection_id
@@ -1624,7 +1624,7 @@ class DatabaseProvider(Provider):
             document_id, collection_id
         )
 
-    # Entity and Triple operations
+    # Entity and Relationship operations
     async def get_entities(
         self,
         collection_id: Optional[UUID],
@@ -1710,7 +1710,7 @@ class DatabaseProvider(Provider):
             collection_id, kg_deduplication_settings
         )
 
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+    async def get_all_triples(self, collection_id: UUID) -> List[Relationship]:
         return await self.kg_handler.get_all_triples(collection_id)
 
     async def update_entity_descriptions(self, entities: list[Entity]):

@@ -33,7 +33,7 @@ __all__ = [
     # KG abstractions
     "Entity",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

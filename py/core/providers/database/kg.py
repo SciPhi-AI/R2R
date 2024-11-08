@@ -14,7 +14,7 @@ from core.base import (
     KGExtractionStatus,
     KGHandler,
     R2RException,
-    Triple,
+    Relationship
 )
 from core.base.abstractions import (
     EntityLevel,
@@ -247,16 +247,67 @@ class PostgresKGHandler(KGHandler):
             cleaned_entities, table_name, conflict_columns
         )
 
+    async def get_graph_status(self, collection_id: UUID) -> dict:
+        # check document_info table for the documents in the collection and return the status of each document
+        kg_extraction_statuses = await self.connection_manager.fetch_query(
+            f"SELECT document_id, kg_extraction_status FROM {self._get_table_name('document_info')} WHERE collection_id = $1",
+            [collection_id],
+        )
+
+        document_ids = [doc_id["document_id"] for doc_id in kg_extraction_statuses]
+
+        kg_enrichment_statuses = await self.connection_manager.fetch_query(
+            f"SELECT enrichment_status FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} WHERE id = $1",
+            [collection_id],
+        )
+
+        # entity and relationship counts
+        chunk_entity_count = await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1)",
+            [document_ids],
+        )
+
+        chunk_triple_count = await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_triple')} WHERE document_id = ANY($1)",
+            [document_ids],
+        )
+
+        document_entity_count = await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1)",
+            [document_ids],
+        )
+
+        collection_entity_count = await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('collection_entity')} WHERE collection_id = $1",
+            [collection_id],
+        )
+
+        community_count = await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('community_report')} WHERE collection_id = $1",
+            [collection_id],
+        )
+
+        return {
+            "kg_extraction_statuses": kg_extraction_statuses,
+            "kg_enrichment_status": kg_enrichment_statuses[0]["enrichment_status"],
+            "chunk_entity_count": chunk_entity_count[0]["count"],
+            "chunk_triple_count": chunk_triple_count[0]["count"],
+            "document_entity_count": document_entity_count[0]["count"],
+            "collection_entity_count": collection_entity_count[0]["count"],
+            "community_count": community_count[0]["count"],
+        }
+
+
     async def add_triples(
         self,
-        triples: list[Triple],
+        triples: list[Relationship],
         table_name: str = "chunk_triple",
     ) -> None:
         """
         Upsert triples into the chunk_triple table. These are raw triples extracted from the document.
 
         Args:
-            triples: list[Triple]: list of triples to upsert
+            triples: list[Relationship]: list of triples to upsert
             table_name: str: name of the table to upsert into
 
         Returns:
@@ -375,7 +426,7 @@ class PostgresKGHandler(KGHandler):
             QUERY2, [document_id]
         )
         triples_list = [
-            Triple(
+            Relationship(
                 subject=triple["subject"],
                 predicate=triple["predicate"],
                 object=triple["object"],
@@ -500,7 +551,7 @@ class PostgresKGHandler(KGHandler):
                 for property_name in property_names
             }
 
-    async def get_all_triples(self, collection_id: UUID) -> list[Triple]:
+    async def get_all_triples(self, collection_id: UUID) -> list[Relationship]:
 
         # getting all documents for a collection
         QUERY = f"""
@@ -517,7 +568,7 @@ class PostgresKGHandler(KGHandler):
         triples = await self.connection_manager.fetch_query(
             QUERY, [document_ids]
         )
-        return [Triple(**triple) for triple in triples]
+        return [Relationship(**triple) for triple in triples]
 
     async def add_communities(self, communities: list[Any]) -> None:
         QUERY = f"""
@@ -736,7 +787,7 @@ class PostgresKGHandler(KGHandler):
 
     async def get_community_details(
         self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, list[Entity], list[Triple]]:
+    ) -> Tuple[int, list[Entity], list[Relationship]]:
 
         QUERY = f"""
             SELECT level FROM {self._get_table_name("community_info")} WHERE cluster = $1 AND collection_id = $2
@@ -792,12 +843,114 @@ class PostgresKGHandler(KGHandler):
         triples = await self.connection_manager.fetch_query(
             QUERY, [community_number, collection_id]
         )
-        triples = [Triple(**triple) for triple in triples]
+        triples = [Relationship(**triple) for triple in triples]
 
         return level, entities, triples
 
     # async def client(self):
     #     return None
+
+    ############################################################
+    ########## Entity CRUD Operations ##########################
+    ############################################################
+
+    async def create_entity(
+        self, collection_id: UUID, entity: Entity
+    ) -> None:
+
+        table_name = entity.level.value + "_entity"
+        entity.level = None
+
+        # check if the entity already exists
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+        """
+        count = (
+            await self.connection_manager.fetch_query(QUERY, [entity.id, collection_id])
+        )[0]["count"]
+
+        if count > 0:
+            raise R2RException("Entity already exists", 400)
+
+        await self._add_objects([entity], table_name)
+
+    async def update_entity(
+        self, collection_id: UUID, entity: Entity
+    ) -> None:
+        table_name = entity.level.value + "_entity"
+
+        # check if the entity already exists
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+        """
+        count = (
+            await self.connection_manager.fetch_query(QUERY, [entity.id, collection_id])
+        )[0]["count"]
+
+        if count == 0:
+            raise R2RException("Entity does not exist", 404)
+
+        await self._add_objects([entity], table_name)
+
+    async def delete_entity(
+        self, collection_id: UUID, entity: Entity
+    ) -> None:
+
+        table_name = entity.level.value + "_entity"
+        QUERY = f"""
+            DELETE FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+        """
+        await self.connection_manager.execute_query(QUERY, [entity.id, collection_id])
+
+    ############################################################
+    ########## Relationship CRUD Operations ####################
+    ############################################################
+
+    async def create_relationship(
+        self, collection_id: UUID, relationship: Relationship
+    ) -> None:
+        
+        # check if the relationship already exists
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")} WHERE subject = $1 AND predicate = $2 AND object = $3 AND collection_id = $4
+        """
+        count = (
+            await self.connection_manager.fetch_query(QUERY, [relationship.subject, relationship.predicate, relationship.object, collection_id])
+        )[0]["count"]
+
+        if count > 0:
+            raise R2RException("Relationship already exists", 400)
+
+        await self._add_objects([relationship], "chunk_triple")
+
+    async def update_relationship(
+        self, relationship_id: UUID, relationship: Relationship
+    ) -> None:
+        
+        # check if relationship_id exists
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")} WHERE id = $1
+        """
+        count = (
+            await self.connection_manager.fetch_query(QUERY, [relationship.id])
+        )[0]["count"]
+
+        if count == 0:
+            raise R2RException("Relationship does not exist", 404)
+
+        await self._add_objects([relationship], "chunk_triple")
+
+    async def delete_relationship(
+        self, relationship_id: UUID
+    ) -> None:
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("chunk_triple")} WHERE id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [relationship_id])
+
+    ############################################################
+    ########## Community CRUD Operations #######################
+    ############################################################
 
     async def get_community_reports(
         self, collection_id: UUID
@@ -1236,7 +1389,7 @@ class PostgresKGHandler(KGHandler):
         """
 
         triples = await self.connection_manager.fetch_query(query, params)
-        triples = [Triple(**triple) for triple in triples]
+        triples = [Relationship(**triple) for triple in triples]
         total_entries = await self.get_triple_count(
             collection_id=collection_id
         )

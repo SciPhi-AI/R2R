@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
-from shared.abstractions.graph import CommunityReport, Entity, Triple
+from shared.abstractions.graph import CommunityReport, Entity, Relationship
 from shared.api.models.base import ResultsWrapper
 
 
@@ -210,7 +210,7 @@ class KGEntitiesResponse(R2RSerializable):
 class KGTriplesResponse(R2RSerializable):
     """Response for knowledge graph triples."""
 
-    triples: list[Triple] = Field(
+    triples: list[Relationship] = Field(
         ...,
         description="The list of triples in the graph.",
     )

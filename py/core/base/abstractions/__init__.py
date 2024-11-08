@@ -28,7 +28,7 @@ from shared.abstractions.graph import (
     EntityType,
     KGExtraction,
     RelationshipType,
-    Triple,
+    Relationship,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
@@ -111,7 +111,7 @@ __all__ = [
     "Community",
     "CommunityReport",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     "EntityLevel",
     # LLM abstractions
     "GenerationConfig",

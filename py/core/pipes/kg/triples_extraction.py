@@ -15,7 +15,7 @@ from core.base import (
     KGExtraction,
     R2RDocumentProcessingError,
     R2RException,
-    Triple,
+    Relationship,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
@@ -159,7 +159,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
                         # check if subject and object are in entities_dict
                         relations_arr.append(
-                            Triple(
+                            Relationship(
                                 subject=subject,
                                 predicate=predicate,
                                 object=object,

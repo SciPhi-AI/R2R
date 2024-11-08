@@ -12,6 +12,8 @@ from core.base.abstractions import (
     KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
     R2RException,
+    Entity,
+    Relationship,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -19,6 +21,7 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
+
 
 logger = logging.getLogger()
 
@@ -112,6 +115,50 @@ class KgService(Service):
             raise e
 
         return await _collect_results(result_gen)
+
+    @telemetry_event("create_entity")
+    async def create_entity(
+        self,
+        collection_id: UUID,
+        entity: Entity,
+        **kwargs,
+    ):
+        return await self.providers.database.create_entity(
+            collection_id, entity
+        )
+
+    @telemetry_event("update_entity")
+    async def update_entity(
+        self,
+        collection_id: UUID,
+        entity: Entity,
+        **kwargs,
+    ):
+        return await self.providers.database.update_entity(
+            collection_id, entity
+        )
+
+    @telemetry_event("delete_entity")
+    async def delete_entity(
+        self,
+        collection_id: UUID,
+        entity: Entity,
+        **kwargs,
+    ):
+        return await self.providers.database.delete_entity(
+            collection_id, entity
+        )
+
+    @telemetry_event("create_relationship")
+    async def create_relationship(
+        self,
+        collection_id: UUID,
+        relationship: Relationship,
+        **kwargs,
+    ):
+        return await self.providers.database.create_relationship(
+            collection_id, relationship
+        )
 
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
@@ -210,6 +257,14 @@ class KgService(Service):
 
         return all_results
 
+    @telemetry_event("get_graph_status")
+    async def get_graph_status(
+        self,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        return await self.providers.database.get_graph_status(collection_id)
+
     @telemetry_event("kg_clustering")
     async def kg_clustering(
         self,
@@ -270,6 +325,15 @@ class KgService(Service):
     ):
         # TODO: Implement this, as it needs some checks.
         raise NotImplementedError
+
+    @telemetry_event("delete_graph")
+    async def delete_graph(
+        self,
+        collection_id: UUID,
+        cascade: bool,
+        **kwargs,
+    ):
+        return await self.delete_graph_for_collection(collection_id, cascade)
 
     @telemetry_event("delete_graph_for_collection")
     async def delete_graph_for_collection(
@@ -387,6 +451,7 @@ class KgService(Service):
             offset=offset or 0,
             limit=limit or -1,
         )
+
     @telemetry_event("get_communities")
     async def get_communities(
         self,
@@ -422,7 +487,6 @@ class KgService(Service):
             offset=offset or 0,
             limit=limit or -1,
         )
-
 
     @telemetry_event("get_deduplication_estimate")
     async def get_deduplication_estimate(

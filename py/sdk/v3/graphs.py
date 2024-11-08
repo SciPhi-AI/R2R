@@ -15,10 +15,7 @@ from core.base.abstractions import EntityLevel, KGRunType
 #     WrappedKGEntityDeduplicationResponse,
 #     WrappedKGTunePromptResponse,
 # )
-from ..models import (
-    KGCreationSettings,
-    KGRunType
-)
+from ..models import KGCreationSettings, KGRunType
 
 
 class GraphsSDK:
@@ -183,7 +180,7 @@ class GraphsSDK:
     async def list_entities(
         self,
         collection_id: Union[str, UUID],
-        level = EntityLevel.DOCUMENT,
+        level=EntityLevel.DOCUMENT,
         offset: int = 0,
         limit: int = 100,
         include_embeddings: bool = False,

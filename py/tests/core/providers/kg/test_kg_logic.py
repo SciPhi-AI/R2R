@@ -4,7 +4,13 @@ import uuid
 
 import pytest
 
-from core.base import Community, CommunityReport, Entity, KGExtraction, Triple
+from core.base import (
+    Community,
+    CommunityReport,
+    Entity,
+    KGExtraction,
+    Relationship,
+)
 from shared.abstractions.vector import VectorQuantizationType
 
 
@@ -89,7 +95,7 @@ def entities_list(extraction_ids, document_id, embedding_vectors):
 @pytest.fixture(scope="function")
 def triples_raw_list(embedding_vectors, extraction_ids, document_id):
     return [
-        Triple(
+        Relationship(
             subject="Entity1",
             predicate="predicate1",
             object="object1",
@@ -100,7 +106,7 @@ def triples_raw_list(embedding_vectors, extraction_ids, document_id):
             document_id=document_id,
             attributes={"attr1": "value1", "attr2": "value2"},
         ),
-        Triple(
+        Relationship(
             subject="Entity2",
             predicate="predicate2",
             object="object2",

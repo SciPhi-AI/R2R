@@ -9,7 +9,7 @@ from core.base import (
     CommunityReport,
     Entity,
     KGExtraction,
-    Triple,
+    Relationship,
 )
 from core.pipes.kg.community_summary import KGCommunitySummaryPipe
 from shared.abstractions.vector import VectorQuantizationType
@@ -125,7 +125,7 @@ def entities_list(extraction_ids, document_id, embedding_vectors):
 @pytest.fixture(scope="function")
 def triples_raw_list(embedding_vectors, extraction_ids, document_id):
     return [
-        Triple(
+        Relationship(
             id=1,
             subject="Entity1",
             predicate="predicate1",
@@ -137,7 +137,7 @@ def triples_raw_list(embedding_vectors, extraction_ids, document_id):
             document_id=document_id,
             attributes={"attr1": "value1", "attr2": "value2"},
         ),
-        Triple(
+        Relationship(
             id=2,
             subject="Entity2",
             predicate="predicate2",

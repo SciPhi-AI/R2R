@@ -15,7 +15,7 @@ from core.base import (
     EmbeddingProvider,
     GenerationConfig,
 )
-from core.base.abstractions import Entity, Triple
+from core.base.abstractions import Entity, Relationship
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
@@ -51,7 +51,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
     async def community_summary_prompt(
         self,
         entities: list[Entity],
-        triples: list[Triple],
+        triples: list[Relationship],
         max_summary_input_length: int,
     ):
 
