@@ -672,7 +672,7 @@ class UsersRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[List[CollectionResponse]]:
+        ) -> PaginatedResultsWrapper[list[CollectionResponse]]:
             """
             Get all collections associated with a specific user.
             Users can only access their own collections unless they are superusers.
