@@ -56,6 +56,25 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.register({
+                                    email: jane.doe@example.com",
+                                    password: "secure_password123"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -94,6 +113,25 @@ class UsersRouter(BaseRouterV3):
                                 email="jane.doe@example.com",
                                 verification_code="1lklwal!awdclm"
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.verifyEmail({
+                                    email: jane.doe@example.com",
+                                    verificationCode: "1lklwal!awdclm"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -137,7 +175,27 @@ class UsersRouter(BaseRouterV3):
                             tokens = client.users.login(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
-                            )"""
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.login({
+                                    email: jane.doe@example.com",
+                                    password: "secure_password123"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -173,7 +231,24 @@ class UsersRouter(BaseRouterV3):
 
                             client = R2RClient("http://localhost:7272")
                             # client.login(...)
-                            result = client.users.logout()"""
+                            result = client.users.logout()
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.logout();
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -212,6 +287,22 @@ class UsersRouter(BaseRouterV3):
 
                             new_tokens = client.users.refresh_token()
                             # New tokens are automatically stored in the client"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.refreshAccessToken();
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -256,6 +347,25 @@ class UsersRouter(BaseRouterV3):
                                 current_password="old_password123",
                                 new_password="new_secure_password456"
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.changePassword({
+                                    current_password: "old_password123",
+                                    new_password: "new_secure_password456"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -304,6 +414,24 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.requestPasswordReset({
+                                    email: jane.doe@example.com",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -341,6 +469,25 @@ class UsersRouter(BaseRouterV3):
                                 reset_token="reset_token_received_via_email",
                                 new_password="new_secure_password789"
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.resetPassword({
+                                    reset_token: "reset_token_received_via_email",
+                                    new_password: "new_secure_password789"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -389,6 +536,22 @@ class UsersRouter(BaseRouterV3):
                                 offset=0,
                                 limit=100,
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.list();
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -473,6 +636,24 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.retrieve({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -529,11 +710,31 @@ class UsersRouter(BaseRouterV3):
                             # client.login(...)
 
                             # Get user collections
-                            collections = client.get_user_collections(
+                            collections = client.user.list_collections(
                                 "550e8400-e29b-41d4-a716-446655440000",
                                 offset=0,
                                 limit=100
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.listCollections({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    offset: 0,
+                                    limit: 100
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -603,10 +804,29 @@ class UsersRouter(BaseRouterV3):
                             # client.login(...)
 
                             # Add user to collection
-                            client.users.add_user_to_collection(
+                            client.users.add_to_collection(
                                 id="550e8400-e29b-41d4-a716-446655440000",
                                 collection_id="750e8400-e29b-41d4-a716-446655440000"
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.addToCollection({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    collection_id: "750e8400-e29b-41d4-a716-446655440000"
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -660,10 +880,29 @@ class UsersRouter(BaseRouterV3):
                             # client.login(...)
 
                             # Remove user from collection
-                            client.remove_user_from_collection(
+                            client.users.remove_from_collection(
                                 id="550e8400-e29b-41d4-a716-446655440000",
                                 collection_id="750e8400-e29b-41d4-a716-446655440000"
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.removeFromCollection({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    collection_id: "750e8400-e29b-41d4-a716-446655440000"
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -725,6 +964,25 @@ class UsersRouter(BaseRouterV3):
                                 "550e8400-e29b-41d4-a716-446655440000",
                                 name="John Doe"
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.update({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    name: "John Doe"
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },

@@ -156,7 +156,7 @@ export class UsersClient {
   }
 
   async resetPassword(options: {
-    resset_token: string;
+    reset_token: string;
     new_password: string;
   }): Promise<any> {
     return this.client.makeRequest("POST", "users/reset-password", {
