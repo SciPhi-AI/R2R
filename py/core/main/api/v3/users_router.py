@@ -65,7 +65,7 @@ class UsersRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.users.register({
-                                    email: jane.doe@example.com",
+                                    email: "jane.doe@example.com",
                                     password: "secure_password123"
                                 });
                             }
