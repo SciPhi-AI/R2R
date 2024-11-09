@@ -14,7 +14,10 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
-    await client.login("admin@example.com", "change_me_immediately");
+    await client.users.login({
+      email: "admin@example.com",
+      password: "change_me_immediately",
+    });
   });
 
   test("Create document with file path", async () => {

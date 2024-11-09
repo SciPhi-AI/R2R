@@ -102,6 +102,7 @@ export class r2rClient extends BaseClient {
    * @param email The email of the user to register.
    * @param password The password of the user to register.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.register` instead.
    */
 
   @feature("register")
@@ -115,6 +116,7 @@ export class r2rClient extends BaseClient {
    * Verifies the email of a user with the given verification code.
    * @param verification_code The verification code to verify the email with.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.verifyEmail` instead.
    */
   @feature("verifyEmail")
   async verifyEmail(verification_code: string): Promise<any> {
@@ -128,6 +130,7 @@ export class r2rClient extends BaseClient {
    * @param email The email of the user to log in.
    * @param password The password of the user to log in.
    * @returns A promise that resolves to the response from the server containing the access and refresh tokens.
+   * @deprecated Use `client.users.login` instead.
    */
   @feature("login")
   async login(
@@ -156,6 +159,12 @@ export class r2rClient extends BaseClient {
     return response.results;
   }
 
+  /**
+   * Logs in a user using a token.
+   * @param accessToken The access token to use for authentication.
+   * @returns A promise that resolves to the response from the server containing the access token.
+   * @deprecated Use `client.users.loginWithToken` instead.
+   */
   @feature("loginWithToken")
   async loginWithToken(
     accessToken: string,
@@ -180,6 +189,7 @@ export class r2rClient extends BaseClient {
   /**
    * Logs out the currently authenticated user.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.logout` instead.
    */
   @feature("logout")
   async logout(): Promise<any> {
@@ -194,6 +204,7 @@ export class r2rClient extends BaseClient {
   /**
    * Retrieves the user information for the currently authenticated user.
    * @returns A promise that resolves to the response from the server containing the user information.
+   * @deprecated Use `client.users.list` instead.
    */
   @feature("user")
   async user(): Promise<any> {
@@ -208,6 +219,7 @@ export class r2rClient extends BaseClient {
    * @param bio  The updated bio for the user.
    * @param profilePicture The updated profile picture URL for the user.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.update` instead.
    */
   @feature("updateUser")
   async updateUser(
@@ -243,6 +255,7 @@ export class r2rClient extends BaseClient {
   /**
    * Refreshes the access token for the currently authenticated user.
    * @returns A promise that resolves to the response from the server containing the new access and refresh tokens.
+   * @deprecated Use `client.users.refreshAccessToken` instead.
    */
   async refreshAccessToken(): Promise<RefreshTokenResponse> {
     if (!this.refreshToken) {
@@ -275,6 +288,7 @@ export class r2rClient extends BaseClient {
    * @param current_password The current password of the user.
    * @param new_password The new password to set for the user.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.changePassword` instead.
    */
   @feature("changePassword")
   async changePassword(
@@ -295,6 +309,7 @@ export class r2rClient extends BaseClient {
    * Requests a password reset for the user with the given email.
    * @param email The email of the user to request a password reset for.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.requestPasswordReset` instead.
    */
   @feature("requestPasswordReset")
   async requestPasswordReset(email: string): Promise<any> {
@@ -308,6 +323,7 @@ export class r2rClient extends BaseClient {
    * @param resetToken The reset token to confirm the password reset with.
    * @param newPassword The new password to set for the user.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.resetPassword` instead.
    */
   @feature("confirmPasswordReset")
   async confirmPasswordReset(

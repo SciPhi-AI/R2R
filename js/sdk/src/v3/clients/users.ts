@@ -41,7 +41,13 @@ export class UsersClient {
    */
   async login(options: { email: string; password: string }): Promise<any> {
     const response = await this.client.makeRequest("POST", "users/login", {
-      data: options,
+      data: {
+        username: options.email,
+        password: options.password,
+      },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
     });
 
     if (response?.results) {
@@ -85,8 +91,9 @@ export class UsersClient {
    * @returns
    */
   async logout(): Promise<any> {
-    this.client.makeRequest("POST", "users/logout");
+    const response = await this.client.makeRequest("POST", "users/logout");
     this.client.setTokens(null, null);
+    return response;
   }
 
   /**

@@ -66,6 +66,7 @@ class ScoreCompletionResponse(BaseModel):
     message: str
 
 
+# TODO: This should just be a UserResponse...
 class UserOverviewResponse(BaseModel):
     user_id: UUID
     num_files: int

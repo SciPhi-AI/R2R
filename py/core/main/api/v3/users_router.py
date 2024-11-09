@@ -503,7 +503,11 @@ class UsersRouter(BaseRouterV3):
 
             user_overview_response = await self.services[
                 "management"
-            ].users_overview([id])
+            ].users_overview(
+                offset=0,
+                limit=1,
+                user_ids=[id],
+            )
             if len(user_overview_response["results"]) == 0:
                 raise R2RException("User not found.", 404)
             return user_overview_response["results"][0].dict(), {  # type: ignore
@@ -574,10 +578,10 @@ class UsersRouter(BaseRouterV3):
                 )
             user_collection_response = await self.services[
                 "management"
-            ].get_collections_overview(
+            ].collections_overview(
                 offset=offset,
                 limit=limit,
-                filter_user_ids=[id],
+                user_ids=[id],
             )
             return user_collection_response["results"], {  # type: ignore
                 "total_entries": user_collection_response["total_entries"]
