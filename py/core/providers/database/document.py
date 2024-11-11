@@ -3,9 +3,9 @@ import json
 import logging
 from typing import Any, Optional, Union
 from uuid import UUID
-from fastapi import HTTPException
 
 import asyncpg
+from fastapi import HTTPException
 
 from core.base import (
     DocumentHandler,
@@ -26,8 +26,12 @@ class PostgresDocumentHandler(DocumentHandler):
     TABLE_NAME = "document_info"
 
     def __init__(
-        self, project_name: str, connection_manager: PostgresConnectionManager
+        self,
+        project_name: str,
+        connection_manager: PostgresConnectionManager,
+        dimension: int,
     ):
+        self.dimension = dimension
         super().__init__(project_name, connection_manager)
 
     async def create_tables(self):
@@ -42,6 +46,8 @@ class PostgresDocumentHandler(DocumentHandler):
             type TEXT,
             metadata JSONB,
             title TEXT,
+            summary TEXT,
+            document_embedding vector({self.dimension}),
             version TEXT,
             size_in_bytes INT,
             ingestion_status TEXT DEFAULT 'pending',
@@ -107,8 +113,9 @@ class PostgresDocumentHandler(DocumentHandler):
                                 UPDATE {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                                    kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11
-                                WHERE document_id = $12
+                                    kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
+                                    summary = $12, document_embedding = $13
+                                WHERE document_id = $14
                                 """
                                 await conn.execute(
                                     update_query,
@@ -123,15 +130,18 @@ class PostgresDocumentHandler(DocumentHandler):
                                     db_entry["kg_extraction_status"],
                                     db_entry["updated_at"],
                                     new_attempt_number,
+                                    db_entry["summary"],
+                                    db_entry["document_embedding"],
                                     document_info.id,
                                 )
                             else:
+
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, kg_extraction_status, created_at,
-                                updated_at, ingestion_attempt_number)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                                updated_at, ingestion_attempt_number, summary, document_embedding)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                                 """
                                 await conn.execute(
                                     insert_query,
@@ -148,6 +158,8 @@ class PostgresDocumentHandler(DocumentHandler):
                                     db_entry["created_at"],
                                     db_entry["updated_at"],
                                     db_entry["ingestion_attempt_number"],
+                                    db_entry["summary"],
+                                    db_entry["document_embedding"],
                                 )
 
                     break  # Success, exit the retry loop
@@ -388,6 +400,7 @@ class PostgresDocumentHandler(DocumentHandler):
         query = f"""
             SELECT document_id, collection_ids, user_id, type, metadata, title, version,
                 size_in_bytes, ingestion_status, kg_extraction_status, created_at, updated_at,
+                summary, document_embedding,
                 COUNT(*) OVER() AS total_entries
             {base_query}
             ORDER BY created_at DESC
@@ -421,10 +434,11 @@ class PostgresDocumentHandler(DocumentHandler):
                     ),
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
+                    summary=row["summary"],
+                    document_embedding=row["document_embedding"],
                 )
                 for row in results
             ]
-
             return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")

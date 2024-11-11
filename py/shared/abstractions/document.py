@@ -116,6 +116,7 @@ class IngestionStatus(str, Enum):
     EXTRACTING = "extracting"
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
+    AUGMENTING = "augmenting"
     STORING = "storing"
     ENRICHING = "enriching"
     ENRICHED = "enriched"
@@ -193,6 +194,8 @@ class DocumentInfo(R2RSerializable):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
+    summary: str = "N/A"  # Add default N/A summary
+    document_embedding: Optional[list[float]] = None  # Add optional embedding
 
     def convert_to_db_entry(self):
         """Prepare the document info for database entry, extracting certain fields from metadata."""
@@ -212,6 +215,8 @@ class DocumentInfo(R2RSerializable):
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,
+            "summary": self.summary,
+            "document_embedding": self.document_embedding,
         }
 
 
