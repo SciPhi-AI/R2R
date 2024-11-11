@@ -1,3 +1,4 @@
+import copy
 import asyncio
 import json
 import logging
@@ -15,6 +16,7 @@ from core.base import (
     KGEnrichmentStatus,
     KGExtractionStatus,
     R2RException,
+    DocumentSearchSettings
 )
 
 from .base import PostgresConnectionManager
@@ -47,7 +49,7 @@ class PostgresDocumentHandler(DocumentHandler):
             metadata JSONB,
             title TEXT,
             summary TEXT,
-            document_embedding vector({self.dimension}),
+            summary_embedding vector({self.dimension}) NULL,
             version TEXT,
             size_in_bytes INT,
             ingestion_status TEXT DEFAULT 'pending',
@@ -58,6 +60,13 @@ class PostgresDocumentHandler(DocumentHandler):
         );
         CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
         ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} USING GIN (collection_ids);
+        
+        -- Index that handles NULL values correctly
+        CREATE INDEX IF NOT EXISTS idx_summary_embedding_{self.project_name}
+        ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} 
+        USING ivfflat (summary_embedding vector_cosine_ops) 
+        WITH (lists = 100)
+        WHERE summary_embedding IS NOT NULL;  -- Only index non-NULL vectors
         """
         await self.connection_manager.execute_query(query)
 
@@ -114,7 +123,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
-                                    summary = $12, document_embedding = $13
+                                    summary = $12, summary_embedding = $13
                                 WHERE document_id = $14
                                 """
                                 await conn.execute(
@@ -131,7 +140,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                     db_entry["updated_at"],
                                     new_attempt_number,
                                     db_entry["summary"],
-                                    db_entry["document_embedding"],
+                                    db_entry["summary_embedding"],
                                     document_info.id,
                                 )
                             else:
@@ -140,7 +149,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                 INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, kg_extraction_status, created_at,
-                                updated_at, ingestion_attempt_number, summary, document_embedding)
+                                updated_at, ingestion_attempt_number, summary, summary_embedding)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                                 """
                                 await conn.execute(
@@ -159,7 +168,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                     db_entry["updated_at"],
                                     db_entry["ingestion_attempt_number"],
                                     db_entry["summary"],
-                                    db_entry["document_embedding"],
+                                    db_entry["summary_embedding"],
                                 )
 
                     break  # Success, exit the retry loop
@@ -400,7 +409,7 @@ class PostgresDocumentHandler(DocumentHandler):
         query = f"""
             SELECT document_id, collection_ids, user_id, type, metadata, title, version,
                 size_in_bytes, ingestion_status, kg_extraction_status, created_at, updated_at,
-                summary, document_embedding,
+                summary, summary_embedding,
                 COUNT(*) OVER() AS total_entries
             {base_query}
             ORDER BY created_at DESC
@@ -418,27 +427,39 @@ class PostgresDocumentHandler(DocumentHandler):
             results = await self.connection_manager.fetch_query(query, params)
             total_entries = results[0]["total_entries"] if results else 0
 
-            documents = [
-                DocumentInfo(
-                    id=row["document_id"],
-                    collection_ids=row["collection_ids"],
-                    user_id=row["user_id"],
-                    document_type=DocumentType(row["type"]),
-                    metadata=json.loads(row["metadata"]),
-                    title=row["title"],
-                    version=row["version"],
-                    size_in_bytes=row["size_in_bytes"],
-                    ingestion_status=IngestionStatus(row["ingestion_status"]),
-                    kg_extraction_status=KGExtractionStatus(
-                        row["kg_extraction_status"]
-                    ),
-                    created_at=row["created_at"],
-                    updated_at=row["updated_at"],
-                    summary=row["summary"],
-                    document_embedding=row["document_embedding"],
+            documents = []
+            for row in results:
+                # Safely handle the embedding
+                embedding = None
+                if row["summary_embedding"] is not None:
+                    try:
+                        # Parse the vector string returned by Postgres
+                        embedding_str = row["summary_embedding"]
+                        if embedding_str.startswith('[') and embedding_str.endswith(']'):
+                            embedding = [float(x) for x in embedding_str[1:-1].split(',') if x]
+                    except Exception as e:
+                        logger.warning(f"Failed to parse embedding for document {row['document_id']}: {e}")
+
+                documents.append(
+                    DocumentInfo(
+                        id=row["document_id"],
+                        collection_ids=row["collection_ids"],
+                        user_id=row["user_id"],
+                        document_type=DocumentType(row["type"]),
+                        metadata=json.loads(row["metadata"]),
+                        title=row["title"],
+                        version=row["version"],
+                        size_in_bytes=row["size_in_bytes"],
+                        ingestion_status=IngestionStatus(row["ingestion_status"]),
+                        kg_extraction_status=KGExtractionStatus(
+                            row["kg_extraction_status"]
+                        ),
+                        created_at=row["created_at"],
+                        updated_at=row["updated_at"],
+                        summary=row["summary"],
+                        summary_embedding=embedding,
+                    )
                 )
-                for row in results
-            ]
             return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")
@@ -446,3 +467,254 @@ class PostgresDocumentHandler(DocumentHandler):
                 status_code=500,
                 detail="Database query failed",
             )
+
+    async def semantic_document_search(
+        self,
+        query_embedding: list[float],
+        search_settings: DocumentSearchSettings
+    ) -> list[dict[str, Any]]:
+        """Search documents using semantic similarity with their summary embeddings."""
+        
+        query = f"""
+        WITH document_scores AS (
+            SELECT 
+                document_id,
+                collection_ids,
+                user_id,
+                type,
+                metadata,
+                title,
+                version,
+                size_in_bytes,
+                ingestion_status,
+                kg_extraction_status,
+                created_at,
+                updated_at,
+                summary,
+                summary_embedding,
+                (summary_embedding <=> $1::vector({self.dimension})) as semantic_distance
+            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+            WHERE summary_embedding IS NOT NULL
+            ORDER BY semantic_distance ASC
+            LIMIT $2
+            OFFSET $3
+        )
+        SELECT *,
+            1.0 - semantic_distance as semantic_score
+        FROM document_scores
+        """
+
+        results = await self.connection_manager.fetch_query(
+            query,
+            [
+                str(query_embedding),
+                search_settings.search_limit,
+                search_settings.offset
+            ]
+        )
+
+        return [
+            DocumentInfo(
+                id=row["document_id"],
+                collection_ids=row["collection_ids"],
+                user_id=row["user_id"],
+                document_type=DocumentType(row["type"]),
+                metadata={
+                    **json.loads(row["metadata"]),
+                    "search_score": float(row["semantic_score"]),
+                    "search_type": "semantic"
+                },
+                title=row["title"],
+                version=row["version"],
+                size_in_bytes=row["size_in_bytes"],
+                ingestion_status=IngestionStatus(row["ingestion_status"]),
+                kg_extraction_status=KGExtractionStatus(row["kg_extraction_status"]),
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                summary=row["summary"],
+                summary_embedding=[float(x) for x in row["summary_embedding"][1:-1].split(",") if x]
+            )
+            for row in results
+        ]
+
+    async def full_text_document_search(
+        self,
+        query_text: str,
+        search_settings: DocumentSearchSettings
+    ) -> list[dict[str, Any]]:
+        """Search documents using full-text search on title and summary."""
+        
+        query = f"""
+        WITH document_scores AS (
+            SELECT 
+                document_id,
+                collection_ids,
+                user_id,
+                type,
+                metadata,
+                title,
+                version,
+                size_in_bytes,
+                ingestion_status,
+                kg_extraction_status,
+                created_at,
+                updated_at,
+                summary,
+                summary_embedding,
+                ts_rank_cd(
+                    setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
+                    setweight(to_tsvector('english', COALESCE(summary, '')), 'B'),
+                    websearch_to_tsquery('english', $1),
+                    32
+                ) as text_score
+            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+            WHERE 
+                to_tsvector('english', COALESCE(title, '')) @@ websearch_to_tsquery('english', $1) OR
+                to_tsvector('english', COALESCE(summary, '')) @@ websearch_to_tsquery('english', $1)
+            ORDER BY text_score DESC
+            LIMIT $2
+            OFFSET $3
+        )
+        SELECT * FROM document_scores
+        """
+
+        results = await self.connection_manager.fetch_query(
+            query,
+            [
+                query_text,
+                search_settings.search_limit,
+                search_settings.offset
+            ]
+        )
+
+        return [
+            DocumentInfo(
+                id=row["document_id"],
+                collection_ids=row["collection_ids"],
+                user_id=row["user_id"],
+                document_type=DocumentType(row["type"]),
+                metadata={
+                    **json.loads(row["metadata"]),
+                    "search_score": float(row["text_score"]),
+                    "search_type": "full_text"
+                },
+                title=row["title"],
+                version=row["version"],
+                size_in_bytes=row["size_in_bytes"],
+                ingestion_status=IngestionStatus(row["ingestion_status"]),
+                kg_extraction_status=KGExtractionStatus(row["kg_extraction_status"]),
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                summary=row["summary"],
+                summary_embedding=[float(x) for x in row["summary_embedding"][1:-1].split(",") if x] if row["summary_embedding"] else None
+            )
+            for row in results
+        ]
+
+    async def hybrid_document_search(
+        self,
+        query_text: str,
+        query_embedding: list[float],
+        search_settings: DocumentSearchSettings
+    ) -> list[dict[str, Any]]:
+        """Search documents using both semantic and full-text search with RRF fusion."""
+        
+        # Get more results than needed for better fusion
+        extended_settings = copy.deepcopy(search_settings)
+        extended_settings.search_limit = search_settings.search_limit * 3
+        
+        # Get results from both search methods
+        semantic_results = await self.semantic_document_search(
+            query_embedding, extended_settings
+        )
+        full_text_results = await self.full_text_document_search(
+            query_text, extended_settings
+        )
+
+        # Combine results using RRF
+        doc_scores: dict[str, dict] = {}
+        
+        # Process semantic results
+        for rank, result in enumerate(semantic_results, 1):
+            doc_id = str(result.id)
+            doc_scores[doc_id] = {
+                "semantic_rank": rank,
+                "full_text_rank": len(full_text_results) + 1,  # Default rank if not found
+                "data": result
+            }
+
+        # Process full-text results
+        for rank, result in enumerate(full_text_results, 1):
+            doc_id = str(result.id)
+            if doc_id in doc_scores:
+                doc_scores[doc_id]["full_text_rank"] = rank
+            else:
+                doc_scores[doc_id] = {
+                    "semantic_rank": len(semantic_results) + 1,  # Default rank if not found
+                    "full_text_rank": rank,
+                    "data": result
+                }
+
+        # Calculate RRF scores
+        for doc_id, scores in doc_scores.items():
+            semantic_score = 1 / (search_settings.rrf_k + scores["semantic_rank"])
+            full_text_score = 1 / (search_settings.rrf_k + scores["full_text_rank"])
+            
+            # Weighted combination
+            combined_score = (
+                semantic_score * search_settings.semantic_weight +
+                full_text_score * search_settings.full_text_weight
+            ) / (search_settings.semantic_weight + search_settings.full_text_weight)
+            
+            scores["final_score"] = combined_score
+
+        # Sort by final score and apply offset/limit
+        sorted_results = sorted(
+            doc_scores.values(),
+            key=lambda x: x["final_score"],
+            reverse=True
+        )[search_settings.offset:search_settings.offset + search_settings.search_limit]
+
+        return [
+            DocumentInfo(
+                **{
+                    **result["data"].__dict__,
+                    "metadata": {
+                        **result["data"].metadata,
+                        "search_score": result["final_score"],
+                        "semantic_rank": result["semantic_rank"],
+                        "full_text_rank": result["full_text_rank"],
+                        "search_type": "hybrid"
+                    }
+                }
+            )
+            for result in sorted_results
+        ]
+
+    async def search_documents(
+        self,
+        query_text: str,
+        query_embedding: Optional[list[float]] = None,
+        search_settings: Optional[DocumentSearchSettings] = None
+    ) -> list[DocumentInfo]:
+        """
+        Main search method that delegates to the appropriate search method based on settings.
+        """
+        if search_settings is None:
+            search_settings = DocumentSearchSettings()
+
+        if search_settings.search_type == "semantic":
+            if query_embedding is None:
+                raise ValueError("query_embedding is required for semantic search")
+            return await self.semantic_document_search(query_embedding, search_settings)
+        
+        elif search_settings.search_type == "full_text":
+            return await self.full_text_document_search(query_text, search_settings)
+        
+        elif search_settings.search_type == "hybrid":
+            if query_embedding is None:
+                raise ValueError("query_embedding is required for hybrid search")
+            return await self.hybrid_document_search(query_text, query_embedding, search_settings)
+        
+        else:
+            raise ValueError(f"Unknown search type: {search_settings.search_type}")

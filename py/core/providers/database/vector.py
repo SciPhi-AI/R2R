@@ -1195,139 +1195,139 @@ class PostgresVectorHandler(VectorHandler):
             for r in results
         ]
 
-    async def search_documents(
-        self,
-        query_text: str,
-        settings: DocumentSearchSettings,
-    ) -> list[dict[str, Any]]:
-        """
-        Search for documents based on their metadata fields and/or body text.
-        Joins with document_info table to get complete document metadata.
+    # async def search_documents(
+    #     self,
+    #     query_text: str,
+    #     settings: DocumentSearchSettings,
+    # ) -> list[dict[str, Any]]:
+    #     """
+    #     Search for documents based on their metadata fields and/or body text.
+    #     Joins with document_info table to get complete document metadata.
 
-        Args:
-            query_text (str): The search query text
-            settings (DocumentSearchSettings): Search settings including search preferences and filters
+    #     Args:
+    #         query_text (str): The search query text
+    #         settings (DocumentSearchSettings): Search settings including search preferences and filters
 
-        Returns:
-            list[dict[str, Any]]: List of documents with their search scores and complete metadata
-        """
-        where_clauses = []
-        params: list[Union[str, int, bytes]] = [query_text]
+    #     Returns:
+    #         list[dict[str, Any]]: List of documents with their search scores and complete metadata
+    #     """
+    #     where_clauses = []
+    #     params: list[Union[str, int, bytes]] = [query_text]
 
-        # Build the dynamic metadata field search expression
-        metadata_fields_expr = " || ' ' || ".join(
-            [
-                f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
-                for key in settings.metadata_keys
-            ]
-        )
+    #     # Build the dynamic metadata field search expression
+    #     metadata_fields_expr = " || ' ' || ".join(
+    #         [
+    #             f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
+    #             for key in settings.metadata_keys
+    #         ]
+    #     )
 
-        query = f"""
-            WITH
-            -- Metadata search scores
-            metadata_scores AS (
-                SELECT DISTINCT ON (v.document_id)
-                    v.document_id,
-                    d.metadata as doc_metadata,
-                    CASE WHEN $1 = '' THEN 0.0
-                    ELSE
-                        ts_rank_cd(
-                            setweight(to_tsvector('english', {metadata_fields_expr}), 'A'),
-                            websearch_to_tsquery('english', $1),
-                            32
-                        )
-                    END as metadata_rank
-                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
-                LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
-                WHERE v.metadata IS NOT NULL
-            ),
-            -- Body search scores
-            body_scores AS (
-                SELECT
-                    document_id,
-                    AVG(
-                        ts_rank_cd(
-                            setweight(to_tsvector('english', COALESCE(text, '')), 'B'),
-                            websearch_to_tsquery('english', $1),
-                            32
-                        )
-                    ) as body_rank
-                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-                WHERE $1 != ''
-                {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
-                GROUP BY document_id
-            ),
-            -- Combined scores with document metadata
-            combined_scores AS (
-                SELECT
-                    COALESCE(m.document_id, b.document_id) as document_id,
-                    m.doc_metadata as metadata,
-                    COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
-                    COALESCE(b.body_rank, 0) as debug_body_rank,
-                    CASE
-                        WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
-                            COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
-                        WHEN {str(settings.search_over_metadata).lower()} THEN
-                            COALESCE(m.metadata_rank, 0)
-                        WHEN {str(settings.search_over_body).lower()} THEN
-                            COALESCE(b.body_rank, 0)
-                        ELSE 0
-                    END as rank
-                FROM metadata_scores m
-                FULL OUTER JOIN body_scores b ON m.document_id = b.document_id
-                WHERE (
-                    ($1 = '') OR
-                    ({str(settings.search_over_metadata).lower()} AND m.metadata_rank > 0) OR
-                    ({str(settings.search_over_body).lower()} AND b.body_rank > 0)
-                )
-        """
+    #     query = f"""
+    #         WITH
+    #         -- Metadata search scores
+    #         metadata_scores AS (
+    #             SELECT DISTINCT ON (v.document_id)
+    #                 v.document_id,
+    #                 d.metadata as doc_metadata,
+    #                 CASE WHEN $1 = '' THEN 0.0
+    #                 ELSE
+    #                     ts_rank_cd(
+    #                         setweight(to_tsvector('english', {metadata_fields_expr}), 'A'),
+    #                         websearch_to_tsquery('english', $1),
+    #                         32
+    #                     )
+    #                 END as metadata_rank
+    #             FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
+    #             LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
+    #             WHERE v.metadata IS NOT NULL
+    #         ),
+    #         -- Body search scores
+    #         body_scores AS (
+    #             SELECT
+    #                 document_id,
+    #                 AVG(
+    #                     ts_rank_cd(
+    #                         setweight(to_tsvector('english', COALESCE(text, '')), 'B'),
+    #                         websearch_to_tsquery('english', $1),
+    #                         32
+    #                     )
+    #                 ) as body_rank
+    #             FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+    #             WHERE $1 != ''
+    #             {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
+    #             GROUP BY document_id
+    #         ),
+    #         -- Combined scores with document metadata
+    #         combined_scores AS (
+    #             SELECT
+    #                 COALESCE(m.document_id, b.document_id) as document_id,
+    #                 m.doc_metadata as metadata,
+    #                 COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
+    #                 COALESCE(b.body_rank, 0) as debug_body_rank,
+    #                 CASE
+    #                     WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
+    #                         COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
+    #                     WHEN {str(settings.search_over_metadata).lower()} THEN
+    #                         COALESCE(m.metadata_rank, 0)
+    #                     WHEN {str(settings.search_over_body).lower()} THEN
+    #                         COALESCE(b.body_rank, 0)
+    #                     ELSE 0
+    #                 END as rank
+    #             FROM metadata_scores m
+    #             FULL OUTER JOIN body_scores b ON m.document_id = b.document_id
+    #             WHERE (
+    #                 ($1 = '') OR
+    #                 ({str(settings.search_over_metadata).lower()} AND m.metadata_rank > 0) OR
+    #                 ({str(settings.search_over_body).lower()} AND b.body_rank > 0)
+    #             )
+    #     """
 
-        # Add any additional filters
-        if settings.filters:
-            filter_clause = self._build_filters(settings.filters, params)
-            where_clauses.append(filter_clause)
+    #     # Add any additional filters
+    #     if settings.filters:
+    #         filter_clause = self._build_filters(settings.filters, params)
+    #         where_clauses.append(filter_clause)
 
-        if where_clauses:
-            query += f" AND {' AND '.join(where_clauses)}"
+    #     if where_clauses:
+    #         query += f" AND {' AND '.join(where_clauses)}"
 
-        query += """
-            )
-            SELECT
-                document_id,
-                metadata,
-                rank as score,
-                debug_metadata_rank,
-                debug_body_rank
-            FROM combined_scores
-            WHERE rank > 0
-            ORDER BY rank DESC
-            OFFSET ${offset_param} LIMIT ${limit_param}
-        """.format(
-            offset_param=len(params) + 1,
-            limit_param=len(params) + 2,
-        )
+    #     query += """
+    #         )
+    #         SELECT
+    #             document_id,
+    #             metadata,
+    #             rank as score,
+    #             debug_metadata_rank,
+    #             debug_body_rank
+    #         FROM combined_scores
+    #         WHERE rank > 0
+    #         ORDER BY rank DESC
+    #         OFFSET ${offset_param} LIMIT ${limit_param}
+    #     """.format(
+    #         offset_param=len(params) + 1,
+    #         limit_param=len(params) + 2,
+    #     )
 
-        # Add offset and limit to params
-        params.extend([settings.offset, settings.limit])
+    #     # Add offset and limit to params
+    #     params.extend([settings.offset, settings.limit])
 
-        # Execute query
-        results = await self.connection_manager.fetch_query(query, params)
+    #     # Execute query
+    #     results = await self.connection_manager.fetch_query(query, params)
 
-        # Format results with complete document metadata
-        return [
-            {
-                "document_id": str(r["document_id"]),
-                "metadata": (
-                    json.loads(r["metadata"])
-                    if isinstance(r["metadata"], str)
-                    else r["metadata"]
-                ),
-                "score": float(r["score"]),
-                "debug_metadata_rank": float(r["debug_metadata_rank"]),
-                "debug_body_rank": float(r["debug_body_rank"]),
-            }
-            for r in results
-        ]
+    #     # Format results with complete document metadata
+    #     return [
+    #         {
+    #             "document_id": str(r["document_id"]),
+    #             "metadata": (
+    #                 json.loads(r["metadata"])
+    #                 if isinstance(r["metadata"], str)
+    #                 else r["metadata"]
+    #             ),
+    #             "score": float(r["score"]),
+    #             "debug_metadata_rank": float(r["debug_metadata_rank"]),
+    #             "debug_body_rank": float(r["debug_body_rank"]),
+    #         }
+    #         for r in results
+    #     ]
 
     def _get_index_options(
         self,

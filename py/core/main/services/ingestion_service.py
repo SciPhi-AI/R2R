@@ -250,6 +250,11 @@ class IngestionService(Service):
             )
 
             document_info.summary = response.choices[0].message.content
+
+            embedding = await self.providers.embedding.async_get_embedding(
+                text = document_info.summary,
+            )
+            document_info.summary_embedding = embedding
         return
 
     async def embed_document(

@@ -59,7 +59,7 @@ class VectorSearchPipe(SearchPipe):
             message,
             purpose=EmbeddingPurpose.QUERY,
         )
-
+        
         search_results = await (
             self.database_provider.hybrid_search(
                 query_vector=query_vector,
@@ -72,7 +72,7 @@ class VectorSearchPipe(SearchPipe):
                 search_settings=search_settings,
             )
         )
-        reranked_results = self.embedding_provider.rerank(
+        reranked_results = await self.embedding_provider.arerank(
             query=message,
             results=search_results,
             limit=search_settings.search_limit,
