@@ -10,7 +10,7 @@ from cli.utils.timer import timer
 @click.option(
     "--query", prompt="Enter your search query", help="The search query"
 )
-# VectorSearchSettings
+# SearchSettings
 @click.option(
     "--use-vector-search",
     is_flag=True,

@@ -83,8 +83,7 @@ base_dimension = 512
 # base_dimension = 3072
 # quantization_settings = { quantization_type = "INT1" }
 
-# To run with reranking, set the following below
-# rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1"
+# rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1" # reranking model
 
 batch_size = 128
 add_title_as_prefix = false
@@ -100,6 +99,13 @@ chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
+
+# Ingestion-time document summary parameters
+# skip_document_summary = False
+# document_summary_system_prompt = 'default_system'
+# document_summary_task_prompt = 'default_summary'
+# chunks_for_document_summary = 128
+# document_summary_model = "openai/gpt-4o-mini"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default

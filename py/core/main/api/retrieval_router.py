@@ -8,12 +8,11 @@ from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
 
 from core.base import (
-    DocumentSearchSettings,
     GenerationConfig,
     KGSearchSettings,
     Message,
     R2RException,
-    VectorSearchSettings,
+    SearchSettings,
 )
 from core.base.api.models import (
     WrappedCompletionResponse,
@@ -58,7 +57,7 @@ class RetrievalRouter(BaseRouter):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+        search_settings: Union[SearchSettings, KGSearchSettings],
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -111,8 +110,8 @@ class RetrievalRouter(BaseRouter):
             query: str = Body(
                 ..., description=search_descriptions.get("query")
             ),
-            settings: DocumentSearchSettings = Body(
-                default_factory=DocumentSearchSettings,
+            settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for document search",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
@@ -127,8 +126,14 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
+            query_embedding = (
+                await self.service.providers.embedding.async_get_embedding(
+                    query
+                )
+            )
             results = await self.service.search_documents(
                 query=query,
+                query_embedding=query_embedding,
                 settings=settings,
             )
             return results
@@ -142,8 +147,8 @@ class RetrievalRouter(BaseRouter):
             query: str = Body(
                 ..., description=search_descriptions.get("query")
             ),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description=search_descriptions.get("vector_search_settings"),
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -187,8 +192,8 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def rag_app(
             query: str = Body(..., description=rag_descriptions.get("query")),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description=rag_descriptions.get("vector_search_settings"),
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -261,8 +266,8 @@ class RetrievalRouter(BaseRouter):
                 description=agent_descriptions.get("messages"),
                 deprecated=True,
             ),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description=agent_descriptions.get("vector_search_settings"),
             ),
             kg_search_settings: KGSearchSettings = Body(

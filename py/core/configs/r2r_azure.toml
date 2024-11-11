@@ -40,5 +40,6 @@ audio_transcription_model="azure/whisper-1"
 vision_img_model = "azure/gpt-4o-mini"
 vision_pdf_model = "azure/gpt-4o-mini"
 
+document_summary_model = "azure/gpt-4o-mini"
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }

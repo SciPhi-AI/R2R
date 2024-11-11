@@ -8,7 +8,7 @@ from core.base import (
 from core.base.abstractions import (
     AggregateSearchResult,
     KGSearchSettings,
-    VectorSearchSettings,
+    SearchSettings,
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import CompletionProvider
@@ -57,7 +57,7 @@ class RAGAgentMixin:
     async def search(
         self,
         query: str,
-        vector_search_settings: VectorSearchSettings,
+        vector_search_settings: SearchSettings,
         kg_search_settings: KGSearchSettings,
         *args,
         **kwargs,
