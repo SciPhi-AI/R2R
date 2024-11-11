@@ -182,6 +182,10 @@ class HybridSearchSettings(R2RSerializable):
 
 
 class DocumentSearchSettings(R2RSerializable):
+    search_type: str = Field(
+        default="hybrid", description="`semantic`, `full-text` or `hybrid"
+    )
+
     search_over_metadata: bool = Field(
         default=True,
         description="Whether to search over the document metadata in the search procedure",
@@ -222,6 +226,19 @@ class DocumentSearchSettings(R2RSerializable):
     )
     metadata_weight: float = Field(
         default=0.5, description="Relative weight to apply to body search"
+    )
+    full_text_weight: float = Field(
+        default=1.0, description="Weight to apply to full text search"
+    )
+    semantic_weight: float = Field(
+        default=5.0, description="Weight to apply to semantic search"
+    )
+    full_text_limit: int = Field(
+        default=200,
+        description="Maximum number of results to return from full text search",
+    )
+    rrf_k: int = Field(
+        default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
     )
 
 

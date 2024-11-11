@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Optional
 from uuid import UUID
+
 from fastapi import HTTPException
 
 from core import R2RStreamingRAGAgent
@@ -122,11 +123,13 @@ class RetrievalService(Service):
         self,
         query: str,
         settings: DocumentSearchSettings,
+        query_embedding: Optional[list[float]] = None,
     ) -> list[dict]:
 
         return await self.providers.database.search_documents(
             query_text=query,
             settings=settings,
+            query_embedding=query_embedding,
         )
 
     @telemetry_event("Completion")

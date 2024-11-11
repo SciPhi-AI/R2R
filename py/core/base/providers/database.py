@@ -521,11 +521,11 @@ class VectorHandler(Handler):
     ) -> list[VectorSearchResult]:
         pass
 
-    @abstractmethod
-    async def search_documents(
-        self, query_text: str, settings: DocumentSearchSettings
-    ) -> list[dict]:
-        pass
+    # @abstractmethod
+    # async def search_documents(
+    #     self, query_text: str, settings: DocumentSearchSettings
+    # ) -> list[dict]:
+    #     pass
 
     @abstractmethod
     async def hybrid_search(
@@ -1430,9 +1430,14 @@ class DatabaseProvider(Provider):
         )
 
     async def search_documents(
-        self, query_text: str, settings: DocumentSearchSettings
+        self,
+        query_text: str,
+        settings: DocumentSearchSettings,
+        query_embedding: Optional[list[float]] = None,
     ) -> list[dict]:
-        return await self.vector_handler.search_documents(query_text, settings)
+        return await self.document_handler.search_documents(
+            query_text, query_embedding, settings
+        )
 
     async def delete(
         self, filters: dict[str, Any]

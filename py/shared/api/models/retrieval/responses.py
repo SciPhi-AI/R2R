@@ -158,9 +158,11 @@ class DocumentSearchResult(BaseModel):
     )
 
 
+from ..management.responses import DocumentOverviewResponse
+
 WrappedCompletionResponse = ResultsWrapper[LLMChatCompletion]
 # Create wrapped versions of the responses
 WrappedSearchResponse = ResultsWrapper[SearchResponse]
-WrappedDocumentSearchResponse = ResultsWrapper[list[DocumentSearchResult]]
+WrappedDocumentSearchResponse = ResultsWrapper[list[DocumentOverviewResponse]]
 WrappedRAGResponse = ResultsWrapper[RAGResponse]
 WrappedRAGAgentResponse = ResultsWrapper[RAGAgentResponse]
