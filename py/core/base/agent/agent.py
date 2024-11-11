@@ -96,7 +96,6 @@ class Agent(ABC):
                 self.config.system_instruction_name
             )
         )
-        print(f"Creating message with content: {content}")
         await self.conversation.add_message(
             Message(
                 role="system",

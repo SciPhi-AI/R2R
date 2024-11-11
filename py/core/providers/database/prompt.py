@@ -154,7 +154,6 @@ class CacheablePromptHandler(PromptHandler):
 
         result = await self._get_prompt_impl(prompt_name, inputs)
         self._prompt_cache.set(cache_key, result)
-        print(f"Returning result: {result}")
         return result
 
     async def get_prompt(
