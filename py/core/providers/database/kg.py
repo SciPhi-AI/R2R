@@ -854,25 +854,12 @@ class PostgresKGHandler(KGHandler):
     ########## Entity CRUD Operations ##########################
     ############################################################
 
-    async def create_entity(
-        self, collection_id: UUID, entity: Entity
+    async def create_entities(
+        self, level: EntityLevel, id: UUID, entities: list[Entity]
     ) -> None:
-
-        table_name = entity.level.value + "_entity"
-        entity.level = None
-
-        # check if the entity already exists
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
-        """
-        count = (
-            await self.connection_manager.fetch_query(QUERY, [entity.id, collection_id])
-        )[0]["count"]
-
-        if count > 0:
-            raise R2RException("Entity already exists", 400)
-
-        await self._add_objects([entity], table_name)
+        
+        # TODO: check if already exists
+        await self._add_objects(entities, level.table_name)
 
     async def update_entity(
         self, collection_id: UUID, entity: Entity
@@ -1272,6 +1259,53 @@ class PostgresKGHandler(KGHandler):
         # somehow get the rds from the postgres db.
         raise NotImplementedError
 
+    async def get_entities_v3(
+        self,
+        level: EntityLevel,
+        id: Optional[UUID] = None,
+        entity_names: Optional[list[str]] = None,
+        entity_categories: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ):
+        
+        params: list = [id]
+
+        if level != EntityLevel.CHUNK and entity_categories:
+            raise ValueError("entity_categories are only supported for chunk level entities")
+
+        filter = {
+            EntityLevel.CHUNK: "chunk_ids = ANY($1)",
+            EntityLevel.DOCUMENT: "document_id = $1",
+            EntityLevel.COLLECTION: "collection_id = $1",
+        }[level]
+
+        if entity_names:
+            filter += " AND name = ANY($2)"
+            params.append(entity_names)
+
+        if entity_categories:
+            filter += " AND category = ANY($3)"
+            params.append(entity_categories)
+
+        QUERY = f"""
+            SELECT * from {self._get_table_name(level.table_name)} WHERE {filter}
+            OFFSET ${len(params)} LIMIT ${len(params) + 1}
+        """
+
+        params.extend([offset, limit])
+
+        output = await self.connection_manager.fetch_query(QUERY, params)
+
+        if attributes:
+            output = [entity for entity in output if entity["name"] in attributes]
+
+        return output
+
+    
+
+    # TODO: deprecate this
     async def get_entities(
         self,
         collection_id: Optional[UUID] = None,

@@ -6,6 +6,7 @@ from uuid import UUID
 
 from core.base import KGExtractionStatus, RunManager
 from core.base.abstractions import (
+    EntityLevel,
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
@@ -116,15 +117,16 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
-    @telemetry_event("create_entity")
-    async def create_entity(
+    @telemetry_event("create_entities")
+    async def create_entities(
         self,
-        collection_id: UUID,
-        entity: Entity,
+        level: EntityLevel,
+        id: UUID,
+        entities: list[Entity],
         **kwargs,
     ):
-        return await self.providers.database.create_entity(
-            collection_id, entity
+        return await self.providers.database.create_entities(
+            level, id, entities, **kwargs
         )
 
     @telemetry_event("update_entity")
@@ -383,17 +385,21 @@ class KgService(Service):
     @telemetry_event("list_entities")
     async def list_entities(
         self,
-        collection_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
-        entity_table_name: str = "document_entity",
+        level: EntityLevel,
+        id: Optional[UUID] = None,
+        entity_names: Optional[list[str]] = None,
+        entity_categories: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_entities(
-            collection_id=collection_id,
-            entity_ids=entity_ids,
-            entity_table_name=entity_table_name,
+        return await self.providers.database.get_entities_v3(
+            level=level,
+            id=id,
+            entity_names=entity_names,
+            entity_categories=entity_categories,
+            attributes=attributes,
             offset=offset or 0,
             limit=limit or -1,
         )

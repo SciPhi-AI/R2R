@@ -44,6 +44,213 @@ class GraphRouter(BaseRouterV3):
         super().__init__(providers, services, orchestration_provider, run_type)
 
     def _setup_routes(self):
+
+        ##### CHUNK LEVEL OPERATIONS #####
+
+        ##### ENTITIES ######
+        @self.router.get(
+            "/chunks/{id}/entities",
+            summary="List entities for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.list_entities(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def list_entities(
+            id: UUID = Path(..., description="The ID of the chunk to retrieve entities for."),
+            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the entities by."),
+            entity_categories: Optional[list[str]] = Query(None, description="A list of entity categories to filter the entities by."),
+            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
+            offset: int = Query(0, ge=0, description="The offset of the first entity to retrieve."),
+            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of entities to retrieve, up to 20,000."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[Entity]]:
+            """
+            Retrieves a list of entities associated with a specific chunk.  
+            
+            Note that when entities are extracted, neighboring chunks are also processed together to extract entities. 
+            
+            So, the entity returned here may not be in the same chunk as the one specified, but rather in a neighboring chunk (upto 2 chunks by default).   
+            """
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            return await self.services["kg"].list_entities(
+                level=EntityLevel.CHUNK,
+                id=id,
+                offset=offset,
+                limit=limit,
+                entity_names=entity_names,
+                entity_categories=entity_categories,
+                attributes=attributes
+            )
+        
+        @self.router.post(
+            "/chunks/{id}/entities",
+            summary="Create entities for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.create_entities(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def create_entities(
+            id: UUID = Path(..., description="The ID of the chunk to create entities for."),
+            entities: list[Union[Entity, dict]] = Body(..., description="The entities to create."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            entities = [Entity(**entity) if isinstance(entity, dict) else entity for entity in entities]
+            # for each entity, set the level to CHUNK
+            for entity in entities:
+                if entity.level is None:
+                    entity.level = EntityLevel.CHUNK
+                else:
+                    raise R2RException("Entity level must be chunk or empty.", 400)
+
+            return await self.services["kg"].create_entities(
+                level=EntityLevel.CHUNK,
+                id=id,
+                entities=entities,
+            )
+
+        @self.router.post(
+            "/chunks/{id}/entities/{entity_id}",
+            summary="Update an entity for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.update_entity(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def update_entity(
+            id: UUID = Path(..., description="The ID of the chunk to update the entity for."),
+            entity_id: UUID = Path(..., description="The ID of the entity to update."),
+            entity: Entity = Body(..., description="The updated entity."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            return await self.services["kg"].update_entity(
+                level=EntityLevel.CHUNK,
+                id=id,
+                entity_id=entity_id,
+                entity=entity,
+            )
+
+
+        @self.router.delete(
+            "/chunks/{id}/entities/{entity_id}",
+            summary="Delete an entity for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.delete_entity(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+
+        @self.base_endpoint
+        async def delete_entity(
+            id: UUID = Path(..., description="The ID of the chunk to delete the entity for."),
+            entity_id: UUID = Path(..., description="The ID of the entity to delete."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+        ##### RELATIONSHIPS #####
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ##### DOCUMENT LEVEL OPERATIONS #####
+
+
+
+
+
+
+
+
+
+        ##### COLLECTION LEVEL OPERATIONS #####
+
+
+
+
+
         # Graph-level operations
         @self.router.post(
             "/graphs/{collection_id}",
