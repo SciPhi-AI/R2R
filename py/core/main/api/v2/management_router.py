@@ -18,7 +18,7 @@ from core.base.api.models import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
+    WrappedConversationsResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
@@ -833,7 +833,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedConversationsOverviewResponse:
+        ) -> WrappedConversationsResponse:
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in conversation_ids
             ]

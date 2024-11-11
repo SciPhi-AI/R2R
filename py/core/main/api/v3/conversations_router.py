@@ -1,17 +1,17 @@
 import logging
 import textwrap
 
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field, Json
 
-from core.base import Message, R2RException, RunType
+from core.base import Message, RunType
 from core.base.api.models import (
     ResultsWrapper,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
+    WrappedConversationsResponse,
+    WrappedMessageResponse,
     WrappedDeleteResponse,
 )
 from core.providers import (
@@ -24,28 +24,14 @@ from .base_router import BaseRouterV3
 logger = logging.getLogger()
 
 
-class MessageContent(BaseModel):
-    content: str = Field(..., description="The content of the message")
-    parent_id: Optional[str] = Field(
-        None, description="The ID of the parent message, if any"
-    )
-    metadata: Optional[dict] = Field(
-        None, description="Additional metadata for the message"
-    )
-
-
-class CreateConversationResponse(BaseModel):
-    conversation_id: UUID
-
-
 class ConversationsRouter(BaseRouterV3):
     def __init__(
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -70,6 +56,22 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.create();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -84,15 +86,13 @@ class ConversationsRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_conversation(
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[CreateConversationResponse]:
+        ) -> WrappedConversationResponse:
             """
             Create a new conversation.
 
             This endpoint initializes a new conversation for the authenticated user.
             """
-            result = await self.services["management"].create_conversation()
-
-            return {"conversation_id": result}  # type: ignore
+            return await self.services["management"].create_conversation()
 
         @self.router.get(
             "/conversations",
@@ -116,6 +116,22 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.list();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -129,6 +145,10 @@ class ConversationsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_conversations(
+            ids: list[str] = Query(
+                [],
+                description="A list of conversation IDs to retrieve. If not provided, all conversations will be returned.",
+            ),
             offset: int = Query(
                 0,
                 ge=0,
@@ -141,20 +161,24 @@ class ConversationsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedConversationsOverviewResponse:
+        ) -> WrappedConversationsResponse:
             """
             List conversations with pagination and sorting options.
 
             This endpoint returns a paginated list of conversations for the authenticated user.
             """
+            conversation_uuids = [
+                UUID(conversation_id) for conversation_id in ids
+            ]
+
             conversations_response = await self.services[
                 "management"
             ].conversations_overview(
-                conversation_ids=[],  # Empty list to get all conversations
+                conversation_ids=conversation_uuids,
                 offset=offset,
                 limit=limit,
             )
-            return conversations_response["results"], {  # type: ignore
+            return conversations_response["results"], {
                 "total_entries": conversations_response["total_entries"]
             }
 
@@ -176,6 +200,25 @@ class ConversationsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 branch_id="branch_1"
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.retrieve({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    branch_id: "branch_1"
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -206,7 +249,7 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
-            return await self.services["management"].get_conversation(  # type: ignore
+            return await self.services["management"].get_conversation(
                 str(id),
                 branch_id,
             )
@@ -226,6 +269,24 @@ class ConversationsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.delete({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -274,9 +335,31 @@ class ConversationsRouter(BaseRouterV3):
                             result = client.conversations.add_message(
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 content="Hello, world!",
+                                role="user",
                                 parent_id="parent_message_id",
                                 metadata={"key": "value"}
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.addMessage({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    content: "Hello, world!",
+                                    role: "user",
+                                    parent_id: "parent_message_id",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -308,26 +391,25 @@ class ConversationsRouter(BaseRouterV3):
             parent_id: Optional[str] = Body(
                 None, description="The ID of the parent message, if any"
             ),
-            metadata: Optional[Json[dict]] = Body(
+            metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> dict:
+        ) -> WrappedMessageResponse:
             """
             Add a new message to a conversation.
 
             This endpoint adds a new message to an existing conversation.
             """
             message = Message(role=role, content=content)
-            message_id = await self.services["management"].add_message(
+            return await self.services["management"].add_message(
                 str(id),
                 message,
                 parent_id,
                 metadata,
             )
-            return {"message_id": message_id}  # type: ignore
 
-        @self.router.put(
+        @self.router.post(
             "/conversations/{id}/messages/{message_id}",
             summary="Update message in conversation",
             openapi_extra={
@@ -350,10 +432,30 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.updateMessage({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    message_id: "message_id_to_update",
+                                    content: "Updated content",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
+                            curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
                                 -d '{"content": "Updated content"}'
@@ -408,6 +510,24 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.listBranches({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -420,6 +540,7 @@ class ConversationsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
+        # FIXME: This should be paginated, no?
         async def list_branches(
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"

@@ -689,13 +689,13 @@ class ManagementService(Service):
         conversation_id: str,
         branch_id: Optional[str] = None,
         auth_user=None,
-    ) -> Tuple[str, list[Message]]:
+    ) -> dict:
         return await self.logging_connection.get_conversation(
             conversation_id, branch_id
         )
 
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> str:
+    async def create_conversation(self, auth_user=None) -> dict:
         return await self.logging_connection.create_conversation()
 
     @telemetry_event("ConversationsOverview")

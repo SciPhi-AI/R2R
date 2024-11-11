@@ -6,8 +6,6 @@ const baseUrl = "http://localhost:7272";
 
 describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
-  let collectionId: string;
-  let documentId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);

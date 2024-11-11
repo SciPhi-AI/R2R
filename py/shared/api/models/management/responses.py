@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -7,11 +7,7 @@ from pydantic import BaseModel
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 from shared.abstractions.document import DocumentInfo
 
-from ....abstractions.llm import Message
-
-
-class MessageResponse(BaseModel):
-    message: str
+from shared.abstractions.llm import Message
 
 
 class UpdatePromptResponse(BaseModel):
@@ -124,28 +120,38 @@ class CollectionResponse(BaseModel):
     document_count: int
 
 
-class ConversationOverviewResponse(BaseModel):
-    conversation_id: UUID
+class ConversationResponse(BaseModel):
+    id: UUID
     created_at: datetime
+
+
+class MessageResponse(BaseModel):
+    id: UUID
+    message: Message
 
 
 class AddUserResponse(BaseModel):
     result: bool
 
 
-# TODO: We should harmonize these more
-# Create wrapped versions of each response
-
-WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
-
 # Collection Responses
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
 WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
+# Conversation Responses
+WrappedConversationResponse = ResultsWrapper[ConversationResponse]
+WrappedConversationsResponse = PaginatedResultsWrapper[
+    list[ConversationResponse]
+]
+WrappedMessageResponse = ResultsWrapper[MessageResponse]
+WrappedMessagesResponse = PaginatedResultsWrapper[list[MessageResponse]]
 
 # Prompt Responses
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
+# TODO: anything below this hasn't been reviewed
+# WrappedBranchResponse = ResultsWrapper[BranchResponse] # TODO: Implement BranchResponse
+# WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]] # TODO: Implement BranchResponse
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
@@ -153,13 +159,13 @@ WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedUserOverviewResponse = PaginatedResultsWrapper[
     list[UserOverviewResponse]
 ]
-WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
 
 # FIXME: Do we really need DocumentInfo and DocumentOverviewResponse? Can it just be a DocumentResponse?
 WrappedDocumentResponse = PaginatedResultsWrapper[list[DocumentInfo]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]
+WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
 
 WrappedAddUserResponse = ResultsWrapper[None]
 WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
@@ -170,7 +176,3 @@ WrappedDocumentChunkResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
-WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
-    list[ConversationOverviewResponse]
-]
-WrappedMessageResponse = ResultsWrapper[MessageResponse]

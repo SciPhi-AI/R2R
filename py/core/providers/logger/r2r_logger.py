@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 from uuid import UUID
 from contextlib import asynccontextmanager
 
@@ -14,8 +14,6 @@ from core.base.logger.base import (
     RunInfoLog,
     RunType,
 )
-
-from ..database.postgres import PostgresDBProvider
 
 logger = logging.getLogger()
 
@@ -224,14 +222,17 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             (conversation_id, created_at),
         )
         await self.conn.commit()
-        return conversation_id
+        return {
+            "id": conversation_id,
+            "created_at": created_at,
+        }
 
     async def get_conversations_overview(
         self,
         conversation_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = -1,
-    ) -> dict[str, Union[list[dict], int]]:
+    ) -> dict:
         """Get an overview of conversations, optionally filtered by conversation IDs, with pagination."""
         query = """
             WITH conversation_overview AS (
@@ -274,7 +275,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
         conversations = [
             {
-                "conversation_id": row[0],
+                "id": row[0],
                 "created_at": row[1],
             }
             for row in results
@@ -299,13 +300,18 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         message_id = str(uuid.uuid4())
         created_at = datetime.utcnow().timestamp()
 
+        # Serialize the message content to a JSON string
+        content_json = (
+            content.model_dump_json()
+        )  # Use model_dump_json instead of json()
+
         await self.conn.execute(
             "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 message_id,
                 conversation_id,
                 parent_id,
-                content.json(),
+                content_json,
                 created_at,
                 json.dumps(metadata or {}),
             ),
@@ -350,7 +356,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 )
 
         await self.conn.commit()
-        return message_id
+        return {
+            "id": message_id,
+            "message": content,
+        }
 
     async def edit_message(
         self, message_id: str, new_content: str
@@ -392,13 +401,16 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         # Add the edited message with the same parent_id
         new_message_id = str(uuid.uuid4())
         message_created_at = datetime.utcnow().timestamp()
+
+        edited_message_json = edited_message.model_dump_json()
+
         await self.conn.execute(
             "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 new_message_id,
                 conversation_id,
                 parent_id,
-                edited_message.json(),
+                edited_message_json,  # Use the serialized JSON string
                 message_created_at,
                 json.dumps({"edited": True}),
             ),
@@ -443,11 +455,21 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> Tuple[str, list[Message]]:
+    ) -> dict:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
             )
+
+        # Get conversation details first
+        async with self.conn.execute(
+            "SELECT created_at FROM conversations WHERE id = ?",
+            (conversation_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                raise ValueError(f"Conversation {conversation_id} not found")
+            conversation_created_at = row[0]
 
         if branch_id is None:
             # Get the most recent branch by created_at timestamp
@@ -463,8 +485,12 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 row = await cursor.fetchone()
                 branch_id = row[0] if row else None
 
+        # If no branch exists, return empty results but with required fields
         if branch_id is None:
-            return []  # No branches found for the conversation
+            return {
+                "id": conversation_id,
+                "created_at": conversation_created_at,
+            }
 
         # Get all messages for this branch
         async with self.conn.execute(
@@ -487,7 +513,12 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             (branch_id, branch_id),
         ) as cursor:
             rows = await cursor.fetchall()
-            return [(row[0], Message.parse_raw(row[1])) for row in rows]
+            messages = [(row[0], Message.parse_raw(row[1])) for row in rows]
+
+            return {
+                "id": conversation_id,
+                "created_at": conversation_created_at,
+            }
 
     async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         if not self.conn:

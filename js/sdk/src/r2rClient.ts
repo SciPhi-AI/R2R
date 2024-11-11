@@ -4,6 +4,7 @@ import FormData from "form-data";
 import { BaseClient } from "./baseClient";
 
 import { CollectionsClient } from "./v3/clients/collections";
+import { ConversationsClient } from "./v3/clients/conversations";
 import { DocumentsClient } from "./v3/clients/documents";
 import { UsersClient } from "./v3/clients/users";
 import { PromptsClient } from "./v3/clients/prompts";
@@ -33,6 +34,7 @@ import {
 
 export class r2rClient extends BaseClient {
   public readonly collections: CollectionsClient;
+  public readonly conversations: ConversationsClient;
   public readonly documents: DocumentsClient;
   public readonly users: UsersClient;
   public readonly prompts: PromptsClient;
@@ -40,8 +42,9 @@ export class r2rClient extends BaseClient {
   constructor(baseURL: string, anonymousTelemetry = true) {
     super(baseURL, "", anonymousTelemetry);
 
-    this.documents = new DocumentsClient(this);
     this.collections = new CollectionsClient(this);
+    this.conversations = new ConversationsClient(this);
+    this.documents = new DocumentsClient(this);
     this.users = new UsersClient(this);
     this.prompts = new PromptsClient(this);
 
@@ -726,6 +729,7 @@ export class r2rClient extends BaseClient {
    * @param template The new template for the prompt.
    * @param input_types The new input types for the prompt.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.prompts.update` instead.
    */
   @feature("updatePrompt")
   async updatePrompt(
@@ -757,6 +761,7 @@ export class r2rClient extends BaseClient {
    * @param name The name of the prompt.
    * @param template The template for the prompt.
    * @param input_types The input types for the prompt.
+   * @deprecated Use `client.prompts.create` instead.
    */
   @feature("addPrompt")
   async addPrompt(
@@ -781,6 +786,7 @@ export class r2rClient extends BaseClient {
    * @param name The name of the prompt to retrieve.
    * @param inputs Inputs for the prompt.
    * @param prompt_override Override for the prompt template.
+   * @deprecated Use `client.prompts.retrieve` instead.
    * @returns
    */
   @feature("getPrompt")
@@ -805,6 +811,7 @@ export class r2rClient extends BaseClient {
   /**
    * Get all prompts from the system.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.prompts.list` instead.
    */
   @feature("getAllPrompts")
   async getAllPrompts(): Promise<Record<string, any>> {
@@ -816,6 +823,7 @@ export class r2rClient extends BaseClient {
    * Delete a prompt from the system.
    * @param prompt_name The name of the prompt to delete.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.prompts.delete` instead.
    */
   @feature("deletePrompt")
   async deletePrompt(prompt_name: string): Promise<Record<string, any>> {
@@ -1345,6 +1353,7 @@ export class r2rClient extends BaseClient {
    * Get an overview of existing conversations.
    * @param limit The maximum number of conversations to return.
    * @param offset The offset to start listing conversations from.
+   * @deprecated use `client.conversations.list` instead
    * @returns
    */
   @feature("conversationsOverview")
@@ -1373,6 +1382,7 @@ export class r2rClient extends BaseClient {
    * Get a conversation by its ID.
    * @param conversationId The ID of the conversation to get.
    * @param branchId The ID of the branch (optional).
+   * @deprecated use `client.conversations.retrieve` instead
    * @returns A promise that resolves to the response from the server.
    */
   @feature("getConversation")
@@ -1390,6 +1400,7 @@ export class r2rClient extends BaseClient {
 
   /**
    * Create a new conversation.
+   * @deprecated use `client.conversations.create` instead
    * @returns A promise that resolves to the response from the server.
    */
   @feature("createConversation")
@@ -1402,6 +1413,7 @@ export class r2rClient extends BaseClient {
    * Add a message to an existing conversation.
    * @param conversationId
    * @param message
+   * @deprecated use `client.conversations.addMessage` instead
    * @returns
    */
   @feature("addMessage")
@@ -1426,6 +1438,7 @@ export class r2rClient extends BaseClient {
    * Update a message in an existing conversation.
    * @param message_id The ID of the message to update.
    * @param message The updated message.
+   * @deprecated use `client.conversations.updateMessage` instead
    * @returns A promise that resolves to the response from the server.
    */
   @feature("updateMessage")
@@ -1442,6 +1455,7 @@ export class r2rClient extends BaseClient {
   /**
    * Get an overview of branches in a conversation.
    * @param conversationId The ID of the conversation to get branches for.
+   * @deprecated use `client.conversations.listBranches` instead
    * @returns A promise that resolves to the response from the server.
    */
   @feature("branchesOverview")
@@ -1494,6 +1508,7 @@ export class r2rClient extends BaseClient {
   /**
    * Delete a conversation by its ID.
    * @param conversationId The ID of the conversation to delete.
+   * @deprecated use `client.conversations.delete` instead
    * @returns A promise that resolves to the response from the server.
    */
   @feature("deleteConversation")

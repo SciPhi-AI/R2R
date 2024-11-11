@@ -169,7 +169,7 @@ class CollectionsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def get_collections(
+        async def list_collections(
             ids: list[str] = Query(
                 [],
                 description="A list of collection IDs to retrieve. If not provided, all collections will be returned.",
@@ -516,7 +516,7 @@ class CollectionsRouter(BaseRouterV3):
             id: UUID = Path(...),
             document_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedMessageResponse:
+        ) -> dict:  # We should make this a generic response or something
             """
             Add a document to a collection.
             """

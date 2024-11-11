@@ -1,6 +1,5 @@
-import json
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Optional, Union
+from inspect import isasyncgenfunction, iscoroutinefunction
+from typing import Optional
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
@@ -25,6 +24,7 @@ class ConversationsSDK:
 
     async def list(
         self,
+        ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -32,6 +32,7 @@ class ConversationsSDK:
         List conversations with pagination and sorting options.
 
         Args:
+            ids (Optional[list[Union[str, UUID]]]): List of conversation IDs to retrieve
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -42,6 +43,8 @@ class ConversationsSDK:
             "offset": offset,
             "limit": limit,
         }
+        if ids:
+            params["ids"] = ids
 
         return await self.client._make_request(
             "GET", "conversations", params=params
@@ -49,15 +52,15 @@ class ConversationsSDK:
 
     async def retrieve(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         branch_id: Optional[str] = None,
     ) -> dict:
         """
         Get detailed information about a specific conversation.
 
         Args:
-            id (Union[str, UUID]): Conversation ID to retrieve
-            branch_id (Optional[str]): ID of the specific branch to retrieve
+            id (Union[str, UUID]): The ID of the conversation to retrieve
+            branch_id (Optional[str]): The ID of the branch to retrieve
 
         Returns:
             dict: Detailed conversation information
@@ -72,13 +75,13 @@ class ConversationsSDK:
 
     async def delete(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> bool:
         """
         Delete a conversation.
 
         Args:
-            id (Union[str, UUID]): Conversation ID to delete
+            id (Union[str, UUID]): The ID of the conversation to delete
 
         Returns:
             bool: True if deletion was successful
@@ -90,20 +93,21 @@ class ConversationsSDK:
 
     async def add_message(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         content: str,
         role: str,
         parent_id: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        metadata: Optional[dict[str, str]] = None,
     ) -> dict:
         """
         Add a new message to a conversation.
 
         Args:
-            id (Union[str, UUID]): Conversation ID
-            content (str): Content of the message
-            parent_id (Optional[str]): ID of the parent message
-            metadata (Optional[dict]): Additional metadata for the message
+            id (Union[str, UUID]): The ID of the conversation to add the message to
+            content (str): The content of the message
+            role (str): The role of the message (e.g., "user" or "assistant")
+            parent_id (Optional[str]): The ID of the parent message
+            metadata (Optional[dict]): Additional metadata to attach to the message
 
         Returns:
             dict: Result of the operation, including the new message ID
@@ -115,15 +119,15 @@ class ConversationsSDK:
         if parent_id:
             data["parent_id"] = parent_id
         if metadata:
-            data["metadata"] = json.dumps(metadata)
+            data["metadata"] = metadata
 
         return await self.client._make_request(
-            "POST", f"conversations/{str(id)}/messages", json=data
+            "POST", f"conversations/{str(id)}/messages", data=data
         )
 
     async def update_message(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         message_id: str,
         content: str,
     ) -> dict:
@@ -131,9 +135,9 @@ class ConversationsSDK:
         Update an existing message in a conversation.
 
         Args:
-            id (Union[str, UUID]): Conversation ID
-            message_id (str): ID of the message to update
-            content (str): New content for the message
+            id (Union[str, UUID]): The ID of the conversation containing the message
+            message_id (str): The ID of the message to update
+            content (str): The new content of the message
 
         Returns:
             dict: Result of the operation, including the new message ID and branch ID
@@ -147,13 +151,13 @@ class ConversationsSDK:
 
     async def list_branches(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> dict:
         """
         List all branches in a conversation.
 
         Args:
-            id (Union[str, UUID]): Conversation ID
+            id (Union[str, UUID]): The ID of the conversation to list branches for
 
         Returns:
             dict: List of branches in the conversation
