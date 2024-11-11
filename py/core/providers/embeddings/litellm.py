@@ -1,7 +1,11 @@
 import logging
+import os
+from copy import copy
 from typing import Any
 
 import litellm
+import requests
+from aiohttp import ClientError, ClientSession
 from litellm import AuthenticationError, aembedding, embedding
 
 from core.base import (
@@ -36,10 +40,21 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "LiteLLMEmbeddingProvider must be initialized with provider `litellm`."
             )
+
+        self.rerank_url = None
         if config.rerank_model:
-            raise ValueError(
-                "LiteLLMEmbeddingProvider does not support separate reranking."
-            )
+
+            if "huggingface" not in config.rerank_model:
+                raise ValueError(
+                    "LiteLLMEmbeddingProvider only supports re-ranking via the HuggingFace text-embeddings-inference API"
+                )
+
+            url = os.getenv("HUGGINGFACE_API_BASE") or config.rerank_url
+            if not url:
+                raise ValueError(
+                    "LiteLLMEmbeddingProvider requires a valid reranking API url to be set via `embedding.rerank_url` in the r2r.toml, or via the environment variable `HUGGINGFACE_API_BASE`."
+                )
+            self.rerank_url = url
 
         self.base_model = config.base_model
         if "amazon" in self.base_model:
@@ -182,4 +197,106 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
-        return results[:limit]
+        if self.config.rerank_model is not None:
+            if not self.rerank_url:
+                raise ValueError(
+                    "Error, `rerank_url` was expected to be set inside LiteLLMEmbeddingProvider"
+                )
+
+            texts = [result.text for result in results]
+
+            payload = {
+                "query": query,
+                "texts": texts,
+                "model-id": self.config.rerank_model.split("huggingface/")[1],
+            }
+
+            headers = {"Content-Type": "application/json"}
+
+            try:
+                response = requests.post(
+                    self.rerank_url, json=payload, headers=headers
+                )
+                response.raise_for_status()
+                reranked_results = response.json()
+
+                # Copy reranked results into new array
+                scored_results = []
+                for rank_info in reranked_results:
+                    original_result = results[rank_info["index"]]
+                    copied_result = copy(original_result)
+                    # Inject the reranking score into the result object
+                    copied_result.score = rank_info["score"]
+                    scored_results.append(copied_result)
+
+                # Return only the VectorSearchResult objects, limited to specified count
+                return scored_results[:limit]
+
+            except requests.RequestException as e:
+                logger.error(f"Error during reranking: {str(e)}")
+                # Fall back to returning the original results if reranking fails
+                return results[:limit]
+        else:
+            return results[:limit]
+
+    async def arerank(
+        self,
+        query: str,
+        results: list[VectorSearchResult],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        limit: int = 10,
+    ) -> list[VectorSearchResult]:
+        """
+        Asynchronously rerank search results using the configured rerank model.
+
+        Args:
+            query: The search query string
+            results: List of VectorSearchResult objects to rerank
+            stage: The pipeline stage (must be RERANK)
+            limit: Maximum number of results to return
+
+        Returns:
+            List of reranked VectorSearchResult objects, limited to specified count
+        """
+        if self.config.rerank_model is not None:
+            if not self.rerank_url:
+                raise ValueError(
+                    "Error, `rerank_url` was expected to be set inside LiteLLMEmbeddingProvider"
+                )
+
+            texts = [result.text for result in results]
+
+            payload = {
+                "query": query,
+                "texts": texts,
+                "model-id": self.config.rerank_model.split("huggingface/")[1],
+            }
+
+            headers = {"Content-Type": "application/json"}
+
+            try:
+                async with ClientSession() as session:
+                    async with session.post(
+                        self.rerank_url, json=payload, headers=headers
+                    ) as response:
+                        response.raise_for_status()
+                        reranked_results = await response.json()
+
+                        # Copy reranked results into new array
+                        scored_results = []
+                        for rank_info in reranked_results:
+                            original_result = results[rank_info["index"]]
+                            copied_result = copy(original_result)
+                            # Inject the reranking score into the result object
+                            copied_result.score = rank_info["score"]
+                            scored_results.append(copied_result)
+
+                        # Return only the VectorSearchResult objects, limited to specified count
+                        return scored_results[:limit]
+
+            except (ClientError, Exception) as e:
+                logger.error(f"Error during async reranking: {str(e)}")
+                # Fall back to returning the original results if reranking fails
+                return results[:limit]
+        else:
+            return results[:limit]
