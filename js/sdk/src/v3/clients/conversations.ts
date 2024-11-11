@@ -1,3 +1,4 @@
+import { off } from "process";
 import { r2rClient } from "../../r2rClient";
 
 export class ConversationsClient {
@@ -124,10 +125,22 @@ export class ConversationsClient {
    * @param id The ID of the conversation to list branches for
    * @returns
    */
-  async listBranches(options: { id: string }): Promise<any> {
+  async listBranches(options: {
+    id: string;
+    offset?: number;
+    limit?: number;
+  }): Promise<any> {
+    const params: Record<string, any> = {
+      offset: options?.offset ?? 0,
+      limit: options?.limit ?? 100,
+    };
+
     return this.client.makeRequest(
       "GET",
       `conversations/${options.id}/branches`,
+      {
+        params,
+      },
     );
   }
 }

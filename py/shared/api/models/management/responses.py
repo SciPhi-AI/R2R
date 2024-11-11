@@ -130,6 +130,13 @@ class MessageResponse(BaseModel):
     message: Message
 
 
+class BranchResponse(BaseModel):
+    branch_id: UUID
+    branch_point_id: Optional[UUID]
+    content: Optional[str]
+    created_at: datetime
+
+
 class AddUserResponse(BaseModel):
     result: bool
 
@@ -137,21 +144,26 @@ class AddUserResponse(BaseModel):
 # Collection Responses
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
 WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
+
+
 # Conversation Responses
 WrappedConversationResponse = ResultsWrapper[ConversationResponse]
 WrappedConversationsResponse = PaginatedResultsWrapper[
     list[ConversationResponse]
 ]
+
 WrappedMessageResponse = ResultsWrapper[MessageResponse]
 WrappedMessagesResponse = PaginatedResultsWrapper[list[MessageResponse]]
+
+WrappedBranchResponse = ResultsWrapper[BranchResponse]
+WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]]
+
 
 # Prompt Responses
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
 # TODO: anything below this hasn't been reviewed
-# WrappedBranchResponse = ResultsWrapper[BranchResponse] # TODO: Implement BranchResponse
-# WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]] # TODO: Implement BranchResponse
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]

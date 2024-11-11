@@ -227,11 +227,11 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             "created_at": created_at,
         }
 
-    async def get_conversations_overview(
+    async def get_conversations(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict:
         """Get an overview of conversations, optionally filtered by conversation IDs, with pagination."""
         query = """
@@ -520,32 +520,54 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 "created_at": conversation_created_at,
             }
 
-    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+    async def get_branches(
+        self,
+        offset: int,
+        limit: int,
+        conversation_id: str,
+    ) -> dict:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
             )
 
+        query = """
+            WITH branch_data AS (
+                SELECT b.id, b.branch_point_id, m.content, b.created_at
+                FROM branches b
+                LEFT JOIN messages m ON b.branch_point_id = m.id
+                WHERE b.conversation_id = ?
+            ),
+            counted_branches AS (
+                SELECT *, COUNT(*) OVER() as total_entries
+                FROM branch_data
+            )
+            SELECT * FROM counted_branches
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """
+
         async with self.conn.execute(
-            """
-            SELECT b.id, b.branch_point_id, m.content, b.created_at
-            FROM branches b
-            LEFT JOIN messages m ON b.branch_point_id = m.id
-            WHERE b.conversation_id = ?
-            ORDER BY b.created_at
-        """,
-            (conversation_id,),
+            query, (conversation_id, limit, offset)
         ) as cursor:
             rows = await cursor.fetchall()
-            return [
-                {
-                    "branch_id": row[0],
-                    "branch_point_id": row[1],
-                    "content": row[2],
-                    "created_at": row[3],
-                }
-                for row in rows
-            ]
+
+        if not rows:
+            return {"results": [], "total_entries": 0}
+
+        branches = [
+            {
+                "branch_id": row[0],
+                "branch_point_id": row[1],
+                "content": row[2],
+                "created_at": row[3],
+            }
+            for row in rows
+        ]
+
+        total_entries = rows[0][-1] if rows else 0
+
+        return {"results": branches, "total_entries": total_entries}
 
     async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
         if not self.conn:

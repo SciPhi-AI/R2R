@@ -60,8 +60,12 @@ from shared.api.models.management.responses import (
     WrappedPromptResponse,
     WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedMessageResponse,
     WrappedPromptMessageResponse,
+    # Conversation Responses
+    WrappedMessageResponse,
+    WrappedMessagesResponse,
+    WrappedBranchResponse,
+    WrappedBranchesResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
@@ -140,11 +144,15 @@ __all__ = [
     # Prompt Responses
     "WrappedPromptResponse",
     "WrappedPromptsResponse",
+    # Conversation Responses
+    "WrappedMessageResponse",
+    "WrappedMessagesResponse",
+    "WrappedBranchResponse",
+    "WrappedBranchesResponse",
     # TODO: This needs to be cleaned up
     "WrappedUserCollectionResponse",
     "WrappedDocumentChunkResponse",
     "WrappedDeleteResponse",
-    "WrappedMessageResponse",
     # Retrieval Responses
     "CombinedSearchResponse",
     "RAGResponse",

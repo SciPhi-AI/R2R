@@ -207,7 +207,7 @@ class PostgresLoggingHandler(LoggingHandler):
             query, [UUID(conversation_id)]
         )
 
-    async def get_conversations_overview(
+    async def get_conversations(
         self,
         offset: int,
         limit: int,
@@ -380,7 +380,7 @@ class PostgresLoggingHandler(LoggingHandler):
             for row in rows
         ]
 
-    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+    async def get_branches(self, conversation_id: str) -> list[dict]:
         """Get an overview of all branches in a conversation."""
         query = """
         SELECT b.id, b.branch_point_id, m.content, b.created_at

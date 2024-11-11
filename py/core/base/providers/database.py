@@ -995,7 +995,7 @@ class LoggingHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_conversations_overview(
+    async def get_conversations(
         self,
         offset: int,
         limit: int,
@@ -1032,7 +1032,7 @@ class LoggingHandler(Handler):
 
     # Branch management methods
     @abstractmethod
-    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+    async def get_branches(self, conversation_id: str) -> list[dict]:
         """Get an overview of all branches in a conversation."""
         pass
 
@@ -1842,14 +1842,14 @@ class DatabaseProvider(Provider):
         """Delete a conversation and all associated data."""
         return await self.logging_handler.delete_conversation(conversation_id)
 
-    async def get_conversations_overview(
+    async def get_conversations(
         self,
         offset: int,
         limit: int,
         conversation_ids: Optional[list[UUID]] = None,
     ) -> dict[str, Union[list[dict], int]]:
         """Get an overview of conversations with pagination."""
-        return await self.logging_handler.get_conversations_overview(
+        return await self.logging_handler.get_conversations(
             offset=offset,
             limit=limit,
             conversation_ids=conversation_ids,
@@ -1881,11 +1881,9 @@ class DatabaseProvider(Provider):
             conversation_id, branch_id
         )
 
-    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+    async def get_branches(self, conversation_id: str) -> list[dict]:
         """Get an overview of all branches in a conversation."""
-        return await self.logging_handler.get_branches_overview(
-            conversation_id
-        )
+        return await self.logging_handler.get_branches(conversation_id)
 
     async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
         """Get the ID of the next branch in chronological order."""

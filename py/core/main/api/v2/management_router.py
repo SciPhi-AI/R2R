@@ -906,9 +906,15 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def branches_overview(
             conversation_id: str = Path(..., description="Conversation ID"),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
-            branches = await self.service.branches_overview(conversation_id)
+            branches = await self.service.branches_overview(
+                offset=offset,
+                limit=limit,
+                conversation_id=conversation_id,
+            )
             return {"branches": branches}
 
         # TODO: Publish this endpoint once more testing is done

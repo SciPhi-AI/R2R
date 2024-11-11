@@ -706,7 +706,7 @@ class ManagementService(Service):
         conversation_ids: Optional[list[UUID]] = None,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
-        return await self.logging_connection.get_conversations_overview(
+        return await self.logging_connection.get_conversations(
             offset=offset,
             limit=limit,
             conversation_ids=conversation_ids,
@@ -735,10 +735,16 @@ class ManagementService(Service):
 
     @telemetry_event("BranchesOverview")
     async def branches_overview(
-        self, conversation_id: str, auth_user=None
+        self,
+        offset: int,
+        limit: int,
+        conversation_id: str,
+        auth_user=None,
     ) -> list[dict]:
-        return await self.logging_connection.get_branches_overview(
-            conversation_id
+        return await self.logging_connection.get_branches(
+            offset=offset,
+            limit=limit,
+            conversation_id=conversation_id,
         )
 
     @telemetry_event("GetNextBranch")

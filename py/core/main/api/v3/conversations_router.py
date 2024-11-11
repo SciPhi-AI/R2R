@@ -9,9 +9,13 @@ from fastapi import Body, Depends, Path, Query
 from core.base import Message, RunType
 from core.base.api.models import (
     ResultsWrapper,
+    WrappedBranchesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedMessageResponse,
+    WrappedMessagesResponse,
+    WrappedBranchResponse,
+    WrappedBranchesResponse,
     WrappedDeleteResponse,
 )
 from core.providers import (
@@ -540,22 +544,39 @@ class ConversationsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        # FIXME: This should be paginated, no?
         async def list_branches(
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> dict:
+        ) -> WrappedBranchesResponse:
             """
             List all branches in a conversation.
 
             This endpoint retrieves all branches associated with a specific conversation.
             """
-            branches = await self.services["management"].branches_overview(
-                str(id)
+            branches_response = await self.services[
+                "management"
+            ].branches_overview(
+                offset=offset,
+                limit=limit,
+                conversation_id=str(id),
             )
-            return {"branches": branches}  # type: ignore
+
+            return branches_response["results"], {
+                "total_entries": branches_response["total_entries"]
+            }
 
         # Commented endpoints to be published after more testing
         # @self.router.get("/conversations/{id}/branches/{branch_id}/next")
