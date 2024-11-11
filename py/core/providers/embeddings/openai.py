@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, List
+from typing import Any
 
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
 from openai._types import NOT_GIVEN
@@ -96,7 +96,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             "dimensions": self._get_dimensions(),
         } | kwargs
 
-    async def _execute_task(self, task: dict[str, Any]) -> List[List[float]]:
+    async def _execute_task(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
@@ -115,7 +115,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             logger.error(error_msg)
             raise ValueError(error_msg) from e
 
-    def _execute_task_sync(self, task: dict[str, Any]) -> List[List[float]]:
+    def _execute_task_sync(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
@@ -139,7 +139,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
@@ -160,7 +160,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
@@ -177,11 +177,11 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     async def async_get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
@@ -197,11 +197,11 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     def get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."

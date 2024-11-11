@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional, Type
 
 from core.agent import R2RRAGAgent
 from core.base import (
@@ -185,8 +185,8 @@ class R2RBuilder:
         ).create_pipelines(*args, **kwargs)
 
     def _create_services(
-        self, service_params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, service_params: dict[str, Any]
+    ) -> dict[str, Any]:
         services = {}
         for service_type, override in vars(self.service_overrides).items():
             logger.info(f"Creating {service_type} service")

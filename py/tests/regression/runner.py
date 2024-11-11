@@ -1,7 +1,6 @@
 import argparse
 import importlib
 import os
-from typing import List
 
 from colorama import Fore, Style, init
 from test_cases.base import BaseTest, RegressionTest
@@ -18,7 +17,7 @@ class RegressionTestRunner:
         base_url: str = "http://localhost:7272",
     ):
         self.client = R2RClient(base_url=base_url)
-        self.tests: List[BaseTest] = []
+        self.tests: list[BaseTest] = []
         self.test_order = [
             "TestDocumentManagement",
             "TestRetrieval",

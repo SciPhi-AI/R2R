@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Dict, List, Optional, Type, Union
+from typing import Any, AsyncGenerator, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ logger = logging.getLogger()
 
 class Conversation:
     def __init__(self):
-        self.messages: List[Message] = []
+        self.messages: list[Message] = []
         self._lock = asyncio.Lock()
 
     def create_and_add_message(
@@ -29,8 +29,8 @@ class Conversation:
         role: Union[MessageType, str],
         content: Optional[str] = None,
         name: Optional[str] = None,
-        function_call: Optional[Dict[str, Any]] = None,
-        tool_calls: Optional[List[Dict[str, Any]]] = None,
+        function_call: Optional[dict[str, Any]] = None,
+        tool_calls: Optional[list[dict[str, Any]]] = None,
     ):
         message = Message(
             role=role,

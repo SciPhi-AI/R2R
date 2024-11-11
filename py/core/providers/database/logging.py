@@ -1,7 +1,6 @@
 import json
 import os
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 from uuid import UUID
 
 from core.base import LoggingHandler, Message
@@ -120,8 +119,8 @@ class PostgresLoggingHandler(LoggingHandler):
         )
 
     async def get_logs(
-        self, run_ids: List[UUID], limit_per_run: int = 10
-    ) -> List[Dict[str, Any]]:
+        self, run_ids: list[UUID], limit_per_run: int = 10
+    ) -> list[dict[str, Any]]:
         """Retrieve logs for specified run IDs."""
         if not run_ids:
             raise ValueError("No run ids provided")
@@ -152,11 +151,11 @@ class PostgresLoggingHandler(LoggingHandler):
         offset: int,
         limit: int,
         run_type_filter: Optional[RunType] = None,
-        user_ids: Optional[List[UUID]] = None,
-    ) -> List[RunInfoLog]:
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         """Retrieve run information logs with filtering options."""
         conditions = []
-        params: List[Any] = []
+        params: list[Any] = []
 
         query = f"""
         SELECT run_id, run_type, timestamp, user_id
@@ -212,8 +211,8 @@ class PostgresLoggingHandler(LoggingHandler):
         self,
         offset: int,
         limit: int,
-        conversation_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Union[List[Dict], int]]:
+        conversation_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, Union[list[dict], int]]:
         """Get an overview of conversations with pagination."""
         query = """
         WITH conversation_overview AS (
@@ -258,7 +257,7 @@ class PostgresLoggingHandler(LoggingHandler):
         conversation_id: str,
         content: Message,
         parent_id: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[dict] = None,
     ) -> str:
         """Add a message to a conversation."""
         message_id = UUID(bytes=os.urandom(16))
@@ -337,7 +336,7 @@ class PostgresLoggingHandler(LoggingHandler):
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> List[Tuple[str, Message]]:
+    ) -> list[Tuple[str, Message]]:
         """Retrieve all messages in a conversation branch."""
         if not branch_id:
             # Get the most recent branch
@@ -381,7 +380,7 @@ class PostgresLoggingHandler(LoggingHandler):
             for row in rows
         ]
 
-    async def get_branches_overview(self, conversation_id: str) -> List[Dict]:
+    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         """Get an overview of all branches in a conversation."""
         query = """
         SELECT b.id, b.branch_point_id, m.content, b.created_at

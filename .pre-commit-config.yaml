@@ -10,6 +10,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: check-typing-imports
+        name: Check for Dict/List usage
+        entry: bash -c 'echo "Checking for typing imports..." && find . -name "*.py" | xargs grep -n "from typing.*import.*[^d]Dict\\|from typing.*import.*List" || exit 0 && echo "⚠️  Please import dict/list instead of Dict/List from typing" && exit 1'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
       - id: isort
         name: isort
         entry: bash -c 'cd py && poetry run isort $(git diff --cached --name-only --diff-filter=ACM | grep ".py$" | xargs -I {} echo ../{}) || true'

@@ -1,6 +1,6 @@
 import json
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Any, Dict, List, Optional, Union
+from inspect import isasyncgenfunction, iscoroutinefunction
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from shared.abstractions import VectorSearchSettings
@@ -19,14 +19,14 @@ class ChunksSDK:
 
     async def create(
         self,
-        chunks: List[Dict[str, Any]],
+        chunks: list[dict[str, Any]],
         run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
         Create multiple chunks.
 
         Args:
-            chunks (List[Dict[str, Any]]): List of chunks to create. Each chunk should contain:
+            chunks (list[dict[str, Any]]): List of chunks to create. Each chunk should contain:
                 - document_id: UUID of the document
                 - collection_ids: List of collection UUIDs
                 - metadata: Dictionary of metadata
@@ -81,7 +81,7 @@ class ChunksSDK:
     async def list_by_document(
         self,
         document_id: Union[str, UUID],
-        metadata_filter: Optional[Dict[str, Any]] = None,
+        metadata_filter: Optional[dict[str, Any]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -90,7 +90,7 @@ class ChunksSDK:
 
         Args:
             document_id (Union[str, UUID]): Document ID to get chunks for
-            metadata_filter (Optional[Dict[str, Any]]): Filter chunks by metadata
+            metadata_filter (Optional[dict[str, Any]]): Filter chunks by metadata
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -123,7 +123,7 @@ class ChunksSDK:
     async def list(
         self,
         include_vectors: bool = False,
-        metadata_filter: Optional[Dict[str, Any]] = None,
+        metadata_filter: Optional[dict[str, Any]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -132,7 +132,7 @@ class ChunksSDK:
 
         Args:
             include_vectors (bool, optional): Include vector data in response. Defaults to False.
-            metadata_filter (Optional[Dict[str, Any]], optional): Filter by metadata. Defaults to None.
+            metadata_filter (Optional[dict[str, Any]], optional): Filter by metadata. Defaults to None.
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 

@@ -1,5 +1,5 @@
 from copy import copy, deepcopy
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base.abstractions import (
@@ -109,8 +109,8 @@ class MultiSearchPipe(AsyncPipe):
                 yield search_result
 
     def reciprocal_rank_fusion(
-        self, all_results: Dict[str, List[VectorSearchResult]]
-    ) -> List[VectorSearchResult]:
+        self, all_results: dict[str, list[VectorSearchResult]]
+    ) -> list[VectorSearchResult]:
         document_scores: dict[UUID, float] = {}
         document_results: dict[UUID, VectorSearchResult] = {}
         document_queries: dict[UUID, set[str]] = {}

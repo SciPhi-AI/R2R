@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -12,7 +12,7 @@ from core.base import (
 class RoutingSearchPipe(AsyncPipe):
     def __init__(
         self,
-        search_pipes: Dict[str, AsyncPipe],
+        search_pipes: dict[str, AsyncPipe],
         default_strategy: str,
         config: AsyncPipe.PipeConfig,
         *args,

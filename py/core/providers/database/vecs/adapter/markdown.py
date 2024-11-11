@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, Generator, Iterable, Optional, Tuple
+from typing import Any, Generator, Iterable, Optional, Tuple
 
 from flupy import flu
 
@@ -54,22 +54,22 @@ class MarkdownChunker(AdapterStep):
 
     def __call__(
         self,
-        records: Iterable[Tuple[str, Any, Optional[Dict]]],
+        records: Iterable[Tuple[str, Any, Optional[dict]]],
         adapter_context: AdapterContext,
         max_tokens: int = 99999999,
-    ) -> Generator[Tuple[str, Any, Dict], None, None]:
+    ) -> Generator[Tuple[str, Any, dict], None, None]:
         """
         Splits each markdown string in the records into chunks where each heading starts a new chunk, and yields each chunk
         as a separate record. If the `skip_during_query` attribute is set to True,
         this step is skipped during querying.
 
         Args:
-            records (Iterable[Tuple[str, Any, Optional[Dict]]]): Iterable of tuples each containing an id, a markdown string and an optional dict.
+            records (Iterable[Tuple[str, Any, Optional[dict]]]): Iterable of tuples each containing an id, a markdown string and an optional dict.
             adapter_context (AdapterContext): Context of the adapter.
             max_tokens (int): The maximum number of tokens per chunk
 
         Yields:
-            Tuple[str, Any, Dict]: The id appended with chunk index, the chunk, and the metadata.
+            Tuple[str, Any, dict]: The id appended with chunk index, the chunk, and the metadata.
         """
         if max_tokens and max_tokens < 1:
             raise ValueError("max_tokens must be a nonzero positive integer")

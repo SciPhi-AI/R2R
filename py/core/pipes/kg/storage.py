@@ -1,12 +1,11 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
     AsyncState,
     DatabaseProvider,
-    EmbeddingProvider,
     KGExtraction,
     R2RDocumentProcessingError,
 )
@@ -19,7 +18,7 @@ logger = logging.getLogger()
 class KGStoragePipe(AsyncPipe):
     # TODO - Apply correct type hints to storage messages
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[List[Any], None]
+        message: AsyncGenerator[list[Any], None]
 
     def __init__(
         self,
@@ -68,7 +67,7 @@ class KGStoragePipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[List[R2RDocumentProcessingError], None]:
+    ) -> AsyncGenerator[list[R2RDocumentProcessingError], None]:
         """
         Executes the async knowledge graph storage pipe: storing knowledge graph extractions in the graph database.
         """

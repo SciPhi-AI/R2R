@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Tuple, Union
 from uuid import UUID
 
 import toml
@@ -446,9 +446,9 @@ class ManagementService(Service):
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
-    ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
+    ) -> Tuple[dict[str, list[str]], dict[str, dict[str, list[str]]]]:
         graph = defaultdict(list)
-        grouped: Dict[str, Dict[str, list[str]]] = defaultdict(
+        grouped: dict[str, dict[str, list[str]]] = defaultdict(
             lambda: defaultdict(list)
         )
         for subject, relation, obj in relationships:
@@ -460,9 +460,9 @@ class ManagementService(Service):
 
     def generate_output(
         self,
-        grouped_relationships: Dict[str, Dict[str, list[str]]],
-        graph: Dict[str, list[str]],
-        descriptions_dict: Dict[str, str],
+        grouped_relationships: dict[str, dict[str, list[str]]],
+        graph: dict[str, list[str]],
+        descriptions_dict: dict[str, str],
         print_descriptions: bool = True,
     ) -> list[str]:
         output = []
@@ -504,7 +504,7 @@ class ManagementService(Service):
 
         return output
 
-    def _count_connected_components(self, graph: Dict[str, list[str]]) -> int:
+    def _count_connected_components(self, graph: dict[str, list[str]]) -> int:
         visited = set()
         components = 0
 
@@ -522,7 +522,7 @@ class ManagementService(Service):
         return components
 
     def _get_central_nodes(
-        self, graph: Dict[str, list[str]]
+        self, graph: dict[str, list[str]]
     ) -> list[Tuple[str, float]]:
         degree = {node: len(neighbors) for node, neighbors in graph.items()}
         total_nodes = len(graph)
@@ -736,7 +736,7 @@ class ManagementService(Service):
     @telemetry_event("BranchesOverview")
     async def branches_overview(
         self, conversation_id: str, auth_user=None
-    ) -> list[Dict]:
+    ) -> list[dict]:
         return await self.logging_connection.get_branches_overview(
             conversation_id
         )
