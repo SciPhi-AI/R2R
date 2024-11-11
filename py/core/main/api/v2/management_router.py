@@ -22,7 +22,7 @@ from core.base.api.models import (
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
+    WrappedPromptsResponse,
     WrappedLogResponse,
     WrappedMessageResponse,
     WrappedPromptMessageResponse,
@@ -137,7 +137,7 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `get_prompt` endpoint.",
                     403,
                 )
-            result = await self.service.get_prompt(
+            result = await self.service.get_cached_prompt(
                 prompt_name, inputs, prompt_override
             )
             return result  # type: ignore
@@ -146,7 +146,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_all_prompts_app(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGetPromptsResponse:
+        ) -> WrappedPromptsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_all_prompts` endpoint.",

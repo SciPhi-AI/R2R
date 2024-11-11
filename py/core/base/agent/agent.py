@@ -91,12 +91,18 @@ class Agent(ABC):
         pass
 
     async def _setup(self, system_instruction: Optional[str] = None):
+        content = system_instruction or (
+            await self.database_provider.get_cached_prompt(
+                self.config.system_instruction_name
+            )
+        )
+        print(f"Creating message with content: {content}")
         await self.conversation.add_message(
             Message(
                 role="system",
                 content=system_instruction
                 or (
-                    await self.database_provider.get_prompt(
+                    await self.database_provider.get_cached_prompt(
                         self.config.system_instruction_name
                     )
                 ),

@@ -27,10 +27,6 @@ class PromptResponse(BaseModel):
     input_types: dict[str, str]
 
 
-class AllPromptsResponse(BaseModel):
-    prompts: dict[str, PromptResponse]
-
-
 class LogEntry(BaseModel):
     key: str
     value: Any
@@ -139,8 +135,17 @@ class AddUserResponse(BaseModel):
 
 # TODO: We should harmonize these more
 # Create wrapped versions of each response
+
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
-WrappedGetPromptsResponse = ResultsWrapper[AllPromptsResponse]
+
+# Collection Responses
+WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
+WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
+
+# Prompt Responses
+WrappedPromptResponse = ResultsWrapper[PromptResponse]
+WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
+
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
@@ -155,10 +160,6 @@ WrappedDocumentResponse = PaginatedResultsWrapper[list[DocumentInfo]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]
-
-# Collection Responses
-WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
-WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
 
 WrappedAddUserResponse = ResultsWrapper[None]
 WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]

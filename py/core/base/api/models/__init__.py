@@ -56,7 +56,9 @@ from shared.api.models.management.responses import (
     WrappedDocumentChunkResponse,
     WrappedDocumentResponse,
     WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
+    # Prompt Responses
+    WrappedPromptResponse,
+    WrappedPromptsResponse,
     WrappedLogResponse,
     WrappedMessageResponse,
     WrappedPromptMessageResponse,
@@ -133,7 +135,9 @@ __all__ = [
     "WrappedDocumentChunkResponse",
     "WrappedAddUserResponse",
     "WrappedUsersInCollectionResponse",
-    "WrappedGetPromptsResponse",
+    # Prompt Responses
+    "WrappedPromptResponse",
+    "WrappedPromptsResponse",
     "WrappedUserCollectionResponse",
     "WrappedDocumentChunkResponse",
     "WrappedDeleteResponse",

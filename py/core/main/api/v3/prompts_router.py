@@ -1,13 +1,13 @@
 import textwrap
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field, Json
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
     ResultsWrapper,
-    WrappedGetPromptsResponse,
+    WrappedPromptResponse,
+    WrappedPromptsResponse,
     WrappedPromptMessageResponse,
 )
 from core.providers import (
@@ -18,25 +18,14 @@ from core.providers import (
 from .base_router import BaseRouterV3
 
 
-class PromptConfig(BaseModel):
-    name: str = Field(..., description="The name of the prompt")
-    template: str = Field(
-        ..., description="The template string for the prompt"
-    )
-    input_types: dict[str, str] = Field(
-        default={},
-        description="A dictionary mapping input names to their types",
-    )
-
-
 class PromptsRouter(BaseRouterV3):
     def __init__(
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -65,6 +54,26 @@ class PromptsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.create({
+                                    name: "greeting_prompt",
+                                    template: "Hello, {name}!",
+                                    input_types: { name: "string" },
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -80,8 +89,13 @@ class PromptsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_prompt(
-            config: PromptConfig = Body(
-                ..., description="The configuration for the new prompt"
+            name: str = Body(..., description="The name of the prompt"),
+            template: str = Body(
+                ..., description="The template string for the prompt"
+            ),
+            input_types: dict[str, str] = Body(
+                default={},
+                description="A dictionary mapping input names to their types",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedPromptMessageResponse:
@@ -96,7 +110,7 @@ class PromptsRouter(BaseRouterV3):
                     403,
                 )
             result = await self.services["management"].add_prompt(
-                config.name, config.template, config.input_types
+                name, template, input_types
             )
             return result
 
@@ -119,6 +133,22 @@ class PromptsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.list();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -131,9 +161,9 @@ class PromptsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def list_prompts(
+        async def get_prompts(
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedGetPromptsResponse:
+        ) -> WrappedPromptsResponse:
             """
             List all available prompts.
 
@@ -144,10 +174,18 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can list prompts.",
                     403,
                 )
-            result = await self.services["management"].get_all_prompts()
-            return {"prompts": result}  # type: ignore
+            get_prompts_response = await self.services[
+                "management"
+            ].get_all_prompts()
 
-        @self.router.get(
+            return (
+                get_prompts_response["results"],
+                {
+                    "total_entries": get_prompts_response["total_entries"],
+                },
+            )
+
+        @self.router.post(
             "/prompts/{name}",
             summary="Get a specific prompt",
             openapi_extra={
@@ -170,10 +208,30 @@ class PromptsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.retrieve({
+                                    name: "greeting_prompt",
+                                    inputs: { name: "John" },
+                                    prompt_override: "Hi, {name}!",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
+                            curl -X POST "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -184,14 +242,14 @@ class PromptsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_prompt(
             name: str = Path(..., description="Prompt name"),
-            inputs: Optional[Json[dict]] = Query(
-                None, description="JSON-encoded prompt inputs"
+            inputs: Optional[dict[str, str]] = Body(
+                None, description="Prompt inputs"
             ),
             prompt_override: Optional[str] = Query(
                 None, description="Prompt override"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedPromptResponse:
             """
             Get a specific prompt by name, optionally with inputs and override.
 
@@ -231,6 +289,26 @@ class PromptsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.update({
+                                    name: "greeting_prompt",
+                                    template: "Greetings, {name}!",
+                                    input_types: { name: "string", age: "integer" },
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -250,8 +328,9 @@ class PromptsRouter(BaseRouterV3):
             template: Optional[str] = Body(
                 None, description="Updated prompt template"
             ),
-            input_types: Optional[Json[dict[str, str]]] = Body(
-                {}, description="Updated input types"
+            input_types: dict[str, str] = Body(
+                default={},
+                description="A dictionary mapping input names to their types",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedPromptMessageResponse:
@@ -285,6 +364,24 @@ class PromptsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.prompts.delete("greeting_prompt")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.delete({
+                                    name: "greeting_prompt",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },

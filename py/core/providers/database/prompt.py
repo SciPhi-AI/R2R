@@ -133,7 +133,7 @@ class CacheablePromptHandler(PromptHandler):
             return f"{prompt_name}:{sorted_inputs}"
         return prompt_name
 
-    async def get_prompt(
+    async def get_cached_prompt(
         self,
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,
@@ -154,7 +154,37 @@ class CacheablePromptHandler(PromptHandler):
 
         result = await self._get_prompt_impl(prompt_name, inputs)
         self._prompt_cache.set(cache_key, result)
+        print(f"Returning result: {result}")
         return result
+
+    async def get_prompt(
+        self,
+        name: str,
+        inputs: Optional[dict] = None,
+        prompt_override: Optional[str] = None,
+    ) -> dict:
+        query = f"""
+        SELECT prompt_id, name, template, input_types, created_at, updated_at
+        FROM {self._get_table_name("prompts")}
+        WHERE name = $1;
+        """
+        result = await self.connection_manager.fetchrow_query(query, [name])
+
+        if not result:
+            raise ValueError(f"Prompt template '{name}' not found")
+
+        input_types = result["input_types"]
+        if isinstance(input_types, str):
+            input_types = json.loads(input_types)
+
+        return {
+            "prompt_id": result["prompt_id"],
+            "name": result["name"],
+            "template": result["template"],
+            "input_types": input_types,
+            "created_at": result["created_at"],
+            "updated_at": result["updated_at"],
+        }
 
     @abstractmethod
     async def _get_prompt_impl(
@@ -520,13 +550,18 @@ class PostgresPromptHandler(CacheablePromptHandler):
     async def get_all_prompts(self) -> dict[str, Any]:
         """Retrieve all stored prompts."""
         query = f"""
-        SELECT prompt_id, name, template, input_types, created_at, updated_at
+        SELECT prompt_id, name, template, input_types, created_at, updated_at, COUNT(*) OVER() AS total_entries
         FROM {self._get_table_name("prompts")};
         """
         results = await self.connection_manager.fetch_query(query)
 
-        return {
-            row["name"]: {
+        if not results:
+            return {"results": [], "total_entries": 0}
+
+        total_entries = results[0]["total_entries"] if results else 0
+
+        prompts = [
+            {
                 "name": row["name"],
                 "prompt_id": row["prompt_id"],
                 "template": row["template"],
@@ -539,7 +574,9 @@ class PostgresPromptHandler(CacheablePromptHandler):
                 "updated_at": row["updated_at"],
             }
             for row in results
-        }
+        ]
+
+        return {"results": prompts, "total_entries": total_entries}
 
     async def delete_prompt(self, name: str) -> None:
         """Delete a prompt template."""
@@ -572,13 +609,13 @@ class PostgresPromptHandler(CacheablePromptHandler):
         if system_prompt_override:
             system_prompt = system_prompt_override
         else:
-            system_prompt = await self.get_prompt(
+            system_prompt = await self.get_cached_prompt(
                 system_prompt_name or "default_system",
                 system_inputs,
                 prompt_override=system_prompt_override,
             )
 
-        task_prompt = await self.get_prompt(
+        task_prompt = await self.get_cached_prompt(
             task_prompt_name or "default_rag",
             task_inputs,
             prompt_override=task_prompt_override,

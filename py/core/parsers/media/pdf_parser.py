@@ -138,7 +138,7 @@ class VLMPDFParser(AsyncParser[DataType]):
             Dict containing page number and content for each processed page
         """
         if not self.vision_prompt_text:
-            self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
+            self.vision_prompt_text = await self.database_provider.get_cached_prompt(  # type: ignore
                 prompt_name=self.config.vision_pdf_prompt_name
             )
 

@@ -841,6 +841,16 @@ class PromptHandler(Handler):
         pass
 
     @abstractmethod
+    async def get_cached_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
+        """Retrieve and format a prompt template."""
+        pass
+
+    @abstractmethod
     async def get_prompt(
         self,
         prompt_name: str,
@@ -1705,6 +1715,16 @@ class DatabaseProvider(Provider):
     ) -> None:
         return await self.prompt_handler.add_prompt(
             name, template, input_types
+        )
+
+    async def get_cached_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> str:
+        return await self.prompt_handler.get_cached_prompt(
+            prompt_name, inputs, prompt_override
         )
 
     async def get_prompt(

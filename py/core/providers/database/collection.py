@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID, uuid4
 from fastapi import HTTPException
 from asyncpg.exceptions import UniqueViolationError
@@ -212,7 +212,7 @@ class PostgresCollectionHandler(CollectionHandler):
 
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[DocumentInfo], int]]:
+    ) -> dict[str, list[DocumentInfo] | int]:
         """
         Get all documents in a specific collection with pagination.
         Args:
@@ -272,7 +272,7 @@ class PostgresCollectionHandler(CollectionHandler):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
+    ) -> dict[str, list[CollectionResponse] | int]:
         conditions = []
         params: list[Any] = []
         param_index = 1

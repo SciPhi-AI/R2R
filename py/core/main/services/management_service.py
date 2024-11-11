@@ -625,7 +625,7 @@ class ManagementService(Service):
             raise R2RException(status_code=400, message=str(e))
 
     @telemetry_event("GetPrompt")
-    async def get_prompt(
+    async def get_cached_prompt(
         self,
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,
@@ -634,11 +634,25 @@ class ManagementService(Service):
         try:
             return {
                 "message": (
-                    await self.providers.database.get_prompt(
+                    await self.providers.database.get_cached_prompt(
                         prompt_name, inputs, prompt_override
                     )
                 )
             }
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))
+
+    @telemetry_event("GetPrompt")
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> dict:
+        try:
+            return await self.providers.database.get_prompt(
+                prompt_name, inputs, prompt_override
+            )
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 

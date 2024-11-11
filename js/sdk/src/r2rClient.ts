@@ -3,9 +3,10 @@ import FormData from "form-data";
 
 import { BaseClient } from "./baseClient";
 
-import { DocumentsClient } from "./v3/clients/documents";
 import { CollectionsClient } from "./v3/clients/collections";
+import { DocumentsClient } from "./v3/clients/documents";
 import { UsersClient } from "./v3/clients/users";
+import { PromptsClient } from "./v3/clients/prompts";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -31,9 +32,10 @@ import {
 } from "./models";
 
 export class r2rClient extends BaseClient {
-  public readonly documents: DocumentsClient;
   public readonly collections: CollectionsClient;
+  public readonly documents: DocumentsClient;
   public readonly users: UsersClient;
+  public readonly prompts: PromptsClient;
 
   constructor(baseURL: string, anonymousTelemetry = true) {
     super(baseURL, "", anonymousTelemetry);
@@ -41,6 +43,7 @@ export class r2rClient extends BaseClient {
     this.documents = new DocumentsClient(this);
     this.collections = new CollectionsClient(this);
     this.users = new UsersClient(this);
+    this.prompts = new PromptsClient(this);
 
     initializeTelemetry(this.anonymousTelemetry);
 
