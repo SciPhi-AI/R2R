@@ -25,8 +25,7 @@ class EmbeddingConfig(ProviderConfig):
     base_model: str
     base_dimension: int
     rerank_model: Optional[str] = None
-    rerank_dimension: Optional[int] = None
-    rerank_transformer_type: Optional[str] = None
+    rerank_url: Optional[str] = None
     batch_size: int = 1
     prefixes: Optional[dict[str, str]] = None
     add_title_as_prefix: bool = True
@@ -37,6 +36,10 @@ class EmbeddingConfig(ProviderConfig):
     quantization_settings: VectorQuantizationSettings = (
         VectorQuantizationSettings()
     )
+
+    ## deprecated
+    rerank_dimension: Optional[int] = None
+    rerank_transformer_type: Optional[str] = None
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
@@ -163,6 +166,16 @@ class EmbeddingProvider(Provider):
 
     @abstractmethod
     def rerank(
+        self,
+        query: str,
+        results: list[VectorSearchResult],
+        stage: PipeStage = PipeStage.RERANK,
+        limit: int = 10,
+    ):
+        pass
+
+    @abstractmethod
+    async def arerank(
         self,
         query: str,
         results: list[VectorSearchResult],
