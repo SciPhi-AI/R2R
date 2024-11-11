@@ -249,7 +249,7 @@ class IngestionService(Service):
                 generation_config=GenerationConfig(model="openai/gpt-4o-mini"),
             )
 
-            document_info.summary = response.choices[0].message.content
+            document_info.summary = response.choices[0].message.content  # type: ignore
 
             embedding = await self.providers.embedding.async_get_embedding(
                 text=document_info.summary,

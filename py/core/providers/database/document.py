@@ -11,12 +11,12 @@ from fastapi import HTTPException
 from core.base import (
     DocumentHandler,
     DocumentInfo,
-    DocumentSearchSettings,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
     R2RException,
+    SearchSettings,
 )
 
 from .base import PostgresConnectionManager
@@ -26,6 +26,12 @@ logger = logging.getLogger()
 
 class PostgresDocumentHandler(DocumentHandler):
     TABLE_NAME = "document_info"
+    COLUMN_VARS = [
+        "extraction_id",
+        "document_id",
+        "user_id",
+        "collection_ids",
+    ]
 
     def __init__(
         self,
@@ -482,11 +488,28 @@ class PostgresDocumentHandler(DocumentHandler):
             )
 
     async def semantic_document_search(
-        self,
-        query_embedding: list[float],
-        search_settings: DocumentSearchSettings,
-    ) -> list[dict[str, Any]]:
+        self, query_embedding: list[float], search_settings: SearchSettings
+    ) -> list[DocumentInfo]:
         """Search documents using semantic similarity with their summary embeddings."""
+
+        where_clauses = ["summary_embedding IS NOT NULL"]
+        params: list[str | int | bytes] = [str(query_embedding)]
+
+        # Handle filters
+        if search_settings.search_filters:
+            filter_clause = self._build_filters(
+                search_settings.search_filters, params
+            )
+            where_clauses.append(filter_clause)
+
+        # Handle collection filtering
+        if search_settings.selected_collection_ids:
+            where_clauses.append("collection_ids && $" + str(len(params) + 1))
+            params.append(
+                [str(ele) for ele in search_settings.selected_collection_ids]  # type: ignore
+            )
+
+        where_clause = " AND ".join(where_clauses)
 
         query = f"""
         WITH document_scores AS (
@@ -507,24 +530,19 @@ class PostgresDocumentHandler(DocumentHandler):
                 summary_embedding,
                 (summary_embedding <=> $1::vector({self.dimension})) as semantic_distance
             FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-            WHERE summary_embedding IS NOT NULL
+            WHERE {where_clause}
             ORDER BY semantic_distance ASC
-            LIMIT $2
-            OFFSET $3
+            LIMIT ${len(params) + 1}
+            OFFSET ${len(params) + 2}
         )
         SELECT *,
             1.0 - semantic_distance as semantic_score
         FROM document_scores
         """
 
-        results = await self.connection_manager.fetch_query(
-            query,
-            [
-                str(query_embedding),
-                search_settings.limit,
-                search_settings.offset,
-            ],
-        )
+        params.extend([search_settings.search_limit, search_settings.offset])
+
+        results = await self.connection_manager.fetch_query(query, params)
 
         return [
             DocumentInfo(
@@ -533,7 +551,11 @@ class PostgresDocumentHandler(DocumentHandler):
                 user_id=row["user_id"],
                 document_type=DocumentType(row["type"]),
                 metadata={
-                    **json.loads(row["metadata"]),
+                    **(
+                        json.loads(row["metadata"])
+                        if search_settings.include_metadatas
+                        else {}
+                    ),
                     "search_score": float(row["semantic_score"]),
                     "search_type": "semantic",
                 },
@@ -557,10 +579,29 @@ class PostgresDocumentHandler(DocumentHandler):
         ]
 
     async def full_text_document_search(
-        self, query_text: str, search_settings: DocumentSearchSettings
+        self, query_text: str, search_settings: SearchSettings
     ) -> list[DocumentInfo]:
         """Enhanced full-text search using generated tsvector."""
-        print(f"query_text = {query_text}, search_settings={search_settings}")
+
+        where_clauses = [
+            "doc_search_vector @@ websearch_to_tsquery('english', $1)"
+        ]
+        params: list[str | int | bytes] = [query_text]
+
+        # Handle filters
+        if search_settings.search_filters:
+            filter_clause = self._build_filters(
+                search_settings.search_filters, params
+            )
+            where_clauses.append(filter_clause)
+
+        # Handle collection filtering
+        if search_settings.selected_collection_ids:
+            where_clauses.append("collection_ids && $" + str(len(params) + 1))
+            params.append([str(ele) for ele in search_settings.selected_collection_ids])  # type: ignore
+
+        where_clause = " AND ".join(where_clauses)
+
         query = f"""
         WITH document_scores AS (
             SELECT
@@ -580,23 +621,15 @@ class PostgresDocumentHandler(DocumentHandler):
                 summary_embedding,
                 ts_rank_cd(doc_search_vector, websearch_to_tsquery('english', $1), 32) as text_score
             FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-            WHERE doc_search_vector @@ websearch_to_tsquery('english', $1)
+            WHERE {where_clause}
             ORDER BY text_score DESC
-            LIMIT $2
-            OFFSET $3
+            LIMIT ${len(params) + 1}
+            OFFSET ${len(params) + 2}
         )
         SELECT * FROM document_scores
         """
 
-        params = [query_text, search_settings.limit, search_settings.offset]
-
-        # # Add collection_id filter if provided
-        # if search_settings.filter_collection_ids:
-        #     query = query.replace(
-        #         "WHERE doc_search_vector",
-        #         "WHERE collection_ids && $4 AND doc_search_vector"
-        #     )
-        #     params.append(search_settings.filter_collection_ids)
+        params.extend([search_settings.search_limit, search_settings.offset])
 
         results = await self.connection_manager.fetch_query(query, params)
 
@@ -607,7 +640,11 @@ class PostgresDocumentHandler(DocumentHandler):
                 user_id=row["user_id"],
                 document_type=DocumentType(row["type"]),
                 metadata={
-                    **json.loads(row["metadata"]),
+                    **(
+                        json.loads(row["metadata"])
+                        if search_settings.include_metadatas
+                        else {}
+                    ),
                     "search_score": float(row["text_score"]),
                     "search_type": "full_text",
                 },
@@ -638,19 +675,18 @@ class PostgresDocumentHandler(DocumentHandler):
         self,
         query_text: str,
         query_embedding: list[float],
-        search_settings: DocumentSearchSettings,
-    ) -> list[dict[str, Any]]:
+        search_settings: SearchSettings,
+    ) -> list[DocumentInfo]:
         """Search documents using both semantic and full-text search with RRF fusion."""
 
         # Get more results than needed for better fusion
         extended_settings = copy.deepcopy(search_settings)
-        extended_settings.limit = search_settings.limit * 3
+        extended_settings.search_limit = search_settings.search_limit * 3
 
         # Get results from both search methods
         semantic_results = await self.semantic_document_search(
             query_embedding, extended_settings
         )
-        print("semantic_results = ", semantic_results)
         full_text_results = await self.full_text_document_search(
             query_text, extended_settings
         )
@@ -681,23 +717,24 @@ class PostgresDocumentHandler(DocumentHandler):
                     "data": result,
                 }
 
-        # Calculate RRF scores
+        # Calculate RRF scores using hybrid search settings
+        rrf_k = search_settings.hybrid_search_settings.rrf_k
+        semantic_weight = (
+            search_settings.hybrid_search_settings.semantic_weight
+        )
+        full_text_weight = (
+            search_settings.hybrid_search_settings.full_text_weight
+        )
+
         for doc_id, scores in doc_scores.items():
-            semantic_score = 1 / (
-                search_settings.rrf_k + scores["semantic_rank"]
-            )
-            full_text_score = 1 / (
-                search_settings.rrf_k + scores["full_text_rank"]
-            )
+            semantic_score = 1 / (rrf_k + scores["semantic_rank"])
+            full_text_score = 1 / (rrf_k + scores["full_text_rank"])
 
             # Weighted combination
             combined_score = (
-                semantic_score * search_settings.semantic_weight
-                + full_text_score * search_settings.full_text_weight
-            ) / (
-                search_settings.semantic_weight
-                + search_settings.full_text_weight
-            )
+                semantic_score * semantic_weight
+                + full_text_score * full_text_weight
+            ) / (semantic_weight + full_text_weight)
 
             scores["final_score"] = combined_score
 
@@ -706,7 +743,7 @@ class PostgresDocumentHandler(DocumentHandler):
             doc_scores.values(), key=lambda x: x["final_score"], reverse=True
         )[
             search_settings.offset : search_settings.offset
-            + search_settings.limit
+            + search_settings.search_limit
         ]
 
         return [
@@ -714,7 +751,11 @@ class PostgresDocumentHandler(DocumentHandler):
                 **{
                     **result["data"].__dict__,
                     "metadata": {
-                        **result["data"].metadata,
+                        **(
+                            result["data"].metadata
+                            if search_settings.include_metadatas
+                            else {}
+                        ),
                         "search_score": result["final_score"],
                         "semantic_rank": result["semantic_rank"],
                         "full_text_rank": result["full_text_rank"],
@@ -729,37 +770,15 @@ class PostgresDocumentHandler(DocumentHandler):
         self,
         query_text: str,
         query_embedding: Optional[list[float]] = None,
-        search_settings: Optional[DocumentSearchSettings] = None,
+        search_settings: Optional[SearchSettings] = None,
     ) -> list[DocumentInfo]:
         """
         Main search method that delegates to the appropriate search method based on settings.
         """
-        print("query_text = ", query_text)
-        print("query_embedding = ", query_embedding)
         if search_settings is None:
-            search_settings = DocumentSearchSettings()
+            search_settings = SearchSettings()
 
-        print("search_settings.search_type = ", search_settings.search_type)
-        # Debug prints
-        print(f"Starting hybrid search with query_text: {query_text}")
-        print(f"Query embedding dimension: {len(query_embedding)}")
-        # print(f"Extended search limit: {extended_settings.limit}")
-
-        if search_settings.search_type == "semantic":
-            if query_embedding is None:
-                raise ValueError(
-                    "query_embedding is required for semantic search"
-                )
-            return await self.semantic_document_search(
-                query_embedding, search_settings
-            )
-
-        elif search_settings.search_type == "full_text":
-            return await self.full_text_document_search(
-                query_text, search_settings
-            )
-
-        elif search_settings.search_type == "hybrid":
+        if search_settings.use_hybrid_search:
             if query_embedding is None:
                 raise ValueError(
                     "query_embedding is required for hybrid search"
@@ -767,8 +786,148 @@ class PostgresDocumentHandler(DocumentHandler):
             return await self.hybrid_document_search(
                 query_text, query_embedding, search_settings
             )
-
-        else:
-            raise ValueError(
-                f"Unknown search type: {search_settings.search_type}"
+        elif search_settings.use_vector_search:
+            if query_embedding is None:
+                raise ValueError(
+                    "query_embedding is required for vector search"
+                )
+            return await self.semantic_document_search(
+                query_embedding, search_settings
             )
+        else:
+            return await self.full_text_document_search(
+                query_text, search_settings
+            )
+
+    # TODO - Remove copy pasta, consolidate
+    def _build_filters(
+        self, filters: dict, parameters: list[Union[str, int, bytes]]
+    ) -> str:
+
+        def parse_condition(key: str, value: Any) -> str:  # type: ignore
+            # nonlocal parameters
+            if key in self.COLUMN_VARS:
+                # Handle column-based filters
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        parameters.append(clause)
+                        return f"{key} = ${len(parameters)}"
+                    elif op == "$ne":
+                        parameters.append(clause)
+                        return f"{key} != ${len(parameters)}"
+                    elif op == "$in":
+                        parameters.append(clause)
+                        return f"{key} = ANY(${len(parameters)})"
+                    elif op == "$nin":
+                        parameters.append(clause)
+                        return f"{key} != ALL(${len(parameters)})"
+                    elif op == "$overlap":
+                        parameters.append(clause)
+                        return f"{key} && ${len(parameters)}"
+                    elif op == "$contains":
+                        parameters.append(clause)
+                        return f"{key} @> ${len(parameters)}"
+                    elif op == "$any":
+                        if key == "collection_ids":
+                            parameters.append(f"%{clause}%")
+                            return f"array_to_string({key}, ',') LIKE ${len(parameters)}"
+                        parameters.append(clause)
+                        return f"${len(parameters)} = ANY({key})"
+                    else:
+                        raise ValueError(
+                            f"Unsupported operator for column {key}: {op}"
+                        )
+                else:
+                    # Handle direct equality
+                    parameters.append(value)
+                    return f"{key} = ${len(parameters)}"
+            else:
+                # Handle JSON-based filters
+                json_col = "metadata"
+                if key.startswith("metadata."):
+                    key = key.split("metadata.")[1]
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op not in (
+                        "$eq",
+                        "$ne",
+                        "$lt",
+                        "$lte",
+                        "$gt",
+                        "$gte",
+                        "$in",
+                        "$contains",
+                    ):
+                        raise ValueError("unknown operator")
+
+                    if op == "$eq":
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
+                        )
+                    elif op == "$ne":
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
+                        )
+                    elif op == "$lt":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
+                    elif op == "$lte":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
+                    elif op == "$gt":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
+                    elif op == "$gte":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
+                    elif op == "$in":
+                        if not isinstance(clause, list):
+                            raise ValueError(
+                                "argument to $in filter must be a list"
+                            )
+                        parameters.append(json.dumps(clause))
+                        return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
+                    elif op == "$contains":
+                        if not isinstance(clause, (int, str, float, list)):
+                            raise ValueError(
+                                "argument to $contains filter must be a scalar or array"
+                            )
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
+                        )
+
+        def parse_filter(filter_dict: dict) -> str:
+            filter_conditions = []
+            for key, value in filter_dict.items():
+                if key == "$and":
+                    and_conditions = [
+                        parse_filter(f) for f in value if f
+                    ]  # Skip empty dictionaries
+                    if and_conditions:
+                        filter_conditions.append(
+                            f"({' AND '.join(and_conditions)})"
+                        )
+                elif key == "$or":
+                    or_conditions = [
+                        parse_filter(f) for f in value if f
+                    ]  # Skip empty dictionaries
+                    if or_conditions:
+                        filter_conditions.append(
+                            f"({' OR '.join(or_conditions)})"
+                        )
+                else:
+                    filter_conditions.append(parse_condition(key, value))
+
+            # Check if there is only a single condition
+            if len(filter_conditions) == 1:
+                return filter_conditions[0]
+            else:
+                return " AND ".join(filter_conditions)
+
+        where_clause = parse_filter(filters)
+
+        return where_clause

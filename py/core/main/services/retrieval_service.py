@@ -8,14 +8,14 @@ from fastapi import HTTPException
 
 from core import R2RStreamingRAGAgent
 from core.base import (
-    DocumentSearchSettings,
+    DocumentInfo,
     EmbeddingPurpose,
     GenerationConfig,
     KGSearchSettings,
     Message,
     R2RException,
     RunManager,
-    VectorSearchSettings,
+    SearchSettings,
     manage_run,
     to_async_generator,
 )
@@ -56,7 +56,7 @@ class RetrievalService(Service):
     async def search(
         self,
         query: str,
-        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vector_search_settings: SearchSettings = SearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         *args,
         **kwargs,
@@ -122,9 +122,9 @@ class RetrievalService(Service):
     async def search_documents(
         self,
         query: str,
-        settings: DocumentSearchSettings,
+        settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
-    ) -> list[dict]:
+    ) -> list[DocumentInfo]:
 
         return await self.providers.database.search_documents(
             query_text=query,
@@ -152,7 +152,7 @@ class RetrievalService(Service):
         self,
         query: str,
         rag_generation_config: GenerationConfig,
-        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vector_search_settings: SearchSettings = SearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         *args,
         **kwargs,
@@ -250,7 +250,7 @@ class RetrievalService(Service):
     async def agent(
         self,
         rag_generation_config: GenerationConfig,
-        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vector_search_settings: SearchSettings = SearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -425,7 +425,7 @@ class RetrievalServiceAdapter:
     @staticmethod
     def prepare_search_input(
         query: str,
-        vector_search_settings: VectorSearchSettings,
+        vector_search_settings: SearchSettings,
         kg_search_settings: KGSearchSettings,
         user: UserResponse,
     ) -> dict:
@@ -440,7 +440,7 @@ class RetrievalServiceAdapter:
     def parse_search_input(data: dict):
         return {
             "query": data["query"],
-            "vector_search_settings": VectorSearchSettings.from_dict(
+            "vector_search_settings": SearchSettings.from_dict(
                 data["vector_search_settings"]
             ),
             "kg_search_settings": KGSearchSettings.from_dict(
@@ -452,7 +452,7 @@ class RetrievalServiceAdapter:
     @staticmethod
     def prepare_rag_input(
         query: str,
-        vector_search_settings: VectorSearchSettings,
+        vector_search_settings: SearchSettings,
         kg_search_settings: KGSearchSettings,
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
@@ -471,7 +471,7 @@ class RetrievalServiceAdapter:
     def parse_rag_input(data: dict):
         return {
             "query": data["query"],
-            "vector_search_settings": VectorSearchSettings.from_dict(
+            "vector_search_settings": SearchSettings.from_dict(
                 data["vector_search_settings"]
             ),
             "kg_search_settings": KGSearchSettings.from_dict(
@@ -487,7 +487,7 @@ class RetrievalServiceAdapter:
     @staticmethod
     def prepare_agent_input(
         message: Message,
-        vector_search_settings: VectorSearchSettings,
+        vector_search_settings: SearchSettings,
         kg_search_settings: KGSearchSettings,
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
@@ -512,7 +512,7 @@ class RetrievalServiceAdapter:
     def parse_agent_input(data: dict):
         return {
             "message": Message.from_dict(data["message"]),
-            "vector_search_settings": VectorSearchSettings.from_dict(
+            "vector_search_settings": SearchSettings.from_dict(
                 data["vector_search_settings"]
             ),
             "kg_search_settings": KGSearchSettings.from_dict(

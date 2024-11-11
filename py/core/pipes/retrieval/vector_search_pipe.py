@@ -9,8 +9,8 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     EmbeddingPurpose,
+    SearchSettings,
     VectorSearchResult,
-    VectorSearchSettings,
 )
 
 from ..abstractions.search_pipe import SearchPipe
@@ -44,7 +44,7 @@ class VectorSearchPipe(SearchPipe):
     async def search(  # type: ignore
         self,
         message: str,
-        search_settings: VectorSearchSettings,
+        search_settings: SearchSettings,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
@@ -93,7 +93,7 @@ class VectorSearchPipe(SearchPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vector_search_settings: SearchSettings = SearchSettings(),
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:

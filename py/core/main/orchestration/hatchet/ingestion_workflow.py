@@ -106,7 +106,10 @@ def hatchet_ingestion_factory(
                 await service.update_document_status(
                     document_info, status=IngestionStatus.AUGMENTING
                 )
-                await service.augment_document_info(document_info, extractions)
+                await service.augment_document_info(
+                    document_info,
+                    [extraction.to_dict() for extraction in extractions],
+                )
 
                 await self.ingestion_service.update_document_status(
                     document_info,
