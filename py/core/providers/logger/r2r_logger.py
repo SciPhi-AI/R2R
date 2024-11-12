@@ -349,9 +349,9 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                     branch_id = str(uuid.uuid4())
                     await self.conn.execute(
                         """
-                        INSERT INTO branches (id, conversation_id, branch_point_id) VALUES (?, ?, NULL)
+                        INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, NULL, ?)
                         """,
-                        (branch_id, conversation_id),
+                        (branch_id, conversation_id, created_at),
                     )
                 await self.conn.execute(
                     """
@@ -639,9 +639,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
         # Create a new branch starting from message_id
         new_branch_id = str(uuid.uuid4())
+        created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
-            "INSERT INTO branches (id, conversation_id, branch_point_id) VALUES (?, ?, ?)",
-            (new_branch_id, conversation_id, message_id),
+            "INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, ?, ?)",
+            (new_branch_id, conversation_id, message_id, created_at),
         )
 
         # Link ancestor messages to the new branch
