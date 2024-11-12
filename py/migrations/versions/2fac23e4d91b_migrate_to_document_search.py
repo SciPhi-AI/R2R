@@ -15,7 +15,7 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 from openai import AsyncOpenAI
-from sqlalchemy.dialects import postgresql
+from sqlalchemy import inspect
 from sqlalchemy.types import UserDefinedType
 
 from r2r import R2RAsyncClient
@@ -26,8 +26,17 @@ down_revision: Union[str, None] = "d342e632358a"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-project_name = os.getenv("R2R_PROJECT_NAME") or "r2r_default"
-dimension = 512  # OpenAI's embedding dimension
+project_name = os.getenv("R2R_PROJECT_NAME")
+if not project_name:
+    raise ValueError(
+        "Environment variable `R2R_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `r2r.toml`."
+    )
+
+dimension = os.getenv("R2R_EMBEDDING_DIMENSION")
+if not dimension:
+    raise ValueError(
+        "Environment variable `R2R_EMBEDDING_DIMENSION` must be provided migrate, it must should be set equal to the value of `base_dimension` in your `r2r.toml`."
+    )
 
 
 class Vector(UserDefinedType):
@@ -47,7 +56,7 @@ async def async_generate_all_summaries():
     base_url = os.getenv("R2R_BASE_URL")
     if not base_url:
         raise ValueError(
-            "Environment variable `R2R_BASE_URL` must be provided, e.g. `http://localhost:7272`."
+            "Environment variable `R2R_BASE_URL` must be provided, it must point at the R2R deployment you wish to migrate, e.g. `http://localhost:7272`."
         )
 
     print(f"Using R2R Base URL: {base_url})")
@@ -55,21 +64,12 @@ async def async_generate_all_summaries():
     base_model = os.getenv("R2R_BASE_MODEL")
     if not base_model:
         raise ValueError(
-            "Environment variable `R2R_BASE_MODEL` must be provided, e.g. `openai/gpt-4o-mini`."
+            "Environment variable `R2R_BASE_MODEL` must be provided, e.g. `openai/gpt-4o-mini`, it will be used for generating document summaries during migration."
         )
 
     print(f"Using R2R Base Model: {base_model}")
 
-    embedding_model = os.getenv("R2R_EMBEDDING_MODEL")
-    if not base_model or "openai" not in embedding_model:
-        raise ValueError(
-            "Environment variable `R2R_EMBEDDING_MODEL` must be provided, e.g. `openai/text-embedding-3-small`, and must point to an OpenAI embedding model."
-        )
-    embedding_model = embedding_model.split("openai/")[-1]
-    print(f"Using R2R Embedding Model: {embedding_model}")
-
     client = R2RAsyncClient(base_url)
-    openai_client = AsyncOpenAI()
 
     offset = 0
     limit = 1_000
@@ -157,10 +157,11 @@ async def async_generate_all_summaries():
             summary_text = summary["results"]["choices"][0]["message"][
                 "content"
             ]
-            embedding_response = await openai_client.embeddings.create(
-                model=embedding_model, input=summary_text, dimensions=dimension
-            )
-            embedding_vector = embedding_response.data[0].embedding
+            embedding_vector = client.embedding(summary_text)["results"][0]
+            # embedding_response = await openai_client.embeddings.create(
+            #     model=embedding_model, input=summary_text, dimensions=dimension
+            # )
+            # embedding_vector = embedding_response.data[0].embedding
 
             # Store in our results dictionary
             document_summaries[doc_id] = {
@@ -187,73 +188,102 @@ def generate_all_summaries():
     return run_async(async_generate_all_summaries())
 
 
-def upgrade() -> None:
-    # Load the document summaries
-    generate_all_summaries()
-    try:
-        with open("document_summaries.json", "r") as f:
-            document_summaries = json.load(f)
-        print(f"Loaded {len(document_summaries)} document summaries")
-    except FileNotFoundError:
-        raise ValueError(
-            "document_summaries.json not found. Please run the summary generation script first."
+def check_if_upgrade_needed():
+    """Check if the upgrade has already been applied by checking for summary column"""
+    # Get database connection
+    connection = op.get_bind()
+    inspector = inspect(connection)
+
+    # Check if the columns exist
+    existing_columns = [
+        col["name"]
+        for col in inspector.get_columns(f"document_info", schema=project_name)
+    ]
+
+    needs_upgrade = "summary" not in existing_columns
+
+    if needs_upgrade:
+        print(
+            "Migration needed: 'summary' column does not exist in document_info table"
         )
-    except json.JSONDecodeError:
-        raise ValueError("Invalid document_summaries.json file")
+    else:
+        print(
+            "Migration not needed: 'summary' column already exists in document_info table"
+        )
 
-    # Create the vector extension if it doesn't exist
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    return needs_upgrade
 
-    # Add new columns to document_info
-    op.add_column(
-        "document_info",
-        sa.Column("summary", sa.Text(), nullable=True),
-        schema=project_name,
-    )
 
-    op.add_column(
-        "document_info",
-        sa.Column("summary_embedding", Vector, nullable=True),
-        schema=project_name,
-    )
+def upgrade() -> None:
+    if check_if_upgrade_needed():
+        # Load the document summaries
+        generate_all_summaries()
+        try:
+            with open("document_summaries.json", "r") as f:
+                document_summaries = json.load(f)
+            print(f"Loaded {len(document_summaries)} document summaries")
+        except FileNotFoundError:
+            raise ValueError(
+                "document_summaries.json not found. Please run the summary generation script first."
+            )
+        except json.JSONDecodeError:
+            raise ValueError("Invalid document_summaries.json file")
 
-    # Add generated column for full text search
-    op.execute(
-        f"""
-    ALTER TABLE {project_name}.document_info
-    ADD COLUMN doc_search_vector tsvector
-    GENERATED ALWAYS AS (
-        setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
-        setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
-        setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
-    ) STORED;
-    """
-    )
+        # Create the vector extension if it doesn't exist
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
-    # Create index for full text search
-    op.execute(
-        f"""
-    CREATE INDEX idx_doc_search_{project_name}
-    ON {project_name}.document_info
-    USING GIN (doc_search_vector);
-    """
-    )
+        # Add new columns to document_info
+        op.add_column(
+            "document_info",
+            sa.Column("summary", sa.Text(), nullable=True),
+            schema=project_name,
+        )
 
-    # Update existing documents with summaries and embeddings
-    for doc_id, doc_data in document_summaries.items():
-        # Convert the embedding array to the PostgreSQL vector format
-        embedding_str = f"[{','.join(str(x) for x in doc_data['embedding'])}]"
+        op.add_column(
+            "document_info",
+            sa.Column("summary_embedding", Vector, nullable=True),
+            schema=project_name,
+        )
 
-        # Use plain SQL with proper escaping for PostgreSQL
+        # Add generated column for full text search
         op.execute(
             f"""
-            UPDATE {project_name}.document_info
-            SET
-                summary = '{doc_data['summary'].replace("'", "''")}',
-                summary_embedding = '{embedding_str}'::vector({dimension})
-            WHERE document_id = '{doc_id}'::uuid;
-            """
+        ALTER TABLE {project_name}.document_info
+        ADD COLUMN doc_search_vector tsvector
+        GENERATED ALWAYS AS (
+            setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
+            setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
+            setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
+        ) STORED;
+        """
         )
+
+        # Create index for full text search
+        op.execute(
+            f"""
+        CREATE INDEX idx_doc_search_{project_name}
+        ON {project_name}.document_info
+        USING GIN (doc_search_vector);
+        """
+        )
+
+        # Update existing documents with summaries and embeddings
+        for doc_id, doc_data in document_summaries.items():
+            # Convert the embedding array to the PostgreSQL vector format
+            embedding_str = (
+                f"[{','.join(str(x) for x in doc_data['embedding'])}]"
+            )
+
+            # Use plain SQL with proper escaping for PostgreSQL
+            op.execute(
+                f"""
+                UPDATE {project_name}.document_info
+                SET
+                    summary = '{doc_data['summary'].replace("'", "''")}',
+                    summary_embedding = '{embedding_str}'::vector({dimension})
+                WHERE document_id = '{doc_id}'::uuid;
+                """
+            )
 
 
 def downgrade() -> None:

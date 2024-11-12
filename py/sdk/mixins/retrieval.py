@@ -214,3 +214,18 @@ class RetrievalMixins:
             return self._make_streaming_request("POST", "agent", json=data)  # type: ignore
         else:
             return await self._make_request("POST", "agent", json=data)  # type: ignore
+
+    async def embedding(
+        self,
+        content: str,
+    ) -> list[float]:
+        """
+        Generate embeddings for the provided content.
+
+        Args:
+            content (str): The text content to embed.
+
+        Returns:
+            list[float]: The generated embedding vector.
+        """
+        return await self._make_request("POST", "embedding", json=content)  # type: ignore

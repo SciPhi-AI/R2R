@@ -1,24 +1,19 @@
-"""migrate_to_document_search
+"""migrate_to_asyncpg
 
-Revision ID: 2fac23e4d91b
+Revision ID: d342e632358a
 Revises:
-Create Date: 2024-11-11 11:55:49.461015
+Create Date: 2024-10-22 11:55:49.461015
 
 """
 
-import asyncio
-import json
 import os
-from concurrent.futures import ThreadPoolExecutor
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
-from openai import AsyncOpenAI
+from sqlalchemy import inspect
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.types import UserDefinedType
-
-from r2r import R2RAsyncClient
 
 # revision identifiers, used by Alembic.
 revision: str = "d342e632358a"
@@ -26,259 +21,176 @@ down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+
 project_name = os.getenv("R2R_PROJECT_NAME") or "r2r_default"
-dimension = 512  # OpenAI's embedding dimension
+
+new_vector_table_name = "vectors"
+old_vector_table_name = project_name
 
 
 class Vector(UserDefinedType):
     def get_col_spec(self, **kw):
-        return f"vector({dimension})"
+        return "vector"
 
 
-def run_async(coroutine):
-    """Helper function to run async code synchronously"""
-    with ThreadPoolExecutor() as pool:
-        return pool.submit(asyncio.run, coroutine).result()
+def check_if_upgrade_needed():
+    """Check if the upgrade has already been applied"""
+    # Get database connection
+    connection = op.get_bind()
+    inspector = inspect(connection)
 
+    # Check if the new vectors table exists
+    has_new_table = inspector.has_table(
+        new_vector_table_name, schema=project_name
+    )
 
-async def async_generate_all_summaries():
-    """Asynchronous function to generate summaries"""
-
-    base_url = os.getenv("R2R_BASE_URL")
-    if not base_url:
-        raise ValueError(
-            "Environment variable `R2R_BASE_URL` must be provided, e.g. `http://localhost:7272`."
+    if has_new_table:
+        print(
+            f"Migration not needed: '{new_vector_table_name}' table already exists"
         )
+        return False
 
-    print(f"Using R2R Base URL: {base_url})")
-
-    base_model = os.getenv("R2R_BASE_MODEL")
-    if not base_model:
-        raise ValueError(
-            "Environment variable `R2R_BASE_MODEL` must be provided, e.g. `openai/gpt-4o-mini`."
-        )
-
-    print(f"Using R2R Base Model: {base_url})")
-
-    embedding_model = os.getenv("R2R_EMBEDDING_MODEL")
-    if not base_model or "openai" not in embedding_model:
-        raise ValueError(
-            "Environment variable `R2R_EMBEDDING_MODEL` must be provided, e.g. `openai/text-embedding-3-small`, and must point to an OpenAI embedding model."
-        )
-    embedding_model = embedding_model.split("openai/")[-1]
-    print(f"Using R2R Embedding Model: {embedding_model})")
-
-    client = R2RAsyncClient(base_url)
-    openai_client = AsyncOpenAI()
-
-    offset = 0
-    limit = 1_000
-    documents = (await client.documents_overview(offset=offset, limit=limit))[
-        "results"
-    ]
-    while len(documents) == limit:
-        limit += offset
-        documents += (
-            await client.documents_overview(offset=offset, limit=limit)
-        )["results"]
-
-    # Load existing summaries if they exist
-    document_summaries = {}
-    if os.path.exists("document_summaries.json"):
-        try:
-            with open("document_summaries.json", "r") as f:
-                document_summaries = json.load(f)
-            print(
-                f"Loaded {len(document_summaries)} existing document summaries"
-            )
-        except json.JSONDecodeError:
-            print(
-                "Existing document_summaries.json was invalid, starting fresh"
-            )
-            document_summaries = {}
-
-    for document in documents:
-        title = document["title"]
-        doc_id = str(
-            document["id"]
-        )  # Convert UUID to string for JSON compatibility
-
-        # Skip if document already has a summary
-        if doc_id in document_summaries:
-            print(
-                f"Skipping document {title} ({doc_id}) - summary already exists"
-            )
-            continue
-
-        print(f"Processing document: {title} ({doc_id})")
-
-        try:
-            document_text = f"Document Title:{title}\n"
-            if document["metadata"]:
-                metadata = json.dumps(document["metadata"])
-                document_text += f"Document Metadata:\n{metadata}\n"
-
-            full_chunks = (
-                await client.document_chunks(document["id"], limit=10)
-            )["results"]
-
-            document_text += "Document Content:\n"
-
-            for chunk in full_chunks:
-                document_text += chunk["text"]
-
-            summary_prompt = """## Task:
-
-    Your task is to generate a descriptive summary of the document that follows. Your objective is to return a summary that is roughly 10% of the input document size while retaining as many key points as possible. Your response should begin with `The document contains `.
-
-    ### Document:
-
-    {document}
-
-
-    ### Query:
-
-    Reminder: Your task is to generate a descriptive summary of the document that was given. Your objective is to return a summary that is roughly 10% of the input document size while retaining as many key points as possible. Your response should begin with `The document contains `.
-
-    ## Response:"""
-
-            messages = [
-                {
-                    "role": "user",
-                    "content": summary_prompt.format(
-                        **{"document": document_text}
-                    ),
-                }
-            ]
-            print("Making completion")
-            summary = await client.completion(
-                messages=messages, generation_config={"model": base_model}
-            )
-            summary_text = summary["results"]["choices"][0]["message"][
-                "content"
-            ]
-            embedding_response = await openai_client.embeddings.create(
-                model=embedding_model, input=summary_text, dimensions=dimension
-            )
-            embedding_vector = embedding_response.data[0].embedding
-
-            # Store in our results dictionary
-            document_summaries[doc_id] = {
-                "summary": summary_text,
-                "embedding": embedding_vector,
-            }
-
-            # Save after each document
-            with open("document_summaries.json", "w") as f:
-                json.dump(document_summaries, f)
-
-            print(f"Successfully processed document {doc_id}")
-
-        except Exception as e:
-            print(f"Error processing document {doc_id}: {str(e)}")
-            # Continue with next document instead of failing
-            continue
-
-    return document_summaries
-
-
-def generate_all_summaries():
-    """Synchronous wrapper for async_generate_all_summaries"""
-    return run_async(async_generate_all_summaries())
+    print(f"Migration needed: '{new_vector_table_name}' table does not exist")
+    return True
 
 
 def upgrade() -> None:
-    # First create vector extension if it doesn't exist
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    if check_if_upgrade_needed():
+        # Create required extensions
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+        op.execute("CREATE EXTENSION IF NOT EXISTS btree_gin")
 
-    # Add new columns with NULL constraint explicitly
-    op.add_column(
-        "document_info",
-        sa.Column("summary", sa.Text(), nullable=True),
-        schema=project_name,
-    )
+        # KG table migrations
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.entity_raw RENAME TO chunk_entity"
+        )
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.triple_raw RENAME TO chunk_triple"
+        )
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.entity_embedding RENAME TO document_entity"
+        )
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.community RENAME TO community_info"
+        )
 
-    op.add_column(
-        "document_info",
-        sa.Column("summary_embedding", Vector, nullable=True),
-        schema=project_name,
-    )
+        # Create the new table
+        op.create_table(
+            new_vector_table_name,
+            sa.Column("extraction_id", postgresql.UUID(), nullable=False),
+            sa.Column("document_id", postgresql.UUID(), nullable=False),
+            sa.Column("user_id", postgresql.UUID(), nullable=False),
+            sa.Column(
+                "collection_ids",
+                postgresql.ARRAY(postgresql.UUID()),
+                server_default="{}",
+            ),
+            sa.Column("vec", Vector),  # This will be handled as a vector type
+            sa.Column("text", sa.Text(), nullable=True),
+            sa.Column(
+                "fts",
+                postgresql.TSVECTOR,
+                nullable=False,
+                server_default=sa.text(
+                    "to_tsvector('english'::regconfig, '')"
+                ),
+            ),
+            sa.Column(
+                "metadata",
+                postgresql.JSONB(),
+                server_default="{}",
+                nullable=False,
+            ),
+            sa.PrimaryKeyConstraint("extraction_id"),
+            schema=project_name,
+        )
 
-    # Add generated column for full text search with COALESCE to handle NULLs
-    op.execute(
-        f"""
-        ALTER TABLE {project_name}.document_info
-        ADD COLUMN doc_search_vector tsvector
-        GENERATED ALWAYS AS (
-            setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
-            setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
-            setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
-        ) STORED;
+        # Create indices
+        op.create_index(
+            "idx_vectors_document_id",
+            new_vector_table_name,
+            ["document_id"],
+            schema=project_name,
+        )
+
+        op.create_index(
+            "idx_vectors_user_id",
+            new_vector_table_name,
+            ["user_id"],
+            schema=project_name,
+        )
+
+        op.create_index(
+            "idx_vectors_collection_ids",
+            new_vector_table_name,
+            ["collection_ids"],
+            schema=project_name,
+            postgresql_using="gin",
+        )
+
+        op.create_index(
+            "idx_vectors_fts",
+            new_vector_table_name,
+            ["fts"],
+            schema=project_name,
+            postgresql_using="gin",
+        )
+
+        # Migrate data from old table (assuming old table name is 'old_vectors')
+        # Note: You'll need to replace 'old_schema' and 'old_vectors' with your actual names
+        op.execute(
+            f"""
+            INSERT INTO {project_name}.{new_vector_table_name}
+                (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            SELECT
+                extraction_id,
+                document_id,
+                user_id,
+                collection_ids,
+                vec,
+                text,
+                metadata
+            FROM {project_name}.{old_vector_table_name}
         """
-    )
+        )
 
-    # Create index for full text search
-    op.execute(
-        f"""
-        CREATE INDEX idx_doc_search_{project_name}
-        ON {project_name}.document_info
-        USING GIN (doc_search_vector);
+        # Verify data migration
+        op.execute(
+            f"""
+            SELECT COUNT(*) old_count FROM {project_name}.{old_vector_table_name};
+            SELECT COUNT(*) new_count FROM {project_name}.{new_vector_table_name};
         """
-    )
+        )
 
-    # Generate summaries after columns are created
-    generate_all_summaries()
-
-    try:
-        with open("document_summaries.json", "r") as f:
-            document_summaries = json.load(f)
-        print(f"Loaded {len(document_summaries)} document summaries")
-    except FileNotFoundError:
-        print("No document summaries found, skipping updates")
-        return
-    except json.JSONDecodeError:
-        print("Invalid document_summaries.json file, skipping updates")
-        return
-
-    # Update existing documents with summaries and embeddings
-    for doc_id, doc_data in document_summaries.items():
-        try:
-            # Convert the embedding array to the PostgreSQL vector format
-            embedding_str = (
-                f"[{','.join(str(x) for x in doc_data['embedding'])}]"
-            )
-
-            # Use parameterized query to handle escaping properly
-            op.execute(
-                f"""
-                UPDATE {project_name}.document_info
-                SET
-                    summary = :summary,
-                    summary_embedding = :embedding::vector({dimension})
-                WHERE document_id = :doc_id::uuid;
-                """,
-                {
-                    "summary": doc_data["summary"],
-                    "embedding": embedding_str,
-                    "doc_id": doc_id,
-                },
-            )
-        except Exception as e:
-            print(f"Error updating document {doc_id}: {str(e)}")
-            continue
+        # If we get here, migration was successful, so drop the old table
+        op.execute(
+            f"""
+        DROP TABLE IF EXISTS {project_name}.{old_vector_table_name};
+        """
+        )
 
 
 def downgrade() -> None:
-    # Drop the full text search index first
+    # Drop all indices
+    op.drop_index("idx_vectors_fts", schema=project_name)
+    op.drop_index("idx_vectors_collection_ids", schema=project_name)
+    op.drop_index("idx_vectors_user_id", schema=project_name)
+    op.drop_index("idx_vectors_document_id", schema=project_name)
+
+    # Drop the new table
+    op.drop_table(new_vector_table_name, schema=project_name)
+
+    # Revert KG table migrations
     op.execute(
-        f"""
-        DROP INDEX IF EXISTS {project_name}.idx_doc_search_{project_name};
-        """
+        f"ALTER TABLE IF EXISTS {project_name}.chunk_entity RENAME TO entity_raw"
     )
-
-    # Remove the generated column (this will automatically remove dependencies)
-    op.drop_column("document_info", "doc_search_vector", schema=project_name)
-
-    # Remove the summary and embedding columns
-    op.drop_column("document_info", "summary_embedding", schema=project_name)
-    op.drop_column("document_info", "summary", schema=project_name)
+    op.execute(
+        f"ALTER TABLE IF EXISTS {project_name}.chunk_triple RENAME TO triple_raw"
+    )
+    op.execute(
+        f"ALTER TABLE IF EXISTS {project_name}.document_entity RENAME TO entity_embedding"
+    )
+    op.execute(
+        f"ALTER TABLE IF EXISTS {project_name}.community_info RENAME TO community"
+    )
