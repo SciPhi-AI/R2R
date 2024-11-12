@@ -1,10 +1,9 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException
 
 import jwt
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
 from core.base import (
