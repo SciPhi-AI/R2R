@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
+from typing import ClassVar, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -123,6 +123,17 @@ class IngestionStatus(str, Enum):
     FAILED = "failed"
     SUCCESS = "success"
 
+    def __str__(self):
+        return self.value
+
+    @classmethod
+    def table_name(cls) -> str:
+        return "document_info"
+
+    @classmethod
+    def id_column(cls) -> str:
+        return "document_id"
+
 
 class KGExtractionStatus(str, Enum):
     """Status of KG Creation per document."""
@@ -130,10 +141,19 @@ class KGExtractionStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
+    ENRICHED = "enriched"
     FAILED = "failed"
 
     def __str__(self):
         return self.value
+
+    @classmethod
+    def table_name(cls) -> str:
+        return "document_info"
+
+    @classmethod
+    def id_column(cls) -> str:
+        return "document_id"
 
 
 class KGEnrichmentStatus(str, Enum):
@@ -141,11 +161,20 @@ class KGEnrichmentStatus(str, Enum):
 
     PENDING = "pending"
     PROCESSING = "processing"
+    OUTDATED = "outdated"
     SUCCESS = "success"
     FAILED = "failed"
 
     def __str__(self):
         return self.value
+
+    @classmethod
+    def table_name(cls) -> str:
+        return "collections"
+
+    @classmethod
+    def id_column(cls) -> str:
+        return "collection_id"
 
 
 class DocumentInfo(R2RSerializable):

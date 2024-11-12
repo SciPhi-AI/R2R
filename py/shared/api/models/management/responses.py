@@ -52,6 +52,8 @@ class AnalyticsResponse(BaseModel):
 class AppSettingsResponse(BaseModel):
     config: dict[str, Any]
     prompts: dict[str, Any]
+    r2r_project_name: str
+    # r2r_version: str
 
 
 class ScoreCompletionResponse(BaseModel):
@@ -118,11 +120,20 @@ class CollectionResponse(BaseModel):
     updated_at: datetime
     user_count: int
     document_count: int
+    kg_enrichment_status: str
 
 
 class ConversationResponse(BaseModel):
     id: UUID
     created_at: datetime
+    user_id: Optional[UUID] = None
+    name: Optional[str] = None
+
+
+class VerificationResult(BaseModel):
+    verification_code: str
+    expiry: datetime
+    message: Optional[str] = None
 
 
 class MessageResponse(BaseModel):
@@ -135,6 +146,14 @@ class BranchResponse(BaseModel):
     branch_point_id: Optional[UUID]
     content: Optional[str]
     created_at: datetime
+    user_id: Optional[UUID] = None
+    name: Optional[str] = None
+
+
+class VerificationResult(BaseModel):
+    verification_code: str
+    expiry: datetime
+    message: Optional[str] = None
 
 
 class AddUserResponse(BaseModel):
@@ -194,3 +213,4 @@ WrappedDocumentChunksResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
+WrappedVerificationResult = ResultsWrapper[VerificationResult]

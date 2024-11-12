@@ -128,9 +128,9 @@ export class r2rClient extends BaseClient {
    * @deprecated Use `client.users.verifyEmail` instead.
    */
   @feature("verifyEmail")
-  async verifyEmail(verification_code: string): Promise<any> {
+  async verifyEmail(email: string, verification_code: string): Promise<any> {
     return await this._makeRequest("POST", "verify_email", {
-      data: { verification_code },
+      data: { email, verification_code },
     });
   }
 
@@ -322,8 +322,11 @@ export class r2rClient extends BaseClient {
    */
   @feature("requestPasswordReset")
   async requestPasswordReset(email: string): Promise<any> {
-    return this._makeRequest("POST", "request_password_reset", {
-      data: { email },
+    return await this._makeRequest("POST", "request_password_reset", {
+      data: JSON.stringify(email),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -358,6 +361,17 @@ export class r2rClient extends BaseClient {
     });
   }
 
+  /**
+   * Generates a new verification code and sends a reset email to the user.
+   * @param email The email address of the user to send the reset email to.
+   * @returns A promise that resolves to the verification code and message from the server.
+   */
+  @feature("sendResetEmail")
+  async sendResetEmail(email: string): Promise<Record<string, any>> {
+    return await this._makeRequest("POST", "send_reset_email", {
+      data: { email },
+    });
+  }
   // -----------------------------------------------------------------------------
   //
   // Ingestion
@@ -380,6 +394,7 @@ export class r2rClient extends BaseClient {
       document_ids?: string[];
       user_ids?: (string | null)[];
       ingestion_config?: Record<string, any>;
+      collection_ids?: string[];
       run_with_orchestration?: boolean;
     } = {},
   ): Promise<any> {
@@ -446,6 +461,9 @@ export class r2rClient extends BaseClient {
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
         : undefined,
+      collection_ids: options.collection_ids
+        ? JSON.stringify(options.collection_ids)
+        : undefined,
       run_with_orchestration:
         options.run_with_orchestration != undefined
           ? String(options.run_with_orchestration)
@@ -488,6 +506,7 @@ export class r2rClient extends BaseClient {
       document_ids: string[];
       metadatas?: Record<string, any>[];
       ingestion_config?: Record<string, any>;
+      collection_ids?: string[];
       run_with_orchestration?: boolean;
     },
   ): Promise<any> {
@@ -528,6 +547,9 @@ export class r2rClient extends BaseClient {
         : undefined,
       ingestion_config: options.ingestion_config
         ? JSON.stringify(options.ingestion_config)
+        : undefined,
+      collection_ids: options.collection_ids
+        ? JSON.stringify(options.collection_ids)
         : undefined,
       run_with_orchestration:
         options.run_with_orchestration != undefined
@@ -572,12 +594,14 @@ export class r2rClient extends BaseClient {
     documentId?: string,
     metadata?: Record<string, any>,
     run_with_orchestration?: boolean,
+    collection_ids?: string[],
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
     let inputData: Record<string, any> = {
       chunks: chunks,
       document_id: documentId,
       metadata: metadata,
+      collection_ids: collection_ids,
       run_with_orchestration: run_with_orchestration,
     };
 
@@ -1465,6 +1489,23 @@ export class r2rClient extends BaseClient {
   }
 
   /**
+   * Update the metadata of a message in an existing conversation.
+   * @param message_id The ID of the message to update.
+   * @param metadata The updated metadata.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("updateMessageMetadata")
+  async updateMessageMetadata(
+    message_id: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>> {
+    this._ensureAuthenticated();
+    return this._makeRequest("PATCH", `messages/${message_id}/metadata`, {
+      data: metadata,
+    });
+  }
+
+  /**
    * Get an overview of branches in a conversation.
    * @param conversationId The ID of the conversation to get branches for.
    * @deprecated use `client.conversations.listBranches` instead
@@ -1790,6 +1831,49 @@ export class r2rClient extends BaseClient {
   // Retrieval
   //
   // -----------------------------------------------------------------------------
+
+  /**
+   * Search over documents.
+   * @param query The query to search for.
+   * @param settings Settings for the document search.
+   * @returns A promise that resolves to the response from the server.
+   */
+  @feature("searchDocuments")
+  async searchDocuments(
+    query: string,
+    settings?: {
+      searchOverMetadata?: boolean;
+      metadataKeys?: string[];
+      searchOverBody?: boolean;
+      filters?: Record<string, any>;
+      searchFilters?: Record<string, any>;
+      offset?: number;
+      limit?: number;
+      titleWeight?: number;
+      metadataWeight?: number;
+    },
+  ): Promise<any> {
+    this._ensureAuthenticated();
+
+    const json_data: Record<string, any> = {
+      query,
+      settings: {
+        search_over_metadata: settings?.searchOverMetadata ?? true,
+        metadata_keys: settings?.metadataKeys ?? ["title"],
+        search_over_body: settings?.searchOverBody ?? false,
+        filters: settings?.filters ?? {},
+        search_filters: settings?.searchFilters ?? {},
+        offset: settings?.offset ?? 0,
+        limit: settings?.limit ?? 10,
+        title_weight: settings?.titleWeight ?? 0.5,
+        metadata_weight: settings?.metadataWeight ?? 0.5,
+      },
+    };
+
+    return await this._makeRequest("POST", "search_documents", {
+      data: json_data,
+    });
+  }
 
   /**
    * Conduct a vector and/or KG search.

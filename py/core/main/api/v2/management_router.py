@@ -1,6 +1,7 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
 import mimetypes
+import os
 from datetime import datetime, timezone
 from typing import Optional, Set
 from uuid import UUID
@@ -829,15 +830,28 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def conversations_overview_app(
             conversation_ids: list[str] = Query([]),
+            user_ids: Optional[list[str]] = Query(None),
             offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            limit: int = Query(100, ge=-1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedConversationsResponse:
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in conversation_ids
             ]
+
+            if auth_user.is_superuser:
+                user_ids = [UUID(uid) for uid in user_ids] if user_ids else None  # type: ignore
+            else:
+                if user_ids:
+                    raise R2RException(
+                        message="Non-superusers cannot query other users' conversations",
+                        status_code=403,
+                    )
+                user_ids = [auth_user.id]
+
             conversations_overview_response = (
                 await self.service.conversations_overview(
+                    user_ids=user_ids,
                     conversation_ids=conversation_uuids,
                     offset=offset,
                     limit=limit,
@@ -857,6 +871,17 @@ class ManagementRouter(BaseRouter):
             branch_id: str = Query(None, description="Branch ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedConversationResponse:
+
+            if not auth_user.is_superuser:
+                has_access = await self.service.verify_conversation_access(
+                    conversation_id, auth_user.id
+                )
+                if not has_access:
+                    raise R2RException(
+                        message="You do not have access to this conversation",
+                        status_code=403,
+                    )
+
             result = await self.service.get_conversation(
                 conversation_id,
                 branch_id,
@@ -868,7 +893,9 @@ class ManagementRouter(BaseRouter):
         async def create_conversation(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
-            return await self.service.create_conversation()
+            return await self.service.create_conversation(
+                user_id=auth_user.id if auth_user else None
+            )
 
         @self.router.post("/add_message/{conversation_id}")
         @self.base_endpoint
@@ -881,6 +908,16 @@ class ManagementRouter(BaseRouter):
             metadata: Optional[dict] = Body(None, description="Metadata"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
+            if not auth_user.is_superuser:
+                has_access = await self.service.verify_conversation_access(
+                    conversation_id, auth_user.id
+                )
+                if not has_access:
+                    raise R2RException(
+                        message="You do not have access to this conversation",
+                        status_code=403,
+                    )
+
             message_id = await self.service.add_message(
                 conversation_id, message, parent_id, metadata
             )
@@ -893,6 +930,8 @@ class ManagementRouter(BaseRouter):
             message: str = Body(..., description="New content"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
+            # TODO: Add a check to see if the user has access to the message
+
             new_message_id, new_branch_id = await self.service.edit_message(
                 message_id, message
             )
@@ -900,6 +939,35 @@ class ManagementRouter(BaseRouter):
                 "new_message_id": new_message_id,
                 "new_branch_id": new_branch_id,
             }
+
+        @self.router.patch("/messages/{message_id}/metadata")
+        @self.base_endpoint
+        async def update_message_metadata(
+            message_id: str = Path(..., description="Message ID"),
+            metadata: dict = Body(..., description="Metadata to update"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """Update metadata for a specific message.
+
+            The provided metadata will be merged with existing metadata.
+            New keys will be added, existing keys will be updated.
+            """
+            await self.service.update_message_metadata(message_id, metadata)
+            return "ok"
+
+        @self.router.get("/export/messages")
+        @self.base_endpoint
+        async def export_messages(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only an authorized user can call the `export/messages` endpoint.",
+                    403,
+                )
+            return await self.service.export_messages_to_csv(
+                return_type="stream"
+            )
 
         @self.router.get("/branches_overview/{conversation_id}")
         @self.base_endpoint
@@ -909,6 +977,15 @@ class ManagementRouter(BaseRouter):
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
+            if not auth_user.is_superuser:
+                has_access = await self.service.verify_conversation_access(
+                    conversation_id, auth_user.id
+                )
+                if not has_access:
+                    raise R2RException(
+                        message="You do not have access to this conversation's branches",
+                        status_code=403,
+                    )
             branches = await self.service.branches_overview(
                 offset=offset,
                 limit=limit,

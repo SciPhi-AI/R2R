@@ -22,6 +22,7 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
+    CommunityInfo,
     CommunityReport,
     Entity,
     EntityLevel,
@@ -52,6 +53,7 @@ from shared.abstractions.llm import (
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
     AggregateSearchResult,
+    DocumentSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
@@ -133,6 +135,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",

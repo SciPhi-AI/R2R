@@ -309,13 +309,14 @@ class PostgresCollectionHandler(CollectionHandler):
                     c.description,
                     c.created_at,
                     c.updated_at,
+                    c.kg_enrichment_status,
                     COUNT(DISTINCT u.user_id) FILTER (WHERE u.user_id IS NOT NULL) as user_count,
                     COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
                 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} c
                 {user_join} {self._get_table_name('users')} u ON c.collection_id = ANY(u.collection_ids)
                 {document_join} {self._get_table_name('document_info')} d ON c.collection_id = ANY(d.collection_ids)
                 {where_clause}
-                GROUP BY c.collection_id, c.user_id, c.name, c.description, c.created_at, c.updated_at
+                GROUP BY c.collection_id, c.user_id, c.name, c.description, c.created_at, c.updated_at, c.kg_enrichment_status
             )
             SELECT
                 *,
@@ -348,7 +349,8 @@ class PostgresCollectionHandler(CollectionHandler):
                     updated_at=row["updated_at"],
                     user_count=row["user_count"],
                     document_count=row["document_count"],
-                )
+                    kg_enrichment_status=row["kg_enrichment_status"],
+            )
                 for row in results
             ]
 
@@ -419,11 +421,11 @@ class PostgresCollectionHandler(CollectionHandler):
             # Re-raise R2RExceptions as they are already handled
             raise
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"An error '{e}' occurred while assigning the document to the collection",
+                detail=f"An error '{e}' occurred while assigning the document to the collection",
             )
-
+        
     async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:

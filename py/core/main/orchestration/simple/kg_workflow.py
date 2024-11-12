@@ -1,8 +1,10 @@
 import json
 import logging
 import math
+import uuid
 
-from core import GenerationConfig
+from core import GenerationConfig, R2RException
+from core.base.abstractions import KGEnrichmentStatus
 
 from ...services import KgService
 
@@ -13,6 +15,10 @@ def simple_kg_factory(service: KgService):
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
+
+            if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -61,32 +67,54 @@ def simple_kg_factory(service: KgService):
 
         input_data = get_input_data_dict(input_data)
 
-        num_communities = await service.kg_clustering(
-            collection_id=input_data["collection_id"],
-            **input_data["kg_enrichment_settings"],
-        )
-        num_communities = num_communities[0]["num_communities"]
-        # TODO - Do not hardcode the number of parallel communities,
-        # make it a configurable parameter at runtime & add server-side defaults
-        parallel_communities = min(100, num_communities)
+        try:
+            num_communities = await service.kg_clustering(
+                collection_id=input_data["collection_id"],
+                **input_data["kg_enrichment_settings"],
+            )
+            num_communities = num_communities[0]["num_communities"]
+            # TODO - Do not hardcode the number of parallel communities,
+            # make it a configurable parameter at runtime & add server-side defaults
 
-        total_workflows = math.ceil(num_communities / parallel_communities)
-        for i in range(total_workflows):
-            input_data_copy = input_data.copy()
-            input_data_copy["offset"] = i * parallel_communities
-            input_data_copy["limit"] = min(
-                parallel_communities,
-                num_communities - i * parallel_communities,
+            if num_communities == 0:
+                raise R2RException("No communities found", 400)
+
+            parallel_communities = min(100, num_communities)
+
+            total_workflows = math.ceil(num_communities / parallel_communities)
+            for i in range(total_workflows):
+                input_data_copy = input_data.copy()
+                input_data_copy["offset"] = i * parallel_communities
+                input_data_copy["limit"] = min(
+                    parallel_communities,
+                    num_communities - i * parallel_communities,
+                )
+                # running i'th workflow out of total_workflows
+                logger.info(
+                    f"Running kg community summary for {i+1}'th workflow out of total {total_workflows} workflows"
+                )
+                await kg_community_summary(
+                    input_data=input_data_copy,
+                )
+
+            await service.providers.database.set_workflow_status(
+                id=input_data["collection_id"],
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.SUCCESS,
             )
-            # running i'th workflow out of total_workflows
-            logger.info(
-                f"Running kg community summary for {i+1}'th workflow out of total {total_workflows} workflows"
-            )
-            await kg_community_summary(
-                input_data=input_data_copy,
+            return {
+                "result": "successfully ran kg community summary workflows"
+            }
+
+        except Exception as e:
+
+            await service.providers.database.set_workflow_status(
+                id=input_data["collection_id"],
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.FAILED,
             )
 
-        return {"result": "successfully ran kg community summary workflows"}
+            raise e
 
     async def kg_community_summary(input_data):
 

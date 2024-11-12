@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional, Sequence, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 from core.base import (
     Document,
@@ -74,6 +75,7 @@ class IngestionService(Service):
         metadata: Optional[dict] = None,
         version: Optional[str] = None,
         is_update: bool = False,
+        collection_ids: Optional[list[UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -137,8 +139,8 @@ class IngestionService(Service):
             logger.error(f"R2RException in ingest_file_ingress: {str(e)}")
             raise
         except Exception as e:
-            raise R2RException(
-                status_code=500, message=f"Error during ingestion: {str(e)}"
+            raise HTTPException(
+                status_code=500, detail=f"Error during ingestion: {str(e)}"
             )
 
     def _create_document_info_from_file(
@@ -470,7 +472,21 @@ class IngestionService(Service):
                     neighbor["chunk_id"] for neighbor in semantic_neighbors
                 )
 
-        context_chunk_ids = list(set(context_chunk_ids))
+        # weird behavior, sometimes we get UUIDs
+        # FIXME: figure out why
+        context_chunk_ids_str = list(
+            set(
+                [
+                    str(context_chunk_id)
+                    for context_chunk_id in context_chunk_ids
+                ]
+            )
+        )
+
+        context_chunk_ids_uuid = [
+            UUID(context_chunk_id)
+            for context_chunk_id in context_chunk_ids_str
+        ]
 
         context_chunk_texts = [
             (
@@ -479,7 +495,7 @@ class IngestionService(Service):
                     "chunk_order"
                 ],
             )
-            for context_chunk_id in context_chunk_ids
+            for context_chunk_id in context_chunk_ids_uuid
         ]
 
         # sort by chunk_order
@@ -532,7 +548,11 @@ class IngestionService(Service):
             metadata=chunk["metadata"],
         )
 
-    async def chunk_enrichment(self, document_id: UUID) -> int:
+    async def chunk_enrichment(
+        self,
+        document_id: UUID,
+        chunk_enrichment_settings: ChunkEnrichmentSettings,
+    ) -> int:
         # just call the pipe on every chunk of the document
 
         # TODO: Why is the config not recognized as an ingestionconfig but as a providerconfig?
@@ -619,6 +639,40 @@ class IngestionService(Service):
     ) -> dict:
         return await self.providers.database.get_chunk(chunk_id)
 
+    async def update_document_metadata(
+        self,
+        document_id: UUID,
+        metadata: dict,
+        user: UserResponse,
+    ) -> None:
+        # Verify document exists and user has access
+        existing_document = (
+            await self.providers.database.get_documents_overview(
+                filter_document_ids=[document_id],
+                filter_user_ids=[user.id],
+            )
+        )
+
+        if not existing_document["results"]:
+            raise R2RException(
+                status_code=404,
+                message=f"Document with id {document_id} not found or you don't have access.",
+            )
+
+        existing_document = existing_document["results"][0]
+
+        # Merge metadata
+        merged_metadata = {
+            **existing_document.metadata,  # type: ignore
+            **metadata,
+        }
+
+        # Update document metadata
+        existing_document.metadata = merged_metadata  # type: ignore
+        await self.providers.database.upsert_documents_overview(
+            existing_document  # type: ignore
+        )
+
 
 class IngestionServiceAdapter:
     @staticmethod
@@ -660,6 +714,7 @@ class IngestionServiceAdapter:
             "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],
+            "collection_ids": data.get("collection_ids", []),
         }
 
     @staticmethod
@@ -725,4 +780,12 @@ class IngestionServiceAdapter:
         return {
             "index_name": input_data["index_name"],
             "table_name": input_data.get("table_name"),
+        }
+
+    @staticmethod
+    def parse_update_document_metadata_input(data: dict) -> dict:
+        return {
+            "document_id": data["document_id"],
+            "metadata": data["metadata"],
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
         }

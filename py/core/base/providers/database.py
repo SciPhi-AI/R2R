@@ -25,6 +25,7 @@ from core.base import (
 )
 from core.base.abstractions import (
     DocumentInfo,
+    DocumentSearchSettings,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -449,6 +450,16 @@ class UserHandler(Handler):
     ) -> dict[str, Union[list[UserStats], int]]:
         pass
 
+    @abstractmethod
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        """
+        Get verification data for a specific user.
+        This method should be called after superuser authorization has been verified.
+        """
+        pass
+
 
 class VectorHandler(Handler):
     def __init__(self, *args, **kwargs):
@@ -472,6 +483,12 @@ class VectorHandler(Handler):
     async def full_text_search(
         self, query_text: str, search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
+        pass
+
+    @abstractmethod
+    async def search_documents(
+        self, query_text: str, settings: DocumentSearchSettings
+    ) -> list[dict]:
         pass
 
     @abstractmethod
@@ -638,7 +655,7 @@ class KGHandler(Handler):
 
     # Community management
     @abstractmethod
-    async def add_communities(self, communities: list[Any]) -> None:
+    async def add_community_info(self, communities: list[Any]) -> None:
         """Add communities to storage."""
         pass
 
@@ -716,6 +733,7 @@ class KGHandler(Handler):
         entity_ids: Optional[list[str]] = None,
         entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
+        extra_columns: Optional[list[str]] = None,
     ) -> dict:
         """Get entities from storage."""
         pass
@@ -820,7 +838,9 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_triples(self, collection_id: UUID) -> list[Triple]:
+    async def get_all_triples(
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+    ) -> list[Triple]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1115,7 +1135,10 @@ class DatabaseProvider(Provider):
         return await self.document_handler.get_workflow_status(id, status_type)
 
     async def set_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str, status: str
+        self,
+        id: Union[UUID, list[UUID]],
+        status_type: str,
+        status: str,
     ):
         return await self.document_handler.set_workflow_status(
             id, status_type, status
@@ -1331,6 +1354,11 @@ class DatabaseProvider(Provider):
             user_ids=user_ids,
         )
 
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        return await self.user_handler.get_user_verification_data(user_id)
+
     # Vector handler methods
     async def upsert(self, entry: VectorEntry) -> None:
         return await self.vector_handler.upsert(entry)
@@ -1363,6 +1391,11 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.hybrid_search(
             query_text, query_vector, search_settings, *args, **kwargs
         )
+
+    async def search_documents(
+        self, query_text: str, settings: DocumentSearchSettings
+    ) -> list[dict]:
+        return await self.vector_handler.search_documents(query_text, settings)
 
     async def delete(
         self, filters: dict[str, Any]
@@ -1507,9 +1540,9 @@ class DatabaseProvider(Provider):
         return await self.kg_handler.upsert_embeddings(data, table_name)
 
     # Community methods
-    async def add_communities(self, communities: list[Any]) -> None:
+    async def add_community_info(self, communities: list[Any]) -> None:
         """Forward to KG handler add_communities method."""
-        return await self.kg_handler.add_communities(communities)
+        return await self.kg_handler.add_community_info(communities)
 
     async def get_communities(
         self,
@@ -1592,6 +1625,7 @@ class DatabaseProvider(Provider):
         entity_ids: Optional[list[str]] = None,
         entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
+        extra_columns: Optional[list[str]] = None,
     ) -> dict:
         """Forward to KG handler get_entities method."""
         return await self.kg_handler.get_entities(
@@ -1601,6 +1635,7 @@ class DatabaseProvider(Provider):
             entity_ids=entity_ids,
             entity_names=entity_names,
             entity_table_name=entity_table_name,
+            extra_columns=extra_columns,
         )
 
     async def get_triples(
@@ -1669,8 +1704,12 @@ class DatabaseProvider(Provider):
             collection_id, kg_deduplication_settings
         )
 
-    async def get_all_triples(self, collection_id: UUID) -> list[Triple]:
-        return await self.kg_handler.get_all_triples(collection_id)
+    async def get_all_triples(
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+    ) -> list[Triple]:
+        return await self.kg_handler.get_all_triples(
+            collection_id, document_ids
+        )
 
     async def update_entity_descriptions(self, entities: list[Entity]):
         return await self.kg_handler.update_entity_descriptions(entities)

@@ -2,6 +2,7 @@ import io
 import logging
 from typing import BinaryIO, Optional, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 import asyncpg
 
@@ -109,9 +110,9 @@ class PostgresFileHandler(FileHandler):
 
         except Exception as e:
             await conn.execute("SELECT lo_unlink($1)", oid)
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Failed to write to large object: {e}",
+                detail=f"Failed to write to large object: {e}",
             )
 
     async def retrieve_file(

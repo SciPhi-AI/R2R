@@ -3,6 +3,7 @@ from typing import AsyncGenerator, Optional, Union
 
 from ...models import (
     CombinedSearchResponse,
+    DocumentSearchSettings,
     GenerationConfig,
     KGSearchSettings,
     Message,
@@ -14,6 +15,31 @@ logger = logging.getLogger()
 
 
 class RetrievalMixins:
+    async def search_documents(
+        self,
+        query: str,
+        settings: Optional[Union[dict, DocumentSearchSettings]] = None,
+    ) -> SearchResponse:
+        """
+        Conduct a vector and/or KG search.
+
+        Args:
+            query (str): The query to search for.
+            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+
+        Returns:
+            SearchResponse: The search response.
+        """
+        if settings and not isinstance(settings, dict):
+            settings = settings.model_dump()
+
+        data = {
+            "query": query,
+            "settings": settings,
+        }
+        return await self._make_request("POST", "search_documents", json=data)  # type: ignore
+
     async def search(
         self,
         query: str,

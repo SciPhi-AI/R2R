@@ -109,9 +109,40 @@ class RAGAgentResponse(BaseModel):
         }
 
 
+class DocumentSearchResult(BaseModel):
+    document_id: str = Field(
+        ...,
+        description="The document ID",
+    )
+    metadata: Optional[dict] = Field(
+        None,
+        description="The metadata of the document",
+    )
+    score: float = Field(
+        ...,
+        description="The score of the document",
+    )
+
+
+class DocumentSearchResult(BaseModel):
+    document_id: str = Field(
+        ...,
+        description="The document ID",
+    )
+    metadata: Optional[dict] = Field(
+        None,
+        description="The metadata of the document",
+    )
+    score: float = Field(
+        ...,
+        description="The score of the document",
+    )
+
+
 WrappedCompletionResponse = ResultsWrapper[LLMChatCompletion]
 # Create wrapped versions of the responses
 WrappedVectorSearchResponse = ResultsWrapper[list[VectorSearchResult]]
 WrappedSearchResponse = ResultsWrapper[CombinedSearchResponse]
+WrappedDocumentSearchResponse = ResultsWrapper[list[DocumentSearchResult]]
 WrappedRAGResponse = ResultsWrapper[RAGResponse]
 WrappedRAGAgentResponse = ResultsWrapper[RAGAgentResponse]

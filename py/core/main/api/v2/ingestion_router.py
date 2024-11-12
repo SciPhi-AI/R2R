@@ -6,7 +6,16 @@ from typing import Optional
 from uuid import UUID
 
 import yaml
-from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
+from fastapi import (
+    Body,
+    Depends,
+    File,
+    Form,
+    Path,
+    Query,
+    UploadFile,
+    HTTPException,
+)
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, Workflow, generate_document_id
@@ -21,6 +30,8 @@ from core.base.api.models import (
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
+    WrappedListVectorIndicesResponse,
+    WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
 )
 from core.providers import (
@@ -72,6 +83,11 @@ class IngestionRouter(BaseRouter):
                     if self.orchestration_provider.config.provider != "simple"
                     else "Chunk update completed successfully."
                 ),
+                "update-document-metadata": (
+                    "Update document metadata task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document metadata update completed successfully."
+                ),
                 "create-vector-index": (
                     "Vector index creation task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
@@ -120,6 +136,10 @@ class IngestionRouter(BaseRouter):
             document_ids: Optional[Json[list[UUID]]] = Form(
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
+            ),
+            collection_ids: Optional[Json[list[list[UUID]]]] = Form(
+                None,
+                description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
             ),
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
@@ -180,6 +200,9 @@ class IngestionRouter(BaseRouter):
                     "ingestion_config": ingestion_config,
                     "user": auth_user.model_dump_json(),
                     "size_in_bytes": content_length,
+                    "collection_ids": (
+                        collection_ids[it] if collection_ids else None
+                    ),
                     "is_update": False,
                 }
 
@@ -239,6 +262,10 @@ class IngestionRouter(BaseRouter):
             ),
             document_ids: Optional[Json[list[UUID]]] = Form(
                 None, description=ingest_files_descriptions.get("document_ids")
+            ),
+            collection_ids: Optional[Json[list[list[UUID]]]] = Form(
+                None,
+                description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
             ),
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
@@ -313,6 +340,7 @@ class IngestionRouter(BaseRouter):
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
                 "is_update": True,
+                "collection_ids": collection_ids,
             }
 
             if run_with_orchestration:
@@ -356,6 +384,10 @@ class IngestionRouter(BaseRouter):
             metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
+            collection_ids: Optional[Json[list[list[UUID]]]] = Body(
+                None,
+                description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
+            ),
             run_with_orchestration: Optional[bool] = Body(
                 True,
                 description=ingest_files_descriptions.get(
@@ -387,6 +419,7 @@ class IngestionRouter(BaseRouter):
                 "chunks": [chunk.model_dump() for chunk in chunks],
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
+                "collection_ids": collection_ids,
             }
             if run_with_orchestration:
                 raw_message = await self.orchestration_provider.run_workflow(
@@ -415,6 +448,62 @@ class IngestionRouter(BaseRouter):
                         "task_id": None,
                     }
                 ]
+
+        @self.router.post(
+            "/update_document_metadata/{document_id}",
+        )
+        @self.base_endpoint
+        async def update_document_metadata_app(
+            document_id: UUID = Path(
+                ..., description="The document ID of the document to update"
+            ),
+            metadata: dict = Body(
+                ...,
+                description="The new metadata to merge with existing metadata",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedMetadataUpdateResponse:
+            """
+            Updates the metadata of a previously ingested document and its associated chunks.
+
+            A valid user authentication token is required to access this endpoint, as regular users can only update their own documents.
+            """
+
+            try:
+                workflow_input = {
+                    "document_id": str(document_id),
+                    "metadata": metadata,
+                    "user": auth_user.model_dump_json(),
+                }
+
+                logger.info(
+                    "Running document metadata update without orchestration."
+                )
+                from core.main.orchestration import simple_ingestion_factory
+
+                simple_ingestor = simple_ingestion_factory(self.service)
+                await simple_ingestor["update-document-metadata"](
+                    workflow_input
+                )
+
+                return {  # type: ignore
+                    "message": "Update metadata task completed successfully.",
+                    "document_id": str(document_id),
+                    "task_id": None,
+                }
+                return [
+                    {  # type: ignore
+                        "message": "Ingestion task completed successfully.",
+                        "document_id": str(document_uuid),
+                        "task_id": None,
+                    }
+                ]
+
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error updating document metadata: {str(e)}",
+                )
 
         @self.router.put(
             "/update_chunk/{document_id}/{chunk_id}",
@@ -475,8 +564,8 @@ class IngestionRouter(BaseRouter):
                     }
 
             except Exception as e:
-                raise R2RException(
-                    status_code=500, message=f"Error updating chunk: {str(e)}"
+                raise HTTPException(
+                    status_code=500, detail=f"Error updating chunk: {str(e)}"
                 )
 
         create_vector_index_extras = self.openapi_extras.get(

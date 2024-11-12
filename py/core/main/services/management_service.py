@@ -1,9 +1,12 @@
 import logging
+import os
 from collections import defaultdict
+from importlib.metadata import version as get_version
 from typing import Any, BinaryIO, Optional, Tuple, Union
 from uuid import UUID
 
 import toml
+from fastapi.responses import StreamingResponse
 
 from core.base import (
     AnalysisTypes,
@@ -196,6 +199,8 @@ class ManagementService(Service):
         return {
             "config": config_dict,
             "prompts": prompts,
+            "r2r_project_name": os.environ["R2R_PROJECT_NAME"],
+            # "r2r_version": get_version("r2r"),
         }
 
     @telemetry_event("UsersOverview")
@@ -692,9 +697,20 @@ class ManagementService(Service):
             conversation_id, branch_id
         )
 
+    async def verify_conversation_access(
+        self, conversation_id: str, user_id: UUID
+    ) -> bool:
+        return await self.logging_connection.verify_conversation_access(
+            conversation_id, user_id
+        )
+
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> dict:
-        return await self.logging_connection.create_conversation()
+    async def create_conversation(
+        self, user_id: Optional[UUID] = None, auth_user=None
+    ) -> dict:
+        return await self.logging_connection.create_conversation(
+            user_id=user_id
+        )
 
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
@@ -702,11 +718,13 @@ class ManagementService(Service):
         offset: int,
         limit: int,
         conversation_ids: Optional[list[UUID]] = None,
+        user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations(
             offset=offset,
             limit=limit,
+            user_ids=user_ids,
             conversation_ids=conversation_ids,
         )
 
@@ -729,6 +747,22 @@ class ManagementService(Service):
     ) -> Tuple[str, str]:
         return await self.logging_connection.edit_message(
             message_id, new_content
+        )
+
+    @telemetry_event("updateMessageMetadata")
+    async def update_message_metadata(
+        self, message_id: str, metadata: dict, auth_user=None
+    ):
+        await self.logging_connection.update_message_metadata(
+            message_id, metadata
+        )
+
+    @telemetry_event("exportMessagesToCSV")
+    async def export_messages_to_csv(
+        self, chunk_size: int = 1000, return_type: str = "stream"
+    ) -> Union[StreamingResponse, str]:
+        return await self.logging_connection.export_messages_to_csv(
+            chunk_size, return_type
         )
 
     @telemetry_event("BranchesOverview")

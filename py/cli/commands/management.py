@@ -160,7 +160,7 @@ async def list_document_chunks(
     for index, chunk in enumerate(chunks, 1):
         click.echo(f"\nChunk {index}:")
         if isinstance(chunk, dict):
-            click.echo(f"Extraction ID: {chunk.get('chunk_id', 'N/A')}")
+            click.echo(f"Extraction ID: {chunk.get('extraction_id', 'N/A')}")
             click.echo(f"Text: {chunk.get('text', '')[:100]}...")
             click.echo(f"Metadata: {chunk.get('metadata', {})}")
             if include_vectors:

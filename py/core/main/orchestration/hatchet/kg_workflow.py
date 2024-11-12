@@ -9,7 +9,7 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider
-from core.base.abstractions import KGExtractionStatus
+from core.base.abstractions import KGEnrichmentStatus, KGExtractionStatus
 
 from ...services import KgService
 
@@ -26,6 +26,10 @@ def hatchet_kg_factory(
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
+
+            if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -147,7 +151,7 @@ def hatchet_kg_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    @orchestration_provider.workflow(name="create-graph", timeout="360m")
+    @orchestration_provider.workflow(name="create-graph", timeout="600m")
     class CreateGraphWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
@@ -197,7 +201,7 @@ def hatchet_kg_factory(
                 )
                 results.append(
                     (
-                        context.aio.spawn_workflow(
+                        await context.aio.spawn_workflow(
                             "kg-extract",
                             {
                                 "request": {
@@ -214,7 +218,7 @@ def hatchet_kg_factory(
                             },
                             key=f"kg-extract-{cnt}/{len(document_ids)}",
                         )
-                    )
+                    ).result()
                 )
 
             if not document_ids:
@@ -227,6 +231,37 @@ def hatchet_kg_factory(
             results = await asyncio.gather(*results)
             return {
                 "result": f"successfully ran graph creation workflows for {len(results)} documents"
+            }
+
+        @orchestration_provider.step(
+            retries=1, parents=["kg_extraction_ingress"]
+        )
+        async def update_enrichment_status(self, context: Context) -> dict:
+
+            enrichment_status = (
+                await self.kg_service.providers.database.get_workflow_status(
+                    id=uuid.UUID(
+                        context.workflow_input()["request"]["collection_id"]
+                    ),
+                    status_type="kg_enrichment_status",
+                )
+            )
+
+            if enrichment_status == KGEnrichmentStatus.SUCCESS:
+                await self.kg_service.providers.database.set_workflow_status(
+                    id=uuid.UUID(
+                        context.workflow_input()["request"]["collection_id"]
+                    ),
+                    status_type="kg_enrichment_status",
+                    status=KGEnrichmentStatus.OUTDATED,
+                )
+
+                logger.info(
+                    f"Updated enrichment status for collection {context.workflow_input()['request']['collection_id']} to OUTDATED because an older enrichment was already successful"
+                )
+
+            return {
+                "result": f"updated enrichment status for collection {context.workflow_input()['request']['collection_id']} to OUTDATED because an older enrichment was already successful"
             }
 
     @orchestration_provider.workflow(
@@ -291,8 +326,8 @@ def hatchet_kg_factory(
                         key=f"{i}/{total_workflows}_entity_deduplication_part",
                     )
                 )
-            await asyncio.gather(*workflows)
 
+            await asyncio.gather(*workflows)
             return {
                 "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
             }
@@ -384,26 +419,63 @@ def hatchet_kg_factory(
             for i in range(total_workflows):
                 offset = i * parallel_communities
                 workflows.append(
-                    context.aio.spawn_workflow(
-                        "kg-community-summary",
-                        {
-                            "request": {
-                                "offset": offset,
-                                "limit": min(
-                                    parallel_communities,
-                                    num_communities - offset,
-                                ),
-                                "collection_id": collection_id,
-                                **input_data["kg_enrichment_settings"],
-                            }
-                        },
-                        key=f"{i}/{total_workflows}_community_summary",
-                    )
+                    (
+                        await context.aio.spawn_workflow(
+                            "kg-community-summary",
+                            {
+                                "request": {
+                                    "offset": offset,
+                                    "limit": min(
+                                        parallel_communities,
+                                        num_communities - offset,
+                                    ),
+                                    "collection_id": str(collection_id),
+                                    **input_data["kg_enrichment_settings"],
+                                }
+                            },
+                            key=f"{i}/{total_workflows}_community_summary",
+                        )
+                    ).result()
                 )
-            await asyncio.gather(*workflows)
+
+            results = await asyncio.gather(*workflows)
+
+            logger.info(f"Ran {len(results)} workflows for community summary")
+
+            # set status to success
+            # for all documents in the collection, set kg_creation_status to ENRICHED
+            document_ids = await self.kg_service.providers.database.get_document_ids_by_status(
+                status_type="kg_extraction_status",
+                status=KGExtractionStatus.SUCCESS,
+                collection_id=collection_id,
+            )
+
+            await self.kg_service.providers.database.set_workflow_status(
+                id=document_ids,
+                status_type="kg_extraction_status",
+                status=KGExtractionStatus.ENRICHED,
+            )
+
+            await self.kg_service.providers.database.set_workflow_status(
+                id=collection_id,
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.SUCCESS,
+            )
+
             return {
-                "result": f"Successfully spawned summary workflows for {num_communities} communities."
+                "result": f"Successfully completed enrichment for collection {collection_id} in {len(results)} workflows."
             }
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            collection_id = context.workflow_input()["request"][
+                "collection_id"
+            ]
+            await self.kg_service.providers.database.set_workflow_status(
+                id=collection_id,
+                status_type="kg_enrichment_status",
+                status=KGEnrichmentStatus.FAILED,
+            )
 
     @orchestration_provider.workflow(
         name="kg-community-summary", timeout="360m"

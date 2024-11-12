@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import logging
 import os
@@ -5,6 +7,8 @@ import uuid
 from datetime import datetime
 from typing import Optional, Tuple
 from uuid import UUID
+
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 
 from core.base import Message
@@ -69,7 +73,9 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             """
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
+                user_id UUID,
                 created_at REAL
+                name TEXT
             );
 
             CREATE TABLE IF NOT EXISTS messages (
@@ -101,6 +107,24 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             );
         """
         )
+
+        async with self.conn.execute(
+            "PRAGMA table_info(conversations);"
+        ) as cursor:
+            columns = await cursor.fetchall()
+            column_names = [col[1] for col in columns]
+
+            # Add 'user_id' column if it doesn't exist
+            if "user_id" not in column_names:
+                await self.conn.execute(
+                    "ALTER TABLE conversations ADD COLUMN user_id TEXT;"
+                )
+            # Add 'name' column if it doesn't exist
+            if "name" not in column_names:
+                await self.conn.execute(
+                    "ALTER TABLE conversations ADD COLUMN name TEXT;"
+                )
+
         await self.conn.commit()
 
     async def __aenter__(self):
@@ -213,7 +237,11 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             for row in rows
         ]
 
-    async def create_conversation(self) -> str:
+    async def create_conversation(
+        self,
+        user_id: Optional[UUID] = None,
+        name: Optional[str] = None,
+    ) -> str:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
@@ -223,8 +251,16 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         created_at = datetime.utcnow().timestamp()
 
         await self.conn.execute(
-            "INSERT INTO conversations (id, created_at) VALUES (?, ?)",
-            (conversation_id, created_at),
+            """
+            INSERT INTO conversations (id, user_id, created_at, name)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                conversation_id,
+                str(user_id) if user_id else None,
+                created_at,
+                name,
+            ),
         )
         await self.conn.commit()
         return {
@@ -232,18 +268,42 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             "created_at": created_at,
         }
 
-    async def get_conversations(
+    async def verify_conversation_access(
+        self, conversation_id: str, user_id: UUID
+    ) -> bool:
+
+        if not self.conn:
+            raise ValueError("Connection pool not initialized.")
+
+        async with self.conn.execute(
+            """
+            SELECT 1 FROM conversations
+            WHERE id = ? AND (user_id IS NULL OR user_id = ?)
+            """,
+            (conversation_id, str(user_id)),
+        ) as cursor:
+            return await cursor.fetchone() is not None
+
+    async def get_conversations_overview(
         self,
         offset: int,
         limit: int,
+        user_ids: Optional[UUID | list[UUID]] = None,
         conversation_ids: Optional[list[UUID]] = None,
-    ) -> dict:
-        """Get an overview of conversations, optionally filtered by conversation IDs, with pagination."""
+    ) -> dict[str, list[dict] | int]:
+        """
+        Get conversations overview with pagination.
+        If user_ids is None, returns all conversations (superuser access)
+        If user_ids is a single UUID, returns conversations for that user
+        If user_ids is a list of UUIDs, returns conversations for those users
+        """
         query = """
             WITH conversation_overview AS (
-                SELECT c.id, c.created_at
+                SELECT c.id, c.created_at, c.user_id, c.name
                 FROM conversations c
-                {where_clause}
+                WHERE 1=1
+                {user_where_clause}
+                {conversation_where_clause}
             ),
             counted_overview AS (
                 SELECT *, COUNT(*) OVER() AS total_entries
@@ -254,34 +314,51 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             LIMIT ? OFFSET ?
         """
 
-        where_clause = (
-            f"WHERE c.id IN ({','.join(['?' for _ in conversation_ids])})"
-            if conversation_ids
-            else ""
-        )
-        query = query.format(where_clause=where_clause)
+        params = []
 
-        params: list = []
+        if user_ids is None:
+            user_where_clause = ""
+        elif isinstance(user_ids, UUID):
+            user_where_clause = "AND c.user_id = ?"
+            params.append(str(user_ids))
+        else:
+            user_where_clause = (
+                f"AND c.user_id IN ({','.join(['?' for _ in user_ids])})"
+            )
+            params.extend(str(uid) for uid in user_ids)
+
         if conversation_ids:
-            params.extend(conversation_ids)
-        params.extend((limit if limit != -1 else -1, offset))
+            conversation_where_clause = (
+                f"AND c.id IN ({','.join(['?' for _ in conversation_ids])})"
+            )
+            params.extend(str(cid) for cid in conversation_ids)
+        else:
+            conversation_where_clause = ""
+
+        params.extend([str(limit) if limit != -1 else "-1", str(offset)])
+
+        query = query.format(
+            user_where_clause=user_where_clause,
+            conversation_where_clause=conversation_where_clause,
+        )
 
         if not self.conn:
             raise ValueError(
-                "Initialize the connection pool before attempting to log."
+                "Initialize the connection pool before attempting to query."
             )
 
         async with self.conn.execute(query, params) as cursor:
             results = await cursor.fetchall()
 
         if not results:
-            logger.info("No conversations found.")
             return {"results": [], "total_entries": 0}
 
         conversations = [
             {
                 "id": row[0],
                 "created_at": row[1],
+                "user_id": UUID(row[2]) if row[2] else None,
+                "name": row[3] or None,
             }
             for row in results
         ]
@@ -457,6 +534,128 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
         await self.conn.commit()
         return new_message_id, new_branch_id
+
+    async def update_message_metadata(
+        self, message_id: str, metadata: dict
+    ) -> None:
+        """Update metadata for a specific message."""
+
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        try:
+            await self.conn.execute("BEGIN TRANSACTION")
+
+            cursor = await self.conn.execute(
+                "SELECT metadata FROM messages WHERE id = ?",
+                (message_id,),
+            )
+            row = await cursor.fetchone()
+            if not row:
+                raise ValueError(f"Message {message_id} not found")
+            current_metadata_json = row[0]
+            current_metadata = (
+                json.loads(current_metadata_json)
+                if current_metadata_json
+                else {}
+            )
+
+            updated_metadata = {**current_metadata, **metadata}
+            updated_metadata_json = json.dumps(updated_metadata)
+
+            await self.conn.execute(
+                "UPDATE messages SET metadata = ? WHERE id = ?",
+                (updated_metadata_json, message_id),
+            )
+
+            await self.conn.commit()
+
+        except Exception as e:
+            await self.conn.rollback()
+            raise e
+
+    async def export_messages_to_csv(
+        self, chunk_size: int = 1000, return_type: str = "stream"
+    ) -> Union[StreamingResponse, str]:
+        """
+        Export messages table to CSV format.
+
+        Args:
+            chunk_size: Number of records to process at once
+            return_type: Either "stream" or "string"
+
+        Returns:
+            StreamingResponse or string depending on return_type
+        """
+        if not self.conn:
+            raise ValueError(
+                "Initialize the connection pool before attempting to log."
+            )
+
+        async def generate_csv():
+            buffer = io.StringIO()
+            writer = csv.writer(buffer)
+
+            # Write headers
+            async with self.conn.execute(
+                "SELECT * FROM messages LIMIT 1"
+            ) as cursor:
+                column_names = [
+                    description[0] for description in cursor.description
+                ]
+                writer.writerow(column_names)
+                yield buffer.getvalue()
+                buffer.seek(0)
+                buffer.truncate()
+
+            # Stream rows in chunks
+            offset = 0
+            while True:
+                async with self.conn.execute(
+                    "SELECT * FROM messages LIMIT ? OFFSET ?",
+                    (chunk_size, offset),
+                ) as cursor:
+                    rows = await cursor.fetchall()
+                    if not rows:
+                        break
+
+                    for row in rows:
+                        writer.writerow(row)
+                    chunk_data = buffer.getvalue()
+                    yield chunk_data
+                    buffer.seek(0)
+                    buffer.truncate()
+
+                offset += chunk_size
+
+        if return_type == "stream":
+            return StreamingResponse(
+                generate_csv(),
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": "attachment; filename=messages.csv"
+                },
+            )
+        else:
+            # For string return, accumulate all data
+            csv_data = io.StringIO()
+            writer = csv.writer(csv_data)
+
+            async with self.conn.execute(
+                "SELECT * FROM messages LIMIT 1"
+            ) as cursor:
+                column_names = [
+                    description[0] for description in cursor.description
+                ]
+                writer.writerow(column_names)
+
+            async with self.conn.execute("SELECT * FROM messages") as cursor:
+                rows = await cursor.fetchall()
+                writer.writerows(rows)
+
+            return csv_data.getvalue()
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None

@@ -39,6 +39,7 @@ from .llm import (
 from .prompt import Prompt
 from .search import (
     AggregateSearchResult,
+    DocumentSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
@@ -117,6 +118,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",
