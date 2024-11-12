@@ -1,7 +1,6 @@
 import logging
 import os
 from collections import defaultdict
-from importlib.metadata import version as get_version
 from typing import Any, BinaryIO, Optional, Tuple, Union
 from uuid import UUID
 
@@ -721,7 +720,7 @@ class ManagementService(Service):
         user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
-        return await self.logging_connection.get_conversations(
+        return await self.logging_connection.get_conversations_overview(
             offset=offset,
             limit=limit,
             user_ids=user_ids,

@@ -578,7 +578,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
     async def export_messages_to_csv(
         self, chunk_size: int = 1000, return_type: str = "stream"
-    ) -> Union[StreamingResponse, str]:
+    ) -> StreamingResponse | str:
         """
         Export messages table to CSV format.
 

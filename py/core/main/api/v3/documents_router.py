@@ -11,6 +11,10 @@ from uuid import UUID
 from fastapi import Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
+from core.base.api.models import (
+    WrappedCollectionsResponse,
+)
+
 # TODO: Need to reivew the use of JSON
 from pydantic import BaseModel, Field, Json
 
@@ -81,25 +85,6 @@ class DocumentResponse(BaseModel):
                 "version": "1",
                 "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
                 "metadata": {"key": "value"},
-            }
-        }
-
-
-class CollectionResponse(BaseModel):
-    collection_id: UUID
-    name: str
-    description: Optional[str]
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "collection_id": "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                "name": "My Collection",
-                "description": "A collection of documents.",
-                "created_at": "2021-09-01T12:00:00Z",
-                "updated_at": "2021-09-01T12:00:00Z",
             }
         }
 
@@ -1131,7 +1116,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[CollectionResponse]]:
+        ) -> WrappedCollectionsResponse:
             """
             Retrieves all collections that contain the specified document. This endpoint is restricted
             to superusers only and provides a system-wide view of document organization.

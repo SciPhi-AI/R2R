@@ -106,7 +106,7 @@ describe("R2RClient", () => {
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
         url: "/v2/verify_email",
-        data: JSON.stringify({ verification_code }),
+        data: JSON.stringify({ email, verification_code }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -124,7 +124,7 @@ describe("R2RClient", () => {
       expect(result).toEqual(mockResponse);
       expect(mockAxiosInstance.request).toHaveBeenCalledWith({
         method: "POST",
-        url: "request_password_reset",
+        url: "/v2/request_password_reset",
         data: '"test@example.com"',
         headers: {
           "Content-Type": "application/json",
@@ -279,26 +279,6 @@ describe("R2RClient", () => {
         }),
         headers: {
           Authorization: "Bearer access-token",
-          "Content-Type": "application/json",
-        },
-        responseType: "json",
-      });
-    });
-
-    test("requestPasswordReset should send POST request to /request_password_reset with correct data", async () => {
-      const mockResponse = { success: true };
-      mockAxiosInstance.request.mockResolvedValue({ data: mockResponse });
-
-      const email = "test@example.com";
-
-      const result = await client.requestPasswordReset(email);
-
-      expect(result).toEqual(mockResponse);
-      expect(mockAxiosInstance.request).toHaveBeenCalledWith({
-        method: "POST",
-        url: "/v2/request_password_reset",
-        data: JSON.stringify({ email }),
-        headers: {
           "Content-Type": "application/json",
         },
         responseType: "json",

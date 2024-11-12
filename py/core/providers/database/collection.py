@@ -76,7 +76,7 @@ class PostgresCollectionHandler(CollectionHandler):
             INSERT INTO {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             (collection_id, user_id, name, description)
             VALUES ($1, $2, $3, $4)
-            RETURNING collection_id, user_id, name, description, created_at, updated_at
+            RETURNING collection_id, user_id, name, description, kg_enrichment_status, created_at, updated_at
         """
         params = [
             collection_id or uuid4(),
@@ -99,6 +99,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 user_id=result["user_id"],
                 name=result["name"],
                 description=result["description"],
+                kg_enrichment_status=result["kg_enrichment_status"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 user_count=0,
@@ -142,7 +143,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
                 SET {', '.join(update_fields)}
                 WHERE collection_id = ${len(params)}
-                RETURNING collection_id, user_id, name, description, created_at, updated_at
+                RETURNING collection_id, user_id, name, description, kg_enrichment_status, created_at, updated_at
             )
             SELECT
                 uc.*,
@@ -151,7 +152,7 @@ class PostgresCollectionHandler(CollectionHandler):
             FROM updated_collection uc
             LEFT JOIN {self._get_table_name('users')} u ON uc.collection_id = ANY(u.collection_ids)
             LEFT JOIN {self._get_table_name('document_info')} d ON uc.collection_id = ANY(d.collection_ids)
-            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.created_at, uc.updated_at
+            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.kg_enrichment_status, uc.created_at, uc.updated_at
         """
 
         result = await self.connection_manager.fetchrow_query(query, params)
@@ -163,6 +164,7 @@ class PostgresCollectionHandler(CollectionHandler):
             user_id=result["user_id"],
             name=result["name"],
             description=result["description"],
+            kg_enrichment_status=result["kg_enrichment_status"],
             created_at=result["created_at"],
             updated_at=result["updated_at"],
             user_count=result["user_count"],
@@ -345,12 +347,12 @@ class PostgresCollectionHandler(CollectionHandler):
                     user_id=row["user_id"],
                     name=row["name"],
                     description=row["description"],
+                    kg_enrichment_status=row["kg_enrichment_status"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
                     user_count=row["user_count"],
                     document_count=row["document_count"],
-                    kg_enrichment_status=row["kg_enrichment_status"],
-            )
+                )
                 for row in results
             ]
 
@@ -425,7 +427,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 status_code=500,
                 detail=f"An error '{e}' occurred while assigning the document to the collection",
             )
-        
+
     async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:

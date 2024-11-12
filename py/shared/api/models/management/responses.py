@@ -116,11 +116,11 @@ class CollectionResponse(BaseModel):
     user_id: Optional[UUID]
     name: str
     description: Optional[str]
+    kg_enrichment_status: str
     created_at: datetime
     updated_at: datetime
     user_count: int
     document_count: int
-    kg_enrichment_status: str
 
 
 class ConversationResponse(BaseModel):
@@ -148,12 +148,6 @@ class BranchResponse(BaseModel):
     created_at: datetime
     user_id: Optional[UUID] = None
     name: Optional[str] = None
-
-
-class VerificationResult(BaseModel):
-    verification_code: str
-    expiry: datetime
-    message: Optional[str] = None
 
 
 class AddUserResponse(BaseModel):

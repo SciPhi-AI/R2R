@@ -19,7 +19,7 @@ class RetrievalMixins:
         self,
         query: str,
         settings: Optional[Union[dict, DocumentSearchSettings]] = None,
-    ) -> SearchResponse:
+    ) -> any:
         """
         Conduct a vector and/or KG search.
 

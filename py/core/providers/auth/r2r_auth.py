@@ -232,7 +232,7 @@ class R2RAuthProvider(AuthProvider):
                 status_code=401, message="Incorrect email or password"
             )
 
-        if not user.is_verified:
+        if not user.is_verified and self.config.require_email_verification:
             logger.warning(f"Unverified user attempted login: {email}")
             raise R2RException(status_code=401, message="Email not verified")
 
