@@ -52,7 +52,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.conversations.listBranches({
       id: conversationId,
     });
-    console.log("List branches response: ", response);
     expect(response.results).toBeDefined();
   });
 

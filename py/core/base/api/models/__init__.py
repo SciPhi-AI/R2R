@@ -53,7 +53,6 @@ from shared.api.models.management.responses import (
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedDeleteResponse,
-    WrappedDocumentChunkResponse,
     WrappedDocumentResponse,
     WrappedDocumentOverviewResponse,
     # Prompt Responses
@@ -70,6 +69,9 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
+    # Chunk Responses
+    WrappedDocumentChunkResponse,
+    WrappedDocumentChunksResponse,
 )
 from shared.api.models.retrieval.responses import (
     CombinedSearchResponse,
@@ -128,13 +130,10 @@ __all__ = [
     "WrappedAnalyticsResponse",
     "WrappedAppSettingsResponse",
     "WrappedUserOverviewResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedDocumentResponse",
     "WrappedDocumentOverviewResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedCollectionResponse",
     "WrappedCollectionsResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedAddUserResponse",
     "WrappedUsersInCollectionResponse",
     # Conversation Responses
@@ -149,9 +148,11 @@ __all__ = [
     "WrappedMessagesResponse",
     "WrappedBranchResponse",
     "WrappedBranchesResponse",
+    # Chunk Responses
+    "WrappedDocumentChunkResponse",
+    "WrappedDocumentChunksResponse",
     # TODO: This needs to be cleaned up
     "WrappedUserCollectionResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedDeleteResponse",
     # Retrieval Responses
     "CombinedSearchResponse",

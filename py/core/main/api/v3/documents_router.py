@@ -20,9 +20,9 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.api.models.management.responses import DocumentChunkResponse
 
 from .base_router import BaseRouterV3
-from .chunks_router import ChunkResponse
 
 T = TypeVar("T")
 
@@ -777,7 +777,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
+        ) -> PaginatedResultsWrapper[list[DocumentChunkResponse]]:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
             Chunks represent semantic sections of the document and are used for retrieval

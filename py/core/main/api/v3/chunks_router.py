@@ -1,70 +1,35 @@
 import logging
 import textwrap
 
-from typing import Any, Optional, Union
+import json
+
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Json
 
 from core.base import (
     KGSearchSettings,
     R2RException,
-    RawChunk,
     RunType,
     UnprocessedChunk,
     UpdateChunk,
     VectorSearchSettings,
+    DocumentChunkResponse,
 )
-from core.base.api.models import WrappedVectorSearchResponse
+from core.base.api.models import (
+    WrappedVectorSearchResponse,
+    WrappedDocumentChunkResponse,
+    WrappedDocumentChunksResponse,
+)
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
 from core.utils import generate_id
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.api.models.base import ResultsWrapper
 
 from .base_router import BaseRouterV3
-
-
-class ChunkResponse(BaseModel):
-    """Response model representing a chunk with its metadata and content."""
-
-    document_id: UUID
-    id: UUID
-    collection_ids: list[UUID]
-    text: str
-    metadata: dict[str, Any]
-    vector: Optional[list[float]] = None
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
-                "text": "Sample chunk content",
-                "metadata": {"key": "value"},
-                "vector": [0.1, 0.2, 0.3],
-            }
-        }
-
-
-class ChunkIngestionResponse(BaseModel):
-    """Response model for chunk ingestion"""
-
-    message: str
-    document_id: UUID
-    task_id: Optional[UUID] = None
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Ingestion task completed successfully",
-                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-            }
-        }
 
 
 logger = logging.getLogger()
@@ -77,9 +42,9 @@ class ChunksRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -87,7 +52,7 @@ class ChunksRouter(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+        search_settings: VectorSearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -158,6 +123,33 @@ class ChunksRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.chunks.create({
+                                    chunks: [
+                                        {
+                                            id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                            document_id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                            collection_ids: ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+                                            metadata: {key: "value"},
+                                            text: "Some text content"
+                                        }
+                                    ],
+                                    run_with_orchestration: false
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -182,12 +174,13 @@ class ChunksRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_chunks(
-            raw_chunks: Json[list[UnprocessedChunk]] = Body(
+            # TODO: We should allow ingestion directly into a collection
+            raw_chunks: list[UnprocessedChunk] = Body(
                 ..., description="List of chunks to create"
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[list[ChunkIngestionResponse]]:
+        ) -> Any:
             """
             Create multiple chunks and process them through the ingestion pipeline.
 
@@ -219,6 +212,7 @@ class ChunksRouter(BaseRouterV3):
             for document_id, doc_chunks in chunks_by_document.items():
                 document_id = document_id or default_document_id
                 # Convert UnprocessedChunks to RawChunks for ingestion
+                # FIXME: Metadata doesn't seem to be getting passed through
                 raw_chunks_for_doc = [
                     UnprocessedChunk(
                         text=chunk.text if hasattr(chunk, "text") else "",
@@ -352,7 +346,25 @@ class ChunksRouter(BaseRouterV3):
                             )
                             """
                         ),
-                    }
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.chunks.retrieve({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
@@ -360,7 +372,7 @@ class ChunksRouter(BaseRouterV3):
         async def retrieve_chunk(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[ChunkResponse]:
+        ) -> WrappedDocumentChunkResponse:
             """
             Get a specific chunk by its ID.
 
@@ -379,12 +391,13 @@ class ChunksRouter(BaseRouterV3):
             ):
                 raise R2RException("Not authorized to access this chunk", 403)
 
-            return ChunkResponse(  # type: ignore
+            return DocumentChunkResponse(  # type: ignore
                 id=chunk["chunk_id"],
+                document_id=chunk["document_id"],
+                user_id=chunk["user_id"],
+                collection_ids=chunk["collection_ids"],
                 text=chunk["text"],
                 metadata=chunk["metadata"],
-                collection_ids=chunk["collection_ids"],
-                document_id=chunk["document_id"],
                 # vector = chunk["vector"] # TODO - Add include vector flag
             )
 
@@ -409,16 +422,37 @@ class ChunksRouter(BaseRouterV3):
                             )
                             """
                         ),
-                    }
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.chunks.update({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                    text: "Updated content",
+                                    metadata: {key: "new value"}
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def update_chunk(
             id: UUID = Path(...),
-            chunk_update: Json[UpdateChunk] = Body(...),
+            chunk_update: UpdateChunk = Body(...),
+            # TODO: Run with orchestration?
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[ChunkResponse]:
+        ) -> WrappedDocumentChunkResponse:
             """
             Update an existing chunk's content and/or metadata.
 
@@ -451,12 +485,13 @@ class ChunksRouter(BaseRouterV3):
             )
             await simple_ingestor["update-chunk"](workflow_input)
 
-            return ChunkResponse(  # type: ignore
+            return DocumentChunkResponse(
                 id=chunk_update.id,
+                document_id=existing_chunk["document_id"],
+                user_id=existing_chunk["user_id"],
+                collection_ids=existing_chunk["collection_ids"],
                 text=chunk_update.text,
                 metadata=chunk_update.metadata or existing_chunk["metadata"],
-                collection_ids=existing_chunk["collection_ids"],
-                document_id=existing_chunk["document_id"],
                 # vector = existing_chunk.get('vector')
             )
 
@@ -482,8 +517,8 @@ class ChunksRouter(BaseRouterV3):
         #         )
         #         @self.base_endpoint
         #         async def enrich_chunk(
-        #             id: Json[UUID] = Path(...),
-        #             enrichment_config: Json[dict] = Body(...),
+        #             id: UUID = Path(...),
+        #             enrichment_config: dict = Body(...),
         #             auth_user=Depends(self.providers.auth.auth_wrapper),
         #         ) -> ResultsWrapper[ChunkResponse]:
         #             """
@@ -514,13 +549,32 @@ class ChunksRouter(BaseRouterV3):
                             )
                             """
                         ),
-                    }
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.chunks.delete({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def delete_chunk(
-            id: Json[UUID] = Path(...),
+            id: UUID = Path(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[bool]:
             """
             Delete a specific chunk by ID.
@@ -534,7 +588,13 @@ class ChunksRouter(BaseRouterV3):
             if existing_chunk is None:
                 raise R2RException(f"Chunk {id} not found", 404)
 
-            await self.services["management"].delete({"$eq": {"chunk_id": id}})
+            filters = {
+                "$and": [
+                    {"user_id": {"$eq": str(auth_user.id)}},
+                    {"document_id": {"$eq": id}},
+                ]
+            }
+            await self.services["management"].delete(filters=filters)
             return True  # type: ignore
 
         @self.router.get(
@@ -557,13 +617,34 @@ class ChunksRouter(BaseRouterV3):
                             )
                             """
                         ),
-                    }
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.chunks.list({
+                                    metadata_filter: {key: "value"},
+                                    include_vectors: false,
+                                    offset: 0,
+                                    limit: 10,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def list_chunks(
-            metadata_filter: Optional[Json[dict]] = Query(
+            metadata_filter: Optional[str] = Query(
                 None, description="Filter by metadata"
             ),
             include_vectors: bool = Query(
@@ -581,7 +662,7 @@ class ChunksRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
+        ) -> WrappedDocumentChunksResponse:
             """
             List chunks with pagination support.
 
@@ -600,8 +681,7 @@ class ChunksRouter(BaseRouterV3):
 
             # Add metadata filters if provided
             if metadata_filter:
-                for key, value in metadata_filter.items():
-                    filters[f"metadata.{key}"] = value
+                metadata_filter = json.loads(metadata_filter)
 
             # Get chunks using the vector handler's list_chunks method
             results = await self.services["ingestion"].list_chunks(
@@ -613,12 +693,13 @@ class ChunksRouter(BaseRouterV3):
 
             # Convert to response format
             chunks = [
-                ChunkResponse(
+                DocumentChunkResponse(
                     id=chunk["chunk_id"],
+                    document_id=chunk["document_id"],
+                    user_id=chunk["user_id"],
+                    collection_ids=chunk["collection_ids"],
                     text=chunk["text"],
                     metadata=chunk["metadata"],
-                    collection_ids=chunk["collection_ids"],
-                    document_id=chunk["document_id"],
                     vector=chunk.get("vector") if include_vectors else None,
                 )
                 for chunk in results["results"]

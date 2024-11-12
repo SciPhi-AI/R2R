@@ -21,6 +21,7 @@ from core.base.api.models import (
     WrappedConversationsResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
+    WrappedDocumentChunksResponse,
     WrappedDocumentOverviewResponse,
     WrappedPromptsResponse,
     WrappedLogResponse,
@@ -374,7 +375,7 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedDocumentChunksResponse:
             document_uuid = UUID(document_id)
 
             document_chunks = await self.service.list_document_chunks(
@@ -432,7 +433,7 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedDocumentChunksResponse:
             document_uuid = UUID(document_id)
 
             list_document_chunks = await self.service.list_document_chunks(

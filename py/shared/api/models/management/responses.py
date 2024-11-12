@@ -184,7 +184,9 @@ WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedUserCollectionResponse = PaginatedResultsWrapper[
     list[CollectionResponse]
 ]
-WrappedDocumentChunkResponse = PaginatedResultsWrapper[
+
+WrappedDocumentChunkResponse = ResultsWrapper[DocumentChunkResponse]
+WrappedDocumentChunksResponse = PaginatedResultsWrapper[
     list[DocumentChunkResponse]
 ]
 WrappedDeleteResponse = ResultsWrapper[None]

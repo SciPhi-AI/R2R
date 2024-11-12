@@ -17,7 +17,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
   test("List prompts", async () => {
     const response = await client.prompts.list();
-    // console.log("List prompts response: ", response);
     expect(response.results).toBeDefined();
   });
 
@@ -34,7 +33,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.prompts.retrieve({
       name: "test-prompt",
     });
-    console.log("Retrieve prompt response: ", response);
     expect(response.results).toBeDefined();
   });
 

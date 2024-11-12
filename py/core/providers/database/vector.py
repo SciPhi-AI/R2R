@@ -19,6 +19,7 @@ from core.base import (
     VectorSearchResult,
     VectorSearchSettings,
     VectorTableName,
+    R2RException,
 )
 
 from .base import PostgresConnectionManager
@@ -717,7 +718,9 @@ class PostgresVectorHandler(VectorHandler):
                 "text": result["text"],
                 "metadata": json.loads(result["metadata"]),
             }
-        raise ValueError(f"Chunk with ID {chunk_id} not found")
+        raise R2RException(
+            message=f"Chunk with ID {chunk_id} not found", status_code=404
+        )
 
     async def create_index(
         self,

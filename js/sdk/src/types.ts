@@ -1,3 +1,11 @@
+export interface UnprocessedChunk {
+  id: string;
+  document_id?: string;
+  collection_ids: string[];
+  metadata: Record<string, any>;
+  text: string;
+}
+
 // Shared wrappers
 export interface ResultsWrapper<T> {
   results: T;

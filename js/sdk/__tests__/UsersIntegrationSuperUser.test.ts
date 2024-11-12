@@ -1,4 +1,3 @@
-import exp from "constants";
 import { r2rClient } from "../src/index";
 const fs = require("fs");
 import { describe, test, beforeAll, expect } from "@jest/globals";
@@ -7,10 +6,8 @@ const baseUrl = "http://localhost:7272";
 
 describe("r2rClient V3 Users Integration Tests", () => {
   let client: r2rClient;
-  let collectionId: string;
   let userId: string;
   let name: string | undefined;
-  let documentId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -21,8 +18,6 @@ describe("r2rClient V3 Users Integration Tests", () => {
       email: "new_user@example.com",
       password: "change_me_immediately",
     });
-
-    console.log("Register response:", JSON.stringify(response, null, 2));
 
     userId = response.results.id;
     name = response.results.name;

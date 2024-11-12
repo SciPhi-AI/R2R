@@ -27,7 +27,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
   test("List collections", async () => {
     const response = await client.collections.list();
-    console.log("List collections response: ", response);
     expect(response.results).toBeDefined();
   });
 
@@ -65,7 +64,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.collections.listDocuments({
       id: collectionId,
     });
-    console.log("List documents in collection response: ", response);
     expect(response.results).toBeDefined();
   });
 
@@ -80,7 +78,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
   test("List users in collection", async () => {
     const response = await client.collections.listUsers({ id: collectionId });
-    console.log("List users in collection response: ", response);
     expect(response.results).toBeDefined();
   });
 

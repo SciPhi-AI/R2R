@@ -3,6 +3,7 @@ import FormData from "form-data";
 
 import { BaseClient } from "./baseClient";
 
+import { ChunksClient } from "./v3/clients/chunks";
 import { CollectionsClient } from "./v3/clients/collections";
 import { ConversationsClient } from "./v3/clients/conversations";
 import { DocumentsClient } from "./v3/clients/documents";
@@ -33,6 +34,7 @@ import {
 } from "./models";
 
 export class r2rClient extends BaseClient {
+  public readonly chunks: ChunksClient;
   public readonly collections: CollectionsClient;
   public readonly conversations: ConversationsClient;
   public readonly documents: DocumentsClient;
@@ -42,6 +44,7 @@ export class r2rClient extends BaseClient {
   constructor(baseURL: string, anonymousTelemetry = true) {
     super(baseURL, "", anonymousTelemetry);
 
+    this.chunks = new ChunksClient(this);
     this.collections = new CollectionsClient(this);
     this.conversations = new ConversationsClient(this);
     this.documents = new DocumentsClient(this);
@@ -554,6 +557,15 @@ export class r2rClient extends BaseClient {
     });
   }
 
+  /**
+   *
+   * @param chunks
+   * @param documentId
+   * @param metadata
+   * @param run_with_orchestration
+   * @deprecated use `client.chunks.create` instead.
+   * @returns
+   */
   @feature("ingestChunks")
   async ingestChunks(
     chunks: RawChunk[],
