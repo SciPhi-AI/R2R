@@ -1921,40 +1921,23 @@ export class r2rClient {
   /**
    * Search over documents.
    * @param query The query to search for.
-   * @param settings Settings for the document search.
+   * @param vector_search_settings Settings for the document search.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("searchDocuments")
   async searchDocuments(
     query: string,
-    settings?: {
-      searchOverMetadata?: boolean;
-      metadataKeys?: string[];
-      searchOverBody?: boolean;
-      filters?: Record<string, any>;
-      searchFilters?: Record<string, any>;
-      offset?: number;
-      limit?: number;
-      titleWeight?: number;
-      metadataWeight?: number;
-    },
+    vector_search_settings?: VectorSearchSettings | Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
-
     const json_data: Record<string, any> = {
       query,
-      settings: {
-        search_over_metadata: settings?.searchOverMetadata ?? true,
-        metadata_keys: settings?.metadataKeys ?? ["title"],
-        search_over_body: settings?.searchOverBody ?? false,
-        filters: settings?.filters ?? {},
-        search_filters: settings?.searchFilters ?? {},
-        offset: settings?.offset ?? 0,
-        limit: settings?.limit ?? 10,
-        title_weight: settings?.titleWeight ?? 0.5,
-        metadata_weight: settings?.metadataWeight ?? 0.5,
-      },
+      vector_search_settings,
     };
+
+    Object.keys(json_data).forEach(
+      (key) => json_data[key] === undefined && delete json_data[key],
+    );
 
     return await this._makeRequest("POST", "search_documents", {
       data: json_data,

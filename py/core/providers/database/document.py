@@ -197,6 +197,12 @@ class PostgresDocumentHandler(DocumentHandler):
                     else:
                         wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)
+                except Exception as e:
+                    if 'column "summary"' in str(e):
+                        raise ValueError(
+                            "Document schema is missing 'summary' and 'summary_embedding' columns. Call `r2r db upgrade` to carry out the necessary migration."
+                        )
+                    raise
 
     async def delete_from_documents_overview(
         self, document_id: UUID, version: Optional[str] = None
