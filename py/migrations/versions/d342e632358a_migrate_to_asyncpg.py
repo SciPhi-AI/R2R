@@ -33,114 +33,134 @@ class Vector(UserDefinedType):
 
 
 def upgrade() -> None:
-    # Create required extensions
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
-    op.execute("CREATE EXTENSION IF NOT EXISTS btree_gin")
-
-    # KG table migrations
-    op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.entity_raw RENAME TO chunk_entity"
-    )
-    op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.triple_raw RENAME TO chunk_triple"
-    )
-    op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.entity_embedding RENAME TO document_entity"
-    )
-    op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.community RENAME TO community_info"
-    )
-
-    # Create the new table
-    op.create_table(
-        new_vector_table_name,
-        sa.Column("extraction_id", postgresql.UUID(), nullable=False),
-        sa.Column("document_id", postgresql.UUID(), nullable=False),
-        sa.Column("user_id", postgresql.UUID(), nullable=False),
-        sa.Column(
-            "collection_ids",
-            postgresql.ARRAY(postgresql.UUID()),
-            server_default="{}",
-        ),
-        sa.Column("vec", Vector),  # This will be handled as a vector type
-        sa.Column("text", sa.Text(), nullable=True),
-        sa.Column(
-            "fts",
-            postgresql.TSVECTOR,
-            nullable=False,
-            server_default=sa.text("to_tsvector('english'::regconfig, '')"),
-        ),
-        sa.Column(
-            "metadata", postgresql.JSONB(), server_default="{}", nullable=False
-        ),
-        sa.PrimaryKeyConstraint("extraction_id"),
-        schema=project_name,
-    )
-
-    # Create indices
-    op.create_index(
-        "idx_vectors_document_id",
-        new_vector_table_name,
-        ["document_id"],
-        schema=project_name,
-    )
-
-    op.create_index(
-        "idx_vectors_user_id",
-        new_vector_table_name,
-        ["user_id"],
-        schema=project_name,
-    )
-
-    op.create_index(
-        "idx_vectors_collection_ids",
-        new_vector_table_name,
-        ["collection_ids"],
-        schema=project_name,
-        postgresql_using="gin",
-    )
-
-    op.create_index(
-        "idx_vectors_fts",
-        new_vector_table_name,
-        ["fts"],
-        schema=project_name,
-        postgresql_using="gin",
-    )
-
-    # Migrate data from old table (assuming old table name is 'old_vectors')
-    # Note: You'll need to replace 'old_schema' and 'old_vectors' with your actual names
-    op.execute(
-        f"""
-        INSERT INTO {project_name}.{new_vector_table_name}
-            (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
-        SELECT
-            extraction_id,
-            document_id,
-            user_id,
-            collection_ids,
-            vec,
-            text,
-            metadata
-        FROM {project_name}.{old_vector_table_name}
+    connection = op.get_bind()
+    table_exists = connection.execute(
+        sa.text(
+            f"""
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables
+            WHERE  table_schema = '{project_name}'
+            AND    table_name   = '{new_vector_table_name}'
+        );
     """
-    )
+        )
+    ).scalar()
 
-    # Verify data migration
-    op.execute(
-        f"""
-        SELECT COUNT(*) old_count FROM {project_name}.{old_vector_table_name};
-        SELECT COUNT(*) new_count FROM {project_name}.{new_vector_table_name};
-    """
-    )
+    if not table_exists:
 
-    # If we get here, migration was successful, so drop the old table
-    op.execute(
-        f"""
-    DROP TABLE IF EXISTS {project_name}.{old_vector_table_name};
-    """
-    )
+        # Create required extensions
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+        op.execute("CREATE EXTENSION IF NOT EXISTS btree_gin")
+
+        # KG table migrations
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.entity_raw RENAME TO chunk_entity"
+        )
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.triple_raw RENAME TO chunk_triple"
+        )
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.entity_embedding RENAME TO document_entity"
+        )
+        op.execute(
+            f"ALTER TABLE IF EXISTS {project_name}.community RENAME TO community_info"
+        )
+
+        # Create the new table
+        op.create_table(
+            new_vector_table_name,
+            sa.Column("extraction_id", postgresql.UUID(), nullable=False),
+            sa.Column("document_id", postgresql.UUID(), nullable=False),
+            sa.Column("user_id", postgresql.UUID(), nullable=False),
+            sa.Column(
+                "collection_ids",
+                postgresql.ARRAY(postgresql.UUID()),
+                server_default="{}",
+            ),
+            sa.Column("vec", Vector),  # This will be handled as a vector type
+            sa.Column("text", sa.Text(), nullable=True),
+            sa.Column(
+                "fts",
+                postgresql.TSVECTOR,
+                nullable=False,
+                server_default=sa.text(
+                    "to_tsvector('english'::regconfig, '')"
+                ),
+            ),
+            sa.Column(
+                "metadata",
+                postgresql.JSONB(),
+                server_default="{}",
+                nullable=False,
+            ),
+            sa.PrimaryKeyConstraint("extraction_id"),
+            schema=project_name,
+        )
+
+        # Create indices
+        op.create_index(
+            "idx_vectors_document_id",
+            new_vector_table_name,
+            ["document_id"],
+            schema=project_name,
+        )
+
+        op.create_index(
+            "idx_vectors_user_id",
+            new_vector_table_name,
+            ["user_id"],
+            schema=project_name,
+        )
+
+        op.create_index(
+            "idx_vectors_collection_ids",
+            new_vector_table_name,
+            ["collection_ids"],
+            schema=project_name,
+            postgresql_using="gin",
+        )
+
+        op.create_index(
+            "idx_vectors_fts",
+            new_vector_table_name,
+            ["fts"],
+            schema=project_name,
+            postgresql_using="gin",
+        )
+
+        # Migrate data from old table (assuming old table name is 'old_vectors')
+        # Note: You'll need to replace 'old_schema' and 'old_vectors' with your actual names
+        op.execute(
+            f"""
+            INSERT INTO {project_name}.{new_vector_table_name}
+                (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
+            SELECT
+                extraction_id,
+                document_id,
+                user_id,
+                collection_ids,
+                vec,
+                text,
+                metadata
+            FROM {project_name}.{old_vector_table_name}
+        """
+        )
+
+        # Verify data migration
+        op.execute(
+            f"""
+            SELECT COUNT(*) old_count FROM {project_name}.{old_vector_table_name};
+            SELECT COUNT(*) new_count FROM {project_name}.{new_vector_table_name};
+        """
+        )
+
+        # If we get here, migration was successful, so drop the old table
+        op.execute(
+            f"""
+        DROP TABLE IF EXISTS {project_name}.{old_vector_table_name};
+        """
+        )
 
 
 def downgrade() -> None:

@@ -363,7 +363,27 @@ class RetrievalRouter(BaseRouter):
             This endpoint uses the language model to generate completions for the provided messages.
             The generation process can be customized using the generation_config parameter.
             """
+            print("messages = ", messages)
+
             return await self.service.completion(
-                messages=messages,
+                messages=[message.to_dict() for message in messages],
                 generation_config=generation_config,
+            )
+
+        @self.router.post("/embedding")
+        @self.base_endpoint
+        async def embedding(
+            content: str = Body(..., description="The content to embed"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+            response_model=WrappedCompletionResponse,
+        ):
+            """
+            Generate completions for a list of messages.
+
+            This endpoint uses the language model to generate completions for the provided messages.
+            The generation process can be customized using the generation_config parameter.
+            """
+
+            return await self.service.providers.embedding.async_get_embedding(
+                text=content
             )
