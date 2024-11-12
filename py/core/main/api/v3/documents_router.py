@@ -5,7 +5,7 @@ import mimetypes
 import textwrap
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar
 from uuid import UUID
 
 from fastapi import Depends, File, Form, Path, Query, UploadFile
@@ -19,6 +19,8 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
+
+# TODO: Need to move to appropriate response models
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 from shared.api.models.management.responses import DocumentChunkResponse
 
@@ -27,6 +29,7 @@ from .base_router import BaseRouterV3
 T = TypeVar("T")
 
 
+# TODO: Get rid of this, it shouldn't be here
 class DocumentIngestionResponse(BaseModel):
     message: str = Field(
         ...,
@@ -109,9 +112,9 @@ class DocumentsRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -278,7 +281,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
             if run_with_orchestration:
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
@@ -484,7 +487,7 @@ class DocumentsRouter(BaseRouterV3):
                 }
 
                 if run_with_orchestration:
-                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                         "update-files", {"request": workflow_input}, {}
                     )
                     raw_message["message"] = "Update task queued successfully."

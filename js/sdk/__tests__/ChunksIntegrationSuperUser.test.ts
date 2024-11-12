@@ -84,7 +84,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.chunks.delete(
       "a285d6ff-1219-4315-a7d4-649b300af992",
     );
-    expect(response.results).toBe(true);
+    expect(response.results.success).toBe(true);
   });
 
   test("Delete a chunk that does not exist", async () => {

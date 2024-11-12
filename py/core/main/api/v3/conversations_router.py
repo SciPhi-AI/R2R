@@ -8,15 +8,12 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import Message, RunType
 from core.base.api.models import (
-    ResultsWrapper,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
     WrappedBranchesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedMessageResponse,
-    WrappedMessagesResponse,
-    WrappedBranchResponse,
-    WrappedBranchesResponse,
-    WrappedDeleteResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -313,14 +310,14 @@ class ConversationsRouter(BaseRouterV3):
                 description="The unique identifier of the conversation to delete",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete an existing conversation.
 
             This endpoint deletes a conversation identified by its UUID.
             """
             await self.services["management"].delete_conversation(str(id))
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/conversations/{id}/messages",

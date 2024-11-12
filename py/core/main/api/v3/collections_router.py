@@ -1,20 +1,18 @@
 import logging
 import textwrap
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
-    ResultsWrapper,
+    GenericBooleanResponse,
     WrappedAddUserResponse,
+    WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
-    WrappedDeleteResponse,
-    WrappedDocumentOverviewResponse,
     WrappedDocumentResponse,
-    WrappedMessageResponse,
     WrappedUsersInCollectionResponse,
 )
 from core.providers import (
@@ -32,9 +30,9 @@ class CollectionsRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -439,7 +437,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the collection to delete",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete an existing collection.
 
@@ -457,7 +455,7 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             await self.services["management"].delete_collection(id)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/collections/{id}/documents/{document_id}",
@@ -689,7 +687,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the document to remove",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Remove a document from a collection.
 
@@ -708,7 +706,7 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_document_from_collection(
                 document_id, id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.get(
             "/collections/{id}/users",
@@ -950,7 +948,7 @@ class CollectionsRouter(BaseRouterV3):
                 ..., description="The unique identifier of the user to remove"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Remove a user from a collection.
 
@@ -969,4 +967,4 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_user_from_collection(
                 user_id, id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)

@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set, Union
+from typing import Optional, Set
 from uuid import UUID
 
 import psutil
@@ -20,16 +20,14 @@ from core.base.api.models import (
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedDeleteResponse,
-    WrappedDocumentChunkResponse,
     WrappedDocumentChunksResponse,
     WrappedDocumentOverviewResponse,
     WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedMessageResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
-    WrappedUserOverviewResponse,
+    WrappedUsersOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria
@@ -47,9 +45,9 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self,
         service: ManagementService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -238,7 +236,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserOverviewResponse:
+        ) -> WrappedUsersOverviewResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `users_overview` endpoint.",

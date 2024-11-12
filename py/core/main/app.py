@@ -1,5 +1,3 @@
-from typing import Union
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -32,9 +30,9 @@ class R2RApp:
     def __init__(
         self,
         config: R2RConfig,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         auth_router: AuthRouter,
         ingestion_router: IngestionRouter,
         management_router: ManagementRouter,

@@ -163,14 +163,18 @@ WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]]
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
+# User Responses
+WrappedUserOverviewResponse = ResultsWrapper[UserOverviewResponse]
+WrappedUsersOverviewResponse = PaginatedResultsWrapper[
+    list[UserOverviewResponse]
+]
+
 # TODO: anything below this hasn't been reviewed
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
-WrappedUserOverviewResponse = PaginatedResultsWrapper[
-    list[UserOverviewResponse]
-]
+
 
 # FIXME: Do we really need DocumentInfo and DocumentOverviewResponse? Can it just be a DocumentResponse?
 WrappedDocumentResponse = PaginatedResultsWrapper[list[DocumentInfo]]

@@ -31,11 +31,6 @@ class UserResponse(R2RSerializable):
     profile_picture: Optional[str] = None
 
 
-class GenericMessageResponse(BaseModel):
-    message: str
-
-
 # Create wrapped versions of each response
 WrappedTokenResponse = ResultsWrapper[TokenResponse]
 WrappedUserResponse = ResultsWrapper[UserResponse]
-WrappedGenericMessageResponse = ResultsWrapper[GenericMessageResponse]

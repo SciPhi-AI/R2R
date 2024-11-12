@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path
@@ -28,9 +28,9 @@ class AuthRouter(BaseRouter):
     def __init__(
         self,
         service: AuthService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.UNSPECIFIED,
     ):
         super().__init__(service, orchestration_provider, run_type)

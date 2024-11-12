@@ -1,16 +1,13 @@
 # TODO - Move indices to 'id' basis
-# TODO - Move indices to 'id' basis
 
 # TODO - Implement update index
-# TODO - Implement update index
 
-# TODO - Implement index data model
 # TODO - Implement index data model
 
 import logging
 import textwrap
 
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 from pydantic import BaseModel, Json
@@ -23,7 +20,7 @@ from core.base.abstractions import (
     IndexMethod,
     VectorTableName,
 )
-from core.base.api.models import (  # WrappedUpdateResponse,
+from core.base.api.models import (
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedListVectorIndicesResponse,
@@ -52,7 +49,7 @@ class IndexConfig(BaseModel):
     #     description=create_vector_descriptions.get("index_measure"),
     # ),
     # index_arguments: Optional[
-    #     Union[IndexArgsIVFFlat, IndexArgsHNSW]
+    #     IndexArgsIVFFlat | IndexArgsHNSW
     # ] = Body(
     #     None,
     #     description=create_vector_descriptions.get("index_arguments"),
@@ -74,7 +71,7 @@ class IndexConfig(BaseModel):
     table_name: Optional[str] = VectorTableName.VECTORS
     index_method: Optional[str] = IndexMethod.hnsw
     index_measure: Optional[str] = IndexMeasure.cosine_distance
-    index_arguments: Optional[Union[IndexArgsIVFFlat, IndexArgsHNSW]] = None
+    index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = None
     index_name: Optional[str] = None
     index_column: Optional[str] = None
     concurrently: bool = True
@@ -86,9 +83,9 @@ class IndicesRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)

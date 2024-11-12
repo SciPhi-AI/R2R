@@ -5,10 +5,11 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
-    ResultsWrapper,
+    GenericBooleanResponse,
     WrappedPromptResponse,
     WrappedPromptsResponse,
     WrappedPromptMessageResponse,
+    WrappedBooleanResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -401,7 +402,7 @@ class PromptsRouter(BaseRouterV3):
         async def delete_prompt(
             name: str = Path(..., description="Prompt name"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete a prompt by name.
 
@@ -413,4 +414,4 @@ class PromptsRouter(BaseRouterV3):
                     403,
                 )
             await self.services["management"].delete_prompt(name)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)

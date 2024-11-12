@@ -98,7 +98,6 @@ __all__ = [
     "ToolResult",
     ## API
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
     ## LOGGING

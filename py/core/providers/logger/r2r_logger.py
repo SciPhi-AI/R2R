@@ -42,8 +42,9 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             )
 
     async def initialize(self):
-        self.conn = await self.aiosqlite.connect(self.logging_path)
-
+        """Initialize the database connection and tables."""
+        if self.conn is None:
+            self.conn = await self.aiosqlite.connect(self.logging_path)
         await self.conn.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.project_name}_{self.log_table} (
@@ -104,7 +105,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
     async def __aenter__(self):
         if self.conn is None:
-            await self._init()
+            await self.initialize()  # Fixed incorrect _init() reference
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -116,14 +117,18 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             self.conn = None
 
     @asynccontextmanager
-    async def savepoint(self, name):
-        await self.conn.execute(f"SAVEPOINT {name}")
-        try:
-            yield
-            await self.conn.execute(f"RELEASE SAVEPOINT {name}")
-        except Exception:
-            await self.conn.execute(f"ROLLBACK TO SAVEPOINT {name}")
-            raise
+    async def savepoint(self, name: str):
+        """Create a savepoint with proper error handling."""
+        if self.conn is None:
+            await self.initialize()
+        async with self.conn.cursor() as cursor:
+            await cursor.execute(f"SAVEPOINT {name}")
+            try:
+                yield
+                await cursor.execute(f"RELEASE SAVEPOINT {name}")
+            except Exception:
+                await cursor.execute(f"ROLLBACK TO SAVEPOINT {name}")
+                raise
 
     async def log(
         self,
@@ -657,12 +662,11 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         return new_branch_id
 
     async def delete_conversation(self, conversation_id: str):
-        if not self.conn:
-            raise ValueError(
-                "Initialize the connection pool before attempting to log."
-            )
+        """Delete a conversation and all related data."""
+        if self.conn is None:
+            await self.initialize()
 
-        async with self.savepoint("delete_conversation"):
+        try:
             # Delete all message branches associated with the conversation
             await self.conn.execute(
                 "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)",
@@ -682,6 +686,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             await self.conn.execute(
                 "DELETE FROM conversations WHERE id = ?", (conversation_id,)
             )
+            await self.conn.commit()
+        except Exception:
+            await self.conn.rollback()
+            raise
 
     async def get_logs(
         self,

@@ -9,16 +9,15 @@ from pydantic import EmailStr
 
 from core.base import R2RException
 from core.base.api.models import (
-    CollectionResponse,
     GenericMessageResponse,
-    PaginatedResultsWrapper,
-    ResultsWrapper,
-    UserOverviewResponse,
-    WrappedCollectionResponse,
+    GenericBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
     WrappedUserOverviewResponse,
+    WrappedUsersOverviewResponse,
     WrappedUserResponse,
+    WrappedBooleanResponse,
+    WrappedCollectionsResponse,
 )
 
 from .base_router import BaseRouterV3
@@ -519,7 +518,6 @@ class UsersRouter(BaseRouterV3):
         @self.router.get(
             "/users",
             summary="List Users",
-            response_model=WrappedUserOverviewResponse,
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -570,7 +568,6 @@ class UsersRouter(BaseRouterV3):
         @self.base_endpoint
         async def list_users(
             # TODO - Implement the following parameters
-            # TODO - Implement the following parameters
             #     offset: int = Query(0, ge=0, example=0),
             #     limit: int = Query(100, ge=1, le=1000, example=100),
             #     username: Optional[str] = Query(None, example="john"),
@@ -594,7 +591,7 @@ class UsersRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  #  -> WrappedUserOverviewResponse:
+        ) -> WrappedUsersOverviewResponse:
             """
             List all users with pagination and filtering options.
             Only accessible by superusers.
@@ -671,7 +668,7 @@ class UsersRouter(BaseRouterV3):
                 ..., example="550e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[UserOverviewResponse]:
+        ) -> WrappedUserOverviewResponse:
             """
             Get detailed information about a specific user.
             Users can only access their own information unless they are superusers.
@@ -682,18 +679,15 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            user_overview_response = await self.services[
+            users_overview_response = await self.services[
                 "management"
             ].users_overview(
                 offset=0,
                 limit=1,
                 user_ids=[id],
             )
-            if len(user_overview_response["results"]) == 0:
-                raise R2RException("User not found.", 404)
-            return user_overview_response["results"][0].dict(), {  # type: ignore
-                "total_entries": user_overview_response["total_entries"]
-            }
+
+            return users_overview_response["results"][0]
 
         @self.router.get(
             "/users/{id}/collections",
@@ -767,7 +761,7 @@ class UsersRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[CollectionResponse]]:
+        ) -> WrappedCollectionsResponse:
             """
             Get all collections associated with a specific user.
             Users can only access their own collections unless they are superusers.
@@ -791,7 +785,7 @@ class UsersRouter(BaseRouterV3):
         @self.router.post(
             "/users/{id}/collections/{collection_id}",
             summary="Add User to Collection",
-            response_model=ResultsWrapper[bool],
+            response_model=WrappedBooleanResponse,
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -851,7 +845,7 @@ class UsersRouter(BaseRouterV3):
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             if auth_user.id != id and not auth_user.is_superuser:
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
@@ -862,12 +856,11 @@ class UsersRouter(BaseRouterV3):
             await self.services["management"].add_user_to_collection(  # type: ignore
                 id, collection_id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/users/{id}/collections/{collection_id}",
             summary="Remove User from Collection",
-            response_model=ResultsWrapper[None],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -927,7 +920,7 @@ class UsersRouter(BaseRouterV3):
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Remove a user from a collection.
             Requires either superuser status or access to the collection.
@@ -942,12 +935,11 @@ class UsersRouter(BaseRouterV3):
             await self.services["management"].remove_user_from_collection(  # type: ignore
                 id, collection_id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/users/{id}",
             summary="Update User",
-            # response_model=ResultsWrapper[UserResponse],
             openapi_extra={
                 "x-codeSamples": [
                     {

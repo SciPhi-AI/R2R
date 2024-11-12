@@ -1,6 +1,6 @@
 import asyncio
 import textwrap
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends
@@ -34,9 +34,9 @@ class RetrievalRouterV3(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -47,7 +47,7 @@ class RetrievalRouterV3(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+        search_settings: VectorSearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)

@@ -18,16 +18,17 @@ from core.base import (
     DocumentChunkResponse,
 )
 from core.base.api.models import (
-    WrappedVectorSearchResponse,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentChunksResponse,
+    WrappedVectorSearchResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
 from core.utils import generate_id
-from shared.api.models.base import ResultsWrapper
 
 from .base_router import BaseRouterV3
 
@@ -575,7 +576,7 @@ class ChunksRouter(BaseRouterV3):
         async def delete_chunk(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete a specific chunk by ID.
 
@@ -586,16 +587,18 @@ class ChunksRouter(BaseRouterV3):
             # Get the existing chunk to get its chunk_id
             existing_chunk = await self.services["ingestion"].get_chunk(id)
             if existing_chunk is None:
-                raise R2RException(f"Chunk {id} not found", 404)
+                raise R2RException(
+                    message=f"Chunk {id} not found", status_code=404
+                )
 
             filters = {
                 "$and": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    {"document_id": {"$eq": id}},
+                    {"chunk_id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.get(
             "/chunks",

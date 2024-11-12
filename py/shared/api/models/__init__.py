@@ -1,8 +1,14 @@
-from shared.api.models.auth.responses import (
+from shared.api.models.base import (
+    PaginatedResultsWrapper,
+    ResultsWrapper,
+    GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.auth.responses import (
     TokenResponse,
     UserResponse,
-    WrappedGenericMessageResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
 )
@@ -45,11 +51,13 @@ from shared.api.models.management.responses import (
     # Prompt Responses
     WrappedPromptResponse,
     WrappedPromptsResponse,
+    # Collection Responses
+    WrappedUserOverviewResponse,
+    WrappedUsersOverviewResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
-    WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
 from shared.api.models.retrieval.responses import (
@@ -96,7 +104,6 @@ __all__ = [
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",
     "WrappedAppSettingsResponse",
-    "WrappedUserOverviewResponse",
     "WrappedConversationResponse",
     "WrappedDocumentOverviewResponse",
     "WrappedDocumentResponse",
@@ -111,6 +118,16 @@ __all__ = [
     # Chunk Responses
     "WrappedDocumentChunkResponse",
     "WrappedDocumentChunksResponse",
+    # Conversation Responses
+    "WrappedUserOverviewResponse",
+    "WrappedUsersOverviewResponse",
+    # Base Responses
+    "PaginatedResultsWrapper",
+    "ResultsWrapper",
+    "GenericBooleanResponse",
+    "GenericMessageResponse",
+    "WrappedBooleanResponse",
+    "WrappedGenericMessageResponse",
     # TODO: Clean up the following responses
     "WrappedUserCollectionResponse",
     "WrappedConversationsResponse",

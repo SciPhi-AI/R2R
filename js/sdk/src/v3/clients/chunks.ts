@@ -13,7 +13,7 @@ export class ChunksClient {
                 - metadata: dict
                 - text: string
      * @param run_with_orchestration Optional flag to run with orchestration
-     * @returns 
+     * @returns
      */
   async create(options: {
     chunks: UnprocessedChunk[];
