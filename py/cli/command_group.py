@@ -4,6 +4,25 @@ from asyncclick.exceptions import Exit
 
 from sdk import R2RAsyncClient
 
+import warnings
+from functools import wraps
+
+
+def deprecated_command(new_name):
+    def decorator(f):
+        @wraps(f)
+        async def wrapped(*args, **kwargs):
+            warnings.warn(
+                f"Warning: This command is deprecated. Please use '{new_name}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return await f(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
 
 @click.group()
 @click.option(
