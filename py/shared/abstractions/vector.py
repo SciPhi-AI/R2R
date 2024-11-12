@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from .base import R2RSerializable
 
@@ -229,3 +229,47 @@ class StorageResult(R2RSerializable):
     def __repr__(self) -> str:
         """Return an unambiguous string representation of the StorageResult."""
         return self.__str__()
+
+
+class IndexConfig(BaseModel):
+    # table_name: Optional[VectorTableName] = Body(
+    #     default=VectorTableName.VECTORS,
+    #     description=create_vector_descriptions.get("table_name"),
+    # ),
+    # index_method: IndexMethod = Body(
+    #     default=IndexMethod.hnsw,
+    #     description=create_vector_descriptions.get("index_method"),
+    # ),
+    # index_measure: IndexMeasure = Body(
+    #     default=IndexMeasure.cosine_distance,
+    #     description=create_vector_descriptions.get("index_measure"),
+    # ),
+    # index_arguments: Optional[
+    #     IndexArgsIVFFlat | IndexArgsHNSW
+    # ] = Body(
+    #     None,
+    #     description=create_vector_descriptions.get("index_arguments"),
+    # ),
+    # index_name: Optional[str] = Body(
+    #     None,
+    #     description=create_vector_descriptions.get("index_name"),
+    # ),
+    # index_column: Optional[str] = Body(
+    #     None,
+    #     description=create_vector_descriptions.get("index_column"),
+    # ),
+    # concurrently: bool = Body(
+    #     default=True,
+    #     description=create_vector_descriptions.get("concurrently"),
+    # ),
+    # auth_user=Depends(self.service.providers.auth.auth_wrapper),
+    name: Optional[str] = Field(default=None)
+    table_name: Optional[str] = Field(default=VectorTableName.VECTORS)
+    index_method: Optional[str] = Field(default=IndexMethod.hnsw)
+    index_measure: Optional[str] = Field(default=IndexMeasure.cosine_distance)
+    index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Field(
+        default=None
+    )
+    index_name: Optional[str] = Field(default=None)
+    index_column: Optional[str] = Field(default=None)
+    concurrently: Optional[bool] = Field(default=True)

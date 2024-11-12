@@ -70,6 +70,7 @@ from shared.abstractions.user import Token, TokenData, UserStats
 from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
+    IndexConfig,
     IndexMeasure,
     IndexMethod,
     StorageResult,
@@ -115,6 +116,8 @@ __all__ = [
     "KGExtraction",
     "Triple",
     "EntityLevel",
+    # Index abstractions
+    "IndexConfig",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

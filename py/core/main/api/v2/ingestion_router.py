@@ -27,8 +27,8 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import (
-    WrappedCreateVectorIndexResponse,
-    WrappedDeleteVectorIndexResponse,
+    GenericMessageResponse,
+    WrappedGenericMessageResponse,
     WrappedIngestionResponse,
     WrappedListVectorIndicesResponse,
     WrappedMetadataUpdateResponse,
@@ -610,7 +610,7 @@ class IngestionRouter(BaseRouter):
                 description=create_vector_descriptions.get("concurrently"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCreateVectorIndexResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Create a vector index for a given table.
 
@@ -638,7 +638,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
 
-            return raw_message  # type: ignore
+            return GenericMessageResponse(message=raw_message)
 
         list_vector_indices_extras = self.openapi_extras.get(
             "create_vector_index", {}
@@ -708,7 +708,7 @@ class IngestionRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteVectorIndexResponse:
+        ) -> WrappedGenericMessageResponse:
             logger.info(
                 f"Deleting vector index {index_name} from table {table_name}"
             )
@@ -727,7 +727,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
 
-            return raw_message  # type: ignore
+            return GenericMessageResponse(message=raw_message)
 
     @staticmethod
     async def _process_files(files):

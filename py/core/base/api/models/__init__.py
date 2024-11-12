@@ -13,15 +13,11 @@ from shared.api.models.auth.responses import (
     WrappedUserResponse,
 )
 from shared.api.models.ingestion.responses import (
-    CreateVectorIndexResponse,
     IngestionResponse,
     UpdateResponse,
-    WrappedCreateVectorIndexResponse,
-    WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
     WrappedListVectorIndicesResponse,
     WrappedMetadataUpdateResponse,
-    WrappedSelectVectorIndexResponse,
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
@@ -107,11 +103,7 @@ __all__ = [
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
     "WrappedMetadataUpdateResponse",
-    "CreateVectorIndexResponse",
-    "WrappedCreateVectorIndexResponse",
     "WrappedListVectorIndicesResponse",
-    "WrappedDeleteVectorIndexResponse",
-    "WrappedSelectVectorIndexResponse",
     "UpdateResponse",
     # Knowledge Graph Responses
     "KGCreationResponse",

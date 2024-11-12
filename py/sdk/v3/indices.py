@@ -12,7 +12,7 @@ class IndicesSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create_index(
+    async def create(
         self,
         config: dict,  # Union[dict, IndexConfig],
         run_with_orchestration: Optional[bool] = True,
@@ -23,9 +23,6 @@ class IndicesSDK:
         Args:
             config (Union[dict, IndexConfig]): Configuration for the vector index.
             run_with_orchestration (Optional[bool]): Whether to run index creation as an orchestrated task.
-
-        Returns:
-            WrappedCreateVectorIndexResponse: The response containing the created index details.
         """
         if not isinstance(config, dict):
             config = config.model_dump()
@@ -36,7 +33,7 @@ class IndicesSDK:
         }
         return await self.client._make_request("POST", "indices", json=data)  # type: ignore
 
-    async def list_indices(
+    async def list(
         self,
         filters: Optional[dict] = None,
         offset: Optional[int] = 0,
@@ -61,7 +58,7 @@ class IndicesSDK:
             params["filters"] = json.dumps(filters)
         return await self.client._make_request("GET", "indices", params=params)  # type: ignore
 
-    async def get_index(
+    async def retrieve(
         self,
         index_name: str,
         table_name: str = "vectors",
@@ -70,7 +67,8 @@ class IndicesSDK:
         Get detailed information about a specific vector index.
 
         Args:
-            id (Union[str, UUID]): The ID of the index to retrieve.
+            index_name (str): The name of the index to retrieve.
+            table_name (str): The name of the table where the index is stored.
 
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
@@ -103,16 +101,17 @@ class IndicesSDK:
     #     }
     #     return await self.client._make_request("POST", f"indices/{id}", json=data)  # type: ignore
 
-    async def delete_index(
+    async def delete(
         self,
         index_name: str,
         table_name: str = "vectors",
     ) -> dict:
         """
-        Get detailed information about a specific vector index.
+        Delete an existing vector index.
 
         Args:
-            id (Union[str, UUID]): The ID of the index to retrieve.
+            index_name (str): The name of the index to retrieve.
+            table_name (str): The name of the table where the index is stored.
 
         Returns:
             WrappedGetIndexResponse: The response containing the index details.

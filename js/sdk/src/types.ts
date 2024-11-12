@@ -32,6 +32,18 @@ export type WrappedCollectionsResponse = PaginatedResultsWrapper<
   CollectionResponse[]
 >;
 
+// Index types
+export interface IndexConfig {
+  name?: string;
+  table_name?: string;
+  index_method?: string;
+  index_measure?: string;
+  index_arguments?: string;
+  index_name?: string;
+  index_column?: string;
+  concurrently?: boolean;
+}
+
 // User types
 export interface UserResponse {
   id: string;
