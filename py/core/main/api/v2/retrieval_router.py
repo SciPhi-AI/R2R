@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 import yaml
@@ -34,9 +34,9 @@ class RetrievalRouter(BaseRouter):
     def __init__(
         self,
         service: RetrievalService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -56,7 +56,7 @@ class RetrievalRouter(BaseRouter):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+        search_settings: VectorSearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)

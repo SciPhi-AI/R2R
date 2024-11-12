@@ -7,7 +7,6 @@ import time
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List
 
 from colorama import Fore, Style, init
 
@@ -17,7 +16,7 @@ class TestResult:
     name: str
     passed: bool
     duration: float
-    error: Dict = None
+    error: dict = None
 
 
 class TestRunner:
@@ -109,7 +108,7 @@ class TestRunner:
         logger.addHandler(ch)
         return logger
 
-    def run_all_categories(self) -> Dict[str, List[TestResult]]:
+    def run_all_categories(self) -> dict[str, list[TestResult]]:
         all_results = {}
         for category in self.test_sequences.keys():
             self.logger.info(
@@ -119,7 +118,7 @@ class TestRunner:
             all_results[category] = results
         return all_results
 
-    def run_test_category(self, category: str) -> List[TestResult]:
+    def run_test_category(self, category: str) -> list[TestResult]:
         results = []
         try:
             module = importlib.import_module(
@@ -177,7 +176,7 @@ class TestRunner:
         self._print_summary(results)
         return results
 
-    def _save_results(self, results: List[TestResult], category: str = None):
+    def _save_results(self, results: list[TestResult], category: str = None):
         output = {
             "timestamp": datetime.now().isoformat(),
             "category": category,
@@ -197,7 +196,7 @@ class TestRunner:
         with open(self.results_file, "w") as f:
             json.dump(output, f, indent=2)
 
-    def _print_summary(self, results: List[TestResult]):
+    def _print_summary(self, results: list[TestResult]):
         total = len(results)
         passed = sum(1 for r in results if r.passed)
         failed = total - passed

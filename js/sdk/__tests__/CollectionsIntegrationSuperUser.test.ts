@@ -4,102 +4,104 @@ import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
-/**
- * Test Collection should have a UUID of `6f2a5494-f759-4f12-a7b6-db836f651577`
- */
 describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let collectionId: string;
+  let documentId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
-    await client.login("admin@example.com", "change_me_immediately");
+    await client.users.login({
+      email: "admin@example.com",
+      password: "change_me_immediately",
+    });
   });
 
   test("Create new collection", async () => {
-    const response = await client.collections.create("Test Collection");
+    const response = await client.collections.create({
+      name: "Test Collection",
+    });
     expect(response).toBeTruthy();
-    collectionId = response.results.collection_id; // Updated to use correct path
+    collectionId = response.results.collection_id;
   });
 
-  test("Delete collection", async () => {
-    await expect(client.collections.delete(collectionId)).resolves.toBeTruthy();
+  test("List collections", async () => {
+    const response = await client.collections.list();
+    expect(response.results).toBeDefined();
   });
 
-  //   test("Create document with content", async () => {
-  //     const response = await client.documents.create({
-  //       content: "This is a test document",
-  //       metadata: { title: "Test Document" },
-  //     });
+  test("Retrieve collection", async () => {
+    const response = await client.collections.retrieve({ id: collectionId });
+    expect(response.results).toBeDefined();
+  });
 
-  //     expect(response.results.document_id).toBeDefined();
+  test("Update collection", async () => {
+    const response = await client.collections.update({
+      id: collectionId,
+      name: "Updated Test Collection",
+    });
+    expect(response.results).toBeDefined();
+  });
+
+  test("Ingest document and assign to collection", async () => {
+    const ingestResponse = await client.documents.create({
+      file: { path: "examples/data/zametov.txt", name: "zametov.txt" },
+      metadata: { title: "zametov.txt" },
+    });
+
+    expect(ingestResponse.results.document_id).toBeDefined();
+    documentId = ingestResponse.results.document_id;
+
+    const response = await client.collections.addDocument({
+      id: collectionId,
+      documentId: documentId,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("List documents in collection", async () => {
+    const response = await client.collections.listDocuments({
+      id: collectionId,
+    });
+    expect(response.results).toBeDefined();
+  });
+
+  // TODO: Need to implement user methods in V3
+  // test("Add user to collection", async () => {
+  //   const response = await client.collections.addUser({
+  //     id: collectionId,
+  //     userId: "",
   //   });
+  //   expect(response.results).toBeDefined
+  // });
 
-  // test("Update document", async () => {
-  //   const response = await client.documents.update({
-  //     id: documentId,
-  //     content: "Updated content",
-  //     metadata: { title: "Updated Test Document" },
+  test("List users in collection", async () => {
+    const response = await client.collections.listUsers({ id: collectionId });
+    expect(response.results).toBeDefined();
+  });
+
+  // TODO: Need to implement user methods in V3
+  // test("Remove user from collection", async () => {
+  //   const response = await client.collections.removeUser({
+  //     id: collectionId,
+  //     userId: "",
   //   });
-
   //   expect(response.results).toBeDefined();
   // });
 
-  //   test("Retrieve document", async () => {
-  //     const response = await client.documents.retrieve(documentId);
+  test("Remove document from collection", async () => {
+    const response = await client.collections.removeDocument({
+      id: collectionId,
+      documentId: documentId,
+    });
 
-  //     expect(response.results).toBeDefined();
-  //     expect(response.results.id).toBe(documentId);
-  //   });
+    expect(response.results).toBeDefined();
+  });
 
-  //   test("List documents with no parameters", async () => {
-  //     const response = await client.documents.list();
-
-  //     expect(response.results).toBeDefined();
-  //     expect(Array.isArray(response.results)).toBe(true);
-  //   });
-
-  //   test("List documents with parameters", async () => {
-  //     const response = await client.documents.list({
-  //       offset: 0,
-  //       limit: 5,
-  //     });
-
-  //     expect(response.results).toBeDefined();
-  //     expect(Array.isArray(response.results)).toBe(true);
-  //     expect(response.results.length).toBeLessThanOrEqual(5);
-  //   });
-
-  //   test("Error handling - Create document with no file or content", async () => {
-  //     await expect(
-  //       client.documents.create({
-  //         metadata: { title: "No Content" },
-  //       }),
-  //     ).rejects.toThrow(/Either file.*or content must be provided/);
-  //   });
-
-  //   test("Error handling - Create document with both file and content", async () => {
-  //     await expect(
-  //       client.documents.create({
-  //         file: {
-  //           path: "examples/data/raskolnikov.txt",
-  //           name: "raskolnikov.txt",
-  //         },
-  //         content: "Test content",
-  //         metadata: { title: "Both File and Content" },
-  //       }),
-  //     ).rejects.toThrow(/Cannot provide both file.*and content/);
-  //   });
-
-  //   test("Delete Raskolnikov.txt", async () => {
-  //     const response = await client.documents.delete("f9f61fc8-079c-52d0-910a-c657958e385b");
-
-  //     expect(response.results).toBeDefined();
-  //   });
-
-  //   test("Delete untitled document", async () => {
-  //     const response = await client.documents.delete("5556836e-a51c-57c7-916a-de76c79df2b6");
-
-  //     expect(response.results).toBeDefined();
-  //   });
+  test("Delete collection", async () => {
+    await expect(
+      client.collections.delete({ id: collectionId }),
+    ).resolves.toBeTruthy();
+  });
 });

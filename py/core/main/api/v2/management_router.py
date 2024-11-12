@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set, Union
+from typing import Optional, Set
 from uuid import UUID
 
 import psutil
@@ -18,17 +18,16 @@ from core.base.api.models import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
+    WrappedConversationsResponse,
     WrappedDeleteResponse,
-    WrappedDocumentChunkResponse,
+    WrappedDocumentChunksResponse,
     WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
+    WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedMessageResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
-    WrappedUserOverviewResponse,
+    WrappedUsersOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria
@@ -46,9 +45,9 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self,
         service: ManagementService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -137,7 +136,7 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `get_prompt` endpoint.",
                     403,
                 )
-            result = await self.service.get_prompt(
+            result = await self.service.get_cached_prompt(
                 prompt_name, inputs, prompt_override
             )
             return result  # type: ignore
@@ -146,7 +145,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_all_prompts_app(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGetPromptsResponse:
+        ) -> WrappedPromptsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_all_prompts` endpoint.",
@@ -237,7 +236,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserOverviewResponse:
+        ) -> WrappedUsersOverviewResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `users_overview` endpoint.",
@@ -374,7 +373,7 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedDocumentChunksResponse:
             document_uuid = UUID(document_id)
 
             document_chunks = await self.service.list_document_chunks(
@@ -432,7 +431,7 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedDocumentChunksResponse:
             document_uuid = UUID(document_id)
 
             list_document_chunks = await self.service.list_document_chunks(
@@ -833,7 +832,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedConversationsOverviewResponse:
+        ) -> WrappedConversationsResponse:
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in conversation_ids
             ]
@@ -906,9 +905,15 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def branches_overview(
             conversation_id: str = Path(..., description="Conversation ID"),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
-            branches = await self.service.branches_overview(conversation_id)
+            branches = await self.service.branches_overview(
+                offset=offset,
+                limit=limit,
+                conversation_id=conversation_id,
+            )
             return {"branches": branches}
 
         # TODO: Publish this endpoint once more testing is done

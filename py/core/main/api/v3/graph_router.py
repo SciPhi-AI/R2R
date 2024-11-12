@@ -1,10 +1,10 @@
 import logging
 import textwrap
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field, Json
+from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType, KGCreationSettings
 from core.base.abstractions import EntityLevel, KGRunType, Entity
@@ -15,6 +15,7 @@ from core.base.api.models import (
     WrappedKGTunePromptResponse,
     WrappedKGEntitiesResponse,
     WrappedKGCommunitiesResponse,
+    WrappedBooleanResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -107,9 +108,9 @@ class GraphRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.KG,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -1468,7 +1469,7 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             community_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Deletes a specific community by ID.
             This operation will not affect other communities or the underlying entities.
@@ -1489,7 +1490,7 @@ class GraphRouter(BaseRouterV3):
             # await self.services["kg"].delete_community(
             #     collection_id, community_id
             # )
-            # return True  # type: ignore
+            # return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/graphs/{collection_id}/tune-prompt",

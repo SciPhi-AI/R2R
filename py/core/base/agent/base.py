@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 from ..abstractions import R2RSerializable
 
@@ -9,7 +9,7 @@ class Tool(R2RSerializable):
     results_function: Callable
     llm_format_function: Callable
     stream_function: Optional[Callable] = None
-    parameters: Optional[Dict[str, Any]] = None
+    parameters: Optional[dict[str, Any]] = None
 
     class Config:
         arbitrary_types_allowed = True

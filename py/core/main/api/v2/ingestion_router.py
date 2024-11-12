@@ -1,9 +1,8 @@
-# TOD
 import base64
 import logging
 from io import BytesIO
 from pathlib import Path as pathlib_Path
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 import yaml
@@ -22,7 +21,6 @@ from core.base.api.models import (
     WrappedCreateVectorIndexResponse,
     WrappedDeleteVectorIndexResponse,
     WrappedIngestionResponse,
-    WrappedListVectorIndicesResponse,
     WrappedUpdateResponse,
 )
 from core.providers import (
@@ -41,9 +39,9 @@ class IngestionRouter(BaseRouter):
     def __init__(
         self,
         service: IngestionService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -161,7 +159,7 @@ class IngestionRouter(BaseRouter):
 
             file_datas = await self._process_files(files)
 
-            messages: list[dict[str, Union[str, None]]] = []
+            messages: list[dict[str, str | None]] = []
             for it, file_data in enumerate(file_datas):
                 content_length = len(file_data["content"])
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
@@ -193,7 +191,7 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
                 if run_with_orchestration:
-                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                         "ingest-files",
                         {"request": workflow_input},
                         options={
@@ -318,7 +316,7 @@ class IngestionRouter(BaseRouter):
             }
 
             if run_with_orchestration:
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "update-files", {"request": workflow_input}, {}
                 )
                 raw_message["message"] = "Update task queued successfully."
@@ -506,9 +504,7 @@ class IngestionRouter(BaseRouter):
                 default=IndexMeasure.cosine_distance,
                 description=create_vector_descriptions.get("index_measure"),
             ),
-            index_arguments: Optional[
-                Union[IndexArgsIVFFlat, IndexArgsHNSW]
-            ] = Body(
+            index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Body(
                 None,
                 description=create_vector_descriptions.get("index_arguments"),
             ),

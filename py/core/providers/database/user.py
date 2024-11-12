@@ -561,6 +561,9 @@ class PostgresUserHandler(UserHandler):
             for row in results
         ]
 
+        if not users:
+            raise R2RException(status_code=404, message="No users found")
+
         total_entries = results[0]["total_entries"]
 
         return {"results": users, "total_entries": total_entries}

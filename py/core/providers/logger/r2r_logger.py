@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 from uuid import UUID
 from contextlib import asynccontextmanager
 
@@ -14,8 +14,6 @@ from core.base.logger.base import (
     RunInfoLog,
     RunType,
 )
-
-from ..database.postgres import PostgresDBProvider
 
 logger = logging.getLogger()
 
@@ -44,8 +42,9 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             )
 
     async def initialize(self):
-        self.conn = await self.aiosqlite.connect(self.logging_path)
-
+        """Initialize the database connection and tables."""
+        if self.conn is None:
+            self.conn = await self.aiosqlite.connect(self.logging_path)
         await self.conn.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self.project_name}_{self.log_table} (
@@ -106,7 +105,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
     async def __aenter__(self):
         if self.conn is None:
-            await self._init()
+            await self.initialize()  # Fixed incorrect _init() reference
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -118,14 +117,18 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             self.conn = None
 
     @asynccontextmanager
-    async def savepoint(self, name):
-        await self.conn.execute(f"SAVEPOINT {name}")
-        try:
-            yield
-            await self.conn.execute(f"RELEASE SAVEPOINT {name}")
-        except Exception:
-            await self.conn.execute(f"ROLLBACK TO SAVEPOINT {name}")
-            raise
+    async def savepoint(self, name: str):
+        """Create a savepoint with proper error handling."""
+        if self.conn is None:
+            await self.initialize()
+        async with self.conn.cursor() as cursor:
+            await cursor.execute(f"SAVEPOINT {name}")
+            try:
+                yield
+                await cursor.execute(f"RELEASE SAVEPOINT {name}")
+            except Exception:
+                await cursor.execute(f"ROLLBACK TO SAVEPOINT {name}")
+                raise
 
     async def log(
         self,
@@ -224,14 +227,17 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             (conversation_id, created_at),
         )
         await self.conn.commit()
-        return conversation_id
+        return {
+            "id": conversation_id,
+            "created_at": created_at,
+        }
 
-    async def get_conversations_overview(
+    async def get_conversations(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
-    ) -> dict[str, Union[list[dict], int]]:
+    ) -> dict:
         """Get an overview of conversations, optionally filtered by conversation IDs, with pagination."""
         query = """
             WITH conversation_overview AS (
@@ -274,7 +280,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
         conversations = [
             {
-                "conversation_id": row[0],
+                "id": row[0],
                 "created_at": row[1],
             }
             for row in results
@@ -299,13 +305,18 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         message_id = str(uuid.uuid4())
         created_at = datetime.utcnow().timestamp()
 
+        # Serialize the message content to a JSON string
+        content_json = (
+            content.model_dump_json()
+        )  # Use model_dump_json instead of json()
+
         await self.conn.execute(
             "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 message_id,
                 conversation_id,
                 parent_id,
-                content.json(),
+                content_json,
                 created_at,
                 json.dumps(metadata or {}),
             ),
@@ -338,9 +349,9 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                     branch_id = str(uuid.uuid4())
                     await self.conn.execute(
                         """
-                        INSERT INTO branches (id, conversation_id, branch_point_id) VALUES (?, ?, NULL)
+                        INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, NULL, ?)
                         """,
-                        (branch_id, conversation_id),
+                        (branch_id, conversation_id, created_at),
                     )
                 await self.conn.execute(
                     """
@@ -350,7 +361,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 )
 
         await self.conn.commit()
-        return message_id
+        return {
+            "id": message_id,
+            "message": content,
+        }
 
     async def edit_message(
         self, message_id: str, new_content: str
@@ -392,13 +406,16 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         # Add the edited message with the same parent_id
         new_message_id = str(uuid.uuid4())
         message_created_at = datetime.utcnow().timestamp()
+
+        edited_message_json = edited_message.model_dump_json()
+
         await self.conn.execute(
             "INSERT INTO messages (id, conversation_id, parent_id, content, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 new_message_id,
                 conversation_id,
                 parent_id,
-                edited_message.json(),
+                edited_message_json,  # Use the serialized JSON string
                 message_created_at,
                 json.dumps({"edited": True}),
             ),
@@ -443,11 +460,21 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> Tuple[str, list[Message]]:
+    ) -> dict:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
             )
+
+        # Get conversation details first
+        async with self.conn.execute(
+            "SELECT created_at FROM conversations WHERE id = ?",
+            (conversation_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                raise ValueError(f"Conversation {conversation_id} not found")
+            conversation_created_at = row[0]
 
         if branch_id is None:
             # Get the most recent branch by created_at timestamp
@@ -463,8 +490,12 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 row = await cursor.fetchone()
                 branch_id = row[0] if row else None
 
+        # If no branch exists, return empty results but with required fields
         if branch_id is None:
-            return []  # No branches found for the conversation
+            return {
+                "id": conversation_id,
+                "created_at": conversation_created_at,
+            }
 
         # Get all messages for this branch
         async with self.conn.execute(
@@ -487,34 +518,61 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             (branch_id, branch_id),
         ) as cursor:
             rows = await cursor.fetchall()
-            return [(row[0], Message.parse_raw(row[1])) for row in rows]
+            messages = [(row[0], Message.parse_raw(row[1])) for row in rows]
 
-    async def get_branches_overview(self, conversation_id: str) -> list[dict]:
+            return {
+                "id": conversation_id,
+                "created_at": conversation_created_at,
+            }
+
+    async def get_branches(
+        self,
+        offset: int,
+        limit: int,
+        conversation_id: str,
+    ) -> dict:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
             )
 
+        query = """
+            WITH branch_data AS (
+                SELECT b.id, b.branch_point_id, m.content, b.created_at
+                FROM branches b
+                LEFT JOIN messages m ON b.branch_point_id = m.id
+                WHERE b.conversation_id = ?
+            ),
+            counted_branches AS (
+                SELECT *, COUNT(*) OVER() as total_entries
+                FROM branch_data
+            )
+            SELECT * FROM counted_branches
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """
+
         async with self.conn.execute(
-            """
-            SELECT b.id, b.branch_point_id, m.content, b.created_at
-            FROM branches b
-            LEFT JOIN messages m ON b.branch_point_id = m.id
-            WHERE b.conversation_id = ?
-            ORDER BY b.created_at
-        """,
-            (conversation_id,),
+            query, (conversation_id, limit, offset)
         ) as cursor:
             rows = await cursor.fetchall()
-            return [
-                {
-                    "branch_id": row[0],
-                    "branch_point_id": row[1],
-                    "content": row[2],
-                    "created_at": row[3],
-                }
-                for row in rows
-            ]
+
+        if not rows:
+            return {"results": [], "total_entries": 0}
+
+        branches = [
+            {
+                "branch_id": row[0],
+                "branch_point_id": row[1],
+                "content": row[2],
+                "created_at": row[3],
+            }
+            for row in rows
+        ]
+
+        total_entries = rows[0][-1] if rows else 0
+
+        return {"results": branches, "total_entries": total_entries}
 
     async def get_next_branch(self, current_branch_id: str) -> Optional[str]:
         if not self.conn:
@@ -581,9 +639,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
         # Create a new branch starting from message_id
         new_branch_id = str(uuid.uuid4())
+        created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
-            "INSERT INTO branches (id, conversation_id, branch_point_id) VALUES (?, ?, ?)",
-            (new_branch_id, conversation_id, message_id),
+            "INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, ?, ?)",
+            (new_branch_id, conversation_id, message_id, created_at),
         )
 
         # Link ancestor messages to the new branch
@@ -604,12 +663,11 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         return new_branch_id
 
     async def delete_conversation(self, conversation_id: str):
-        if not self.conn:
-            raise ValueError(
-                "Initialize the connection pool before attempting to log."
-            )
+        """Delete a conversation and all related data."""
+        if self.conn is None:
+            await self.initialize()
 
-        async with self.savepoint("delete_conversation"):
+        try:
             # Delete all message branches associated with the conversation
             await self.conn.execute(
                 "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)",
@@ -629,6 +687,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             await self.conn.execute(
                 "DELETE FROM conversations WHERE id = ?", (conversation_id,)
             )
+            await self.conn.commit()
+        except Exception:
+            await self.conn.rollback()
+            raise
 
     async def get_logs(
         self,

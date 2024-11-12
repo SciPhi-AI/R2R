@@ -1,8 +1,14 @@
-from shared.api.models.auth.responses import (
+from shared.api.models.base import (
+    PaginatedResultsWrapper,
+    ResultsWrapper,
+    GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.auth.responses import (
     TokenResponse,
     UserResponse,
-    WrappedGenericMessageResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
 )
@@ -23,7 +29,7 @@ from shared.api.models.management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
     CollectionResponse,
-    ConversationOverviewResponse,
+    ConversationResponse,
     DocumentChunkResponse,
     DocumentOverviewResponse,
     LogResponse,
@@ -37,15 +43,21 @@ from shared.api.models.management.responses import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
+    WrappedConversationsResponse,
     WrappedDocumentChunkResponse,
+    WrappedDocumentChunksResponse,
     WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
+    WrappedDocumentResponse,
+    # Prompt Responses
+    WrappedPromptResponse,
+    WrappedPromptsResponse,
+    # Collection Responses
+    WrappedUserOverviewResponse,
+    WrappedUsersOverviewResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
-    WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
 from shared.api.models.retrieval.responses import (
@@ -86,26 +98,39 @@ __all__ = [
     "DocumentOverviewResponse",
     "DocumentChunkResponse",
     "CollectionResponse",
-    "ConversationOverviewResponse",
+    "ConversationResponse",
     "WrappedPromptMessageResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",
     "WrappedAppSettingsResponse",
-    "WrappedUserOverviewResponse",
     "WrappedConversationResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedDocumentOverviewResponse",
-    "WrappedDocumentChunkResponse",
+    "WrappedDocumentResponse",
+    # Collection Responses
     "WrappedCollectionResponse",
     "WrappedCollectionsResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedAddUserResponse",
     "WrappedUsersInCollectionResponse",
-    "WrappedGetPromptsResponse",
-    "WrappedUserCollectionResponse",
+    # Prompt Responses
+    "WrappedPromptResponse",
+    "WrappedPromptsResponse",
+    # Chunk Responses
     "WrappedDocumentChunkResponse",
-    "WrappedConversationsOverviewResponse",
+    "WrappedDocumentChunksResponse",
+    # Conversation Responses
+    "WrappedUserOverviewResponse",
+    "WrappedUsersOverviewResponse",
+    # Base Responses
+    "PaginatedResultsWrapper",
+    "ResultsWrapper",
+    "GenericBooleanResponse",
+    "GenericMessageResponse",
+    "WrappedBooleanResponse",
+    "WrappedGenericMessageResponse",
+    # TODO: Clean up the following responses
+    "WrappedUserCollectionResponse",
+    "WrappedConversationsResponse",
     # Retrieval Responses
     "CombinedSearchResponse",
     "RAGResponse",

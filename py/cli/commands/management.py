@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import asyncclick as click
 from asyncclick import pass_context
@@ -13,7 +13,7 @@ from cli.utils.timer import timer
 @click.option("--analysis-types", type=JSON, help="Analysis types as JSON")
 @pass_context
 async def analytics(
-    ctx, filters: Dict[str, Any], analysis_types: Dict[str, Any]
+    ctx, filters: dict[str, Any], analysis_types: dict[str, Any]
 ):
     client = ctx.obj
     """Retrieve analytics data."""

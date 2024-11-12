@@ -1,12 +1,17 @@
-from shared.api.models.auth.responses import (
+from shared.api.models.base import (
+    PaginatedResultsWrapper,
+    ResultsWrapper,
+    GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.auth.responses import (
     TokenResponse,
     UserResponse,
-    WrappedGenericMessageResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
 )
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
     IngestionResponse,
@@ -37,7 +42,7 @@ from shared.api.models.management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
     CollectionResponse,
-    ConversationOverviewResponse,
+    ConversationResponse,
     DocumentChunkResponse,
     DocumentOverviewResponse,
     LogResponse,
@@ -51,17 +56,28 @@ from shared.api.models.management.responses import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
+    WrappedConversationsResponse,
     WrappedDeleteResponse,
-    WrappedDocumentChunkResponse,
+    WrappedDocumentResponse,
     WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
+    # Prompt Responses
+    WrappedPromptResponse,
+    WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedMessageResponse,
     WrappedPromptMessageResponse,
+    # Chunk Responses
+    WrappedDocumentChunkResponse,
+    WrappedDocumentChunksResponse,
+    # Conversation Responses
+    WrappedMessageResponse,
+    WrappedMessagesResponse,
+    WrappedBranchResponse,
+    WrappedBranchesResponse,
+    # User Responses
+    WrappedUserOverviewResponse,
+    WrappedUsersOverviewResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
-    WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
 )
 from shared.api.models.retrieval.responses import (
@@ -77,12 +93,10 @@ from shared.api.models.retrieval.responses import (
 
 __all__ = [
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
     "WrappedTokenResponse",
     "WrappedUserResponse",
-    "WrappedGenericMessageResponse",
     # Ingestion Responses
     "IngestionResponse",
     "WrappedIngestionResponse",
@@ -115,28 +129,45 @@ __all__ = [
     "DocumentOverviewResponse",
     "DocumentChunkResponse",
     "CollectionResponse",
-    "ConversationOverviewResponse",
     "WrappedPromptMessageResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",
     "WrappedAppSettingsResponse",
-    "WrappedUserOverviewResponse",
-    "WrappedConversationResponse",
-    "WrappedDocumentChunkResponse",
+    "WrappedDocumentResponse",
     "WrappedDocumentOverviewResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedCollectionResponse",
     "WrappedCollectionsResponse",
-    "WrappedDocumentChunkResponse",
     "WrappedAddUserResponse",
     "WrappedUsersInCollectionResponse",
-    "WrappedGetPromptsResponse",
-    "WrappedUserCollectionResponse",
-    "WrappedDocumentChunkResponse",
-    "WrappedDeleteResponse",
-    "WrappedConversationsOverviewResponse",
+    # Conversation Responses
+    "ConversationResponse",
+    "WrappedConversationResponse",
+    "WrappedConversationsResponse",
+    # Prompt Responses
+    "WrappedPromptResponse",
+    "WrappedPromptsResponse",
+    # Conversation Responses
     "WrappedMessageResponse",
+    "WrappedMessagesResponse",
+    "WrappedBranchResponse",
+    "WrappedBranchesResponse",
+    # Chunk Responses
+    "WrappedDocumentChunkResponse",
+    "WrappedDocumentChunksResponse",
+    # User Responses
+    "WrappedUserOverviewResponse",
+    "WrappedUsersOverviewResponse",
+    # Base Responses
+    "PaginatedResultsWrapper",
+    "ResultsWrapper",
+    "GenericBooleanResponse",
+    "GenericMessageResponse",
+    "WrappedBooleanResponse",
+    "WrappedGenericMessageResponse",
+    # TODO: This needs to be cleaned up
+    "WrappedUserCollectionResponse",
+    "WrappedDeleteResponse",
     # Retrieval Responses
     "CombinedSearchResponse",
     "RAGResponse",
@@ -146,6 +177,4 @@ __all__ = [
     "WrappedCompletionResponse",
     "WrappedRAGResponse",
     "WrappedRAGAgentResponse",
-    "PaginatedResultsWrapper",
-    "ResultsWrapper",
 ]

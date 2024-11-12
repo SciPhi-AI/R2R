@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import asyncclick as click
 
@@ -7,7 +7,7 @@ import asyncclick as click
 class JsonParamType(click.ParamType):
     name = "json"
 
-    def convert(self, value, param, ctx) -> Optional[Dict[str, Any]]:
+    def convert(self, value, param, ctx) -> Optional[dict[str, Any]]:
         if value is None:
             return None
         if isinstance(value, dict):

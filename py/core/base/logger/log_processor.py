@@ -3,7 +3,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -17,11 +17,11 @@ class LogFilterCriteria(BaseModel):
 class LogProcessor:
     timestamp_format = "%Y-%m-%d %H:%M:%S"
 
-    def __init__(self, filters: Dict[str, Callable[[Dict[str, Any]], bool]]):
+    def __init__(self, filters: dict[str, Callable[[dict[str, Any]], bool]]):
         self.filters = filters
         self.populations: dict = {name: [] for name in filters}
 
-    def process_log(self, log: Dict[str, Any]):
+    def process_log(self, log: dict[str, Any]):
         for name, filter_func in self.filters.items():
             if filter_func(log):
                 self.populations[name].append(log)
@@ -30,9 +30,9 @@ class LogProcessor:
 class StatisticsCalculator:
     @staticmethod
     def calculate_statistics(
-        population: List[Dict[str, Any]],
-        stat_functions: Dict[str, Callable[[List[Dict[str, Any]]], Any]],
-    ) -> Dict[str, Any]:
+        population: list[dict[str, Any]],
+        stat_functions: dict[str, Callable[[list[dict[str, Any]]], Any]],
+    ) -> dict[str, Any]:
         return {
             name: func(population) for name, func in stat_functions.items()
         }
@@ -41,9 +41,9 @@ class StatisticsCalculator:
 class DistributionGenerator:
     @staticmethod
     def generate_distributions(
-        population: List[Dict[str, Any]],
-        dist_functions: Dict[str, Callable[[List[Dict[str, Any]]], Any]],
-    ) -> Dict[str, Any]:
+        population: list[dict[str, Any]],
+        dist_functions: dict[str, Callable[[list[dict[str, Any]]], Any]],
+    ) -> dict[str, Any]:
         return {
             name: func(population) for name, func in dist_functions.items()
         }
@@ -52,9 +52,9 @@ class DistributionGenerator:
 class VisualizationPreparer:
     @staticmethod
     def prepare_visualization_data(
-        data: Dict[str, Any],
-        vis_functions: Dict[str, Callable[[Dict[str, Any]], Any]],
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        vis_functions: dict[str, Callable[[dict[str, Any]], Any]],
+    ) -> dict[str, Any]:
         return {name: func(data) for name, func in vis_functions.items()}
 
 
@@ -162,7 +162,7 @@ class AnalysisTypes(BaseModel):
 
 
 class LogAnalytics:
-    def __init__(self, logs: List[Dict[str, Any]], config: LogAnalyticsConfig):
+    def __init__(self, logs: list[dict[str, Any]], config: LogAnalyticsConfig):
         self.logs = logs
         self.log_processor = LogProcessor(config.filters)
         self.statistics_calculator = StatisticsCalculator()
@@ -170,14 +170,14 @@ class LogAnalytics:
         self.visualization_preparer = VisualizationPreparer()
         self.config = config
 
-    def count_logs(self) -> Dict[str, Any]:
+    def count_logs(self) -> dict[str, Any]:
         """Count the logs for each filter."""
         return {
             name: len(population)
             for name, population in self.log_processor.populations.items()
         }
 
-    def process_logs(self) -> Dict[str, Any]:
+    def process_logs(self) -> dict[str, Any]:
         for log in self.logs:
             self.log_processor.process_log(log)
 

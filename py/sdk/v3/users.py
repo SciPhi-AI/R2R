@@ -1,6 +1,5 @@
-import json
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Any, Dict, List, Optional, Union
+from inspect import isasyncgenfunction, iscoroutinefunction
+from typing import Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
@@ -38,7 +37,7 @@ class UsersSDK:
 
         Args:
             email (str): User's email address
-            verification_code (str): Verification code sent to email
+            verification_code (str): Verification code sent to the user's email
 
         Returns:
             dict: Verification result
@@ -59,7 +58,7 @@ class UsersSDK:
         Returns:
             dict[str, Token]: Access and refresh tokens
         """
-        data = {"username": email, "password": password}
+        data = {"email": email, "password": password}
         response = await self.client._make_request(
             "POST", "users/login", data=data
         )
@@ -69,6 +68,7 @@ class UsersSDK:
         ]
         return response
 
+    # FIXME: What is going on here...
     async def login_with_token(self, access_token: str) -> dict[str, Token]:
         """
         Log in using an existing access token.
@@ -119,8 +119,8 @@ class UsersSDK:
         Change the user's password.
 
         Args:
-            current_password (str): Current password
-            new_password (str): New password
+            current_password (str): User's current password
+            new_password (str): User's new password
 
         Returns:
             dict: Change password result
@@ -167,7 +167,6 @@ class UsersSDK:
 
     async def list(
         self,
-        username: Optional[str] = None,
         email: Optional[str] = None,
         is_active: Optional[bool] = None,
         is_superuser: Optional[bool] = None,
@@ -178,8 +177,7 @@ class UsersSDK:
         List users with pagination and filtering options.
 
         Args:
-            username (Optional[str]): Filter by username (partial match)
-            email (Optional[str]): Filter by email (partial match)
+            email (Optional[str]): Email to filter by (partial match)
             is_active (Optional[bool]): Filter by active status
             is_superuser (Optional[bool]): Filter by superuser status
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
@@ -193,8 +191,6 @@ class UsersSDK:
             "limit": limit,
         }
 
-        if username:
-            params["username"] = username
         if email:
             params["email"] = email
         if is_active is not None:
@@ -209,7 +205,7 @@ class UsersSDK:
         id: Union[str, UUID],
     ) -> dict:
         """
-        Get detailed information about a specific user.
+        Get a specific user.
 
         Args:
             id (Union[str, UUID]): User ID to retrieve
@@ -316,7 +312,7 @@ class UsersSDK:
             bool: True if successful
         """
         return await self.client._make_request(
-            "POST", f"users/{str(id)}/collections/{str(collection_id)}"
+            "DELETE", f"users/{str(id)}/collections/{str(collection_id)}"
         )
 
 

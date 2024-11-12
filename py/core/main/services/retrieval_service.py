@@ -296,33 +296,29 @@ class RetrievalService(Service):
                         ]
                         ids = [conv[0] for conv in conversation]
                     else:
-                        conversation_id = (
+                        conversation = (
                             await self.logging_connection.create_conversation()
                         )
-                        messages = [message]  # type: ignore
-                else:
-                    if not conversation_id:
-                        conversation_id = (
-                            await self.logging_connection.create_conversation()
-                        )
+                        conversation_id = conversation["id"]
 
                         parent_id = None
                         for inner_message in messages[:-1]:
-
-                            parent_id = (
-                                await self.logging_connection.add_message(
-                                    conversation_id, inner_message, parent_id
-                                )
+                            parent_id = await self.logging_connection.add_message(
+                                conversation_id,  # Use the stored conversation_id
+                                inner_message,
+                                parent_id,
                             )
+                    messages = messages or []
 
                 current_message = messages[-1]  # type: ignore
 
                 # Save the new message to the conversation
-                message_id = await self.logging_connection.add_message(
+                message = await self.logging_connection.add_message(
                     conversation_id,  # type: ignore
                     current_message,  # type: ignore
                     parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
                 )
+                message_id = message["id"]
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -382,7 +378,9 @@ class RetrievalService(Service):
                 )
                 return {
                     "messages": results,
-                    "conversation_id": conversation_id,
+                    "conversation_id": str(
+                        conversation_id
+                    ),  # Ensure it's a string
                 }
 
             except Exception as e:

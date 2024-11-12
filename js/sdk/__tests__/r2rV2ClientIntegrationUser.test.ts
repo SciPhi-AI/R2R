@@ -213,7 +213,7 @@ describe("r2rClient Integration Tests", () => {
 
   test("Create conversation", async () => {
     const createConversationResponse = await client.createConversation();
-    createdConversationId = createConversationResponse.results;
+    createdConversationId = createConversationResponse.results.id;
     expect(createdConversationId).toBeDefined();
   });
 

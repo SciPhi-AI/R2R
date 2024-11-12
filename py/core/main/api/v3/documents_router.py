@@ -5,11 +5,13 @@ import mimetypes
 import textwrap
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar
 from uuid import UUID
 
 from fastapi import Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
+
+# TODO: Need to reivew the use of JSON
 from pydantic import BaseModel, Field, Json
 
 from core.base import R2RException, RunType, generate_document_id
@@ -17,14 +19,17 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
+
+# TODO: Need to move to appropriate response models
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.api.models.management.responses import DocumentChunkResponse
 
 from .base_router import BaseRouterV3
-from .chunks_router import ChunkResponse
 
 T = TypeVar("T")
 
 
+# TODO: Get rid of this, it shouldn't be here
 class DocumentIngestionResponse(BaseModel):
     message: str = Field(
         ...,
@@ -107,9 +112,9 @@ class DocumentsRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -125,28 +130,49 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                  from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                  client = R2RClient("http://localhost:7272")
-                                                  # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                  result = client.documents.create(
-                                                    file_path="pg_essay_1.html",
-                                                    metadata={"metadata_1":"some random metadata"},
-                                                    id=None
-                                                  )"""
+                            result = client.documents.create(
+                            file_path="pg_essay_1.html",
+                            metadata={"metadata_1":"some random metadata"},
+                            id=None
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.create({
+                                    file: { path: "examples/data/marmeladov.txt", name: "marmeladov.txt" },
+                                    metadata: { title: "marmeladov.txt" },
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                  curl -X POST "https://api.example.com/v3/documents" \\
-                                                    -H "Content-Type: multipart/form-data" \\
-                                                    -H "Authorization: Bearer YOUR_API_KEY" \\
-                                                    -F "file=@pg_essay_1.html;type=text/html" \\
-                                                    -F 'metadata={}' \\
-                                                    -F 'id=null' """
+                            curl -X POST "https://api.example.com/v3/documents" \\
+                            -H "Content-Type: multipart/form-data" \\
+                            -H "Authorization: Bearer YOUR_API_KEY" \\
+                            -F "file=@pg_essay_1.html;type=text/html" \\
+                            -F 'metadata={}' \\
+                            -F 'id=null'
+                            """
                         ),
                     },
                 ]
@@ -255,7 +281,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
             if run_with_orchestration:
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
@@ -292,25 +318,45 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                              from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                              client = R2RClient("http://localhost:7272")
-                                                              # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                              result = client.documents.update(
-                                                                file_path="pg_essay_1.html",
-                                                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                              )"""
+                            result = client.documents.update(
+                            file_path="pg_essay_1.html",
+                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.update({
+                                    file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
-                                                                -H "Content-Type: multipart/form-data"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY"  \\
-                                                                -F "file=@pg_essay_1.html;type=text/plain" """
+                            curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                            -H "Content-Type: multipart/form-data"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"  \\
+                            -F "file=@pg_essay_1.html;type=text/plain"
+                            """
                         ),
                     },
                 ]
@@ -330,7 +376,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
-            metadata: Optional[Json[dict]] = Form(
+            metadata: Optional[list[dict]] = Form(
                 None,
                 description="Metadata to associate with the document, such as title, description, or custom fields.",
             ),
@@ -441,7 +487,7 @@ class DocumentsRouter(BaseRouterV3):
                 }
 
                 if run_with_orchestration:
-                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                         "update-files", {"request": workflow_input}, {}
                     )
                     raw_message["message"] = "Update task queued successfully."
@@ -476,23 +522,44 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                              from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                              client = R2RClient("http://localhost:7272")
-                                                              # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                              result = client.documents.list(
-                                                                limit=10,
-                                                                offset=0
-                                                              )"""
+                            result = client.documents.list(
+                            limit=10,
+                            offset=0
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.list({
+                                    limit: 10,
+                                    offset: 0,
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X GET "https://api.example.com/v3/documents"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -561,22 +628,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                              from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                              client = R2RClient("http://localhost:7272")
-                                                              # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                              result = client.documents.retrieve(
-                                                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                              )"""
+                            result = client.documents.retrieve(
+                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.retrieve({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -630,22 +717,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                                from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                                client = R2RClient("http://localhost:7272")
-                                                                # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                                result = client.documents.list_chunks(
-                                                                  id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                                )"""
+                            result = client.documents.list_chunks(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.listChunks({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                                curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
-                                                                    -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"\
+                            """
                         ),
                     },
                 ]
@@ -673,7 +780,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
+        ) -> PaginatedResultsWrapper[list[DocumentChunkResponse]]:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
             Chunks represent semantic sections of the document and are used for retrieval
@@ -734,22 +841,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                            from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                            client = R2RClient("http://localhost:7272")
-                                                            # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                            result = client.documents.download(
-                                                              id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-                                                            )"""
+                            result = client.documents.download(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.download({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -815,22 +942,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                            from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                            client = R2RClient("http://localhost:7272")
-                                                            # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                            result = client.documents.delete(
-                                                              id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                            )"""
+                            result = client.documents.delete(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.delete({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -919,8 +1066,6 @@ class DocumentsRouter(BaseRouterV3):
                 filters=filters_dict
             )
 
-        # TODO: If you want a list of Collection objects for which a document is in,
-        # you should be filtering over collections_overview with the list of collection ids
         @self.router.get(
             "/documents/{id}/collections",
             summary="List document collections",
@@ -930,22 +1075,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                            from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                            client = R2RClient("http://localhost:7272")
-                                                            # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                            result = client.documents.list_collections(
-                                                              id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
-                                                            )"""
+                            result = client.documents.list_collections(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.listCollections({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]

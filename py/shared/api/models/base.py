@@ -12,3 +12,15 @@ class ResultsWrapper(BaseModel, Generic[T]):
 class PaginatedResultsWrapper(BaseModel, Generic[T]):
     results: T
     total_entries: int
+
+
+class GenericBooleanResponse(BaseModel):
+    success: bool
+
+
+class GenericMessageResponse(BaseModel):
+    message: str
+
+
+WrappedBooleanResponse = ResultsWrapper[GenericBooleanResponse]
+WrappedGenericMessageResponse = ResultsWrapper[GenericMessageResponse]

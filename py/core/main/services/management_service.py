@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Tuple, Union
 from uuid import UUID
 
 import toml
@@ -229,7 +229,6 @@ class ManagementService(Service):
         NOTE: This method assumes that filters delete entire contents of any touched documents.
         """
         ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
-        ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
 
         def validate_filters(filters: dict[str, Any]) -> None:
             ALLOWED_FILTERS = {
@@ -237,7 +236,6 @@ class ManagementService(Service):
                 "user_id",
                 "collection_ids",
                 "chunk_id",
-                # TODO - Modify these checks such that they can be used PROPERLY for nested filters
                 # TODO - Modify these checks such that they can be used PROPERLY for nested filters
                 "$and",
                 "$or",
@@ -446,9 +444,9 @@ class ManagementService(Service):
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
-    ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
+    ) -> Tuple[dict[str, list[str]], dict[str, dict[str, list[str]]]]:
         graph = defaultdict(list)
-        grouped: Dict[str, Dict[str, list[str]]] = defaultdict(
+        grouped: dict[str, dict[str, list[str]]] = defaultdict(
             lambda: defaultdict(list)
         )
         for subject, relation, obj in relationships:
@@ -460,9 +458,9 @@ class ManagementService(Service):
 
     def generate_output(
         self,
-        grouped_relationships: Dict[str, Dict[str, list[str]]],
-        graph: Dict[str, list[str]],
-        descriptions_dict: Dict[str, str],
+        grouped_relationships: dict[str, dict[str, list[str]]],
+        graph: dict[str, list[str]],
+        descriptions_dict: dict[str, str],
         print_descriptions: bool = True,
     ) -> list[str]:
         output = []
@@ -504,7 +502,7 @@ class ManagementService(Service):
 
         return output
 
-    def _count_connected_components(self, graph: Dict[str, list[str]]) -> int:
+    def _count_connected_components(self, graph: dict[str, list[str]]) -> int:
         visited = set()
         components = 0
 
@@ -522,7 +520,7 @@ class ManagementService(Service):
         return components
 
     def _get_central_nodes(
-        self, graph: Dict[str, list[str]]
+        self, graph: dict[str, list[str]]
     ) -> list[Tuple[str, float]]:
         degree = {node: len(neighbors) for node, neighbors in graph.items()}
         total_nodes = len(graph)
@@ -625,7 +623,7 @@ class ManagementService(Service):
             raise R2RException(status_code=400, message=str(e))
 
     @telemetry_event("GetPrompt")
-    async def get_prompt(
+    async def get_cached_prompt(
         self,
         prompt_name: str,
         inputs: Optional[dict[str, Any]] = None,
@@ -634,11 +632,25 @@ class ManagementService(Service):
         try:
             return {
                 "message": (
-                    await self.providers.database.get_prompt(
+                    await self.providers.database.get_cached_prompt(
                         prompt_name, inputs, prompt_override
                     )
                 )
             }
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))
+
+    @telemetry_event("GetPrompt")
+    async def get_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> dict:
+        try:
+            return await self.providers.database.get_prompt(
+                prompt_name, inputs, prompt_override
+            )
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
@@ -675,13 +687,13 @@ class ManagementService(Service):
         conversation_id: str,
         branch_id: Optional[str] = None,
         auth_user=None,
-    ) -> Tuple[str, list[Message]]:
+    ) -> dict:
         return await self.logging_connection.get_conversation(
             conversation_id, branch_id
         )
 
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> str:
+    async def create_conversation(self, auth_user=None) -> dict:
         return await self.logging_connection.create_conversation()
 
     @telemetry_event("ConversationsOverview")
@@ -692,7 +704,7 @@ class ManagementService(Service):
         conversation_ids: Optional[list[UUID]] = None,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
-        return await self.logging_connection.get_conversations_overview(
+        return await self.logging_connection.get_conversations(
             offset=offset,
             limit=limit,
             conversation_ids=conversation_ids,
@@ -721,10 +733,16 @@ class ManagementService(Service):
 
     @telemetry_event("BranchesOverview")
     async def branches_overview(
-        self, conversation_id: str, auth_user=None
-    ) -> list[Dict]:
-        return await self.logging_connection.get_branches_overview(
-            conversation_id
+        self,
+        offset: int,
+        limit: int,
+        conversation_id: str,
+        auth_user=None,
+    ) -> list[dict]:
+        return await self.logging_connection.get_branches(
+            offset=offset,
+            limit=limit,
+            conversation_id=conversation_id,
         )
 
     @telemetry_event("GetNextBranch")

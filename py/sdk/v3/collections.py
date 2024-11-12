@@ -1,5 +1,5 @@
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Any, Dict, List, Optional, Union
+from inspect import isasyncgenfunction, iscoroutinefunction
+from typing import Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
@@ -37,7 +37,7 @@ class CollectionsSDK:
 
     async def list(
         self,
-        name: Optional[str] = None,
+        ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -45,7 +45,7 @@ class CollectionsSDK:
         List collections with pagination and filtering options.
 
         Args:
-            name (Optional[str]): Filter collections by name
+            ids (Optional[list[str | UUID]]): Filter collections by ids
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -56,8 +56,8 @@ class CollectionsSDK:
             "offset": offset,
             "limit": limit,
         }
-        if name:
-            params["name"] = name
+        if ids:
+            params["ids"] = ids
 
         return await self.client._make_request(
             "GET", "collections", params=params
@@ -89,8 +89,8 @@ class CollectionsSDK:
 
         Args:
             id (Union[str, UUID]): Collection ID to update
-            name (Optional[str]): New name for the collection
-            description (Optional[str]): New description for the collection
+            name (Optional[str]): Optional new name for the collection
+            description (Optional[str]): Optional new description for the collection
 
         Returns:
             dict: Updated collection information

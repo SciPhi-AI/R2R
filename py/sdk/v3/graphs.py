@@ -1,6 +1,6 @@
 import json
 from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
@@ -38,7 +38,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create graph for
-            settings (Optional[Dict[str, Any]]): Graph creation settings
+            settings (Optional[dict[str, Any]]): Graph creation settings
             run_with_orchestration (Optional[bool]): Whether to run with task orchestration
 
         Returns:
@@ -90,14 +90,14 @@ class GraphsSDK:
 
     # Entity operations
     async def create_entity(
-        self, collection_id: Union[str, UUID], entity: Dict[str, Any]
+        self, collection_id: Union[str, UUID], entity: dict[str, Any]
     ) -> dict:
         """
         Create a new entity in the graph.
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create entity in
-            entity (Dict[str, Any]): Entity data including name, type, and metadata
+            entity (dict[str, Any]): Entity data including name, type, and metadata
 
         Returns:
             dict: Created entity information
@@ -134,7 +134,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         entity_id: Union[str, UUID],
-        entity_update: Dict[str, Any],
+        entity_update: dict[str, Any],
     ) -> dict:
         """
         Update an existing entity.
@@ -142,7 +142,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID containing the entity
             entity_id (Union[str, UUID]): Entity ID to update
-            entity_update (Dict[str, Any]): Updated entity data
+            entity_update (dict[str, Any]): Updated entity data
 
         Returns:
             dict: Updated entity information
@@ -211,7 +211,7 @@ class GraphsSDK:
     async def deduplicate_entities(
         self,
         collection_id: Union[str, UUID],
-        settings: Optional[Dict[str, Any]] = None,
+        settings: Optional[dict[str, Any]] = None,
         run_type: str = "ESTIMATE",
         run_with_orchestration: bool = True,
     ):  # -> WrappedKGEntityDeduplicationResponse:
@@ -220,7 +220,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to deduplicate entities in
-            settings (Optional[Dict[str, Any]]): Deduplication settings
+            settings (Optional[dict[str, Any]]): Deduplication settings
             run_type (str): Whether to estimate cost or run deduplication
             run_with_orchestration (bool): Whether to run with task orchestration
 
@@ -244,14 +244,14 @@ class GraphsSDK:
 
     # Relationship operations
     async def create_relationship(
-        self, collection_id: Union[str, UUID], relationship: Dict[str, Any]
+        self, collection_id: Union[str, UUID], relationship: dict[str, Any]
     ) -> dict:
         """
         Create a new relationship between entities.
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create relationship in
-            relationship (Dict[str, Any]): Relationship data including source, target, and type
+            relationship (dict[str, Any]): Relationship data including source, target, and type
 
         Returns:
             dict: Created relationship information
@@ -286,7 +286,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         relationship_id: Union[str, UUID],
-        relationship_update: Dict[str, Any],
+        relationship_update: dict[str, Any],
     ) -> dict:
         """
         Update an existing relationship.
@@ -294,7 +294,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID containing the relationship
             relationship_id (Union[str, UUID]): Relationship ID to update
-            relationship_update (Dict[str, Any]): Updated relationship data
+            relationship_update (dict[str, Any]): Updated relationship data
 
         Returns:
             dict: Updated relationship information
@@ -370,7 +370,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         run_type: Optional[Union[str, KGRunType]] = None,
-        settings: Optional[Dict[str, Any]] = None,
+        settings: Optional[dict[str, Any]] = None,
         run_with_orchestration: bool = True,
     ):  # -> WrappedKGCommunitiesResponse:
         """
@@ -378,7 +378,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create communities in
-            settings (Optional[Dict[str, Any]]): Community detection settings
+            settings (Optional[dict[str, Any]]): Community detection settings
             run_with_orchestration (bool): Whether to run with task orchestration
 
         Returns:
@@ -423,7 +423,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         community_id: Union[str, UUID],
-        community_update: Dict[str, Any],
+        community_update: dict[str, Any],
     ) -> dict:
         """
         Update a community.
@@ -431,7 +431,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID containing the community
             community_id (Union[str, UUID]): Community ID to update
-            community_update (Dict[str, Any]): Updated community data
+            community_update (dict[str, Any]): Updated community data
 
         Returns:
             dict: Updated community information
