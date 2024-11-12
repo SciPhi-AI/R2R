@@ -21,8 +21,8 @@ from sqlalchemy.types import UserDefinedType
 from r2r import R2RAsyncClient
 
 # revision identifiers, used by Alembic.
-revision: str = "2fac23e4d91b"
-down_revision: Union[str, None] = "d342e632358a"
+revision: str = "d342e632358a"
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
