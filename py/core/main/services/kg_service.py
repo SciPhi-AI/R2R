@@ -440,6 +440,8 @@ class KgService(Service):
             limit=limit or -1,
         )
 
+    ##### Relationships #####
+
     @telemetry_event("list_triples")
     async def list_triples(
         self,
@@ -458,6 +460,22 @@ class KgService(Service):
             limit=limit or -1,
         )
 
+    @telemetry_event("list_relationships")
+    async def list_relationships_v3(
+        self,
+        level: EntityLevel,
+        id: UUID,
+        entity_names: Optional[list[str]] = None,
+        relationship_types: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ):
+        return await self.providers.database.list_relationships_v3(
+            level, id, entity_names, relationship_types, attributes, offset, limit
+        )
+
+    ##### Communities #####
     @telemetry_event("get_communities")
     async def get_communities(
         self,

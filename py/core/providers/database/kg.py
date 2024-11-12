@@ -297,7 +297,7 @@ class PostgresKGHandler(KGHandler):
             "community_count": community_count[0]["count"],
         }
 
-
+    ### Relationships BEGIN ####
     async def add_triples(
         self,
         triples: list[Relationship],
@@ -316,6 +316,52 @@ class PostgresKGHandler(KGHandler):
         return await self._add_objects(
             [ele.to_dict() for ele in triples], table_name
         )
+
+    async def list_relationships_v3(
+        self,
+        level: EntityLevel,
+        id: UUID,
+        entity_names: Optional[list[str]] = None,
+        relationship_types: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ):
+        filter_query = ""
+        if entity_names:
+            filter_query += "AND (subject IN ($2) OR object IN ($2))"
+        if relationship_types:
+            filter_query += "AND predicate IN ($3)"
+
+        if level == EntityLevel.CHUNK:
+            QUERY = f"""
+                SELECT * FROM {self._get_table_name("chunk_triple")} WHERE $1 = ANY(chunk_ids)
+                {filter_query}
+            """
+        elif level == EntityLevel.DOCUMENT:
+            QUERY = f"""
+                SELECT * FROM {self._get_table_name("chunk_triple")} WHERE $1 = document_id
+                {filter_query}
+            """
+        elif level == EntityLevel.COLLECTION:
+            QUERY = f"""
+                WITH document_ids AS (
+                    SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)
+                )
+                SELECT * FROM {self._get_table_name("chunk_triple")} WHERE document_id IN (SELECT document_id FROM document_ids)
+                {filter_query}
+            """
+
+        results = await self.connection_manager.fetch_query(QUERY, [id, entity_names, relationship_types])
+
+        if attributes:
+            results = [
+                {k: v for k, v in result.items() if k in attributes} for result in results
+            ]
+
+        return results
+
+    ### Relationships END ####
 
     async def add_kg_extractions(
         self,

@@ -28,8 +28,22 @@ from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
 
+from fastapi import Request
+
 logger = logging.getLogger()
 
+class EntityResponse(BaseModel):
+    id: UUID
+    name: str
+    category: str
+
+class RelationshipResponse(BaseModel):
+    id: UUID
+    subject_id: UUID
+    object_id: UUID
+    subject_name: str
+    object_name: str
+    predicate: str
 
 class GraphRouter(BaseRouterV3):
     def __init__(
@@ -43,10 +57,16 @@ class GraphRouter(BaseRouterV3):
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
 
+    def _get_path_level(self, request: Request) -> EntityLevel:
+        path = request.url.path
+        if "/chunks/" in path:
+            return EntityLevel.CHUNK
+        elif "/documents/" in path:
+            return EntityLevel.DOCUMENT
+        else:
+            return EntityLevel.COLLECTION
+
     def _setup_routes(self):
-
-        ##### CHUNK LEVEL OPERATIONS #####
-
         ##### ENTITIES ######
         @self.router.get(
             "/chunks/{id}/entities",
@@ -69,8 +89,51 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
+        @self.router.get(
+            "/documents/{id}/entities",
+            summary="List entities for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.list_entities(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.get(
+            "/collections/{id}/entities",
+            summary="List entities for a collection",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.collections.list_entities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def list_entities(
+            request: Request,
             id: UUID = Path(..., description="The ID of the chunk to retrieve entities for."),
             entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the entities by."),
             entity_categories: Optional[list[str]] = Query(None, description="A list of entity categories to filter the entities by."),
@@ -89,8 +152,8 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can access this endpoint.", 403)
 
-            return await self.services["kg"].list_entities(
-                level=EntityLevel.CHUNK,
+            return await self.services["kg"].list_entities_v3(
+                level=self._get_path_level(request),
                 id=id,
                 offset=offset,
                 limit=limit,
@@ -120,8 +183,51 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
+        @self.router.post(
+            "/documents/{id}/entities",
+            summary="Create entities for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.create_entities(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.post(
+            "/collections/{id}/entities",
+            summary="Create entities for a collection",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.collections.create_entities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def create_entities(
+            request: Request,
             id: UUID = Path(..., description="The ID of the chunk to create entities for."),
             entities: list[Union[Entity, dict]] = Body(..., description="The entities to create."),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -137,8 +243,8 @@ class GraphRouter(BaseRouterV3):
                 else:
                     raise R2RException("Entity level must be chunk or empty.", 400)
 
-            return await self.services["kg"].create_entities(
-                level=EntityLevel.CHUNK,
+            return await self.services["kg"].create_entities_v3(
+                level=self._get_path_level(request),
                 id=id,
                 entities=entities,
             )
@@ -166,6 +272,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def update_entity(
+            request: Request,
             id: UUID = Path(..., description="The ID of the chunk to update the entity for."),
             entity_id: UUID = Path(..., description="The ID of the entity to update."),
             entity: Entity = Body(..., description="The updated entity."),
@@ -174,13 +281,12 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can access this endpoint.", 403)
 
-            return await self.services["kg"].update_entity(
-                level=EntityLevel.CHUNK,
+            return await self.services["kg"].update_entity_v3(
+                level=self._get_path_level(request),
                 id=id,
                 entity_id=entity_id,
                 entity=entity,
             )
-
 
         @self.router.delete(
             "/chunks/{id}/entities/{entity_id}",
@@ -203,9 +309,51 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
+        @self.router.delete(
+            "/documents/{id}/entities/{entity_id}",
+            summary="Delete an entity for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.delete_entity(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.delete(
+            "/collections/{id}/entities/{entity_id}",
+            summary="Delete an entity for a collection",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.delete_entity(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def delete_entity(
+            request: Request,
             id: UUID = Path(..., description="The ID of the chunk to delete the entity for."),
             entity_id: UUID = Path(..., description="The ID of the entity to delete."),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -213,39 +361,505 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can access this endpoint.", 403)
 
+            return await self.services["kg"].delete_entity_v3(
+                level=self._get_path_level(request),
+                id=id,
+                entity_id=entity_id,
+            )
+
         ##### RELATIONSHIPS #####
+        @self.router.get(
+            "/chunks/{id}/relationships",
+            summary="List relationships for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.list_relationships(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.get(
+            "/documents/{id}/relationships",
+            summary="List relationships for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.list_relationships(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+
+        @self.router.get(
+            "/chunks/{id}/relationships",
+            summary="List relationships for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.collections.list_relationships(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def list_relationships(
+            id: UUID = Path(..., description="The ID of the chunk to retrieve relationships for."),
+            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the relationships by."),
+            relationship_types: Optional[list[str]] = Query(None, description="A list of relationship types to filter the relationships by."),
+            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
+            offset: int = Query(0, ge=0, description="The offset of the first relationship to retrieve."),
+            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of relationships to retrieve, up to 20,000."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[Relationship]]:
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            return await self.services["kg"].list_relationships_v3(
+                level=EntityLevel.CHUNK,
+                id=id,
+                entity_names=entity_names,
+                relationship_types=relationship_types,
+                attributes=attributes,
+                offset=offset,
+                limit=limit,
+            )
+
+
+        @self.router.post(
+            "/chunks/{id}/relationships",
+            summary="Create relationships for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.create_relationships(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def create_relationships(
+            id: UUID = Path(..., description="The ID of the chunk to create relationships for."),
+            relationships: list[Union[Relationship, dict]] = Body(..., description="The relationships to create."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> ResultsWrapper[list[RelationshipResponse]]:
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            relationships = [Relationship(**relationship) if isinstance(relationship, dict) else relationship for relationship in relationships]
+
+            return await self.services["kg"].create_relationships_v3(
+                level=EntityLevel.CHUNK,
+                id=id,
+                relationships=relationships,
+            )
         
-        
+
+        @self.router.post(
+            "/chunks/{id}/relationships/{relationship_id}",
+            summary="Update a relationship for a chunk",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.update_relationship(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint 
+        async def update_relationship(
+            id: UUID = Path(..., description="The ID of the chunk to update the relationship for."),
+            relationship_id: UUID = Path(..., description="The ID of the relationship to update."),
+            relationship: Relationship = Body(..., description="The updated relationship."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
 
 
+            return await self.services["kg"].update_relationship_v3(
+                level=EntityLevel.CHUNK,
+                id=id,
+                relationship_id=relationship_id,
+                relationship=relationship,
+            )
 
+        @self.router.delete(
+            "/chunks/{id}/relationships/{relationship_id}",
+            summary="Delete a relationship for a chunk",
+        )
+        @self.base_endpoint
+        async def delete_relationship(
+            id: UUID = Path(..., description="The ID of the chunk to delete the relationship for."),
+            relationship_id: UUID = Path(..., description="The ID of the relationship to delete."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            return await self.services["kg"].delete_relationship_v3(
+                level=EntityLevel.CHUNK,
+                id=id,
+                relationship_id=relationship_id,
+            )
 
         ##### DOCUMENT LEVEL OPERATIONS #####
+        @self.router.get(
+            "/documents/{id}/entities",
+            summary="List entities for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.chunks.list_entities(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def list_entities(
+            id: UUID = Path(..., description="The ID of the document to retrieve entities for."),
+            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the entities by."),
+            entity_categories: Optional[list[str]] = Query(None, description="A list of entity categories to filter the entities by."),
+            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
+            offset: int = Query(0, ge=0, description="The offset of the first entity to retrieve."),
+            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of entities to retrieve, up to 20,000."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[Entity]]:
+            """
+            Retrieves a list of entities associated with a specific document.  
+            """
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            return await self.services["kg"].list_entities_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                offset=offset,
+                limit=limit,
+                entity_names=entity_names,
+                entity_categories=entity_categories,
+                attributes=attributes
+            )
+        
+        @self.router.post(
+            "/documents/{id}/entities",
+            summary="Create entities for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.create_entities(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def create_entities(
+            id: UUID = Path(..., description="The ID of the chunk to create entities for."),
+            entities: list[Union[Entity, dict]] = Body(..., description="The entities to create."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            entities = [Entity(**entity) if isinstance(entity, dict) else entity for entity in entities]
+            # for each entity, set the level to CHUNK
+            for entity in entities:
+                if entity.level is None:
+                    entity.level = EntityLevel.DOCUMENT
+                else:
+                    raise R2RException("Entity level must be chunk or empty.", 400)
+
+            return await self.services["kg"].create_entities_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                entities=entities,
+            )
+
+        @self.router.post(
+            "/documents/{id}/entities/{entity_id}",
+            summary="Update an entity for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.update_entity(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def update_entity(
+            id: UUID = Path(..., description="The ID of the document to update the entity for."),
+            entity_id: UUID = Path(..., description="The ID of the entity to update."),
+            entity: Entity = Body(..., description="The updated entity."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            return await self.services["kg"].update_entity_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                entity_id=entity_id,
+                entity=entity,
+            )
 
 
+        @self.router.delete(
+            "/documents/{id}/entities/{entity_id}",
+            summary="Delete an entity for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.delete_entity(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+
+        @self.base_endpoint
+        async def delete_entity(
+            id: UUID = Path(..., description="The ID of the document to delete the entity for."),
+            entity_id: UUID = Path(..., description="The ID of the entity to delete."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+        ##### RELATIONSHIPS #####
+        @self.router.get(
+            "/documents/{id}/relationships",
+            summary="List relationships for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.list_relationships(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def list_relationships(
+            id: UUID = Path(..., description="The ID of the document to retrieve relationships for."),
+            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the relationships by."),
+            relationship_types: Optional[list[str]] = Query(None, description="A list of relationship types to filter the relationships by."),
+            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
+            offset: int = Query(0, ge=0, description="The offset of the first relationship to retrieve."),
+            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of relationships to retrieve, up to 20,000."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[Relationship]]:
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            return await self.services["kg"].list_relationships_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                entity_names=entity_names,
+                relationship_types=relationship_types,
+                attributes=attributes,
+                offset=offset,
+                limit=limit,
+            )
 
 
+        @self.router.post(
+            "/documents/{id}/relationships",
+            summary="Create relationships for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.create_relationships(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def create_relationships(
+            id: UUID = Path(..., description="The ID of the document to create relationships for."),
+            relationships: list[Union[Relationship, dict]] = Body(..., description="The relationships to create."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> ResultsWrapper[list[RelationshipResponse]]:
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
+
+            relationships = [Relationship(**relationship) if isinstance(relationship, dict) else relationship for relationship in relationships]
+
+            return await self.services["kg"].create_relationships_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                relationships=relationships,
+            )
+        
+
+        @self.router.post(
+            "/documents/{id}/relationships/{relationship_id}",
+            summary="Update a relationship for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.update_relationship(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint 
+        async def update_relationship(
+            id: UUID = Path(..., description="The ID of the document to update the relationship for."),
+            relationship_id: UUID = Path(..., description="The ID of the relationship to update."),
+            relationship: Relationship = Body(..., description="The updated relationship."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
 
 
+            return await self.services["kg"].update_relationship_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                relationship_id=relationship_id,
+                relationship=relationship,
+            )
 
+        @self.router.delete(
+            "/documents/{id}/relationships/{relationship_id}",
+            summary="Delete a relationship for a document",
+        )
+        @self.base_endpoint
+        async def delete_relationship(
+            id: UUID = Path(..., description="The ID of the document to delete the relationship for."),
+            relationship_id: UUID = Path(..., description="The ID of the relationship to delete."),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can access this endpoint.", 403)
 
+            return await self.services["kg"].delete_relationship_v3(
+                level=EntityLevel.DOCUMENT,
+                id=id,
+                relationship_id=relationship_id,
+            )
 
         ##### COLLECTION LEVEL OPERATIONS #####
+
 
 
 
