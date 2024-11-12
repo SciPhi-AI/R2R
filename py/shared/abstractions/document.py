@@ -194,7 +194,7 @@ class DocumentInfo(R2RSerializable):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
-    summary: str = "N/A"  # Add default N/A summary
+    summary: Optional[str] = None
     summary_embedding: Optional[list[float]] = None  # Add optional embedding
 
     def convert_to_db_entry(self):
