@@ -58,7 +58,7 @@ async def async_generate_all_summaries():
             "Environment variable `R2R_BASE_MODEL` must be provided, e.g. `openai/gpt-4o-mini`."
         )
 
-    print(f"Using R2R Base Model: {base_url})")
+    print(f"Using R2R Base Model: {base_model}")
 
     embedding_model = os.getenv("R2R_EMBEDDING_MODEL")
     if not base_model or "openai" not in embedding_model:
@@ -66,7 +66,7 @@ async def async_generate_all_summaries():
             "Environment variable `R2R_EMBEDDING_MODEL` must be provided, e.g. `openai/text-embedding-3-small`, and must point to an OpenAI embedding model."
         )
     embedding_model = embedding_model.split("openai/")[-1]
-    print(f"Using R2R Embedding Model: {embedding_model})")
+    print(f"Using R2R Embedding Model: {embedding_model}")
 
     client = R2RAsyncClient(base_url)
     openai_client = AsyncOpenAI()
@@ -257,17 +257,18 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Drop the full text search index
+    # First drop any dependencies on the columns we want to remove
     op.execute(
         f"""
-    DROP INDEX IF EXISTS {project_name}.idx_doc_search_{project_name};
-    """
+        -- Drop the full text search index first
+        DROP INDEX IF EXISTS {project_name}.idx_doc_search_{project_name};
+
+        -- Drop the generated column that depends on the summary column
+        ALTER TABLE {project_name}.document_info
+        DROP COLUMN IF EXISTS doc_search_vector;
+        """
     )
 
-    # Remove the generated column (this will automatically remove dependencies)
-    op.drop_column("document_info", "doc_search_vector", schema=project_name)
-
-    # Remove the summary and embedding columns
+    # Now we can safely drop the summary and embedding columns
     op.drop_column("document_info", "summary_embedding", schema=project_name)
-
     op.drop_column("document_info", "summary", schema=project_name)

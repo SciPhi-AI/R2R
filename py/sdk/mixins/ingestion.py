@@ -38,57 +38,60 @@ class IngestionMixins:
                 "Number of metadatas must match number of document IDs."
             )
 
-        all_file_paths: list[str] = []
-        for path in file_paths:
-            if os.path.isdir(path):
-                for root, _, files in os.walk(path):
-                    all_file_paths.extend(
-                        os.path.join(root, file) for file in files
-                    )
-            else:
-                all_file_paths.append(path)
-
         with ExitStack() as stack:
-            files_tuples = [
-                (
-                    "files",
+            all_file_paths: list[str] = []
+            for path in file_paths:
+                if os.path.isdir(path):
+                    for root, _, files in os.walk(path):
+                        all_file_paths.extend(
+                            os.path.join(root, file) for file in files
+                        )
+                else:
+                    all_file_paths.append(path)
+
+            with ExitStack() as stack:
+                files_tuples = [
                     (
-                        os.path.basename(file),
-                        stack.enter_context(open(file, "rb")),
-                        "application/octet-stream",
-                    ),
-                )
-                for file in all_file_paths
-            ]
+                        "files",
+                        (
+                            os.path.basename(file),
+                            stack.enter_context(open(file, "rb")),
+                            "application/octet-stream",
+                        ),
+                    )
+                    for file in all_file_paths
+                ]
 
-            data = {}
-            if document_ids:
-                data["document_ids"] = json.dumps(
-                    [str(doc_id) for doc_id in document_ids]
-                )
-            if metadatas:
-                data["metadatas"] = json.dumps(metadatas)
+                data = {}
+                if document_ids:
+                    data["document_ids"] = json.dumps(
+                        [str(doc_id) for doc_id in document_ids]
+                    )
+                if metadatas:
+                    data["metadatas"] = json.dumps(metadatas)
 
-            if ingestion_config:
-                data["ingestion_config"] = json.dumps(ingestion_config)
+                if ingestion_config:
+                    data["ingestion_config"] = json.dumps(ingestion_config)
 
-            if run_with_orchestration is not None:
-                data["run_with_orchestration"] = str(run_with_orchestration)
+                if run_with_orchestration is not None:
+                    data["run_with_orchestration"] = str(
+                        run_with_orchestration
+                    )
 
-            if collection_ids:
-                data["collection_ids"] = json.dumps(
-                    [
+                if collection_ids:
+                    data["collection_ids"] = json.dumps(
                         [
-                            str(collection_id)
-                            for collection_id in doc_collection_ids
+                            [
+                                str(collection_id)
+                                for collection_id in doc_collection_ids
+                            ]
+                            for doc_collection_ids in collection_ids
                         ]
-                        for doc_collection_ids in collection_ids
-                    ]
-                )
+                    )
 
-            return await self._make_request(  # type: ignore
-                "POST", "ingest_files", data=data, files=files_tuples
-            )
+                return await self._make_request(  # type: ignore
+                    "POST", "ingest_files", data=data, files=files_tuples
+                )
 
     async def update_files(
         self,

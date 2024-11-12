@@ -251,6 +251,9 @@ class IngestionService(Service):
 
             document_info.summary = response.choices[0].message.content  # type: ignore
 
+            if not document_info.summary:
+                raise ValueError("Expected a generated response.")
+
             embedding = await self.providers.embedding.async_get_embedding(
                 text=document_info.summary,
             )
