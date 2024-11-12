@@ -320,91 +320,90 @@ class KgService(Service):
     @telemetry_event("list_entities")
     async def list_entities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_ids: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         **kwargs,
     ):
         return await self.providers.database.get_entities(
             collection_id=collection_id,
             entity_ids=entity_ids,
             entity_table_name=entity_table_name,
-            offset=offset or 0,
-            limit=limit or -1,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("get_entities")
     async def get_entities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_ids: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
     ):
         return await self.providers.database.get_entities(
+            offset=offset,
+            limit=limit,
             collection_id=collection_id,
             entity_ids=entity_ids,
             entity_table_name=entity_table_name,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("get_triples")
     async def get_triples(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         **kwargs,
     ):
         return await self.providers.database.get_triples(
+            offset=offset,
+            limit=limit,
             collection_id=collection_id,
             entity_names=entity_names,
             triple_ids=triple_ids,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("list_triples")
     async def list_triples(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
         triple_ids: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         **kwargs,
     ):
         return await self.providers.database.get_triples(
+            offset=offset,
+            limit=limit,
             collection_id=collection_id,
             entity_names=entity_names,
             triple_ids=triple_ids,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("get_communities")
     async def get_communities(
         self,
+        offset: int,
+        limit: int,
         collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
         community_numbers: Optional[list[int]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         **kwargs,
     ):
         return await self.providers.database.get_communities(
+            offset=offset,
+            limit=limit,
             collection_id=collection_id,
             levels=levels,
             community_numbers=community_numbers,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("list_communities")
@@ -418,11 +417,11 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.get_communities(
+            offset=offset,
+            limit=limit,
             collection_id=collection_id,
             levels=levels,
             community_numbers=community_numbers,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("get_deduplication_estimate")

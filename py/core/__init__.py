@@ -89,6 +89,7 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexConfig",
     ## AGENT
     # Agent abstractions
     "Agent",

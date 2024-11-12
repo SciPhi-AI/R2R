@@ -1,7 +1,5 @@
 # TODO - Move indices to 'id' basis
-
 # TODO - Implement update index
-
 # TODO - Implement index data model
 
 import logging
@@ -10,19 +8,14 @@ import textwrap
 from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Json
 
-from core.base import R2RException, RunType  # IndexConfig,
+from core.base import R2RException, RunType, IndexConfig
 from core.base.abstractions import (
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
-    IndexMeasure,
-    IndexMethod,
     VectorTableName,
 )
 from core.base.api.models import (
-    WrappedCreateVectorIndexResponse,
-    WrappedDeleteVectorIndexResponse,
+    GenericMessageResponse,
+    WrappedGenericMessageResponse,
     WrappedListVectorIndicesResponse,
 )
 from core.providers import (
@@ -33,48 +26,6 @@ from core.providers import (
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
-
-
-class IndexConfig(BaseModel):
-    # table_name: Optional[VectorTableName] = Body(
-    #     default=VectorTableName.VECTORS,
-    #     description=create_vector_descriptions.get("table_name"),
-    # ),
-    # index_method: IndexMethod = Body(
-    #     default=IndexMethod.hnsw,
-    #     description=create_vector_descriptions.get("index_method"),
-    # ),
-    # index_measure: IndexMeasure = Body(
-    #     default=IndexMeasure.cosine_distance,
-    #     description=create_vector_descriptions.get("index_measure"),
-    # ),
-    # index_arguments: Optional[
-    #     IndexArgsIVFFlat | IndexArgsHNSW
-    # ] = Body(
-    #     None,
-    #     description=create_vector_descriptions.get("index_arguments"),
-    # ),
-    # index_name: Optional[str] = Body(
-    #     None,
-    #     description=create_vector_descriptions.get("index_name"),
-    # ),
-    # index_column: Optional[str] = Body(
-    #     None,
-    #     description=create_vector_descriptions.get("index_column"),
-    # ),
-    # concurrently: bool = Body(
-    #     default=True,
-    #     description=create_vector_descriptions.get("concurrently"),
-    # ),
-    # auth_user=Depends(self.service.providers.auth.auth_wrapper),
-    name: Optional[str] = None
-    table_name: Optional[str] = VectorTableName.VECTORS
-    index_method: Optional[str] = IndexMethod.hnsw
-    index_measure: Optional[str] = IndexMeasure.cosine_distance
-    index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = None
-    index_name: Optional[str] = None
-    index_column: Optional[str] = None
-    concurrently: bool = True
 
 
 class IndicesRouter(BaseRouterV3):
@@ -92,7 +43,6 @@ class IndicesRouter(BaseRouterV3):
 
     def _setup_routes(self):
 
-        ## TODO - Allow developer to pass the index id with the request
         ## TODO - Allow developer to pass the index id with the request
         @self.router.post(
             "/indices",
@@ -141,6 +91,37 @@ class IndicesRouter(BaseRouterV3):
                                     "concurrently": True
                                 }
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.indicies.create({
+                                    config: {
+                                        table_name: "vectors",
+                                        index_method: "hnsw",
+                                        index_measure: "cosine_distance",
+                                        index_arguments: {
+                                            m: 16,
+                                            ef_construction: 64,
+                                            ef: 40
+                                        },
+                                        index_name: "my_document_embeddings_idx",
+                                        index_column: "embedding",
+                                        concurrently: true
+                                    },
+                                    run_with_orchestration: true
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -195,29 +176,13 @@ class IndicesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_index(
-            config: IndexConfig = Body(
-                ...,
-                description="Configuration for the vector index, acceptable table_name values are 'vectors', 'document_entity', 'document_collections'",
-                example={
-                    "table_name": "vectors",
-                    "index_method": "hnsw",
-                    "index_measure": "cosine_distance",
-                    "index_arguments": {
-                        "m": 16,
-                        "ef_construction": 64,
-                        "ef": 40,
-                    },
-                    "index_name": "my_document_embeddings_idx",
-                    "index_column": "embedding",
-                    "concurrently": True,
-                },
-            ),
+            config: IndexConfig,
             run_with_orchestration: Optional[bool] = Body(
                 True,
                 description="Whether to run index creation as an orchestrated task (recommended for large indices)",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedCreateVectorIndexResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'document_entity', 'document_collections'.
             Vectors correspond to the chunks of text that are indexed for similarity search, whereas document_entity and document_collections are created during knowledge graph construction.
@@ -276,7 +241,7 @@ class IndicesRouter(BaseRouterV3):
                 },
             )
 
-            return raw_message  # type: ignore
+            return GenericMessageResponse(message=raw_message)
 
         @self.router.get(
             "/indices",
@@ -308,6 +273,25 @@ class IndicesRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.indicies.list({
+                                    offset: 0,
+                                    limit: 10,
+                                    filters: { table_name: "vectors" }
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -327,10 +311,7 @@ class IndicesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_indices(
-            filters: Optional[Json[dict]] = Query(
-                None,
-                description='Filter criteria for indices (e.g., {"table_name": "vectors"})',
-            ),
+            filters: Optional[dict] = Depends(),
             offset: int = Query(
                 0,
                 ge=0,
@@ -377,12 +358,33 @@ class IndicesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
 
                             # Get detailed information about a specific index
-                            index = client.indices.get("index_1")
+                            index = client.indices.retrieve("index_1")
 
                             # Access index details
                             print(f"Index Method: {index['method']}")
                             print(f"Parameters: {index['parameters']}")
                             print(f"Performance Stats: {index['stats']}")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.indicies.retrieve({
+                                    index_name: "index_1",
+                                    table_name: "vectors"
+                                });
+
+                                console.log(response);
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -436,7 +438,6 @@ class IndicesRouter(BaseRouterV3):
                 )
             return {"index": indices["indices"][0]}
 
-        # TODO - Implement update index
         # TODO - Implement update index
         #         @self.router.post(
         #             "/indices/{name}",
@@ -512,8 +513,30 @@ class IndicesRouter(BaseRouterV3):
                             # Delete an index with orchestration for cleanup
                             result = client.indices.delete(
                                 index_name="index_1",
+                                table_name="vectors",
                                 run_with_orchestration=True
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.indicies.delete({
+                                    index_name: "index_1"
+                                    table_name: "vectors"
+                                });
+
+                                console.log(response);
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -545,7 +568,7 @@ class IndicesRouter(BaseRouterV3):
             # ),
             # run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteVectorIndexResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Delete an existing vector similarity search index.
 
@@ -578,4 +601,4 @@ class IndicesRouter(BaseRouterV3):
                 },
             )
 
-            return raw_message  # type: ignore
+            return GenericMessageResponse(message=raw_message)

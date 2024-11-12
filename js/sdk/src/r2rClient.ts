@@ -7,6 +7,7 @@ import { ChunksClient } from "./v3/clients/chunks";
 import { CollectionsClient } from "./v3/clients/collections";
 import { ConversationsClient } from "./v3/clients/conversations";
 import { DocumentsClient } from "./v3/clients/documents";
+import { IndiciesClient } from "./v3/clients/indices";
 import { UsersClient } from "./v3/clients/users";
 import { PromptsClient } from "./v3/clients/prompts";
 
@@ -38,6 +39,7 @@ export class r2rClient extends BaseClient {
   public readonly collections: CollectionsClient;
   public readonly conversations: ConversationsClient;
   public readonly documents: DocumentsClient;
+  public readonly indices: IndiciesClient;
   public readonly users: UsersClient;
   public readonly prompts: PromptsClient;
 
@@ -48,6 +50,7 @@ export class r2rClient extends BaseClient {
     this.collections = new CollectionsClient(this);
     this.conversations = new ConversationsClient(this);
     this.documents = new DocumentsClient(this);
+    this.indices = new IndiciesClient(this);
     this.users = new UsersClient(this);
     this.prompts = new PromptsClient(this);
 
@@ -656,6 +659,7 @@ export class r2rClient extends BaseClient {
    * Create a vector index for similarity search.
    * @param options The options for creating the vector index
    * @returns Promise resolving to the creation response
+   * @deprecated Use `client.indices.create` instead.
    */
   @feature("createVectorIndex")
   async createVectorIndex(options: {
@@ -693,6 +697,7 @@ export class r2rClient extends BaseClient {
    * List existing vector indices for a table.
    * @param options The options for listing vector indices
    * @returns Promise resolving to the list of indices
+   * @deprecated Use `client.indices.list` instead.
    */
   @feature("listVectorIndices")
   async listVectorIndices(options: {
@@ -712,6 +717,7 @@ export class r2rClient extends BaseClient {
    * Delete a vector index from a table.
    * @param options The options for deleting the vector index
    * @returns Promise resolving to the deletion response
+   * @deprecated Use `client.indices.delete` instead.
    */
   @feature("deleteVectorIndex")
   async deleteVectorIndex(options: {
