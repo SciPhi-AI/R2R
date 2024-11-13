@@ -207,7 +207,6 @@ class GraphsSDK:
             f"graphs/{str(collection_id)}/entities",
             params=params,
             version="v3",
-            version="v3",
         )
 
     async def deduplicate_entities(

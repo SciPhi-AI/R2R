@@ -1,11 +1,10 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 import json
 from typing import Any, Optional, Union
 from uuid import UUID
 
 from ...models import Message
-
-from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
 
 
 class ManagementMixins:

@@ -1,3 +1,5 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 import json
 import os
 from contextlib import ExitStack
@@ -5,9 +7,6 @@ from typing import Optional, Union
 from uuid import UUID
 
 from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
-
-from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
 
 
 class IngestionMixins:

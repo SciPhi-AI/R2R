@@ -1,10 +1,9 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 from typing import Optional, Union
 from uuid import UUID
 
 from ...models import Token, UserResponse
-
-from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
 
 
 class AuthMixins:
@@ -211,7 +210,7 @@ class AuthMixins:
             self._refresh_token = None
             raise ValueError("Invalid tokens provided")
 
-    @deprecated()
+    @deprecated("")
     async def get_user_verification_code(
         self, user_id: Union[str, UUID]
     ) -> dict:
@@ -228,7 +227,7 @@ class AuthMixins:
             "GET", f"user/{user_id}/verification_data"
         )
 
-    @deprecated()
+    @deprecated("")
     async def send_reset_email(self, email: str) -> dict:
         """
         Generates a new verification code and sends a reset email to the user.
