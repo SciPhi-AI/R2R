@@ -54,10 +54,6 @@ class AppSettingsResponse(BaseModel):
     # r2r_version: str
 
 
-class ScoreCompletionResponse(BaseModel):
-    message: str
-
-
 class UserResponse(R2RSerializable):
     id: UUID
     email: str

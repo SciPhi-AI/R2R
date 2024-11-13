@@ -12,10 +12,10 @@ from pydantic import Json
 
 from core.base import Message, R2RException
 from core.base.api.models import (
-    WrappedBooleanResponse,
     GenericMessageResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
+    WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedConversationResponse,
