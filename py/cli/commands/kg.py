@@ -195,7 +195,7 @@ async def enrich_graph(
 )
 @click.option(
     "--entity-level",
-    default="collection",
+    default="document",
     help="Entity level to filter by.",
 )
 @pass_context
@@ -209,11 +209,11 @@ async def get_entities(
 
     with timer():
         response = await client.get_entities(
-            entity_level,
-            collection_id,
-            offset,
-            limit,
-            list(entity_ids),
+            offset=offset,
+            limit=limit,
+            entity_level=entity_level,
+            collection_id=collection_id,
+            entity_ids=list(entity_ids),
         )
 
     click.echo(json.dumps(response, indent=2))
