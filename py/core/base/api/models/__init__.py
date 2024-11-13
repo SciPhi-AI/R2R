@@ -71,8 +71,6 @@ from shared.api.models.management.responses import (
     WrappedUsersResponse,
     # TODO: anything below this hasn't been reviewed
     WrappedServerStatsResponse,
-    WrappedUserCollectionResponse,
-    WrappedUsersInCollectionResponse,
     WrappedVerificationResult,
 )
 from shared.api.models.retrieval.responses import (
@@ -128,7 +126,6 @@ __all__ = [
     "WrappedDocumentsResponse",
     "WrappedCollectionResponse",
     "WrappedCollectionsResponse",
-    "WrappedUsersInCollectionResponse",
     # Conversation Responses
     "ConversationResponse",
     "WrappedConversationResponse",
@@ -156,7 +153,6 @@ __all__ = [
     "WrappedBooleanResponse",
     "WrappedGenericMessageResponse",
     # TODO: This needs to be cleaned up
-    "WrappedUserCollectionResponse",
     "WrappedDeleteResponse",
     # Retrieval Responses
     "CombinedSearchResponse",

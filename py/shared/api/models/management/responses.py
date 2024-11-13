@@ -166,10 +166,5 @@ WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 
-WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
-WrappedUserCollectionResponse = PaginatedResultsWrapper[
-    list[CollectionResponse]
-]
-
 WrappedDeleteResponse = ResultsWrapper[None]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]

@@ -12,7 +12,7 @@ from core.base.api.models import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedDocumentsResponse,
-    WrappedUsersInCollectionResponse,
+    WrappedUsersResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -776,7 +776,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedUsersInCollectionResponse:
+        ) -> WrappedUsersResponse:
             """
             Get all users in a collection with pagination and sorting options.
 

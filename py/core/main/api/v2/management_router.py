@@ -28,9 +28,7 @@ from core.base.api.models import (
     WrappedPromptsResponse,
     WrappedLogResponse,
     WrappedServerStatsResponse,
-    WrappedUserCollectionResponse,
     WrappedUsersResponse,
-    WrappedUsersInCollectionResponse,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria
 from core.providers import (
@@ -679,7 +677,7 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUsersInCollectionResponse:
+        ) -> WrappedUsersResponse:
             collection_uuid = UUID(collection_id)
             if (
                 not auth_user.is_superuser
@@ -711,7 +709,7 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserCollectionResponse:
+        ) -> WrappedCollectionsResponse:
             if str(auth_user.id) != user_id and not auth_user.is_superuser:
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
