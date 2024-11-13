@@ -9,13 +9,13 @@ from fastapi.security import OAuth2PasswordBearer
 from core.base import (
     AuthConfig,
     AuthProvider,
+    CollectionResponse,
     CryptoProvider,
     DatabaseProvider,
     EmailProvider,
     R2RException,
     Token,
     TokenData,
-    CollectionResponse,
 )
 from core.base.api.models import UserResponse
 

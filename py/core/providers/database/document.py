@@ -776,7 +776,7 @@ class PostgresDocumentHandler(DocumentHandler):
             search_settings.hybrid_search_settings.full_text_weight
         )
 
-        for doc_id, scores in doc_scores.items():
+        for scores in doc_scores.values():
             semantic_score = 1 / (rrf_k + scores["semantic_rank"])
             full_text_score = 1 / (rrf_k + scores["full_text_rank"])
 
@@ -851,7 +851,7 @@ class PostgresDocumentHandler(DocumentHandler):
 
     # TODO - Remove copy pasta, consolidate
     def _build_filters(
-        self, filters: dict, parameters: list[Union[str, int, bytes]]
+        self, filters: dict, parameters: list[str | int | bytes]
     ) -> str:
 
         def parse_condition(key: str, value: Any) -> str:  # type: ignore

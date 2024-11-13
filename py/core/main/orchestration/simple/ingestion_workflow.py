@@ -5,8 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from litellm import AuthenticationError
 
-from fastapi import HTTPException
-from core.base import R2RException, DocumentChunk, increment_version
+from core.base import DocumentChunk, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
     generate_extraction_id,

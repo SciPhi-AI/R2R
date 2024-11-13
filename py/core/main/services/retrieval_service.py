@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from core import R2RStreamingRAGAgent
 from core.base import (
-    DocumentInfo,
+    DocumentResponse,
     EmbeddingPurpose,
     GenerationConfig,
     KGSearchSettings,
@@ -128,7 +128,7 @@ class RetrievalService(Service):
         query: str,
         settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
-    ) -> list[DocumentInfo]:
+    ) -> list[DocumentResponse]:
 
         return await self.providers.database.search_documents(
             query_text=query,

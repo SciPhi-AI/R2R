@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, AsyncGenerator, Optional, Sequence, Union
+from typing import Any, AsyncGenerator, Optional, Sequence
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -234,7 +234,7 @@ class IngestionService(Service):
 
     async def augment_document_info(
         self,
-        document_info: DocumentInfo,
+        document_info: DocumentResponse,
         chunked_documents: list[dict],
     ) -> None:
         if not self.config.ingestion.skip_document_summary:
@@ -253,6 +253,7 @@ class IngestionService(Service):
                 task_prompt_name=self.config.ingestion.document_summary_task_prompt,
                 task_inputs={"document": document},
             )
+            # FIXME: Why are we hardcoding the model here?
             response = await self.providers.llm.aget_completion(
                 messages=messages,
                 generation_config=GenerationConfig(model="openai/gpt-4o-mini"),
@@ -286,7 +287,7 @@ class IngestionService(Service):
 
     async def store_embeddings(
         self,
-        embeddings: Sequence[Union[dict, VectorEntry]],
+        embeddings: Sequence[dict | VectorEntry],
     ) -> AsyncGenerator[str, None]:
         vector_entries = [
             (

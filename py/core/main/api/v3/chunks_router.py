@@ -14,7 +14,7 @@ from core.base import (
     RunType,
     UnprocessedChunk,
     UpdateChunk,
-    VectorSearchSettings,
+    SearchSettings,
     ChunkResponse,
 )
 from core.base.api.models import (
@@ -53,7 +53,7 @@ class ChunksRouter(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: VectorSearchSettings | KGSearchSettings,
+        search_settings: SearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -302,8 +302,8 @@ class ChunksRouter(BaseRouterV3):
         @self.base_endpoint
         async def search_chunks(
             query: str = Body(...),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedVectorSearchResponse:  # type: ignore

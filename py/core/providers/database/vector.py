@@ -13,13 +13,13 @@ from core.base import (
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
+    R2RException,
     SearchSettings,
     VectorEntry,
     VectorHandler,
     VectorQuantizationType,
     VectorSearchResult,
     VectorTableName,
-    R2RException,
 )
 
 from .base import PostgresConnectionManager
@@ -1335,7 +1335,7 @@ class PostgresVectorHandler(VectorHandler):
     async def search_documents(
         self,
         query_text: str,
-        settings: DocumentSearchSettings,
+        settings: SearchSettings,
     ) -> list[dict[str, Any]]:
         """
         Search for documents based on their metadata fields and/or body text.
@@ -1343,7 +1343,7 @@ class PostgresVectorHandler(VectorHandler):
 
         Args:
             query_text (str): The search query text
-            settings (DocumentSearchSettings): Search settings including search preferences and filters
+            settings (SearchSettings): Search settings including search preferences and filters
 
         Returns:
             list[dict[str, Any]]: List of documents with their search scores and complete metadata

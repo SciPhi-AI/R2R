@@ -1401,7 +1401,7 @@ class DatabaseProvider(Provider):
         query_text: str,
         settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
-    ) -> list[DocumentInfo]:
+    ) -> list[DocumentResponse]:
         return await self.document_handler.search_documents(
             query_text, query_embedding, settings
         )

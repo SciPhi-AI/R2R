@@ -2,12 +2,10 @@ import logging
 from typing import AsyncGenerator, Optional
 
 from ...models import (
-    DocumentSearchSettings,
     GenerationConfig,
     KGSearchSettings,
     Message,
     RAGResponse,
-    SearchResponse,
     SearchSettings,
 )
 
@@ -18,8 +16,8 @@ class RetrievalMixins:
     async def search_documents(
         self,
         query: str,
-        settings: Optional[dict | DocumentSearchSettings] = None,
-    ) -> SearchResponse:
+        settings: Optional[dict] = None,
+    ):
         """
         Conduct a vector and/or KG search.
 
@@ -43,9 +41,9 @@ class RetrievalMixins:
     async def search(
         self,
         query: str,
-        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
-        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
-    ) -> CombinedSearchResponse:
+        vector_search_settings: Optional[dict | SearchSettings] = None,
+        kg_search_settings: Optional[dict | KGSearchSettings] = None,
+    ):
         """
         Conduct a vector and/or KG search.
 
@@ -73,8 +71,8 @@ class RetrievalMixins:
 
     async def completion(
         self,
-        messages: list[Union[dict, Message]],
-        generation_config: Optional[Union[dict, GenerationConfig]] = None,
+        messages: list[dict | Message],
+        generation_config: Optional[dict | GenerationConfig] = None,
     ):
         cast_messages: list[Message] = [
             Message(**msg) if isinstance(msg, dict) else msg
@@ -94,12 +92,12 @@ class RetrievalMixins:
     async def rag(
         self,
         query: str,
-        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
-        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
+        rag_generation_config: Optional[dict | GenerationConfig] = None,
+        vector_search_settings: Optional[dict | SearchSettings] = None,
+        kg_search_settings: Optional[dict | KGSearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
-    ) -> Union[RAGResponse, AsyncGenerator[RAGResponse, None]]:
+    ) -> RAGResponse | AsyncGenerator[RAGResponse, None]:
         """
         Conducts a Retrieval Augmented Generation (RAG) search with the given query.
 

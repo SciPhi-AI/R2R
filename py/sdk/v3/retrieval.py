@@ -9,7 +9,7 @@ from ..models import (
     KGSearchSettings,
     Message,
     RAGResponse,
-    VectorSearchSettings,
+    SearchSettings,
 )
 
 logger = logging.getLogger()
@@ -26,9 +26,7 @@ class RetrievalSDK:
     async def search(
         self,
         query: str,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
     ) -> CombinedSearchResponse:
         """
@@ -36,7 +34,7 @@ class RetrievalSDK:
 
         Args:
             query (str): The query to search for.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
 
         Returns:
@@ -80,9 +78,7 @@ class RetrievalSDK:
         self,
         query: str,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -93,7 +89,7 @@ class RetrievalSDK:
         Args:
             query (str): The query to search for.
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
             task_prompt_override (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
@@ -132,9 +128,7 @@ class RetrievalSDK:
         self,
         message: Optional[Union[dict, Message]] = None,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -149,7 +143,7 @@ class RetrievalSDK:
         Args:
             messages (List[Union[dict, Message]]): The messages to send to the agent.
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
             task_prompt_override (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.

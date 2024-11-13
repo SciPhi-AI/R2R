@@ -3,8 +3,8 @@ import logging
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
-from fastapi import HTTPException
 from asyncpg.exceptions import UniqueViolationError
+from fastapi import HTTPException
 
 from core.base import (
     CollectionHandler,
@@ -19,9 +19,7 @@ from core.base.abstractions import (
     IngestionStatus,
 )
 from core.base.api.models import CollectionResponse
-from core.utils import (
-    generate_default_user_collection_id,
-)
+from core.utils import generate_default_user_collection_id
 
 from .base import PostgresConnectionManager
 

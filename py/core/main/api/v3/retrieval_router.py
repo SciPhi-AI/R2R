@@ -11,7 +11,7 @@ from core.base import (
     KGSearchSettings,
     Message,
     R2RException,
-    VectorSearchSettings,
+    SearchSettings,
 )
 from core.base.api.models import (
     WrappedCompletionResponse,
@@ -46,7 +46,7 @@ class RetrievalRouterV3(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: VectorSearchSettings | KGSearchSettings,
+        search_settings: SearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -174,8 +174,8 @@ class RetrievalRouterV3(BaseRouterV3):
                 ...,
                 description="Search query to find relevant documents",
             ),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -287,8 +287,8 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.base_endpoint
         async def rag_app(
             query: str = Body(...),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -434,8 +434,8 @@ class RetrievalRouterV3(BaseRouterV3):
                 deprecated=True,
                 description="List of messages (deprecated, use message instead)",
             ),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
