@@ -125,7 +125,7 @@ class RetrievalSDK:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return self._make_streaming_request(
+            return self.client._make_streaming_request(
                 "POST",
                 "retrieval/rag",
                 json=data,
@@ -194,7 +194,7 @@ class RetrievalSDK:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return self._make_streaming_request(
+            return self.client._make_streaming_request(
                 "POST",
                 "retrieval/agent",
                 json=data,

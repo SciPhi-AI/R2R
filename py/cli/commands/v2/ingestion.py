@@ -2,18 +2,20 @@ import json
 import os
 import tempfile
 import uuid
-from urllib.parse import urlparse
-
 import asyncclick as click
 import requests
+
+from urllib.parse import urlparse
 from asyncclick import pass_context
 
-from cli.command_group import cli
+from r2r import R2RAsyncClient
+from cli.command_group import cli, deprecated_command
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
 
+# TODO
 async def ingest_files_from_urls(client, urls):
     """Download and ingest files from given URLs."""
     files_to_ingest = []
@@ -71,11 +73,12 @@ async def ingest_files_from_urls(client, urls):
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
+@deprecated_command("r2r documents create /path/to/file.txt")
 async def ingest_files(
     ctx, file_paths, document_ids, metadatas, run_without_orchestration
 ):
     """Ingest files into R2R."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
@@ -105,11 +108,14 @@ async def ingest_files(
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
+@deprecated_command(
+    "r2r documents update /path/to/file.txt --id=<document id>"
+)
 async def update_files(
     ctx, file_paths, document_ids, metadatas, run_without_orchestration
 ):
     """Update existing files in R2R."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         file_paths = list(file_paths)
 
@@ -145,7 +151,7 @@ async def update_files(
 async def ingest_sample_file(ctx, v2=False, v3=False):
     """Ingest the first sample file into R2R."""
     sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle{'_v2' if v2 else ''}{'_v3' if v3 else ''}.txt"
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     with timer():
         response = await ingest_files_from_urls(client, [sample_file_url])
@@ -158,7 +164,7 @@ async def ingest_sample_file(ctx, v2=False, v3=False):
 @pass_context
 async def ingest_sample_files(ctx):
     """Ingest multiple sample files into R2R."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     urls = [
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_3.html",
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_4.html",
@@ -182,7 +188,7 @@ async def ingest_sample_files(ctx):
 @pass_context
 async def ingest_sample_files_from_unstructured(ctx):
     """Ingest multiple sample files from URLs into R2R."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     # Get the absolute path of the current script
     current_script_path = os.path.abspath(__file__)
@@ -250,7 +256,7 @@ async def create_vector_index(
     no_concurrent,
 ):
     """Create a vector index for similarity search."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         response = await client.create_vector_index(
             table_name=table_name,
@@ -274,7 +280,7 @@ async def create_vector_index(
 @pass_context
 async def list_vector_indices(ctx, table_name):
     """List all vector indices for a table."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         response = await client.list_vector_indices(table_name=table_name)
     click.echo(json.dumps(response, indent=2))
@@ -296,7 +302,7 @@ async def list_vector_indices(ctx, table_name):
 @pass_context
 async def delete_vector_index(ctx, index_name, table_name, no_concurrent):
     """Delete a vector index."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         response = await client.delete_vector_index(
             index_name=index_name,

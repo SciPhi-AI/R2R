@@ -1,6 +1,4 @@
-import logging
 import textwrap
-from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -22,7 +20,6 @@ from core.base.api.models import (
 from .base_router import BaseRouterV3
 
 
-logger = logging.getLogger()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
@@ -69,6 +66,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users register jane.doe@example.com secure_password123
                             """
                         ),
                     },
@@ -553,6 +558,14 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users list
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -574,8 +587,8 @@ class UsersRouter(BaseRouterV3):
             #     is_active: Optional[bool] = Query(None, example=True),
             #     is_superuser: Optional[bool] = Query(None, example=False),
             #     auth_user=Depends(self.providers.auth.auth_wrapper),
-            user_ids: Optional[list[UUID]] = Query(
-                None, description="List of user IDs to filter by"
+            ids: list[str] = Query(
+                [], description="List of user IDs to filter by"
             ),
             offset: int = Query(
                 0,
@@ -601,9 +614,11 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
+            user_uuids = [UUID(user_id) for user_id in ids]
+
             users_overview_response = await self.services[
                 "management"
-            ].users_overview(user_ids=user_ids, offset=offset, limit=limit)
+            ].users_overview(user_ids=user_uuids, offset=offset, limit=limit)
             return users_overview_response["results"], {  # type: ignore
                 "total_entries": users_overview_response["total_entries"]
             }
@@ -644,6 +659,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -726,6 +749,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users list-collections 550e8400-e29b-41d4-a716-446655440000
                             """
                         ),
                     },
@@ -822,6 +853,14 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users add-to-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -893,6 +932,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users remove-from-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
                             """
                         ),
                     },

@@ -1,20 +1,13 @@
-import json
-
 import asyncclick as click
 from asyncclick import pass_context
 
 from r2r import R2RAsyncClient
-from cli.utils.timer import timer
+from cli.command_group import cli, deprecated_command
 from cli.utils.param_types import JSON
+from cli.utils.timer import timer
 
 
-@click.group()
-def retrieval():
-    """Retrieval commands."""
-    pass
-
-
-@retrieval.command()
+@cli.command()
 @click.option(
     "--query", prompt="Enter your search query", help="The search query"
 )
@@ -70,6 +63,7 @@ def retrieval():
 )
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
 @pass_context
+@deprecated_command("r2r retrieval search")
 async def search(ctx, query, **kwargs):
     """Perform a search query."""
     client: R2RAsyncClient = ctx.obj
@@ -106,7 +100,7 @@ async def search(ctx, query, **kwargs):
     }
 
     with timer():
-        results = await client.retrieval.search(
+        results = await client.search(
             query,
             vector_search_settings,
             kg_search_settings,
@@ -118,15 +112,15 @@ async def search(ctx, query, **kwargs):
         if "vector_search_results" in results:
             click.echo("Vector search results:")
             for result in results["vector_search_results"]:
-                click.echo(json.dumps(result, indent=2))
+                click.echo(result)
 
         if "kg_search_results" in results and results["kg_search_results"]:
             click.echo("KG search results:")
             for result in results["kg_search_results"]:
-                click.echo(json.dumps(result, indent=2))
+                click.echo(result)
 
 
-@retrieval.command()
+@cli.command()
 @click.option("--query", prompt="Enter your query", help="The query for RAG")
 # RAG Generation Config
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
@@ -176,6 +170,7 @@ async def search(ctx, query, **kwargs):
     help="Vanilla RAG or complex method like query fusion or HyDE.",
 )
 @click.option("--local-search-limits", type=JSON, help="Local search limits")
+@deprecated_command("r2r retrieval rag")
 @pass_context
 async def rag(ctx, query, **kwargs):
     """Perform a RAG query."""
@@ -224,11 +219,11 @@ async def rag(ctx, query, **kwargs):
         }
 
     with timer():
-        response = await client.retrieval.rag(
-            query=query,
-            rag_generation_config=rag_generation_config,
-            vector_search_settings=vector_search_settings,
-            kg_search_settings=kg_search_settings,
+        response = await client.rag(
+            query,
+            rag_generation_config,
+            vector_search_settings,
+            kg_search_settings,
         )
 
         if rag_generation_config.get("stream"):
@@ -236,4 +231,7 @@ async def rag(ctx, query, **kwargs):
                 click.echo(chunk, nl=False)
             click.echo()
         else:
-            click.echo(json.dumps(response, indent=2))
+            click.echo(response)
+
+
+# TODO: Implement agent

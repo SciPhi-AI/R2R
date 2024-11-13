@@ -65,7 +65,10 @@ class DocumentsSDK:
         else:
             data["content"] = content  # type: ignore
             return await self.client._make_request(
-                "POST", "documents", data=data
+                "POST",
+                "documents",
+                data=data,
+                version="v3",
             )
 
     async def update(
@@ -130,7 +133,10 @@ class DocumentsSDK:
         else:
             data["content"] = content  # type: ignore
             return await self.client._make_request(
-                "POST", f"documents/{str(id)}", data=data
+                "POST",
+                f"documents/{str(id)}",
+                data=data,
+                version="v3",
             )
 
     async def retrieve(
@@ -146,7 +152,11 @@ class DocumentsSDK:
         Returns:
             dict: Document information
         """
-        return await self.client._make_request("GET", f"documents/{str(id)}")
+        return await self.client._make_request(
+            "GET",
+            f"documents/{str(id)}",
+            version="v3",
+        )
 
     async def list(
         self,
