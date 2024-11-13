@@ -45,7 +45,7 @@ jobs:
 
       - name: Install JS SDK dependencies
         working-directory: ./js/sdk
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Check if R2R server is running
         run: |
@@ -53,4 +53,4 @@ jobs:
 
       - name: Run integration tests
         working-directory: ./js/sdk
-        run: npm run test
+        run: pnpm test
