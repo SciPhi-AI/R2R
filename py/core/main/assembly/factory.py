@@ -542,7 +542,9 @@ class R2RPipeFactory:
             logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="kg_relationships_extraction_pipe"),
+            config=AsyncPipe.PipeConfig(
+                name="kg_relationships_extraction_pipe"
+            ),
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:

@@ -15,7 +15,7 @@ from core.base import (
     KGExtractionStatus,
     KGHandler,
     R2RException,
-    Relationship
+    Relationship,
 )
 from core.base.abstractions import (
     CommunityInfo,
@@ -26,11 +26,7 @@ from core.base.abstractions import (
     KGEntityDeduplicationSettings,
     VectorQuantizationType,
 )
-from core.base.api.models import (
-    KGCreationEstimationResponse,
-    KGDeduplicationEstimationResponse,
-    KGEnrichmentEstimationResponse,
-)
+
 from core.base.utils import _decorate_vector_type, llm_cost_per_million_tokens
 
 from .base import PostgresConnectionManager
@@ -257,7 +253,9 @@ class PostgresKGHandler(KGHandler):
             [collection_id],
         )
 
-        document_ids = [doc_id["document_id"] for doc_id in kg_extraction_statuses]
+        document_ids = [
+            doc_id["document_id"] for doc_id in kg_extraction_statuses
+        ]
 
         kg_enrichment_statuses = await self.connection_manager.fetch_query(
             f"SELECT enrichment_status FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} WHERE id = $1",
@@ -292,7 +290,9 @@ class PostgresKGHandler(KGHandler):
 
         return {
             "kg_extraction_statuses": kg_extraction_statuses,
-            "kg_enrichment_status": kg_enrichment_statuses[0]["enrichment_status"],
+            "kg_enrichment_status": kg_enrichment_statuses[0][
+                "enrichment_status"
+            ],
             "chunk_entity_count": chunk_entity_count[0]["count"],
             "chunk_relationship_count": chunk_relationship_count[0]["count"],
             "document_entity_count": document_entity_count[0]["count"],
@@ -355,11 +355,14 @@ class PostgresKGHandler(KGHandler):
                 {filter_query}
             """
 
-        results = await self.connection_manager.fetch_query(QUERY, [id, entity_names, relationship_types])
+        results = await self.connection_manager.fetch_query(
+            QUERY, [id, entity_names, relationship_types]
+        )
 
         if attributes:
             results = [
-                {k: v for k, v in result.items() if k in attributes} for result in results
+                {k: v for k, v in result.items() if k in attributes}
+                for result in results
             ]
 
         return results
@@ -412,10 +415,13 @@ class PostgresKGHandler(KGHandler):
                         extraction.relationships[i].extraction_ids = (
                             extraction.extraction_ids
                         )
-                    extraction.relationships[i].document_id = extraction.document_id
+                    extraction.relationships[i].document_id = (
+                        extraction.document_id
+                    )
 
                 await self.add_relationships(
-                    extraction.relationships, table_name=f"{table_prefix}relationship"
+                    extraction.relationships,
+                    table_name=f"{table_prefix}relationship",
                 )
 
         return (total_entities, total_relationships)
@@ -495,9 +501,13 @@ class PostgresKGHandler(KGHandler):
 
         for relationship in relationships_list:
             if relationship.subject in entity_map:
-                entity_map[relationship.subject]["relationships"].append(relationship)
+                entity_map[relationship.subject]["relationships"].append(
+                    relationship
+                )
             if relationship.object in entity_map:
-                entity_map[relationship.object]["relationships"].append(relationship)
+                entity_map[relationship.object]["relationships"].append(
+                    relationship
+                )
 
         return entity_map
 
@@ -600,7 +610,9 @@ class PostgresKGHandler(KGHandler):
                 for property_name in property_names
             }
 
-    async def get_all_relationships(self, collection_id: UUID) -> list[Relationship]:
+    async def get_all_relationships(
+        self, collection_id: UUID
+    ) -> list[Relationship]:
 
         # getting all documents for a collection
         if document_ids is None:
@@ -857,10 +869,17 @@ class PostgresKGHandler(KGHandler):
                 and relationship.object is not None
             ):
                 relationship_ids_cache[relationship.object] = []
-            if relationship.subject is not None and relationship.id is not None:
-                relationship_ids_cache[relationship.subject].append(relationship.id)
+            if (
+                relationship.subject is not None
+                and relationship.id is not None
+            ):
+                relationship_ids_cache[relationship.subject].append(
+                    relationship.id
+                )
             if relationship.object is not None and relationship.id is not None:
-                relationship_ids_cache[relationship.object].append(relationship.id)
+                relationship_ids_cache[relationship.object].append(
+                    relationship.id
+                )
 
         return relationship_ids_cache
 
@@ -988,15 +1007,22 @@ class PostgresKGHandler(KGHandler):
 
         logger.info(f"Clustering with settings: {leiden_params}")
 
-        relationship_ids_cache = await self._get_relationship_ids_cache(relationships)
+        relationship_ids_cache = await self._get_relationship_ids_cache(
+            relationships
+        )
 
-        if await self._use_community_cache(collection_id, relationship_ids_cache):
+        if await self._use_community_cache(
+            collection_id, relationship_ids_cache
+        ):
             num_communities = await self._incremental_clustering(
                 relationship_ids_cache, leiden_params, collection_id
             )
         else:
             num_communities = await self._cluster_and_add_community_info(
-                relationships, relationship_ids_cache, leiden_params, collection_id
+                relationships,
+                relationship_ids_cache,
+                leiden_params,
+                collection_id,
             )
 
         return num_communities
@@ -1088,7 +1114,9 @@ class PostgresKGHandler(KGHandler):
         relationships = await self.connection_manager.fetch_query(
             QUERY, [community_number, collection_id]
         )
-        relationships = [Relationship(**relationship) for relationship in relationships]
+        relationships = [
+            Relationship(**relationship) for relationship in relationships
+        ]
 
         return level, entities, relationships
 
@@ -1102,13 +1130,11 @@ class PostgresKGHandler(KGHandler):
     async def create_entities(
         self, level: EntityLevel, id: UUID, entities: list[Entity]
     ) -> None:
-        
+
         # TODO: check if already exists
         await self._add_objects(entities, level.table_name)
 
-    async def update_entity(
-        self, collection_id: UUID, entity: Entity
-    ) -> None:
+    async def update_entity(self, collection_id: UUID, entity: Entity) -> None:
         table_name = entity.level.value + "_entity"
 
         # check if the entity already exists
@@ -1116,7 +1142,9 @@ class PostgresKGHandler(KGHandler):
             SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
         """
         count = (
-            await self.connection_manager.fetch_query(QUERY, [entity.id, collection_id])
+            await self.connection_manager.fetch_query(
+                QUERY, [entity.id, collection_id]
+            )
         )[0]["count"]
 
         if count == 0:
@@ -1124,15 +1152,15 @@ class PostgresKGHandler(KGHandler):
 
         await self._add_objects([entity], table_name)
 
-    async def delete_entity(
-        self, collection_id: UUID, entity: Entity
-    ) -> None:
+    async def delete_entity(self, collection_id: UUID, entity: Entity) -> None:
 
         table_name = entity.level.value + "_entity"
         QUERY = f"""
             DELETE FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
         """
-        await self.connection_manager.execute_query(QUERY, [entity.id, collection_id])
+        await self.connection_manager.execute_query(
+            QUERY, [entity.id, collection_id]
+        )
 
     ############################################################
     ########## Relationship CRUD Operations ####################
@@ -1141,13 +1169,21 @@ class PostgresKGHandler(KGHandler):
     async def create_relationship(
         self, collection_id: UUID, relationship: Relationship
     ) -> None:
-        
+
         # check if the relationship already exists
         QUERY = f"""
             SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE subject = $1 AND predicate = $2 AND object = $3 AND collection_id = $4
         """
         count = (
-            await self.connection_manager.fetch_query(QUERY, [relationship.subject, relationship.predicate, relationship.object, collection_id])
+            await self.connection_manager.fetch_query(
+                QUERY,
+                [
+                    relationship.subject,
+                    relationship.predicate,
+                    relationship.object,
+                    collection_id,
+                ],
+            )
         )[0]["count"]
 
         if count > 0:
@@ -1158,7 +1194,7 @@ class PostgresKGHandler(KGHandler):
     async def update_relationship(
         self, relationship_id: UUID, relationship: Relationship
     ) -> None:
-        
+
         # check if relationship_id exists
         QUERY = f"""
             SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE id = $1
@@ -1172,9 +1208,7 @@ class PostgresKGHandler(KGHandler):
 
         await self._add_objects([relationship], "chunk_relationship")
 
-    async def delete_relationship(
-        self, relationship_id: UUID
-    ) -> None:
+    async def delete_relationship(self, relationship_id: UUID) -> None:
         QUERY = f"""
             DELETE FROM {self._get_table_name("chunk_relationship")} WHERE id = $1
         """
@@ -1346,7 +1380,7 @@ class PostgresKGHandler(KGHandler):
 
     async def get_creation_estimate(
         self, collection_id: UUID, kg_creation_settings: KGCreationSettings
-    ) -> KGCreationEstimationResponse:
+    ):
 
         # todo: harmonize the document_id and id fields: postgres table contains document_id, but other places use id.
         document_ids = [
@@ -1520,11 +1554,13 @@ class PostgresKGHandler(KGHandler):
         offset: int = 0,
         limit: int = -1,
     ):
-        
+
         params: list = [id]
 
         if level != EntityLevel.CHUNK and entity_categories:
-            raise ValueError("entity_categories are only supported for chunk level entities")
+            raise ValueError(
+                "entity_categories are only supported for chunk level entities"
+            )
 
         filter = {
             EntityLevel.CHUNK: "chunk_ids = ANY($1)",
@@ -1550,11 +1586,11 @@ class PostgresKGHandler(KGHandler):
         output = await self.connection_manager.fetch_query(QUERY, params)
 
         if attributes:
-            output = [entity for entity in output if entity["name"] in attributes]
+            output = [
+                entity for entity in output if entity["name"] in attributes
+            ]
 
         return output
-
-    
 
     # TODO: deprecate this
     async def get_entities(
@@ -1674,8 +1710,12 @@ class PostgresKGHandler(KGHandler):
             {pagination_clause}
         """
 
-        relationships = await self.connection_manager.fetch_query(query, params)
-        relationships = [Relationship(**relationship) for relationship in relationships]
+        relationships = await self.connection_manager.fetch_query(
+            query, params
+        )
+        relationships = [
+            Relationship(**relationship) for relationship in relationships
+        ]
         total_entries = await self.get_relationship_count(
             collection_id=collection_id
         )

@@ -42,9 +42,6 @@ from core.base.abstractions import (
 )
 from core.base.api.models import (
     CollectionResponse,
-    KGCreationEstimationResponse,
-    KGDeduplicationEstimationResponse,
-    KGEnrichmentEstimationResponse,
     UserResponse,
 )
 
@@ -775,14 +772,14 @@ class KGHandler(Handler):
     @abstractmethod
     async def get_creation_estimate(
         self, collection_id: UUID, kg_creation_settings: KGCreationSettings
-    ) -> KGCreationEstimationResponse:
+    ):
         """Get creation cost estimate."""
         pass
 
     @abstractmethod
     async def get_enrichment_estimate(
         self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
-    ) -> KGEnrichmentEstimationResponse:
+    ):
         """Get enrichment cost estimate."""
         pass
 
@@ -791,7 +788,7 @@ class KGHandler(Handler):
         self,
         collection_id: UUID,
         kg_deduplication_settings: KGEntityDeduplicationSettings,
-    ) -> KGDeduplicationEstimationResponse:
+    ):
         """Get deduplication cost estimate."""
         pass
 
@@ -839,7 +836,9 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_relationships(self, collection_id: UUID) -> list[Relationship]:
+    async def get_all_relationships(
+        self, collection_id: UUID
+    ) -> list[Relationship]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1523,7 +1522,9 @@ class DatabaseProvider(Provider):
         table_name: str = "chunk_relationship",
     ) -> None:
         """Forward to KG handler add_relationships method."""
-        return await self.kg_handler.add_relationships(relationships, table_name)
+        return await self.kg_handler.add_relationships(
+            relationships, table_name
+        )
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
@@ -1680,7 +1681,7 @@ class DatabaseProvider(Provider):
     # Estimation methods
     async def get_creation_estimate(
         self, collection_id: UUID, kg_creation_settings: KGCreationSettings
-    ) -> KGCreationEstimationResponse:
+    ):
         """Forward to KG handler get_creation_estimate method."""
         return await self.kg_handler.get_creation_estimate(
             collection_id, kg_creation_settings
@@ -1688,7 +1689,7 @@ class DatabaseProvider(Provider):
 
     async def get_enrichment_estimate(
         self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
-    ) -> KGEnrichmentEstimationResponse:
+    ):
         """Forward to KG handler get_enrichment_estimate method."""
         return await self.kg_handler.get_enrichment_estimate(
             collection_id, kg_enrichment_settings
@@ -1698,13 +1699,15 @@ class DatabaseProvider(Provider):
         self,
         collection_id: UUID,
         kg_deduplication_settings: KGEntityDeduplicationSettings,
-    ) -> KGDeduplicationEstimationResponse:
+    ):
         """Forward to KG handler get_deduplication_estimate method."""
         return await self.kg_handler.get_deduplication_estimate(
             collection_id, kg_deduplication_settings
         )
 
-    async def get_all_relationships(self, collection_id: UUID) -> list[Relationship]:
+    async def get_all_relationships(
+        self, collection_id: UUID
+    ) -> list[Relationship]:
         return await self.kg_handler.get_all_relationships(collection_id)
 
     async def update_entity_descriptions(self, entities: list[Entity]):

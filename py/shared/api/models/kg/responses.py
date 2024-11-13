@@ -310,7 +310,9 @@ WrappedKGEnrichmentResponse = ResultsWrapper[
 # KG Entities
 WrappedKGEntityResponse = ResultsWrapper[KGEntitiesResponse]
 WrappedKGEntitiesResponse = PaginatedResultsWrapper[KGEntitiesResponse]
-WrappedKGRelationshipsResponse = PaginatedResultsWrapper[KGRelationshipsResponse]
+WrappedKGRelationshipsResponse = PaginatedResultsWrapper[
+    KGRelationshipsResponse
+]
 
 WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]

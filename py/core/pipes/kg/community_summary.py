@@ -67,7 +67,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
                     "entities": [],
                     "relationships": [],
                 }
-            entity_map[relationship.subject]["relationships"].append(relationship)
+            entity_map[relationship.subject]["relationships"].append(
+                relationship
+            )
 
         # sort in descending order of relationship count
         sorted_entity_map = sorted(
@@ -90,7 +92,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 for entity in sampled_entities
             )
 
-        async def _get_relationships_string(relationships: list, max_count: int = 100):
+        async def _get_relationships_string(
+            relationships: list, max_count: int = 100
+        ):
             sampled_relationships = (
                 random.sample(relationships, max_count)
                 if len(relationships) > max_count
@@ -106,7 +110,9 @@ class KGCommunitySummaryPipe(AsyncPipe):
             entity_descriptions = await _get_entity_descriptions_string(
                 entity_data["entities"]
             )
-            relationships = await _get_relationships_string(entity_data["relationships"])
+            relationships = await _get_relationships_string(
+                entity_data["relationships"]
+            )
 
             prompt += f"""
             Entity: {entity_name}

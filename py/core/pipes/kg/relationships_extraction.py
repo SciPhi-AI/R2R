@@ -56,7 +56,9 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         super().__init__(
             logging_provider=logging_provider,
             config=config
-            or AsyncPipe.PipeConfig(name="default_kg_relationships_extraction_pipe"),
+            or AsyncPipe.PipeConfig(
+                name="default_kg_relationships_extraction_pipe"
+            ),
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
@@ -226,7 +228,9 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
         extraction_merge_count = input.message["extraction_merge_count"]
-        max_knowledge_relationships = input.message["max_knowledge_relationships"]
+        max_knowledge_relationships = input.message[
+            "max_knowledge_relationships"
+        ]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
 

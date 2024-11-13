@@ -282,7 +282,10 @@ async def test_add_kg_extractions(
 
 @pytest.mark.asyncio
 async def test_get_entity_map(
-    postgres_db_provider, entities_raw_list, relationships_raw_list, document_id
+    postgres_db_provider,
+    entities_raw_list,
+    relationships_raw_list,
+    document_id,
 ):
     await postgres_db_provider.add_entities(
         entities_raw_list, table_name="chunk_entity"

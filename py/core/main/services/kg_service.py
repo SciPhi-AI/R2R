@@ -508,7 +508,13 @@ class KgService(Service):
         limit: Optional[int] = None,
     ):
         return await self.providers.database.list_relationships_v3(
-            level, id, entity_names, relationship_types, attributes, offset, limit
+            level,
+            id,
+            entity_names,
+            relationship_types,
+            attributes,
+            offset,
+            limit,
         )
 
     ##### Communities #####

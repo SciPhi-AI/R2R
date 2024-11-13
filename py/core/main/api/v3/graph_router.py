@@ -8,13 +8,20 @@ from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType
 from core.base.abstractions import EntityLevel, KGRunType
+
 from core.base.api.models import (
-    WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGEntityDeduplicationResponse,
-    WrappedKGTunePromptResponse,
-    WrappedKGRelationshipsResponse,
+    WrappedKGCreationResponseV3 as WrappedKGCreationResponse,
+    WrappedKGEnrichmentResponseV3 as WrappedKGEnrichmentResponse,
+    WrappedKGEntityDeduplicationResponseV3 as WrappedKGEntityDeduplicationResponse,
+    WrappedKGTunePromptResponseV3 as WrappedKGTunePromptResponse,
+    WrappedKGRelationshipsResponseV3 as WrappedKGRelationshipsResponse,
+    WrappedKGCommunitiesResponseV3 as WrappedKGCommunitiesResponse,
+    KGCreationResponseV3 as KGCreationResponse,
+    KGEnrichmentResponseV3 as KGEnrichmentResponse,
+    KGEntityDeduplicationResponseV3 as KGEntityDeduplicationResponse,
+    KGTunePromptResponseV3 as KGTunePromptResponse,
 )
+
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -23,7 +30,8 @@ from core.utils import (
     generate_default_user_collection_id,
     update_settings_from_dict,
 )
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+
+from core.base.api.models import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
 
@@ -66,6 +74,7 @@ class Relationship(BaseModel):
     subject_name: str
     object_name: str
     predicate: str
+
 
 class GraphRouter(BaseRouterV3):
     def __init__(
@@ -156,23 +165,46 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def list_entities(
             request: Request,
-            id: UUID = Path(..., description="The ID of the chunk to retrieve entities for."),
-            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the entities by."),
-            entity_categories: Optional[list[str]] = Query(None, description="A list of entity categories to filter the entities by."),
-            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
-            offset: int = Query(0, ge=0, description="The offset of the first entity to retrieve."),
-            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of entities to retrieve, up to 20,000."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to retrieve entities for.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="A list of entity names to filter the entities by.",
+            ),
+            entity_categories: Optional[list[str]] = Query(
+                None,
+                description="A list of entity categories to filter the entities by.",
+            ),
+            attributes: Optional[list[str]] = Query(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="The offset of the first entity to retrieve.",
+            ),
+            limit: int = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of entities to retrieve, up to 20,000.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Entity]]:
             """
-            Retrieves a list of entities associated with a specific chunk.  
-            
-            Note that when entities are extracted, neighboring chunks are also processed together to extract entities. 
-            
-            So, the entity returned here may not be in the same chunk as the one specified, but rather in a neighboring chunk (upto 2 chunks by default).   
+            Retrieves a list of entities associated with a specific chunk.
+
+            Note that when entities are extracted, neighboring chunks are also processed together to extract entities.
+
+            So, the entity returned here may not be in the same chunk as the one specified, but rather in a neighboring chunk (upto 2 chunks by default).
             """
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].list_entities_v3(
                 level=self._get_path_level(request),
@@ -181,9 +213,9 @@ class GraphRouter(BaseRouterV3):
                 limit=limit,
                 entity_names=entity_names,
                 entity_categories=entity_categories,
-                attributes=attributes
+                attributes=attributes,
             )
-        
+
         @self.router.post(
             "/chunks/{id}/entities",
             summary="Create entities for a chunk",
@@ -250,20 +282,31 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_entities(
             request: Request,
-            id: UUID = Path(..., description="The ID of the chunk to create entities for."),
-            entities: list[Union[Entity, dict]] = Body(..., description="The entities to create."),
+            id: UUID = Path(
+                ..., description="The ID of the chunk to create entities for."
+            ),
+            entities: list[Union[Entity, dict]] = Body(
+                ..., description="The entities to create."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
-            entities = [Entity(**entity) if isinstance(entity, dict) else entity for entity in entities]
+            entities = [
+                Entity(**entity) if isinstance(entity, dict) else entity
+                for entity in entities
+            ]
             # for each entity, set the level to CHUNK
             for entity in entities:
                 if entity.level is None:
                     entity.level = EntityLevel.CHUNK
                 else:
-                    raise R2RException("Entity level must be chunk or empty.", 400)
+                    raise R2RException(
+                        "Entity level must be chunk or empty.", 400
+                    )
 
             return await self.services["kg"].create_entities_v3(
                 level=self._get_path_level(request),
@@ -295,13 +338,20 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def update_entity(
             request: Request,
-            id: UUID = Path(..., description="The ID of the chunk to update the entity for."),
-            entity_id: UUID = Path(..., description="The ID of the entity to update."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to update the entity for.",
+            ),
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to update."
+            ),
             entity: Entity = Body(..., description="The updated entity."),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].update_entity_v3(
                 level=self._get_path_level(request),
@@ -376,12 +426,19 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def delete_entity(
             request: Request,
-            id: UUID = Path(..., description="The ID of the chunk to delete the entity for."),
-            entity_id: UUID = Path(..., description="The ID of the entity to delete."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to delete the entity for.",
+            ),
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to delete."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].delete_entity_v3(
                 level=self._get_path_level(request),
@@ -432,7 +489,6 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
-
         @self.router.get(
             "/chunks/{id}/relationships",
             summary="List relationships for a chunk",
@@ -456,16 +512,39 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_relationships(
-            id: UUID = Path(..., description="The ID of the chunk to retrieve relationships for."),
-            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the relationships by."),
-            relationship_types: Optional[list[str]] = Query(None, description="A list of relationship types to filter the relationships by."),
-            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
-            offset: int = Query(0, ge=0, description="The offset of the first relationship to retrieve."),
-            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of relationships to retrieve, up to 20,000."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to retrieve relationships for.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="A list of entity names to filter the relationships by.",
+            ),
+            relationship_types: Optional[list[str]] = Query(
+                None,
+                description="A list of relationship types to filter the relationships by.",
+            ),
+            attributes: Optional[list[str]] = Query(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="The offset of the first relationship to retrieve.",
+            ),
+            limit: int = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of relationships to retrieve, up to 20,000.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Relationship]]:
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].list_relationships_v3(
                 level=EntityLevel.CHUNK,
@@ -476,7 +555,6 @@ class GraphRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
-
 
         @self.router.post(
             "/chunks/{id}/relationships",
@@ -501,21 +579,34 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_relationships(
-            id: UUID = Path(..., description="The ID of the chunk to create relationships for."),
-            relationships: list[Union[Relationship, dict]] = Body(..., description="The relationships to create."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to create relationships for.",
+            ),
+            relationships: list[Union[Relationship, dict]] = Body(
+                ..., description="The relationships to create."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGRelationshipsResponse:
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
-            relationships = [Relationship(**relationship) if isinstance(relationship, dict) else relationship for relationship in relationships]
+            relationships = [
+                (
+                    Relationship(**relationship)
+                    if isinstance(relationship, dict)
+                    else relationship
+                )
+                for relationship in relationships
+            ]
 
             return await self.services["kg"].create_relationships_v3(
                 level=EntityLevel.CHUNK,
                 id=id,
                 relationships=relationships,
             )
-        
 
         @self.router.post(
             "/chunks/{id}/relationships/{relationship_id}",
@@ -538,16 +629,24 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
-        @self.base_endpoint 
+        @self.base_endpoint
         async def update_relationship(
-            id: UUID = Path(..., description="The ID of the chunk to update the relationship for."),
-            relationship_id: UUID = Path(..., description="The ID of the relationship to update."),
-            relationship: Relationship = Body(..., description="The updated relationship."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to update the relationship for.",
+            ),
+            relationship_id: UUID = Path(
+                ..., description="The ID of the relationship to update."
+            ),
+            relationship: Relationship = Body(
+                ..., description="The updated relationship."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
-
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].update_relationship_v3(
                 level=EntityLevel.CHUNK,
@@ -562,12 +661,19 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_relationship(
-            id: UUID = Path(..., description="The ID of the chunk to delete the relationship for."),
-            relationship_id: UUID = Path(..., description="The ID of the relationship to delete."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the chunk to delete the relationship for.",
+            ),
+            relationship_id: UUID = Path(
+                ..., description="The ID of the relationship to delete."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].delete_relationship_v3(
                 level=EntityLevel.CHUNK,
@@ -599,19 +705,42 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_entities(
-            id: UUID = Path(..., description="The ID of the document to retrieve entities for."),
-            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the entities by."),
-            entity_categories: Optional[list[str]] = Query(None, description="A list of entity categories to filter the entities by."),
-            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
-            offset: int = Query(0, ge=0, description="The offset of the first entity to retrieve."),
-            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of entities to retrieve, up to 20,000."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve entities for.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="A list of entity names to filter the entities by.",
+            ),
+            entity_categories: Optional[list[str]] = Query(
+                None,
+                description="A list of entity categories to filter the entities by.",
+            ),
+            attributes: Optional[list[str]] = Query(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="The offset of the first entity to retrieve.",
+            ),
+            limit: int = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of entities to retrieve, up to 20,000.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Entity]]:
             """
-            Retrieves a list of entities associated with a specific document.  
+            Retrieves a list of entities associated with a specific document.
             """
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].list_entities_v3(
                 level=EntityLevel.DOCUMENT,
@@ -620,9 +749,9 @@ class GraphRouter(BaseRouterV3):
                 limit=limit,
                 entity_names=entity_names,
                 entity_categories=entity_categories,
-                attributes=attributes
+                attributes=attributes,
             )
-        
+
         @self.router.post(
             "/documents/{id}/entities",
             summary="Create entities for a document",
@@ -646,20 +775,31 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_entities(
-            id: UUID = Path(..., description="The ID of the chunk to create entities for."),
-            entities: list[Union[Entity, dict]] = Body(..., description="The entities to create."),
+            id: UUID = Path(
+                ..., description="The ID of the chunk to create entities for."
+            ),
+            entities: list[Union[Entity, dict]] = Body(
+                ..., description="The entities to create."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
-            entities = [Entity(**entity) if isinstance(entity, dict) else entity for entity in entities]
+            entities = [
+                Entity(**entity) if isinstance(entity, dict) else entity
+                for entity in entities
+            ]
             # for each entity, set the level to CHUNK
             for entity in entities:
                 if entity.level is None:
                     entity.level = EntityLevel.DOCUMENT
                 else:
-                    raise R2RException("Entity level must be chunk or empty.", 400)
+                    raise R2RException(
+                        "Entity level must be chunk or empty.", 400
+                    )
 
             return await self.services["kg"].create_entities_v3(
                 level=EntityLevel.DOCUMENT,
@@ -690,13 +830,20 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def update_entity(
-            id: UUID = Path(..., description="The ID of the document to update the entity for."),
-            entity_id: UUID = Path(..., description="The ID of the entity to update."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to update the entity for.",
+            ),
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to update."
+            ),
             entity: Entity = Body(..., description="The updated entity."),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].update_entity_v3(
                 level=EntityLevel.DOCUMENT,
@@ -704,7 +851,6 @@ class GraphRouter(BaseRouterV3):
                 entity_id=entity_id,
                 entity=entity,
             )
-
 
         @self.router.delete(
             "/documents/{id}/entities/{entity_id}",
@@ -727,15 +873,21 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
-
         @self.base_endpoint
         async def delete_entity(
-            id: UUID = Path(..., description="The ID of the document to delete the entity for."),
-            entity_id: UUID = Path(..., description="The ID of the entity to delete."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to delete the entity for.",
+            ),
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to delete."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
         ##### RELATIONSHIPS #####
         @self.router.get(
@@ -761,16 +913,39 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_relationships(
-            id: UUID = Path(..., description="The ID of the document to retrieve relationships for."),
-            entity_names: Optional[list[str]] = Query(None, description="A list of entity names to filter the relationships by."),
-            relationship_types: Optional[list[str]] = Query(None, description="A list of relationship types to filter the relationships by."),
-            attributes: Optional[list[str]] = Query(None, description="A list of attributes to return. By default, all attributes are returned."),
-            offset: int = Query(0, ge=0, description="The offset of the first relationship to retrieve."),
-            limit: int = Query(100, ge=0, le=20_000, description="The maximum number of relationships to retrieve, up to 20,000."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve relationships for.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="A list of entity names to filter the relationships by.",
+            ),
+            relationship_types: Optional[list[str]] = Query(
+                None,
+                description="A list of relationship types to filter the relationships by.",
+            ),
+            attributes: Optional[list[str]] = Query(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="The offset of the first relationship to retrieve.",
+            ),
+            limit: int = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of relationships to retrieve, up to 20,000.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Relationship]]:
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].list_relationships_v3(
                 level=EntityLevel.DOCUMENT,
@@ -781,7 +956,6 @@ class GraphRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
-
 
         @self.router.post(
             "/documents/{id}/relationships",
@@ -806,21 +980,34 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_relationships(
-            id: UUID = Path(..., description="The ID of the document to create relationships for."),
-            relationships: list[Union[Relationship, dict]] = Body(..., description="The relationships to create."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to create relationships for.",
+            ),
+            relationships: list[Union[Relationship, dict]] = Body(
+                ..., description="The relationships to create."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[list[RelationshipResponse]]:
+        ) -> WrappedKGCreationResponse:
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
-            relationships = [Relationship(**relationship) if isinstance(relationship, dict) else relationship for relationship in relationships]
+            relationships = [
+                (
+                    Relationship(**relationship)
+                    if isinstance(relationship, dict)
+                    else relationship
+                )
+                for relationship in relationships
+            ]
 
             return await self.services["kg"].create_relationships_v3(
                 level=EntityLevel.DOCUMENT,
                 id=id,
                 relationships=relationships,
             )
-        
 
         @self.router.post(
             "/documents/{id}/relationships/{relationship_id}",
@@ -843,16 +1030,24 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
-        @self.base_endpoint 
+        @self.base_endpoint
         async def update_relationship(
-            id: UUID = Path(..., description="The ID of the document to update the relationship for."),
-            relationship_id: UUID = Path(..., description="The ID of the relationship to update."),
-            relationship: Relationship = Body(..., description="The updated relationship."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to update the relationship for.",
+            ),
+            relationship_id: UUID = Path(
+                ..., description="The ID of the relationship to update."
+            ),
+            relationship: Relationship = Body(
+                ..., description="The updated relationship."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
-
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].update_relationship_v3(
                 level=EntityLevel.DOCUMENT,
@@ -867,12 +1062,19 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_relationship(
-            id: UUID = Path(..., description="The ID of the document to delete the relationship for."),
-            relationship_id: UUID = Path(..., description="The ID of the relationship to delete."),
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to delete the relationship for.",
+            ),
+            relationship_id: UUID = Path(
+                ..., description="The ID of the relationship to delete."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can access this endpoint.", 403)
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
 
             return await self.services["kg"].delete_relationship_v3(
                 level=EntityLevel.DOCUMENT,
@@ -881,11 +1083,6 @@ class GraphRouter(BaseRouterV3):
             )
 
         ##### COLLECTION LEVEL OPERATIONS #####
-
-
-
-
-
 
         # Graph-level operations
         @self.router.post(

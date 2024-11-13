@@ -19,10 +19,7 @@ from shared.api.models.ingestion.responses import (
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
-    KGCreationEstimationResponse,
     KGCreationResponse,
-    KGDeduplicationEstimationResponse,
-    KGEnrichmentEstimationResponse,
     KGEnrichmentResponse,
     KGEntityDeduplicationResponse,
     WrappedKGCommunitiesResponse,
@@ -33,6 +30,23 @@ from shared.api.models.kg.responses import (
     WrappedKGRelationshipsResponse,
     WrappedKGTunePromptResponse,
 )
+
+
+from shared.api.models.kg.responses_v3 import (
+    WrappedKGEntitiesResponse as WrappedKGEntitiesResponseV3,
+    WrappedKGRelationshipsResponse as WrappedKGRelationshipsResponseV3,
+    WrappedKGCommunitiesResponse as WrappedKGCommunitiesResponseV3,
+    WrappedKGCreationResponse as WrappedKGCreationResponseV3,
+    WrappedKGEnrichmentResponse as WrappedKGEnrichmentResponseV3,
+    WrappedKGTunePromptResponse as WrappedKGTunePromptResponseV3,
+    WrappedKGEntityDeduplicationResponse as WrappedKGEntityDeduplicationResponseV3,
+    KGCreationResponse as KGCreationResponseV3,
+    KGEnrichmentResponse as KGEnrichmentResponseV3,
+    KGEntityDeduplicationResponse as KGEntityDeduplicationResponseV3,
+    KGTunePromptResponse as KGTunePromptResponseV3,
+)
+
+
 from shared.api.models.management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
@@ -97,7 +111,8 @@ __all__ = [
     "WrappedMetadataUpdateResponse",
     "WrappedListVectorIndicesResponse",
     "UpdateResponse",
-    # Knowledge Graph Responses
+    # Knowledge Graph Responses for V2
+    # will be removed eventually
     "KGCreationResponse",
     "WrappedKGCreationResponse",
     "KGEnrichmentResponse",
@@ -105,9 +120,18 @@ __all__ = [
     "KGEntityDeduplicationResponse",
     "WrappedKGEntityDeduplicationResponse",
     "WrappedKGTunePromptResponse",
-    "KGCreationEstimationResponse",
-    "KGDeduplicationEstimationResponse",
-    "KGEnrichmentEstimationResponse",
+    # Knowledge Graph Responses for V3
+    "WrappedKGEntitiesResponseV3",
+    "WrappedKGRelationshipsResponseV3",
+    "WrappedKGCommunitiesResponseV3",
+    "WrappedKGCreationResponseV3",
+    "WrappedKGEnrichmentResponseV3",
+    "WrappedKGTunePromptResponseV3",
+    "WrappedKGEntityDeduplicationResponseV3",
+    "KGCreationResponseV3",
+    "KGEnrichmentResponseV3",
+    "KGEntityDeduplicationResponseV3",
+    "KGTunePromptResponseV3",
     # Management Responses
     "PromptResponse",
     "ServerStats",

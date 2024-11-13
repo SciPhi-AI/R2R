@@ -289,11 +289,12 @@ class KGRouter(BaseRouter):
                 limit=limit,
             )
 
-        @self.router.get("/relationships")
+        @self.router.get("/triples")
         @self.base_endpoint
         async def get_relationships(
             collection_id: Optional[UUID] = Query(
-                None, description="Collection ID to retrieve relationships from."
+                None,
+                description="Collection ID to retrieve relationships from.",
             ),
             entity_names: Optional[list[str]] = Query(
                 None, description="Entity names to filter by."
