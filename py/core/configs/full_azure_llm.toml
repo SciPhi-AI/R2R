@@ -19,7 +19,7 @@ concurrent_request_limit = 1
 
 [embedding]
 provider = "litellm"
-base_model = "azure/oai-amplifi-dev-embedding-01"
+base_model = "azure/text-embedding-3-large"
 base_dimension = 1_024
 
 [ingestion]
