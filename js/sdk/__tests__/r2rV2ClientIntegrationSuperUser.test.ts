@@ -313,7 +313,7 @@ describe("r2rClient Integration Tests", () => {
       "test_collection",
       "test_description",
     );
-    newCollectionId = response.results.collection_id;
+    newCollectionId = response.results.id;
 
     expect(newCollectionId).toBeDefined();
   });
