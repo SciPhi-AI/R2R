@@ -8,9 +8,7 @@ from shared.api.models.base import (
 )
 from shared.api.models.auth.responses import (
     TokenResponse,
-    UserResponse,
     WrappedTokenResponse,
-    WrappedUserResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -40,13 +38,12 @@ from shared.api.models.management.responses import (
     AppSettingsResponse,
     CollectionResponse,
     ConversationResponse,
-    DocumentChunkResponse,
+    ChunkResponse,
+    UserResponse,
     LogResponse,
     PromptResponse,
     ScoreCompletionResponse,
     ServerStats,
-    UserOverviewResponse,
-    WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
     WrappedCollectionResponse,
@@ -61,18 +58,18 @@ from shared.api.models.management.responses import (
     WrappedPromptResponse,
     WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedPromptMessageResponse,
     # Chunk Responses
-    WrappedDocumentChunkResponse,
-    WrappedDocumentChunksResponse,
+    WrappedChunkResponse,
+    WrappedChunksResponse,
     # Conversation Responses
     WrappedMessageResponse,
     WrappedMessagesResponse,
     WrappedBranchResponse,
     WrappedBranchesResponse,
     # User Responses
-    WrappedUserOverviewResponse,
-    WrappedUsersOverviewResponse,
+    WrappedUserResponse,
+    WrappedUsersResponse,
+    # TODO: anything below this hasn't been reviewed
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUsersInCollectionResponse,
@@ -93,9 +90,7 @@ from shared.api.models.retrieval.responses import (
 __all__ = [
     # Auth Responses
     "TokenResponse",
-    "UserResponse",
     "WrappedTokenResponse",
-    "WrappedUserResponse",
     "WrappedVerificationResult",
     "WrappedGenericMessageResponse",
     # Ingestion Responses
@@ -123,10 +118,8 @@ __all__ = [
     "AnalyticsResponse",
     "AppSettingsResponse",
     "ScoreCompletionResponse",
-    "UserOverviewResponse",
-    "DocumentChunkResponse",
+    "ChunkResponse",
     "CollectionResponse",
-    "WrappedPromptMessageResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",
@@ -135,7 +128,6 @@ __all__ = [
     "WrappedDocumentsResponse",
     "WrappedCollectionResponse",
     "WrappedCollectionsResponse",
-    "WrappedAddUserResponse",
     "WrappedUsersInCollectionResponse",
     # Conversation Responses
     "ConversationResponse",
@@ -150,11 +142,12 @@ __all__ = [
     "WrappedBranchResponse",
     "WrappedBranchesResponse",
     # Chunk Responses
-    "WrappedDocumentChunkResponse",
-    "WrappedDocumentChunksResponse",
+    "WrappedChunkResponse",
+    "WrappedChunksResponse",
     # User Responses
-    "WrappedUserOverviewResponse",
-    "WrappedUsersOverviewResponse",
+    "UserResponse",
+    "WrappedUserResponse",
+    "WrappedUsersResponse",
     # Base Responses
     "PaginatedResultsWrapper",
     "ResultsWrapper",

@@ -15,13 +15,13 @@ from core.base import (
     UnprocessedChunk,
     UpdateChunk,
     VectorSearchSettings,
-    DocumentChunkResponse,
+    ChunkResponse,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
-    WrappedDocumentChunkResponse,
-    WrappedDocumentChunksResponse,
+    WrappedChunkResponse,
+    WrappedChunksResponse,
     WrappedVectorSearchResponse,
 )
 from core.providers import (
@@ -373,7 +373,7 @@ class ChunksRouter(BaseRouterV3):
         async def retrieve_chunk(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedChunkResponse:
             """
             Get a specific chunk by its ID.
 
@@ -392,7 +392,7 @@ class ChunksRouter(BaseRouterV3):
             ):
                 raise R2RException("Not authorized to access this chunk", 403)
 
-            return DocumentChunkResponse(  # type: ignore
+            return ChunkResponse(  # type: ignore
                 id=chunk["chunk_id"],
                 document_id=chunk["document_id"],
                 user_id=chunk["user_id"],
@@ -453,7 +453,7 @@ class ChunksRouter(BaseRouterV3):
             chunk_update: UpdateChunk = Body(...),
             # TODO: Run with orchestration?
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedChunkResponse:
             """
             Update an existing chunk's content and/or metadata.
 
@@ -486,7 +486,7 @@ class ChunksRouter(BaseRouterV3):
             )
             await simple_ingestor["update-chunk"](workflow_input)
 
-            return DocumentChunkResponse(
+            return ChunkResponse(
                 id=chunk_update.id,
                 document_id=existing_chunk["document_id"],
                 user_id=existing_chunk["user_id"],
@@ -665,7 +665,7 @@ class ChunksRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunksResponse:
+        ) -> WrappedChunksResponse:
             """
             List chunks with pagination support.
 
@@ -696,7 +696,7 @@ class ChunksRouter(BaseRouterV3):
 
             # Convert to response format
             chunks = [
-                DocumentChunkResponse(
+                ChunkResponse(
                     id=chunk["chunk_id"],
                     document_id=chunk["document_id"],
                     user_id=chunk["user_id"],

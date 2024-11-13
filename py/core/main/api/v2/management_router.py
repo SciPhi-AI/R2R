@@ -12,7 +12,8 @@ from pydantic import Json
 
 from core.base import Message, R2RException
 from core.base.api.models import (
-    WrappedAddUserResponse,
+    WrappedBooleanResponse,
+    GenericMessageResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
     WrappedCollectionResponse,
@@ -20,14 +21,15 @@ from core.base.api.models import (
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedDeleteResponse,
-    WrappedDocumentChunksResponse,
+    WrappedChunksResponse,
+    WrappedGenericMessageResponse,
+    WrappedBooleanResponse,
     WrappedDocumentsResponse,
     WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
-    WrappedUsersOverviewResponse,
+    WrappedUsersResponse,
     WrappedUsersInCollectionResponse,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria
@@ -91,7 +93,7 @@ class ManagementRouter(BaseRouter):
                 {}, description="Input types"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `update_prompt` endpoint.",
@@ -101,7 +103,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.update_prompt(
                 name, template, input_types
             )
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.post("/add_prompt")
         @self.base_endpoint
@@ -110,14 +112,14 @@ class ManagementRouter(BaseRouter):
             template: str = Body(..., description="Prompt template"),
             input_types: dict[str, str] = Body({}, description="Input types"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `add_prompt` endpoint.",
                     403,
                 )
             result = await self.service.add_prompt(name, template, input_types)
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.get("/get_prompt/{prompt_name}")
         @self.base_endpoint
@@ -130,7 +132,7 @@ class ManagementRouter(BaseRouter):
                 None, description="Prompt override"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_prompt` endpoint.",
@@ -139,7 +141,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.get_cached_prompt(
                 prompt_name, inputs, prompt_override
             )
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.get("/get_all_prompts")
         @self.base_endpoint
@@ -236,7 +238,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUsersOverviewResponse:
+        ) -> WrappedUsersResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `users_overview` endpoint.",
@@ -373,7 +375,7 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunksResponse:
+        ) -> WrappedChunksResponse:
             document_uuid = UUID(document_id)
 
             document_chunks = await self.service.list_document_chunks(
@@ -431,7 +433,7 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunksResponse:
+        ) -> WrappedChunksResponse:
             document_uuid = UUID(document_id)
 
             list_document_chunks = await self.service.list_document_chunks(
@@ -627,7 +629,7 @@ class ManagementRouter(BaseRouter):
             user_id: str = Body(..., description="User ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
+        ) -> WrappedBooleanResponse:
             collection_uuid = UUID(collection_id)
             user_uuid = UUID(user_id)
             if (
@@ -642,7 +644,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.add_user_to_collection(
                 user_uuid, collection_uuid
             )
-            return result  # type: ignore
+            return WrappedBooleanResponse(result=result)
 
         @self.router.post("/remove_user_from_collection")
         @self.base_endpoint

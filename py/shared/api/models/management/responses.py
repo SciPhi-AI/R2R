@@ -9,9 +9,7 @@ from shared.abstractions.document import DocumentResponse
 
 from shared.abstractions.llm import Message
 
-
-class UpdatePromptResponse(BaseModel):
-    message: str
+from shared.abstractions import R2RSerializable
 
 
 class PromptResponse(BaseModel):
@@ -60,16 +58,7 @@ class ScoreCompletionResponse(BaseModel):
     message: str
 
 
-# TODO: This should just be a UserResponse...
-class UserOverviewResponse(BaseModel):
-    user_id: UUID
-    num_files: int
-    total_size_in_bytes: int
-    document_ids: list[UUID]
-
-
-# FIXME: Why are we redefining this and not using the model in py/shared/api/models/auth/responses.py?
-class UserResponse(BaseModel):
+class UserResponse(R2RSerializable):
     id: UUID
     email: str
     is_active: bool = True
@@ -87,7 +76,7 @@ class UserResponse(BaseModel):
     profile_picture: Optional[str] = None
 
 
-class DocumentChunkResponse(BaseModel):
+class ChunkResponse(BaseModel):
     id: UUID
     document_id: UUID
     user_id: UUID
@@ -140,6 +129,10 @@ class AddUserResponse(BaseModel):
     result: bool
 
 
+# Chunk Responses
+WrappedChunkResponse = ResultsWrapper[ChunkResponse]
+WrappedChunksResponse = PaginatedResultsWrapper[list[ChunkResponse]]
+
 # Collection Responses
 WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
 WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
@@ -164,10 +157,8 @@ WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
 # User Responses
-WrappedUserOverviewResponse = ResultsWrapper[UserOverviewResponse]
-WrappedUsersOverviewResponse = PaginatedResultsWrapper[
-    list[UserOverviewResponse]
-]
+WrappedUserResponse = ResultsWrapper[UserResponse]
+WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
 
 # TODO: anything below this hasn't been reviewed
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
@@ -175,17 +166,10 @@ WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 
-WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
-
-WrappedAddUserResponse = ResultsWrapper[None]
 WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedUserCollectionResponse = PaginatedResultsWrapper[
     list[CollectionResponse]
 ]
 
-WrappedDocumentChunkResponse = ResultsWrapper[DocumentChunkResponse]
-WrappedDocumentChunksResponse = PaginatedResultsWrapper[
-    list[DocumentChunkResponse]
-]
 WrappedDeleteResponse = ResultsWrapper[None]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]

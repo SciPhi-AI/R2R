@@ -622,7 +622,7 @@ class ManagementService(Service):
             await self.providers.database.add_prompt(
                 name, template, input_types
             )
-            return {"message": f"Prompt '{name}' added successfully."}
+            return f"Prompt '{name}' added successfully."
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
 
@@ -673,7 +673,7 @@ class ManagementService(Service):
             await self.providers.database.update_prompt(
                 name, template, input_types
             )
-            return {"message": f"Prompt '{name}' updated successfully."}
+            return f"Prompt '{name}' updated successfully."
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 

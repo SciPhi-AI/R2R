@@ -8,7 +8,6 @@ from fastapi import Body, Depends, Path, Query
 from core.base import R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
-    WrappedAddUserResponse,
     WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
@@ -866,7 +865,7 @@ class CollectionsRouter(BaseRouterV3):
                 ..., description="The unique identifier of the user to add"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
+        ) -> WrappedBooleanResponse:
             """
             Add a user to a collection.
 
@@ -885,7 +884,7 @@ class CollectionsRouter(BaseRouterV3):
             result = await self.services["management"].add_user_to_collection(
                 user_id, id
             )
-            return result  # type: ignore
+            return GenericBooleanResponse(success=result)
 
         @self.router.delete(
             "/collections/{id}/users/{user_id}",

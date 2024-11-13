@@ -34,8 +34,9 @@ class TokenData(BaseModel):
     exp: Optional[datetime] = None
 
 
+# TODO: Seems like an unnecessary abstraction
 class UserStats(BaseModel):
-    user_id: UUID
+    id: UUID
     email: str
     is_superuser: bool
     is_active: bool

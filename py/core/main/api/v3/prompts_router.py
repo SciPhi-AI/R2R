@@ -6,10 +6,11 @@ from fastapi import Body, Depends, Path, Query
 from core.base import R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
+    GenericMessageResponse,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
     WrappedPromptResponse,
     WrappedPromptsResponse,
-    WrappedPromptMessageResponse,
-    WrappedBooleanResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -99,7 +100,7 @@ class PromptsRouter(BaseRouterV3):
                 description="A dictionary mapping input names to their types",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Create a new prompt with the given configuration.
 
@@ -113,7 +114,7 @@ class PromptsRouter(BaseRouterV3):
             result = await self.services["management"].add_prompt(
                 name, template, input_types
             )
-            return result
+            return GenericMessageResponse(message=result)
 
         @self.router.get(
             "/prompts",
@@ -334,7 +335,7 @@ class PromptsRouter(BaseRouterV3):
                 description="A dictionary mapping input names to their types",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Update an existing prompt's template and/or input types.
 
@@ -348,7 +349,7 @@ class PromptsRouter(BaseRouterV3):
             result = await self.services["management"].update_prompt(
                 name, template, input_types
             )
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.delete(
             "/prompts/{name}",

@@ -17,7 +17,7 @@ from core.base.api.models import (
     WrappedDocumentsResponse,
     WrappedIngestionResponse,
     WrappedBooleanResponse,
-    WrappedDocumentChunksResponse,
+    WrappedChunksResponse,
 )
 
 from pydantic import Json
@@ -706,7 +706,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunksResponse:
+        ) -> WrappedChunksResponse:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
             Chunks represent semantic sections of the document and are used for retrieval

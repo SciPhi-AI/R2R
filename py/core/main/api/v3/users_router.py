@@ -13,8 +13,7 @@ from core.base.api.models import (
     GenericBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
-    WrappedUserOverviewResponse,
-    WrappedUsersOverviewResponse,
+    WrappedUsersResponse,
     WrappedUserResponse,
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
@@ -575,7 +574,6 @@ class UsersRouter(BaseRouterV3):
             #     is_active: Optional[bool] = Query(None, example=True),
             #     is_superuser: Optional[bool] = Query(None, example=False),
             #     auth_user=Depends(self.providers.auth.auth_wrapper),
-            # ) -> PaginatedResultsWrapper[List[UserOverviewResponse]]:
             user_ids: Optional[list[UUID]] = Query(
                 None, description="List of user IDs to filter by"
             ),
@@ -591,7 +589,7 @@ class UsersRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedUsersOverviewResponse:
+        ) -> WrappedUsersResponse:
             """
             List all users with pagination and filtering options.
             Only accessible by superusers.
@@ -613,7 +611,6 @@ class UsersRouter(BaseRouterV3):
         @self.router.get(
             "/users/{id}",
             summary="Get User Details",
-            # response_model=ResultsWrapper[UserOverviewResponse],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -668,7 +665,7 @@ class UsersRouter(BaseRouterV3):
                 ..., example="550e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedUserOverviewResponse:
+        ) -> WrappedUserResponse:
             """
             Get detailed information about a specific user.
             Users can only access their own information unless they are superusers.

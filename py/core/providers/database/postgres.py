@@ -6,7 +6,6 @@ from typing import Any, Optional
 
 from core.base import (
     DatabaseConfig,
-    DatabaseConnectionManager,
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,

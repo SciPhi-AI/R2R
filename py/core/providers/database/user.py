@@ -549,7 +549,7 @@ class PostgresUserHandler(UserHandler):
 
         users = [
             UserStats(
-                user_id=row[0],
+                id=row[0],
                 email=row[1],
                 is_superuser=row[2],
                 is_active=row[3],
