@@ -67,3 +67,6 @@ vision_pdf_model = "ollama/llama3.2-vision"
 
   [ingestion.extra_parsers]
     pdf = "zerox"
+
+chunks_for_document_summary = 16
+document_summary_model = "ollama/llama3.1"

@@ -224,6 +224,15 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     ):
         return results[:limit]
 
+    async def arerank(
+        self,
+        query: str,
+        results: list[VectorSearchResult],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        limit: int = 10,
+    ):
+        return results[:limit]
+
     def tokenize_string(self, text: str, model: str) -> list[int]:
         try:
             import tiktoken

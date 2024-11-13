@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional, Sequence, Union
 from uuid import UUID
+
 from fastapi import HTTPException
 
 from core.base import (
@@ -12,6 +13,7 @@ from core.base import (
     DocumentChunk,
     DocumentResponse,
     DocumentType,
+    GenerationConfig,
     IngestionStatus,
     R2RException,
     RawChunk,
@@ -229,6 +231,43 @@ class IngestionService(Service):
             run_manager=self.run_manager,
             ingestion_config=ingestion_config,
         )
+
+    async def augment_document_info(
+        self,
+        document_info: DocumentInfo,
+        chunked_documents: list[dict],
+    ) -> None:
+        if not self.config.ingestion.skip_document_summary:
+            document = f"Document Title: {document_info.title}\n"
+            if document_info.metadata != {}:
+                document += f"Document Metadata: {json.dumps(document_info.metadata)}\n"
+
+            document += "Document Text:\n"
+            for chunk in chunked_documents[
+                0 : self.config.ingestion.chunks_for_document_summary
+            ]:
+                document += chunk["data"]
+
+            messages = await self.providers.database.prompt_handler.get_message_payload(
+                system_prompt_name=self.config.ingestion.document_summary_system_prompt,
+                task_prompt_name=self.config.ingestion.document_summary_task_prompt,
+                task_inputs={"document": document},
+            )
+            response = await self.providers.llm.aget_completion(
+                messages=messages,
+                generation_config=GenerationConfig(model="openai/gpt-4o-mini"),
+            )
+
+            document_info.summary = response.choices[0].message.content  # type: ignore
+
+            if not document_info.summary:
+                raise ValueError("Expected a generated response.")
+
+            embedding = await self.providers.embedding.async_get_embedding(
+                text=document_info.summary,
+            )
+            document_info.summary_embedding = embedding
+        return
 
     async def embed_document(
         self,

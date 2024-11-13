@@ -1,14 +1,14 @@
 import logging
-from typing import AsyncGenerator, Optional, Union
+from typing import AsyncGenerator, Optional
 
 from ...models import (
-    CombinedSearchResponse,
     DocumentSearchSettings,
     GenerationConfig,
     KGSearchSettings,
     Message,
     RAGResponse,
-    VectorSearchSettings,
+    SearchResponse,
+    SearchSettings,
 )
 
 logger = logging.getLogger()
@@ -18,14 +18,14 @@ class RetrievalMixins:
     async def search_documents(
         self,
         query: str,
-        settings: Optional[Union[dict, DocumentSearchSettings]] = None,
-    ) -> any:
+        settings: Optional[dict | DocumentSearchSettings] = None,
+    ) -> SearchResponse:
         """
         Conduct a vector and/or KG search.
 
         Args:
             query (str): The query to search for.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
 
         Returns:
@@ -43,9 +43,7 @@ class RetrievalMixins:
     async def search(
         self,
         query: str,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
     ) -> CombinedSearchResponse:
         """
@@ -53,7 +51,7 @@ class RetrievalMixins:
 
         Args:
             query (str): The query to search for.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
 
         Returns:
@@ -97,9 +95,7 @@ class RetrievalMixins:
         self,
         query: str,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, SearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -110,7 +106,7 @@ class RetrievalMixins:
         Args:
             query (str): The query to search for.
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
             task_prompt_override (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
@@ -147,26 +143,24 @@ class RetrievalMixins:
 
     async def agent(
         self,
-        message: Optional[Union[dict, Message]] = None,
-        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
-        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
+        message: Optional[dict | Message] = None,
+        rag_generation_config: Optional[dict | GenerationConfig] = None,
+        vector_search_settings: Optional[dict | SearchSettings] = None,
+        kg_search_settings: Optional[dict | KGSearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
         branch_id: Optional[str] = None,
         # TODO - Deprecate messages
-        messages: Optional[Union[dict, Message]] = None,
-    ) -> Union[list[Message], AsyncGenerator[Message, None]]:
+        messages: Optional[dict | Message] = None,
+    ) -> list[Message] | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
 
         Args:
             messages (List[Union[dict, Message]]): The messages to send to the agent.
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
-            vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
+            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
             task_prompt_override (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
@@ -221,3 +215,18 @@ class RetrievalMixins:
             return self._make_streaming_request("POST", "agent", json=data)  # type: ignore
         else:
             return await self._make_request("POST", "agent", json=data)  # type: ignore
+
+    async def embedding(
+        self,
+        content: str,
+    ) -> list[float]:
+        """
+        Generate embeddings for the provided content.
+
+        Args:
+            content (str): The text content to embed.
+
+        Returns:
+            list[float]: The generated embedding vector.
+        """
+        return await self._make_request("POST", "embedding", json=content)  # type: ignore

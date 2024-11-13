@@ -3,10 +3,10 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
-from fastapi import HTTPException
 
 import asyncpg
 from asyncpg.exceptions import PostgresError, UndefinedTableError
+from fastapi import HTTPException
 
 from core.base import (
     CommunityReport,

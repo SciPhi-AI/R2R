@@ -136,7 +136,7 @@ class PostgresDBProvider(DatabaseProvider):
             PostgresConnectionManager()
         )
         self.document_handler = PostgresDocumentHandler(
-            self.project_name, self.connection_manager
+            self.project_name, self.connection_manager, self.dimension
         )
         self.token_handler = PostgresTokenHandler(
             self.project_name, self.connection_manager

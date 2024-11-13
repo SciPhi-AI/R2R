@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Optional
 from uuid import UUID, uuid4
+
 from fastapi import HTTPException
 from asyncpg.exceptions import UniqueViolationError
 

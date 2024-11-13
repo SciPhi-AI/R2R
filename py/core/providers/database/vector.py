@@ -9,16 +9,15 @@ from uuid import UUID
 import numpy as np
 
 from core.base import (
-    DocumentSearchSettings,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
     IndexMethod,
+    SearchSettings,
     VectorEntry,
     VectorHandler,
     VectorQuantizationType,
     VectorSearchResult,
-    VectorSearchSettings,
     VectorTableName,
     R2RException,
 )
@@ -145,7 +144,6 @@ class PostgresVectorHandler(VectorHandler):
         CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (document_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (user_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
         """
         if self.enable_fts:
             query += f"""
@@ -285,7 +283,7 @@ class PostgresVectorHandler(VectorHandler):
             await self.connection_manager.execute_many(query, params)
 
     async def semantic_search(
-        self, query_vector: list[float], search_settings: VectorSearchSettings
+        self, query_vector: list[float], search_settings: SearchSettings
     ) -> list[VectorSearchResult]:
         try:
             imeasure_obj = IndexMeasure(search_settings.index_measure)
@@ -430,7 +428,7 @@ class PostgresVectorHandler(VectorHandler):
         ]
 
     async def full_text_search(
-        self, query_text: str, search_settings: VectorSearchSettings
+        self, query_text: str, search_settings: SearchSettings
     ) -> list[VectorSearchResult]:
         if not self.enable_fts:
             raise ValueError(
@@ -492,7 +490,7 @@ class PostgresVectorHandler(VectorHandler):
         self,
         query_text: str,
         query_vector: list[float],
-        search_settings: VectorSearchSettings,
+        search_settings: SearchSettings,
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:

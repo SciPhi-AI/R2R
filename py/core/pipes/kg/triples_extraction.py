@@ -286,7 +286,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
         extractions = sorted(
-            extractions, key=lambda x: x.metadata["chunk_order"]
+            extractions, key=lambda x: x.metadata.get("chunk_order", float('inf'))
         )
 
         # group these extractions into groups of extraction_merge_count

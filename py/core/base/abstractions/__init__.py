@@ -52,7 +52,6 @@ from shared.abstractions.llm import (
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
     AggregateSearchResult,
-    DocumentSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
@@ -62,8 +61,8 @@ from shared.abstractions.search import (
     KGSearchResult,
     KGSearchResultType,
     KGSearchSettings,
+    SearchSettings,
     VectorSearchResult,
-    VectorSearchSettings,
 )
 from shared.abstractions.user import Token, TokenData, UserStats
 from shared.abstractions.vector import (
@@ -135,8 +134,7 @@ __all__ = [
     "KGGlobalResult",
     "KGSearchSettings",
     "VectorSearchResult",
-    "VectorSearchSettings",
-    "DocumentSearchSettings",
+    "SearchSettings",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",
